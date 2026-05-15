@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>החשבון שלי — כסף'לה</title>
+<meta name="theme-color" content="#0f172a" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+
+<!-- nav -->
+<header class="border-b border-slate-200 bg-white">
+  <nav class="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="flex items-center gap-3">
+      <img id="user-picture" class="hidden h-9 w-9 rounded-full ring-2 ring-emerald-200" alt="" />
+      <span id="user-name" class="text-sm font-semibold text-slate-700">טוען...</span>
+      <button onclick="kesefleLogout()" class="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">התנתק</button>
+    </div>
+  </nav>
+</header>
+
+<main class="mx-auto max-w-5xl px-5 py-10">
+
+  <!-- onboarding banner -->
+  <section id="onboarding" class="mb-8 rounded-3xl border border-amber-200 bg-amber-50 p-6">
+    <div class="flex items-start gap-4">
+      <div class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl">👋</div>
+      <div class="flex-1">
+        <h2 class="text-xl font-black">ברוך הבא! בוא נסיים את ההגדרה</h2>
+        <p class="mt-1 text-slate-700">3 שלבים קצרים והכל מוכן.</p>
+        <ol class="mt-5 space-y-3">
+          <li class="flex items-start gap-3" id="step-1">
+            <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white">✓</span>
+            <div class="flex-1">
+              <div class="font-bold">התחברת עם Google</div>
+              <div class="text-sm text-slate-600">החשבון מקושר.</div>
+            </div>
+          </li>
+          <li class="flex items-start gap-3" id="step-2">
+            <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">2</span>
+            <div class="flex-1">
+              <div class="font-bold">צור את הגיליון שלך</div>
+              <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
+              <button onclick="kesefleProvisionSheet()" id="btn-provision" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">צור גיליון</button>
+              <div id="provision-status" class="mt-2 hidden text-sm"></div>
+            </div>
+          </li>
+          <li class="flex items-start gap-3" id="step-3">
+            <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
+            <div class="flex-1">
+              <div class="font-bold">חבר את הוואטסאפ שלך</div>
+              <div class="text-sm text-slate-600 mb-2">שלח הודעה ראשונה לבוט.</div>
+              <a href="#" id="btn-whatsapp" class="inline-block rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white hover:opacity-90">פתח וואטסאפ</a>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- summary cards -->
+  <section class="grid gap-4 md:grid-cols-3">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6">
+      <div class="text-sm font-semibold text-slate-500">החודש</div>
+      <div class="mt-1 text-3xl font-black"><span class="num">₪0</span></div>
+      <div class="mt-1 text-xs text-slate-500">סך הוצאות החודש</div>
+    </div>
+    <div class="rounded-3xl border border-slate-200 bg-white p-6">
+      <div class="text-sm font-semibold text-slate-500">קטגוריה מובילה</div>
+      <div class="mt-1 text-3xl font-black">—</div>
+      <div class="mt-1 text-xs text-slate-500">תופיע אחרי כמה הוצאות</div>
+    </div>
+    <div class="rounded-3xl border border-slate-200 bg-white p-6">
+      <div class="text-sm font-semibold text-slate-500">סטטוס</div>
+      <div class="mt-1 text-3xl font-black text-emerald-600">פעיל</div>
+      <div class="mt-1 text-xs text-slate-500">הבוט מקשיב</div>
+    </div>
+  </section>
+
+  <!-- linked sheet card -->
+  <section id="linked-sheet" class="mt-6 hidden rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
+    <div class="flex items-center gap-4">
+      <div class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-white shadow-sm">📊</div>
+      <div class="flex-1">
+        <div class="font-bold">הגיליון שלך מוכן</div>
+        <div class="text-sm text-slate-600">כל הוצאה שתשלח לבוט תופיע כאן.</div>
+      </div>
+      <a id="sheet-link" href="#" target="_blank" rel="noopener" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">פתח גיליון →</a>
+    </div>
+  </section>
+
+</main>
+
+<script>
+function kesefleGetUser() {
+  try {
+    return JSON.parse(localStorage.getItem('kesefle_user') || 'null');
+  } catch { return null; }
+}
+function kesefleSetUser(u) {
+  localStorage.setItem('kesefle_user', JSON.stringify(u));
+}
+function kesefleLogout() {
+  localStorage.removeItem('kesefle_user');
+  localStorage.removeItem('kesefle_sheet');
+  window.location.href = '/';
+}
+
+(function init() {
+  var u = kesefleGetUser();
+  if (!u) { window.location.href = '/'; return; }
+  document.getElementById('user-name').textContent = u.name || u.email || 'משתמש';
+  if (u.picture) {
+    var img = document.getElementById('user-picture');
+    img.src = u.picture;
+    img.classList.remove('hidden');
+  }
+  // If sheet already provisioned, show it
+  var s = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
+  if (s && s.spreadsheetUrl) {
+    document.getElementById('sheet-link').href = s.spreadsheetUrl;
+    document.getElementById('linked-sheet').classList.remove('hidden');
+    var step2 = document.getElementById('step-2').firstElementChild;
+    step2.classList.remove('bg-slate-300');
+    step2.classList.add('bg-emerald-500');
+    step2.textContent = '✓';
+  }
+})();
+
+async function kesefleProvisionSheet() {
+  var u = kesefleGetUser();
+  if (!u) return;
+  var btn = document.getElementById('btn-provision');
+  var status = document.getElementById('provision-status');
+  btn.disabled = true;
+  btn.textContent = 'יוצר…';
+  status.className = 'mt-2 text-sm text-slate-500';
+  status.textContent = 'מעתיק תבנית ל-Drive שלך…';
+  status.classList.remove('hidden');
+  try {
+    // Need a Google access token with drive.file + spreadsheets scope.
+    // The browser must call google.accounts.oauth2.initTokenClient — set up on home page.
+    // For now this endpoint expects the token to come from the user object.
+    var r = await fetch('/api/sheet/provision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accessToken: u.accessToken || '',
+        userSub: u.sub,
+        userEmail: u.email,
+      }),
+    });
+    var j = await r.json();
+    if (j.ok) {
+      localStorage.setItem('kesefle_sheet', JSON.stringify(j));
+      document.getElementById('sheet-link').href = j.spreadsheetUrl;
+      document.getElementById('linked-sheet').classList.remove('hidden');
+      status.className = 'mt-2 text-sm text-emerald-600';
+      status.textContent = '✓ הגיליון מוכן!';
+      btn.style.display = 'none';
+      var step2 = document.getElementById('step-2').firstElementChild;
+      step2.classList.remove('bg-slate-300');
+      step2.classList.add('bg-emerald-500');
+      step2.textContent = '✓';
+    } else {
+      status.className = 'mt-2 text-sm text-red-600';
+      status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.');
+      btn.disabled = false;
+      btn.textContent = 'נסה שוב';
+    }
+  } catch (e) {
+    status.className = 'mt-2 text-sm text-red-600';
+    status.textContent = '✗ שגיאת רשת.';
+    btn.disabled = false;
+    btn.textContent = 'נסה שוב';
+  }
+}
+</script>
+
+</body>
+</html>
