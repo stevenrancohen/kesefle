@@ -83,11 +83,46 @@
       <a href="#faq" class="text-sm font-medium text-ink-700 hover:text-ink-900">שאלות נפוצות</a>
     </div>
     <div class="flex items-center gap-2">
+      <button
+        onclick="kesefleToggleDark()"
+        aria-label="מצב כהה"
+        class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
+        id="dark-toggle"
+      >
+        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
       <a href="#signup" class="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100 sm:inline-block">היכנס</a>
       <a href="#signup" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800">התחל חינם</a>
     </div>
   </nav>
 </header>
+
+<!-- Floating voice input button -->
+<button
+  onclick="kesefleStartVoice()"
+  aria-label="הקלט הוצאה בקול"
+  id="voice-fab"
+  class="fixed bottom-6 left-6 z-40 grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-2xl transition hover:scale-110 hover:shadow-glow"
+>
+  <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+</button>
+
+<!-- Voice input modal -->
+<div id="voice-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 p-4 backdrop-blur">
+  <div class="relative w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl dark:bg-ink-900">
+    <button onclick="kesefleCloseVoice()" class="absolute left-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-ink-100 hover:bg-ink-200 dark:bg-ink-800 dark:hover:bg-ink-700">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M6 18L18 6"/></svg>
+    </button>
+    <div class="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white" id="voice-blob">
+      <svg class="h-12 w-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+    </div>
+    <h3 class="mt-6 text-2xl font-black">דבר עכשיו</h3>
+    <p class="mt-2 text-sm text-ink-500 dark:text-ink-400" id="voice-status">לדוגמה: "ארבעים שקל קפה" או "מאה חמישים סופר"</p>
+    <div class="mt-4 min-h-12 rounded-2xl bg-ink-50 p-3 text-ink-900 dark:bg-ink-800 dark:text-white" id="voice-transcript"></div>
+    <p class="mt-3 text-xs text-ink-400">דמו — בגרסה החיה, הכל מתקטלג אוטומטית ונשמר בגיליון שלך</p>
+  </div>
+</div>
 
 <!-- ============== HERO ============== -->
 <section class="relative overflow-hidden bg-mesh pt-28 pb-20 md:pt-36 md:pb-28">
@@ -779,8 +814,68 @@ async function submitSignup(e) {
 
 // ESC to close modal
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') kesefleCloseDemo();
+  if (e.key === 'Escape') { kesefleCloseDemo(); kesefleCloseVoice(); }
 });
+
+// ============ DARK MODE ============
+function kesefleToggleDark() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle('dark');
+  localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light');
+  document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+  document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+}
+(function initTheme() {
+  var saved = localStorage.getItem('kesefle_theme');
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    document.getElementById('icon-moon').classList.add('hidden');
+    document.getElementById('icon-sun').classList.remove('hidden');
+  }
+})();
+
+// ============ VOICE INPUT (Web Speech API) ============
+function kesefleStartVoice() {
+  var m = document.getElementById('voice-modal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  var transcript = document.getElementById('voice-transcript');
+  var status = document.getElementById('voice-status');
+  var blob = document.getElementById('voice-blob');
+  transcript.textContent = '';
+
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    status.textContent = 'הדפדפן שלך לא תומך בקלט קולי. נסה ב-Chrome.';
+    return;
+  }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = new SR();
+  rec.lang = 'he-IL';
+  rec.interimResults = true;
+  rec.continuous = false;
+  blob.classList.add('animate-pulse');
+  status.textContent = 'מקשיב…';
+
+  rec.onresult = function(e) {
+    var t = '';
+    for (var i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+    transcript.textContent = t;
+    status.textContent = e.results[e.results.length - 1].isFinal ? '✓ נקלט. בגרסה החיה, זה היה נשמר עכשיו' : 'מקשיב…';
+  };
+  rec.onerror = function(e) { status.textContent = 'שגיאה: ' + e.error; blob.classList.remove('animate-pulse'); };
+  rec.onend = function() { blob.classList.remove('animate-pulse'); };
+  try { rec.start(); } catch (e) { status.textContent = 'אנא אפשר גישה למיקרופון בדפדפן'; }
+  window._kesefleRec = rec;
+}
+function kesefleCloseVoice() {
+  var m = document.getElementById('voice-modal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+  document.body.style.overflow = '';
+  if (window._kesefleRec) { try { window._kesefleRec.stop(); } catch (e) {} }
+}
 
 // Hide OAuth buttons whose Client ID is still a placeholder.
 // Leaves at least the waitlist email form working.
