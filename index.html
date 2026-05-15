@@ -132,23 +132,22 @@
     <div>
       <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
         <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
-        עובד עכשיו עם וואטסאפ • זמין בישראל
+        כבר עוקב אחרי <span class="num">₪479,000</span> ב-<span class="num">368</span> הוצאות אמיתיות • 4 שנות פיתוח
       </div>
-      <h1 class="text-balance text-5xl font-black leading-[1.05] tracking-tight md:text-6xl">
-        הכסף שלך,
-        <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">על אוטומט</span>.
+      <h1 class="text-balance text-4xl font-black leading-[1.05] tracking-tight md:text-6xl">
+        הוצאה ב-וואטסאפ.
+        <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">רשומה בשנייה.</span>
       </h1>
-      <p class="mt-5 max-w-xl text-lg leading-relaxed text-ink-600">
-        שלח הודעה בוואטסאפ — <span class="font-semibold text-ink-900">"<span class="num">245</span> סופר"</span> — וזה כבר רשום בגוגל שיטס שלך, מקוטלג, מסוכם.
-        בלי אפליקציה להוריד. בלי טפסים. בלי לזכור.
+      <p class="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-ink-600">
+        בלי אפליקציה. בלי טפסים. בלי לזכור. כותב <span class="font-semibold text-ink-900">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון שלך, מקוטלג.
       </p>
-      <div class="mt-8 flex flex-wrap items-center gap-3">
-        <a href="#signup" class="group inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-glow transition hover:bg-brand-700">
-          חבר את הוואטסאפ שלי
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <a href="#signup" class="group inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-glow transition hover:bg-brand-700">
+          קח אותי על אוטומט
           <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
         </a>
-        <button type="button" onclick="kesefleOpenDemo()" class="inline-flex items-center gap-2 rounded-2xl border border-ink-200 bg-white px-6 py-3.5 text-base font-semibold text-ink-700 transition hover:border-ink-300 hover:bg-ink-50">
-          ראה דמו של <span class="num">30</span> שניות
+        <button type="button" onclick="kesefleOpenDemo()" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white px-6 py-3.5 text-base font-semibold text-ink-700 transition hover:border-ink-300 hover:bg-ink-50">
+          ראה דמו ←
         </button>
       </div>
       <div class="mt-7 flex items-center gap-5 text-sm text-ink-500">
@@ -233,16 +232,22 @@
   </div>
 </section>
 
-<!-- ============== LOGO BAR (social proof scaffold) ============== -->
+<!-- ============== LIVE STATS BAR ============== -->
 <section class="border-y border-ink-200 bg-white py-8">
   <div class="mx-auto max-w-6xl px-5">
-    <p class="text-center text-sm font-medium text-ink-500">בעיתון. <span class="opacity-60">(בקרוב)</span></p>
-    <div class="mt-5 grid grid-cols-2 items-center gap-8 opacity-40 md:grid-cols-5">
-      <div class="text-center font-bold text-ink-400">Geektime</div>
-      <div class="text-center font-bold text-ink-400">The Marker</div>
-      <div class="text-center font-bold text-ink-400">Calcalist</div>
-      <div class="text-center font-bold text-ink-400">Globes</div>
-      <div class="text-center font-bold text-ink-400">Ynet Tech</div>
+    <div class="grid gap-6 text-center md:grid-cols-3">
+      <div>
+        <div class="text-3xl font-black text-brand-600">₪<span class="num" id="stat-money">479,000</span>+</div>
+        <div class="mt-1 text-sm text-ink-500">נרשמו בארבע השנים האחרונות</div>
+      </div>
+      <div>
+        <div class="text-3xl font-black text-accent-600"><span class="num" id="stat-orders">368</span></div>
+        <div class="mt-1 text-sm text-ink-500">הוצאות אמיתיות בגיליון אחד</div>
+      </div>
+      <div>
+        <div class="text-3xl font-black text-ink-900"><span class="num">2</span> שניות</div>
+        <div class="mt-1 text-sm text-ink-500">מהודעה ל-וואטסאפ ועד שורה בגיליון</div>
+      </div>
     </div>
   </div>
 </section>
@@ -655,10 +660,12 @@ function kesefleShowAuthMsg(text, kind) {
 
 function kesefleShowSuccess(user) {
   window.KESEFLE_STATE.user = user;
+  try { localStorage.setItem('kesefle_user', JSON.stringify(user)); } catch (e) {}
   document.getElementById('auth-buttons').classList.add('hidden');
   document.getElementById('auth-success').classList.remove('hidden');
   document.getElementById('auth-success-name').textContent = 'ברוך הבא, ' + (user.name || user.email || '') + '!';
-  document.getElementById('auth-success-detail').textContent = 'אנחנו מכינים את הגיליון שלך… (תקבל אימייל תוך דקה)';
+  document.getElementById('auth-success-detail').textContent = 'מעביר אותך לחשבון שלך…';
+  setTimeout(function() { location.href = '/account'; }, 1400);
 }
 
 async function kesefleStartGoogle() {
@@ -878,25 +885,33 @@ function kesefleCloseVoice() {
 }
 
 // Hide OAuth buttons whose Client ID is still a placeholder.
-// Leaves at least the waitlist email form working.
+// Only iterate the OAuth provider buttons — NOT the waitlist submit button.
 (function hideUnconfiguredAuth() {
   var cfg = window.KESEFLE_CONFIG || {};
   function isPlaceholder(v) { return !v || v.indexOf('__') === 0; }
-  var btns = document.querySelectorAll('#auth-buttons > button');
-  if (!btns.length) return;
-  var providers = ['GOOGLE_CLIENT_ID', 'FACEBOOK_APP_ID', 'APPLE_CLIENT_ID'];
-  btns.forEach(function(b, i) {
-    if (isPlaceholder(cfg[providers[i]])) {
-      b.style.display = 'none';
-      // hide the "כולל Instagram" hint that immediately follows the FB button
-      if (i === 1) {
-        var hint = b.nextElementSibling;
-        if (hint && hint.tagName === 'P') hint.style.display = 'none';
+  var providers = [
+    { key: 'GOOGLE_CLIENT_ID',   sel: 'button[onclick="kesefleStartGoogle()"]' },
+    { key: 'FACEBOOK_APP_ID',    sel: 'button[onclick="kesefleStartFacebook()"]' },
+    { key: 'APPLE_CLIENT_ID',    sel: 'button[onclick="kesefleStartApple()"]' }
+  ];
+  providers.forEach(function(p) {
+    if (isPlaceholder(cfg[p.key])) {
+      var btn = document.querySelector(p.sel);
+      if (btn) {
+        btn.style.display = 'none';
+        // Hide the "כולל Instagram" hint right after the FB button
+        if (p.key === 'FACEBOOK_APP_ID') {
+          var hint = btn.nextElementSibling;
+          if (hint && hint.tagName === 'P') hint.style.display = 'none';
+        }
       }
     }
   });
-  // If all OAuth are hidden, remove the "או" divider too.
-  var anyVisible = Array.from(btns).some(b => b.style.display !== 'none');
+  // If ALL OAuth are hidden, hide the "או" divider too
+  var anyVisible = providers.some(function(p) {
+    var btn = document.querySelector(p.sel);
+    return btn && btn.style.display !== 'none';
+  });
   if (!anyVisible) {
     var divider = document.querySelector('#auth-buttons .my-4');
     if (divider) divider.style.display = 'none';

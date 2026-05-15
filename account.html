@@ -5,8 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>החשבון שלי — כסף'לה</title>
 <meta name="theme-color" content="#0f172a" />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  window.KESEFLE_CONFIG = {
+    GOOGLE_CLIENT_ID: '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com'
+  };
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   body { font-family: 'Heebo', system-ui, sans-serif; }
   .num { direction: ltr; unicode-bidi: isolate; }
@@ -145,45 +151,66 @@ async function kesefleProvisionSheet() {
   btn.disabled = true;
   btn.textContent = 'יוצר…';
   status.className = 'mt-2 text-sm text-slate-500';
-  status.textContent = 'מעתיק תבנית ל-Drive שלך…';
+  status.textContent = 'מבקש הרשאה ל-Google Drive…';
   status.classList.remove('hidden');
-  try {
-    // Need a Google access token with drive.file + spreadsheets scope.
-    // The browser must call google.accounts.oauth2.initTokenClient — set up on home page.
-    // For now this endpoint expects the token to come from the user object.
-    var r = await fetch('/api/sheet/provision', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        accessToken: u.accessToken || '',
-        userSub: u.sub,
-        userEmail: u.email,
-      }),
-    });
-    var j = await r.json();
-    if (j.ok) {
-      localStorage.setItem('kesefle_sheet', JSON.stringify(j));
-      document.getElementById('sheet-link').href = j.spreadsheetUrl;
-      document.getElementById('linked-sheet').classList.remove('hidden');
-      status.className = 'mt-2 text-sm text-emerald-600';
-      status.textContent = '✓ הגיליון מוכן!';
-      btn.style.display = 'none';
-      var step2 = document.getElementById('step-2').firstElementChild;
-      step2.classList.remove('bg-slate-300');
-      step2.classList.add('bg-emerald-500');
-      step2.textContent = '✓';
-    } else {
-      status.className = 'mt-2 text-sm text-red-600';
-      status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.');
-      btn.disabled = false;
-      btn.textContent = 'נסה שוב';
-    }
-  } catch (e) {
+
+  if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
     status.className = 'mt-2 text-sm text-red-600';
-    status.textContent = '✗ שגיאת רשת.';
+    status.textContent = '✗ Google SDK לא נטען. רענן את הדף ונסה שוב.';
     btn.disabled = false;
     btn.textContent = 'נסה שוב';
+    return;
   }
+
+  var tokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+    callback: async function(tokenResponse) {
+      if (tokenResponse.error || !tokenResponse.access_token) {
+        status.className = 'mt-2 text-sm text-red-600';
+        status.textContent = '✗ נדרשת הרשאה ל-Drive כדי ליצור גיליון. ' + (tokenResponse.error || '');
+        btn.disabled = false;
+        btn.textContent = 'אשר הרשאה';
+        return;
+      }
+      status.textContent = 'מעתיק תבנית ל-Drive שלך…';
+      try {
+        var r = await fetch('/api/sheet/provision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken: tokenResponse.access_token,
+            userSub: u.sub,
+            userEmail: u.email,
+          }),
+        });
+        var j = await r.json();
+        if (j.ok) {
+          localStorage.setItem('kesefle_sheet', JSON.stringify(j));
+          document.getElementById('sheet-link').href = j.spreadsheetUrl;
+          document.getElementById('linked-sheet').classList.remove('hidden');
+          status.className = 'mt-2 text-sm text-emerald-600';
+          status.textContent = '✓ הגיליון מוכן!';
+          btn.style.display = 'none';
+          var step2 = document.getElementById('step-2').firstElementChild;
+          step2.classList.remove('bg-slate-300');
+          step2.classList.add('bg-emerald-500');
+          step2.textContent = '✓';
+        } else {
+          status.className = 'mt-2 text-sm text-red-600';
+          status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.');
+          btn.disabled = false;
+          btn.textContent = 'נסה שוב';
+        }
+      } catch (e) {
+        status.className = 'mt-2 text-sm text-red-600';
+        status.textContent = '✗ שגיאת רשת.';
+        btn.disabled = false;
+        btn.textContent = 'נסה שוב';
+      }
+    }
+  });
+  tokenClient.requestAccessToken();
 }
 </script>
 
