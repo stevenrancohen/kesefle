@@ -16,24 +16,26 @@ export default async function handler(req, res) {
   const appId = process.env.FACEBOOK_APP_ID;
   const appSecret = process.env.FACEBOOK_APP_SECRET;
 
-  if (appId && appSecret) {
-    try {
-      const debugRes = await fetch(
-        `https://graph.facebook.com/debug_token?input_token=${encodeURIComponent(accessToken)}&access_token=${encodeURIComponent(appId + '|' + appSecret)}`
-      );
-      const debug = await debugRes.json();
-      if (!debug?.data?.is_valid) {
-        return res.status(401).json({ ok: false, error: 'invalid facebook token' });
-      }
-      if (debug.data.app_id !== appId) {
-        return res.status(401).json({ ok: false, error: 'token app mismatch' });
-      }
-      if (userId && debug.data.user_id !== userId) {
-        return res.status(401).json({ ok: false, error: 'user id mismatch' });
-      }
-    } catch (e) {
-      return res.status(500).json({ ok: false, error: 'debug_token failed' });
+  if (!appId || !appSecret) {
+    return res.status(500).json({ ok: false, error: 'server misconfigured: FACEBOOK_APP_ID and FACEBOOK_APP_SECRET required' });
+  }
+
+  try {
+    const debugRes = await fetch(
+      `https://graph.facebook.com/debug_token?input_token=${encodeURIComponent(accessToken)}&access_token=${encodeURIComponent(appId + '|' + appSecret)}`
+    );
+    const debug = await debugRes.json();
+    if (!debug?.data?.is_valid) {
+      return res.status(401).json({ ok: false, error: 'invalid facebook token' });
     }
+    if (debug.data.app_id !== appId) {
+      return res.status(401).json({ ok: false, error: 'token app mismatch' });
+    }
+    if (userId && debug.data.user_id !== userId) {
+      return res.status(401).json({ ok: false, error: 'user id mismatch' });
+    }
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: 'debug_token failed' });
   }
 
   let profile;

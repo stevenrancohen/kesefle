@@ -476,7 +476,7 @@
       </form>
     </div>
 
-    <p class="mt-5 text-xs text-ink-400">בלחיצה אתה מאשר את <a href="#" class="underline">תנאי השימוש</a> ו<a href="#" class="underline">מדיניות הפרטיות</a>.</p>
+    <p class="mt-5 text-xs text-ink-400">בלחיצה אתה מאשר את <a href="/terms" class="underline">תנאי השימוש</a> ו<a href="/privacy" class="underline">מדיניות הפרטיות</a>.</p>
   </div>
 </section>
 
@@ -548,9 +548,9 @@
     <div>
       <p class="font-bold">משפטי</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500">
-        <li><a href="#" class="hover:text-ink-900">תנאי שימוש</a></li>
-        <li><a href="#" class="hover:text-ink-900">מדיניות פרטיות</a></li>
-        <li><a href="#" class="hover:text-ink-900">צור קשר</a></li>
+        <li><a href="/terms" class="hover:text-ink-900">תנאי שימוש</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900">מדיניות פרטיות</a></li>
+        <li><a href="mailto:hi@kesefle.com" class="hover:text-ink-900">צור קשר</a></li>
       </ul>
     </div>
     <div>
@@ -781,6 +781,32 @@ async function submitSignup(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') kesefleCloseDemo();
 });
+
+// Hide OAuth buttons whose Client ID is still a placeholder.
+// Leaves at least the waitlist email form working.
+(function hideUnconfiguredAuth() {
+  var cfg = window.KESEFLE_CONFIG || {};
+  function isPlaceholder(v) { return !v || v.indexOf('__') === 0; }
+  var btns = document.querySelectorAll('#auth-buttons > button');
+  if (!btns.length) return;
+  var providers = ['GOOGLE_CLIENT_ID', 'FACEBOOK_APP_ID', 'APPLE_CLIENT_ID'];
+  btns.forEach(function(b, i) {
+    if (isPlaceholder(cfg[providers[i]])) {
+      b.style.display = 'none';
+      // hide the "כולל Instagram" hint that immediately follows the FB button
+      if (i === 1) {
+        var hint = b.nextElementSibling;
+        if (hint && hint.tagName === 'P') hint.style.display = 'none';
+      }
+    }
+  });
+  // If all OAuth are hidden, remove the "או" divider too.
+  var anyVisible = Array.from(btns).some(b => b.style.display !== 'none');
+  if (!anyVisible) {
+    var divider = document.querySelector('#auth-buttons .my-4');
+    if (divider) divider.style.display = 'none';
+  }
+})();
 </script>
 
 </body>
