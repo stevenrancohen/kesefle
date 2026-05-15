@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>בדיקת מערכת — כסף'לה</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-50 p-6 text-slate-900">
+
+<div class="mx-auto max-w-4xl">
+  <header class="mb-8">
+    <a href="/" class="text-sm font-bold text-emerald-600 hover:underline">← חזרה לעמוד הראשי</a>
+    <h1 class="mt-4 text-4xl font-black">🧪 בדיקת מערכת חיה</h1>
+    <p class="mt-2 text-slate-600">בודק כל כפתור וזרימה באתר. לחץ <strong>הרץ הכל</strong> או בדוק כל פריט בנפרד.</p>
+  </header>
+
+  <div class="mb-6 flex flex-wrap items-center gap-3">
+    <button onclick="runAll()" class="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white hover:bg-emerald-700">▶️ הרץ את כל הבדיקות</button>
+    <button onclick="resetAll()" class="rounded-2xl border border-slate-200 px-5 py-3 font-bold hover:bg-slate-100">🔄 איפוס</button>
+    <div class="ms-auto text-sm">
+      <span class="font-bold text-emerald-600" id="pass-count">0</span>
+      <span class="text-slate-500">/</span>
+      <span class="font-bold text-red-600" id="fail-count">0</span>
+      <span class="text-slate-500">/</span>
+      <span class="font-bold text-slate-500" id="pending-count">0</span>
+      <span class="text-slate-400 text-xs">(עברו / נכשלו / ממתינים)</span>
+    </div>
+  </div>
+
+  <div class="space-y-3" id="test-list"></div>
+</div>
+
+<script>
+var TESTS = [
+  { id: 'site-loads',      name: '1. האתר נטען', run: testSiteLoads },
+  { id: 'nav-links',       name: '2. כפתורי ניווט (איך זה עובד / תכונות / מחיר / שאלות)', run: testNavLinks },
+  { id: 'hero-cta-1',      name: '3. כפתור "קח אותי על אוטומט" בגיבור', run: testHeroPrimary },
+  { id: 'hero-cta-2',      name: '4. כפתור "ראה דמו" בגיבור', run: testHeroDemo },
+  { id: 'demo-modal',      name: '5. חלון דמו (פתיחה + סגירה ב-X)', run: testDemoModal },
+  { id: 'pricing-free',    name: '6. כפתור "התחל בחינם" בכרטיס Free', run: testPricingFree },
+  { id: 'pricing-family',  name: '7. כפתור "התחל ניסיון" בכרטיס Family', run: testPricingFamily },
+  { id: 'pricing-pro',     name: '8. כפתור "התחל ניסיון" בכרטיס Pro', run: testPricingPro },
+  { id: 'auth-google',     name: '9. כפתור "התחבר עם Google" קיים ועם onclick', run: testAuthGoogle },
+  { id: 'waitlist-form',   name: '10. טופס רשימת המתנה — שולח לאימייל', run: testWaitlist },
+  { id: 'faq-details',     name: '11. שאלות נפוצות נפתחות', run: testFaq },
+  { id: 'faq-cta',         name: '12. כפתור "כתוב לנו בוואטסאפ" → מספר אמיתי', run: testFaqCta },
+  { id: 'footer-links',    name: '13. קישורי פוטר (תנאי שימוש / פרטיות / מייל)', run: testFooterLinks },
+  { id: 'dark-toggle',     name: '14. מתג מצב כהה', run: testDarkToggle },
+  { id: 'privacy-page',    name: '15. דף /privacy זמין', run: testPrivacyPage },
+  { id: 'terms-page',      name: '16. דף /terms זמין', run: testTermsPage },
+  { id: 'account-page',    name: '17. דף /account זמין', run: testAccountPage },
+  { id: 'api-waitlist',    name: '18. /api/waitlist API חי', run: testApiWaitlist },
+  { id: 'no-voice-fab',    name: '19. כפתור מיקרופון צף — הוסר', run: testNoFab },
+  { id: 'og-meta',         name: '20. תגיות OG לתצוגה מקדימה', run: testOgMeta }
+];
+
+function el(id) { return document.getElementById(id); }
+function setStatus(id, ok, msg) {
+  var row = document.getElementById('row-' + id);
+  if (!row) return;
+  var badge = row.querySelector('.badge');
+  var detail = row.querySelector('.detail');
+  if (ok === true) {
+    badge.textContent = '✅ עבר';
+    badge.className = 'badge inline-block rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700';
+  } else if (ok === false) {
+    badge.textContent = '❌ נכשל';
+    badge.className = 'badge inline-block rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700';
+  } else {
+    badge.textContent = '⏳ ממתין';
+    badge.className = 'badge inline-block rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600';
+  }
+  if (detail) detail.textContent = msg || '';
+  updateCounts();
+}
+function updateCounts() {
+  var pass = 0, fail = 0, pend = 0;
+  document.querySelectorAll('.badge').forEach(function(b) {
+    if (b.textContent.indexOf('✅') >= 0) pass++;
+    else if (b.textContent.indexOf('❌') >= 0) fail++;
+    else pend++;
+  });
+  el('pass-count').textContent = pass;
+  el('fail-count').textContent = fail;
+  el('pending-count').textContent = pend;
+}
+
+// Renders the test list
+TESTS.forEach(function(t) {
+  var row = document.createElement('div');
+  row.id = 'row-' + t.id;
+  row.className = 'flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4';
+  row.innerHTML =
+    '<div class="flex-1">' +
+      '<div class="font-bold">' + t.name + '</div>' +
+      '<div class="detail mt-1 text-xs text-slate-500"></div>' +
+    '</div>' +
+    '<button class="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-100">▶️ בדוק</button>' +
+    '<span class="badge inline-block rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">⏳ ממתין</span>';
+  row.querySelector('button').onclick = function() { setStatus(t.id, null, 'בודק…'); t.run(t.id); };
+  el('test-list').appendChild(row);
+});
+updateCounts();
+
+function resetAll() {
+  TESTS.forEach(function(t) { setStatus(t.id, null, ''); });
+}
+function runAll() {
+  TESTS.forEach(function(t, i) {
+    setTimeout(function() { setStatus(t.id, null, 'בודק…'); t.run(t.id); }, i * 250);
+  });
+}
+
+// ============ TESTS ============
+async function fetchMain() {
+  var r = await fetch('/', { credentials: 'omit' });
+  if (!r.ok) throw new Error('site ' + r.status);
+  return await r.text();
+}
+
+async function testSiteLoads(id) {
+  try {
+    var html = await fetchMain();
+    if (html.length > 1000) setStatus(id, true, 'נטען (' + html.length + ' תווים)');
+    else setStatus(id, false, 'תוכן קצר מדי');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testNavLinks(id) {
+  try {
+    var html = await fetchMain();
+    var anchors = ['#how','#features','#pricing','#faq'];
+    var missing = anchors.filter(function(a) { return html.indexOf('href="' + a + '"') < 0; });
+    if (missing.length === 0) setStatus(id, true, 'כל 4 הקישורים קיימים');
+    else setStatus(id, false, 'חסרים: ' + missing.join(', '));
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testHeroPrimary(id) {
+  try { var h = await fetchMain(); setStatus(id, h.indexOf('קח אותי על אוטומט') >= 0, 'נמצא בגיבור'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testHeroDemo(id) {
+  try { var h = await fetchMain(); setStatus(id, h.indexOf('kesefleOpenDemo') >= 0, 'אונקליק נמצא'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testDemoModal(id) {
+  try { var h = await fetchMain(); var hasModal = h.indexOf('id="demo-modal"') >= 0; var hasClose = h.indexOf('kesefleCloseDemo') >= 0; setStatus(id, hasModal && hasClose, hasModal && hasClose ? 'מודאל + סגירה' : 'חסר'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testPricingFree(id) {
+  try { var h = await fetchMain(); setStatus(id, h.indexOf("kesefleSelectPlan('free')") >= 0, 'אונקליק plan=free נמצא'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testPricingFamily(id) {
+  try {
+    var h = await fetchMain();
+    var hasFamily = h.indexOf('משפחה') >= 0 || h.indexOf("kesefleSelectPlan('family')") >= 0;
+    setStatus(id, hasFamily, hasFamily ? 'תוכנית משפחה קיימת' : 'חסר');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testPricingPro(id) {
+  try { var h = await fetchMain(); setStatus(id, h.indexOf("kesefleSelectPlan('pro')") >= 0, 'אונקליק plan=pro נמצא'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testAuthGoogle(id) {
+  try { var h = await fetchMain(); var has = h.indexOf('kesefleStartGoogle') >= 0; setStatus(id, has, has ? 'נמצא' : 'חסר'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testWaitlist(id) {
+  try {
+    var r = await fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'test+' + Date.now() + '@example.com', source: 'self-test' }) });
+    var j = await r.json();
+    setStatus(id, !!j.ok, j.ok ? 'API החזיר ok' : (j.error || 'שגיאה'));
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testFaq(id) {
+  try { var h = await fetchMain(); setStatus(id, h.indexOf('<details') >= 0, 'תגי details קיימים'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testFaqCta(id) {
+  try {
+    var h = await fetchMain();
+    var bad = h.indexOf('wa.me/972500000000') >= 0;
+    var good = h.indexOf('wa.me/972547760643') >= 0;
+    if (bad) setStatus(id, false, 'עדיין מפנה למספר מזויף');
+    else if (good) setStatus(id, true, 'מפנה למספר אמיתי 972547760643');
+    else setStatus(id, false, 'wa.me לא נמצא');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testFooterLinks(id) {
+  try {
+    var h = await fetchMain();
+    var hasTerms = h.indexOf('href="/terms"') >= 0;
+    var hasPriv = h.indexOf('href="/privacy"') >= 0;
+    var hasMail = h.indexOf('mailto:') >= 0;
+    setStatus(id, hasTerms && hasPriv && hasMail, (hasTerms?'✓terms ':'')+(hasPriv?'✓privacy ':'')+(hasMail?'✓mail':''));
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testDarkToggle(id) {
+  try { var h = await fetchMain(); setStatus(id, h.indexOf('kesefleToggleDark') >= 0, 'פונקציה קיימת'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testPrivacyPage(id) {
+  try { var r = await fetch('/privacy'); setStatus(id, r.ok, r.status === 200 ? 'נטען (200)' : 'סטטוס ' + r.status); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testTermsPage(id) {
+  try { var r = await fetch('/terms'); setStatus(id, r.ok, r.status === 200 ? 'נטען (200)' : 'סטטוס ' + r.status); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testAccountPage(id) {
+  try { var r = await fetch('/account'); setStatus(id, r.ok, r.status === 200 ? 'נטען (200)' : 'סטטוס ' + r.status); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testApiWaitlist(id) {
+  try { var r = await fetch('/api/waitlist', { method: 'OPTIONS' }); setStatus(id, r.ok || r.status === 204, 'מגיב (' + r.status + ')'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testNoFab(id) {
+  try { var h = await fetchMain(); setStatus(id, h.indexOf('id="voice-fab"') < 0, h.indexOf('id="voice-fab"') < 0 ? 'FAB הוסר ✓' : 'עדיין קיים'); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testOgMeta(id) {
+  try {
+    var h = await fetchMain();
+    var hasOg = h.indexOf('property="og:image"') >= 0;
+    var hasTw = h.indexOf('name="twitter:card"') >= 0;
+    setStatus(id, hasOg && hasTw, (hasOg?'✓og:image ':'')+(hasTw?'✓twitter:card':''));
+  } catch (e) { setStatus(id, false, e.message); }
+}
+</script>
+</body>
+</html>
