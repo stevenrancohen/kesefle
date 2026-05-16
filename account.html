@@ -369,9 +369,15 @@ async function kesefleProvisionSheet() {
           document.getElementById('sheet-link').href = j.spreadsheetUrl;
           document.getElementById('linked-sheet').classList.remove('hidden');
           status.className = 'mt-2 text-sm text-emerald-600';
-          status.textContent = '✓ הגיליון מוכן!';
+          status.textContent = '✓ הגיליון מוכן! מעביר אותך למסך ההכרות…';
           btn.style.display = 'none';
           kesefleUpdateOnboardingProgress();
+          // First-time success — guide user to /welcome to learn the bot commands.
+          // Skip redirect if user is re-provisioning (sheet was already linked before this run).
+          var alreadySeenWelcome = sessionStorage.getItem('kfl_welcome_seen') === '1';
+          if (!alreadySeenWelcome) {
+            setTimeout(function() { window.location.href = '/welcome'; }, 1500);
+          }
         } else {
           status.className = 'mt-2 text-sm text-red-600';
           status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.');
