@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /account
+Disallow: /test
+
+Sitemap: https://kesefle.vercel.app/sitemap.xml

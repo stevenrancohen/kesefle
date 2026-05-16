@@ -57,7 +57,17 @@ var TESTS = [
   { id: 'account-page',    name: '17. דף /account זמין', run: testAccountPage },
   { id: 'api-waitlist',    name: '18. /api/waitlist API חי', run: testApiWaitlist },
   { id: 'no-voice-fab',    name: '19. כפתור מיקרופון צף — הוסר', run: testNoFab },
-  { id: 'og-meta',         name: '20. תגיות OG לתצוגה מקדימה', run: testOgMeta }
+  { id: 'og-meta',         name: '20. תגיות OG לתצוגה מקדימה', run: testOgMeta },
+  { id: 'dark-mode-class', name: '21. Tailwind darkMode: "class" (התיקון של מצב כהה)', run: testDarkModeClass },
+  { id: 'voice-modal-gone',name: '22. HTML של voice modal הוסר לחלוטין', run: testVoiceModalGone },
+  { id: 'voice-js-gone',   name: '23. JS של voice (kesefleStartVoice) הוסר', run: testVoiceJsGone },
+  { id: 'onboarding-wa',   name: '24. כפתור WhatsApp בעמוד /account (לא href="#")', run: testOnboardingWa },
+  { id: 'perms-no-mic',    name: '25. Permissions-Policy ללא microphone', run: testPermsNoMic },
+  { id: 'real-wa-count',   name: '26. מספר WhatsApp האמיתי מופיע בדף', run: testRealWaCount },
+  { id: 'no-placeholder-wa', name: '27. מספר WhatsApp Placeholder הוסר', run: testNoPlaceholderWa },
+  { id: 'pricing-tiers-3', name: '28. שלוש דרגות מחיר (חינם / Pro / משפחה)', run: testPricingTiers3 },
+  { id: 'heebo-font',      name: '29. גופן Heebo נטען', run: testHeeboFont },
+  { id: 'rtl-direction',   name: '30. RTL מוגדר בדף', run: testRtl }
 ];
 
 function el(id) { return document.getElementById(id); }
@@ -231,6 +241,96 @@ async function testOgMeta(id) {
     var hasOg = h.indexOf('property="og:image"') >= 0;
     var hasTw = h.indexOf('name="twitter:card"') >= 0;
     setStatus(id, hasOg && hasTw, (hasOg?'✓og:image ':'')+(hasTw?'✓twitter:card':''));
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testDarkModeClass(id) {
+  try {
+    var h = await fetchMain();
+    var has = h.indexOf("darkMode: 'class'") >= 0 || h.indexOf('darkMode: "class"') >= 0;
+    setStatus(id, has, has ? 'darkMode: "class" קיים — מתג מצב כהה עובד' : 'חסר — מתג מצב כהה לא יעבוד');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testVoiceModalGone(id) {
+  try {
+    var h = await fetchMain();
+    var has = h.indexOf('id="voice-modal"') >= 0;
+    setStatus(id, !has, has ? 'עדיין קיים' : 'הוסר ✓');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testVoiceJsGone(id) {
+  try {
+    var h = await fetchMain();
+    var hasStart = h.indexOf('function kesefleStartVoice') >= 0;
+    var hasClose = h.indexOf('function kesefleCloseVoice') >= 0;
+    setStatus(id, !hasStart && !hasClose, (!hasStart && !hasClose) ? 'JS הוסר ✓' : 'עדיין קיים');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testOnboardingWa(id) {
+  try {
+    var r = await fetch('/account');
+    if (!r.ok) { setStatus(id, false, '/account לא נטען'); return; }
+    var h = await r.text();
+    var badHref = h.indexOf('id="btn-whatsapp"') >= 0 && h.indexOf('href="#"') >= 0 && h.match(/<a[^>]*id="btn-whatsapp"[^>]*href="#"/);
+    var hasReal = h.indexOf('wa.me/972547760643') >= 0;
+    setStatus(id, hasReal && !badHref, hasReal ? 'מקושר למספר אמיתי' : 'חסר קישור אמיתי');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testPermsNoMic(id) {
+  try {
+    var r = await fetch('/', { method: 'HEAD' });
+    var pp = r.headers.get('Permissions-Policy') || r.headers.get('permissions-policy') || '';
+    var hasMic = pp.indexOf('microphone=(self)') >= 0;
+    var hasEmpty = pp.indexOf('microphone=()') >= 0;
+    setStatus(id, !hasMic, !hasMic ? ('Permissions-Policy: ' + (hasEmpty ? 'microphone=()' : 'ללא mic') + ' ✓') : 'עדיין מתיר microphone');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testRealWaCount(id) {
+  try {
+    var h = await fetchMain();
+    var matches = h.match(/972547760643/g) || [];
+    setStatus(id, matches.length >= 1, matches.length + ' מופעים של המספר האמיתי');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testNoPlaceholderWa(id) {
+  try {
+    var h = await fetchMain();
+    var has = h.indexOf('972500000000') >= 0;
+    setStatus(id, !has, has ? 'עדיין מכיל מספר מזויף' : 'מספר מזויף הוסר ✓');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testPricingTiers3(id) {
+  try {
+    var h = await fetchMain();
+    var hasFree = h.indexOf("kesefleSelectPlan('free')") >= 0;
+    var hasPro = h.indexOf("kesefleSelectPlan('pro')") >= 0;
+    var hasFamily = h.indexOf("kesefleSelectPlan('family')") >= 0;
+    var count = [hasFree, hasPro, hasFamily].filter(Boolean).length;
+    setStatus(id, count === 3, count + '/3 (Free=' + hasFree + ' Pro=' + hasPro + ' Family=' + hasFamily + ')');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testHeeboFont(id) {
+  try {
+    var h = await fetchMain();
+    var has = h.indexOf('family=Heebo') >= 0;
+    setStatus(id, has, has ? 'גופן Heebo מקושר' : 'גופן Heebo חסר');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+async function testRtl(id) {
+  try {
+    var h = await fetchMain();
+    var hasDir = h.indexOf('dir="rtl"') >= 0;
+    var hasLang = h.indexOf('lang="he"') >= 0;
+    setStatus(id, hasDir && hasLang, (hasDir?'✓dir=rtl ':'')+(hasLang?'✓lang=he':''));
   } catch (e) { setStatus(id, false, e.message); }
 }
 </script>

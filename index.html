@@ -12,6 +12,32 @@
 <meta property="og:locale" content="he_IL" />
 <meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta property="og:url" content="https://kesefle.vercel.app/" />
+<meta property="og:site_name" content="כסף'לה" />
+<link rel="canonical" href="https://kesefle.vercel.app/" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "כסף'לה",
+  "alternateName": "Kesefle",
+  "description": "מעקב הוצאות והכנסות באמצעות וואטסאפ — שלח הודעה, וההוצאה כבר רשומה ומקוטלגת בגוגל שיטס שלך.",
+  "url": "https://kesefle.vercel.app/",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Any",
+  "inLanguage": "he-IL",
+  "offers": [
+    { "@type": "Offer", "name": "חינם", "price": "0", "priceCurrency": "ILS" },
+    { "@type": "Offer", "name": "Pro", "priceCurrency": "ILS" },
+    { "@type": "Offer", "name": "משפחה", "price": "39", "priceCurrency": "ILS" }
+  ],
+  "publisher": {
+    "@type": "Organization",
+    "name": "SRC Solutions",
+    "url": "https://kesefle.vercel.app/"
+  }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
@@ -28,8 +54,17 @@
   window.KESEFLE_STATE = { user: null, plan: 'free' };
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script async defer crossorigin="anonymous" src="https://connect.facebook.net/he_IL/sdk.js"></script>
-<script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/he_IL/appleid.auth.js" async defer></script>
+<script>
+  // Lazy-load Facebook + Apple SDKs only if their app IDs are configured (not placeholders).
+  // Saves ~150KB on every initial pageview while these providers are not active.
+  (function loadOptionalAuthSDKs() {
+    var cfg = window.KESEFLE_CONFIG || {};
+    function isReal(v) { return v && v.indexOf('__') !== 0; }
+    function addScript(src) { var s = document.createElement('script'); s.async = true; s.defer = true; s.src = src; document.head.appendChild(s); }
+    if (isReal(cfg.FACEBOOK_APP_ID)) addScript('https://connect.facebook.net/he_IL/sdk.js');
+    if (isReal(cfg.APPLE_CLIENT_ID)) addScript('https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/he_IL/appleid.auth.js');
+  })();
+</script>
 <script>
   tailwind.config = {
     darkMode: 'class',
