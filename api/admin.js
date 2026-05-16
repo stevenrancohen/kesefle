@@ -9,6 +9,7 @@
 //   GET ?action=metrics
 //   GET ?action=audit&action_filter=&since=
 //   GET ?action=transactions       (stub — see note)
+//   GET ?action=analytics&days=30  (returns daily counters + unique-session counts)
 //   GET ?action=feature-flags
 //   POST ?action=feature-flag-set  body: { key, value }
 //   POST ?action=user-action       body: { action, targetUserSub }
@@ -154,6 +155,97 @@ async function listAudit(req, res) {
   return res.status(200).json({ ok: true, events, total: keys.length });
 }
 
+// =============================================================
+// Analytics — returns last N days of per-event counters + unique session counts.
+// Reads keys written by /api/analytics:
+//   analytics:<YYYY-MM-DD>:<event>         (INCR counter)
+//   analytics:session:<YYYY-MM-DD>:<event> (SADD set of sessions)
+// =============================================================
+const ANALYTICS_EVENTS = [
+  'page_view',
+  'cta_click',
+  'signup_start',
+  'signup_complete',
+  'sheet_provisioned',
+  'first_message_received',
+  'subscribe_clicked',
+  'export_downloaded',
+  'feature_used',
+];
+
+function lastNDates(n) {
+  const out = [];
+  const now = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 3600 * 1000);
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
+
+async function kvScard(key) {
+  const r = await kvFetch(`/scard/${encodeURIComponent(key)}`);
+  if (!r.ok) return 0;
+  return r.result || 0;
+}
+
+async function getAnalytics(req, res) {
+  const days = Math.max(1, Math.min(90, parseInt(req.query.days, 10) || 30));
+  const dates = lastNDates(days);
+
+  // First scan to verify KV is reachable; SCAN returns [] when nothing yet — that's fine.
+  const probe = await kvScan('analytics:*', 10);
+  if (probe === null) return kvOutage(res);
+
+  // For each date × event, MGET counters in one batch, SCARD sessions individually.
+  const counterKeys = [];
+  for (const date of dates) {
+    for (const ev of ANALYTICS_EVENTS) counterKeys.push(`analytics:${date}:${ev}`);
+  }
+  const counterVals = await kvMget(counterKeys);
+
+  // For unique-session counts, fan out SCARDs (one per date×event).
+  // 30 × 9 = 270 max — well within Vercel function budget.
+  const sessionPromises = [];
+  for (const date of dates) {
+    for (const ev of ANALYTICS_EVENTS) sessionPromises.push(kvScard(`analytics:session:${date}:${ev}`));
+  }
+  const sessionVals = await Promise.all(sessionPromises);
+
+  const daysOut = dates.map((date, dIdx) => {
+    const events = {};
+    const uniqueSessions = {};
+    for (let eIdx = 0; eIdx < ANALYTICS_EVENTS.length; eIdx++) {
+      const ev = ANALYTICS_EVENTS[eIdx];
+      const flatIdx = dIdx * ANALYTICS_EVENTS.length + eIdx;
+      const raw = counterVals[flatIdx];
+      // counterVals comes through kvMget which JSON.parses — INCR returns plain number
+      // stored as a string; both cases handled.
+      let n = 0;
+      if (typeof raw === 'number') n = raw;
+      else if (typeof raw === 'string') n = parseInt(raw, 10) || 0;
+      events[ev] = n;
+      uniqueSessions[ev] = sessionVals[flatIdx] || 0;
+    }
+    return { date, events, unique_sessions: uniqueSessions };
+  });
+
+  // Aggregate funnel totals across the window
+  const funnelEvents = ['page_view', 'signup_start', 'signup_complete', 'sheet_provisioned', 'first_message_received'];
+  const totals = {};
+  for (const ev of ANALYTICS_EVENTS) totals[ev] = daysOut.reduce((s, d) => s + (d.events[ev] || 0), 0);
+  const funnel = funnelEvents.map(ev => ({ event: ev, count: totals[ev] }));
+
+  return res.status(200).json({
+    ok: true,
+    window_days: days,
+    events: ANALYTICS_EVENTS,
+    days: daysOut,
+    totals,
+    funnel,
+  });
+}
+
 async function getFeatureFlags(req, res) {
   const keys = await kvScan('flag:*');
   if (keys === null) return kvOutage(res);
@@ -202,7 +294,7 @@ async function userAction(req, res) {
 // =============================================================
 async function handlerImpl(req, res) {
   const action = String(req.query.action || '').trim();
-  if (!action) return res.status(400).json({ ok: false, error: 'missing_action_param', hint: 'use ?action=users|user|jobs|metrics|audit|feature-flags|feature-flag-set|user-action|transactions' });
+  if (!action) return res.status(400).json({ ok: false, error: 'missing_action_param', hint: 'use ?action=users|user|jobs|metrics|analytics|audit|feature-flags|feature-flag-set|user-action|transactions' });
 
   if (req.method === 'GET') {
     switch (action) {
@@ -210,6 +302,7 @@ async function handlerImpl(req, res) {
       case 'user': return getUser(req, res);
       case 'jobs': return listJobs(req, res);
       case 'metrics': return getMetrics(req, res);
+      case 'analytics': return getAnalytics(req, res);
       case 'audit': return listAudit(req, res);
       case 'feature-flags': return getFeatureFlags(req, res);
       case 'transactions':

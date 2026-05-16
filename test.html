@@ -183,7 +183,7 @@ async function testAuthGoogle(id) {
 }
 async function testWaitlist(id) {
   try {
-    var r = await fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'test+' + Date.now() + '@example.com', source: 'self-test' }) });
+    var r = await fetch('/api/events?action=waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'test+' + Date.now() + '@example.com', source: 'self-test' }) });
     var j = await r.json();
     setStatus(id, !!j.ok, j.ok ? 'API החזיר ok' : (j.error || 'שגיאה'));
   } catch (e) { setStatus(id, false, e.message); }
@@ -228,7 +228,7 @@ async function testAccountPage(id) {
   catch (e) { setStatus(id, false, e.message); }
 }
 async function testApiWaitlist(id) {
-  try { var r = await fetch('/api/waitlist', { method: 'OPTIONS' }); setStatus(id, r.ok || r.status === 204, 'מגיב (' + r.status + ')'); }
+  try { var r = await fetch('/api/events?action=waitlist', { method: 'OPTIONS' }); setStatus(id, r.ok || r.status === 204, 'מגיב (' + r.status + ')'); }
   catch (e) { setStatus(id, false, e.message); }
 }
 async function testNoFab(id) {

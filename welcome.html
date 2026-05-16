@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ברוך הבא — כסף'לה</title>
 <meta name="theme-color" content="#0f1422" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="כסף'לה" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="canonical" href="https://kesefle.vercel.app/welcome" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,6 +44,7 @@
   .cmd-card:hover { background: #f0fdf6; }
   .cmd-card:active { background: #dcfce9; }
 </style>
+<script src="/lib/analytics.js" defer></script>
 </head>
 <body class="min-h-screen bg-ink-50 text-ink-900 dark:bg-ink-900 dark:text-white">
 
@@ -157,7 +163,7 @@
   <section class="mt-14 rounded-3xl bg-gradient-to-br from-brand-500 to-emerald-700 p-8 md:p-12 text-center text-white">
     <h2 class="text-3xl font-black md:text-4xl">מוכן? שלח את ההוצאה הראשונה</h2>
     <p class="mt-3 opacity-90">2 שניות, בלי טפסים, בלי אפליקציה.</p>
-    <a href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-base font-bold text-emerald-700 hover:bg-emerald-50">
+    <a href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="window.kfl && window.kfl.track('cta_click', { source: 'welcome_whatsapp' });" class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-base font-bold text-emerald-700 hover:bg-emerald-50">
       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
       פתח WhatsApp ושלח "245 סופר"
     </a>
@@ -244,6 +250,15 @@ if (!sessionStorage.getItem('kfl_welcome_seen')) {
   sessionStorage.setItem('kfl_welcome_seen', '1');
   setTimeout(function() { confettiBurst(); }, 500);
 }
+</script>
+
+<script>
+  // PWA: register service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+    });
+  }
 </script>
 
 </body>

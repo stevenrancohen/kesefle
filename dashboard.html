@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>הדשבורד שלי — כסף'לה</title>
 <meta name="theme-color" content="#0f172a" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="כסף'לה" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="canonical" href="https://kesefle.vercel.app/dashboard" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -73,6 +78,7 @@
   .tx-row { cursor: pointer; }
   .tx-row:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
 </style>
+<script src="/lib/analytics.js" defer></script>
 </head>
 <body class="min-h-screen bg-ink-50 text-ink-900 dark:bg-ink-900 dark:text-white">
 
@@ -339,6 +345,66 @@
         <a href="mailto:srcslcollection@gmail.com?subject=מחיקת%20חשבון" class="text-xs font-semibold text-red-600 hover:underline">שלח בקשה →</a>
       </div>
     </div>
+
+    <!-- ============ REFERRAL PROGRAM ============ -->
+    <div class="mt-6 rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-emerald-50 p-5 dark:border-brand-700/40 dark:from-brand-900/20 dark:to-emerald-900/20">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="grid h-10 w-10 flex-shrink-0 place-items-center rounded-2xl bg-brand-500 text-xl text-white shadow-soft">💚</div>
+          <div>
+            <h4 class="text-base font-black">תוכנית חברים מביאים חברים</h4>
+            <p class="text-xs text-ink-600 dark:text-ink-300">שלח לחבר.ה — מקבלים שניכם חודש Pro חינם.</p>
+          </div>
+        </div>
+        <span id="ref-stat-chip" class="hidden whitespace-nowrap rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
+          <span class="num" id="ref-count">0</span> חברים הזמינו דרכך
+        </span>
+      </div>
+
+      <!-- 1. user has NO code yet → show generate button -->
+      <div id="ref-empty-state" class="mt-4 hidden">
+        <button type="button" onclick="kesefleGenerateReferralCode()" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700">
+          🎁 צור את קוד ההזמנה שלי
+        </button>
+        <div id="ref-empty-status" class="mt-2 hidden text-xs"></div>
+      </div>
+
+      <!-- 2. user HAS code → show link + share buttons + stats -->
+      <div id="ref-active-state" class="mt-4 hidden">
+        <div class="flex flex-wrap items-stretch gap-2">
+          <input id="ref-link-input" type="text" readonly aria-label="קישור הזמנה אישי"
+                 class="num min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm font-mono text-ink-700 ltr:text-left dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100" />
+          <button type="button" onclick="kesefleCopyReferralLink()" id="ref-copy-btn" class="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-brand-700">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span id="ref-copy-label">העתק</span>
+          </button>
+        </div>
+
+        <div id="ref-share-row" class="mt-3 flex flex-wrap gap-2">
+          <a id="ref-share-whatsapp" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2 text-xs font-bold text-white hover:opacity-90">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
+            WhatsApp
+          </a>
+          <a id="ref-share-email" href="#" class="inline-flex items-center gap-1.5 rounded-xl bg-ink-700 px-3 py-2 text-xs font-bold text-white hover:bg-ink-800 dark:bg-ink-200 dark:text-ink-900 dark:hover:bg-white">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email
+          </a>
+          <a id="ref-share-twitter" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-xl bg-black px-3 py-2 text-xs font-bold text-white hover:opacity-90">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            X / טוויטר
+          </a>
+          <button type="button" onclick="kesefleRegenerateReferralCode()" class="inline-flex items-center gap-1.5 rounded-xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">
+            ↺ קוד חדש
+          </button>
+        </div>
+
+        <div id="ref-credit-note" class="mt-3 hidden rounded-xl bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200"></div>
+      </div>
+
+      <div id="ref-loading" class="mt-4 text-xs text-ink-500 dark:text-ink-400">טוען…</div>
+    </div>
+    <!-- ============ /REFERRAL ============ -->
+
   </section>
 
 </main>
@@ -386,9 +452,163 @@ function kesefleLogout() {
 }
 function openSettings(e) {
   if (e) e.preventDefault();
-  document.getElementById('settings-panel').classList.toggle('hidden');
-  document.getElementById('settings-panel').scrollIntoView({ behavior: 'smooth' });
+  var panel = document.getElementById('settings-panel');
+  var wasHidden = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  panel.scrollIntoView({ behavior: 'smooth' });
+  // When opening for the first time, lazy-load referral state.
+  if (wasHidden && !window._kesefleRefLoaded) {
+    window._kesefleRefLoaded = true;
+    kesefleLoadReferral();
+  }
 }
+
+// ===================== REFERRAL PROGRAM =====================
+// Loads the user's referral code + count + redeemers via /api/referral?action=mine.
+// If no code exists, shows the "generate" button. Otherwise wires up the share links.
+async function kesefleLoadReferral() {
+  var loading = document.getElementById('ref-loading');
+  var emptyState = document.getElementById('ref-empty-state');
+  var activeState = document.getElementById('ref-active-state');
+  if (loading) loading.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (activeState) activeState.classList.add('hidden');
+
+  var u = kesefleGetUser();
+  var idToken = isIdTokenFresh(u) ? u.idToken : await getOrRefreshIdentity(false);
+  if (!idToken) {
+    if (loading) loading.textContent = 'נדרשת התחברות מחדש כדי לראות את הקוד שלך.';
+    return;
+  }
+
+  try {
+    var r = await fetch('/api/referral?action=mine', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + idToken, 'Accept': 'application/json' },
+    });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+
+    if (loading) loading.classList.add('hidden');
+
+    if (!j.code) {
+      // User hasn't generated a code yet
+      if (emptyState) emptyState.classList.remove('hidden');
+      return;
+    }
+    kesefleRenderReferralActive(j);
+  } catch (e) {
+    if (loading) {
+      loading.textContent = 'לא ניתן לטעון כעת. נסה שוב מאוחר יותר.';
+      loading.classList.remove('hidden');
+    }
+    console.warn('referral load failed', e);
+  }
+}
+
+function kesefleRenderReferralActive(data) {
+  var emptyState = document.getElementById('ref-empty-state');
+  var activeState = document.getElementById('ref-active-state');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (activeState) activeState.classList.remove('hidden');
+
+  document.getElementById('ref-link-input').value = data.url || '';
+
+  // Stat chip
+  var chip = document.getElementById('ref-stat-chip');
+  if (data.count > 0 && chip) {
+    chip.classList.remove('hidden');
+    document.getElementById('ref-count').textContent = String(data.count);
+  }
+
+  // Referral credit note (if active)
+  if (data.referral_credit_until) {
+    var d = new Date(data.referral_credit_until);
+    if (d > new Date()) {
+      var note = document.getElementById('ref-credit-note');
+      if (note) {
+        var dateStr = d.toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' });
+        note.textContent = '✓ Pro חינם פעיל עד ' + dateStr;
+        note.classList.remove('hidden');
+      }
+    }
+  }
+
+  // Wire up share links
+  var u = kesefleGetUser();
+  var firstName = (u && u.name) ? String(u.name).split(/\s+/)[0] : '';
+  var shareUrl = data.url || '';
+  // Append the user's first name to the URL so the landing page can personalize "X הזמינ.ה אותך".
+  if (firstName) {
+    try {
+      var su = new URL(shareUrl);
+      su.searchParams.set('name', firstName);
+      shareUrl = su.toString();
+    } catch (e) { /* fallback to raw URL */ }
+  }
+
+  var msg = 'הי! אני משתמש.ת בכסף\'לה לעקוב אחרי הוצאות דרך וואטסאפ — הזמנתי אותך, מקבלים שנינו חודש Pro חינם: ' + shareUrl;
+  document.getElementById('ref-share-whatsapp').href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  document.getElementById('ref-share-email').href = 'mailto:?subject=' + encodeURIComponent('בוא ננהל הוצאות בוואטסאפ — חודש חינם לשנינו') + '&body=' + encodeURIComponent(msg);
+  document.getElementById('ref-share-twitter').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent('חברים ניהול הוצאות דרך וואטסאפ עם כסף\'לה? קישור הזמנה — חודש Pro חינם לשנינו: ' + shareUrl);
+}
+
+async function kesefleGenerateReferralCode(force) {
+  var u = kesefleGetUser();
+  var idToken = isIdTokenFresh(u) ? u.idToken : await getOrRefreshIdentity(false);
+  if (!idToken) { showReauthBanner(); return; }
+
+  var statusEl = document.getElementById('ref-empty-status');
+  if (statusEl) {
+    statusEl.classList.remove('hidden');
+    statusEl.className = 'mt-2 text-xs text-ink-500';
+    statusEl.textContent = 'יוצר קוד…';
+  }
+  try {
+    var url = '/api/referral?action=generate' + (force ? '&force=1' : '');
+    var r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
+    });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    // Reload state from the server (count + redeemers + credit).
+    await kesefleLoadReferral();
+  } catch (e) {
+    if (statusEl) {
+      statusEl.className = 'mt-2 text-xs text-red-600';
+      statusEl.textContent = '✗ נכשל. נסה שוב.';
+    }
+  }
+}
+
+async function kesefleRegenerateReferralCode() {
+  if (!confirm('הקוד הקיים יבוטל וקוד חדש יוצר. להמשיך?')) return;
+  await kesefleGenerateReferralCode(true);
+}
+
+function kesefleCopyReferralLink() {
+  var input = document.getElementById('ref-link-input');
+  if (!input || !input.value) return;
+  var label = document.getElementById('ref-copy-label');
+  var done = function(ok) {
+    if (label) {
+      var old = label.textContent;
+      label.textContent = ok ? '✓ הועתק' : '✗ נכשל';
+      setTimeout(function() { label.textContent = old; }, 1800);
+    }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(function() { done(true); }, function() { done(false); });
+  } else {
+    try {
+      input.select();
+      document.execCommand('copy');
+      done(true);
+    } catch (e) { done(false); }
+  }
+}
+// =====================================================
 
 // Copy demo message to clipboard from empty state
 function kesefleCopyDemoMsg(e) {
@@ -781,6 +1001,7 @@ function kesefleOpenTxModal(idx) {
   var tx = (LAST_DASHBOARD && LAST_DASHBOARD.recent) ? LAST_DASHBOARD.recent[idx] : null;
   if (!tx) return;
   LAST_TX = tx;
+  if (window.kfl) window.kfl.track('feature_used', { category: 'transaction_detail', source: 'recent_list' });
   var meta = categoryMeta(tx.subcategory || tx.category);
   var iconEl = document.getElementById('tx-modal-icon');
   iconEl.textContent = meta.icon;
@@ -943,6 +1164,109 @@ function generatePseudoSeries(target, n, intLike) {
   }
   return out;
 }
+</script>
+
+<script>
+  // PWA: register service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+    });
+  }
+</script>
+
+<!-- NPS feedback widget: appears once per user after 5+ days, then 90-day cooldown -->
+<div id="kflNpsCard" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;max-width:440px;margin-inline:auto;z-index:80;background:rgba(15,20,34,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px 18px 16px;box-shadow:0 18px 50px -10px rgba(0,0,0,0.55);backdrop-filter:blur(12px);font-family:'Heebo',sans-serif;direction:rtl">
+  <button id="kflNpsClose" aria-label="סגור" style="position:absolute;top:8px;left:8px;width:30px;height:30px;border:0;background:transparent;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;border-radius:6px">×</button>
+  <div id="kflNpsStep1">
+    <div style="font-weight:700;font-size:15px;color:#e6f6ec;margin-bottom:4px">איך הסיכוי שתמליצ/י על כסף'לה?</div>
+    <div style="color:rgba(230,246,236,0.62);font-size:12px;margin-bottom:12px">דירוג מ-0 (לא ימליץ) עד 10 (ימליץ בוודאות)</div>
+    <div id="kflNpsScale" style="display:grid;grid-template-columns:repeat(11,1fr);gap:4px"></div>
+    <div style="display:flex;justify-content:space-between;color:rgba(230,246,236,0.4);font-size:10px;margin-top:6px"><span>לא סביר</span><span>בוודאות</span></div>
+  </div>
+  <div id="kflNpsStep2" style="display:none">
+    <div style="font-weight:700;font-size:15px;color:#e6f6ec;margin-bottom:8px" id="kflNpsTitle2">תודה! ספר/י לנו עוד</div>
+    <textarea id="kflNpsComment" placeholder="מה הסיבה לציון? איך נוכל להשתפר?" rows="3" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;color:#e6f6ec;font-family:inherit;font-size:13px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="kflNpsSkip" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(230,246,236,0.65);font-family:inherit;font-size:13px;cursor:pointer">דלג</button>
+      <button id="kflNpsSubmit" style="flex:2;padding:10px;border-radius:8px;border:0;background:#22c55e;color:#062a13;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer">שלח משוב</button>
+    </div>
+  </div>
+  <div id="kflNpsStep3" style="display:none;text-align:center;padding:18px 4px">
+    <div style="font-size:30px;line-height:1;margin-bottom:8px">🙏</div>
+    <div style="font-weight:700;color:#e6f6ec;font-size:14px">תודה! קיבלנו את המשוב שלך</div>
+    <div style="font-size:11px;color:rgba(230,246,236,0.55);margin-top:4px">כל משוב משפר את המוצר</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var FIRST_KEY = 'kfl_first_seen_ts';
+  var SHOWN_KEY = 'kfl_nps_last';
+  var MIN_DAYS_USAGE = 5;
+  var COOLDOWN_DAYS = 90;
+  function now(){return Date.now();}
+  function days(ms){return ms/86400000;}
+  if (!localStorage.getItem(FIRST_KEY)) localStorage.setItem(FIRST_KEY, String(now()));
+  var firstSeen = parseInt(localStorage.getItem(FIRST_KEY) || '0', 10) || now();
+  var lastShown = parseInt(localStorage.getItem(SHOWN_KEY) || '0', 10) || 0;
+  var card = document.getElementById('kflNpsCard');
+  var step1 = document.getElementById('kflNpsStep1');
+  var step2 = document.getElementById('kflNpsStep2');
+  var step3 = document.getElementById('kflNpsStep3');
+  var title2 = document.getElementById('kflNpsTitle2');
+  var commentEl = document.getElementById('kflNpsComment');
+  var scale = document.getElementById('kflNpsScale');
+  var chosenScore = null;
+  var session = localStorage.getItem('kfl_session') || (function(){
+    var s = Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 6);
+    localStorage.setItem('kfl_session', s);
+    return s;
+  })();
+  for (var i = 0; i <= 10; i++) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = String(i);
+    btn.dataset.score = String(i);
+    var color = i <= 6 ? '#ef4444' : i <= 8 ? '#f59e0b' : '#22c55e';
+    btn.style.cssText = 'padding:9px 0;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);color:'+color+';border-radius:6px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:transform 0.1s';
+    btn.addEventListener('mouseenter', function(){this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.07)';});
+    btn.addEventListener('mouseleave', function(){this.style.transform='';this.style.background='rgba(255,255,255,0.03)';});
+    btn.addEventListener('click', function(){
+      chosenScore = parseInt(this.dataset.score, 10);
+      title2.textContent = chosenScore >= 9 ? 'תודה! מה הכי אהבת?' :
+                            chosenScore >= 7 ? 'תודה! מה היה גורם לך לתת 10?' :
+                                                'מצטערים, מה לא עבד? נתקן.';
+      step1.style.display = 'none';
+      step2.style.display = 'block';
+      commentEl.focus();
+    });
+    scale.appendChild(btn);
+  }
+  function closeCard(){ localStorage.setItem(SHOWN_KEY, String(now())); card.style.display = 'none'; }
+  document.getElementById('kflNpsClose').addEventListener('click', closeCard);
+  document.getElementById('kflNpsSkip').addEventListener('click', function(){ submit(''); });
+  document.getElementById('kflNpsSubmit').addEventListener('click', function(){ submit(commentEl.value || ''); });
+  function submit(comment){
+    if (chosenScore == null) return;
+    var b = document.getElementById('kflNpsSubmit');
+    b.disabled = true; b.style.opacity = '0.6'; b.textContent = 'שולח…';
+    fetch('/api/events?action=nps', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+      body: JSON.stringify({ score: chosenScore, comment: String(comment).slice(0,500), session: session, path: '/dashboard' })
+    }).catch(function(){}).finally(function(){
+      step2.style.display = 'none'; step3.style.display = 'block';
+      localStorage.setItem(SHOWN_KEY, String(now()));
+      setTimeout(function(){ card.style.display = 'none'; }, 2500);
+    });
+  }
+  var usageDays = days(now() - firstSeen);
+  var cooldownDays = days(now() - lastShown);
+  var force = location.hash === '#nps';
+  if (force || (usageDays >= MIN_DAYS_USAGE && (lastShown === 0 || cooldownDays >= COOLDOWN_DAYS))) {
+    setTimeout(function(){ card.style.display = 'block'; }, force ? 600 : 8000);
+  }
+})();
 </script>
 
 </body>

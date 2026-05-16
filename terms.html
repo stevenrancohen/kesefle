@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" />
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'Heebo',system-ui,sans-serif}</style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#22c55e">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body class="bg-slate-50 text-slate-900">
 <div class="mx-auto max-w-3xl px-5 py-16">
@@ -58,5 +61,6 @@
     <p>שאלות? <a href="mailto:srcslcollection@gmail.com">srcslcollection@gmail.com</a> או דרך WhatsApp: <a href="https://wa.me/972547760643" target="_blank" rel="noopener">+972-54-776-0643</a></p>
   </div>
 </div>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
 </body>
 </html>

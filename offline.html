@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>אין חיבור — כסף'לה</title>
+<meta name="theme-color" content="#0f1422" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="כסף'לה" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" />
+<style>
+  :root {
+    --ink-50: #f7f8fb;
+    --ink-200: #dde1ec;
+    --ink-500: #5d6b8f;
+    --ink-700: #2f3b54;
+    --ink-800: #1e2638;
+    --ink-900: #0f1422;
+    --brand-50: #f0fdf6;
+    --brand-100: #dcfce9;
+    --brand-400: #4ade85;
+    --brand-500: #22c55e;
+    --brand-600: #16a34a;
+    --brand-700: #15803d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: 'Heebo', system-ui, sans-serif;
+    background:
+      radial-gradient(at 15% 10%, rgba(34,197,94,0.16) 0px, transparent 50%),
+      radial-gradient(at 85% 90%, rgba(168,85,247,0.10) 0px, transparent 50%),
+      var(--ink-900);
+    color: #fff;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: rgba(15, 20, 34, 0.7);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(221, 225, 236, 0.10);
+    border-radius: 24px;
+    padding: 36px 28px;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    text-align: center;
+  }
+  .logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+    color: white;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 30px;
+    box-shadow: 0 16px 40px -10px rgba(34, 197, 94, 0.55);
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 900;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    color: rgba(255,255,255,0.65);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 0 22px;
+  }
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .status-dot::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    animation: pulse 1.6s infinite;
+  }
+  .status-dot.online {
+    background: rgba(34, 197, 94, 0.16);
+    color: #86efb1;
+  }
+  .status-dot.online::before {
+    background: #22c55e;
+    animation: none;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+  .summary {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(221, 225, 236, 0.08);
+    border-radius: 14px;
+    padding: 14px;
+    margin: 18px 0 22px;
+    text-align: right;
+    font-size: 14px;
+  }
+  .summary h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.06);
+  }
+  .summary-row:last-child { border-bottom: 0; }
+  .summary-row .label { color: rgba(255,255,255,0.7); }
+  .summary-row .value { font-weight: 700; direction: ltr; unicode-bidi: isolate; }
+  .summary-row.empty { color: rgba(255,255,255,0.45); justify-content: center; padding: 14px 0; font-size: 13px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 0;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-600));
+    color: white;
+    box-shadow: 0 14px 30px -10px rgba(34, 197, 94, 0.55);
+  }
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-ghost {
+    background: rgba(255,255,255,0.06);
+    color: white;
+    margin-top: 10px;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.10); }
+  .tip {
+    margin-top: 22px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+  }
+  .tip strong { color: rgba(255,255,255,0.7); }
+  .links {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .links a {
+    color: var(--brand-400);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 10px;
+    transition: background 0.15s;
+  }
+  .links a:hover { background: rgba(34, 197, 94, 0.10); }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <div class="logo" aria-hidden="true">₪</div>
+    <div id="status" class="status-dot" aria-live="polite">לא מקוון</div>
+    <h1 id="title">אתה במצב לא מקוון</h1>
+    <p class="subtitle">אין כרגע חיבור לאינטרנט.<br>מה שראית לאחרונה עדיין נגיש מהזיכרון.</p>
+
+    <section class="summary" id="summary" aria-label="סיכום אחרון">
+      <h3>הנתונים האחרונים שנשמרו</h3>
+      <div id="summary-body">
+        <div class="summary-row empty">טוען את הסיכום האחרון…</div>
+      </div>
+    </section>
+
+    <button class="btn btn-primary" id="retry-btn" type="button">
+      <span id="retry-icon" aria-hidden="true">↻</span>
+      <span>נסה שוב</span>
+    </button>
+    <a class="btn btn-ghost" href="/dashboard">לדשבורד הזמין</a>
+
+    <div class="links">
+      <a href="/">דף הבית</a>
+      <a href="/welcome">איך להתחיל</a>
+      <a href="/status">סטטוס הבוט</a>
+    </div>
+
+    <p class="tip">
+      <strong>טיפ:</strong> כסף'לה עובדת גם דרך WhatsApp.<br>
+      תשלח הודעה לבוט וכשהאינטרנט יחזור — הכל יסתנכרן.
+    </p>
+  </main>
+
+<script>
+(function() {
+  'use strict';
+
+  var statusEl = document.getElementById('status');
+  var retryBtn = document.getElementById('retry-btn');
+  var retryIcon = document.getElementById('retry-icon');
+  var summaryBody = document.getElementById('summary-body');
+
+  function setOnline(isOnline) {
+    if (isOnline) {
+      statusEl.classList.add('online');
+      statusEl.textContent = 'חזרה לאינטרנט — מרענן…';
+      setTimeout(function() {
+        window.location.replace('/dashboard');
+      }, 600);
+    } else {
+      statusEl.classList.remove('online');
+      statusEl.textContent = 'לא מקוון';
+    }
+  }
+
+  function ilNum(n) {
+    if (n == null || isNaN(n)) return '—';
+    try { return Number(n).toLocaleString('he-IL', { maximumFractionDigits: 0 }); }
+    catch (e) { return String(n); }
+  }
+
+  function renderSummary(data) {
+    if (!data) {
+      summaryBody.innerHTML = '<div class="summary-row empty">אין סיכום שמור עדיין. תפתח את הדשבורד כשתחזור לאינטרנט.</div>';
+      return;
+    }
+    var rows = [];
+    if (data.balance != null)  rows.push(['מאזן',     '₪ ' + ilNum(data.balance)]);
+    if (data.expenses != null) rows.push(['הוצאות',   '₪ ' + ilNum(data.expenses)]);
+    if (data.income != null)   rows.push(['הכנסות',   '₪ ' + ilNum(data.income)]);
+    if (data.month)            rows.push(['חודש',     String(data.month)]);
+    if (data.updated)          rows.push(['עודכן',    String(data.updated)]);
+    if (!rows.length) {
+      summaryBody.innerHTML = '<div class="summary-row empty">אין סיכום שמור עדיין.</div>';
+      return;
+    }
+    summaryBody.innerHTML = rows.map(function(r) {
+      return '<div class="summary-row"><span class="label">' + r[0] + '</span><span class="value">' + r[1] + '</span></div>';
+    }).join('');
+  }
+
+  function loadLastSummary() {
+    try {
+      var raw = localStorage.getItem('kesefle_last_summary');
+      if (!raw) { renderSummary(null); return; }
+      var data = JSON.parse(raw);
+      renderSummary(data);
+    } catch (e) {
+      renderSummary(null);
+    }
+  }
+
+  function retry() {
+    retryIcon.classList.add('spin');
+    retryBtn.disabled = true;
+    // small delay so the spinner shows
+    setTimeout(function() {
+      if (navigator.onLine) {
+        window.location.replace('/dashboard');
+      } else {
+        retryIcon.classList.remove('spin');
+        retryBtn.disabled = false;
+        statusEl.textContent = 'עדיין אין חיבור';
+        setTimeout(function() { statusEl.textContent = 'לא מקוון'; }, 1800);
+      }
+    }, 450);
+  }
+
+  retryBtn.addEventListener('click', retry);
+  window.addEventListener('online', function() { setOnline(true); });
+  window.addEventListener('offline', function() { setOnline(false); });
+  setOnline(navigator.onLine);
+  loadLastSummary();
+})();
+</script>
+</body>
+</html>

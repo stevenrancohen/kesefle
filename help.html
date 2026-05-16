@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>מרכז עזרה — כסף'לה</title>
+<meta name="description" content="מרכז העזרה של כסף'לה: מדריכים, פתרון בעיות, תשלומים, פרטיות והבוט בוואטסאפ. תשובות מהירות לכל מה שצריך." />
+<meta name="theme-color" content="#22c55e" />
+<link rel="canonical" href="https://kesefle.vercel.app/help" />
+<meta property="og:title" content="מרכז עזרה — כסף'לה" />
+<meta property="og:description" content="כל התשובות במקום אחד. חיפוש חכם, מדריכים בעברית, פתרון בעיות נפוצות." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://kesefle.vercel.app/help" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%82%AA%3C/text%3E%3C/svg%3E" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:  { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent: { 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        }
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  /* highlight matches in search */
+  mark.hl { background: #fef08a; color: #422006; padding: 0 2px; border-radius: 3px; }
+  html.dark mark.hl { background: #facc15; color: #111; }
+  /* article body */
+  .prose-he p { margin: 0.9em 0; line-height: 1.85; }
+  .prose-he h2 { font-size: 1.25rem; font-weight: 800; margin: 1.6em 0 0.6em; }
+  .prose-he h3 { font-size: 1.05rem; font-weight: 700; margin: 1.3em 0 0.5em; }
+  .prose-he ul { list-style: disc; padding-inline-start: 1.5rem; margin: 0.7em 0; }
+  .prose-he ul li { margin: 0.35em 0; line-height: 1.75; }
+  .prose-he code { background: #eef0f6; padding: 0.15em 0.45em; border-radius: 6px; font-size: 0.9em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; direction: ltr; display: inline-block; }
+  html.dark .prose-he code { background: #1e2638; color: #bbf7d3; }
+  .prose-he blockquote { border-inline-start: 4px solid #22c55e; background: #f0fdf6; padding: 0.6em 1em; border-radius: 0 12px 12px 0; margin: 1em 0; }
+  html.dark .prose-he blockquote { background: rgba(34,197,94,0.08); border-color: #4ade85; }
+  /* sidebar transition */
+  @media (max-width: 767px) {
+    #sidebar { transform: translateX(110%); transition: transform 0.25s ease-out; }
+    #sidebar.open { transform: translateX(0); }
+  }
+  /* card hover */
+  .article-card:hover { transform: translateY(-2px); }
+  .article-card { transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, border-color 0.15s ease-out; }
+  /* fade animation */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.25s ease-out both; }
+  /* focus ring */
+  *:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; border-radius: 8px; }
+</style>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased dark:bg-ink-900 dark:text-white">
+
+<!-- ============== HEADER ============== -->
+<header class="sticky top-0 z-40 border-b border-ink-200/60 bg-white/85 backdrop-blur-lg dark:border-ink-700/60 dark:bg-ink-900/85">
+  <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>כסף'לה</span>
+      <span class="hidden sm:inline-block rounded-full bg-ink-100 px-2 py-0.5 text-xs font-bold text-ink-700 dark:bg-ink-800 dark:text-ink-200">עזרה</span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">דף הבית</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
+      <a href="/dashboard" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">דשבורד</a>
+      <a href="mailto:hi@kesefle.com" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">צור קשר</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="kesefleToggleDark()" aria-label="מצב כהה"
+        class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">
+        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <button id="hamburger" onclick="kesefleToggleSidebar()" aria-label="תפריט קטגוריות"
+        class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800 md:hidden">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<!-- ============== HERO + SEARCH ============== -->
+<section class="relative border-b border-ink-200/60 bg-gradient-to-b from-brand-50 via-white to-white px-4 py-12 dark:border-ink-700/60 dark:from-brand-500/10 dark:via-ink-900 dark:to-ink-900 sm:px-6 md:py-16">
+  <div class="mx-auto max-w-3xl text-center">
+    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-500/40 dark:bg-ink-800 dark:text-brand-300">
+      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+      תשובות מהירות, בעברית, <span class="num">24/7</span>
+    </div>
+    <h1 class="text-balance text-3xl font-black leading-tight tracking-tight md:text-5xl">
+      איך אפשר לעזור?
+    </h1>
+    <p class="mt-3 text-base text-ink-600 dark:text-ink-300 md:text-lg">
+      מחפש איך להתחיל? נתקעת? יש לנו את התשובה.
+    </p>
+    <div class="relative mx-auto mt-7 max-w-2xl">
+      <svg class="pointer-events-none absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 text-ink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="search" type="search" autocomplete="off" inputmode="search"
+        placeholder="חיפוש: למשל &quot;תשלומים&quot; או &quot;לא מגיע סיכום&quot;"
+        class="w-full rounded-2xl border-2 border-ink-200 bg-white py-4 pr-12 pl-4 text-base font-medium shadow-soft transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/20 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:focus:border-brand-400" />
+      <button id="clear-search" onclick="kesefleClearSearch()" class="absolute left-3 top-1/2 hidden -translate-y-1/2 rounded-lg p-1.5 text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-700 dark:hover:text-white" aria-label="נקה חיפוש">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-ink-500 dark:text-ink-400">
+      <span>חיפושים פופולריים:</span>
+      <button class="rounded-full border border-ink-200 bg-white px-2.5 py-1 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400 dark:hover:text-brand-300" onclick="kesefleQuickSearch('פיצול תשלומים')">פיצול תשלומים</button>
+      <button class="rounded-full border border-ink-200 bg-white px-2.5 py-1 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400 dark:hover:text-brand-300" onclick="kesefleQuickSearch('הוראת קבע')">הוראת קבע</button>
+      <button class="rounded-full border border-ink-200 bg-white px-2.5 py-1 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400 dark:hover:text-brand-300" onclick="kesefleQuickSearch('drive.file')">drive.file</button>
+      <button class="rounded-full border border-ink-200 bg-white px-2.5 py-1 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400 dark:hover:text-brand-300" onclick="kesefleQuickSearch('ביטול מנוי')">ביטול מנוי</button>
+      <button class="rounded-full border border-ink-200 bg-white px-2.5 py-1 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400 dark:hover:text-brand-300" onclick="kesefleQuickSearch('הבוט לא עונה')">הבוט לא עונה</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============== MAIN LAYOUT ============== -->
+<main class="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12">
+  <div class="grid gap-8 md:grid-cols-[260px_1fr]">
+
+    <!-- Sidebar overlay (mobile) -->
+    <div id="sidebar-overlay" onclick="kesefleToggleSidebar()" class="fixed inset-0 z-30 hidden bg-black/40 backdrop-blur-sm md:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 right-0 z-40 w-72 overflow-y-auto border-l border-ink-200 bg-white p-5 shadow-2xl md:sticky md:top-[80px] md:z-0 md:h-[calc(100vh-100px)] md:w-auto md:rounded-2xl md:border md:border-ink-200 md:bg-white md:p-4 md:shadow-soft dark:border-ink-700 dark:bg-ink-800 md:dark:bg-ink-800">
+      <div class="mb-4 flex items-center justify-between md:hidden">
+        <p class="font-extrabold text-lg">קטגוריות</p>
+        <button onclick="kesefleToggleSidebar()" class="grid h-8 w-8 place-items-center rounded-lg hover:bg-ink-100 dark:hover:bg-ink-700" aria-label="סגור תפריט">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p class="hidden md:block px-2 pb-3 text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">קטגוריות</p>
+      <nav id="sidebar-nav" class="flex flex-col gap-1"></nav>
+      <div class="mt-6 rounded-xl border border-ink-200 bg-ink-50 p-3 dark:border-ink-700 dark:bg-ink-900">
+        <p class="text-xs font-bold text-ink-700 dark:text-ink-200">לא מצאת תשובה?</p>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">צוות התמיכה עונה תוך <span class="num">24</span> שעות.</p>
+        <a href="mailto:hi@kesefle.com" class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-200">
+          שלח לנו אימייל
+          <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <section id="content" class="min-w-0">
+      <!-- breadcrumb -->
+      <nav id="breadcrumb" class="mb-4 flex flex-wrap items-center gap-2 text-sm text-ink-500 dark:text-ink-400"></nav>
+
+      <!-- HOME view: category grid -->
+      <div id="view-home"></div>
+
+      <!-- CATEGORY view: article cards -->
+      <div id="view-category" class="hidden"></div>
+
+      <!-- ARTICLE view: full article -->
+      <div id="view-article" class="hidden"></div>
+
+      <!-- SEARCH view -->
+      <div id="view-search" class="hidden"></div>
+    </section>
+  </div>
+</main>
+
+<!-- ============== FOOTER ============== -->
+<footer class="mt-16 border-t border-ink-200 bg-white py-10 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-7xl gap-6 px-4 text-sm sm:px-6 md:grid-cols-3">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold">
+        <span class="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-2 text-ink-500 dark:text-ink-400">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">קישורים</p>
+      <ul class="mt-2 space-y-1 text-ink-500 dark:text-ink-400">
+        <li><a href="/" class="hover:text-ink-900 dark:hover:text-white">דף הבית</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">פרטיות</a></li>
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-2 space-y-1 text-ink-500 dark:text-ink-400">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:hi@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">hi@kesefle.com</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-8 max-w-7xl border-t border-ink-200 px-4 pt-5 text-center text-xs text-ink-500 dark:border-ink-700 dark:text-ink-400 sm:px-6">
+    © <span class="num">2026</span> כסף'לה. עשוי באהבה בישראל.
+  </div>
+</footer>
+
+<script>
+// ============ DARK MODE ============
+function kesefleToggleDark() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle('dark');
+  localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light');
+  document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+  document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+}
+(function initTheme() {
+  var saved = localStorage.getItem('kesefle_theme');
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    document.getElementById('icon-moon').classList.add('hidden');
+    document.getElementById('icon-sun').classList.remove('hidden');
+  }
+})();
+
+// ============ SIDEBAR ============
+function kesefleToggleSidebar() {
+  var sb = document.getElementById('sidebar');
+  var ov = document.getElementById('sidebar-overlay');
+  var open = sb.classList.toggle('open');
+  ov.classList.toggle('hidden', !open);
+  document.body.style.overflow = open ? 'hidden' : '';
+}
+
+// ============ DATA ============
+// Each article: { id, title, summary, body (HTML string), tags[] }
+var CATEGORIES = [
+  {
+    id: 'getting-started',
+    emoji: '🚀',
+    title: 'התחלת שימוש',
+    desc: 'הכל מה שצריך כדי להתחיל ב-5 דקות.',
+    articles: [
+      {
+        id: 'gs-signup',
+        title: 'איך להירשם לכסף\'לה',
+        summary: 'תהליך הרישום בשלושה צעדים — אימייל, גוגל ווואטסאפ.',
+        tags: ['רישום','התחלה','הרשמה','signup','onboarding'],
+        body: `
+          <p>הרישום לכסף'לה לוקח פחות מ-<span class="num">3</span> דקות, ובסיומו תוכל לכתוב הוצאה ראשונה בוואטסאפ ולראות אותה בגיליון Google שלך.</p>
+          <h2>שלב 1 — צור חשבון</h2>
+          <p>היכנס ל-<a href="/" class="text-brand-700 underline dark:text-brand-300">kesefle.vercel.app</a> ולחץ "התחל חינם". נשאל אותך לאימייל ולמספר וואטסאפ. שום פרט אחר לא נדרש — לא תעודת זהות, לא כתובת, לא תאריך לידה.</p>
+          <h2>שלב 2 — חבר את Google שלך</h2>
+          <p>נפנה אותך למסך התחברות רשמי של Google. נבקש הרשאת <code>drive.file</code> בלבד — זה אומר שכסף'לה יכולה לכתוב רק לגיליון אחד שהיא יצרה עבורך, ולא לראות שום קובץ אחר ב-Drive.</p>
+          <h2>שלב 3 — אמת את הוואטסאפ</h2>
+          <p>נשלח לך הודעת אישור מהבוט שלנו. ענה "כן" וזהו — חיברנו הכל. תקבל הודעת ברוכים הבאים עם <span class="num">5</span> דוגמאות הוצאות כדי להתאמן.</p>
+          <blockquote><strong>טיפ:</strong> אם משהו השתבש באמצע, אפשר להתחיל מחדש מ-<a href="/welcome" class="text-brand-700 underline dark:text-brand-300">/welcome</a>. החשבון לא ינעל.</blockquote>
+          <p>בשלב זה אתה בתקופת ניסיון של <span class="num">30</span> יום ב-Pro — בלי כרטיס אשראי, בלי התחייבות. אחר כך תוכל להישאר בחינם או לשדרג.</p>
+        `,
+      },
+      {
+        id: 'gs-google',
+        title: 'איך לחבר את חשבון Google שלי',
+        summary: 'מה אומר OAuth, מה לעשות אם נכשל, ואיך לאמת שהחיבור תקין.',
+        tags: ['google','oauth','חיבור','גוגל','דרייב'],
+        body: `
+          <p>החיבור ל-Google הוא הצעד החשוב ביותר — בלעדיו אין גיליון, ובלי גיליון אין מקום לרשום את ההוצאות.</p>
+          <h2>איך זה עובד</h2>
+          <p>אנחנו משתמשים ב-OAuth <span class="num">2</span>.<span class="num">0</span> — הסטנדרט הרשמי של Google. כסף'לה לעולם לא רואה ולא שומרת את הסיסמה שלך. במקום זה, Google נותנת לנו אסימון (token) שמרשה לנו לכתוב לגיליון אחד מסוים, וזה הכל.</p>
+          <h2>הצעדים</h2>
+          <ul>
+            <li>לחץ "התחבר עם Google" בעת הרישום.</li>
+            <li>בחר את חשבון Google שתרצה להשתמש בו (אישי או עסקי).</li>
+            <li>בדוק שמופיע השם "Kesefle" במסך ההרשאות.</li>
+            <li>אשר את ההרשאה <code>drive.file</code>.</li>
+            <li>נחזיר אותך לכסף'לה — וזה הסוף.</li>
+          </ul>
+          <h2>אם משהו השתבש</h2>
+          <p>אם Google מציגה "App not verified" — זה תקין. אנחנו עוברים תהליך verification רשמי שלוקח כמה שבועות. עד שזה יסתיים אפשר ללחוץ "Advanced" ואז "Go to Kesefle (unsafe)" — שום סכנה אמיתית, רק Google מתריעה על אפליקציות צעירות.</p>
+          <p>אם החיבור פג תוקף, נשלח לך הודעת וואטסאפ ונבקש ממך לחבר מחדש. זה לוקח <span class="num">30</span> שניות.</p>
+        `,
+      },
+      {
+        id: 'gs-drive-file',
+        title: 'מה זה אומר "drive.file" — איזה הרשאות אני נותן',
+        summary: 'ההרשאה המינימלית של Google ולמה היא הכי בטוחה.',
+        tags: ['הרשאות','drive.file','פרטיות','גוגל','אבטחה'],
+        body: `
+          <p>שאלה מצוינת — וכזאת שכל אחד צריך לשאול כשהוא נותן הרשאות לאפליקציה כלשהי.</p>
+          <h2>מה זה drive.file?</h2>
+          <p><code>drive.file</code> היא ההרשאה <strong>הצרה ביותר</strong> ש-Google מציעה ל-Drive. היא אומרת:</p>
+          <blockquote>"האפליקציה יכולה לראות ולערוך <em>רק קבצים שהיא עצמה יצרה</em>, או קבצים שהמשתמש בחר במפורש לפתוח דרכה."</blockquote>
+          <h2>במילים פשוטות</h2>
+          <ul>
+            <li>כסף'לה <strong>תיצור</strong> גיליון חדש בשם "כסף'לה — הוצאות".</li>
+            <li>כסף'לה תוכל לכתוב ולקרוא <strong>מהגיליון הזה בלבד</strong>.</li>
+            <li>כסף'לה <strong>לא תוכל לראות</strong> שום קובץ אחר ב-Drive שלך — לא תמונות, לא מסמכים, לא גיליונות אחרים.</li>
+            <li>גם אם תיצור גיליון אחר בעצמך, אנחנו <strong>לא נראה אותו</strong>.</li>
+          </ul>
+          <h2>מה ההבדל מ-drive המלא?</h2>
+          <p>הרשאת <code>drive</code> (בלי <code>.file</code>) תאפשר לאפליקציה לראות הכל. אנחנו לא ביקשנו את זה ולא נבקש לעולם. ההבדל הזה הוא לב הגישה שלנו לפרטיות.</p>
+          <p>תוכל לאמת זאת בעצמך ב-<a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-brand-700 underline dark:text-brand-300">myaccount.google.com/permissions</a> — תראה את כסף'לה עם הרשאת "See, edit, create, and delete only the specific Google Drive files you use with this app".</p>
+        `,
+      },
+      {
+        id: 'gs-whatsapp',
+        title: 'איך לחבר את הוואטסאפ שלי',
+        summary: 'אימות בקוד בן 6 ספרות. בלי הורדה, בלי בוט חיצוני.',
+        tags: ['וואטסאפ','whatsapp','אימות','חיבור','טלפון'],
+        body: `
+          <p>החיבור לוואטסאפ פשוט — הבוט שלנו הוא חשבון Business רשמי שמופעל מול ה-API של Meta.</p>
+          <h2>השלבים</h2>
+          <ul>
+            <li>אחרי הרישום, נציג לך מספר וואטסאפ של הבוט: <code>+972&#8209;<span class="num">54</span>&#8209;<span class="num">7760643</span></code>.</li>
+            <li>שלח לנו את ההודעה <code>היי</code>.</li>
+            <li>תקבל <strong>קוד בן 6 ספרות</strong> במסך כסף'לה.</li>
+            <li>שלח את הקוד בוואטסאפ — וחיברנו.</li>
+          </ul>
+          <h2>שאלות נפוצות</h2>
+          <h3>מה אם אני מחליף מכשיר?</h3>
+          <p>שום בעיה — מספר הטלפון נשאר, וזה כל מה שנדרש. אפילו אם תאבד את המכשיר, חיבור הוואטסאפ ימשיך לעבוד.</p>
+          <h3>מה אם יש לי שני מספרים?</h3>
+          <p>בתוכנית Pro אפשר לחבר עד <span class="num">2</span> מספרים לאותו חשבון (למשל אישי ועבודה). בתוכנית Family אפשר <span class="num">5</span>.</p>
+          <h3>מה אם אני מחוץ לישראל?</h3>
+          <p>הבוט עובד בכל העולם — וואטסאפ הוא בינלאומי. הקפד להוסיף את הקידומת הבינלאומית למספר שלך בעת הרישום.</p>
+        `,
+      },
+      {
+        id: 'gs-first-message',
+        title: 'ההודעה הראשונה — דוגמאות',
+        summary: 'איך לכתוב הוצאה כדי שהבוט יבין אותה נכון בפעם הראשונה.',
+        tags: ['הוצאה','דוגמה','הודעה','כתיבה','התחלה'],
+        body: `
+          <p>אין צורך בפורמט מיוחד. הבוט מבין עברית טבעית. הנה מה שעובד הכי טוב:</p>
+          <h2>הצורה הקלאסית</h2>
+          <p><code>סכום + קטגוריה/מקום</code> — לדוגמה:</p>
+          <ul>
+            <li><code><span class="num">245</span> סופר</code> ← רישום: <span class="num">245</span>₪ בסופרמרקט.</li>
+            <li><code><span class="num">90</span> דלק</code> ← רישום: <span class="num">90</span>₪ דלק.</li>
+            <li><code><span class="num">35</span> קפה</code> ← רישום: <span class="num">35</span>₪ קפה.</li>
+            <li><code><span class="num">1200</span> שכר דירה</code> ← רישום: <span class="num">1,200</span>₪ דיור.</li>
+          </ul>
+          <h2>גרסאות מתקדמות</h2>
+          <ul>
+            <li><code>אתמול <span class="num">120</span> דלק פז</code> — הבוט יקבע תאריך אתמול.</li>
+            <li><code><span class="num">2500</span> טיסה למיאמי ב-<span class="num">3</span> תשלומים</code> — חלוקה אוטומטית.</li>
+            <li><code><span class="num">300</span> אוכל כל חודש</code> — הוראת קבע.</li>
+            <li><code><span class="num">$45</span> נטפליקס</code> — מטבע דולר.</li>
+          </ul>
+          <h2>מה לא לעשות</h2>
+          <ul>
+            <li>אל תכתוב רק "<code>סופר</code>" בלי סכום — נצטרך לבקש ממך.</li>
+            <li>אל תשלח תמונות בלבד (תכונת קבלות מגיעה בעוד חודש).</li>
+            <li>אל תשלח כמה הוצאות בהודעה אחת — אחת בכל פעם.</li>
+          </ul>
+          <blockquote><strong>טיפ:</strong> הבוט לומד ממך. אחרי <span class="num">10</span>-<span class="num">15</span> הוצאות הוא כבר מבין את הסגנון שלך ואת המקומות שאתה אוהב.</blockquote>
+        `,
+      },
+      {
+        id: 'gs-plans',
+        title: 'מה ההבדל בין חינם ל-Pro ל-Family',
+        summary: 'השוואה ברורה בין שלוש התוכניות כדי להחליט בקלות.',
+        tags: ['תוכניות','מחיר','חינם','pro','family','השוואה'],
+        body: `
+          <p>שלוש תוכניות, מותאמות לצרכים שונים. כולן מתחילות בניסיון Pro של <span class="num">30</span> יום.</p>
+          <h2>חינם — לתמיד</h2>
+          <ul>
+            <li>עד <span class="num">50</span> הוצאות בחודש.</li>
+            <li>בוט וואטסאפ בסיסי.</li>
+            <li>גיליון Google אישי.</li>
+            <li>קטלוג אוטומטי בסיסי (<span class="num">10</span> קטגוריות).</li>
+            <li>בלי סיכומים מותאמים, בלי הוראות קבע, בלי תשלומים.</li>
+          </ul>
+          <h2>Pro — <span class="num">19</span>₪ לחודש</h2>
+          <ul>
+            <li>הוצאות ללא הגבלה.</li>
+            <li>קטגוריות מותאמות אישית.</li>
+            <li>פיצול לתשלומים והוראות קבע.</li>
+            <li>סיכום שבועי + חודשי בוואטסאפ.</li>
+            <li>מטבעות מרובים (₪, $, €, ועוד <span class="num">15</span>).</li>
+            <li>תמיכה תוך <span class="num">24</span> שעות.</li>
+          </ul>
+          <h2>Family — <span class="num">39</span>₪ לחודש</h2>
+          <ul>
+            <li>כל מה שיש ב-Pro.</li>
+            <li>עד <span class="num">5</span> מספרי וואטסאפ באותו חשבון.</li>
+            <li>גיליון משותף לכל המשפחה.</li>
+            <li>תיוג מי הוציא מה (אבא, אמא, ילדים).</li>
+            <li>חלוקת תקציבים פר-בן-משפחה.</li>
+            <li>תמיכה עדיפות (תוך <span class="num">4</span> שעות).</li>
+          </ul>
+          <p>אפשר לשנות תוכנית בכל רגע ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>. אין דמי ביטול, אין התחייבות.</p>
+        `,
+      },
+    ],
+  },
+  {
+    id: 'whatsapp-bot',
+    emoji: '🤖',
+    title: 'הבוט בוואטסאפ',
+    desc: 'איך לדבר עם הבוט, מה הוא יכול לעשות, ואיך הוא חושב.',
+    articles: [
+      {
+        id: 'wa-commands',
+        title: '5 פקודות שכדאי לדעת',
+        summary: 'הפקודות הכי שימושיות שיחסכו לך זמן.',
+        tags: ['פקודות','commands','עזרה','help'],
+        body: `
+          <p>הבוט מבין שפה טבעית, אבל יש <span class="num">5</span> פקודות מהירות שכדאי להכיר:</p>
+          <h2>1. <code>סיכום</code></h2>
+          <p>שלח את המילה "סיכום" ותקבל את הסיכום החודשי המלא — סך הוצאות, קטגוריות מובילות, השוואה לחודש קודם.</p>
+          <h2>2. <code>השבוע</code></h2>
+          <p>סיכום של <span class="num">7</span> הימים האחרונים. מועיל לפני סוף השבוע כדי לדעת איפה אתה עומד.</p>
+          <h2>3. <code>בטל</code></h2>
+          <p>מבטל את ההוצאה האחרונה שרשמת. שימושי אם כתבת בטעות סכום לא נכון.</p>
+          <h2>4. <code>קטגוריה X</code></h2>
+          <p>למשל <code>קטגוריה אוכל</code> — מראה לך כמה הוצאת על אוכל החודש, עם רשימת ההוצאות.</p>
+          <h2>5. <code>עזרה</code></h2>
+          <p>מציג את כל הפקודות הזמינות, כולל פקודות נסתרות כמו <code>גיליון</code> (קישור ישיר לגיליון), <code>ייצוא</code> (CSV באימייל), ו-<code>מצב שקט</code> (השתקת התראות לזמן מוגדר).</p>
+          <blockquote><strong>טיפ:</strong> אפשר לכתוב פקודות בעברית או באנגלית — <code>summary</code>, <code>cancel</code>, <code>help</code> עובדים זהה.</blockquote>
+        `,
+      },
+      {
+        id: 'wa-categories',
+        title: 'איך הבוט מזהה קטגוריה אוטומטית',
+        summary: 'איך עובד ה-AI שמסווג את ההוצאות שלך.',
+        tags: ['קטגוריה','ai','זיהוי','אוטומטי','סיווג'],
+        body: `
+          <p>הבוט משתמש בשילוב של זיהוי טקסט וקטלוג מבוסס למידה, כדי לקבוע אוטומטית את הקטגוריה של כל הוצאה.</p>
+          <h2>איך זה עובד</h2>
+          <p>כשאתה כותב <code><span class="num">245</span> שופרסל</code>, הבוט:</p>
+          <ul>
+            <li>מזהה את "שופרסל" כרשת סופרמרקטים → קטגוריה "מזון וצריכה".</li>
+            <li>מסתכל בהיסטוריה שלך — אם בפעם הקודמת שאלת על שופרסל וסיווגת כ"מצרכים", הוא יזכור.</li>
+            <li>אם הוא לא בטוח (נניח "פז" — תחנת דלק או חנות נוחות?), ישאל אותך פעם אחת.</li>
+          </ul>
+          <h2>הקטגוריות המובנות</h2>
+          <p>יש <span class="num">12</span> קטגוריות בסיסיות: מזון, דלק/תחבורה, דיור, בילוי, מסעדות, ביגוד, בריאות, חינוך, מתנות, מנויים, חיות, ואחר. ב-Pro אפשר להוסיף בלי הגבלה.</p>
+          <h2>אם הבוט טעה</h2>
+          <p>פשוט ענה: <code>זה היה בילוי</code> או <code>קטגוריה: דלק</code> — הבוט יתקן את ההוצאה <strong>ויזכור</strong> בפעם הבאה.</p>
+          <p>אחרי <span class="num">30</span>-<span class="num">50</span> הוצאות, רמת הדיוק עוברת <span class="num">95</span>%. הבוט באמת לומד את הסגנון שלך, את החנויות האהובות עליך, ואת ההרגלים שלך.</p>
+        `,
+      },
+      {
+        id: 'wa-personal-business',
+        title: 'מה לעשות אם הבוט שאל "אישי או עסקי?"',
+        summary: 'איך לסמן הוצאה כעסקית ולמה זה חשוב.',
+        tags: ['עסקי','אישי','עוסק','דיווח','מע"מ'],
+        body: `
+          <p>אם החשבון שלך מוגדר כעוסק (Pro או Family), הבוט מבדיל בין הוצאות אישיות ועסקיות — וזה חשוב מאוד לדיווח למס.</p>
+          <h2>למה זה חשוב</h2>
+          <p>הוצאות עסקיות הן הוצאות מוכרות לצורכי מס. הפרדה ברורה בין אישי לעסקי תחסוך לך עבודה בסוף השנה, ותעזור לרואה החשבון לעבד את הדוחות מהר.</p>
+          <h2>איך לענות לבוט</h2>
+          <ul>
+            <li>כתוב <code>עסקי</code> או <code>אישי</code> — די בכך.</li>
+            <li>אפשר גם <code>ע</code> או <code>א</code> בקיצור.</li>
+            <li>אפשר להוסיף הקשר: <code>עסקי — ארוחת עבודה עם דני</code>.</li>
+          </ul>
+          <h2>מתי הבוט שואל אוטומטית</h2>
+          <p>הוא שואל רק כשהקטגוריה <strong>אמביוולנטית</strong> — למשל "מסעדה" יכולה להיות שניהם. הוא לא ישאל על דלק (לרוב עסקי לעוסק) או על קניות בסופר (לרוב אישי).</p>
+          <h2>הגדרת ברירת מחדל</h2>
+          <p>אפשר להגדיר בלוח הבקרה (<a href="/dashboard" class="text-brand-700 underline dark:text-brand-300">/dashboard</a>) ש-<strong>כל</strong> הוצאה היא עסקית כברירת מחדל, אם יש לך עסק חד-תכליתי. אז הבוט יסמן הוצאות בודדות כאישיות רק כשתבקש מפורש.</p>
+          <blockquote><strong>טיפ למיסים:</strong> בייצוא לאקסל יש עמודה "סוג" — סנן רק "עסקי" וקיבלת רשימה מוכנה לראיית חשבון.</blockquote>
+        `,
+      },
+      {
+        id: 'wa-installments',
+        title: 'תשלומים — איך לפצל הוצאה ל-X תשלומים',
+        summary: 'רישום הוצאה עם פיצול לכרטיס אשראי.',
+        tags: ['תשלומים','פיצול','אשראי','installments'],
+        body: `
+          <p>אחד מהפיצ'רים האהובים ב-Pro — הבוט יודע לפצל הוצאה גדולה למספר תשלומים, בדיוק כמו בכרטיס האשראי.</p>
+          <h2>איך מציינים</h2>
+          <p>הוסף "ב-X תשלומים" בסוף ההודעה:</p>
+          <ul>
+            <li><code><span class="num">3000</span> תנור ב-<span class="num">10</span> תשלומים</code></li>
+            <li><code><span class="num">2400</span> טיסה לרומא ב-<span class="num">6</span> תשלומים</code></li>
+            <li><code><span class="num">600</span> ב<span class="num">4</span> נעלי ילדים</code></li>
+          </ul>
+          <h2>איך זה נראה בגיליון</h2>
+          <p>הבוט יוצר <strong>שורה אחת לכל תשלום</strong>, עם תאריך שכל אחד יורד ב-1 לכל חודש:</p>
+          <ul>
+            <li>שורה 1: ינואר — <span class="num">300</span>₪ (תשלום 1 מתוך 10)</li>
+            <li>שורה 2: פברואר — <span class="num">300</span>₪ (תשלום 2 מתוך 10)</li>
+            <li>... וכן הלאה עד תשלום <span class="num">10</span> באוקטובר.</li>
+          </ul>
+          <h2>פיצ'רים מתקדמים</h2>
+          <ul>
+            <li><strong>תשלום שונה הראשון:</strong> <code><span class="num">2400</span> ב-<span class="num">6</span> תשלומים, ראשון <span class="num">600</span></code> — תשלום ראשון <span class="num">600</span>, השאר ב-<span class="num">360</span>.</li>
+            <li><strong>חיוב כפול בחודש:</strong> <code><span class="num">1200</span> ב-<span class="num">2</span>×<span class="num">6</span> תשלומים</code> — שני חיובים של <span class="num">100</span>₪ באותו חודש.</li>
+            <li><strong>ביטול שורת תשלום בודדת:</strong> <code>בטל תשלום <span class="num">3</span> מהוצאה <span class="num">12345</span></code>.</li>
+          </ul>
+          <blockquote><strong>טיפ:</strong> אם תרצה לראות רק את התשלום של החודש הנוכחי בסיכום — סנן את הגיליון לפי "תאריך = החודש הזה".</blockquote>
+        `,
+      },
+      {
+        id: 'wa-recurring',
+        title: 'הוראת קבע — איך לרשום הוצאה חודשית',
+        summary: 'דיור, מנויים, ביטוחים — אוטומציה מלאה.',
+        tags: ['הוראת קבע','חודשי','recurring','דיור','מנוי'],
+        body: `
+          <p>אם יש לך הוצאה חוזרת — שכר דירה, נטפליקס, ביטוח רכב, מנוי לחדר כושר — אין צורך לכתוב אותה כל חודש מחדש.</p>
+          <h2>איך להגדיר</h2>
+          <p>הוסף "כל חודש" או "חודשי":</p>
+          <ul>
+            <li><code><span class="num">3200</span> שכר דירה כל חודש</code></li>
+            <li><code><span class="num">45</span> נטפליקס חודשי</code></li>
+            <li><code><span class="num">189</span> ביטוח רכב כל חודש ב-<span class="num">5</span></code> (לחיוב ב-<span class="num">5</span> לחודש)</li>
+          </ul>
+          <h2>תדירויות אחרות</h2>
+          <ul>
+            <li><code>כל שבוע</code> — שבועי</li>
+            <li><code>כל יום</code> — יומי (קפה?)</li>
+            <li><code>כל שנה</code> — שנתי (ביטוח דירה)</li>
+            <li><code>כל חודשיים</code> — דו-חודשי</li>
+          </ul>
+          <h2>איך מעדכנים סכום</h2>
+          <p>אם שכר הדירה עלה ל-<span class="num">3,400</span>: <code>עדכן שכר דירה ל-<span class="num">3400</span></code>. השינוי יחול מהחודש הבא, וההיסטוריה תישמר.</p>
+          <h2>איך מבטלים</h2>
+          <p><code>בטל הוראת קבע נטפליקס</code> — הבוט יאשר ויעצור את החיובים החודשיים האוטומטיים.</p>
+          <h2>צפייה ברשימה</h2>
+          <p>שלח <code>הוראות קבע</code> ותקבל את כל הקבועים שלך, מסודרים לפי גובה.</p>
+          <blockquote><strong>טיפ:</strong> פעם בחצי שנה הבוט שולח לך תזכורת לבדוק אם כל המנויים עדיין רלוונטיים. רוב המשתמשים חוסכים <span class="num">100</span>-<span class="num">200</span>₪ בחודש מהביקורת הזו.</blockquote>
+        `,
+      },
+      {
+        id: 'wa-fix',
+        title: 'מחיקה ותיקון של הוצאה שגויה',
+        summary: 'איך לתקן טעות בהוצאה שכבר נרשמה.',
+        tags: ['מחיקה','תיקון','שגיאה','undo','edit'],
+        body: `
+          <p>כולנו טועים. הבוט יודע לבטל ולתקן הוצאות בכמה דרכים שונות.</p>
+          <h2>ביטול ההוצאה האחרונה</h2>
+          <p>שלח פשוט <code>בטל</code> — ההוצאה האחרונה תוסר מהגיליון. תופיע הודעת אישור עם פירוט מה נמחק.</p>
+          <h2>תיקון סכום</h2>
+          <p>אם רשמת <span class="num">25</span> וזה היה <span class="num">250</span>: <code>תקן ל-<span class="num">250</span></code> או <code>זה היה <span class="num">250</span></code> — הבוט יבין שאתה מתייחס להוצאה האחרונה.</p>
+          <h2>תיקון קטגוריה</h2>
+          <p><code>זה לא דלק, זה תחבורה ציבורית</code> — הבוט יעדכן.</p>
+          <h2>מחיקה לפי מזהה</h2>
+          <p>כל הוצאה מקבלת מזהה ייחודי (מספר בן <span class="num">5</span> ספרות). אם תרצה למחוק הוצאה ישנה: <code>מחק <span class="num">12345</span></code>.</p>
+          <h2>איך למצוא מזהה</h2>
+          <p>הבוט שולח אישור עם המזהה אחרי כל הוצאה. או — תוכל לראות אותו בעמודה <strong>A</strong> בגיליון.</p>
+          <h2>מחיקה ישירה בגיליון</h2>
+          <p>תוכל גם פשוט להוסיף "מבוטל" בעמודה <strong>סטטוס</strong> או למחוק את השורה ב-Google Sheets. הסיכומים יתעדכנו אוטומטית.</p>
+          <blockquote><strong>שים לב:</strong> מחיקה היא <em>סופית</em>. אנחנו לא שומרים גיבוי של הוצאות שנמחקו (פרטיות first). אם תפסת טעות אחרי <span class="num">7</span> ימים — תצטרך לרשום מחדש.</blockquote>
+        `,
+      },
+      {
+        id: 'wa-summary',
+        title: 'הסיכום השבועי האוטומטי',
+        summary: 'מה אתה מקבל כל יום ראשון בבוקר.',
+        tags: ['סיכום','שבועי','התראות','דוח','weekly'],
+        body: `
+          <p>אחד הפיצ'רים המוערכים של Pro — סיכום שבועי אוטומטי, ביום ראשון בבוקר, ישירות בוואטסאפ.</p>
+          <h2>מה כלול בסיכום</h2>
+          <ul>
+            <li>סכום כולל של השבוע שעבר.</li>
+            <li>השוואה לשבוע הקודם (יותר/פחות באחוזים).</li>
+            <li><span class="num">3</span> קטגוריות בולטות.</li>
+            <li>הוצאה הגדולה ביותר השבוע.</li>
+            <li>מספר ימים שלא הוצאת (חיסכון!).</li>
+            <li>תחזית לחודש לפי הקצב הנוכחי.</li>
+          </ul>
+          <h2>איך זה נראה</h2>
+          <blockquote>
+            <p>📊 <strong>סיכום השבוע</strong> (<span class="num">6</span>/<span class="num">5</span>—<span class="num">12</span>/<span class="num">5</span>)</p>
+            <p>סה"כ: <span class="num">1,247</span>₪ (—<span class="num">8</span>% מהשבוע שעבר)</p>
+            <p>🥇 מזון: <span class="num">580</span>₪</p>
+            <p>🥈 דלק: <span class="num">240</span>₪</p>
+            <p>🥉 בילוי: <span class="num">180</span>₪</p>
+            <p>הגדולה: <span class="num">420</span>₪ ב-IKEA</p>
+            <p>תחזית חודש: <span class="num">~5,300</span>₪</p>
+          </blockquote>
+          <h2>איך להתאים</h2>
+          <p>ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>:</p>
+          <ul>
+            <li>שינוי יום ושעה (ברירת מחדל: ראשון <span class="num">8</span>:<span class="num">00</span>).</li>
+            <li>תדירות: שבועי / דו-שבועי / חודשי בלבד / בלי.</li>
+            <li>הוספת אזהרות לחריגה מתקציב.</li>
+          </ul>
+          <p>תוכל גם לבקש סיכום בכל רגע — פשוט שלח <code>סיכום</code> או <code>השבוע</code>.</p>
+        `,
+      },
+      {
+        id: 'wa-unsubscribe',
+        title: 'איך להסיר את עצמי מההתראות',
+        summary: 'איך להשתיק את הבוט בלי לסגור חשבון.',
+        tags: ['התראות','השתקה','mute','notifications'],
+        body: `
+          <p>הבוט שלנו לא ישלח לך הודעות ספאם — רק סיכומים תקופתיים ואישורים על הוצאות שאתה כתבת. עדיין, אם תרצה לשקוט לזמן מה, יש כמה דרכים.</p>
+          <h2>השתקה זמנית</h2>
+          <ul>
+            <li><code>שקט יום</code> — שקט ל-<span class="num">24</span> שעות.</li>
+            <li><code>שקט שבוע</code> — שקט ל-<span class="num">7</span> ימים.</li>
+            <li><code>שקט עד <span class="num">1</span>/<span class="num">7</span></code> — שקט עד תאריך מסוים (מועיל לחופשות).</li>
+          </ul>
+          <p>גם בזמן שקט תוכל לכתוב הוצאות ולקבל אישור — רק לא תקבל סיכומים אוטומטיים, תזכורות או הודעות שיווק.</p>
+          <h2>השתקת סוג מסוים</h2>
+          <ul>
+            <li><code>בטל סיכום שבועי</code></li>
+            <li><code>בטל סיכום חודשי</code></li>
+            <li><code>בטל תזכורות תקציב</code></li>
+            <li><code>בטל הודעות חדשנות</code> (טיפים, פיצ'רים חדשים)</li>
+          </ul>
+          <h2>שליטה מלאה</h2>
+          <p>ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> תמצא מתג נפרד לכל סוג התראה. אפשר להחליט שאתה רוצה רק את הסיכום החודשי, או רק תזכורות לחריגה מתקציב, וכלום אחר.</p>
+          <h2>חזרה לפעולה רגילה</h2>
+          <p><code>הפעל</code> — מחזיר את כל ההתראות לתקין.</p>
+          <blockquote><strong>חשוב:</strong> אישורים על הוצאות שאתה רושם <em>לא</em> נחשבים להתראות — הם תמיד מופעלים, כי בלעדיהם לא תדע שההוצאה נכנסה. אם תרצה לדכא גם אותם, תיכנס למצב "שתיקה מלאה" — וגם זה אופציה ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>.</blockquote>
+        `,
+      },
+    ],
+  },
+  {
+    id: 'sheet-dashboard',
+    emoji: '📊',
+    title: 'הגיליון והדשבורד',
+    desc: 'הגיליון הוא הבית של הנתונים שלך. ככה משתמשים בו.',
+    articles: [
+      {
+        id: 'sd-where',
+        title: 'איפה הגיליון שלי שמור',
+        summary: 'הכל ב-Google Drive שלך. לא אצלנו.',
+        tags: ['גיליון','drive','מיקום','שמירה','google'],
+        body: `
+          <p>הגיליון שלך הוא <strong>הקובץ שלך</strong>, שמור ב-Google Drive שלך, בחשבון שלך — לא אצלנו.</p>
+          <h2>איך למצוא אותו</h2>
+          <ul>
+            <li>בוואטסאפ: שלח <code>גיליון</code> — תקבל קישור ישיר.</li>
+            <li>בדשבורד: <a href="/dashboard" class="text-brand-700 underline dark:text-brand-300">/dashboard</a> → כפתור "פתח גיליון".</li>
+            <li>ב-Google Drive: חפש "כסף'לה" או "Kesefle" — תקפוץ ראשונה.</li>
+          </ul>
+          <h2>הגיליון שייך לך</h2>
+          <p>אתה הבעלים (owner) של הגיליון. אתה יכול:</p>
+          <ul>
+            <li>לערוך אותו ישירות.</li>
+            <li>לשתף אותו עם בני משפחה או רואה חשבון.</li>
+            <li>להעתיק אותו לגיבוי.</li>
+            <li>להוריד כ-Excel או PDF.</li>
+            <li>למחוק אותו (אבל אז כסף'לה תפסיק לעבוד עד שתחבר חדש).</li>
+          </ul>
+          <h2>מבנה הגיליון</h2>
+          <p>בכל גיליון יש <span class="num">3</span> עד <span class="num">5</span> טאבים:</p>
+          <ul>
+            <li><strong>הוצאות</strong> — הרשימה המלאה, שורה לכל הוצאה.</li>
+            <li><strong>דשבורד</strong> — סיכומים אוטומטיים, גרפים, תקציבים.</li>
+            <li><strong>קטגוריות</strong> — הקטגוריות שלך וצבעים.</li>
+            <li><strong>תקציב</strong> (Pro) — תקציבים פר-קטגוריה.</li>
+            <li><strong>היסטוריה</strong> (Family) — שינויים ועדכונים.</li>
+          </ul>
+          <blockquote><strong>גיבוי:</strong> ל-Google יש גרסאות אוטומטיות לכל גיליון. תוכל לראות שינויים לאחור באמצעות "קובץ → היסטוריית גרסאות".</blockquote>
+        `,
+      },
+      {
+        id: 'sd-edit',
+        title: 'איך לערוך הוצאה ישירות בגיליון',
+        summary: 'כן, אפשר. ככה לעשות את זה נכון.',
+        tags: ['עריכה','גיליון','שינוי','sheets'],
+        body: `
+          <p>הגיליון לא רק לקריאה — תוכל לערוך הוצאות ישירות, והבוט יסונכרן אוטומטית.</p>
+          <h2>שינוי סכום</h2>
+          <p>פתח את הגיליון, גש לעמודה <strong>סכום</strong>, ושנה. זהו. הסיכומים בטאב "דשבורד" יתעדכנו תוך כמה שניות.</p>
+          <h2>שינוי קטגוריה</h2>
+          <p>בעמודה <strong>קטגוריה</strong>, לחץ על התא. תופיע רשימה נפתחת — בחר את הקטגוריה החדשה. הבוט יזכור את השינוי לעתיד.</p>
+          <h2>שינוי תאריך</h2>
+          <p>שנה את הערך בעמודה <strong>תאריך</strong>. השתמש בפורמט <code>DD/MM/YYYY</code>. הוצאה תזוז לחודש הנכון בסיכומים.</p>
+          <h2>שינוי הערות</h2>
+          <p>בעמודה <strong>הערות</strong> תוכל להוסיף פרטים — שם הספק, מספר חשבונית, מי בילה איתך וכו'. זה מאוד שימושי לעוסקים.</p>
+          <h2>מה לא לעשות</h2>
+          <ul>
+            <li>אל תשנה את עמודת <strong>מזהה</strong> (A) — היא משמשת להסנכרון עם הבוט.</li>
+            <li>אל תמחק שורות מתאריכים מבלי ליצור גיבוי קודם.</li>
+            <li>אל תוסיף או תסיר עמודות — זה ישבור את ה-formulas של הדשבורד.</li>
+            <li>אל תערוך את טאב "דשבורד" — הוא מחושב אוטומטית.</li>
+          </ul>
+          <h2>הוספת הוצאה ידנית</h2>
+          <p>אפשר להוסיף שורה חדשה בידיים. מלא: תאריך, סכום, קטגוריה, הערות. תשאיר את עמודת מזהה ריקה — הבוט ישלים אותה אוטומטית בסנכרון הבא.</p>
+          <blockquote><strong>טיפ:</strong> שינויים שאתה עושה בגיליון מסונכרנים עם הבוט תוך <span class="num">5</span> דקות. תרצה סינכרון מיידי? שלח לבוט <code>סנכרן</code>.</blockquote>
+        `,
+      },
+      {
+        id: 'sd-export',
+        title: 'ייצוא ל-CSV/Excel',
+        summary: 'איך להוציא את הנתונים שלך — בכל פורמט.',
+        tags: ['ייצוא','csv','excel','הורדה','גיבוי'],
+        body: `
+          <p>כל הנתונים שלך שייכים לך, וקל מאוד להוריד אותם בכל רגע, בכל פורמט.</p>
+          <h2>דרך הבוט (הכי מהיר)</h2>
+          <ul>
+            <li><code>ייצוא</code> — תקבל קישור הורדה ל-CSV של החודש האחרון.</li>
+            <li><code>ייצוא שנה</code> — CSV של כל השנה.</li>
+            <li><code>ייצוא הכל</code> — מ-day one ועד היום.</li>
+            <li><code>ייצוא <span class="num">2025</span></code> — שנה ספציפית.</li>
+          </ul>
+          <p>הקישור נשלח גם לאימייל שלך, ונשמר זמין למשך <span class="num">7</span> ימים.</p>
+          <h2>דרך Google Sheets</h2>
+          <p>פתח את הגיליון → "קובץ" → "הורדה". בחר פורמט:</p>
+          <ul>
+            <li><strong>Microsoft Excel</strong> (.xlsx) — לפתיחה ב-Excel עם נוסחאות.</li>
+            <li><strong>CSV</strong> — לעבודה ב-Python, R, SQL.</li>
+            <li><strong>PDF</strong> — להדפסה או שליחה לרואה חשבון.</li>
+            <li><strong>HTML</strong> — לאחסון בארכיון.</li>
+            <li><strong>ODS</strong> — ל-LibreOffice.</li>
+          </ul>
+          <h2>ייצוא מתקדם — לקבצים מרובים</h2>
+          <p>ב-Pro תוכל לבקש <code>ייצוא חודשי</code> — קובץ ZIP עם <span class="num">12</span> CSVs (אחד לכל חודש), נוח לעבודה מבוססת חודש.</p>
+          <h2>ייצוא לחשבוניות (עוסקים)</h2>
+          <p>ב-Family + תוכנית "עוסק" (חודש <span class="num">59</span>₪) אפשר לקבל ייצוא ישיר ב-format שמערכות הנהלת חשבונות (Rivhit, Hashavshevet) קוראות.</p>
+          <blockquote><strong>פרטיות first:</strong> אנחנו לא שומרים עותק של הייצוא אחרי שהקישור פג. הקובץ נמחק מהשרת שלנו ברגע שעבר השבוע.</blockquote>
+        `,
+      },
+      {
+        id: 'sd-dashboard',
+        title: 'איך לקרוא את "מאזן חברה"',
+        summary: 'הסבר על הטאב "דשבורד" — כל מספר ומה הוא אומר.',
+        tags: ['דשבורד','מאזן','סיכום','קריאה','dashboard'],
+        body: `
+          <p>הדשבורד הוא הטאב החשוב ביותר אחרי הוצאות עצמן. הוא מספר לך, במבט אחד, איך עומדים העניינים הכספיים שלך.</p>
+          <h2>הקטעים העיקריים</h2>
+          <h3>1. סיכום החודש</h3>
+          <p>סכום הוצאות מצטבר מתחילת החודש הנוכחי. מצד ימין — שינוי באחוזים מול חודש קודם (ירוק = פחות הוצאת, אדום = יותר).</p>
+          <h3>2. פירוט לפי קטגוריות</h3>
+          <p>טבלה עם <span class="num">12</span> שורות (או יותר אם הוספת קטגוריות). כל שורה: שם הקטגוריה, סכום החודש, אחוז מהסה"כ, ועמודת "תקציב" אם הגדרת.</p>
+          <h3>3. מאזן חברה (לעוסקים)</h3>
+          <p>הקטע הזה רלוונטי רק אם סימנת הוצאות כעסקיות. הוא מציג:</p>
+          <ul>
+            <li><strong>הוצאות עסקיות החודש</strong> — סך הוצאות שמדווחות למס.</li>
+            <li><strong>הוצאות אישיות החודש</strong> — שאר ההוצאות.</li>
+            <li><strong>אחוז עסקי</strong> — איזה אחוז מההוצאות שלך הם עסקיים.</li>
+            <li><strong>פוטנציאל החזר מס</strong> — הערכה (לא משפטית!) של כמה תוכל לקבל חזרה.</li>
+          </ul>
+          <h3>4. גרף "<span class="num">12</span> חודשים אחרונים"</h3>
+          <p>גרף עמודות שמראה מגמה ארוכת טווח. מאוד שימושי לראות אם אתה במגמת עליה או ירידה.</p>
+          <h3>5. הוצאות הגדולות</h3>
+          <p>טופ <span class="num">5</span> ההוצאות הגדולות החודש — לפעמים מגלה דברים שכחת.</p>
+          <h2>אם המספרים נראים לא נכונים</h2>
+          <p>בדוק שעמודת "תאריך" כתובה בפורמט תאריך מלא ב-Sheets (לחץ ימני → עיצוב מספרים → תאריך). שגיאות נפוצות נובעות מטקסט במקום תאריך.</p>
+        `,
+      },
+      {
+        id: 'sd-deleted',
+        title: 'אם מחקתי את הגיליון בטעות',
+        summary: 'איך לשחזר ולא לאבד נתונים.',
+        tags: ['מחיקה','שחזור','אובד','recovery','גיליון'],
+        body: `
+          <p>אל דאגה — Google שומרת על הגיליון שלך גם אחרי מחיקה, ואנחנו נעזור לך לחבר אותו מחדש או ליצור גיליון חדש מהנתונים שלנו.</p>
+          <h2>שלב 1 — בדוק בפח של Drive</h2>
+          <ul>
+            <li>היכנס ל-<a href="https://drive.google.com/drive/trash" target="_blank" rel="noopener" class="text-brand-700 underline dark:text-brand-300">drive.google.com/drive/trash</a>.</li>
+            <li>אם הגיליון שם — לחץ ימני → "שחזר".</li>
+            <li>Google שומרת קבצים בפח עד <span class="num">30</span> יום אחרי מחיקה.</li>
+          </ul>
+          <h2>שלב 2 — אם עברו <span class="num">30</span> יום</h2>
+          <p>שלח לנו אימייל ל-<a href="mailto:hi@kesefle.com" class="text-brand-700 underline dark:text-brand-300">hi@kesefle.com</a> עם הכותרת "שחזור גיליון". אנחנו שומרים גיבוי של <strong>מטא-דאטה</strong> (לא של הוצאות עצמן, מסיבות פרטיות) שמאפשר לנו לבנות לך גיליון חדש בלי לאבד את הגדרות הקטגוריות, התקציבים והעדפות.</p>
+          <p>במידה ויש לך גיבוי CSV שייצאת — נוכל לייבא אותו לתוך הגיליון החדש.</p>
+          <h2>שלב 3 — איך למנוע בעתיד</h2>
+          <ul>
+            <li>הפעל "ייצוא חודשי אוטומטי" ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> — תקבל CSV בכל ה-1 לחודש.</li>
+            <li>אל תמחק את הגיליון בידיים — אם אתה רוצה לעצור את כסף'לה, נתק את החשבון מהממשק במקום זה.</li>
+            <li>השתמש בהיסטוריית גרסאות של Google: "קובץ → היסטוריית גרסאות" — תוכל לחזור לכל גרסה של הגיליון לאחור.</li>
+          </ul>
+          <blockquote><strong>חשוב:</strong> אם תמחק את הגיליון, הבוט יפסיק לכתוב הוצאות חדשות עד שתיצור גיליון חדש. תקבל הודעת אזהרה בוואטסאפ ברגע שזה קורה.</blockquote>
+        `,
+      },
+    ],
+  },
+  {
+    id: 'account-billing',
+    emoji: '💳',
+    title: 'חשבון וחיוב',
+    desc: 'תשלומים, מנוי, חשבוניות וניהול חשבון.',
+    articles: [
+      {
+        id: 'ab-upgrade',
+        title: 'איך לשדרג ל-Pro',
+        summary: 'תהליך השדרוג ב-<span class="num">2</span> דקות.',
+        tags: ['שדרוג','pro','תשלום','upgrade'],
+        body: `
+          <p>השדרוג ל-Pro מיועד למי שעובר את <span class="num">50</span> ההוצאות בחודש או רוצה לפתוח את הפיצ'רים המתקדמים — הוראות קבע, תשלומים, סיכומים שבועיים, קטגוריות מותאמות אישית.</p>
+          <h2>איך לשדרג</h2>
+          <ul>
+            <li>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>.</li>
+            <li>לחץ "שדרג ל-Pro".</li>
+            <li>בחר אופן תשלום: כרטיס אשראי, Bit, או PayPal.</li>
+            <li>אשר את התשלום הראשון של <span class="num">19</span>₪.</li>
+          </ul>
+          <p>תוך <span class="num">5</span> שניות הפיצ'רים החדשים יהיו זמינים. תקבל הודעת אישור בוואטסאפ.</p>
+          <h2>תשלום שנתי — חיסכון <span class="num">17</span>%</h2>
+          <p>אם תבחר לשלם פעם בשנה, המחיר יורד מ-<span class="num">228</span>₪ (שנתי) ל-<span class="num">189</span>₪ — חיסכון של כמעט <span class="num">40</span>₪. אפשר לבחור את האפשרות הזו בעת השדרוג.</p>
+          <h2>שדרוג ל-Family</h2>
+          <p>אם כבר אתה Pro ורוצה לעבור ל-Family (לשתף עם בני משפחה) — לחץ "שנה תוכנית" ובחר Family. ההפרש (<span class="num">20</span>₪) ייגבה באופן יחסי על הימים שנותרו בחודש.</p>
+          <h2>שדרוג עם קוד הנחה</h2>
+          <p>יש לך קוד הנחה? הזן אותו בעמוד התשלום. קודים נפוצים: <code>FIRST20</code> (<span class="num">20</span>% הנחה לחודש ראשון), <code>STUDENT</code> (<span class="num">50</span>% לסטודנטים — דרוש הוכחה).</p>
+          <blockquote><strong>ניסיון:</strong> אם זה החודש הראשון שלך — אתה כבר ב-Pro בחינם. תוכל לשדרג ל-Pro המשולם בכל רגע, בלי לחכות לסוף הניסיון, ולקבל הנחה של חודש שני בחינם.</blockquote>
+        `,
+      },
+      {
+        id: 'ab-cancel',
+        title: 'ביטול מנוי',
+        summary: 'איך לבטל בלי דמי ביטול ובלי שאלות מציקות.',
+        tags: ['ביטול','מנוי','cancel','עזיבה'],
+        body: `
+          <p>ביטול מנוי אצלנו פשוט וכן — בלי שאלות, בלי מאמצי שכנוע, בלי דמי ביטול. גם החוק (<span class="num">1981</span>) דורש את זה, וגם זה הדבר הנכון.</p>
+          <h2>איך לבטל</h2>
+          <ul>
+            <li>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>.</li>
+            <li>גלול עד "ניהול מנוי".</li>
+            <li>לחץ "בטל מנוי".</li>
+            <li>תוצג שאלה אחת אופציונלית: "מה הסיבה?" (לטובת המוצר — אבל לא חייב לענות).</li>
+            <li>אשר.</li>
+          </ul>
+          <p>תקבל אישור באימייל ובוואטסאפ.</p>
+          <h2>מתי הביטול נכנס לתוקף</h2>
+          <p>הביטול לתוקף בסיום החודש הנוכחי. עד אז תהנה מכל פיצ'רי Pro. לדוגמה: אם ביטלת ב-<span class="num">15</span>/<span class="num">5</span> והמנוי שלך מתחדש ב-<span class="num">1</span>/<span class="num">6</span>, תהיה Pro עד <span class="num">31</span>/<span class="num">5</span>, ומ-<span class="num">1</span>/<span class="num">6</span> תעבור לחינם.</p>
+          <h2>מה קורה אחרי הביטול</h2>
+          <ul>
+            <li>הנתונים שלך <strong>נשארים</strong> — כל ההוצאות, הקטגוריות, הגיליון.</li>
+            <li>תעבור אוטומטית לתוכנית חינם.</li>
+            <li>הוראות קבע פעילות ימשיכו לעבוד עד סוף החודש, ואז יושהו.</li>
+            <li>תוכל לכתוב עד <span class="num">50</span> הוצאות בחודש (מגבלת חינם).</li>
+          </ul>
+          <h2>החזר כספי</h2>
+          <p>אם ביטלת תוך <span class="num">14</span> יום מתחילת מנוי חדש — תקבל החזר מלא. אחרי <span class="num">14</span> יום אין החזר על תקופה שכבר עברה, אבל לא תחויב יותר.</p>
+          <h2>שינוי דעה</h2>
+          <p>תוכל לחזור בכל רגע — לחץ "חדש מנוי" באותו עמוד. אם זה בתוך אותו חודש שביטלת, נשמח להחזיר אותך בלי תהליך תשלום מחדש.</p>
+        `,
+      },
+      {
+        id: 'ab-trial',
+        title: 'כמה זמן ניסיון חינם',
+        summary: 'הניסיון, מה כלול בו, ומה קורה כשהוא נגמר.',
+        tags: ['ניסיון','trial','חינם','בדיקה'],
+        body: `
+          <p>כל מי שנרשם מקבל ניסיון של <span class="num">30</span> יום ב-Pro — בלי כרטיס אשראי, בלי התחייבות, בלי קטע.</p>
+          <h2>מה כלול בניסיון</h2>
+          <p>הכל. כל פיצ'רי Pro פתוחים — הוצאות ללא הגבלה, תשלומים, הוראות קבע, סיכומים שבועיים, קטגוריות מותאמות אישית, מטבעות מרובים, ותמיכה תוך <span class="num">24</span> שעות.</p>
+          <h2>איך אני יודע כמה ניסיון נשאר</h2>
+          <ul>
+            <li>בכל הודעת אישור מהבוט יש שורה קטנה: "ניסיון Pro — נשארו X ימים".</li>
+            <li>ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> תראה ספירה לאחור.</li>
+            <li>שלח לבוט <code>ניסיון</code> — תקבל את הסטטוס.</li>
+          </ul>
+          <h2>מה קורה ביום <span class="num">29</span> ו-<span class="num">30</span></h2>
+          <p>נשלח לך תזכורת בוואטסאפ <span class="num">3</span> ימים לפני סיום הניסיון, ושוב יום לפני. בהודעה תהיה אופציה לשדרג ל-Pro או להישאר בחינם.</p>
+          <h2>מה קורה אחרי הניסיון</h2>
+          <p>אם לא תשדרג, החשבון שלך עובר אוטומטית לתוכנית <strong>חינם</strong>:</p>
+          <ul>
+            <li>הוצאות מוגבלות ל-<span class="num">50</span> בחודש.</li>
+            <li>הוראות קבע ופיצולי תשלומים שכבר הגדרת — ימשיכו לעבוד עד שתבטל.</li>
+            <li>תקבל הודעה אם תגיע למגבלת ההוצאות.</li>
+            <li>הנתונים שלך — נשארים. הכל. תמיד.</li>
+          </ul>
+          <h2>הארכת ניסיון</h2>
+          <p>אם אתה מהסס וצריך עוד זמן — שלח לנו אימייל ל-<a href="mailto:hi@kesefle.com" class="text-brand-700 underline dark:text-brand-300">hi@kesefle.com</a> ונשמח להאריך לעוד <span class="num">14</span> יום פעם אחת. רוצים שתנסה ברצינות.</p>
+        `,
+      },
+      {
+        id: 'ab-invoice',
+        title: 'שאלות על חשבונית',
+        summary: 'חשבוניות, אישורי תשלום, פרטי עוסק.',
+        tags: ['חשבונית','קבלה','עוסק','מע"מ','דיווח'],
+        body: `
+          <p>אנחנו מנפיקים חשבונית מס ממוחשבת תקנית לכל תשלום, גם בתוכנית Pro וגם ב-Family.</p>
+          <h2>איפה למצוא את החשבונית</h2>
+          <ul>
+            <li><strong>אימייל אוטומטי</strong> — כל חיוב מקבל חשבונית באימייל תוך <span class="num">24</span> שעות.</li>
+            <li><strong>אזור אישי</strong> — ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> → "חשבוניות" יש את כל ההיסטוריה להורדה כ-PDF.</li>
+            <li><strong>בוט</strong> — שלח <code>חשבונית</code> ותקבל קישור לאחרונה.</li>
+          </ul>
+          <h2>הוספת פרטי עוסק</h2>
+          <p>אם אתה עוסק והחשבונית צריכה להיות לחברה ולא לשם פרטי:</p>
+          <ul>
+            <li>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> → "פרטי חשבונית".</li>
+            <li>הוסף שם עוסק, מספר עוסק, כתובת.</li>
+            <li>השמירה משפיעה רק על חשבוניות עתידיות. לרוצים לתקן עבר — אנא שלח אימייל.</li>
+          </ul>
+          <h2>תיקון חשבונית קודמת</h2>
+          <p>שלח אימייל ל-<a href="mailto:hi@kesefle.com" class="text-brand-700 underline dark:text-brand-300">hi@kesefle.com</a> עם מספר החשבונית והשינוי הרצוי. נטפל בזה תוך יום עסקים, ונשלח חשבונית מתוקנת לפי חוק רשות המסים.</p>
+          <h2>מע"מ</h2>
+          <p>החשבוניות כוללות מע"מ <span class="num">17</span>%, מפורט בנפרד. עוסקים מורשים יוכלו לקזז אותו בדוח התקופתי.</p>
+          <h2>תקופת ניסיון</h2>
+          <p>על תקופת הניסיון בחינם לא מנפיקים חשבונית — אין חיוב, אין חשבונית. החשבונית הראשונה תהיה על החיוב הראשון בפועל.</p>
+          <blockquote><strong>שמירה לחמש שנים:</strong> אנחנו שומרים את כל החשבוניות שלך זמינות להורדה לפחות לחמש שנים, על פי חוק החשבוניות.</blockquote>
+        `,
+      },
+      {
+        id: 'ab-payment',
+        title: 'שינוי אמצעי תשלום',
+        summary: 'איך לעדכן כרטיס אשראי שפג, להחליף לכרטיס אחר, או לעבור ל-Bit.',
+        tags: ['אשראי','תשלום','כרטיס','bit','paypal','עדכון'],
+        body: `
+          <p>שינוי אמצעי תשלום הוא תהליך פשוט שלוקח פחות מ-<span class="num">2</span> דקות.</p>
+          <h2>שלבים</h2>
+          <ul>
+            <li>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>.</li>
+            <li>בחר "אמצעי תשלום".</li>
+            <li>לחץ "הוסף אמצעי תשלום חדש".</li>
+            <li>בחר: כרטיס אשראי, Bit, PayPal, או העברה בנקאית (Family בלבד).</li>
+            <li>הזן את הפרטים — או סרוק QR.</li>
+            <li>סמן כאמצעי תשלום ראשי.</li>
+            <li>אפשר למחוק את הישן.</li>
+          </ul>
+          <h2>אמצעי תשלום נתמכים</h2>
+          <ul>
+            <li><strong>אשראי:</strong> Visa, Mastercard, American Express, Isracard.</li>
+            <li><strong>Bit:</strong> תשלום מיידי מהבנק שלך.</li>
+            <li><strong>PayPal:</strong> נוח למי שכבר משתמש.</li>
+            <li><strong>Apple Pay / Google Pay:</strong> מובייל בלבד, מהיר.</li>
+            <li><strong>העברה בנקאית:</strong> רק עבור Family שנתי, מינימום <span class="num">468</span>₪.</li>
+          </ul>
+          <h2>אם הכרטיס שלי פג</h2>
+          <p>אם הכרטיס פג ולא הוחלף — נחויב נכשל. במקרה כזה:</p>
+          <ul>
+            <li>נשלח לך אימייל ו-וואטסאפ.</li>
+            <li>תקבל <span class="num">7</span> ימי גרייס לעדכן.</li>
+            <li>אם לא — תרד אוטומטית לתוכנית חינם. הנתונים נשארים.</li>
+            <li>אפשר לחזור ל-Pro בכל רגע אחרי עדכון התשלום.</li>
+          </ul>
+          <h2>אבטחת פרטי תשלום</h2>
+          <p>אנחנו <strong>לא שומרים</strong> את מספר הכרטיס שלך. הוא נשמר אצל שותף הסליקה שלנו (Tranzila) שעובד תחת תקן <strong>PCI-DSS Level <span class="num">1</span></strong>. אנחנו שומרים רק את ארבע הספרות האחרונות לזיהוי.</p>
+        `,
+      },
+    ],
+  },
+  {
+    id: 'privacy-security',
+    emoji: '🔒',
+    title: 'פרטיות ואבטחה',
+    desc: 'הנתונים שלך, ההגנה עליהם, והשליטה שלך.',
+    articles: [
+      {
+        id: 'ps-see-data',
+        title: 'האם תוכלו לראות את הנתונים שלי',
+        summary: 'מה אנחנו רואים, מה לא, ולמה.',
+        tags: ['פרטיות','גישה','נתונים','privacy','data'],
+        body: `
+          <p>שאלה הוגנת ביותר — והתשובה הקצרה: <strong>כמעט לא</strong>. בארכיטקטורה שלנו אנחנו עיצבנו את המערכת במכוון כך שנוכל לראות מינימום מוחלט של מידע פרטי.</p>
+          <h2>מה אנחנו יכולים לראות</h2>
+          <ul>
+            <li><strong>מטא-דאטה תפעולית:</strong> מספר הוצאות שכתבת (לא הסכומים), זמני שימוש, סוג המכשיר. זה דרוש לתפעול.</li>
+            <li><strong>אימייל ושם:</strong> מההרשמה. דרוש לתקשורת ולחשבוניות.</li>
+            <li><strong>מספר וואטסאפ:</strong> כדי שהבוט ידע שזה אתה.</li>
+            <li><strong>הודעות לבוט באופן זמני:</strong> בעת קליטה, ההודעה עוברת דרך השרת שלנו (כמה מילישניות) כדי להגיע לגיליון. היא לא נשמרת אצלנו.</li>
+          </ul>
+          <h2>מה אנחנו <em>לא</em> רואים</h2>
+          <ul>
+            <li>סכומי ההוצאות שלך — נשמרים בגיליון שלך ב-Drive שלך.</li>
+            <li>על מה הוצאת — קטגוריות, חנויות, מקומות, פרטים.</li>
+            <li>ההיסטוריה שלך — אנחנו לא ניגשים לגיליון אחרי שהוא נכתב.</li>
+            <li>כל קובץ אחר ב-Drive שלך — הרשאת <code>drive.file</code> מונעת זאת מבחינה טכנית.</li>
+          </ul>
+          <h2>למה אנחנו לא רואים</h2>
+          <p>זה לא רק עניין של מדיניות — זה ארכיטקטורה. הגיליון נמצא בחשבון <strong>שלך</strong>. כסף'לה כותבת אליו דרך API של Google, ולא שומרת עותק בצד שלנו. אם תפסיק את החשבון, הגיליון נשאר אצלך — אנחנו לא יכולים לקחת אותו בחזרה כי מעולם לא היה אצלנו.</p>
+          <h2>למה זה חשוב</h2>
+          <p>גם אם השרת שלנו נפרץ — אין מה לגנוב. ההוצאות לא שם. גם אם נציגי שירות לקוחות מתבקשים לעזור לך — הם לא יכולים "לציץ" בנתונים שלך כדי לעזור. הם רואים רק את אותה מטא-דאטה.</p>
+          <blockquote><strong>אישור:</strong> תוכל לראות בדיוק את ההרשאות שלנו ב-<a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-brand-700 underline dark:text-brand-300">myaccount.google.com/permissions</a>.</blockquote>
+        `,
+      },
+      {
+        id: 'ps-shutdown',
+        title: 'מה קורה אם תיסגרו',
+        summary: 'הסבר על תוכנית "Exit Plan" שלנו.',
+        tags: ['סגירה','shutdown','exit','עתיד','המשך'],
+        body: `
+          <p>סטארטאפים נסגרים. אנחנו לא חושבים שזה יקרה לנו, אבל אנחנו מעצבים את המוצר תחת ההנחה שאולי. הנה מה שתקרה אם, חס וחלילה.</p>
+          <h2>הנתונים שלך נשארים</h2>
+          <p>כל הנתונים שלך נמצאים בגיליון <strong>שלך</strong>, ב-Drive <strong>שלך</strong>, בחשבון <strong>שלך</strong>. גם אם אנחנו ניסגר עכשיו, הגיליון יישאר בדיוק איפה שהוא. תוכל להמשיך להשתמש בו, לערוך אותו, לייצא אותו — בלי כסף'לה.</p>
+          <h2>הודעה מוקדמת של <span class="num">90</span> יום</h2>
+          <p>אם נחליט לסגור, נודיע לכל המשתמשים <strong>לפחות <span class="num">90</span> יום מראש</strong>. ההודעה תישלח באימייל, בוואטסאפ, ובאתר. נסביר למה, מתי בדיוק, ומה לעשות.</p>
+          <h2>החזר כספי יחסי</h2>
+          <p>אם שילמת מראש (תוכנית שנתית), נחזיר לך את התקופה שעוד לא נוצלה — באופן יחסי לימים. גם אם החוק לא מחייב, זה הדבר הנכון.</p>
+          <h2>קוד פתוח של הבוט</h2>
+          <p>אם נסגור באמת — נשחרר את הקוד של הבוט כ-open source ב-GitHub, עם הוראות אילו API keys צריך והאם אפשר להריץ עצמאית. כך לא תאבד גישה לפונקציונליות (גם אם תאבד את התמיכה).</p>
+          <h2>תקופת הסיום</h2>
+          <p>בשני החודשים האחרונים נאפשר ייצוא מסיבי של כל ההוצאות שלך לפורמטים שונים, ונפרסם מדריך מפורט איך להעביר את הנתונים לכלי אחר (כמו Excel או Notion).</p>
+          <blockquote><strong>מחויבות פומבית:</strong> זאת לא רק מדיניות — זה כתוב בתנאי השימוש שלנו (סעיף <span class="num">12</span>). זה חוקית מחייב אותנו.</blockquote>
+        `,
+      },
+      {
+        id: 'ps-encryption',
+        title: 'הצפנה של אסימוני OAuth',
+        summary: 'איך אנחנו שומרים על האסימונים שמחברים אותך ל-Google.',
+        tags: ['הצפנה','token','oauth','אבטחה','encryption'],
+        body: `
+          <p>כשאתה מחבר את חשבון Google שלך, Google שולחת לנו <strong>access token</strong> ו-<strong>refresh token</strong>. אלה "מפתחות" שמאפשרים לנו לכתוב לגיליון שלך. שמירה בטוחה שלהם היא קריטית.</p>
+          <h2>איפה נשמרים</h2>
+          <ul>
+            <li>במסד נתונים מנוהל (Supabase / PlanetScale).</li>
+            <li>בעמודה ייעודית בשם <code>encrypted_tokens</code>.</li>
+            <li><strong>מוצפנים</strong> לפני הכתיבה, ו-<strong>מפוענחים</strong> בזיכרון בלבד בעת השימוש.</li>
+          </ul>
+          <h2>שיטת ההצפנה</h2>
+          <ul>
+            <li><strong>AES-<span class="num">256</span>-GCM</strong> — אלגוריתם הצפנה סימטרי מתקדם.</li>
+            <li><strong>Envelope encryption</strong> — מפתח האב נשמר בנפרד (KMS) ולא ב-DB.</li>
+            <li><strong>Rotation</strong> אוטומטי של מפתח הצפנה כל <span class="num">90</span> יום.</li>
+          </ul>
+          <h2>מה קורה אם נפרץ המסד</h2>
+          <p>גם אם תוקף משיג גישה למסד הנתונים שלנו — האסימונים שם <strong>חסרי ערך</strong> בלי מפתח האב, שנשמר במערכת נפרדת לחלוטין (AWS KMS / Google Cloud KMS). הוא מעולם לא נמצא באותו מקום כמו ה-DB.</p>
+          <h2>הגנה נוספת</h2>
+          <ul>
+            <li><strong>Scope מינימלי:</strong> ה-token יכול לכתוב רק לגיליון אחד. גם אם נפרץ, נזק מוגבל מאוד.</li>
+            <li><strong>Refresh tokens מתחלפים:</strong> כל <span class="num">7</span> ימים בערך, אסימון ה-access מתחדש דרך ה-refresh. כך אסימונים ישנים גוועים מהר.</li>
+            <li><strong>אזעקות:</strong> ניטור עקיף של שימוש לא רגיל באסימונים.</li>
+            <li><strong>ביטול מיידי:</strong> תוכל לבטל הרשאות מ-<a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-brand-700 underline dark:text-brand-300">myaccount.google.com/permissions</a> בכל רגע, ואז האסימון שלנו ייפסל סופית.</li>
+          </ul>
+          <blockquote><strong>חוו"ד חיצונית:</strong> ב-<span class="num">2026</span> נעבור הסמכת SOC <span class="num">2</span> Type II שכוללת ביקורת חיצונית של תהליכי האבטחה.</blockquote>
+        `,
+      },
+      {
+        id: 'ps-delete-account',
+        title: 'מחיקת חשבון מלאה',
+        summary: 'איך למחוק הכל, באמת.',
+        tags: ['מחיקה','חשבון','דליט','delete','gdpr'],
+        body: `
+          <p>זכותך למחוק את החשבון שלך לחלוטין, בכל רגע, בלי הסבר. זה חוק (GDPR), זה ה-Privacy Act הישראלי, וזה פשוט הדבר הנכון.</p>
+          <h2>איך למחוק</h2>
+          <ul>
+            <li>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>.</li>
+            <li>גלול עד הסוף — "אזור מסוכן".</li>
+            <li>לחץ "מחק חשבון".</li>
+            <li>תוצג שאלת אישור עם המילה <code>מחק</code> שתצטרך להקליד.</li>
+            <li>תהליך המחיקה יחל. תקבל אישור באימייל.</li>
+          </ul>
+          <h2>מה נמחק</h2>
+          <ul>
+            <li>החשבון שלך אצלנו, כולל אימייל ומספר טלפון.</li>
+            <li>כל המטא-דאטה התפעולית.</li>
+            <li>אסימוני OAuth של Google (נמחקים גם בצד Google).</li>
+            <li>היסטוריית התקשורת עם תמיכת לקוחות.</li>
+          </ul>
+          <h2>מה <em>לא</em> נמחק</h2>
+          <ul>
+            <li><strong>הגיליון שלך</strong> — הוא שלך, ב-Drive שלך. אם תרצה למחוק גם אותו, עשה זאת בעצמך מ-Drive.</li>
+            <li><strong>חשבוניות</strong> — לפי חוק רשות המסים אנחנו חייבים לשמור חשבוניות <span class="num">5</span> שנים. הן יישמרו בלי קישור ישיר אליך, ויימחקו אחרי <span class="num">5</span> שנים.</li>
+          </ul>
+          <h2>תוך כמה זמן</h2>
+          <ul>
+            <li><strong>מיידי:</strong> הגישה נחסמת, הבוט לא יענה יותר.</li>
+            <li><strong>תוך <span class="num">24</span> שעות:</strong> נתונים נמחקים ממאגרים פעילים.</li>
+            <li><strong>תוך <span class="num">30</span> יום:</strong> נמחקים גם מגיבויים. ה-GDPR מתיר <span class="num">30</span> יום להפעלת מחיקה ממסדי גיבוי.</li>
+          </ul>
+          <h2>אחרי המחיקה</h2>
+          <p>תקבל מאיתנו אימייל אחרון עם אישור הסתיים. אחר כך — שום קשר. אם תרצה לחזור, תצטרך להיירשם מחדש מאפס.</p>
+          <blockquote><strong>גישה לנתונים שלך לפני המחיקה:</strong> תוכל לבקש <code>ייצוא הכל</code> בבוט לפני שאתה מוחק, כדי לקחת איתך עותק של הגיליון.</blockquote>
+        `,
+      },
+    ],
+  },
+  {
+    id: 'troubleshooting',
+    emoji: '❓',
+    title: 'פתרון בעיות',
+    desc: 'מה לעשות כשמשהו לא עובד כמו שצריך.',
+    articles: [
+      {
+        id: 'ts-bot-silent',
+        title: 'הבוט לא עונה',
+        summary: 'שלבי אבחון מהירים — רובם פותרים תוך דקה.',
+        tags: ['בוט','שקט','לא עונה','בעיה','silent'],
+        body: `
+          <p>הבוט שלנו אמור לענות תוך <span class="num">2</span>-<span class="num">5</span> שניות. אם הוא לא עונה — בוא נאבחן.</p>
+          <h2>שלב 1 — בדוק אם וואטסאפ עובד</h2>
+          <p>שלח הודעה לחבר. אם זה לא הולך — הבעיה ברשת שלך, לא בבוט. עבור ל-Wi-Fi אחר או הפעל שוב את האפליקציה.</p>
+          <h2>שלב 2 — בדוק שלא חסמת את הבוט</h2>
+          <p>היכנס לפרטי הצ'אט עם הבוט (לחץ על השם בראש הצ'אט). אם רואים "בטל חסימה" — הבוט חסום. בטל חסימה.</p>
+          <h2>שלב 3 — שלח <code>היי</code></h2>
+          <p>זאת פקודת "ping" שלנו. אם הבוט יענה — המערכת חיה. אם לא — המשך לשלב <span class="num">4</span>.</p>
+          <h2>שלב 4 — בדוק את הסטטוס שלנו</h2>
+          <p>היכנס ל-<a href="/status" class="text-brand-700 underline dark:text-brand-300">kesefle.vercel.app/status</a> — שם מופיע סטטוס בזמן אמת של כל הרכיבים. אם רואים בעיה — אנחנו כבר עליה.</p>
+          <h2>שלב 5 — בדוק את החשבון שלך</h2>
+          <p>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>. אם החשבון מושעה (תשלום נכשל למשל) — הבוט לא יענה. עדכן את אמצעי התשלום ותוך דקות הבוט יחזור.</p>
+          <h2>שלב 6 — צור קשר</h2>
+          <p>אם שום דבר לא עזר — שלח אימייל ל-<a href="mailto:hi@kesefle.com" class="text-brand-700 underline dark:text-brand-300">hi@kesefle.com</a> עם:</p>
+          <ul>
+            <li>מספר הטלפון שאיתו אתה רושם הוצאות.</li>
+            <li>מה ניסית לשלוח לבוט.</li>
+            <li>צילום מסך אם אפשר.</li>
+            <li>זמן השליחה.</li>
+          </ul>
+          <p>אנחנו עונים תוך <span class="num">24</span> שעות (תוך <span class="num">4</span> ל-Family).</p>
+        `,
+      },
+      {
+        id: 'ts-not-in-sheet',
+        title: 'ההוצאה לא נכנסה לגיליון',
+        summary: 'הבוט אישר, אבל הגיליון ריק. מה קרה.',
+        tags: ['גיליון','לא נכנס','sync','בעיה','שגיאה'],
+        body: `
+          <p>זה תסריט מבלבל — הבוט אומר "נרשם!", אבל בגיליון לא רואים כלום. הנה אבחון מהיר.</p>
+          <h2>סיבה <span class="num">1</span> — שיהוי סנכרון</h2>
+          <p>לפעמים ל-Google Sheets לוקח <span class="num">30</span>-<span class="num">60</span> שניות לרענן. נסה לרענן את הגיליון (Ctrl+R / Cmd+R). אם ההוצאה מופיעה — לא הייתה בעיה אמיתית.</p>
+          <h2>סיבה <span class="num">2</span> — אתה מסתכל על הגיליון הלא נכון</h2>
+          <p>אם יצרת בעבר גיליון בעצמך עם שם דומה — אולי אתה מסתכל עליו. שלח לבוט <code>גיליון</code> ולחץ על הקישור שיחזיר. זה הגיליון הנכון.</p>
+          <h2>סיבה <span class="num">3</span> — אסימון OAuth פג</h2>
+          <p>אם הבוט הראה לך הודעה כמו "missing_auth" או "פג תוקף" — צריך לחבר מחדש את Google. היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> ולחץ "חבר מחדש".</p>
+          <h2>סיבה <span class="num">4</span> — הגעת למגבלת חינם</h2>
+          <p>בתוכנית חינם יש מגבלה של <span class="num">50</span> הוצאות בחודש. אם עברת — הבוט יקבל את ההודעה אבל לא יכתוב לגיליון. תקבל הודעה שמסבירה את המצב.</p>
+          <h2>סיבה <span class="num">5</span> — הגיליון נמחק או הועבר</h2>
+          <p>אם מחקת את הגיליון מ-Drive, או העברת אותו לתיקיה משותפת בלי הרשאות מתאימות — הבוט לא יכול לכתוב. צור גיליון חדש מ-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> → "צור גיליון חדש".</p>
+          <h2>סיבה <span class="num">6</span> — באג</h2>
+          <p>אם שום אחת לא מתאימה — זה כנראה באג. שלח לנו לאימייל את ההודעה המקורית, את התשובה של הבוט, וצילום מסך של הגיליון. נטפל מיד.</p>
+        `,
+      },
+      {
+        id: 'ts-google-error',
+        title: 'שגיאה בכניסה ל-Google',
+        summary: 'מה לעשות כשמסך הרשאות של Google מציג שגיאה.',
+        tags: ['google','שגיאה','כניסה','oauth','login'],
+        body: `
+          <p>שגיאות בכניסה ל-Google הן הדבר המתסכל ביותר — Google רוצה להגן, ולפעמים זה בא על חשבון חוויית המשתמש.</p>
+          <h2>"App not verified"</h2>
+          <p>זאת לא שגיאה אלא אזהרה. Google מציגה אותה לכל אפליקציה צעירה. כדי להמשיך:</p>
+          <ul>
+            <li>לחץ "Advanced" (או "מתקדם" אם זה בעברית).</li>
+            <li>לחץ "Go to Kesefle (unsafe)" — לא באמת unsafe, פשוט עוד לא עברנו את ה-verification הפורמלי של Google.</li>
+            <li>המשך כרגיל.</li>
+          </ul>
+          <p>אנחנו בתהליך אישור רשמי — אמור להסתיים בקרוב.</p>
+          <h2>"This app is blocked"</h2>
+          <p>זה קורה בארגונים שמשתמשים ב-Google Workspace עם פוליסי שמגביל אפליקציות חיצוניות. שתי אפשרויות:</p>
+          <ul>
+            <li>בקש מהאדמין של הארגון לאשר את "Kesefle".</li>
+            <li>השתמש בחשבון Google אישי במקום עבודה.</li>
+          </ul>
+          <h2>"redirect_uri_mismatch"</h2>
+          <p>שגיאה טכנית שמשמעותה שהדומיין משתנה. נסה להיכנס מ-<code>kesefle.vercel.app</code> בלבד (לא מתת-דומיין או מ-staging).</p>
+          <h2>"access_denied"</h2>
+          <p>אתה לחצת "ביטול" במסך ההרשאות במקום "אישור". פשוט נסה שוב.</p>
+          <h2>"invalid_grant"</h2>
+          <p>הזמן במכשיר שלך שונה מאוד מהזמן האמיתי, או שאסימון refresh פג. הגדר שעון אוטומטי במכשיר, וחבר מחדש ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>.</p>
+          <h2>אם אין שגיאה ברורה</h2>
+          <p>נקה cookies של <code>accounts.google.com</code> ו-<code>kesefle.vercel.app</code>. נסה שוב בחלון פרטי (Incognito). אם זה עובד שם — נקה הכל בחלון רגיל.</p>
+        `,
+      },
+      {
+        id: 'ts-missing-msg',
+        title: 'ההודעה לא הגיעה',
+        summary: 'סיכום שבועי או חודשי שלא הגיע — איך לבדוק.',
+        tags: ['סיכום','התראה','לא הגיע','missing','notification'],
+        body: `
+          <p>אם הסיכום השבועי או החודשי לא הגיע — סיבות נפוצות:</p>
+          <h2>1. במצב שקט?</h2>
+          <p>שלח לבוט <code>סטטוס</code> — תראה אם אתה במצב שקט וכמה זמן נשאר.</p>
+          <h2>2. ביטלת את ההתראה?</h2>
+          <p>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> → "התראות" — בדוק שהסיכומים מופעלים. גלגול אחורה אצל משתמשים רבים — בלי לשים לב הם כיבו את הסיכום.</p>
+          <h2>3. תוכנית חינם?</h2>
+          <p>בתוכנית חינם אין סיכומים אוטומטיים. תוכל לבקש בכל רגע ע"י שליחת <code>סיכום</code>, אבל הבוט לא ישלח על דעת עצמו.</p>
+          <h2>4. שעת השליחה</h2>
+          <p>ברירת המחדל היא יום ראשון <span class="num">8</span>:<span class="num">00</span>. אם החלפת לשעה אחרת, ייתכן שאתה מחפש בזמן הלא נכון. בדוק ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> מה השעה המוגדרת.</p>
+          <h2>5. אזור זמן</h2>
+          <p>הבוט שולח לפי אזור הזמן של המכשיר שלך. אם נסעת לחו"ל ולא עדכנת — הסיכום ייצא בזמן הישראלי. עדכן ב-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a> → "אזור זמן".</p>
+          <h2>6. וואטסאפ חסם הודעות business</h2>
+          <p>לעיתים נדירות, אם דיווחת על הבוט כספאם, וואטסאפ יחסום הודעות. שלח לבוט <code>היי</code> ידנית — זה ישחרר את החסימה.</p>
+          <h2>בכל מקרה</h2>
+          <p>תוכל לבקש את הסיכום ידנית בכל רגע: <code>סיכום</code> או <code>השבוע</code> או <code>החודש</code>. הוא ייצא תוך שניות.</p>
+        `,
+      },
+      {
+        id: 'ts-missing-auth',
+        title: '"missing_auth" error',
+        summary: 'מה השגיאה הזו אומרת ואיך לפתור אותה.',
+        tags: ['missing_auth','שגיאה','token','oauth','error'],
+        body: `
+          <p>השגיאה <code>missing_auth</code> אומרת שכסף'לה אבדה את הגישה לגיליון שלך. זה קורה מסיבות שונות, אבל הפתרון פשוט.</p>
+          <h2>סיבות אפשריות</h2>
+          <ul>
+            <li>ביטלת את ההרשאות של כסף'לה ב-<a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-brand-700 underline dark:text-brand-300">myaccount.google.com/permissions</a>.</li>
+            <li>אסימון ה-refresh פג (קורה אחרי <span class="num">6</span> חודשים בלי שימוש).</li>
+            <li>שינית סיסמת Google לאחרונה (זה לפעמים מבטל אסימונים).</li>
+            <li>הפעלת <span class="num">2</span>FA על חשבון Google בפעם הראשונה (לפעמים מבטל אסימונים ישנים).</li>
+            <li>החלפת חשבון Google — עברת מאישי לעסקי או להיפך.</li>
+          </ul>
+          <h2>הפתרון</h2>
+          <ul>
+            <li>היכנס ל-<a href="/account" class="text-brand-700 underline dark:text-brand-300">/account</a>.</li>
+            <li>תראה באנר אדום: "חיבור Google לא תקף — חבר מחדש".</li>
+            <li>לחץ "חבר מחדש".</li>
+            <li>אשר שוב את ההרשאות של Google.</li>
+            <li>תקבל הודעת אישור.</li>
+          </ul>
+          <p>כל ההוצאות שכתבת בינתיים (בזמן שהבוט לא יכול לכתוב לגיליון) שמורות אצלנו ב-queue, ויסונכרנו לגיליון בתוך <span class="num">5</span> דקות מהחיבור מחדש.</p>
+          <h2>אם זה ממשיך לקרות</h2>
+          <p>אם השגיאה חוזרת שוב ושוב — ייתכן ש-Google לא נותנת לנו refresh token. סיבות אפשריות:</p>
+          <ul>
+            <li>חשבון Google Workspace עם מדיניות שמגבילה refresh tokens.</li>
+            <li>שעון לא מסונכרן במכשיר שלך.</li>
+            <li>בעיה בצד שלנו — שלח אימייל ל-<a href="mailto:hi@kesefle.com" class="text-brand-700 underline dark:text-brand-300">hi@kesefle.com</a> ונחקור.</li>
+          </ul>
+          <blockquote><strong>למה זה לא קורה אצל אחרים?</strong> רוב המשתמשים לא נתקלים בזה — זה קורה אצל אחוז קטן בלבד, בדרך כלל בעלי חשבון ארגוני או שביטלו הרשאות בכוונה.</blockquote>
+        `,
+      },
+      {
+        id: 'ts-wrong-numbers',
+        title: 'הסיכום החודשי מציג מספרים שגויים',
+        summary: 'הבוט אומר X, הגיליון אומר Y — מה האמת.',
+        tags: ['סיכום','שגוי','מספרים','דיוק','בעיה'],
+        body: `
+          <p>אם הסיכום שהבוט שולח לא תואם למה שאתה רואה בגיליון — לרוב יש סיבה פשוטה.</p>
+          <h2>סיבה <span class="num">1</span> — הוצאות מבוטלות</h2>
+          <p>הבוט סופר רק הוצאות פעילות. אם הצבת "מבוטל" בעמודת סטטוס לאיזושהי שורה, הבוט יחסיר אותה מהסיכום אבל הגיליון יציג אותה. בדוק בעמודה שורה אחר שורה.</p>
+          <h2>סיבה <span class="num">2</span> — תאריכי תשלומים</h2>
+          <p>אם פיצלת הוצאה ל-X תשלומים, כל תשלום מקבל תאריך משלו. הסיכום החודשי יכלול רק את התשלומים <strong>של החודש הנוכחי</strong>, לא את הסכום הכולל המקורי.</p>
+          <h2>סיבה <span class="num">3</span> — אזור זמן</h2>
+          <p>הוצאה שכתבת ב-<span class="num">23</span>:<span class="num">50</span> ב-<span class="num">31</span>/<span class="num">5</span> עם אזור זמן UTC עלולה להירשם כ-<span class="num">1</span>/<span class="num">6</span> בשעון מקומי. בדוק את עמודת התאריך — אם מספר הוצאות "ברחו" לחודש הבא, זה כנראה זה.</p>
+          <h2>סיבה <span class="num">4</span> — סינון אוטומטי בגיליון</h2>
+          <p>אם הפעלת מסנן (Filter) בגיליון, אתה אולי רואה רק חלק מההוצאות. הסר את הסינון: "נתונים → סינון → הסר סינון".</p>
+          <h2>סיבה <span class="num">5</span> — מטבעות מרובים</h2>
+          <p>אם יש לך הוצאות בדולרים, הם מומרים לשקלים לפי שער ביום ההוצאה. הסכום בגיליון יהיה ב-₪, וגם הסיכום — אבל אם הגיליון שלך מציג את הסכום המקורי בדולר בעמודה אחת ואת השקלי בעמודה אחרת, יכול להיווצר בלבול.</p>
+          <h2>סיבה <span class="num">6</span> — שינוי ידני שכחת</h2>
+          <p>אם ערכת ידנית סכום בגיליון, הסיכום יתעדכן בקצב <span class="num">15</span> דקות. שלח <code>סנכרן</code> לבוט כדי לרענן מיידית.</p>
+          <h2>אם שום סיבה לא מסבירה</h2>
+          <p>שלח לנו צילום מסך של הגיליון, את הסיכום שקיבלת, והפרש המספרים. נחקור ונחזור עם תשובה תוך יום עסקים.</p>
+        `,
+      },
+    ],
+  },
+];
+
+// Build flat article index for search
+var ALL_ARTICLES = [];
+CATEGORIES.forEach(function(cat) {
+  cat.articles.forEach(function(art) {
+    ALL_ARTICLES.push(Object.assign({}, art, { categoryId: cat.id, categoryTitle: cat.title, categoryEmoji: cat.emoji }));
+  });
+});
+
+// ============ ROUTING ============
+function kesefleRoute() {
+  var hash = (location.hash || '').replace(/^#/, '');
+  document.getElementById('view-home').classList.add('hidden');
+  document.getElementById('view-category').classList.add('hidden');
+  document.getElementById('view-article').classList.add('hidden');
+  document.getElementById('view-search').classList.add('hidden');
+
+  // Search view is driven by input, handled separately
+  var q = (document.getElementById('search').value || '').trim();
+  if (q) {
+    renderSearch(q);
+    return;
+  }
+
+  if (!hash) {
+    document.getElementById('view-home').classList.remove('hidden');
+    renderHome();
+    renderBreadcrumb([]);
+    document.title = "מרכז עזרה — כסף'לה";
+    return;
+  }
+
+  // article
+  var art = findArticle(hash);
+  if (art) {
+    document.getElementById('view-article').classList.remove('hidden');
+    renderArticle(art);
+    return;
+  }
+
+  // category
+  var cat = findCategory(hash);
+  if (cat) {
+    document.getElementById('view-category').classList.remove('hidden');
+    renderCategory(cat);
+    return;
+  }
+
+  // unknown — fallback to home
+  document.getElementById('view-home').classList.remove('hidden');
+  renderHome();
+  renderBreadcrumb([]);
+}
+
+function findCategory(id) {
+  for (var i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i];
+  return null;
+}
+function findArticle(id) {
+  for (var i = 0; i < ALL_ARTICLES.length; i++) if (ALL_ARTICLES[i].id === id) return ALL_ARTICLES[i];
+  return null;
+}
+
+// ============ RENDER ============
+function escapeHtml(s) { return s.replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+function renderSidebar() {
+  var nav = document.getElementById('sidebar-nav');
+  var hash = (location.hash || '').replace(/^#/, '');
+  var currentArt = findArticle(hash);
+  var currentCat = currentArt ? currentArt.categoryId : hash;
+  var html = '';
+  CATEGORIES.forEach(function(cat) {
+    var isActive = currentCat === cat.id;
+    var count = cat.articles.length;
+    html += '<a href="#' + cat.id + '" onclick="kesefleNav()" class="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition ' +
+      (isActive
+        ? 'bg-brand-100 text-brand-800 dark:bg-brand-500/20 dark:text-brand-200'
+        : 'text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-700')
+      + '">';
+    html += '<span class="flex items-center gap-2"><span class="text-base">' + cat.emoji + '</span><span>' + escapeHtml(cat.title) + '</span></span>';
+    html += '<span class="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-ink-500 dark:bg-ink-900 dark:text-ink-300">' + count + '</span>';
+    html += '</a>';
+  });
+  nav.innerHTML = html;
+}
+
+function renderBreadcrumb(parts) {
+  var bc = document.getElementById('breadcrumb');
+  var html = '<a href="#" onclick="kesefleNav()" class="hover:text-ink-900 dark:hover:text-white">מרכז עזרה</a>';
+  parts.forEach(function(p) {
+    html += '<svg class="h-3 w-3 rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>';
+    if (p.href) {
+      html += '<a href="' + p.href + '" onclick="kesefleNav()" class="hover:text-ink-900 dark:hover:text-white">' + escapeHtml(p.label) + '</a>';
+    } else {
+      html += '<span class="font-semibold text-ink-700 dark:text-ink-200">' + escapeHtml(p.label) + '</span>';
+    }
+  });
+  bc.innerHTML = html;
+}
+
+function renderHome() {
+  var html = '<div class="mb-6 flex items-end justify-between gap-3"><div>';
+  html += '<h2 class="text-2xl font-black md:text-3xl">בחר נושא</h2>';
+  html += '<p class="mt-1 text-sm text-ink-500 dark:text-ink-400"><span class="num">' + ALL_ARTICLES.length + '</span> מאמרים, כולם בעברית.</p>';
+  html += '</div></div>';
+  html += '<div class="grid gap-4 sm:grid-cols-2">';
+  CATEGORIES.forEach(function(cat) {
+    html += '<a href="#' + cat.id + '" onclick="kesefleNav()" class="article-card group flex flex-col gap-3 rounded-2xl border border-ink-200 bg-white p-5 shadow-soft hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+    html += '<div class="flex items-center justify-between"><div class="text-3xl">' + cat.emoji + '</div>';
+    html += '<span class="rounded-full bg-ink-100 px-2.5 py-1 text-xs font-bold text-ink-600 dark:bg-ink-900 dark:text-ink-300"><span class="num">' + cat.articles.length + '</span> מאמרים</span></div>';
+    html += '<h3 class="text-lg font-black">' + escapeHtml(cat.title) + '</h3>';
+    html += '<p class="text-sm text-ink-500 dark:text-ink-400">' + escapeHtml(cat.desc) + '</p>';
+    html += '<div class="mt-1 flex flex-wrap gap-1.5">';
+    cat.articles.slice(0, 3).forEach(function(a) {
+      html += '<span class="rounded-md bg-ink-50 px-2 py-0.5 text-xs font-medium text-ink-600 dark:bg-ink-900 dark:text-ink-300">' + escapeHtml(a.title) + '</span>';
+    });
+    if (cat.articles.length > 3) {
+      html += '<span class="rounded-md bg-ink-50 px-2 py-0.5 text-xs font-medium text-ink-500 dark:bg-ink-900 dark:text-ink-400">+' + (cat.articles.length - 3) + ' עוד</span>';
+    }
+    html += '</div>';
+    html += '<div class="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand-700 dark:text-brand-300">צפה בקטגוריה <svg class="h-3 w-3 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg></div>';
+    html += '</a>';
+  });
+  html += '</div>';
+
+  // Top articles strip
+  html += '<div class="mt-10"><h3 class="text-lg font-black">מאמרים פופולריים</h3>';
+  html += '<div class="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">';
+  var popular = [
+    findArticle('gs-signup'),
+    findArticle('wa-installments'),
+    findArticle('ab-cancel'),
+    findArticle('ts-bot-silent'),
+    findArticle('ps-see-data'),
+    findArticle('sd-export'),
+  ].filter(Boolean);
+  popular.forEach(function(a) {
+    html += '<a href="#' + a.id + '" onclick="kesefleNav()" class="article-card group rounded-xl border border-ink-200 bg-white p-4 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+    html += '<div class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-300">' + a.categoryEmoji + ' ' + escapeHtml(a.categoryTitle) + '</div>';
+    html += '<h4 class="mt-1 text-sm font-bold leading-snug">' + escapeHtml(a.title) + '</h4>';
+    html += '<p class="mt-1 text-xs text-ink-500 line-clamp-2 dark:text-ink-400">' + escapeHtml(a.summary.replace(/<[^>]+>/g,'')) + '</p>';
+    html += '</a>';
+  });
+  html += '</div></div>';
+
+  document.getElementById('view-home').innerHTML = html;
+  document.getElementById('view-home').classList.add('fade-in');
+}
+
+function renderCategory(cat) {
+  document.title = cat.title + " — מרכז עזרה כסף'לה";
+  renderBreadcrumb([{ label: cat.title }]);
+  var html = '<div class="mb-6 rounded-2xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">';
+  html += '<div class="flex items-center gap-3"><div class="grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-2xl dark:bg-brand-500/20">' + cat.emoji + '</div>';
+  html += '<div><h2 class="text-2xl font-black">' + escapeHtml(cat.title) + '</h2>';
+  html += '<p class="text-sm text-ink-500 dark:text-ink-400">' + escapeHtml(cat.desc) + '</p></div></div></div>';
+  html += '<div class="grid gap-3 md:grid-cols-2">';
+  cat.articles.forEach(function(a, i) {
+    html += '<a href="#' + a.id + '" onclick="kesefleNav()" class="article-card group rounded-2xl border border-ink-200 bg-white p-5 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+    html += '<div class="mb-2 flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-lg bg-ink-100 text-xs font-black text-ink-700 dark:bg-ink-900 dark:text-ink-200">' + (i+1) + '</span>';
+    html += '<span class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-300">' + Math.max(2, Math.round(a.body.length/800)) + ' דק׳ קריאה</span></div>';
+    html += '<h3 class="text-base font-bold leading-snug">' + escapeHtml(a.title) + '</h3>';
+    html += '<p class="mt-2 text-sm text-ink-500 dark:text-ink-400">' + escapeHtml(a.summary.replace(/<[^>]+>/g,'')) + '</p>';
+    html += '<div class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-700 dark:text-brand-300">קרא <svg class="h-3 w-3 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg></div>';
+    html += '</a>';
+  });
+  html += '</div>';
+  document.getElementById('view-category').innerHTML = html;
+  document.getElementById('view-category').classList.add('fade-in');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderArticle(a) {
+  document.title = a.title + " — מרכז עזרה כסף'לה";
+  renderBreadcrumb([
+    { label: a.categoryTitle, href: '#' + a.categoryId },
+    { label: a.title },
+  ]);
+
+  // helpful state
+  var helpfulKey = 'kesefle_helpful_' + a.id;
+  var vote = '';
+  try { vote = localStorage.getItem(helpfulKey) || ''; } catch (e) {}
+
+  var html = '<article class="rounded-2xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800 md:p-8">';
+  html += '<div class="mb-2 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-300">' + a.categoryEmoji + ' ' + escapeHtml(a.categoryTitle) + '</div>';
+  html += '<h1 class="text-2xl font-black leading-tight md:text-3xl">' + escapeHtml(a.title) + '</h1>';
+  html += '<p class="mt-2 text-sm text-ink-500 dark:text-ink-400">' + a.summary + '</p>';
+  html += '<hr class="my-5 border-ink-200 dark:border-ink-700">';
+  html += '<div class="prose-he text-base leading-relaxed text-ink-700 dark:text-ink-200">' + a.body + '</div>';
+
+  // helpful widget
+  html += '<div class="mt-8 rounded-xl border border-ink-200 bg-ink-50 p-4 dark:border-ink-700 dark:bg-ink-900">';
+  html += '<p class="text-sm font-bold">המאמר עזר?</p>';
+  html += '<div id="helpful-buttons" class="mt-2 flex flex-wrap items-center gap-2">';
+  html += '<button onclick="kesefleVote(\'' + a.id + '\',\'up\')" data-vote="up" class="' + (vote==='up' ? 'bg-brand-100 text-brand-800 dark:bg-brand-500/20 dark:text-brand-200 border-brand-400' : 'bg-white text-ink-700 dark:bg-ink-800 dark:text-ink-200 border-ink-200 dark:border-ink-700') + ' inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition hover:border-brand-400">';
+  html += '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>כן';
+  html += '</button>';
+  html += '<button onclick="kesefleVote(\'' + a.id + '\',\'down\')" data-vote="down" class="' + (vote==='down' ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200 border-red-400' : 'bg-white text-ink-700 dark:bg-ink-800 dark:text-ink-200 border-ink-200 dark:border-ink-700') + ' inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition hover:border-red-400">';
+  html += '<svg class="h-4 w-4 rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>לא';
+  html += '</button>';
+  html += '<span id="vote-feedback" class="text-sm text-ink-500 dark:text-ink-400">' + (vote==='up' ? 'תודה! שמחים שעזרנו.' : (vote==='down' ? 'נשתפר. שלח לנו אימייל ל-hi@kesefle.com.' : '')) + '</span>';
+  html += '</div></div>';
+
+  // related
+  var related = a.tags && a.tags.length
+    ? ALL_ARTICLES.filter(function(x){ return x.id !== a.id && x.categoryId === a.categoryId; }).slice(0, 3)
+    : [];
+  if (related.length) {
+    html += '<div class="mt-8"><p class="text-sm font-bold text-ink-700 dark:text-ink-200">מאמרים קשורים</p>';
+    html += '<div class="mt-3 grid gap-2 md:grid-cols-3">';
+    related.forEach(function(r) {
+      html += '<a href="#' + r.id + '" onclick="kesefleNav()" class="rounded-xl border border-ink-200 bg-white p-3 text-sm hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+      html += '<div class="font-bold">' + escapeHtml(r.title) + '</div>';
+      html += '<div class="mt-1 text-xs text-ink-500 dark:text-ink-400 line-clamp-2">' + escapeHtml(r.summary.replace(/<[^>]+>/g,'')) + '</div>';
+      html += '</a>';
+    });
+    html += '</div></div>';
+  }
+
+  html += '</article>';
+  document.getElementById('view-article').innerHTML = html;
+  document.getElementById('view-article').classList.add('fade-in');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function kesefleVote(articleId, vote) {
+  try { localStorage.setItem('kesefle_helpful_' + articleId, vote); } catch(e) {}
+  var btns = document.querySelectorAll('#helpful-buttons button');
+  btns.forEach(function(b){
+    var isThis = b.getAttribute('data-vote') === vote;
+    var isUp = b.getAttribute('data-vote') === 'up';
+    b.className = (isThis && isUp ? 'bg-brand-100 text-brand-800 dark:bg-brand-500/20 dark:text-brand-200 border-brand-400' :
+                   isThis && !isUp ? 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200 border-red-400' :
+                   'bg-white text-ink-700 dark:bg-ink-800 dark:text-ink-200 border-ink-200 dark:border-ink-700')
+      + ' inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition hover:border-' + (isUp ? 'brand' : 'red') + '-400';
+  });
+  document.getElementById('vote-feedback').textContent = vote === 'up' ? 'תודה! שמחים שעזרנו.' : 'נשתפר. שלח לנו אימייל ל-hi@kesefle.com.';
+}
+
+// ============ SEARCH (fuzzy) ============
+function normalize(s) {
+  if (!s) return '';
+  return s.toString().toLowerCase()
+    .replace(/[֑-ׇ]/g, '') // strip Hebrew niqqud
+    .replace(/[''""״׳]/g, '')
+    .replace(/[^֐-׿\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function fuzzyScore(needle, haystack) {
+  if (!needle) return 0;
+  needle = normalize(needle);
+  haystack = normalize(haystack);
+  if (!needle || !haystack) return 0;
+  if (haystack.indexOf(needle) >= 0) return 1.0;
+  var terms = needle.split(' ').filter(Boolean);
+  if (!terms.length) return 0;
+  var hits = 0;
+  terms.forEach(function(t) { if (haystack.indexOf(t) >= 0) hits++; });
+  if (hits === terms.length) return 0.8;
+  if (hits > 0) return 0.4 * (hits / terms.length);
+  // char-level similarity for typo tolerance
+  var sim = 0;
+  for (var i = 0; i < needle.length - 1; i++) {
+    var bg = needle.substring(i, i+2);
+    if (haystack.indexOf(bg) >= 0) sim++;
+  }
+  return Math.min(0.5, sim / Math.max(1, needle.length));
+}
+
+function searchArticles(q) {
+  if (!q || q.length < 1) return [];
+  var scored = ALL_ARTICLES.map(function(a) {
+    var bodyText = a.body.replace(/<[^>]+>/g, ' ');
+    var score = Math.max(
+      fuzzyScore(q, a.title) * 3,
+      fuzzyScore(q, a.summary) * 2,
+      fuzzyScore(q, (a.tags || []).join(' ')) * 2,
+      fuzzyScore(q, bodyText) * 1,
+      fuzzyScore(q, a.categoryTitle) * 1
+    );
+    return { article: a, score: score };
+  }).filter(function(x){ return x.score > 0.1; });
+  scored.sort(function(a,b){ return b.score - a.score; });
+  return scored.slice(0, 20);
+}
+
+function highlight(text, q) {
+  if (!q) return escapeHtml(text);
+  var terms = normalize(q).split(' ').filter(Boolean);
+  var safe = escapeHtml(text);
+  terms.forEach(function(t) {
+    if (t.length < 2) return;
+    try {
+      var re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+      safe = safe.replace(re, '<mark class="hl">$1</mark>');
+    } catch(e) {}
+  });
+  return safe;
+}
+
+function renderSearch(q) {
+  document.getElementById('view-search').classList.remove('hidden');
+  document.title = '"' + q + "\" — חיפוש במרכז עזרה כסף'לה";
+  renderBreadcrumb([{ label: 'חיפוש: "' + q + '"' }]);
+  var results = searchArticles(q);
+  var html = '<div class="mb-5"><h2 class="text-xl font-black">תוצאות חיפוש</h2>';
+  html += '<p class="mt-1 text-sm text-ink-500 dark:text-ink-400">נמצאו <span class="num">' + results.length + '</span> תוצאות עבור "<strong>' + escapeHtml(q) + '</strong>"</p></div>';
+  if (results.length === 0) {
+    html += '<div class="rounded-2xl border-2 border-dashed border-ink-200 bg-white p-8 text-center dark:border-ink-700 dark:bg-ink-800">';
+    html += '<div class="text-4xl">🤷</div>';
+    html += '<p class="mt-3 font-bold">לא נמצאו תוצאות.</p>';
+    html += '<p class="mt-1 text-sm text-ink-500 dark:text-ink-400">נסה במילים אחרות, או שלח לנו אימייל ל-<a href="mailto:hi@kesefle.com" class="text-brand-700 underline dark:text-brand-300">hi@kesefle.com</a> ונשמח לעזור.</p>';
+    html += '</div>';
+  } else {
+    html += '<div class="space-y-3">';
+    results.forEach(function(r) {
+      var a = r.article;
+      var bodyText = a.body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      // find a snippet
+      var idx = -1, nq = normalize(q);
+      var normBody = normalize(bodyText);
+      var terms = nq.split(' ').filter(Boolean);
+      for (var i = 0; i < terms.length && idx < 0; i++) idx = normBody.indexOf(terms[i]);
+      var snippet = bodyText.substring(Math.max(0, idx-60), idx+180);
+      if (idx > 60) snippet = '…' + snippet;
+      if (idx + 180 < bodyText.length) snippet = snippet + '…';
+      html += '<a href="#' + a.id + '" onclick="kesefleClearSearchAndNav()" class="article-card block rounded-2xl border border-ink-200 bg-white p-5 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+      html += '<div class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-300">' + a.categoryEmoji + ' ' + escapeHtml(a.categoryTitle) + '</div>';
+      html += '<h3 class="mt-1 text-lg font-bold leading-snug">' + highlight(a.title, q) + '</h3>';
+      html += '<p class="mt-1 text-sm text-ink-500 dark:text-ink-400">' + highlight(a.summary.replace(/<[^>]+>/g,''), q) + '</p>';
+      if (snippet) html += '<p class="mt-2 text-xs text-ink-500 line-clamp-2 dark:text-ink-400">' + highlight(snippet, q) + '</p>';
+      html += '</a>';
+    });
+    html += '</div>';
+  }
+  document.getElementById('view-search').innerHTML = html;
+  document.getElementById('view-search').classList.add('fade-in');
+}
+
+function kesefleClearSearch() {
+  document.getElementById('search').value = '';
+  document.getElementById('clear-search').classList.add('hidden');
+  kesefleRoute();
+}
+function kesefleClearSearchAndNav() {
+  document.getElementById('search').value = '';
+  document.getElementById('clear-search').classList.add('hidden');
+  setTimeout(kesefleRoute, 50);
+}
+function kesefleQuickSearch(q) {
+  document.getElementById('search').value = q;
+  document.getElementById('clear-search').classList.remove('hidden');
+  if (location.hash) {
+    history.replaceState(null, '', location.pathname);
+  }
+  renderSidebar();
+  kesefleRoute();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function kesefleNav() {
+  // close mobile sidebar on nav
+  var sb = document.getElementById('sidebar');
+  if (sb.classList.contains('open')) kesefleToggleSidebar();
+}
+
+// ============ EVENTS ============
+window.addEventListener('hashchange', function() {
+  renderSidebar();
+  kesefleRoute();
+});
+
+document.getElementById('search').addEventListener('input', function(e) {
+  var v = e.target.value;
+  document.getElementById('clear-search').classList.toggle('hidden', !v);
+  if (v && location.hash) {
+    history.replaceState(null, '', location.pathname);
+  }
+  renderSidebar();
+  kesefleRoute();
+});
+
+// keyboard: '/' focus search, Esc clear
+document.addEventListener('keydown', function(e) {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+  if (e.key === 'Escape' && document.activeElement.id === 'search') {
+    kesefleClearSearch();
+    document.getElementById('search').blur();
+  }
+});
+
+// ============ INIT ============
+renderSidebar();
+kesefleRoute();
+</script>
+</body>
+</html>

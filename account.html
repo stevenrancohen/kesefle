@@ -57,6 +57,10 @@
   .listen-dot:nth-child(2) { animation-delay: 0.16s; }
   .listen-dot:nth-child(3) { animation-delay: 0.32s; }
 </style>
+<script src="/lib/analytics.js" defer></script>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#22c55e">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
 
@@ -76,6 +80,23 @@
 </header>
 
 <main class="mx-auto max-w-5xl px-5 py-10">
+
+  <!-- referral chip + confirmation (shown only when ?ref=<code> is present) -->
+  <section id="ref-banner" class="mb-6 hidden">
+    <div id="ref-invited-chip" class="hidden mb-3 flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+      <span class="text-base">🎁</span>
+      <span>מוזמן.ת ע"י <span id="ref-inviter-name" class="font-black">חבר</span></span>
+      <span class="text-xs text-emerald-600">· חודש Pro חינם בהמתנה</span>
+    </div>
+    <div id="ref-success-chip" class="hidden flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-100 px-4 py-3 text-sm font-bold text-emerald-800">
+      <span class="text-lg">✓</span>
+      <span id="ref-success-text">קיבלת חודש Pro חינם</span>
+    </div>
+    <div id="ref-error-chip" class="hidden flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+      <span class="text-lg">⚠</span>
+      <span id="ref-error-text">לא ניתן להחיל את ההזמנה.</span>
+    </div>
+  </section>
 
   <!-- onboarding banner -->
   <section id="onboarding" class="relative mb-8 overflow-hidden rounded-3xl border border-amber-200 bg-amber-50 p-6">
@@ -304,6 +325,98 @@ function kesefleStartWaitingForMsg() {
   window.addEventListener('focus', onFocus);
 }
 
+// ============ REFERRAL CODE PICKUP ============
+// Read ?ref=<code> (or sessionStorage from /referral landing) and remember it.
+// On first successful signup (kesefle_user with idToken present), POST it to /api/referral?action=redeem.
+
+function kesefleReadReferralCode() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var code = (params.get('ref') || '').trim().toUpperCase();
+    var name = (params.get('name') || '').trim();
+    if (!code) {
+      code = (sessionStorage.getItem('kesefle_ref_code') || '').trim().toUpperCase();
+      if (!name) name = (sessionStorage.getItem('kesefle_ref_name') || '').trim();
+    }
+    if (!/^[A-Z0-9]{6}$/.test(code)) return { code: null, name: null };
+    // Persist in sessionStorage so it survives redirects (e.g. OAuth).
+    try {
+      sessionStorage.setItem('kesefle_ref_code', code);
+      if (name) sessionStorage.setItem('kesefle_ref_name', name);
+    } catch (e) {}
+    return { code: code, name: name };
+  } catch (e) { return { code: null, name: null }; }
+}
+
+function kesefleShowInvitedChip(ref) {
+  if (!ref || !ref.code) return;
+  var banner = document.getElementById('ref-banner');
+  var chip = document.getElementById('ref-invited-chip');
+  if (!banner || !chip) return;
+  banner.classList.remove('hidden');
+  chip.classList.remove('hidden');
+  if (ref.name) {
+    var safe = ref.name.replace(/[<>&"]/g, '').slice(0, 32);
+    document.getElementById('ref-inviter-name').textContent = safe;
+  }
+}
+
+async function kesefleRedeemReferralIfPending() {
+  var redeemedKey = 'kfl_referral_redeemed';
+  if (localStorage.getItem(redeemedKey)) return;  // already redeemed once on this device
+
+  var ref = kesefleReadReferralCode();
+  if (!ref.code) return;
+
+  var u = kesefleGetUser();
+  if (!u || !u.idToken) return;  // need fresh login
+
+  try {
+    var r = await fetch('/api/referral?action=redeem', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + u.idToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code: ref.code }),
+    });
+    var j = await r.json();
+    var banner = document.getElementById('ref-banner');
+    if (j.ok) {
+      localStorage.setItem(redeemedKey, '1');
+      try { sessionStorage.removeItem('kesefle_ref_code'); sessionStorage.removeItem('kesefle_ref_name'); } catch (e) {}
+      if (banner) banner.classList.remove('hidden');
+      var success = document.getElementById('ref-success-chip');
+      if (success) {
+        success.classList.remove('hidden');
+        var name = j.referrer_first_name || ref.name || 'חבר';
+        document.getElementById('ref-success-text').textContent = '✓ קיבלת חודש Pro חינם (הוזמנת ע"י ' + name + ')';
+      }
+      // Hide the "invited by" pre-redeem chip — we now show the success chip instead.
+      var inv = document.getElementById('ref-invited-chip');
+      if (inv) inv.classList.add('hidden');
+    } else if (j.error === 'already_redeemed') {
+      // Silently mark as redeemed locally so we don't keep trying.
+      localStorage.setItem(redeemedKey, '1');
+    } else {
+      // Show a soft error but don't block onboarding.
+      if (banner) banner.classList.remove('hidden');
+      var err = document.getElementById('ref-error-chip');
+      if (err) {
+        err.classList.remove('hidden');
+        var msg = j.error === 'code_not_found' ? 'קוד ההזמנה לא נמצא.' :
+                  j.error === 'cannot_redeem_own_code' ? 'לא ניתן להשתמש בקוד שלך.' :
+                  'לא הצלחנו להחיל את ההזמנה כעת.';
+        document.getElementById('ref-error-text').textContent = msg;
+      }
+    }
+  } catch (e) {
+    console.warn('referral redeem failed', e);
+    // network errors are non-fatal — user can refresh later.
+  }
+}
+// =====================================================
+
 (function init() {
   var u = kesefleGetUser();
   if (!u) { window.location.href = '/'; return; }
@@ -313,6 +426,23 @@ function kesefleStartWaitingForMsg() {
     img.src = u.picture;
     img.classList.remove('hidden');
   }
+  // Fire signup_complete the first time a user lands on /account after auth.
+  // Dedup with localStorage so refreshes don't re-fire it.
+  try {
+    if (!localStorage.getItem('kfl_signup_complete_fired')) {
+      if (window.kfl) window.kfl.track('signup_complete', { plan: u.plan || 'free' });
+      localStorage.setItem('kfl_signup_complete_fired', '1');
+    }
+  } catch (_) { /* private mode — best effort */ }
+
+  // Referral flow: show "invited by" chip + attempt redemption (idempotent).
+  var ref = kesefleReadReferralCode();
+  if (ref.code) {
+    kesefleShowInvitedChip(ref);
+    // Fire redemption if we already have a fresh token (user just signed in).
+    kesefleRedeemReferralIfPending();
+  }
+
   // If sheet already provisioned, show it
   var s = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
   if (s && s.spreadsheetUrl) {
@@ -371,6 +501,7 @@ async function kesefleProvisionSheet() {
           status.className = 'mt-2 text-sm text-emerald-600';
           status.textContent = '✓ הגיליון מוכן! מעביר אותך למסך ההכרות…';
           btn.style.display = 'none';
+          if (window.kfl) window.kfl.track('sheet_provisioned', { plan: u.plan || 'free' });
           kesefleUpdateOnboardingProgress();
           // First-time success — guide user to /welcome to learn the bot commands.
           // Skip redirect if user is re-provisioning (sheet was already linked before this run).
@@ -396,5 +527,6 @@ async function kesefleProvisionSheet() {
 }
 </script>
 
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
 </body>
 </html>

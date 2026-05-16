@@ -1,0 +1,75 @@
+{
+  "name": "Kesefle — כסף'לה",
+  "short_name": "כסף'לה",
+  "description": "מעקב הוצאות והכנסות באמצעות וואטסאפ — שלח הודעה, וההוצאה כבר רשומה ומקוטלגת בגוגל שיטס שלך.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "id": "/dashboard",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#0f1422",
+  "theme_color": "#22c55e",
+  "lang": "he",
+  "dir": "rtl",
+  "orientation": "portrait",
+  "categories": ["finance", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "הדשבורד שלי",
+      "short_name": "דשבורד",
+      "description": "מאזן, הוצאות והכנסות החודש",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "סטטוס הבוט",
+      "short_name": "סטטוס",
+      "description": "מצב חיבור WhatsApp ובדיקת בריאות",
+      "url": "/status",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "פתח WhatsApp",
+      "short_name": "WhatsApp",
+      "description": "שלח הוצאה ישירות לבוט",
+      "url": "https://wa.me/?text=%D7%94%D7%9C%D7%95",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "דשבורד כסף'לה"
+    }
+  ]
+}

@@ -114,6 +114,9 @@
   @keyframes fill { from { width: 0%; } }
   .progress-fill { animation: fill linear forwards; }
 </style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#22c55e">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased dark:bg-ink-900 dark:text-white">
 
@@ -799,5 +802,6 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
 </body>
 </html>

@@ -71,6 +71,9 @@
   input[type="range"].kf-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 9999px; background: #fff; border: 3px solid #16a34a; box-shadow: 0 4px 12px -2px rgba(22,163,74,0.5); cursor: pointer; }
   .dark input[type="range"].kf-slider::-webkit-slider-runnable-track { background: linear-gradient(to left, #22c55e var(--kf-fill, 50%), #2f3b54 var(--kf-fill, 50%)); }
 </style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#22c55e">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
 
@@ -818,5 +821,6 @@ function kesefleToggleDark() {
 })();
 </script>
 
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
 </body>
 </html>

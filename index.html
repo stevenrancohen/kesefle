@@ -6,6 +6,11 @@
 <title>כסף'לה — הכסף שלך, על אוטומט</title>
 <meta name="description" content="שלח הודעה בוואטסאפ, וההוצאה כבר רשומה בגוגל שיטס שלך. בלי אפליקציות. בלי טפסים. בלי לזכור." />
 <meta name="theme-color" content="#0f172a" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="כסף'לה" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
 <meta property="og:title" content="כסף'לה — הכסף שלך, על אוטומט" />
 <meta property="og:description" content="שלח הודעה בוואטסאפ — '245 סופר' — וזה כבר רשום, מקוטלג, מסוכם." />
 <meta property="og:type" content="website" />
@@ -15,6 +20,9 @@
 <meta property="og:url" content="https://kesefle.vercel.app/" />
 <meta property="og:site_name" content="כסף'לה" />
 <link rel="canonical" href="https://kesefle.vercel.app/" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.vercel.app/" />
+<link rel="alternate" hreflang="en" href="https://kesefle.vercel.app/en" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.vercel.app/" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -102,6 +110,7 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
+<script src="/lib/analytics.js" defer></script>
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
 
@@ -136,6 +145,17 @@
   </nav>
 </header>
 
+<!-- ============== REFERRAL BANNER (logged-in users only) ============== -->
+<div id="referral-banner" class="hidden fixed inset-x-0 top-[60px] z-40 mx-auto max-w-6xl px-5">
+  <a href="/referral" class="mt-2 flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 to-emerald-50 px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-soft transition hover:from-brand-100 hover:to-emerald-100 dark:border-brand-700/40 dark:from-brand-900/30 dark:to-emerald-900/30 dark:text-brand-200">
+    <span class="flex items-center gap-2">
+      <span class="text-base">💚</span>
+      <span>הביאו חבר וקבלו חודש Pro חינם — לשניכם</span>
+    </span>
+    <span class="text-xs opacity-80">פתח ←</span>
+  </a>
+</div>
+
 <!-- ============== HERO ============== -->
 <section class="relative overflow-hidden bg-mesh pt-28 pb-20 md:pt-36 md:pb-28">
   <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
@@ -154,7 +174,7 @@
         בלי אפליקציה. בלי טפסים. בלי לזכור. כותב <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון שלך, מקוטלג.
       </p>
       <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <a href="#signup" class="group inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-glow transition hover:bg-brand-700">
+        <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'hero' });" class="group inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-glow transition hover:bg-brand-700">
           קח אותי על אוטומט
           <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
         </a>
@@ -711,11 +731,14 @@
         <li><a href="#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
         <li><a href="#features" class="hover:text-ink-900 dark:hover:text-white">תכונות</a></li>
         <li><a href="#pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/roadmap" class="hover:text-ink-900 dark:hover:text-white">מפת דרכים</a></li>
+        <li><a href="/changelog" class="hover:text-ink-900 dark:hover:text-white">Changelog</a></li>
       </ul>
     </div>
     <div>
       <p class="font-bold dark:text-white">משפטי</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/trust" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">אבטחה ופרטיות →</a></li>
         <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
         <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
         <li><a href="mailto:hi@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">צור קשר</a></li>
@@ -726,6 +749,7 @@
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
         <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
         <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
+        <li><a href="/en" hreflang="en" class="hover:text-ink-900 dark:hover:text-white">🇬🇧 English version</a></li>
       </ul>
     </div>
   </div>
@@ -761,6 +785,7 @@ function kesefleSelectPlan(plan) {
   window.KESEFLE_STATE.plan = plan;
   var hidden = document.getElementById('selected-plan');
   if (hidden) hidden.value = plan;
+  if (window.kfl && plan !== 'free') window.kfl.track('subscribe_clicked', { plan: plan, source: 'pricing' });
 }
 
 function kesefleOpenDemo() {
@@ -803,6 +828,7 @@ async function kesefleStartGoogle() {
   if (!window.google || !window.google.accounts || !window.google.accounts.id) {
     return kesefleShowAuthMsg('Google SDK טרם נטען. נסה שוב בעוד רגע.', 'err');
   }
+  if (window.kfl) window.kfl.track('signup_start', { source: 'google', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' });
   window.google.accounts.id.initialize({
     client_id: cid,
     callback: async function(response) {
@@ -830,6 +856,7 @@ async function kesefleStartFacebook() {
   if (!aid || aid.indexOf('__') === 0) {
     return kesefleShowAuthMsg('Facebook App ID לא מוגדר. ראה SETUP.md.', 'err');
   }
+  if (window.kfl) window.kfl.track('signup_start', { source: 'facebook', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' });
   if (!window.FB) {
     window.fbAsyncInit = function() {
       FB.init({ appId: aid, cookie: true, xfbml: false, version: 'v19.0' });
@@ -877,6 +904,7 @@ async function kesefleStartApple() {
   if (!window.AppleID) {
     return kesefleShowAuthMsg('Apple SDK טרם נטען. נסה שוב בעוד רגע.', 'err');
   }
+  if (window.kfl) window.kfl.track('signup_start', { source: 'apple', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' });
   try {
     window.AppleID.auth.init({
       clientId: cid,
@@ -919,7 +947,7 @@ async function submitSignup(e) {
   var origLabel = btn.textContent;
   btn.textContent = 'שולח…';
   try {
-    var r = await fetch('/api/waitlist', {
+    var r = await fetch('/api/events?action=waitlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email, source: 'landing-waitlist', plan: window.KESEFLE_STATE.plan })
@@ -950,6 +978,18 @@ async function submitSignup(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { kesefleCloseDemo(); }
 });
+
+// ============ REFERRAL BANNER (logged-in users only) ============
+(function showReferralBannerIfLoggedIn() {
+  try {
+    var raw = localStorage.getItem('kesefle_user');
+    if (!raw) return;
+    var u = JSON.parse(raw);
+    if (!u || (!u.sub && !u.idToken && !u.email)) return;
+    var banner = document.getElementById('referral-banner');
+    if (banner) banner.classList.remove('hidden');
+  } catch (e) { /* private mode — banner stays hidden */ }
+})();
 
 // ============ DARK MODE ============
 function kesefleToggleDark() {
@@ -1001,6 +1041,136 @@ function kesefleToggleDark() {
     var divider = document.querySelector('#auth-buttons .my-4');
     if (divider) divider.style.display = 'none';
   }
+})();
+</script>
+
+<!-- ============== PWA: install chip + service worker ============== -->
+<style>
+  #kfl-install-chip {
+    position: fixed;
+    bottom: 22px;
+    inset-inline-start: 22px;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px 11px 14px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    border: 0;
+    border-radius: 9999px;
+    font-family: 'Heebo', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 14px 36px -10px rgba(34, 197, 94, 0.6), 0 4px 14px -4px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  #kfl-install-chip.show { display: inline-flex; opacity: 1; transform: translateY(0); }
+  #kfl-install-chip:hover { transform: translateY(-2px); }
+  #kfl-install-chip .kfl-x {
+    margin-inline-start: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    line-height: 1;
+  }
+  #kfl-install-chip .kfl-x:hover { background: rgba(255,255,255,0.30); }
+</style>
+<button id="kfl-install-chip" type="button" aria-label="התקן את כסף'לה">
+  <span aria-hidden="true">⬇</span>
+  <span>התקן את כסף'לה</span>
+  <span class="kfl-x" id="kfl-install-dismiss" role="button" aria-label="סגור">×</span>
+</button>
+<script>
+(function() {
+  'use strict';
+  // Service Worker registration
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+    });
+  }
+
+  // Install prompt — beforeinstallprompt + 7-day cooldown
+  var DISMISS_KEY = 'kfl_install_dismissed_at';
+  var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  var deferred = null;
+  var chip = document.getElementById('kfl-install-chip');
+  var dismissBtn = document.getElementById('kfl-install-dismiss');
+
+  function recentlyDismissed() {
+    try {
+      var t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
+      return t && (Date.now() - t) < SEVEN_DAYS;
+    } catch (e) { return false; }
+  }
+
+  function hideChip() {
+    if (!chip) return;
+    chip.classList.remove('show');
+    setTimeout(function() { chip.style.display = 'none'; }, 320);
+  }
+
+  function showChip() {
+    if (!chip || recentlyDismissed()) return;
+    chip.style.display = 'inline-flex';
+    // force reflow then add class for the animation
+    void chip.offsetWidth;
+    chip.classList.add('show');
+  }
+
+  function dismiss() {
+    try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch (e) {}
+    hideChip();
+  }
+
+  // Capture the prompt event
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferred = e;
+    setTimeout(showChip, 5000);
+  });
+
+  // Hide chip if app is already installed
+  window.addEventListener('appinstalled', function() {
+    hideChip();
+    try { localStorage.removeItem(DISMISS_KEY); } catch (e) {}
+  });
+
+  if (chip) {
+    chip.addEventListener('click', function(ev) {
+      if (ev.target === dismissBtn || (ev.target && ev.target.closest && ev.target.closest('#kfl-install-dismiss'))) return;
+      if (!deferred) { hideChip(); return; }
+      deferred.prompt();
+      deferred.userChoice.then(function(choice) {
+        if (choice && choice.outcome === 'dismissed') {
+          try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch (e) {}
+        }
+        deferred = null;
+        hideChip();
+      });
+    });
+  }
+  if (dismissBtn) {
+    dismissBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      dismiss();
+    });
+  }
+
+  // Click-away to dismiss
+  document.addEventListener('click', function(ev) {
+    if (!chip || !chip.classList.contains('show')) return;
+    if (ev.target === chip || (ev.target && ev.target.closest && ev.target.closest('#kfl-install-chip'))) return;
+    dismiss();
+  }, { capture: true });
 })();
 </script>
 

@@ -7,12 +7,23 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" />
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'Heebo',system-ui,sans-serif}</style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#22c55e">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body class="bg-slate-50 text-slate-900">
 <div class="mx-auto max-w-3xl px-5 py-16">
   <a href="/" class="text-sm font-bold text-emerald-600 hover:underline">← חזרה לדף הבית</a>
   <h1 class="mt-6 text-4xl font-black">מדיניות פרטיות</h1>
   <p class="mt-2 text-slate-500">עודכן לאחרונה: <time datetime="2026-05-15">15 במאי, 2026</time></p>
+
+  <div class="mt-6 rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
+    <p class="text-sm text-slate-700">
+      מחפש פרטים טכניים על איך אנחנו מגנים על הנתונים שלך?
+      <a href="/trust" class="font-bold text-emerald-700 underline hover:text-emerald-900">אבטחה ופרטיות →</a>
+      — דף שמתאר את ההצפנה (AES-256-GCM), ה-OAuth scopes, ה-Red Team audits, וההגנות הטכניות שלנו.
+    </p>
+  </div>
 
   <div class="prose prose-slate mt-10 max-w-none">
     <h2>1. מי אנחנו</h2>
@@ -81,5 +92,6 @@
     <p class="mt-12 text-sm text-slate-500">מדיניות זו כפופה לחוק הגנת הפרטיות, התשמ"א-1981 ולתקנות הגנת הפרטיות (אבטחת מידע), התשע"ז-2017.</p>
   </div>
 </div>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
 </body>
 </html>

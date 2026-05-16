@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>מפת דרכים — כסף'לה</title>
+<meta name="description" content="מה כבר שיגרנו, מה בעבודה, ומה בתכנון — מפת הדרכים הציבורית של כסף'לה. הצביעו על מה שאתם רוצים שייבנה הבא." />
+<meta name="theme-color" content="#0f172a" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://kesefle.vercel.app/roadmap" />
+<meta property="og:title" content="מפת דרכים — כסף'לה" />
+<meta property="og:description" content="מפת הדרכים הציבורית של כסף'לה. הצביעו, הירשמו לעדכונים, השפיעו על מה ייבנה הבא." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:url" content="https://kesefle.vercel.app/roadmap" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:  { 500:'#22c55e', 600:'#16a34a', 700:'#15803d' },
+          warn:   { 500:'#f59e0b', 600:'#d97706' },
+          danger: { 500:'#dc2626', 600:'#b91c1c' }
+        }
+      }
+    }
+  };
+  // Restore dark mode preference before paint
+  (function(){
+    try {
+      const saved = localStorage.getItem('kesefle:dark');
+      if (saved === '1' || (saved === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    } catch(e){}
+  })();
+</script>
+<style>
+  html, body { font-family: 'Heebo', system-ui, sans-serif; }
+  .card { transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgb(15 20 34 / 0.15); }
+  .chip { transition: background-color .12s ease, color .12s ease, border-color .12s ease; }
+  .chip.active {
+    background: #16a34a; color: white; border-color: #16a34a;
+  }
+  .dark .chip.active { background: #22c55e; color: #0f1422; border-color: #22c55e; }
+  .col-shipped   { border-top: 3px solid #22c55e; }
+  .col-progress  { border-top: 3px solid #f59e0b; }
+  .col-planned   { border-top: 3px solid #8a95b3; }
+  .vote-btn.voted {
+    background: #16a34a !important; color: white !important; border-color: #16a34a !important;
+  }
+  .dark .vote-btn.voted { background: #22c55e !important; color: #0f1422 !important; border-color: #22c55e !important; }
+  .sub-btn.subscribed { background: #0f1422; color: white; }
+  .dark .sub-btn.subscribed { background: #f7f8fb; color: #0f1422; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #0f1422; color: white; padding: 10px 18px; border-radius: 9999px;
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4); font-weight: 500; font-size: 14px;
+    opacity: 0; transition: all .25s ease; z-index: 100; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .dark .toast { background: #f7f8fb; color: #0f1422; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+</style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#22c55e">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+</head>
+<body class="bg-ink-50 dark:bg-ink-900 text-ink-900 dark:text-ink-50 min-h-screen antialiased">
+
+<!-- Nav -->
+<header class="sticky top-0 z-30 border-b border-ink-200 bg-white/85 backdrop-blur dark:border-ink-700 dark:bg-ink-900/85">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold tracking-tight dark:text-white">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden items-center gap-5 text-sm md:flex">
+      <a href="/" class="text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white">בית</a>
+      <a href="/pricing" class="text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white">מחיר</a>
+      <a href="/roadmap" class="font-semibold text-ink-900 dark:text-white">מפת דרכים</a>
+      <a href="/status" class="text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white">סטטוס</a>
+      <a href="/account" class="rounded-full bg-brand-600 px-4 py-1.5 font-semibold text-white hover:bg-brand-700">התחל חינם</a>
+    </div>
+    <button id="dark-toggle" aria-label="החלף מצב כהה" class="grid h-9 w-9 place-items-center rounded-full border border-ink-200 hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-800">
+      <span class="text-base">🌓</span>
+    </button>
+  </nav>
+</header>
+
+<!-- Hero -->
+<section class="mx-auto max-w-6xl px-5 pt-10 pb-6 md:pt-14 md:pb-8">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="max-w-2xl">
+      <span class="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-semibold text-ink-600 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200">
+        <span class="h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+        עודכן אחרון: <span class="num">2026-05-16</span>
+      </span>
+      <h1 class="mt-3 text-3xl font-extrabold tracking-tight md:text-5xl dark:text-white">מפת דרכים</h1>
+      <p class="mt-3 text-ink-600 dark:text-ink-300 md:text-lg">
+        זה מה שכבר שיגרנו, מה בעבודה כרגע, ומה הבא בתור. הצביעו על מה שחשוב לכם — אנחנו מקשיבים.
+      </p>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      <a href="https://github.com/" target="_blank" rel="noopener" class="rounded-full border border-ink-200 bg-white px-4 py-2 font-medium hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">GitHub</a>
+      <a href="/status" class="rounded-full border border-ink-200 bg-white px-4 py-2 font-medium hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">סטטוס מערכת</a>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="mt-7 grid grid-cols-3 gap-3 md:grid-cols-3">
+    <div class="rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+      <p class="text-xs text-ink-500 dark:text-ink-300">שיגרנו</p>
+      <p class="mt-1 text-2xl font-extrabold text-brand-600 dark:text-brand-500"><span data-count="shipped">0</span></p>
+    </div>
+    <div class="rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+      <p class="text-xs text-ink-500 dark:text-ink-300">בעבודה</p>
+      <p class="mt-1 text-2xl font-extrabold text-warn-600"><span data-count="progress">0</span></p>
+    </div>
+    <div class="rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+      <p class="text-xs text-ink-500 dark:text-ink-300">בתכנון</p>
+      <p class="mt-1 text-2xl font-extrabold text-ink-500 dark:text-ink-300"><span data-count="planned">0</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- Filters -->
+<section class="mx-auto max-w-6xl px-5 pb-3">
+  <div class="rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="ms-1 text-xs font-semibold text-ink-500 dark:text-ink-300">סינון לפי קטגוריה:</span>
+      <div id="tag-filters" class="flex flex-wrap gap-2"></div>
+      <button id="clear-filters" class="ms-auto text-xs font-medium text-ink-500 underline-offset-2 hover:underline dark:text-ink-300">נקה הכל</button>
+    </div>
+  </div>
+</section>
+
+<!-- Columns -->
+<main class="mx-auto max-w-6xl px-5 pb-16">
+  <div class="grid gap-5 md:grid-cols-3">
+    <!-- Shipped -->
+    <section aria-label="שיגרנו" class="col-shipped rounded-3xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+      <header class="flex items-center justify-between px-1 pb-3">
+        <h2 class="flex items-center gap-2 text-base font-extrabold dark:text-white">
+          <span class="h-2.5 w-2.5 rounded-full bg-brand-500"></span>
+          שיגרנו
+          <span class="text-xs font-medium text-ink-500 dark:text-ink-300">בייצור</span>
+        </h2>
+        <span class="rounded-full bg-brand-500/10 px-2 py-0.5 text-xs font-bold text-brand-600 dark:text-brand-500" data-count-chip="shipped">0</span>
+      </header>
+      <div id="col-shipped" class="space-y-3 min-h-[200px]"></div>
+    </section>
+
+    <!-- In progress -->
+    <section aria-label="בעבודה" class="col-progress rounded-3xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+      <header class="flex items-center justify-between px-1 pb-3">
+        <h2 class="flex items-center gap-2 text-base font-extrabold dark:text-white">
+          <span class="h-2.5 w-2.5 rounded-full bg-warn-500"></span>
+          בעבודה
+          <span class="text-xs font-medium text-ink-500 dark:text-ink-300">פעיל כעת</span>
+        </h2>
+        <span class="rounded-full bg-warn-500/10 px-2 py-0.5 text-xs font-bold text-warn-600" data-count-chip="progress">0</span>
+      </header>
+      <div id="col-progress" class="space-y-3 min-h-[200px]"></div>
+    </section>
+
+    <!-- Planned -->
+    <section aria-label="בתכנון" class="col-planned rounded-3xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+      <header class="flex items-center justify-between px-1 pb-3">
+        <h2 class="flex items-center gap-2 text-base font-extrabold dark:text-white">
+          <span class="h-2.5 w-2.5 rounded-full bg-ink-400"></span>
+          בתכנון
+          <span class="text-xs font-medium text-ink-500 dark:text-ink-300">הבא בתור</span>
+        </h2>
+        <span class="rounded-full bg-ink-200 px-2 py-0.5 text-xs font-bold text-ink-700 dark:bg-ink-700 dark:text-ink-200" data-count-chip="planned">0</span>
+      </header>
+      <div id="col-planned" class="space-y-3 min-h-[200px]"></div>
+    </section>
+  </div>
+
+  <!-- Bottom CTA -->
+  <section class="mt-12 rounded-3xl border border-ink-200 bg-gradient-to-br from-brand-500/10 via-white to-white p-6 text-center dark:border-ink-700 dark:from-brand-500/15 dark:via-ink-800 dark:to-ink-800 md:p-10">
+    <h3 class="text-2xl font-extrabold tracking-tight dark:text-white md:text-3xl">חסר משהו? ספרו לנו.</h3>
+    <p class="mx-auto mt-2 max-w-xl text-ink-600 dark:text-ink-300">
+      הצבעה זה אדיר, אבל הצעות חדשות יותר טובות. כתבו לנו ב-WhatsApp או באימייל.
+    </p>
+    <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
+      <a href="https://wa.me/972547760643?text=%D7%99%D7%A9%20%D7%9C%D7%99%20%D7%A8%D7%A2%D7%99%D7%95%D7%9F%20%D7%9C%D7%9E%D7%A4%D7%AA%20%D7%94%D7%93%D7%A8%D7%9B%D7%99%D7%9D" target="_blank" rel="noopener"
+         class="rounded-full bg-brand-600 px-5 py-2.5 font-semibold text-white hover:bg-brand-700">WhatsApp</a>
+      <a href="mailto:hi@kesefle.com?subject=רעיון%20למפת%20הדרכים" class="rounded-full border border-ink-300 bg-white px-5 py-2.5 font-semibold hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">אימייל</a>
+    </div>
+  </section>
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">מוצר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/" class="hover:text-ink-900 dark:hover:text-white">בית</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/roadmap" class="hover:text-ink-900 dark:hover:text-white">מפת דרכים</a></li>
+        <li><a href="/status" class="hover:text-ink-900 dark:hover:text-white">סטטוס</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">משפטי</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    © <span class="num">2026</span> כסף'לה. כל הזכויות שמורות. עשוי באהבה בישראל
+  </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // -------- Roadmap data --------
+  // ids must be stable (used as localStorage / waitlist source keys)
+  const ITEMS = [
+    // ===== SHIPPED =====
+    { id:'classifier-700', status:'shipped', tag:'Bot',        title:"סיווג חכם של 700 מילים (עברית + אנגלית)",
+      desc:'מנוע סיווג ב-`KESEFLE_KEYWORDS_v2.gs` עם 30 קטגוריות ודיוק גבוה גם על סלנג ישראלי.', baseVotes: 142 },
+    { id:'dashboard-personal', status:'shipped', tag:'Web',    title:'דשבורד אישי עם גרפים',
+      desc:'דונאט קטגוריות, sparkline חודשי ורשימת עסקאות אחרונות ב-/dashboard.', baseVotes: 118 },
+    { id:'aes-256-gcm', status:'shipped', tag:'Security',      title:'הצפנת AES-256-GCM של אסימוני OAuth',
+      desc:'lib/crypto.js עם envelope encryption ו-AAD מקושר ל-userSub. אסימונים מוצפנים במנוחה.', baseVotes: 64 },
+    { id:'status-page', status:'shipped', tag:'Web',           title:'עמוד מצב המערכת ב-/status',
+      desc:'6 שירותים, uptime 30 יום, רענון אוטומטי וסיכום תקריות.', baseVotes: 71 },
+    { id:'dropdown-unsure', status:'shipped', tag:'Bot',       title:'תפריט נפתח כשהבוט לא בטוח',
+      desc:'כשהביטחון נמוך מ-70%, הבוט שולח רשימה אינטראקטיבית ב-WhatsApp לסיווג ידני.', baseVotes: 96 },
+    { id:'weekly-digest', status:'shipped', tag:'Bot',         title:'סיכום שבועי אוטומטי בכל יום ראשון',
+      desc:"WEEKLY_DIGEST.gs ב-08:00 שעון ירושלים, כולל זיהוי קפיצות (>2× ממוצע שבועי).", baseVotes: 88 },
+    { id:'gdpr-export', status:'shipped', tag:'Compliance',    title:'ייצוא נתונים עצמי (GDPR Art. 20)',
+      desc:'/api/account?action=export מחזיר את כל הנתונים שלך כ-JSON בלחיצה אחת.', baseVotes: 41 },
+    { id:'self-delete', status:'shipped', tag:'Compliance',    title:'מחיקת חשבון עצמית (חוק הגנת הפרטיות)',
+      desc:'/api/account?action=delete מבטל גישת OAuth, מוחק רשומות KV וכותב audit log.', baseVotes: 38 },
+    { id:'whatsapp-stop', status:'shipped', tag:'Compliance',  title:'STOP/עצור/הסר — ביטול הסכמה ב-WhatsApp',
+      desc:'תאימות מלאה למדיניות WhatsApp Business: מילת stop בעברית או באנגלית עוצרת מיידית.', baseVotes: 52 },
+    { id:'bot-commands', status:'shipped', tag:'Bot',          title:"פקודות שיחה: היום? השבוע? החודש? מחק אחרון",
+      desc:'BOT_COMMANDS.gs עונה על שאילתות חופשיות בעברית כולל "כמה הוצאתי על וולט?".', baseVotes: 134 },
+    { id:'admin-panel', status:'shipped', tag:'Web',           title:"לוח אדמין ב-/admin",
+      desc:'9 חלקים: משתמשים, משימות, מטריקות, ביקורת, feature flags, lookup לתמיכה.', baseVotes: 33 },
+    { id:'hmac-rawbody', status:'shipped', tag:'Security',     title:'אימות HMAC על raw-body של Meta + Stripe',
+      desc:'תיקון בעיה קריטית שבה re-stringify של body היה שובר חתימות.', baseVotes: 29 },
+    { id:'formula-injection', status:'shipped', tag:'Security',title:"חיסון מפני formula injection בגיליון",
+      desc:"valueInputOption=RAW + prefix של ' לערכים שמתחילים ב-= + - @. אין דרך להזריק נוסחאות.", baseVotes: 27 },
+    { id:'idempotency-meta', status:'shipped', tag:'Bot',      title:'אידמפוטנציה על webhook של Meta',
+      desc:'כל message_id נשמר ב-KV ל-24 שעות — Meta שולחת retries בלי כפילויות בגיליון.', baseVotes: 35 },
+    { id:'rate-limit-kv', status:'shipped', tag:'Security',    title:'Rate-limit ב-KV עם token-bucket',
+      desc:'lib/ratelimit.js עם קיבוץ IPv6 /64 למניעת bypass של prefix.', baseVotes: 31 },
+    { id:'tx-edit-delete', status:'shipped', tag:'Web',        title:'עריכה ומחיקה של עסקאות מהדשבורד',
+      desc:'/api/transactions/edit (PATCH) + /api/transactions/delete (soft) + /export ל-CSV.', baseVotes: 79 },
+    { id:'sheet-provision', status:'shipped', tag:'Bot',       title:'הקצאת גיליון אוטומטית בהרשמה',
+      desc:'/api/sheet/provision מעתיק את ה-template ל-Drive שלך עם scope drive.file בלבד.', baseVotes: 67 },
+    { id:'docs-architecture', status:'shipped', tag:'Infra',   title:'תיעוד אדריכלות מלא',
+      desc:'docs/architecture: db-schema, api-routes, billing-stripe, jobs-cron, observability.', baseVotes: 22 },
+    { id:'rs256-jwt', status:'shipped', tag:'Security',        title:'אימות RS256 של Google ID token',
+      desc:'כולל JWKS rotation cache. אפשר לסמוך על ה-sub במקום לבטוח ב-header.', baseVotes: 24 },
+    { id:'test-suite-31', status:'shipped', tag:'Infra',       title:'31 בדיקות רגרסיה ב-/test',
+      desc:'בדיקות frontend אוטומטיות כדי שלא נשבור גרסאות לפני deploy.', baseVotes: 28 },
+
+    // ===== IN PROGRESS =====
+    { id:'stripe-prices', status:'progress', tag:'Billing',    title:'אינטגרציית Stripe ל-Pro / Family',
+      desc:"Checkout + webhook כבר בנויים. ממתינים ליצירת מוצרים ב-Stripe + STRIPE_PRICE_* envs.", eta:'שבוע',  baseVotes: 154 },
+    { id:'oauth-pkce-frontend', status:'progress', tag:'Security', title:'מעבר ל-OAuth PKCE בצד לקוח',
+      desc:'/api/auth/google-exchange כבר תומך. account.html עובר מ-GIS-only לקוד+PKCE כדי לקבל refresh tokens.',
+      eta:'היום', baseVotes: 47 },
+    { id:'oauth-tier2', status:'progress', tag:'Compliance',   title:'אישור Google OAuth — CASA Tier 2',
+      desc:"scope drive.file הוא restricted ודורש ביקורת. סקריפט וידאו מוכן, צילום בקרוב.", eta:'6 שבועות', baseVotes: 19 },
+    { id:'eu-region', status:'progress', tag:'Infra',           title:'מעבר לאזורי EU (Vercel + Upstash)',
+      desc:'מ-iad1 ל-cdg1/arn1 + Upstash KV ב-eu-west-1, תאימות לחוק הגנת הפרטיות תיקון 13.', eta:'שבוע', baseVotes: 25 },
+    { id:'wa-business-number', status:'progress', tag:'Compliance', title:'מספר WhatsApp Business ייעודי',
+      desc:'מעבר ממספר אישי למספר עסקי מאומת — תנאי לאישור Meta Business.', eta:'שבועיים', baseVotes: 44 },
+    { id:'kv-supabase', status:'progress', tag:'Infra',        title:'מיגרציה מ-KV ל-Supabase Postgres',
+      desc:'שאילתות נקיות יותר, audit trail מובנה, joins על עסקאות.', eta:'3 שבועות', baseVotes: 18 },
+    { id:'plan-gating', status:'progress', tag:'Billing',      title:'בלוקים לפי תוכנית (Free/Pro/Family)',
+      desc:"plan נשמר ב-KV. נשאר לחווט את ה-UI כך שתכונות Pro יחסמו ב-Free.", eta:'שבוע', baseVotes: 58 },
+    { id:'sentry-integration', status:'progress', tag:'Infra', title:'אינטגרציית Sentry + Better Stack',
+      desc:'observability רציני: שגיאות, alerting, uptime checks חיצוניים.', eta:'שבועיים', baseVotes: 21 },
+
+    // ===== PLANNED =====
+    { id:'ocr-receipts', status:'planned', tag:'Bot',          title:'OCR לקבלות (Gemini Vision)',
+      desc:'שלח תמונה של קבלה — הבוט מזהה סכום, ספק וקטגוריה ושומר בגיליון. RECEIPT_PARSING.gs מוכן.',
+      eta:'חודש', baseVotes: 287 },
+    { id:'personal-learning', status:'planned', tag:'ML',      title:'למידה אישית אחרי 20 תיקונים',
+      desc:'PERSONALIZED_LEARNING.gs לומד את הסלנג והקטגוריות המועדפות שלך לפי תיקוני העבר.',
+      eta:'חודש', baseVotes: 192 },
+    { id:'embedding-fallback', status:'planned', tag:'ML',     title:'Vertex AI Gemini fallback לסיווג',
+      desc:'אם הביטחון נמוך מ-70 — embedding חישוב סמנטי על Vertex AI במקום שאלה למשתמש.',
+      eta:'חודש', baseVotes: 73 },
+    { id:'site-english', status:'planned', tag:'Web',          title:'גרסה אנגלית של האתר והבוט',
+      desc:'i18n מלא לאתר וקלאסיפיקציה דו-לשונית. השוק האמריקאי הוא הצעד הבא.',
+      eta:'2 חודשים', baseVotes: 91 },
+    { id:'roas-dashboard', status:'planned', tag:'Analytics',  title:'ROAS Dashboard ל-Pro',
+      desc:'מעקב Return on Ad Spend עבור עסקים קטנים: הזן הוצאת קמפיין, ראה הכנסה מיוחסת.',
+      eta:'2 חודשים', baseVotes: 68 },
+    { id:'pwa-installable', status:'planned', tag:'Web',       title:'PWA — התקנה כאפליקציה במכשיר',
+      desc:'manifest + service worker. גישה offline לדשבורד + push notifications לסיכומים.',
+      eta:'חודש', baseVotes: 156 },
+    { id:'anomaly-alerts', status:'planned', tag:'Bot',        title:'התראות חריגים (2 סטיות תקן)',
+      desc:'בוט מתריע ב-WhatsApp אם הוצאה בקטגוריה גבוהה ב-2σ מהממוצע ההיסטורי.',
+      eta:'חודש', baseVotes: 124 },
+    { id:'family-leaderboard', status:'planned', tag:'Bot',    title:'"מי הוציא הכי הרבה השבוע" (Family)',
+      desc:'לוח שבועי משעשע למשפחות — מי קנה הכי הרבה קפה, מי על וולט, מי על דלק.',
+      eta:'חודשיים', baseVotes: 102 },
+    { id:'green-invoice', status:'planned', tag:'Integration', title:'אינטגרציה ל-Green Invoice',
+      desc:'יצוא הוצאות עסקיות ישירות לחשבונית מס דיגיטלית. חיבור API מתוכנן.',
+      eta:'2 חודשים', baseVotes: 144 },
+    { id:'budgets-categories', status:'planned', tag:'Web',    title:'תקציבים לפי קטגוריות',
+      desc:'הגדר תקציב חודשי לאוכל בחוץ, דלק, קניות — בוט יזהיר כשהגעת ל-80%.',
+      eta:'חודש', baseVotes: 213 },
+    { id:'multi-currency', status:'planned', tag:'Bot',        title:'תמיכה במטבעות מרובים (USD, EUR)',
+      desc:"כתבת ב-WhatsApp 'מסעדה 45 דולר' — מומר אוטומטית ל-₪ לפי שער יומי.",
+      eta:'חודשיים', baseVotes: 87 },
+    { id:'csv-pdf-export', status:'planned', tag:'Web',        title:'יצוא ל-CSV / PDF חודשי (Pro)',
+      desc:'דוח PDF מעוצב לרואה חשבון + CSV גולמי ל-Excel. tx export ל-CSV כבר קיים.',
+      eta:'שבועיים', baseVotes: 116 },
+    { id:'recurring-detection', status:'planned', tag:'ML',    title:'זיהוי אוטומטי של מנויים חוזרים',
+      desc:'הבוט מזהה ש-Netflix מחויב כל חודש ב-55₪ ומציע להוסיף תזכורת לפני חיוב.',
+      eta:'חודשיים', baseVotes: 178 },
+    { id:'sheet-templates', status:'planned', tag:'Web',       title:'תבניות גיליון מותאמות לתחום',
+      desc:'תבניות מוכנות: עצמאי, מסעדה, חנות אונליין — כל אחת עם קטגוריות וריגול שונים.',
+      eta:'חודש', baseVotes: 56 },
+    { id:'bot-voice', status:'planned', tag:'Bot',             title:'הוצאות בהודעה קולית',
+      desc:'שלח voice note ב-WhatsApp, transcription ב-Gemini, הבוט מסווג ושומר.',
+      eta:'חודשיים', baseVotes: 234 },
+    { id:'referral-loop', status:'planned', tag:'Web',         title:'תכנית הפניות',
+      desc:'הזמן חבר — שניכם מקבלים חודש Pro חינם. קוד אישי + dashboard גיוס.',
+      eta:'חודש', baseVotes: 64 },
+    { id:'shared-sheet-family', status:'planned', tag:'Bot',   title:'גיליון משותף ל-4 טלפונים (Family)',
+      desc:'בני זוג + ילדים כותבים לאותו גיליון עם תג צבע לפי משתמש. Family ₪39.',
+      eta:'חודשיים', baseVotes: 121 },
+    { id:'category-drill', status:'planned', tag:'Web',        title:'Drill-down קטגוריה בדשבורד',
+      desc:'קליק על "אוכל בחוץ" → רשימת כל המסעדות, סכום, גרף עוגה לפי ספק.',
+      eta:'שבועיים', baseVotes: 109 },
+    { id:'budget-progress', status:'planned', tag:'Web',       title:'פס התקדמות תקציב חודשי',
+      desc:'באנר עליון בדשבורד: "אכלת 67% מתקציב אוכל החודש" עם צבע מתחלף.',
+      eta:'שבועיים', baseVotes: 98 },
+    { id:'reconnect-banner', status:'planned', tag:'Bot',      title:'באנר "חבר מחדש את Google" כשטוקן פג',
+      desc:'אם Google מבטל הסכמה — נקבל 401, הדשבורד מציג באנר ותזכורת WhatsApp.',
+      eta:'שבוע', baseVotes: 32 },
+    { id:'dunning-emails', status:'planned', tag:'Billing',    title:'תזכורות חיוב כושל (dunning)',
+      desc:'3 מיילים אוטומטיים לפני downgrade ל-Free כשכרטיס נדחה. תזכורת WhatsApp ביום 7.',
+      eta:'חודש', baseVotes: 19 },
+    { id:'transaction-rules', status:'planned', tag:'Bot',     title:'חוקי סיווג אישיים',
+      desc:"\"כל פעם שאני כותב 'אמא' — קטגוריה: משפחה\". UI ב-/dashboard ליצירת חוקים.",
+      eta:'חודש', baseVotes: 81 },
+    { id:'sheet-templates-marketplace', status:'planned', tag:'Web', title:'חנות תבניות גיליון',
+      desc:'תבניות שנבנו על ידי המשתמשים — שתף את הסכמה שלך עם הקהילה.',
+      eta:'3 חודשים', baseVotes: 47 },
+    { id:'webhook-zapier', status:'planned', tag:'Integration',title:'Webhooks + Zapier/Make integration',
+      desc:'כל הוצאה חדשה → trigger ל-Zapier. אוטומציות מותאמות אישית.',
+      eta:'2 חודשים', baseVotes: 73 },
+    { id:'yearly-tax-export', status:'planned', tag:'Compliance', title:'דוח שנתי לרשויות מס',
+      desc:'יצוא דוח הוצאות עסק שנתי בפורמט מקובל לרואה חשבון או מערכת ניהול מס.',
+      eta:'3 חודשים', baseVotes: 132 },
+    { id:'darkmode-bot', status:'planned', tag:'Bot',          title:'מצב לילה — בוט שותק אחרי השעה',
+      desc:'הגדרת "שעות שקט" — בוט לא ישלח digest או תזכורות מ-23:00 עד 07:00.',
+      eta:'שבועיים', baseVotes: 53 },
+    { id:'mobile-native', status:'planned', tag:'Web',         title:'אפליקציית מובייל native (iOS/Android)',
+      desc:'אחרי PWA — אפליקציה מקורית עם widget הוצאה מהירה ו-shortcuts ל-Siri.',
+      eta:'6 חודשים', baseVotes: 167 }
+  ];
+
+  // -------- State --------
+  const STORAGE_KEY = 'kesefle:votes';
+  const SUB_KEY     = 'kesefle:subs';
+  const FILTER_KEY  = 'kesefle:filter';
+
+  const TAG_COLORS = {
+    Bot:         { light: 'bg-emerald-100 text-emerald-800',   dark: 'dark:bg-emerald-900/40 dark:text-emerald-200' },
+    Web:         { light: 'bg-blue-100 text-blue-800',         dark: 'dark:bg-blue-900/40 dark:text-blue-200' },
+    Security:    { light: 'bg-red-100 text-red-800',           dark: 'dark:bg-red-900/40 dark:text-red-200' },
+    Billing:     { light: 'bg-purple-100 text-purple-800',     dark: 'dark:bg-purple-900/40 dark:text-purple-200' },
+    Analytics:   { light: 'bg-amber-100 text-amber-800',       dark: 'dark:bg-amber-900/40 dark:text-amber-200' },
+    ML:          { light: 'bg-pink-100 text-pink-800',         dark: 'dark:bg-pink-900/40 dark:text-pink-200' },
+    Infra:       { light: 'bg-slate-100 text-slate-800',       dark: 'dark:bg-slate-700 dark:text-slate-100' },
+    Compliance:  { light: 'bg-teal-100 text-teal-800',         dark: 'dark:bg-teal-900/40 dark:text-teal-200' },
+    Integration: { light: 'bg-orange-100 text-orange-800',     dark: 'dark:bg-orange-900/40 dark:text-orange-200' }
+  };
+
+  function readJSON(k, fallback) {
+    try { return JSON.parse(localStorage.getItem(k)) ?? fallback; }
+    catch(e){ return fallback; }
+  }
+  function writeJSON(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
+  }
+  function getVotes(){ return readJSON(STORAGE_KEY, {}); }
+  function setVote(id){ const v = getVotes(); v[id] = true; writeJSON(STORAGE_KEY, v); }
+  function hasVoted(id){ return !!getVotes()[id]; }
+  function getSubs(){ return readJSON(SUB_KEY, {}); }
+  function setSub(id, email){ const s = getSubs(); s[id] = email; writeJSON(SUB_KEY, s); }
+  function hasSub(id){ return !!getSubs()[id]; }
+  function getFilters(){ return readJSON(FILTER_KEY, []); }
+  function setFilters(arr){ writeJSON(FILTER_KEY, arr); }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function toast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>el.classList.remove('show'), 2200);
+  }
+
+  function postWaitlist(source, email){
+    // best-effort; ignore network errors silently
+    try {
+      const body = JSON.stringify({ email: email || '', source });
+      fetch('/api/events?action=waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true
+      }).catch(()=>{});
+    } catch(e){}
+  }
+
+  function statusColumnId(s){
+    return s === 'shipped' ? 'col-shipped' : s === 'progress' ? 'col-progress' : 'col-planned';
+  }
+
+  function tagBadge(tag){
+    const c = TAG_COLORS[tag] || TAG_COLORS.Web;
+    return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${c.light} ${c.dark}">${escapeHtml(tag)}</span>`;
+  }
+
+  function etaBadge(eta){
+    if (!eta) return '';
+    return `<span class="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-medium text-ink-700 dark:bg-ink-700 dark:text-ink-200">
+      <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .2.08.39.22.53l3 3a.75.75 0 101.06-1.06L10.75 9.69V5z" clip-rule="evenodd"/></svg>
+      ETA ${escapeHtml(eta)}
+    </span>`;
+  }
+
+  function renderCard(item){
+    const voted = hasVoted(item.id);
+    const subscribed = hasSub(item.id);
+    const count = (item.baseVotes || 0) + (voted ? 1 : 0);
+    return `
+      <article class="card relative rounded-2xl border border-ink-200 bg-ink-50/60 p-4 dark:border-ink-700 dark:bg-ink-900/50"
+               data-id="${escapeHtml(item.id)}" data-tag="${escapeHtml(item.tag)}" data-votes="${count}" data-title="${escapeHtml(item.title)}">
+        <div class="flex items-start justify-between gap-2">
+          <h3 class="text-[15px] font-bold leading-snug dark:text-white">${escapeHtml(item.title)}</h3>
+          ${tagBadge(item.tag)}
+        </div>
+        <p class="mt-1.5 text-sm leading-relaxed text-ink-600 dark:text-ink-300">${escapeHtml(item.desc)}</p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          ${etaBadge(item.eta)}
+          <div class="ms-auto flex items-center gap-2">
+            <button class="vote-btn ${voted ? 'voted' : ''} inline-flex items-center gap-1.5 rounded-full border border-ink-300 bg-white px-2.5 py-1 text-xs font-semibold hover:bg-ink-100 dark:border-ink-600 dark:bg-ink-800 dark:hover:bg-ink-700"
+                    data-action="vote" aria-label="הצבע על ${escapeHtml(item.title)}">
+              <span aria-hidden="true">👍</span>
+              <span class="vote-count tabular-nums">${count}</span>
+            </button>
+            <button class="sub-btn ${subscribed ? 'subscribed' : ''} inline-flex items-center gap-1 rounded-full border border-ink-300 bg-white px-2.5 py-1 text-xs font-semibold hover:bg-ink-100 dark:border-ink-600 dark:bg-ink-800 dark:hover:bg-ink-700"
+                    data-action="subscribe" aria-label="הירשם לעדכונים על ${escapeHtml(item.title)}">
+              ${subscribed ? '✓ נרשמת' : 'הירשם לעדכונים'}
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function applyFilters(){
+    const filters = getFilters();
+    const cards = document.querySelectorAll('article.card');
+    cards.forEach(c => {
+      const tag = c.dataset.tag;
+      const show = filters.length === 0 || filters.includes(tag);
+      c.style.display = show ? '' : 'none';
+    });
+    // recompute counts
+    ['shipped','progress','planned'].forEach(s => {
+      const col = document.getElementById('col-' + s);
+      const visible = col.querySelectorAll('article.card:not([style*="display: none"])').length;
+      const total = col.querySelectorAll('article.card').length;
+      const filtering = filters.length > 0;
+      const displayN = filtering ? visible : total;
+      document.querySelectorAll(`[data-count="${s}"], [data-count-chip="${s}"]`).forEach(el => el.textContent = displayN);
+    });
+  }
+
+  function sortAndRender(){
+    const cols = { shipped: [], progress: [], planned: [] };
+    ITEMS.forEach(it => cols[it.status].push(it));
+
+    Object.keys(cols).forEach(status => {
+      const items = cols[status];
+      const sorted = items.slice().sort((a,b) => {
+        const va = (a.baseVotes || 0) + (hasVoted(a.id) ? 1 : 0);
+        const vb = (b.baseVotes || 0) + (hasVoted(b.id) ? 1 : 0);
+        if (vb !== va) return vb - va;
+        return a.title.localeCompare(b.title, 'he');
+      });
+      const html = sorted.map(renderCard).join('');
+      document.getElementById('col-' + status).innerHTML = html;
+    });
+
+    // total chips
+    document.querySelector('[data-count="shipped"]').textContent = cols.shipped.length;
+    document.querySelector('[data-count="progress"]').textContent = cols.progress.length;
+    document.querySelector('[data-count="planned"]').textContent  = cols.planned.length;
+    document.querySelector('[data-count-chip="shipped"]').textContent = cols.shipped.length;
+    document.querySelector('[data-count-chip="progress"]').textContent = cols.progress.length;
+    document.querySelector('[data-count-chip="planned"]').textContent  = cols.planned.length;
+  }
+
+  function renderTagFilters(){
+    const tags = [...new Set(ITEMS.map(i => i.tag))].sort();
+    const active = getFilters();
+    const html = tags.map(t => {
+      const isActive = active.includes(t);
+      return `<button data-tag="${escapeHtml(t)}" class="chip ${isActive ? 'active' : ''} rounded-full border border-ink-200 bg-white px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100 dark:hover:bg-ink-700">
+        ${escapeHtml(t)}
+      </button>`;
+    }).join('');
+    document.getElementById('tag-filters').innerHTML = html;
+  }
+
+  // -------- Event wiring --------
+  document.addEventListener('click', (e) => {
+    const dark = e.target.closest('#dark-toggle');
+    if (dark) {
+      const isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('kesefle:dark', isDark ? '1' : '0'); } catch(_){}
+      return;
+    }
+
+    const clear = e.target.closest('#clear-filters');
+    if (clear) {
+      setFilters([]);
+      renderTagFilters();
+      applyFilters();
+      return;
+    }
+
+    const chip = e.target.closest('#tag-filters .chip');
+    if (chip) {
+      const tag = chip.dataset.tag;
+      const current = getFilters();
+      const idx = current.indexOf(tag);
+      if (idx === -1) current.push(tag); else current.splice(idx, 1);
+      setFilters(current);
+      renderTagFilters();
+      applyFilters();
+      return;
+    }
+
+    const voteBtn = e.target.closest('.vote-btn');
+    if (voteBtn) {
+      const card = voteBtn.closest('article.card');
+      const id = card.dataset.id;
+      if (hasVoted(id)) {
+        toast('כבר הצבעת על הפיצ\'ר הזה');
+        return;
+      }
+      setVote(id);
+      // animate count
+      const countEl = voteBtn.querySelector('.vote-count');
+      countEl.textContent = String(parseInt(countEl.textContent, 10) + 1);
+      voteBtn.classList.add('voted');
+      card.dataset.votes = String(parseInt(card.dataset.votes, 10) + 1);
+      postWaitlist('vote_' + id, '');
+      toast('ההצבעה נקלטה. תודה!');
+      // re-sort the column the card lives in
+      const col = card.parentElement;
+      const sorted = [...col.children].sort((a,b) => parseInt(b.dataset.votes, 10) - parseInt(a.dataset.votes, 10) || a.dataset.title.localeCompare(b.dataset.title, 'he'));
+      sorted.forEach(c => col.appendChild(c));
+      return;
+    }
+
+    const subBtn = e.target.closest('.sub-btn');
+    if (subBtn) {
+      const card = subBtn.closest('article.card');
+      const id = card.dataset.id;
+      if (hasSub(id)) {
+        toast('כבר נרשמת לעדכונים על הפיצ\'ר הזה');
+        return;
+      }
+      const email = (prompt('האימייל שלך לעדכונים על הפיצ\'ר הזה:') || '').trim();
+      if (!email) return;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast('אימייל לא תקין');
+        return;
+      }
+      setSub(id, email);
+      subBtn.classList.add('subscribed');
+      subBtn.textContent = '✓ נרשמת';
+      postWaitlist('roadmap_' + id, email);
+      toast('נרשמת. נשלח עדכון כשהפיצ\'ר יוצא.');
+      return;
+    }
+  });
+
+  // -------- Boot --------
+  sortAndRender();
+  renderTagFilters();
+  applyFilters();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
+</body>
+</html>
