@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>הבלוג של כסף'לה — מעקב הוצאות, תקציב משפחתי, ותזרים לעצמאי</title>
+<meta name="description" content="כל מה שאיש מקצוע בישראל צריך לדעת על ניהול כסף — מעקב הוצאות, תקציב משפחתי, תזרים מזומנים לפרילנסר, כלים לעסקים קטנים, מדריכים פרקטיים." />
+<meta name="theme-color" content="#0f172a" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="בלוג כסף'לה" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<meta property="og:title" content="הבלוג של כסף'לה — ניהול כסף בעברית, בפועל" />
+<meta property="og:description" content="מדריכים פרקטיים על מעקב הוצאות, תקציב משפחתי, ותזרים מזומנים לעצמאים בישראל." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:url" content="https://kesefle.vercel.app/blog" />
+<meta property="og:site_name" content="כסף'לה" />
+<link rel="canonical" href="https://kesefle.vercel.app/blog" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "name": "הבלוג של כסף'לה",
+  "description": "מדריכים פרקטיים בעברית על ניהול כסף, מעקב הוצאות, תקציב, ותזרים לעצמאים ועסקים קטנים.",
+  "url": "https://kesefle.vercel.app/blog",
+  "inLanguage": "he-IL",
+  "publisher": {
+    "@type": "Organization",
+    "name": "כסף'לה",
+    "url": "https://kesefle.vercel.app/"
+  },
+  "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "איך עצמאי בישראל יכול לעקוב אחרי הוצאות בלי לשגע את עצמו (מדריך 2026)",
+      "url": "https://kesefle.vercel.app/blog/expense-tracking-freelancer",
+      "datePublished": "2026-05-16"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "תקציב לעומת תזרים מזומנים — מה ההבדל באמת, ולמה זה משנה לעצמאי?",
+      "url": "https://kesefle.vercel.app/blog/budget-vs-cashflow",
+      "datePublished": "2026-05-16"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "5 כלים שמשנים את הדרך שבה עסקים ישראליים משתמשים בוואטסאפ ב-2026",
+      "url": "https://kesefle.vercel.app/blog/whatsapp-business-tools",
+      "datePublished": "2026-05-16"
+    }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+        backgroundImage: {
+          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  /* article card covers — pure CSS gradient placeholders */
+  .cover-freelancer { background: linear-gradient(135deg, #22c55e 0%, #15803d 50%, #0f1422 100%); }
+  .cover-budget     { background: linear-gradient(135deg, #a855f7 0%, #6d28d9 50%, #0f1422 100%); }
+  .cover-whatsapp   { background: linear-gradient(135deg, #25D366 0%, #128C7E 50%, #075E54 100%); }
+  .cover-featured   { background: linear-gradient(135deg, #22c55e 0%, #15803d 35%, #166534 65%, #a855f7 100%); }
+  .cover-glyph {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-weight: 900; font-size: 5rem; color: rgba(255,255,255,0.10);
+    letter-spacing: -0.05em;
+  }
+  .cover-glyph-lg { font-size: 9rem; }
+  .chip-active { background: #22c55e; color: white; }
+</style>
+<script src="/lib/analytics.js" defer></script>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<!-- ============== NAV ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
+      <a href="/#features" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">תכונות</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
+      <a href="/blog" class="text-sm font-bold text-brand-600 dark:text-brand-400">בלוג</a>
+      <a href="/trust" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אבטחה</a>
+      <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="kesefleToggleDark()" aria-label="מצב כהה" class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800" id="dark-toggle">
+        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a href="/#signup" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 dark:bg-brand-600 dark:hover:bg-brand-500">התחל חינם</a>
+    </div>
+  </nav>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative overflow-hidden bg-mesh pt-28 pb-12 md:pt-36 md:pb-16">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
+  <div class="mx-auto max-w-4xl px-5 text-center">
+    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
+      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+      בלוג • עודכן <span class="num">16/05/2026</span>
+    </div>
+    <h1 class="text-balance text-4xl font-black leading-[1.05] tracking-tight md:text-6xl">
+      הבלוג של
+      <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">כסף'לה</span>
+    </h1>
+    <p class="mt-5 mx-auto max-w-2xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+      כל מה שאיש מקצוע בישראל צריך לדעת על ניהול כסף — מעקב הוצאות, תקציב משפחתי, תזרים לעצמאים, מערכות חשבוניות. בלי בלה-בלה. בלי מילים גדולות.
+    </p>
+  </div>
+</section>
+
+<!-- ============== CATEGORY FILTER ============== -->
+<section class="border-y border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-900/50">
+  <div class="mx-auto flex max-w-6xl items-center gap-2 overflow-x-auto px-5 py-4">
+    <button data-cat="all" class="cat-chip chip-active whitespace-nowrap rounded-full border border-ink-200 px-4 py-1.5 text-sm font-semibold transition hover:border-brand-400 dark:border-ink-700 dark:text-ink-100">
+      כל המאמרים
+    </button>
+    <button data-cat="freelancer" class="cat-chip whitespace-nowrap rounded-full border border-ink-200 px-4 py-1.5 text-sm font-semibold text-ink-700 transition hover:border-brand-400 dark:border-ink-700 dark:text-ink-100">
+      לפרילנסרים
+    </button>
+    <button data-cat="business" class="cat-chip whitespace-nowrap rounded-full border border-ink-200 px-4 py-1.5 text-sm font-semibold text-ink-700 transition hover:border-brand-400 dark:border-ink-700 dark:text-ink-100">
+      לעסקים קטנים
+    </button>
+    <button data-cat="family" class="cat-chip whitespace-nowrap rounded-full border border-ink-200 px-4 py-1.5 text-sm font-semibold text-ink-700 transition hover:border-brand-400 dark:border-ink-700 dark:text-ink-100">
+      למשפחות
+    </button>
+    <button data-cat="deep" class="cat-chip whitespace-nowrap rounded-full border border-ink-200 px-4 py-1.5 text-sm font-semibold text-ink-700 transition hover:border-brand-400 dark:border-ink-700 dark:text-ink-100">
+      עומק טכני
+    </button>
+  </div>
+</section>
+
+<!-- ============== FEATURED ARTICLE ============== -->
+<section class="py-12 md:py-16">
+  <div class="mx-auto max-w-6xl px-5">
+    <p class="mb-4 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">מאמר נבחר</p>
+    <a href="/blog/expense-tracking-freelancer" data-article data-cat="freelancer" class="group block overflow-hidden rounded-3xl border border-ink-200 bg-white shadow-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800">
+      <div class="grid md:grid-cols-2">
+        <div class="cover-featured relative h-64 md:h-full min-h-[280px]">
+          <div class="cover-glyph cover-glyph-lg">₪</div>
+          <div class="absolute bottom-4 right-4 left-4 flex items-center justify-between">
+            <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white backdrop-blur">לפרילנסרים</span>
+            <span class="text-xs font-semibold text-white/80"><span class="num">7</span> דקות קריאה</span>
+          </div>
+        </div>
+        <div class="p-7 md:p-10">
+          <p class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300"><span class="num">16</span> במאי <span class="num">2026</span> • Steven Ran Cohen</p>
+          <h2 class="mt-3 text-2xl font-black leading-tight md:text-4xl dark:text-white">
+            איך עצמאי בישראל יכול לעקוב אחרי הוצאות בלי לשגע את עצמו (מדריך <span class="num">2026</span>)
+          </h2>
+          <p class="mt-4 text-base leading-relaxed text-ink-600 dark:text-ink-200">
+            תכנון תזרים, אקסל מסובך, אפליקציות שדורשות גישה לחשבון בנק — אחרי שנתיים זה הופך לסיוט. הנה גישה אחרת, פרקטית, שלוקחת <span class="num">10</span> שניות ביום.
+          </p>
+          <span class="mt-6 inline-flex items-center gap-2 font-bold text-brand-600 group-hover:gap-3 transition-all dark:text-brand-400">
+            קרא את המאמר ←
+          </span>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- ============== ARTICLE GRID ============== -->
+<section class="pb-16 md:pb-24">
+  <div class="mx-auto max-w-6xl px-5">
+    <p class="mb-6 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">כל המאמרים</p>
+    <div class="grid gap-6 md:grid-cols-3" id="article-grid">
+
+      <a href="/blog/expense-tracking-freelancer" data-article data-cat="freelancer" class="group block overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800">
+        <div class="cover-freelancer relative h-44">
+          <div class="cover-glyph">₪</div>
+          <span class="absolute right-3 top-3 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur">לפרילנסרים</span>
+        </div>
+        <div class="p-5">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300"><span class="num">16</span> במאי <span class="num">2026</span> • <span class="num">7</span> דקות</p>
+          <h3 class="mt-2 text-lg font-extrabold leading-snug dark:text-white">
+            איך עצמאי בישראל יכול לעקוב אחרי הוצאות בלי לשגע את עצמו
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+            פחות ניירת, יותר תזרים. המדריך הכי פרקטי ל-<span class="num">2026</span>.
+          </p>
+        </div>
+      </a>
+
+      <a href="/blog/budget-vs-cashflow" data-article data-cat="freelancer" class="group block overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800">
+        <div class="cover-budget relative h-44">
+          <div class="cover-glyph">↔</div>
+          <span class="absolute right-3 top-3 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur">עומק טכני</span>
+        </div>
+        <div class="p-5">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300"><span class="num">16</span> במאי <span class="num">2026</span> • <span class="num">6</span> דקות</p>
+          <h3 class="mt-2 text-lg font-extrabold leading-snug dark:text-white">
+            תקציב לעומת תזרים מזומנים — מה ההבדל באמת
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+            שני מושגים שכולם מערבבים. עצמאי שמבין את ההבדל ישן בלילה.
+          </p>
+        </div>
+      </a>
+
+      <a href="/blog/whatsapp-business-tools" data-article data-cat="business" class="group block overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800">
+        <div class="cover-whatsapp relative h-44">
+          <div class="cover-glyph">✓</div>
+          <span class="absolute right-3 top-3 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur">לעסקים קטנים</span>
+        </div>
+        <div class="p-5">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300"><span class="num">16</span> במאי <span class="num">2026</span> • <span class="num">6</span> דקות</p>
+          <h3 class="mt-2 text-lg font-extrabold leading-snug dark:text-white">
+            <span class="num">5</span> כלים שמשנים את הדרך שבה עסקים ישראליים משתמשים בוואטסאפ
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+            מעבר ל"היי, אפשר לתאם?" — מה באמת קורה ב-<span class="num">2026</span>.
+          </p>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- empty state for filters -->
+    <div id="empty-state" class="hidden mt-12 text-center">
+      <p class="text-lg font-bold text-ink-600 dark:text-ink-200">עוד אין מאמרים בקטגוריה הזו.</p>
+      <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">אנחנו עובדים על זה. הצטרף לעדכונים כדי לדעת ראשון.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============== NEWSLETTER SIGNUP ============== -->
+<section class="relative overflow-hidden border-t border-ink-200 bg-ink-900 py-20 dark:border-ink-700">
+  <div class="absolute inset-0 -z-10 bg-mesh opacity-40"></div>
+  <div class="mx-auto max-w-2xl px-5 text-center">
+    <p class="text-xs font-bold uppercase tracking-wider text-brand-400">ניוזלטר</p>
+    <h2 class="mt-3 text-3xl font-black text-white md:text-4xl">קבל את המאמר הבא לפני כולם</h2>
+    <p class="mt-4 text-base leading-relaxed text-ink-200">
+      מאמר אחד בחודש על ניהול כסף, מסים, וטעויות נפוצות. בלי ספאם, בלי מכירה אגרסיבית. ביטול בלחיצה.
+    </p>
+    <form id="blog-newsletter" class="mx-auto mt-7 flex max-w-md flex-col gap-3" onsubmit="return blogSubscribe(event)">
+      <input
+        type="email"
+        required
+        name="email"
+        placeholder="האימייל שלך"
+        class="w-full rounded-2xl border border-white/20 bg-white/10 px-5 py-4 text-center text-base text-white placeholder-white/50 backdrop-blur focus:border-brand-400 focus:bg-white/15 focus:outline-none"
+      />
+      <button type="submit" class="rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-bold text-white shadow-glow transition hover:bg-brand-700">
+        הרשמה לעדכונים
+      </button>
+      <div id="blog-newsletter-msg" class="hidden text-center text-sm"></div>
+    </form>
+    <p class="mt-4 text-xs text-ink-400">
+      בהרשמה אתה מאשר את <a href="/terms" class="underline">תנאי השימוש</a> ו<a href="/privacy" class="underline">מדיניות הפרטיות</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">מוצר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
+        <li><a href="/#features" class="hover:text-ink-900 dark:hover:text-white">תכונות</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/blog" class="hover:text-ink-900 dark:hover:text-white">בלוג</a></li>
+        <li><a href="/roadmap" class="hover:text-ink-900 dark:hover:text-white">מפת דרכים</a></li>
+        <li><a href="/changelog" class="hover:text-ink-900 dark:hover:text-white">Changelog</a></li>
+        <li><a href="/help" class="hover:text-ink-900 dark:hover:text-white">מרכז עזרה</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">חברה</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/about" class="hover:text-ink-900 dark:hover:text-white">אודות</a></li>
+        <li><a href="/press" class="hover:text-ink-900 dark:hover:text-white">מדיה</a></li>
+        <li><a href="/trust" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">אבטחה ופרטיות →</a></li>
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
+        <li><a href="/en" hreflang="en" class="hover:text-ink-900 dark:hover:text-white">🇬🇧 English version</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    © <span class="num">2026</span> כסף'לה. כל הזכויות שמורות. עשוי באהבה בישראל 🇮🇱
+  </div>
+</footer>
+
+<script>
+// dark mode toggle
+function kesefleToggleDark() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle('dark');
+  localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light');
+  document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+  document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+}
+(function initTheme() {
+  var saved = localStorage.getItem('kesefle_theme');
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    document.getElementById('icon-moon').classList.add('hidden');
+    document.getElementById('icon-sun').classList.remove('hidden');
+  }
+})();
+
+// category filter
+(function initCategoryFilter() {
+  var chips = document.querySelectorAll('.cat-chip');
+  var articles = document.querySelectorAll('[data-article]');
+  var empty = document.getElementById('empty-state');
+  chips.forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      var cat = chip.dataset.cat;
+      chips.forEach(function(c) { c.classList.remove('chip-active'); });
+      chip.classList.add('chip-active');
+      var visible = 0;
+      articles.forEach(function(a) {
+        if (cat === 'all' || a.dataset.cat === cat) {
+          a.classList.remove('hidden'); visible++;
+        } else {
+          a.classList.add('hidden');
+        }
+      });
+      if (empty) empty.classList.toggle('hidden', visible > 0);
+    });
+  });
+})();
+
+// newsletter signup
+async function blogSubscribe(ev) {
+  ev.preventDefault();
+  var f = ev.target;
+  var msg = document.getElementById('blog-newsletter-msg');
+  var btn = f.querySelector('button[type="submit"]');
+  var email = f.email.value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msg.textContent = 'אנא הכנס אימייל תקין';
+    msg.className = 'text-center text-sm text-red-300';
+    msg.classList.remove('hidden');
+    return false;
+  }
+  btn.disabled = true;
+  var orig = btn.textContent;
+  btn.textContent = 'שולח…';
+  try {
+    var r = await fetch('/api/events?action=waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, source: 'blog_subscribe' })
+    });
+    if (r.ok) {
+      msg.textContent = '✓ נרשמת. המאמר הבא בדרך אליך.';
+      msg.className = 'text-center text-sm text-brand-300';
+      f.email.value = '';
+    } else {
+      msg.textContent = 'משהו השתבש. נסה שוב בעוד רגע.';
+      msg.className = 'text-center text-sm text-red-300';
+    }
+  } catch (err) {
+    var stored = JSON.parse(localStorage.getItem('kesefle_waitlist') || '[]');
+    stored.push({ email: email, ts: new Date().toISOString(), source: 'blog_subscribe' });
+    localStorage.setItem('kesefle_waitlist', JSON.stringify(stored));
+    msg.textContent = '✓ נרשמת. תקבל פרטים כשהמערכת תפעל.';
+    msg.className = 'text-center text-sm text-brand-300';
+    f.email.value = '';
+  }
+  msg.classList.remove('hidden');
+  btn.disabled = false;
+  btn.textContent = orig;
+  return false;
+}
+
+// service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+  });
+}
+</script>
+
+</body>
+</html>

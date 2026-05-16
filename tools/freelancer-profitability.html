@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>מחשבון רווחיות לפרילנסר — חינם, בעברית, 2026 | כסף'לה</title>
+<meta name="description" content="מחשבון רווחיות לפרילנסר ועצמאי בישראל 2026: חישוב רווח נטו אחרי הוצאות, ביטוח לאומי, מע״מ ומס הכנסה. חינם, ללא רישום, רץ בדפדפן." />
+<meta name="theme-color" content="#0f172a" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="כסף'לה" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<meta property="og:title" content="מחשבון רווחיות לפרילנסר — חינם, 2026" />
+<meta property="og:description" content="כמה אתה באמת מרוויח אחרי הוצאות, ביטוח לאומי ומיסים. מחשבון חינם בעברית. ללא רישום." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta property="og:url" content="https://kesefle.vercel.app/tools/freelancer-profitability" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://kesefle.vercel.app/tools/freelancer-profitability" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "מחשבון רווחיות לפרילנסר — כסף'לה",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Any",
+  "url": "https://kesefle.vercel.app/tools/freelancer-profitability",
+  "inLanguage": "he-IL",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "ILS" },
+  "author": { "@type": "Organization", "name": "כסף'לה" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "כסף'לה", "item": "https://kesefle.vercel.app/" },
+    { "@type": "ListItem", "position": 2, "name": "כלים חינמיים", "item": "https://kesefle.vercel.app/tools" },
+    { "@type": "ListItem", "position": 3, "name": "מחשבון רווחיות לפרילנסר", "item": "https://kesefle.vercel.app/tools/freelancer-profitability" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "מה זה רווחיות?", "acceptedAnswer": { "@type": "Answer", "text": "אחוז הרווח הנקי מתוך ההכנסות. רווחיות 40% פירושה שמכל 100₪ הכנסה, 40₪ הם רווח נטו לאחר כל ההוצאות והמיסים." }},
+    { "@type": "Question", "name": "מהו אחוז ביטוח לאומי לעצמאי?", "acceptedAnswer": { "@type": "Answer", "text": "אחוז ביטוח לאומי לעצמאי בישראל נע בין 2.87% ל-12.83% תלוי בהכנסה. בממוצע סביב 5-9% מההכנסה החייבת." }},
+    { "@type": "Question", "name": "האם המחשבון חינמי?", "acceptedAnswer": { "@type": "Answer", "text": "כן, המחשבון חינמי לחלוטין, ללא רישום וללא איסוף נתונים. הכל רץ מקומית בדפדפן שלך." }}
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+        backgroundImage: {
+          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+  .input-num { direction: ltr; text-align: right; }
+  .toggle-track { width: 44px; height: 24px; transition: background-color 0.2s; }
+  .toggle-thumb { transform: translateX(0); transition: transform 0.2s; }
+  .toggle-on .toggle-thumb { transform: translateX(-20px); }
+  @keyframes count-up { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .animate-count { animation: count-up 0.3s ease-out; }
+</style>
+<script src="/lib/analytics.js" defer></script>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<!-- ============== NAV ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
+      <a href="/tools" class="text-sm font-semibold text-brand-700 dark:text-brand-300">כלים</a>
+      <a href="/trust" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אבטחה</a>
+      <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="kesefleToggleDark()" aria-label="מצב כהה" class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">
+        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a href="/#signup" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 dark:bg-brand-600 dark:hover:bg-brand-500">התחל חינם</a>
+    </div>
+  </nav>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative bg-mesh pt-28 pb-10 md:pt-32">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
+  <div class="mx-auto max-w-4xl px-5">
+    <nav aria-label="breadcrumb" class="mb-6 text-sm text-ink-500 dark:text-ink-300">
+      <a href="/" class="hover:text-ink-900 dark:hover:text-white">בית</a>
+      <span class="mx-2">/</span>
+      <a href="/tools" class="hover:text-ink-900 dark:hover:text-white">כלים</a>
+      <span class="mx-2">/</span>
+      <span class="font-semibold text-ink-900 dark:text-white">רווחיות לפרילנסר</span>
+    </nav>
+    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-700/40 dark:bg-brand-900/30 dark:text-brand-200">
+      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+      מעודכן ל-<span class="num">2026</span> • חישוב לפי החוק הישראלי
+    </div>
+    <h1 class="text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-5xl">
+      מחשבון רווחיות לפרילנסר
+    </h1>
+    <p class="mt-4 max-w-2xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+      כמה אתה <strong>באמת</strong> מרוויח אחרי הוצאות, ביטוח לאומי, מע״מ ומס הכנסה? מלא את הנתונים ותראה בזמן אמת.
+    </p>
+  </div>
+</section>
+
+<!-- ============== CALCULATOR ============== -->
+<section class="pb-12">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+
+      <!-- ===== INPUTS ===== -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <h2 class="text-xl font-black tracking-tight dark:text-white">הנתונים שלך</h2>
+        <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">כל שדה משנה את התוצאות בזמן אמת</p>
+
+        <!-- Income -->
+        <div class="mt-6">
+          <label class="flex items-center justify-between text-sm font-bold dark:text-white">
+            <span>הכנסה חודשית ממוצעת</span>
+            <span class="text-xs font-medium text-ink-500 dark:text-ink-300">₪</span>
+          </label>
+          <input id="in-income" type="number" min="0" step="100" value="20000" class="input-num mt-2 w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-lg font-semibold focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+        </div>
+
+        <!-- VAT toggle -->
+        <div class="mt-5 flex items-center justify-between rounded-2xl border border-ink-200 bg-ink-50 px-4 py-3 dark:border-ink-700 dark:bg-ink-900/40">
+          <div>
+            <p class="text-sm font-bold dark:text-white">ההכנסה כוללת מע״מ?</p>
+            <p class="text-xs text-ink-500 dark:text-ink-300">סמן אם הסכום כולל מע״מ <span class="num">18%</span></p>
+          </div>
+          <button type="button" id="toggle-vat" onclick="kesefleToggle('toggle-vat')" class="toggle-track relative flex shrink-0 items-center rounded-full bg-ink-300 px-0.5 dark:bg-ink-600">
+            <span class="toggle-thumb block h-5 w-5 rounded-full bg-white shadow"></span>
+          </button>
+        </div>
+
+        <!-- Business expenses split -->
+        <p class="mt-7 text-sm font-bold dark:text-white">הוצאות עסקיות חודשיות</p>
+        <p class="mt-0.5 text-xs text-ink-500 dark:text-ink-300">פרק את ההוצאות שלך לקטגוריות</p>
+        <div class="mt-3 grid gap-3">
+          <div class="grid grid-cols-[1fr_140px] items-center gap-3">
+            <label class="text-sm dark:text-ink-100">שכירות משרד / מקום עבודה</label>
+            <input id="in-rent" type="number" min="0" step="50" value="0" class="input-num rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+          </div>
+          <div class="grid grid-cols-[1fr_140px] items-center gap-3">
+            <label class="text-sm dark:text-ink-100">תוכנות וכלים (SaaS)</label>
+            <input id="in-software" type="number" min="0" step="20" value="300" class="input-num rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+          </div>
+          <div class="grid grid-cols-[1fr_140px] items-center gap-3">
+            <label class="text-sm dark:text-ink-100">שיווק ופרסום</label>
+            <input id="in-marketing" type="number" min="0" step="50" value="500" class="input-num rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+          </div>
+          <div class="grid grid-cols-[1fr_140px] items-center gap-3">
+            <label class="text-sm dark:text-ink-100">רואה חשבון / יועץ מס</label>
+            <input id="in-accountant" type="number" min="0" step="50" value="500" class="input-num rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+          </div>
+          <div class="grid grid-cols-[1fr_140px] items-center gap-3">
+            <label class="text-sm dark:text-ink-100">הוצאות אחרות</label>
+            <input id="in-other" type="number" min="0" step="50" value="400" class="input-num rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+          </div>
+        </div>
+
+        <!-- Bituach Leumi -->
+        <div class="mt-7">
+          <label class="flex items-center justify-between text-sm font-bold dark:text-white">
+            <span>ביטוח לאומי + ביטוח בריאות</span>
+            <span class="text-xs font-medium text-ink-500 dark:text-ink-300">% מההכנסה החייבת</span>
+          </label>
+          <input id="in-bituach" type="number" min="0" max="100" step="0.1" value="5" class="input-num mt-2 w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-lg font-semibold focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">בהנחת <span class="num">5%</span> ממוצע. הטווח האמיתי לעצמאי הוא <span class="num">2.87%-12.83%</span> תלוי בהכנסה</p>
+        </div>
+
+        <!-- Income tax -->
+        <div class="mt-5">
+          <label class="flex items-center justify-between text-sm font-bold dark:text-white">
+            <span>שיעור מס הכנסה משוער</span>
+            <span class="text-xs font-medium text-ink-500 dark:text-ink-300">%</span>
+          </label>
+          <input id="in-tax" type="number" min="0" max="100" step="1" value="20" class="input-num mt-2 w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-lg font-semibold focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-ink-600 dark:bg-ink-900 dark:text-white" />
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">מדרגות <span class="num">2026</span>: <span class="num">10-50%</span>. ברירת מחדל <span class="num">20%</span> מתאימה להכנסה חייבת של ~<span class="num">8,000-15,000₪</span> בחודש</p>
+        </div>
+
+        <!-- Quick preset buttons -->
+        <div class="mt-6 flex flex-wrap gap-2">
+          <button type="button" onclick="kesefleSetPreset('starter')" class="rounded-xl border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-brand-300 hover:bg-brand-50 dark:border-ink-600 dark:bg-ink-900 dark:text-ink-100 dark:hover:bg-ink-700">מתחיל (<span class="num">10k₪</span>)</button>
+          <button type="button" onclick="kesefleSetPreset('mid')" class="rounded-xl border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-brand-300 hover:bg-brand-50 dark:border-ink-600 dark:bg-ink-900 dark:text-ink-100 dark:hover:bg-ink-700">בינוני (<span class="num">25k₪</span>)</button>
+          <button type="button" onclick="kesefleSetPreset('senior')" class="rounded-xl border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 hover:border-brand-300 hover:bg-brand-50 dark:border-ink-600 dark:bg-ink-900 dark:text-ink-100 dark:hover:bg-ink-700">בכיר (<span class="num">50k₪</span>)</button>
+        </div>
+
+        <button type="button" onclick="kesefleShareInputs()" class="mt-6 w-full rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-700 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-900/30 dark:text-brand-200">
+          העתק קישור עם הנתונים שלך
+        </button>
+      </div>
+
+      <!-- ===== OUTPUTS ===== -->
+      <div class="space-y-6">
+
+        <!-- Hero numbers -->
+        <div class="rounded-3xl bg-gradient-to-br from-brand-600 to-emerald-700 p-7 text-white shadow-glow">
+          <p class="text-sm font-medium opacity-90">רווח נטו חודשי</p>
+          <p id="out-net-month" class="mt-1 text-5xl font-black tracking-tight animate-count num">₪0</p>
+          <div class="mt-5 grid grid-cols-2 gap-4 border-t border-white/20 pt-4">
+            <div>
+              <p class="text-xs opacity-80">רווח נטו שנתי</p>
+              <p id="out-net-year" class="mt-0.5 text-xl font-black num">₪0</p>
+            </div>
+            <div>
+              <p class="text-xs opacity-80">אחוז רווחיות</p>
+              <p id="out-profitability" class="mt-0.5 text-xl font-black num">0%</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Where the money goes - stacked bar -->
+        <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black tracking-tight dark:text-white">לאן הולך כל שקל?</h3>
+            <span id="out-income-label" class="text-sm font-bold text-ink-600 dark:text-ink-200 num">100%</span>
+          </div>
+          <div class="mt-4 flex h-12 overflow-hidden rounded-xl bg-ink-100 dark:bg-ink-900">
+            <div id="bar-expenses" style="width:0%" class="bg-orange-500 transition-all duration-300"></div>
+            <div id="bar-bituach" style="width:0%" class="bg-purple-500 transition-all duration-300"></div>
+            <div id="bar-tax" style="width:0%" class="bg-red-500 transition-all duration-300"></div>
+            <div id="bar-net" style="width:0%" class="bg-brand-500 transition-all duration-300"></div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div class="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2 dark:bg-orange-900/20">
+              <span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span><span class="dark:text-ink-100">הוצאות עסקיות</span></span>
+              <span id="lbl-expenses" class="font-bold num text-ink-900 dark:text-white">₪0</span>
+            </div>
+            <div class="flex items-center justify-between rounded-xl bg-purple-50 px-3 py-2 dark:bg-purple-900/20">
+              <span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-purple-500"></span><span class="dark:text-ink-100">ביטוח לאומי</span></span>
+              <span id="lbl-bituach" class="font-bold num text-ink-900 dark:text-white">₪0</span>
+            </div>
+            <div class="flex items-center justify-between rounded-xl bg-red-50 px-3 py-2 dark:bg-red-900/20">
+              <span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-red-500"></span><span class="dark:text-ink-100">מס הכנסה</span></span>
+              <span id="lbl-tax" class="font-bold num text-ink-900 dark:text-white">₪0</span>
+            </div>
+            <div class="flex items-center justify-between rounded-xl bg-brand-50 px-3 py-2 dark:bg-brand-900/20">
+              <span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-brand-500"></span><span class="dark:text-ink-100">רווח נטו</span></span>
+              <span id="lbl-net" class="font-bold num text-brand-700 dark:text-brand-300">₪0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expense breakdown -->
+        <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <h3 class="text-lg font-black tracking-tight dark:text-white">כמה אתה משלם לעבוד?</h3>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">חלוקת ההוצאות העסקיות שלך</p>
+          <div id="expenses-breakdown" class="mt-4 space-y-2"></div>
+          <div class="mt-4 border-t border-ink-200 pt-3 dark:border-ink-700">
+            <div class="flex items-center justify-between text-sm">
+              <span class="font-bold dark:text-white">סה"כ הוצאות שנתיות</span>
+              <span id="out-annual-expenses" class="font-black text-orange-600 num dark:text-orange-400">₪0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto verdict -->
+        <div id="verdict" class="rounded-3xl border-2 p-6 transition-colors"></div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ASSUMPTIONS NOTE ============== -->
+<section class="border-y border-ink-200 bg-white py-10 dark:border-ink-700 dark:bg-ink-800/40">
+  <div class="mx-auto max-w-3xl px-5">
+    <h3 class="text-xl font-black tracking-tight dark:text-white">איך החישוב עובד</h3>
+    <ol class="mt-4 space-y-3 text-sm text-ink-600 dark:text-ink-200">
+      <li>
+        <strong class="dark:text-white"><span class="num">1.</span> הכנסה נטו ממע״מ:</strong>
+        אם סימנת שההכנסה כוללת מע״מ, אנחנו מחלקים ב-<span class="num">1.18</span> לקבל את ההכנסה האמיתית.
+      </li>
+      <li>
+        <strong class="dark:text-white"><span class="num">2.</span> הכנסה חייבת:</strong>
+        הכנסה ללא מע״מ פחות סך הוצאות עסקיות מוכרות.
+      </li>
+      <li>
+        <strong class="dark:text-white"><span class="num">3.</span> ביטוח לאומי:</strong>
+        אחוז שאתה מגדיר מההכנסה החייבת. בפועל מדרגות הביטוח הלאומי לעצמאי בישראל (<span class="num">2026</span>):
+        <span class="num">2.87%</span> עד ~<span class="num">7,522₪</span>/חודש, <span class="num">12.83%</span> מעבר לכך.
+      </li>
+      <li>
+        <strong class="dark:text-white"><span class="num">4.</span> מס הכנסה:</strong>
+        אחוז שאתה מגדיר על ההכנסה החייבת לאחר ביטוח לאומי. מדרגות מס הכנסה <span class="num">2026</span>:
+        <span class="num">10%</span>, <span class="num">14%</span>, <span class="num">20%</span>, <span class="num">31%</span>, <span class="num">35%</span>, <span class="num">47%</span>, <span class="num">50%</span>.
+      </li>
+      <li>
+        <strong class="dark:text-white"><span class="num">5.</span> רווח נטו:</strong>
+        הכנסה חייבת פחות ביטוח לאומי פחות מס הכנסה.
+      </li>
+    </ol>
+    <div class="mt-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900 dark:border-yellow-700/40 dark:bg-yellow-900/20 dark:text-yellow-200">
+      <strong>הערה:</strong> זהו אומדן בלבד. החישוב המדויק תלוי במצב משפחתי, נקודות זיכוי, הפרשות פנסיוניות ופרטים נוספים. לקבלת חישוב מדויק התייעץ עם רואה חשבון.
+    </div>
+  </div>
+</section>
+
+<!-- ============== CTA ============== -->
+<section class="py-16">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="rounded-3xl bg-gradient-to-br from-brand-600 to-emerald-700 p-10 text-center text-white shadow-glow">
+      <h2 class="text-3xl font-black tracking-tight md:text-4xl">
+        רוצה לעקוב אחרי ההוצאות החודשיות אוטומטית?
+      </h2>
+      <p class="mx-auto mt-3 max-w-xl text-brand-50">
+        כסף'לה רושמת כל הוצאה שלך מתוך הודעת וואטסאפ. בלי טפסים, בלי אפליקציה. בסוף החודש יש לך גיליון אמיתי ולא הערכה.
+      </p>
+      <a href="/#signup" class="mt-7 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-bold text-brand-700 transition hover:bg-brand-50">
+        התחל ב-Kesefle בחינם
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============== OTHER TOOLS ============== -->
+<section class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-800/40">
+  <div class="mx-auto max-w-5xl px-5">
+    <h3 class="text-2xl font-black tracking-tight dark:text-white">כלים נוספים שיעניינו אותך</h3>
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+      <a href="/tools/budget-calculator" class="rounded-2xl border border-ink-200 bg-white p-5 transition hover:border-brand-300 hover:shadow-soft dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-600">
+        <p class="font-bold dark:text-white">תקציב משפחתי <span class="num">50/30/20</span></p>
+        <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">חלוקת הכנסה לחיוני, רצונות, וחיסכון</p>
+      </a>
+      <a href="/tools/vat-calculator" class="rounded-2xl border border-ink-200 bg-white p-5 transition hover:border-brand-300 hover:shadow-soft dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-600">
+        <p class="font-bold dark:text-white">מחשבון מע״מ</p>
+        <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">חישוב מע״מ <span class="num">18%</span> נטו/ברוטו</p>
+      </a>
+      <a href="/tools/cashflow-projector" class="rounded-2xl border border-ink-200 bg-white p-5 transition hover:border-brand-300 hover:shadow-soft dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-600">
+        <p class="font-bold dark:text-white">תזרים <span class="num">12</span> חודשים</p>
+        <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">תחזית כניסות והוצאות לשנה</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">מוצר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/tools" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300">כלים חינמיים</a></li>
+        <li><a href="/help" class="hover:text-ink-900 dark:hover:text-white">מרכז עזרה</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">חברה</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/about" class="hover:text-ink-900 dark:hover:text-white">אודות</a></li>
+        <li><a href="/trust" class="hover:text-ink-900 dark:hover:text-white">אבטחה ופרטיות</a></li>
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    &copy; <span class="num">2026</span> כסף'לה. כל הזכויות שמורות.
+  </div>
+</footer>
+
+<script>
+function kesefleToggleDark() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle('dark');
+  localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light');
+  document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+  document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+}
+(function initTheme() {
+  var saved = localStorage.getItem('kesefle_theme');
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    var m = document.getElementById('icon-moon'); if (m) m.classList.add('hidden');
+    var s = document.getElementById('icon-sun'); if (s) s.classList.remove('hidden');
+  }
+})();
+
+function kesefleToggle(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('toggle-on');
+  el.classList.toggle('bg-brand-500');
+  el.classList.toggle('bg-ink-300');
+  el.classList.toggle('dark:bg-ink-600');
+  kesefleRecalc();
+}
+
+function fmt(n) {
+  if (!isFinite(n)) n = 0;
+  var r = Math.round(n);
+  return '₪' + r.toLocaleString('en-US');
+}
+
+function pct(n) { return (Math.round(n * 10) / 10) + '%'; }
+
+function getInputs() {
+  return {
+    income:     parseFloat(document.getElementById('in-income').value) || 0,
+    includesVat:document.getElementById('toggle-vat').classList.contains('toggle-on'),
+    rent:       parseFloat(document.getElementById('in-rent').value) || 0,
+    software:   parseFloat(document.getElementById('in-software').value) || 0,
+    marketing:  parseFloat(document.getElementById('in-marketing').value) || 0,
+    accountant: parseFloat(document.getElementById('in-accountant').value) || 0,
+    other:      parseFloat(document.getElementById('in-other').value) || 0,
+    bituach:    parseFloat(document.getElementById('in-bituach').value) || 0,
+    tax:        parseFloat(document.getElementById('in-tax').value) || 0
+  };
+}
+
+function kesefleRecalc() {
+  var x = getInputs();
+  // Income net of VAT (if it included VAT)
+  var grossIncome = x.includesVat ? x.income / 1.18 : x.income;
+  var totalExpenses = x.rent + x.software + x.marketing + x.accountant + x.other;
+  var taxableIncome = Math.max(0, grossIncome - totalExpenses);
+  var bituachAmt = taxableIncome * (x.bituach / 100);
+  var afterBituach = Math.max(0, taxableIncome - bituachAmt);
+  var taxAmt = afterBituach * (x.tax / 100);
+  var net = Math.max(0, afterBituach - taxAmt);
+
+  var base = grossIncome > 0 ? grossIncome : 1;
+  var pExp     = (totalExpenses / base) * 100;
+  var pBituach = (bituachAmt / base) * 100;
+  var pTax     = (taxAmt / base) * 100;
+  var pNet     = (net / base) * 100;
+
+  // Render
+  document.getElementById('out-net-month').textContent = fmt(net);
+  document.getElementById('out-net-year').textContent = fmt(net * 12);
+  document.getElementById('out-profitability').textContent = pct(grossIncome > 0 ? (net / grossIncome) * 100 : 0);
+  document.getElementById('out-income-label').textContent = fmt(grossIncome) + ' = 100%';
+
+  document.getElementById('bar-expenses').style.width = pExp + '%';
+  document.getElementById('bar-bituach').style.width = pBituach + '%';
+  document.getElementById('bar-tax').style.width      = pTax + '%';
+  document.getElementById('bar-net').style.width      = pNet + '%';
+
+  document.getElementById('lbl-expenses').textContent = fmt(totalExpenses) + ' (' + pct(pExp) + ')';
+  document.getElementById('lbl-bituach').textContent  = fmt(bituachAmt) + ' (' + pct(pBituach) + ')';
+  document.getElementById('lbl-tax').textContent      = fmt(taxAmt) + ' (' + pct(pTax) + ')';
+  document.getElementById('lbl-net').textContent      = fmt(net) + ' (' + pct(pNet) + ')';
+
+  // Expenses breakdown
+  var items = [
+    { name: 'שכירות משרד', v: x.rent, color: 'bg-blue-400' },
+    { name: 'תוכנות וכלים', v: x.software, color: 'bg-cyan-400' },
+    { name: 'שיווק ופרסום', v: x.marketing, color: 'bg-pink-400' },
+    { name: 'רואה חשבון', v: x.accountant, color: 'bg-amber-400' },
+    { name: 'אחר', v: x.other, color: 'bg-slate-400' }
+  ];
+  var html = '';
+  items.forEach(function(it) {
+    var p = totalExpenses > 0 ? (it.v / totalExpenses) * 100 : 0;
+    html += '<div>' +
+      '<div class="flex items-center justify-between text-xs"><span class="dark:text-ink-100">' + it.name + '</span><span class="font-bold num dark:text-white">' + fmt(it.v) + ' / חודש</span></div>' +
+      '<div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900"><div class="h-full ' + it.color + '" style="width:' + p + '%"></div></div>' +
+    '</div>';
+  });
+  document.getElementById('expenses-breakdown').innerHTML = html;
+  document.getElementById('out-annual-expenses').textContent = fmt(totalExpenses * 12);
+
+  // Verdict
+  var verdict = document.getElementById('verdict');
+  var profitability = grossIncome > 0 ? (net / grossIncome) * 100 : 0;
+  var cls, title, text, emoji;
+  if (profitability >= 60) {
+    cls = 'border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/30';
+    emoji = 'מעולה!';
+    title = 'רווחיות גבוהה — אתה במצב מצוין';
+    text = 'הרווחיות שלך מעל <span class="num">60%</span>. בדוק שאתה לא מציע מחיר נמוך מדי ושיש לך מקום לגדול.';
+  } else if (profitability >= 30) {
+    cls = 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/30';
+    emoji = 'יש מקום לשיפור';
+    title = 'רווחיות סבירה';
+    text = 'הרווחיות שלך בין <span class="num">30%-60%</span>. שקול אם יש הוצאות שאפשר לקצץ, או דרכים להעלות מחיר.';
+  } else {
+    cls = 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/30';
+    emoji = 'תשומת לב';
+    title = 'הוצאות גבוהות מדי';
+    text = 'הרווחיות שלך מתחת ל-<span class="num">30%</span>. ההוצאות שלך אוכלות את רוב ההכנסה. שווה לבדוק קיצוץ או העלאת תעריף.';
+  }
+  verdict.className = 'rounded-3xl border-2 p-6 transition-colors ' + cls;
+  verdict.innerHTML =
+    '<div class="flex items-start gap-3">' +
+      '<div class="text-sm font-black uppercase tracking-wide opacity-80 dark:text-white">' + emoji + '</div>' +
+    '</div>' +
+    '<h3 class="mt-1 text-xl font-black dark:text-white">' + title + '</h3>' +
+    '<p class="mt-2 text-sm leading-relaxed dark:text-ink-100">' + text + '</p>';
+
+  kesefleUpdateHash();
+}
+
+function kesefleSetPreset(kind) {
+  var presets = {
+    starter: { income: 10000, rent: 0, software: 200, marketing: 200, accountant: 350, other: 200, bituach: 4, tax: 14, vat: false },
+    mid:     { income: 25000, rent: 0, software: 400, marketing: 800, accountant: 600, other: 500, bituach: 8, tax: 25, vat: false },
+    senior:  { income: 50000, rent: 2500, software: 700, marketing: 1500, accountant: 1000, other: 800, bituach: 11, tax: 35, vat: false }
+  };
+  var p = presets[kind];
+  if (!p) return;
+  document.getElementById('in-income').value = p.income;
+  document.getElementById('in-rent').value = p.rent;
+  document.getElementById('in-software').value = p.software;
+  document.getElementById('in-marketing').value = p.marketing;
+  document.getElementById('in-accountant').value = p.accountant;
+  document.getElementById('in-other').value = p.other;
+  document.getElementById('in-bituach').value = p.bituach;
+  document.getElementById('in-tax').value = p.tax;
+  var tog = document.getElementById('toggle-vat');
+  var on = tog.classList.contains('toggle-on');
+  if (on !== p.vat) {
+    tog.classList.toggle('toggle-on');
+    tog.classList.toggle('bg-brand-500');
+    tog.classList.toggle('bg-ink-300');
+    tog.classList.toggle('dark:bg-ink-600');
+  }
+  kesefleRecalc();
+}
+
+function kesefleUpdateHash() {
+  var x = getInputs();
+  var parts = [x.income, x.includesVat ? 1 : 0, x.rent, x.software, x.marketing, x.accountant, x.other, x.bituach, x.tax];
+  location.hash = '#d=' + parts.join('-');
+}
+
+function kesefleLoadFromHash() {
+  var h = location.hash || '';
+  if (h.indexOf('#d=') !== 0) return;
+  var parts = h.slice(3).split('-').map(parseFloat);
+  if (parts.length < 9) return;
+  document.getElementById('in-income').value = parts[0];
+  var tog = document.getElementById('toggle-vat');
+  if (parts[1] === 1 && !tog.classList.contains('toggle-on')) {
+    tog.classList.add('toggle-on');
+    tog.classList.add('bg-brand-500');
+    tog.classList.remove('bg-ink-300');
+    tog.classList.remove('dark:bg-ink-600');
+  }
+  document.getElementById('in-rent').value = parts[2];
+  document.getElementById('in-software').value = parts[3];
+  document.getElementById('in-marketing').value = parts[4];
+  document.getElementById('in-accountant').value = parts[5];
+  document.getElementById('in-other').value = parts[6];
+  document.getElementById('in-bituach').value = parts[7];
+  document.getElementById('in-tax').value = parts[8];
+}
+
+function kesefleShareInputs() {
+  kesefleUpdateHash();
+  var url = location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      alert('הקישור הועתק!');
+    }).catch(function() {
+      prompt('העתק את הקישור:', url);
+    });
+  } else {
+    prompt('העתק את הקישור:', url);
+  }
+  if (window.kfl) window.kfl.track('share_inputs', { tool: 'freelancer-profitability' });
+}
+
+// Wire all inputs to recalc
+['in-income','in-rent','in-software','in-marketing','in-accountant','in-other','in-bituach','in-tax'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', kesefleRecalc);
+});
+
+kesefleLoadFromHash();
+kesefleRecalc();
+</script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});});}</script>
+</body>
+</html>
