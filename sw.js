@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const VERSION = 'v1';
+const VERSION = 'v2-2026-05-16';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -100,11 +100,7 @@ function isRuntimeCacheableHost(url) {
 async function networkWithFallback(request, fallbackUrl) {
   try {
     const resp = await fetch(request);
-    // Cache successful HTML responses for the navigation route
-    if (resp && resp.ok && request.method === 'GET') {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, resp.clone()).catch(() => {});
-    }
+    // DON'T cache HTML responses — fresh content beats stale layout
     return resp;
   } catch (_) {
     const cached = await caches.match(request);
