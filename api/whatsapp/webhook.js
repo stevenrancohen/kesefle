@@ -119,6 +119,68 @@ export default async function handler(req, res) {
   const messageId = message.id;
   const text = message.text?.body || '';
 
+  // STOP/unsubscribe handler — must respond per Meta policy + Israeli direct-marketing law.
+  // Hebrew: עצור / הסר / ביטול. English: STOP, UNSUBSCRIBE, CANCEL.
+  const STOP_PATTERN = /^\s*(stop|unsubscribe|cancel|עצור|הסר|ביטול|בטל)\s*$/i;
+  if (STOP_PATTERN.test(text)) {
+    // Mark user as opted out (best-effort — non-fatal if KV down).
+    const kvUrl2 = process.env.KV_REST_API_URL;
+    const kvToken2 = process.env.KV_REST_API_TOKEN;
+    if (kvUrl2 && kvToken2) {
+      try {
+        await fetch(`${kvUrl2}/set/${encodeURIComponent('optout:' + fromPhone)}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${kvToken2}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ts: new Date().toISOString(), reason: 'user_stop' }),
+        });
+      } catch (e) { /* non-fatal */ }
+    }
+    await sendReply(fromPhone, 'הוסרת מהבוט. לא נשלח לך עוד הודעות. להחזרה כתוב START.');
+    return res.status(200).json({ ok: true, action: 'stopped' });
+  }
+
+  // Re-subscribe via START
+  if (/^\s*start\s*$/i.test(text)) {
+    const kvUrl3 = process.env.KV_REST_API_URL;
+    const kvToken3 = process.env.KV_REST_API_TOKEN;
+    if (kvUrl3 && kvToken3) {
+      try {
+        await fetch(`${kvUrl3}/del/${encodeURIComponent('optout:' + fromPhone)}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${kvToken3}` },
+        });
+      } catch (e) { /* non-fatal */ }
+    }
+    await sendReply(fromPhone, 'ברוך השב 👋 הבוט פעיל שוב. שלח הוצאה לדוגמה: "45 קפה".');
+    return res.status(200).json({ ok: true, action: 'started' });
+  }
+
+  // If user previously opted out, don't process (Meta policy).
+  const kvUrlCheck = process.env.KV_REST_API_URL;
+  const kvTokenCheck = process.env.KV_REST_API_TOKEN;
+  if (kvUrlCheck && kvTokenCheck) {
+    try {
+      const optoutRes = await fetch(`${kvUrlCheck}/get/${encodeURIComponent('optout:' + fromPhone)}`, {
+        headers: { 'Authorization': `Bearer ${kvTokenCheck}` },
+      });
+      const optoutJson = await optoutRes.json();
+      if (optoutJson?.result) {
+        return res.status(200).json({ ok: true, ignored: 'opted_out' });
+      }
+    } catch (e) { /* non-fatal */ }
+  }
+
+  // Track last inbound timestamp (24h-window compliance — only send free-form replies within 24h of user message).
+  if (kvUrlCheck && kvTokenCheck) {
+    try {
+      await fetch(`${kvUrlCheck}/set/${encodeURIComponent('last_inbound:' + fromPhone)}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${kvTokenCheck}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ts: Date.now(), id: messageId }),
+      });
+    } catch (e) { /* non-fatal */ }
+  }
+
   // 4. Idempotency — skip if we've seen this message ID before
   const seenKey = `seen:wa:${messageId}`;
   if (await kvGet(seenKey)) {
