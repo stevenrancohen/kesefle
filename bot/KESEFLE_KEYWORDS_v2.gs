@@ -84,3 +84,12 @@ function _SRC_classify_v2_(text) {
   }
   return { category: null, routes_to: null, confidence: 0, matched_keyword: null, amount: amount, is_biz_prefixed: isBiz, needs_question: !!amount };
 }
+
+// Test runner - select TEST_CLASSIFIER from function dropdown and click Run
+function TEST_CLASSIFIER() {
+  var tests = ['245 סופר', '60 וולט', '42 קפה', 'עסק 300 פייסבוק', '15000 משכורת', 'מכרתי אייפון 1500'];
+  tests.forEach(function(t) {
+    var r = _SRC_classify_v2_(t);
+    Logger.log(t + ' -> ' + r.subcategory + ' [' + r.routes_to + '] conf=' + r.confidence);
+  });
+}
