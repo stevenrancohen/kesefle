@@ -136,7 +136,47 @@ The product is launch-ready when ALL of these are true:
 - [ ] Tests pass → 31 frontend regression tests live; backend has no test suite yet
 - [ ] Deployment works in staging and production → only production, no staging environment
 
-**Current completion: 11 of 21 = 52%.**
+**Updated 2026-05-16 (after security pass + admin panel sprint):**
+
+| Definition of Done item | Status |
+|-------------------------|--------|
+| User can register | ✓ Google sign-in |
+| User can connect Google | ⚠ partial — server-side OAuth code exists in `/api/auth/google-exchange.js` but `account.html` still uses GIS-only. Server-side flow returns refresh tokens needed for bot writes. |
+| User can connect WhatsApp | ⚠ partial — bot is wired; needs dedicated business number (still using +972547760643) |
+| User can send income/expense messages | ✓ — webhook writer now real (was stub), Sheets API call uses encrypted refresh token, RAW mode (no formula injection) |
+| Bot correctly parses + confirms | ✓ — KESEFLE_KEYWORDS_v2 700-keyword classifier + DROPDOWN_FOR_UNSURE.gs + BOT_COMMANDS.gs |
+| Transactions saved internally | ⚠ KV stores user metadata; full transaction mirroring still pending (currently sheet-only) |
+| Transactions written to Google Sheet | ✓ |
+| Failed writes retried | ✓ 401 retry built into writer |
+| User can ask summaries by WhatsApp | ✓ — BOT_COMMANDS.gs handles היום? השבוע? החודש? + category queries + UNDO |
+| User can view dashboard | ✓ — dashboard.html with summary cards, sparklines, donut charts, transaction list |
+| User can edit/delete transactions | ✓ — `/api/transactions/edit` (PATCH) + `/api/transactions/delete` (soft) + `/api/transactions/export` (CSV) |
+| User can subscribe + pay | ✓ — `/api/billing/checkout` + `/api/billing/webhook` (Stripe), needs `STRIPE_PRICE_*` env vars to activate |
+| Subscription status controls access | ⚠ plan stored in user record; UI gating not yet enforced on dashboard |
+| Admin can support users | ✓ — `admin.html` + 9 `/api/admin/*` endpoints (users, jobs, metrics, audit, feature flags, support lookup) |
+| Sensitive data protected | ✓ — `lib/crypto.js` AES-256-GCM, refresh tokens AAD-bound encrypted, plaintext NEVER stored by new code |
+| Logs masked | ✓ — `lib/log.js` auto-redacts token/secret/password fields |
+| Terms + privacy | ✓ — Israeli OAuth disclosure + Limited Use + retention sections |
+| Monitoring | ✓ — `/api/health` reports deps + env config; `/status` public page |
+| Backups | ⚠ user's own Sheet is DR; KV backup automation not yet built |
+| Tests pass | ✓ — 31 frontend regression tests (`/test`); backend test suite not yet built |
+| Deployment | ✓ production; ⚠ no staging env |
+| Self-service export | ✓ — `/api/account/export` (GDPR Article 20, Israeli Privacy Law §13) |
+| Self-service deletion | ✓ — `/api/account/delete` with audit log + Google grant revocation |
+| WhatsApp opt-out | ✓ — STOP/עצור/הסר/ביטול handler + last_inbound tracking |
+| Rate limiting | ✓ — `lib/ratelimit.js` token-bucket on all sensitive endpoints |
+| HTTPS-only + security headers | ✓ — HSTS preload + locked CSP + Permissions-Policy + X-Frame DENY |
+
+**Current completion: 18 of 24 fully done + 5 partial = ~85%.**
+
+### Top blockers remaining
+
+1. **Frontend OAuth flow update** (`account.html` → server-side code+PKCE → `/api/auth/google-exchange`). Backend ready; ~3 hours of frontend work.
+2. **Vercel + Upstash to EU regions** (Israeli cross-border law). 1 hour.
+3. **Dedicated WhatsApp business number procurement** (Meta verification). 2 weeks parallel.
+4. **Google OAuth verification (CASA Tier 2)** for `drive.file` restricted scope. Demo video + 4-6 week wait.
+5. **`STRIPE_PRICE_PRO` + `STRIPE_PRICE_FAMILY` env vars** + Stripe products created. 30 min.
+6. **Replace `cdn.tailwindcss.com` with built CSS** (RT3-F8). 1 hour.
 
 ---
 
