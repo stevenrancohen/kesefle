@@ -44,6 +44,7 @@ async function exchangeRefreshForAccess(refreshToken) {
 import { requireAuth } from '../../lib/auth.js';
 import { withRequestId } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { decryptRefreshToken } from '../../lib/crypto.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
@@ -57,11 +58,25 @@ async function handlerImpl(req, res) {
   const userRec = await kvGet('user:' + userSub);
   if (!userRec) return res.status(404).json({ ok: false, error: 'user not found' });
   if (!userRec.spreadsheetId) return res.status(404).json({ ok: false, error: 'no sheet provisioned' });
-  if (!userRec.refreshToken) return res.status(403).json({ ok: false, error: 'reauth_needed' });
+
+  // SECURITY: refresh token is encrypted at rest (AES-256-GCM, AAD-bound to userSub).
+  // Legacy plaintext fallback for users provisioned before the encryption rollout.
+  let refreshToken = null;
+  if (userRec.refreshTokenEnvelope) {
+    try {
+      refreshToken = decryptRefreshToken(userRec.refreshTokenEnvelope, userSub);
+    } catch (e) {
+      return res.status(403).json({ ok: false, error: 'refresh_token_decrypt_failed' });
+    }
+  } else if (userRec.refreshToken) {
+    refreshToken = userRec.refreshToken;
+  } else {
+    return res.status(403).json({ ok: false, error: 'reauth_needed' });
+  }
 
   let accessToken;
   try {
-    accessToken = await exchangeRefreshForAccess(userRec.refreshToken);
+    accessToken = await exchangeRefreshForAccess(refreshToken);
   } catch (e) {
     return res.status(403).json({ ok: false, error: 'reauth_needed', detail: e.message });
   }

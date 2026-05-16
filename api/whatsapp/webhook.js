@@ -11,6 +11,7 @@
 // IMPORTANT: This is the multi-tenant version. Each user's expenses go to THEIR sheet.
 
 import crypto from 'node:crypto';
+import { decryptRefreshToken } from '../../lib/crypto.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -256,15 +257,27 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
   if (!userRecord?.spreadsheetId) {
     return { ok: false, error: 'no_spreadsheet_id_in_user_record' };
   }
-  if (!userRecord?.refreshToken) {
-    // Fallback: log and return non-fatal so the bot still replies. The user needs to re-link Google.
+  // SECURITY: Read refresh token from encrypted envelope (AES-256-GCM, AAD-bound to userSub).
+  // Legacy fallback: also check the old plaintext field for users provisioned before the
+  // encryption rollout. New writes never store plaintext.
+  let refreshToken = null;
+  if (userRecord?.refreshTokenEnvelope) {
+    try {
+      refreshToken = decryptRefreshToken(userRecord.refreshTokenEnvelope, userRecord.userSub);
+    } catch (e) {
+      console.error('WRITE_BLOCKED_DECRYPT_FAILED', { userSub: userRecord.userSub, err: e.message });
+      return { ok: false, error: 'refresh_token_decrypt_failed' };
+    }
+  } else if (userRecord?.refreshToken) {
+    refreshToken = userRecord.refreshToken; // legacy
+  } else {
     console.error('WRITE_BLOCKED_NO_REFRESH_TOKEN', { userSub: userRecord.userSub, spreadsheetId: userRecord.spreadsheetId });
     return { ok: false, error: 'no_refresh_token_relink_needed' };
   }
 
   let accessToken;
   try {
-    accessToken = await exchangeRefreshForAccess(userRecord.refreshToken);
+    accessToken = await exchangeRefreshForAccess(refreshToken);
   } catch (e) {
     console.error('access_token_refresh_failed', e.message);
     return { ok: false, error: 'token_refresh_failed', detail: e.message };
@@ -324,9 +337,9 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
   }
 
   if (resp.status === 401) {
-    // Refresh and retry once
+    // Refresh and retry once (re-derive a fresh access token from the same refresh token)
     try {
-      accessToken = await exchangeRefreshForAccess(userRecord.refreshToken, true);
+      accessToken = await exchangeRefreshForAccess(refreshToken, true);
       resp = await fetch(url, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },

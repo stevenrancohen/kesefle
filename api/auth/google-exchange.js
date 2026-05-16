@@ -24,6 +24,7 @@
 import { verifyGoogleIdToken } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { encryptRefreshToken } from '../../lib/crypto.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
@@ -99,14 +100,24 @@ async function handlerImpl(req, res) {
   const kvToken = process.env.KV_REST_API_TOKEN;
   if (tokens.refresh_token && kvUrl && kvToken) {
     try {
-      // Encrypt refresh token at rest (XOR with a server-side key is NOT secure — use a proper KMS in prod).
-      // For now: store in KV with the assumption KV is access-controlled. TODO: AES-GCM with KEK from env.
+      // SECURITY: Encrypt refresh token at rest using AES-256-GCM with AAD bound to userSub.
+      // The AAD binding means even if an attacker swaps the envelope between user records,
+      // decryption fails (the userSub in the AAD won't match the new record's userSub).
+      let refreshTokenEnvelope = null;
+      try {
+        refreshTokenEnvelope = encryptRefreshToken(tokens.refresh_token, identity.sub);
+      } catch (e) {
+        log.error('refresh_token_encrypt_failed', { reqId: req.reqId, error: e.message });
+        // Fail closed if encryption is misconfigured — refusing to store plaintext.
+        return res.status(500).json({ ok: false, error: 'token_encryption_unavailable' });
+      }
       const record = {
         userSub: identity.sub,
         email: identity.email,
         name: identity.name,
         picture: identity.picture,
-        refreshToken: tokens.refresh_token,
+        // NOTE: refreshToken (plaintext) is NEVER stored anymore. Only the encrypted envelope.
+        refreshTokenEnvelope,
         scopes: tokens.scope,
         connectedAt: new Date().toISOString(),
       };
