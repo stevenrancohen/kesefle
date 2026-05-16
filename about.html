@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>אודות — כסף'לה | הסיפור מאחורי המוצר</title>
+<meta name="description" content="הסיפור של כסף'לה: למה בנינו מעקב הוצאות בעברית, איך הגענו לוואטסאפ + Google Sheets, ולמה זה חשוב לישראלים בשנת 2026." />
+<meta name="theme-color" content="#22c55e" />
+<meta property="og:title" content="אודות — כסף'לה" />
+<meta property="og:description" content="הסיפור מאחורי כסף'לה — מעקב הוצאות שמתאים לאיך שישראלים באמת חיים." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta property="og:url" content="https://kesefle.vercel.app/about" />
+<meta property="og:site_name" content="כסף'לה" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://kesefle.vercel.app/about" />
+<link rel="alternate" hreflang="he" href="https://kesefle.vercel.app/about" />
+<link rel="alternate" hreflang="en" href="https://kesefle.vercel.app/en" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Steven Ran Cohen",
+  "givenName": "Steven",
+  "familyName": "Cohen",
+  "alternateName": "סטיבן רן כהן",
+  "jobTitle": "Founder",
+  "worksFor": {
+    "@type": "Organization",
+    "name": "כסף'לה",
+    "url": "https://kesefle.vercel.app"
+  },
+  "email": "srcslcollection@gmail.com",
+  "url": "https://kesefle.vercel.app/about",
+  "sameAs": [
+    "https://github.com/stevenrancohen",
+    "https://wa.me/972547760643"
+  ],
+  "knowsLanguage": ["he", "en"],
+  "nationality": "IL"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "name": "אודות כסף'לה",
+  "url": "https://kesefle.vercel.app/about",
+  "inLanguage": "he",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "כסף'לה",
+    "url": "https://kesefle.vercel.app"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+        backgroundImage: {
+          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Founder pull-quote */
+  .pull-quote { position: relative; }
+  .pull-quote::before {
+    content: '"';
+    position: absolute;
+    top: -1rem;
+    right: -0.5rem;
+    font-size: 6rem;
+    line-height: 1;
+    color: rgba(34, 197, 94, 0.15);
+    font-family: serif;
+    font-weight: 900;
+    pointer-events: none;
+  }
+
+  /* Timeline */
+  .timeline-line {
+    position: absolute;
+    right: 1.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #22c55e 0%, #16a34a 50%, #15803d 100%);
+    border-radius: 9999px;
+  }
+  .dark .timeline-line {
+    background: linear-gradient(to bottom, #22c55e 0%, #4ade85 50%, #86efb1 100%);
+  }
+  .timeline-dot {
+    position: absolute;
+    right: 0.625rem;
+    top: 0.25rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background: white;
+    border: 3px solid #22c55e;
+    box-shadow: 0 4px 12px -2px rgba(34, 197, 94, 0.45);
+  }
+  .dark .timeline-dot { background: #0f1422; border-color: #4ade85; }
+  .timeline-dot-future {
+    background: #f7f8fb;
+    border-style: dashed;
+    border-color: #8a95b3;
+    box-shadow: none;
+  }
+  .dark .timeline-dot-future { background: #1e2638; border-color: #5d6b8f; }
+</style>
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<script src="/lib/analytics.js" defer></script>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<!-- ============== NAV ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">
+        ₪
+      </span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
+      <a href="/#features" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">תכונות</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
+      <a href="/about" class="text-sm font-semibold text-brand-600 dark:text-brand-400">אודות</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button
+        onclick="kesefleToggleDark()"
+        aria-label="מצב כהה"
+        class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
+        id="dark-toggle"
+      >
+        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a href="/account" class="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800 sm:inline-block">היכנס</a>
+      <a href="/account?plan=pro" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 dark:bg-brand-600 dark:hover:bg-brand-500">התחל חינם</a>
+    </div>
+  </nav>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative overflow-hidden bg-mesh pt-28 pb-12 md:pt-36 md:pb-20">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
+  <div class="mx-auto max-w-3xl px-5 text-center">
+    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
+      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+      סטארטאפ ישראלי · מייסד יחיד · קוד פתוח בלב
+    </div>
+    <h1 class="text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl">
+      הסיפור מאחורי <span class="bg-gradient-to-l from-brand-600 to-brand-400 bg-clip-text text-transparent">כסף'לה</span>
+    </h1>
+    <p class="mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-ink-600 dark:text-ink-200 md:text-xl">
+      בנינו מעקב הוצאות שמתאים לאיך שישראלים באמת חיים — בוואטסאפ, בעברית, על הגיליון שלהם, בלי לבקש מהם להפוך לרואי-חשבון.
+    </p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-2 text-sm text-ink-500 dark:text-ink-300">
+      <a href="#founder" class="rounded-full border border-ink-200 px-4 py-1.5 hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:hover:border-brand-400 dark:hover:text-brand-300">הסיפור האישי</a>
+      <a href="#values" class="rounded-full border border-ink-200 px-4 py-1.5 hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:hover:border-brand-400 dark:hover:text-brand-300">ערכים</a>
+      <a href="#timeline" class="rounded-full border border-ink-200 px-4 py-1.5 hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:hover:border-brand-400 dark:hover:text-brand-300">ציר זמן</a>
+      <a href="#money" class="rounded-full border border-ink-200 px-4 py-1.5 hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:hover:border-brand-400 dark:hover:text-brand-300">איך אנחנו מרוויחים</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOUNDER STORY ============== -->
+<section id="founder" class="py-16 md:py-24">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="mb-10 text-center">
+      <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">המייסד</p>
+      <h2 class="text-3xl font-black tracking-tight md:text-5xl">Steven Ran Cohen</h2>
+      <p class="mt-3 text-base text-ink-500 dark:text-ink-300">סטיבן רן כהן · בנאי, מהנדס, ישראלי · ת"א</p>
+    </div>
+
+    <div class="grid items-start gap-10 md:grid-cols-[180px_1fr]">
+      <div class="mx-auto md:mx-0">
+        <div class="relative">
+          <div class="grid h-40 w-40 place-items-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-7xl font-black text-white shadow-glow">
+            S
+          </div>
+          <div class="absolute -bottom-2 -left-2 grid h-12 w-12 place-items-center rounded-2xl border-4 border-white bg-ink-900 text-2xl text-white shadow-soft dark:border-ink-900 dark:bg-brand-600">
+            ₪
+          </div>
+        </div>
+        <div class="mt-5 flex flex-col items-center gap-1 text-sm md:items-start">
+          <a href="mailto:srcslcollection@gmail.com" class="text-ink-600 hover:text-brand-700 dark:text-ink-200 dark:hover:text-brand-300">srcslcollection@gmail.com</a>
+          <a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="text-ink-600 hover:text-brand-700 dark:text-ink-200 dark:hover:text-brand-300">+972-54-776-0643</a>
+        </div>
+      </div>
+
+      <div class="pull-quote rounded-3xl border border-ink-200 bg-white p-7 leading-relaxed text-ink-700 shadow-soft dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100 md:p-9">
+        <p class="text-lg font-bold text-ink-900 dark:text-white md:text-xl">
+          בניתי את כסף'לה כי איבדתי 14,000<span class="num"> </span>₪ במזומן קטן בלי-מעקב בשנת 2024 לבדה, וכל אפליקציית הוצאות בעברית שניסיתי הייתה איומה.
+        </p>
+
+        <p class="mt-5">
+          אני סטיבן. נולדתי כאן, גדלתי כאן, חי כאן. דובר עברית ואנגלית מאז שאני זוכר את עצמי, ועובד כמהנדס תוכנה ובונה מוצרים כבר יותר מעשור — חלקם הצליחו, חלקם פחות, אבל תמיד אהבתי את הרגע שבו רעיון פשוט הופך לכלי שמישהו באמת משתמש בו ביום-יום.
+        </p>
+
+        <p class="mt-4">
+          הרגע ששינה הכל היה שיחה עם רואה-החשבון שלי בינואר 2025. הוא הראה לי שורה בטבלה: "מזומן לא מזוהה — 13,847<span class="num"> </span>₪". זה היה שנה שלמה של קפה, חניות, ארוחות, בייביסיטר, מתנות — שזרמו דרך הארנק שלי ונעלמו. ניסיתי אז שש אפליקציות שונות. כולן היו או באנגלית עם RTL רצוץ, או דרשו פתיחת אפליקציה והקלדה לתוך טופס בכל פעם, או רצו לעזור לי "להבין את הרגלי הצריכה שלי" במקום פשוט לרשום. אף אחת לא הבינה ש"<bdo dir="rtl">80 דלק</bdo>" זה הוצאה של 80 שקל על דלק, ושאם זה לא קורה בשתי שניות בוואטסאפ — זה לא קורה.
+        </p>
+
+        <p class="mt-4">
+          התחלתי לבנות פרוטוטייפ באוגוסט 2025. בחרתי בוואטסאפ ולא בטלגרם כי כל אמא ישראלית שאני מכיר משתמשת בוואטסאפ, ובחרתי ב-Google Sheets ולא בבסיס-נתונים פרטי כי אני מאמין שהנתונים הפיננסיים שלך צריכים להישאר שלך — בגיליון שאתה שולט בו, גם אם נסגור מחר. זה הסיפור, וזה גם ההבטחה.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== VALUES ============== -->
+<section id="values" class="bg-white py-16 dark:bg-ink-800/40 md:py-24">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="mb-12 text-center">
+      <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">ערכים</p>
+      <h2 class="text-3xl font-black tracking-tight md:text-5xl">איך אנחנו עובדים</h2>
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-ink-500 dark:text-ink-300">
+        ארבעה עקרונות שמדריכים כל החלטה — מהקוד ועד התמחור.
+      </p>
+    </div>
+
+    <div class="grid gap-5 md:grid-cols-2">
+      <!-- Value 1 -->
+      <a href="/trust" class="group block rounded-3xl border border-ink-200 bg-white p-7 shadow-soft transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-500/50">
+        <div class="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v7c0 5 3.5 9 8 10 4.5-1 8-5 8-10V5l-8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3 class="text-xl font-black dark:text-white">פרטיות זו לא תכונה, זה ברירת מחדל</h3>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          אנחנו לא קוראים את הגיליון שלך. אנחנו לא מאמנים מודלים על ההוצאות שלך. אנחנו לא מוכרים מטא-דאטא. מי שאומר "פרטיות חשובה לנו" מתכוון בדרך כלל ההפך — אצלנו זו ארכיטקטורה.
+        </p>
+        <p class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand-700 group-hover:gap-2 dark:text-brand-400">
+          קרא על האבטחה שלנו
+          <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        </p>
+      </a>
+
+      <!-- Value 2 -->
+      <a href="/en" hreflang="en" class="group block rounded-3xl border border-ink-200 bg-white p-7 shadow-soft transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-500/50">
+        <div class="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <h3 class="text-xl font-black dark:text-white">עברית קודם, אנגלית אחר-כך</h3>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          רוב כלי-הפיננסים בעברית הם תרגום-אוטומט מעצבן של מוצר אמריקאי. אצלנו זה הפוך: כל מילה, כל אייקון, כל הודעת-שגיאה נכתבה קודם בעברית, ואז תורגמה לאנגלית. בלי "<bdo dir="rtl">משתמש 4</bdo>" ובלי RTL-שבור.
+        </p>
+        <p class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand-700 group-hover:gap-2 dark:text-brand-400">
+          English version
+          <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        </p>
+      </a>
+
+      <!-- Value 3 -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
+        </div>
+        <h3 class="text-xl font-black dark:text-white">הנתונים שלך חיים אצלך</h3>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          הגיליון נוצר ב-Google Drive שלך, תחת המייל שלך. אנחנו מבקשים הרשאת <code class="rounded bg-ink-100 px-1.5 py-0.5 text-[0.85em] text-brand-700 dark:bg-ink-700 dark:text-brand-300">drive.file</code> בלבד — זה אומר שיש לנו גישה אך-ורק לקבצים שאנחנו עצמנו יצרנו, לא לכל הדרייב. אם תרצה ללכת מחר, פשוט שלוף את ההרשאה. הגיליון נשאר שלך, על-זמני.
+        </p>
+      </div>
+
+      <!-- Value 4 -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
+        </div>
+        <h3 class="text-xl font-black dark:text-white">מזומן זה כסף אמיתי</h3>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          רוב האפליקציות הישראליות מניחות שאתה משלם הכל בכרטיס. אבל הקפה במכולת, חניית-זמן, הטיפ למלצרית, ה-100 שקל שנתת לבן — זה מזומן, וזה איפה שהכסף באמת נעלם. כסף'לה מתחילה במזומן, לא מסתיימת בו.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TIMELINE ============== -->
+<section id="timeline" class="py-16 md:py-24">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="mb-12 text-center">
+      <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">ציר זמן</p>
+      <h2 class="text-3xl font-black tracking-tight md:text-5xl">מרעיון לכלי שאנשים אוהבים</h2>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-ink-500 dark:text-ink-300">
+        13 חודשים מ"רעיון על מפית" ל-100 משתמשים פעילים. הנה איך זה התגלגל.
+      </p>
+    </div>
+
+    <div class="relative pr-16">
+      <div class="timeline-line"></div>
+
+      <!-- Milestone 1 -->
+      <div class="relative mb-10">
+        <div class="timeline-dot"></div>
+        <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            <span class="num">04 / 2025</span>
+            <span class="text-ink-400 dark:text-ink-500">·</span>
+            <span>הרעיון</span>
+          </div>
+          <h3 class="text-lg font-black dark:text-white">"<bdo dir="rtl">80 דלק</bdo>" על מפית במסעדה בפלורנטין</h3>
+          <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">
+            שיחה עם רואה-החשבון על 14,000<span class="num"> </span>₪ "מזומן לא מזוהה" הביאה אותי לרשום את הצורה הפשוטה ביותר לרשום הוצאה בעברית: מספר + מילה. אם זה לוקח יותר משתי שניות, אף-אחד לא יעשה את זה.
+          </p>
+        </div>
+      </div>
+
+      <!-- Milestone 2 -->
+      <div class="relative mb-10">
+        <div class="timeline-dot"></div>
+        <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            <span class="num">08 / 2025</span>
+            <span class="text-ink-400 dark:text-ink-500">·</span>
+            <span>פרוטוטייפ ראשון</span>
+          </div>
+          <h3 class="text-lg font-black dark:text-white">200 שורות קוד שעבדו עליי בלבד</h3>
+          <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">
+            Twilio + WhatsApp Sandbox + Google Sheets API + Apps Script פשוט. רק 12 קטגוריות. רק עברית. אבל זה רשם, וזה היה מספיק מהיר. השתמשתי בו עליי במשך 6 שבועות לפני שדיברתי עם בן-אדם נוסף.
+          </p>
+        </div>
+      </div>
+
+      <!-- Milestone 3 -->
+      <div class="relative mb-10">
+        <div class="timeline-dot"></div>
+        <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            <span class="num">12 / 2025</span>
+            <span class="text-ink-400 dark:text-ink-500">·</span>
+            <span>המשתמש הראשון</span>
+          </div>
+          <h3 class="text-lg font-black dark:text-white">אמא שלי, מסיבת חנוכה, ה-iPhone שלה</h3>
+          <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">
+            הרציתי את הבוט מול אמא, שתחיה. תוך עשר דקות היא רשמה את כל המתנות של היום. הרגע שבו ידעתי שזה עובד היה כשהיא שלחה לי בלילה: "<bdo dir="rtl">איך אני רואה את הסה"כ של דצמבר?</bdo>". זאת הייתה השאלה הראשונה האמיתית של "אני משתמשת בזה".
+          </p>
+        </div>
+      </div>
+
+      <!-- Milestone 4 -->
+      <div class="relative mb-10">
+        <div class="timeline-dot"></div>
+        <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            <span class="num">03 / 2026</span>
+            <span class="text-ink-400 dark:text-ink-500">·</span>
+            <span>השקה ציבורית</span>
+          </div>
+          <h3 class="text-lg font-black dark:text-white">kesefle.vercel.app הולך באוויר</h3>
+          <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">
+            דומיין, אתר נחיתה, מערכת תשלומים, OAuth, רישום עצמי. בלי גיוס. בלי קולגות. רק קוד, קפה ועצבים. השקה שקטה — פוסט בלינקדאין אחד, ושיחה אחת בקבוצת וואטסאפ של חברים.
+          </p>
+        </div>
+      </div>
+
+      <!-- Milestone 5 -->
+      <div class="relative mb-10">
+        <div class="timeline-dot"></div>
+        <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            <span class="num">05 / 2026</span>
+            <span class="text-ink-400 dark:text-ink-500">·</span>
+            <span>היום</span>
+          </div>
+          <h3 class="text-lg font-black dark:text-white">100 משתמשים פעילים · 47,000 הוצאות נרשמו</h3>
+          <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">
+            רובם מצאו אותנו דרך פה-לאוזן. הם כותבים לי בוואטסאפ באגים, רעיונות, תודות. כל אחד מהם משנה את המוצר. אני קורא הכל. תודה ענקית — אתם אלה שמחזיקים את זה באוויר.
+          </p>
+        </div>
+      </div>
+
+      <!-- Future milestone -->
+      <div class="relative">
+        <div class="timeline-dot timeline-dot-future"></div>
+        <div class="rounded-2xl border border-dashed border-ink-300 bg-ink-50/50 p-6 dark:border-ink-600 dark:bg-ink-800/30">
+          <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-ink-100 px-3 py-1 text-xs font-bold text-ink-600 dark:bg-ink-700/50 dark:text-ink-300">
+            <span>בקרוב</span>
+            <span class="text-ink-400 dark:text-ink-500">·</span>
+            <span>המשך</span>
+          </div>
+          <h3 class="text-lg font-black text-ink-700 dark:text-ink-200">1,000 משתמשים · OCR קבלות · אפליקציה ילידית</h3>
+          <p class="mt-2 leading-relaxed text-ink-500 dark:text-ink-300">
+            הצעדים הבאים מתפרסמים בשקיפות מלאה במפת-הדרכים שלנו.
+            <a href="/roadmap" class="font-bold text-brand-700 hover:underline dark:text-brand-300">צפה במפת הדרכים →</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== WHY NOW? ============== -->
+<section class="bg-white py-16 dark:bg-ink-800/40 md:py-24">
+  <div class="mx-auto max-w-5xl px-5">
+    <div class="mb-12 text-center">
+      <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">למה דווקא עכשיו?</p>
+      <h2 class="text-3xl font-black tracking-tight md:text-5xl">שלוש טכנולוגיות נפגשו ב-2026</h2>
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-ink-500 dark:text-ink-300">
+        כסף'לה לא יכלה להתקיים ב-2018, או אפילו ב-2022. הנה למה הרגע הזה הוא הרגע.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-3">
+      <!-- Reason 1: WhatsApp Business -->
+      <div class="relative rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="absolute -top-3 right-6 grid h-8 w-8 place-items-center rounded-full bg-brand-500 text-sm font-black text-white shadow-soft">1</div>
+        <div class="mt-2 mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[#25D366]/15 text-[#25D366]">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        <h3 class="text-lg font-black dark:text-white">WhatsApp Business API</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          רק ב-2023 פתחה מטא את ה-Business API לעסקים קטנים בעלות סבירה. עד אז, בוט וואטסאפ אמיתי דרש חשבון Twilio של אלפי דולרים. היום אנחנו משלמים פרוטה להודעה.
+        </p>
+      </div>
+
+      <!-- Reason 2: Google Sheets API + Apps Script V8 -->
+      <div class="relative rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="absolute -top-3 right-6 grid h-8 w-8 place-items-center rounded-full bg-brand-500 text-sm font-black text-white shadow-soft">2</div>
+        <div class="mt-2 mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[#0F9D58]/15 text-[#0F9D58]">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM8 18v-2h2v2H8zm0-4v-2h2v2H8zm0-4V8h2v2H8zm4 8v-2h2v2h-2zm0-4v-2h2v2h-2zm0-4V8h2v2h-2zM13 9V3.5L18.5 9H13z"/></svg>
+        </div>
+        <h3 class="text-lg font-black dark:text-white">Sheets API + Apps Script V8</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          OAuth מובנה, סקופ "drive.file" שמכבד פרטיות, הרשאות לפי-קובץ. גוגל הפכה את Sheets לבסיס-נתונים מבוזר שכל ישראלי כבר מחזיק חשבון בו — בלי שאני צריך לתחזק שרת מסד-נתונים.
+        </p>
+      </div>
+
+      <!-- Reason 3: LLM in Hebrew -->
+      <div class="relative rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="absolute -top-3 right-6 grid h-8 w-8 place-items-center rounded-full bg-brand-500 text-sm font-black text-white shadow-soft">3</div>
+        <div class="mt-2 mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-accent-500/15 text-accent-600 dark:text-accent-500">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 00-3 3v1.5a3 3 0 00-3 3V11a3 3 0 00-2 2.83V16a3 3 0 003 3h1a3 3 0 003 3h2a3 3 0 003-3h1a3 3 0 003-3v-2.17A3 3 0 0018 11V9.5a3 3 0 00-3-3V5a3 3 0 00-3-3z"/></svg>
+        </div>
+        <h3 class="text-lg font-black dark:text-white">מודלים שמבינים עברית</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          לפני 2024, NLP בעברית היה בדיחה אכזרית. סלנג, שגיאות-כתיב, "<bdo dir="rtl">סופר-פארם</bdo>" מול "<bdo dir="rtl">סופרפארם</bdo>" — שום מודל לא הסתדר. הדור הנוכחי של LLMs (Claude, GPT-4o, Gemini) באמת תופס. בוט-טקסטים-קצרים-בעברית עובד עכשיו.
+        </p>
+      </div>
+    </div>
+
+    <p class="mx-auto mt-10 max-w-2xl text-center text-base italic text-ink-500 dark:text-ink-300">
+      "אם לא היה את שלושת אלה, כסף'לה הייתה אפליקציה נוספת שצריך להוריד וללמוד. עם שלושתם, היא משתלבת לתוך החיים שלך מהדקה הראשונה."
+    </p>
+  </div>
+</section>
+
+<!-- ============== ROADMAP TEASER ============== -->
+<section class="py-16 md:py-20">
+  <div class="mx-auto max-w-3xl px-5">
+    <a href="/roadmap" class="group block overflow-hidden rounded-3xl border border-ink-200 bg-gradient-to-br from-brand-50 to-white p-8 shadow-soft transition hover:-translate-y-1 hover:shadow-glow dark:border-brand-500/30 dark:from-brand-500/10 dark:to-ink-900 md:p-12">
+      <div class="flex flex-col items-start gap-6 md:flex-row md:items-center md:gap-10">
+        <div class="grid h-20 w-20 shrink-0 place-items-center rounded-3xl bg-brand-500 text-white shadow-glow">
+          <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l9-3 9 3M3 6v12l9 3 9-3V6M3 6l9 3 9-3M12 9v12"/></svg>
+        </div>
+        <div class="flex-1">
+          <p class="mb-1 text-sm font-bold uppercase tracking-widest text-brand-700 dark:text-brand-300">מפת דרכים</p>
+          <h2 class="text-2xl font-black tracking-tight dark:text-white md:text-3xl">אנחנו מפרסמים מה שאנחנו בונים.</h2>
+          <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+            תכונות בעבודה, מה הצביעו עליו המשתמשים, מה דחינו ולמה. בלי הבטחות-שיווק, רק רשימה כנה של מה שיגיע ומתי.
+          </p>
+          <p class="mt-5 inline-flex items-center gap-1 font-bold text-brand-700 group-hover:gap-2 dark:text-brand-300">
+            צפה במפת הדרכים
+            <svg class="h-5 w-5 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- ============== HOW WE MAKE MONEY ============== -->
+<section id="money" class="bg-white py-16 dark:bg-ink-800/40 md:py-24">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="mb-10 text-center">
+      <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">איך אנחנו מרוויחים</p>
+      <h2 class="text-3xl font-black tracking-tight md:text-5xl">בלי כוכביות, בלי הפתעות</h2>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-ink-500 dark:text-ink-300">
+        עסק שמטפל בנתונים פיננסיים שלך חייב להיות שקוף איך הוא משלם משכורות. הנה זה.
+      </p>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="rounded-2xl border-2 border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-900">
+        <p class="text-xs font-bold uppercase tracking-widest text-ink-500 dark:text-ink-400">חינם</p>
+        <p class="mt-2 text-3xl font-black dark:text-white"><span class="num">0</span>₪</p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          לוס-ליידר. עד 30 הוצאות בחודש. אנחנו מפסידים כסף על כל משתמש חינם, וזה בסדר — זה איך שאתה מנסה בלי סיכון.
+        </p>
+      </div>
+      <div class="rounded-2xl border-2 border-brand-500 bg-brand-50 p-6 shadow-soft dark:border-brand-500 dark:bg-brand-500/10">
+        <p class="text-xs font-bold uppercase tracking-widest text-brand-700 dark:text-brand-300">Pro</p>
+        <p class="mt-2 text-3xl font-black dark:text-white"><span class="num">19</span>₪<span class="text-sm font-normal text-ink-500 dark:text-ink-300">/חודש</span></p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-700 dark:text-ink-100">
+          לחם-וחמאה שלנו. אם 1,000 איש משלמים — אנחנו עצמאיים, בלי משקיע שדוחק להפוך אתכם למוצר. זה היעד הראשון שלנו.
+        </p>
+      </div>
+      <div class="rounded-2xl border-2 border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-900">
+        <p class="text-xs font-bold uppercase tracking-widest text-ink-500 dark:text-ink-400">משפחה</p>
+        <p class="mt-2 text-3xl font-black dark:text-white"><span class="num">39</span>₪<span class="text-sm font-normal text-ink-500 dark:text-ink-300">/חודש</span></p>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          עד 5 בני-בית, גיליון משותף, חלוקת תשלומים. למשפחות, שותפויות עסקיות קטנות, וזוגות שמחלקים הוצאות.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-10 grid gap-4 rounded-3xl border-2 border-ink-900 bg-ink-900 p-7 text-white shadow-soft dark:border-brand-500 md:grid-cols-3 md:p-9">
+      <div class="md:col-span-1">
+        <p class="text-sm font-bold uppercase tracking-widest text-brand-400">ההבטחה</p>
+        <h3 class="mt-2 text-xl font-black md:text-2xl">איפה הכסף לא בא מ-</h3>
+      </div>
+      <ul class="space-y-3 text-ink-100 md:col-span-2">
+        <li class="flex items-start gap-3">
+          <span class="mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-red-500/20 text-red-400">✕</span>
+          <span><strong class="text-white">אנחנו לא מוכרים את הנתונים שלך.</strong> אף פעם. לא לבנקים, לא לחברות-כרטיסי-אשראי, לא לחברות-ביטוח. גם לא בצורה "אנונימית" (זו בדיחה ממילא).</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-red-500/20 text-red-400">✕</span>
+          <span><strong class="text-white">אנחנו לא מציגים פרסומות.</strong> אין באנרים, אין "מומלץ לך גם...", אין שותפי-אפיליאט מוסתרים.</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-red-500/20 text-red-400">✕</span>
+          <span><strong class="text-white">אנחנו לא לוקחים אחוזים מהעסקאות שלך.</strong> 19 שקל לחודש, כל החודשים, כל המשתמשים, אותו דבר.</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-500/30 text-brand-300">✓</span>
+          <span><strong class="text-white">אנחנו מתפרנסים ממנויים.</strong> זה הכל. אם אתם מרוצים, אנחנו חיים. אם לא, מגיע לנו להפסיק.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TEAM ============== -->
+<section class="py-16 md:py-24">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="mb-10 text-center">
+      <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">הצוות</p>
+      <h2 class="text-3xl font-black tracking-tight md:text-5xl">אחד · ועוד 100</h2>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-ink-500 dark:text-ink-300">
+        בואו נהיה ישרים על המידה. כסף'לה היא היום מייסד-יחיד, וזה נכון לעכשיו.
+      </p>
+    </div>
+
+    <div class="grid gap-5 md:grid-cols-2">
+      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="flex items-start gap-4">
+          <div class="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-3xl font-black text-white">S</div>
+          <div>
+            <h3 class="text-lg font-black dark:text-white">Steven Ran Cohen</h3>
+            <p class="text-sm font-semibold text-brand-700 dark:text-brand-400">Founder, Engineer, Support</p>
+            <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+              כותב את הקוד, עונה לוואטסאפ, מטפל בחשבוניות, עושה את הקפה. גר בת"א. דובר עברית, אנגלית וקצת ערבית-פלסטינית. ההורים שלי מ-חיפה ומ-ארה"ב.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="flex items-start gap-4">
+          <div class="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 text-3xl text-white">
+            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-black dark:text-white">100 משתמשים מוקדמים</h3>
+            <p class="text-sm font-semibold text-accent-600 dark:text-accent-500">צוות-הנפש שלי</p>
+            <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+              אתם דיווחתם על באגים בשעה 23:00, הצעתם פיצ'רים, סבלתם הודעות-שגיאה לא ברורות, ובחנתם איתי כל גרסה. תודה. הביקורת והשבחים שלכם הם המוצר. בלעדיכם אין כסף'לה.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="mt-10 text-center text-sm italic text-ink-500 dark:text-ink-300">
+      ככל שנגדל, נשכור — אבל קודם נוודא שהכלכלה מאפשרת זאת בלי לקחת כסף ממשקיעים שלוחצים להפוך אתכם למוצר. עד אז, אני כאן לבד וזה בסדר.
+    </p>
+  </div>
+</section>
+
+<!-- ============== CONTACT ============== -->
+<section id="contact" class="bg-white py-16 dark:bg-ink-800/40 md:py-20">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="mb-10 text-center">
+      <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">צור קשר</p>
+      <h2 class="text-3xl font-black tracking-tight md:text-5xl">אני קורא הכל</h2>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-ink-500 dark:text-ink-300">
+        באמת. כל הודעה, כל אימייל. אם אתה כאן, סביר שיש לך משהו לומר — שלח.
+      </p>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-3">
+      <a href="mailto:srcslcollection@gmail.com" class="group block rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-500/50">
+        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 8l8 5 8-5"/></svg>
+        </div>
+        <p class="text-xs font-bold uppercase tracking-widest text-ink-500 dark:text-ink-400">אימייל</p>
+        <p dir="ltr" class="mt-1 break-all text-sm font-semibold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">srcslcollection@gmail.com</p>
+      </a>
+
+      <a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="group block rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-500/50">
+        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[#25D366]/15 text-[#25D366]">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        <p class="text-xs font-bold uppercase tracking-widest text-ink-500 dark:text-ink-400">WhatsApp</p>
+        <p dir="ltr" class="mt-1 text-sm font-semibold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">+972-54-776-0643</p>
+      </a>
+
+      <a href="https://github.com/stevenrancohen" target="_blank" rel="noopener" class="group block rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-glow dark:border-ink-700 dark:bg-ink-900 dark:hover:border-brand-500/50">
+        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-ink-900 text-white dark:bg-ink-100 dark:text-ink-900">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        </div>
+        <p class="text-xs font-bold uppercase tracking-widest text-ink-500 dark:text-ink-400">GitHub</p>
+        <p dir="ltr" class="mt-1 text-sm font-semibold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">@stevenrancohen</p>
+      </a>
+    </div>
+
+    <p class="mt-8 text-center text-sm text-ink-500 dark:text-ink-300">
+      תגובה ממוצעת תוך 24 שעות בשבוע. בשבת — ראשון בבוקר.
+    </p>
+  </div>
+</section>
+
+<!-- ============== FINAL CTA ============== -->
+<section class="relative overflow-hidden py-20 md:py-28">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-br from-ink-900 via-ink-800 to-ink-900"></div>
+  <div class="absolute inset-0 -z-10 bg-mesh opacity-60"></div>
+  <div class="mx-auto max-w-3xl px-5 text-center text-white">
+    <h2 class="text-4xl font-black tracking-tight md:text-5xl">התחל לעקוב בעצמך</h2>
+    <p class="mt-5 text-lg text-ink-200">
+      קראת את הסיפור. עכשיו תגלה אם הוא עובד אצלך. <span class="num">14</span> ימי ניסיון Pro בחינם, בלי כרטיס.
+    </p>
+    <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <a href="/account?plan=pro" class="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-8 py-4 text-base font-black text-white shadow-glow transition hover:bg-brand-400 sm:w-auto">
+        התחל ניסיון Pro חינם
+        <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+      </a>
+      <a href="/pricing" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-8 py-4 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto">
+        השווה מחירים ←
+      </a>
+    </div>
+    <p class="mt-6 text-sm text-ink-300">הגיליון נוצר בדרייב שלך. ביטול בלחיצה. בלי הפתעות.</p>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">מוצר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
+        <li><a href="/#features" class="hover:text-ink-900 dark:hover:text-white">תכונות</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/roadmap" class="hover:text-ink-900 dark:hover:text-white">מפת דרכים</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">חברה</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/about" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">אודות →</a></li>
+        <li><a href="/trust" class="hover:text-ink-900 dark:hover:text-white">אבטחה ופרטיות</a></li>
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
+        <li><a href="/en" hreflang="en" class="hover:text-ink-900 dark:hover:text-white">English version</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    © <span class="num">2026</span> כסף'לה. כל הזכויות שמורות. עשוי באהבה בישראל
+  </div>
+</footer>
+
+<script>
+// ============ DARK MODE ============
+function kesefleToggleDark() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle('dark');
+  try { localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light'); } catch (e) {}
+  var m = document.getElementById('icon-moon');
+  var s = document.getElementById('icon-sun');
+  if (m) m.classList.toggle('hidden', isDark);
+  if (s) s.classList.toggle('hidden', !isDark);
+}
+(function initTheme() {
+  var saved = null;
+  try { saved = localStorage.getItem('kesefle_theme'); } catch (e) {}
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    var m = document.getElementById('icon-moon');
+    var s = document.getElementById('icon-sun');
+    if (m) m.classList.add('hidden');
+    if (s) s.classList.remove('hidden');
+  }
+})();
+</script>
+
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
+</body>
+</html>

@@ -1,0 +1,1391 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Kesefle API Docs — for developers</title>
+<meta name="description" content="Reference documentation for the Kesefle public API: authentication, rate limits, HMAC signatures, and every endpoint with request and response examples." />
+<meta name="theme-color" content="#0f172a" />
+<meta name="color-scheme" content="dark light" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://kesefle.vercel.app/docs" />
+<meta property="og:title" content="Kesefle API Docs" />
+<meta property="og:description" content="Reference documentation for the Kesefle public API." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://kesefle.vercel.app/docs" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Heebo', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        },
+        colors: {
+          ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:  { 300:'#86efac', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' },
+          accent: { 300:'#7dd3fc', 500:'#0ea5e9', 600:'#0284c7' },
+          warn:   { 500:'#f59e0b', 600:'#d97706' },
+          danger: { 500:'#dc2626', 600:'#b91c1c' }
+        }
+      }
+    }
+  };
+</script>
+<style>
+  html, body { font-family: 'Heebo', system-ui, sans-serif; }
+  code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  /* Code blocks */
+  pre.code-block {
+    background: #0b1220;
+    color: #e2e8f0;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    direction: ltr;
+    text-align: left;
+  }
+  .light pre.code-block { background: #0f172a; color: #f1f5f9; }
+
+  /* Tiny syntax highlight via CSS classes */
+  .tok-kw      { color: #f472b6; font-weight: 600; } /* keywords/methods */
+  .tok-str     { color: #86efac; }                   /* strings */
+  .tok-num     { color: #fcd34d; }                   /* numbers */
+  .tok-bool    { color: #fb923c; }                   /* booleans / null */
+  .tok-key     { color: #7dd3fc; }                   /* JSON keys */
+  .tok-com     { color: #64748b; font-style: italic;}/* comments */
+  .tok-punct   { color: #cbd5e1; }                   /* punctuation */
+
+  /* Inline code in prose */
+  .prose-doc code:not(pre code) {
+    background: rgba(34,197,94,0.10);
+    color: #15803d;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.9em;
+  }
+  .dark .prose-doc code:not(pre code) {
+    background: rgba(34,197,94,0.18);
+    color: #86efac;
+  }
+
+  /* Method badges */
+  .method { display:inline-block; padding:2px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  .method-GET    { background:#0ea5e9; color:white; }
+  .method-POST   { background:#22c55e; color:white; }
+  .method-PUT    { background:#f59e0b; color:white; }
+  .method-DELETE { background:#dc2626; color:white; }
+
+  /* Status pill */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 9999px;
+    background: rgba(34,197,94,0.15);
+    color: #15803d; font-size: 12px; font-weight: 700;
+    border: 1px solid rgba(34,197,94,0.3);
+  }
+  .dark .status-pill { color:#86efac; }
+  .status-pill::before {
+    content:''; width:6px; height:6px; border-radius:50%; background:#22c55e;
+    box-shadow: 0 0 0 0 rgba(34,197,94,.5);
+    animation: live-pulse 2s ease-out infinite;
+  }
+  @keyframes live-pulse { 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+
+  /* Copy button */
+  .code-wrap { position: relative; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px; padding: 4px 10px; font-size: 11px;
+    cursor: pointer; transition: all .15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .copy-btn:hover { background: rgba(34,197,94,0.2); color: #86efac; border-color: rgba(34,197,94,0.4); }
+  .copy-btn.copied { background: rgba(34,197,94,0.3); color: #fff; }
+
+  /* TOC */
+  .toc-link {
+    display: block; padding: 6px 10px; border-radius: 8px;
+    font-size: 13px; color: #5d6b8f; text-decoration: none;
+    border-right: 2px solid transparent; transition: all .12s;
+  }
+  .toc-link:hover { background: rgba(34,197,94,0.08); color: #15803d; }
+  .toc-link.active { background: rgba(34,197,94,0.12); color: #15803d; border-right-color: #22c55e; font-weight: 600; }
+  .dark .toc-link { color: #8a95b3; }
+  .dark .toc-link:hover { background: rgba(34,197,94,0.12); color: #86efac; }
+  .dark .toc-link.active { color: #86efac; border-right-color: #22c55e; }
+  .toc-group-title { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8a95b3; padding: 12px 10px 4px; }
+
+  /* Endpoint card */
+  .endpoint {
+    border: 1px solid #dde1ec;
+    border-radius: 14px;
+    background: white;
+    padding: 18px 20px;
+    margin-top: 18px;
+    scroll-margin-top: 24px;
+  }
+  .dark .endpoint { background: #1e2638; border-color: #2f3b54; }
+  .endpoint header { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .endpoint .ep-url { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #0f1422; word-break: break-all; }
+  .dark .endpoint .ep-url { color: #e2e8f0; }
+  .endpoint h3 a { color: inherit; text-decoration: none; }
+  .endpoint h3 a:hover { color: #22c55e; }
+
+  .pill {
+    display:inline-block; padding: 2px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  }
+  .pill-public { background: rgba(14,165,233,0.12); color: #0284c7; border: 1px solid rgba(14,165,233,0.25); }
+  .pill-auth   { background: rgba(34,197,94,0.12); color: #15803d; border: 1px solid rgba(34,197,94,0.25); }
+  .pill-admin  { background: rgba(245,158,11,0.12); color: #d97706; border: 1px solid rgba(245,158,11,0.25); }
+  .pill-hmac   { background: rgba(139,92,246,0.12); color: #7c3aed; border: 1px solid rgba(139,92,246,0.25); }
+  .dark .pill-public { color:#7dd3fc; }
+  .dark .pill-auth   { color:#86efac; }
+  .dark .pill-admin  { color:#fbbf24; }
+  .dark .pill-hmac   { color:#c4b5fd; }
+
+  /* Tabs */
+  .tab-btn { padding: 6px 12px; border-radius: 8px 8px 0 0; font-size: 12px; cursor: pointer; color: #5d6b8f; border-bottom: 2px solid transparent; }
+  .tab-btn.active { color: #15803d; border-bottom-color: #22c55e; font-weight: 600; }
+  .dark .tab-btn { color: #8a95b3; }
+  .dark .tab-btn.active { color: #86efac; }
+
+  /* Section anchor */
+  section[id] { scroll-margin-top: 24px; }
+
+  /* Hidden on search */
+  .endpoint.hidden { display: none; }
+
+  /* Tables */
+  table.params { width: 100%; font-size: 13px; border-collapse: collapse; }
+  table.params th, table.params td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #dde1ec; }
+  .dark table.params th, .dark table.params td { border-color: #2f3b54; }
+  table.params th { background: #f7f8fb; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color:#5d6b8f; }
+  .dark table.params th { background: #0f1422; color:#8a95b3; }
+
+  /* Mobile TOC */
+  @media (max-width: 1023px) {
+    .desktop-toc { display: none; }
+  }
+  @media (min-width: 1024px) {
+    .mobile-toc { display: none; }
+  }
+
+  /* Smooth scroll */
+  html { scroll-behavior: smooth; }
+</style>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/png" href="/icon-192.png" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Kesefle API Reference",
+  "description": "Public HTTP API for Kesefle — authentication, rate limits, HMAC signatures, endpoints.",
+  "author": { "@type": "Organization", "name": "Kesefle" },
+  "publisher": { "@type": "Organization", "name": "Kesefle", "url": "https://kesefle.vercel.app" },
+  "datePublished": "2026-05-16",
+  "dateModified": "2026-05-16",
+  "inLanguage": "en",
+  "url": "https://kesefle.vercel.app/docs",
+  "image": "https://kesefle.vercel.app/og-image.png",
+  "proficiencyLevel": "Expert",
+  "audience": { "@type": "Audience", "audienceType": "Developers" }
+}
+</script>
+</head>
+<body class="bg-white dark:bg-ink-900 text-ink-900 dark:text-ink-50 min-h-screen antialiased">
+
+<!-- Header / nav -->
+<header class="sticky top-0 z-40 border-b border-ink-200 bg-white/90 backdrop-blur dark:border-ink-700 dark:bg-ink-900/90">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-lg tracking-tight dark:text-white">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow">₪</span>
+      <span>Kesefle</span>
+      <span class="ml-1 rounded bg-ink-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-600 dark:bg-ink-800 dark:text-ink-300">Docs</span>
+    </a>
+    <nav class="flex items-center gap-3 text-sm">
+      <a href="/status" class="hidden md:inline rounded-lg px-3 py-1.5 text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800">Status</a>
+      <a href="/changelog" class="hidden md:inline rounded-lg px-3 py-1.5 text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800">Changelog</a>
+      <a href="mailto:api@kesefle.app" class="rounded-lg bg-brand-500 px-3 py-1.5 font-semibold text-white hover:bg-brand-600">Contact</a>
+      <button id="theme-toggle" class="rounded-lg p-2 text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800" aria-label="Toggle theme">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="border-b border-ink-200 bg-gradient-to-b from-ink-50 to-white dark:border-ink-700 dark:from-ink-900 dark:to-ink-900">
+  <div class="mx-auto max-w-7xl px-5 py-12">
+    <div class="flex items-center gap-3">
+      <span class="status-pill">v1 · public</span>
+      <a href="/status" class="text-sm text-ink-500 hover:text-brand-600 dark:text-ink-300">Operational — view /status →</a>
+    </div>
+    <h1 class="mt-4 text-4xl font-black tracking-tight md:text-5xl">Kesefle API <span class="text-brand-600">— for developers</span></h1>
+    <p class="mt-3 max-w-3xl text-lg text-ink-600 dark:text-ink-300">
+      Build on top of Kesefle. All endpoints are HTTPS, JSON, and live at <code class="rounded bg-ink-100 px-2 py-0.5 text-sm dark:bg-ink-800">https://kesefle.vercel.app</code>. This page is the source of truth for request and response shapes.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-2 text-xs">
+      <span class="rounded-full border border-ink-200 px-3 py-1 dark:border-ink-700">JSON over HTTPS</span>
+      <span class="rounded-full border border-ink-200 px-3 py-1 dark:border-ink-700">Bearer auth (Google ID token)</span>
+      <span class="rounded-full border border-ink-200 px-3 py-1 dark:border-ink-700">KV-backed rate limits</span>
+      <span class="rounded-full border border-ink-200 px-3 py-1 dark:border-ink-700">HMAC-signed webhooks</span>
+      <span class="rounded-full border border-ink-200 px-3 py-1 dark:border-ink-700">GDPR / Israeli Privacy Law</span>
+    </div>
+
+    <!-- Mobile TOC dropdown -->
+    <div class="mobile-toc mt-6">
+      <label class="block text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-300">Jump to</label>
+      <select id="mobile-toc-select" class="mt-1 w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm dark:border-ink-700 dark:bg-ink-800 dark:text-ink-50">
+        <option value="#overview">Overview</option>
+        <option value="#auth">Authentication</option>
+        <option value="#ratelimit">Rate Limiting</option>
+        <option value="#hmac">HMAC Webhook Signatures</option>
+        <option value="#idempotency">Idempotency</option>
+        <option value="#errors">Errors</option>
+        <option value="#privacy">Privacy</option>
+        <option value="#endpoints">Endpoints</option>
+        <option value="#ep-events">  /api/events</option>
+        <option value="#ep-auth-google">  /api/auth/google</option>
+        <option value="#ep-auth-exchange">  /api/auth/google-exchange</option>
+        <option value="#ep-sheet-provision">  /api/sheet/provision</option>
+        <option value="#ep-sheet-summary">  /api/sheet/summary</option>
+        <option value="#ep-whatsapp">  /api/whatsapp/webhook</option>
+        <option value="#ep-checkout">  /api/billing/checkout</option>
+        <option value="#ep-billing-webhook">  /api/billing/webhook</option>
+        <option value="#ep-account">  /api/account</option>
+        <option value="#ep-referral">  /api/referral</option>
+        <option value="#ep-admin">  /api/admin</option>
+        <option value="#ep-health">  /api/health</option>
+        <option value="#sdk">SDK / Clients</option>
+        <option value="#changelog">Changelog</option>
+        <option value="#contact">Contact</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- Layout -->
+<div class="mx-auto flex max-w-7xl gap-8 px-5 py-10">
+
+  <!-- Sticky TOC (desktop) -->
+  <aside class="desktop-toc sticky top-20 hidden h-[calc(100vh-6rem)] w-64 shrink-0 overflow-y-auto lg:block">
+    <div class="rounded-2xl border border-ink-200 bg-white p-3 dark:border-ink-700 dark:bg-ink-800/50">
+      <label class="block px-2 pb-2 text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-300">Filter endpoints</label>
+      <input id="ep-search" type="text" placeholder="Search…" class="w-full rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-50" />
+      <nav id="toc" class="mt-3">
+        <div class="toc-group-title">Get started</div>
+        <a class="toc-link" href="#overview">Overview</a>
+        <a class="toc-link" href="#auth">Authentication</a>
+        <a class="toc-link" href="#ratelimit">Rate limiting</a>
+        <a class="toc-link" href="#hmac">HMAC signatures</a>
+        <a class="toc-link" href="#idempotency">Idempotency</a>
+        <a class="toc-link" href="#errors">Errors</a>
+        <a class="toc-link" href="#privacy">Privacy</a>
+
+        <div class="toc-group-title">Endpoints</div>
+        <a class="toc-link" href="#ep-events">events</a>
+        <a class="toc-link" href="#ep-auth-google">auth/google</a>
+        <a class="toc-link" href="#ep-auth-exchange">auth/google-exchange</a>
+        <a class="toc-link" href="#ep-sheet-provision">sheet/provision</a>
+        <a class="toc-link" href="#ep-sheet-summary">sheet/summary</a>
+        <a class="toc-link" href="#ep-whatsapp">whatsapp/webhook</a>
+        <a class="toc-link" href="#ep-checkout">billing/checkout</a>
+        <a class="toc-link" href="#ep-billing-webhook">billing/webhook</a>
+        <a class="toc-link" href="#ep-account">account</a>
+        <a class="toc-link" href="#ep-referral">referral</a>
+        <a class="toc-link" href="#ep-admin">admin</a>
+        <a class="toc-link" href="#ep-health">health</a>
+
+        <div class="toc-group-title">Tools</div>
+        <a class="toc-link" href="#sdk">SDK / clients</a>
+        <a class="toc-link" href="#changelog">Changelog</a>
+        <a class="toc-link" href="#contact">Contact</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="prose-doc min-w-0 flex-1">
+
+    <!-- OVERVIEW -->
+    <section id="overview" class="mb-12">
+      <h2 class="text-2xl font-black">Overview</h2>
+      <p class="mt-2 text-ink-600 dark:text-ink-300">
+        Kesefle is a Hebrew WhatsApp-to-Google-Sheets expense tracker. The API powers our web dashboard, the WhatsApp webhook, and any third-party tool that wants to integrate. The base URL is:
+      </p>
+      <div class="code-wrap mt-3">
+        <pre class="code-block"><code><span class="tok-key">https</span>://kesefle.vercel.app</code></pre>
+        <button class="copy-btn" data-copy="https://kesefle.vercel.app">copy</button>
+      </div>
+      <p class="mt-4 text-ink-600 dark:text-ink-300">Conventions:</p>
+      <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-600 dark:text-ink-300">
+        <li>All requests and responses are JSON unless noted (WhatsApp and Stripe webhooks read raw bytes).</li>
+        <li>Successful responses include <code>"ok": true</code>. Failures use <code>"ok": false</code> with an <code>error</code> code.</li>
+        <li>Authenticated endpoints expect <code>Authorization: Bearer &lt;Google ID token&gt;</code>.</li>
+        <li>Many endpoints are routed by a <code>?action=</code> query parameter to keep us under Vercel Hobby's 12-function limit.</li>
+        <li>Webhooks (WhatsApp, Stripe) validate HMAC signatures over the raw request body.</li>
+      </ul>
+    </section>
+
+    <!-- AUTHENTICATION -->
+    <section id="auth" class="mb-12">
+      <h2 class="text-2xl font-black">Authentication</h2>
+      <p class="mt-2 text-ink-600 dark:text-ink-300">
+        Most endpoints require a verified Google ID token. We verify the token's RS256 signature against Google's JWKS (<code>https://www.googleapis.com/oauth2/v3/certs</code>), check the <code>iss</code>, <code>aud</code>, and <code>exp</code> claims, and set <code>req.user = { sub, email, name, picture }</code> from the verified payload.
+      </p>
+
+      <h3 class="mt-6 text-lg font-bold">Obtaining a token</h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Use Google Identity Services in the browser to obtain a JWT credential. For the offline (refresh-token) flow, use the PKCE redirect to <a class="underline" href="#ep-auth-exchange">/api/auth/google-exchange</a> instead — that endpoint stores the refresh token server-side, encrypted at rest.
+      </p>
+
+      <h3 class="mt-6 text-lg font-bold">Sending the token</h3>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-kw">GET</span> /api/sheet/summary <span class="tok-kw">HTTP</span>/1.1
+<span class="tok-key">Host</span>: kesefle.vercel.app
+<span class="tok-key">Authorization</span>: <span class="tok-str">Bearer eyJhbGciOiJSUzI1NiIs…</span>
+<span class="tok-key">Accept</span>: <span class="tok-str">application/json</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+      <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">
+        For browser sessions, a <code>kfl_session</code> cookie containing the same JWT is also accepted.
+      </p>
+
+      <div class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-700 dark:bg-amber-900/20">
+        <p class="font-bold text-amber-800 dark:text-amber-300">A note on <code>X-User-Sub</code></p>
+        <p class="mt-1 text-amber-900 dark:text-amber-200">
+          Older docs and examples may show an <code>X-User-Sub</code> request header. <b>That header is ignored.</b> The user identity is taken exclusively from the verified ID token payload. Sending it has no effect.
+        </p>
+      </div>
+
+      <h3 class="mt-6 text-lg font-bold">Failure modes</h3>
+      <table class="params mt-2">
+        <thead><tr><th>Status</th><th>Error code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>401</code></td><td><code>missing_auth</code></td><td>No Bearer token / cookie present</td></tr>
+          <tr><td><code>401</code></td><td><code>invalid_token</code></td><td>Signature, audience, or expiry check failed</td></tr>
+          <tr><td><code>403</code></td><td><code>admin_required</code></td><td>Endpoint requires admin email in <code>ADMIN_EMAILS</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- RATE LIMITING -->
+    <section id="ratelimit" class="mb-12">
+      <h2 class="text-2xl font-black">Rate limiting</h2>
+      <p class="mt-2 text-ink-600 dark:text-ink-300">
+        Each endpoint has its own token bucket implemented via Vercel KV (Upstash) <code>INCR</code> + <code>EXPIRE</code>. Authenticated requests are keyed by user <code>sub</code>; anonymous requests are keyed by IP (IPv6 grouped at <code>/64</code> to prevent prefix bypass). When KV is unreachable we fail open — legitimate users are never blocked by an outage.
+      </p>
+
+      <h3 class="mt-6 text-lg font-bold">Response headers</h3>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-kw">HTTP</span>/1.1 200 OK
+<span class="tok-key">X-RateLimit-Limit</span>: <span class="tok-num">30</span>
+<span class="tok-key">X-RateLimit-Remaining</span>: <span class="tok-num">27</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h3 class="mt-6 text-lg font-bold">When exceeded</h3>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-kw">HTTP</span>/1.1 429 Too Many Requests
+<span class="tok-key">X-RateLimit-Limit</span>: <span class="tok-num">30</span>
+<span class="tok-key">Retry-After</span>: <span class="tok-num">60</span>
+<span class="tok-key">Content-Type</span>: <span class="tok-str">application/json</span>
+
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span><span class="tok-punct">,</span>
+  <span class="tok-key">"error"</span><span class="tok-punct">:</span> <span class="tok-str">"rate_limit_exceeded"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"retry_after"</span><span class="tok-punct">:</span> <span class="tok-num">60</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h3 class="mt-6 text-lg font-bold">Per-route limits</h3>
+      <table class="params mt-2">
+        <thead><tr><th>Endpoint</th><th>Limit</th><th>Window</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/events?action=waitlist</code></td><td>5 per IP, 3 per email</td><td>1 hour</td></tr>
+          <tr><td><code>/api/events?action=track</code></td><td>200</td><td>60 seconds</td></tr>
+          <tr><td><code>/api/events?action=nps</code></td><td>3</td><td>24 hours</td></tr>
+          <tr><td><code>/api/auth/google-exchange</code></td><td>10</td><td>1 hour</td></tr>
+          <tr><td><code>/api/sheet/provision</code></td><td>5</td><td>1 hour</td></tr>
+          <tr><td><code>/api/sheet/summary</code></td><td>30</td><td>60 seconds</td></tr>
+          <tr><td><code>/api/billing/checkout</code></td><td>10</td><td>1 hour</td></tr>
+          <tr><td><code>/api/account?action=*</code></td><td>5 combined</td><td>1 hour</td></tr>
+          <tr><td><code>/api/referral?action=*</code></td><td>30 combined</td><td>1 hour</td></tr>
+          <tr><td><code>/api/admin?action=*</code></td><td>60</td><td>60 seconds</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- HMAC -->
+    <section id="hmac" class="mb-12">
+      <h2 class="text-2xl font-black">HMAC webhook signatures</h2>
+      <p class="mt-2 text-ink-600 dark:text-ink-300">
+        Two endpoints accept signed inbound webhooks: <a class="underline" href="#ep-whatsapp">/api/whatsapp/webhook</a> (Meta) and <a class="underline" href="#ep-billing-webhook">/api/billing/webhook</a> (Stripe). Both disable the default JSON body parser so we can read the raw request bytes — re-serializing JSON before verification will fail because key ordering and whitespace differ. Both use constant-time comparison via Node's <code>crypto.timingSafeEqual</code>.
+      </p>
+
+      <h3 class="mt-6 text-lg font-bold">WhatsApp (Meta) — <code>X-Hub-Signature-256</code></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        The header is <code>sha256=&lt;hex-digest&gt;</code>. The signing secret is <code>META_APP_SECRET</code>. The signed message is the entire raw request body.
+      </p>
+
+      <div class="mt-4 flex gap-1 border-b border-ink-200 dark:border-ink-700">
+        <button class="tab-btn active" data-tab="meta-node">Node.js</button>
+        <button class="tab-btn" data-tab="meta-py">Python</button>
+      </div>
+      <div class="tab-pane" data-pane="meta-node">
+        <div class="code-wrap mt-2">
+          <pre class="code-block"><code><span class="tok-kw">import</span> crypto <span class="tok-kw">from</span> <span class="tok-str">'node:crypto'</span><span class="tok-punct">;</span>
+
+<span class="tok-kw">function</span> verifyMetaSignature(rawBody, header, appSecret) <span class="tok-punct">{</span>
+  <span class="tok-kw">if</span> (!header?.startsWith(<span class="tok-str">'sha256='</span>)) <span class="tok-kw">return</span> <span class="tok-bool">false</span><span class="tok-punct">;</span>
+  <span class="tok-kw">const</span> expected = header.slice(<span class="tok-num">7</span>)<span class="tok-punct">;</span>
+  <span class="tok-kw">const</span> computed = crypto.createHmac(<span class="tok-str">'sha256'</span>, appSecret)
+    .update(rawBody).digest(<span class="tok-str">'hex'</span>)<span class="tok-punct">;</span>
+  <span class="tok-kw">if</span> (expected.length !== computed.length) <span class="tok-kw">return</span> <span class="tok-bool">false</span><span class="tok-punct">;</span>
+  <span class="tok-kw">return</span> crypto.timingSafeEqual(
+    Buffer.from(expected, <span class="tok-str">'hex'</span>),
+    Buffer.from(computed, <span class="tok-str">'hex'</span>),
+  )<span class="tok-punct">;</span>
+<span class="tok-punct">}</span></code></pre>
+          <button class="copy-btn" data-copy-target="prev">copy</button>
+        </div>
+      </div>
+      <div class="tab-pane hidden" data-pane="meta-py">
+        <div class="code-wrap mt-2">
+          <pre class="code-block"><code><span class="tok-kw">import</span> hmac, hashlib
+
+<span class="tok-kw">def</span> verify_meta_signature(raw_body: <span class="tok-kw">bytes</span>, header: <span class="tok-kw">str</span>, app_secret: <span class="tok-kw">str</span>) -> <span class="tok-kw">bool</span>:
+    <span class="tok-kw">if</span> <span class="tok-kw">not</span> header <span class="tok-kw">or</span> <span class="tok-kw">not</span> header.startswith(<span class="tok-str">"sha256="</span>):
+        <span class="tok-kw">return</span> <span class="tok-bool">False</span>
+    expected = header[<span class="tok-num">7</span>:]
+    computed = hmac.new(
+        app_secret.encode(), raw_body, hashlib.sha256
+    ).hexdigest()
+    <span class="tok-kw">return</span> hmac.compare_digest(expected, computed)</code></pre>
+          <button class="copy-btn" data-copy-target="prev">copy</button>
+        </div>
+      </div>
+
+      <h3 class="mt-8 text-lg font-bold">Stripe — <code>Stripe-Signature</code></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Header format: <code>t=1700000000,v1=&lt;hex&gt;,v0=…</code>. We reject events where <code>|now − t| &gt; 300s</code> to limit replay attacks. The signed payload is <code>`${t}.${rawBody}`</code>. Secret: <code>STRIPE_WEBHOOK_SECRET</code>.
+      </p>
+
+      <div class="mt-4 flex gap-1 border-b border-ink-200 dark:border-ink-700">
+        <button class="tab-btn active" data-tab="stripe-node">Node.js</button>
+        <button class="tab-btn" data-tab="stripe-py">Python</button>
+      </div>
+      <div class="tab-pane" data-pane="stripe-node">
+        <div class="code-wrap mt-2">
+          <pre class="code-block"><code><span class="tok-kw">import</span> crypto <span class="tok-kw">from</span> <span class="tok-str">'node:crypto'</span><span class="tok-punct">;</span>
+
+<span class="tok-kw">function</span> verifyStripe(rawBody, sigHeader, secret, toleranceSec = <span class="tok-num">300</span>) <span class="tok-punct">{</span>
+  <span class="tok-kw">const</span> parts = Object.fromEntries(
+    sigHeader.split(<span class="tok-str">','</span>).map(p =&gt; p.split(<span class="tok-str">'='</span>).map(s =&gt; s.trim()))
+  )<span class="tok-punct">;</span>
+  <span class="tok-kw">const</span> t = parseInt(parts.t, <span class="tok-num">10</span>)<span class="tok-punct">;</span>
+  <span class="tok-kw">const</span> v1 = parts.v1<span class="tok-punct">;</span>
+  <span class="tok-kw">if</span> (!t || !v1) <span class="tok-kw">return</span> <span class="tok-bool">false</span><span class="tok-punct">;</span>
+  <span class="tok-kw">if</span> (Math.abs(Math.floor(Date.now() / <span class="tok-num">1000</span>) - t) &gt; toleranceSec) <span class="tok-kw">return</span> <span class="tok-bool">false</span><span class="tok-punct">;</span>
+  <span class="tok-kw">const</span> signedPayload = <span class="tok-str">`${t}.${rawBody.toString(</span><span class="tok-str">'utf8'</span><span class="tok-str">)}`</span><span class="tok-punct">;</span>
+  <span class="tok-kw">const</span> expected = crypto.createHmac(<span class="tok-str">'sha256'</span>, secret)
+    .update(signedPayload).digest(<span class="tok-str">'hex'</span>)<span class="tok-punct">;</span>
+  <span class="tok-kw">return</span> crypto.timingSafeEqual(
+    Buffer.from(expected, <span class="tok-str">'hex'</span>),
+    Buffer.from(v1, <span class="tok-str">'hex'</span>),
+  )<span class="tok-punct">;</span>
+<span class="tok-punct">}</span></code></pre>
+          <button class="copy-btn" data-copy-target="prev">copy</button>
+        </div>
+      </div>
+      <div class="tab-pane hidden" data-pane="stripe-py">
+        <div class="code-wrap mt-2">
+          <pre class="code-block"><code><span class="tok-kw">import</span> hmac, hashlib, time
+
+<span class="tok-kw">def</span> verify_stripe(raw_body: <span class="tok-kw">bytes</span>, sig_header: <span class="tok-kw">str</span>, secret: <span class="tok-kw">str</span>,
+                   tolerance_sec: <span class="tok-kw">int</span> = <span class="tok-num">300</span>) -> <span class="tok-kw">bool</span>:
+    parts = <span class="tok-punct">{</span>k: v <span class="tok-kw">for</span> k, v <span class="tok-kw">in</span> (p.split(<span class="tok-str">"="</span>, <span class="tok-num">1</span>) <span class="tok-kw">for</span> p <span class="tok-kw">in</span> sig_header.split(<span class="tok-str">","</span>))<span class="tok-punct">}</span>
+    t = <span class="tok-kw">int</span>(parts.get(<span class="tok-str">"t"</span>, <span class="tok-str">"0"</span>))
+    v1 = parts.get(<span class="tok-str">"v1"</span>)
+    <span class="tok-kw">if</span> <span class="tok-kw">not</span> (t <span class="tok-kw">and</span> v1):
+        <span class="tok-kw">return</span> <span class="tok-bool">False</span>
+    <span class="tok-kw">if</span> <span class="tok-kw">abs</span>(<span class="tok-kw">int</span>(time.time()) - t) &gt; tolerance_sec:
+        <span class="tok-kw">return</span> <span class="tok-bool">False</span>
+    signed_payload = <span class="tok-str">f"</span><span class="tok-punct">{</span>t<span class="tok-punct">}</span><span class="tok-str">."</span>.encode() + raw_body
+    expected = hmac.new(secret.encode(), signed_payload, hashlib.sha256).hexdigest()
+    <span class="tok-kw">return</span> hmac.compare_digest(expected, v1)</code></pre>
+          <button class="copy-btn" data-copy-target="prev">copy</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- IDEMPOTENCY -->
+    <section id="idempotency" class="mb-12">
+      <h2 class="text-2xl font-black">Idempotency</h2>
+      <p class="mt-2 text-ink-600 dark:text-ink-300">
+        Webhooks may be retried by the sender. We deduplicate at the application layer using KV-backed keys:
+      </p>
+      <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-ink-600 dark:text-ink-300">
+        <li><b>WhatsApp:</b> the inbound <code>message.id</code> from Meta is checked against <code>seen:wa:&lt;id&gt;</code> with a 24-hour TTL. Duplicates return <code>200 { ok: true, ignored: "duplicate" }</code> without writing to the sheet.</li>
+        <li><b>Stripe:</b> the <code>event.id</code> is checked against <code>stripe_event:&lt;id&gt;</code>. Duplicates return <code>200 { ok: true, duplicate: &lt;id&gt; }</code>.</li>
+        <li><b>Sheet rows:</b> each appended row carries the <code>message_id</code> in column I, so the sheet itself is the system of record for "we already processed this".</li>
+        <li><b>Provision:</b> <a class="underline" href="#ep-sheet-provision">/api/sheet/provision</a> is idempotent — calling it twice for the same user returns the existing <code>spreadsheetId</code> with <code>reused: true</code>.</li>
+        <li><b>Referral generate:</b> calling <code>?action=generate</code> twice returns the same code with <code>reused: true</code> unless <code>?force=1</code> is supplied.</li>
+      </ul>
+      <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">A client-supplied <code>Idempotency-Key</code> header is <em>not</em> currently honored — submit a feature request if you need it.</p>
+    </section>
+
+    <!-- ERRORS -->
+    <section id="errors" class="mb-12">
+      <h2 class="text-2xl font-black">Errors</h2>
+      <p class="mt-2 text-ink-600 dark:text-ink-300">All failure responses share this shape:</p>
+      <div class="code-wrap mt-3">
+        <pre class="code-block"><code><span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span><span class="tok-punct">,</span>
+  <span class="tok-key">"error"</span><span class="tok-punct">:</span> <span class="tok-str">"machine_readable_code"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"detail"</span><span class="tok-punct">:</span> <span class="tok-str">"optional human-readable explanation"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"reqId"</span><span class="tok-punct">:</span> <span class="tok-str">"abc123…"</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+      <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">
+        Every response carries a request ID (also logged server-side). Include the <code>reqId</code> when reporting issues so we can pull the trace.
+      </p>
+      <h3 class="mt-6 text-lg font-bold">Common error codes</h3>
+      <table class="params mt-2">
+        <thead><tr><th>Code</th><th>HTTP</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>method_not_allowed</code></td><td>405</td><td>Wrong HTTP verb</td></tr>
+          <tr><td><code>missing_auth</code></td><td>401</td><td>No Bearer / cookie</td></tr>
+          <tr><td><code>invalid_token</code></td><td>401</td><td>JWT signature / aud / exp failed</td></tr>
+          <tr><td><code>admin_required</code></td><td>403</td><td>Not in <code>ADMIN_EMAILS</code></td></tr>
+          <tr><td><code>rate_limit_exceeded</code></td><td>429</td><td>Token bucket empty — see <code>retry_after</code></td></tr>
+          <tr><td><code>invalid_action</code> / <code>unknown_action</code></td><td>400</td><td>Bad <code>?action=</code> value</td></tr>
+          <tr><td><code>kv_outage</code></td><td>503</td><td>Vercel KV is unreachable</td></tr>
+          <tr><td><code>signature_invalid</code></td><td>401</td><td>Webhook HMAC check failed</td></tr>
+          <tr><td><code>reauth_needed</code></td><td>403</td><td>Refresh token expired / revoked — relink Google</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- PRIVACY -->
+    <section id="privacy" class="mb-12">
+      <h2 class="text-2xl font-black">Privacy notes</h2>
+      <p class="mt-2 text-ink-600 dark:text-ink-300">
+        Kesefle is built around the principle that <b>your data lives in your Google Sheet, not ours</b>. Our KV holds the minimum needed to route inbound WhatsApp messages to the right sheet.
+      </p>
+      <h3 class="mt-6 text-lg font-bold">What we log</h3>
+      <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-600 dark:text-ink-300">
+        <li>Structured request logs (method, path, status, latency, request ID) without bodies.</li>
+        <li>User <code>sub</code> + email on authenticated requests.</li>
+        <li>Anonymous event counters (page views, signup funnel, NPS scores) bucketed by day.</li>
+        <li>Audit entries for account deletion and admin user-actions.</li>
+        <li>Webhook signature failures (for abuse detection).</li>
+      </ul>
+      <h3 class="mt-6 text-lg font-bold">What we never log</h3>
+      <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-600 dark:text-ink-300">
+        <li>Raw WhatsApp message bodies (only the parsed amount + category are persisted, into <em>your</em> sheet).</li>
+        <li>Bank / card numbers — we never receive them.</li>
+        <li>Google refresh tokens in plaintext — stored AES-256-GCM encrypted with AAD bound to the user <code>sub</code>.</li>
+        <li>The IP of any authenticated request beyond the rate-limit window (ephemeral).</li>
+        <li>The contents of your Google Drive outside the single Kesefle-provisioned sheet.</li>
+      </ul>
+      <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">
+        For GDPR Article 17 (deletion) and Article 20 (portability), use <a class="underline" href="#ep-account">/api/account?action=delete</a> and <code>?action=export</code>. Israeli Privacy Law Amendment 13 complaints: <a class="underline" href="https://www.gov.il/he/departments/the_privacy_protection_authority" rel="noopener" target="_blank">Privacy Protection Authority</a>.
+      </p>
+    </section>
+
+    <!-- ENDPOINTS -->
+    <section id="endpoints" class="mb-4">
+      <h2 class="text-2xl font-black">Endpoints</h2>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Twelve endpoints, grouped by surface. Use the search box (top-left) to filter this list as you type.
+      </p>
+    </section>
+
+    <!-- ============ EVENTS ============ -->
+    <article id="ep-events" class="endpoint" data-keywords="events waitlist track nps analytics anonymous">
+      <header>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/events?action=waitlist|track|nps</code>
+        <span class="pill pill-public">public</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-events">Anonymous events</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Consolidated router for waitlist signups, privacy-friendly analytics, and NPS feedback. No auth, no cookies, no fingerprinting.
+      </p>
+
+      <h4 class="mt-4 font-bold">action=waitlist</h4>
+      <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">Rate limit: 5 / hour / IP, 3 / hour / email.</p>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// Request</span>
+<span class="tok-punct">{</span> <span class="tok-key">"email"</span><span class="tok-punct">:</span> <span class="tok-str">"user@example.com"</span><span class="tok-punct">,</span> <span class="tok-key">"source"</span><span class="tok-punct">:</span> <span class="tok-str">"landing-hero"</span> <span class="tok-punct">}</span>
+
+<span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span> <span class="tok-punct">}</span>
+
+<span class="tok-com">// 400 — invalid_email | 429 — rate_limit_ip | rate_limit_email</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">action=track</h4>
+      <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">Rate limit: 200 / minute. Returns <code>204 No Content</code>.</p>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// Request</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"event"</span><span class="tok-punct">:</span> <span class="tok-str">"signup_complete"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"session"</span><span class="tok-punct">:</span> <span class="tok-str">"a1b2c3d4e5f6"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"path"</span><span class="tok-punct">:</span> <span class="tok-str">"/"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"meta"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span><span class="tok-punct">,</span> <span class="tok-key">"utm_source"</span><span class="tok-punct">:</span> <span class="tok-str">"twitter"</span> <span class="tok-punct">}</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 204 — accepted (no body)</span>
+<span class="tok-com">// 400 — invalid_event | invalid_session</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">
+        Allowed events: <code>page_view, cta_click, signup_start, signup_complete, sheet_provisioned, first_message_received, subscribe_clicked, export_downloaded, feature_used, help_search, install_pwa, referral_share, referral_redeem</code>.
+      </p>
+
+      <h4 class="mt-4 font-bold">action=nps</h4>
+      <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">Rate limit: 3 / 24h / IP.</p>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// Request</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"score"</span><span class="tok-punct">:</span> <span class="tok-num">9</span><span class="tok-punct">,</span>
+  <span class="tok-key">"comment"</span><span class="tok-punct">:</span> <span class="tok-str">"Saves me 10 min a day."</span><span class="tok-punct">,</span>
+  <span class="tok-key">"session"</span><span class="tok-punct">:</span> <span class="tok-str">"a1b2c3d4e5f6"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"path"</span><span class="tok-punct">:</span> <span class="tok-str">"/dashboard"</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"bucket"</span><span class="tok-punct">:</span> <span class="tok-str">"promoter"</span> <span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ AUTH GOOGLE ============ -->
+    <article id="ep-auth-google" class="endpoint" data-keywords="auth google id-token verify jwt jwks signin">
+      <header>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/auth/google</code>
+        <span class="pill pill-public">public</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-auth-google">Verify a Google ID token</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Takes a Google Identity Services credential (JWT), verifies the RS256 signature against Google's JWKS, validates issuer / audience / expiry, and upserts the user record in KV. Used by the browser's one-tap signin flow.
+      </p>
+
+      <h4 class="mt-4 font-bold">Request</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-punct">{</span>
+  <span class="tok-key">"credential"</span><span class="tok-punct">:</span> <span class="tok-str">"eyJhbGciOiJSUzI1NiIs…"</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// or, equivalently:</span>
+<span class="tok-punct">{</span> <span class="tok-key">"id_token"</span><span class="tok-punct">:</span> <span class="tok-str">"eyJ…"</span> <span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">Response</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"user"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-key">"sub"</span><span class="tok-punct">:</span> <span class="tok-str">"110023456789012345678"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"email"</span><span class="tok-punct">:</span> <span class="tok-str">"user@example.com"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"emailVerified"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"name"</span><span class="tok-punct">:</span> <span class="tok-str">"Alice"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"picture"</span><span class="tok-punct">:</span> <span class="tok-str">"https://lh3.googleusercontent.com/…"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"locale"</span><span class="tok-punct">:</span> <span class="tok-str">"he"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"provider"</span><span class="tok-punct">:</span> <span class="tok-str">"google"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"firstSeen"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-05-16T08:00:00.000Z"</span>
+  <span class="tok-punct">}</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 400 — missing credential</span>
+<span class="tok-com">// 401 — verification failed: signature invalid | bad issuer | audience mismatch | token expired</span>
+<span class="tok-com">// 500 — server misconfigured: GOOGLE_CLIENT_ID required</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ AUTH GOOGLE EXCHANGE ============ -->
+    <article id="ep-auth-exchange" class="endpoint" data-keywords="auth google pkce oauth exchange refresh token">
+      <header>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/auth/google-exchange</code>
+        <span class="pill pill-public">public</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-auth-exchange">Exchange OAuth code for tokens (PKCE)</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Server side of the OAuth 2.0 authorization-code-with-PKCE flow. The browser redirects to Google with <code>access_type=offline&amp;prompt=consent</code> and a <code>code_challenge</code>, then POSTs the resulting <code>code</code> here. We exchange it with Google's token endpoint, verify the returned ID token, and persist the refresh token <strong>encrypted at rest</strong> (AES-256-GCM, AAD = userSub). The refresh token is <strong>never</strong> returned to the browser.
+      </p>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">Rate limit: 10 / hour / IP.</p>
+
+      <h4 class="mt-4 font-bold">Request</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-punct">{</span>
+  <span class="tok-key">"code"</span><span class="tok-punct">:</span> <span class="tok-str">"4/0AeaY…"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"codeVerifier"</span><span class="tok-punct">:</span> <span class="tok-str">"S256_random_string_43_to_128_chars"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"redirectUri"</span><span class="tok-punct">:</span> <span class="tok-str">"https://kesefle.vercel.app/account"</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">Response</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"user"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-key">"sub"</span><span class="tok-punct">:</span> <span class="tok-str">"110023456789012345678"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"email"</span><span class="tok-punct">:</span> <span class="tok-str">"user@example.com"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"name"</span><span class="tok-punct">:</span> <span class="tok-str">"Alice"</span><span class="tok-punct">,</span>
+    <span class="tok-key">"picture"</span><span class="tok-punct">:</span> <span class="tok-str">"https://lh3.googleusercontent.com/…"</span>
+  <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"accessToken"</span><span class="tok-punct">:</span> <span class="tok-str">"ya29.a0Ae…"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"expiresIn"</span><span class="tok-punct">:</span> <span class="tok-num">3599</span><span class="tok-punct">,</span>
+  <span class="tok-key">"hasRefreshToken"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 400 — missing code | missing codeVerifier | missing redirectUri</span>
+<span class="tok-com">//       | id_token_verification_failed | id_token_missing_sub</span>
+<span class="tok-com">// 4xx/5xx — token_exchange_failed (passthrough of Google's status)</span>
+<span class="tok-com">// 500 — token_encryption_unavailable (server misconfigured — fail-closed)</span>
+<span class="tok-com">// 502 — google_token_endpoint_unreachable</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ SHEET PROVISION ============ -->
+    <article id="ep-sheet-provision" class="endpoint" data-keywords="sheet provision template copy drive spreadsheet">
+      <header>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/sheet/provision</code>
+        <span class="pill pill-public">public (access-token verified)</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-sheet-provision">Provision a user's Google Sheet</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Copies the Kesefle template (<code>KESEFLE_TEMPLATE_SHEET_ID</code>) into the user's Drive using their OAuth access token (must include <code>drive.file</code> + <code>spreadsheets</code> scopes). The token is verified server-side via Google's <code>tokeninfo</code> endpoint — the user <code>sub</code> in the request body is ignored; only the <code>sub</code> from the verified token is trusted. Idempotent: a second call returns the existing sheet.
+      </p>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">Rate limit: 5 / hour.</p>
+
+      <h4 class="mt-4 font-bold">Request</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-punct">{</span>
+  <span class="tok-key">"accessToken"</span><span class="tok-punct">:</span> <span class="tok-str">"ya29.a0Ae…"</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">Response</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK (new)</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"reused"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span><span class="tok-punct">,</span>
+  <span class="tok-key">"spreadsheetId"</span><span class="tok-punct">:</span> <span class="tok-str">"1aBcD…"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"spreadsheetUrl"</span><span class="tok-punct">:</span> <span class="tok-str">"https://docs.google.com/spreadsheets/d/1aBcD…"</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 200 OK (idempotent replay)</span>
+<span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"reused"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"spreadsheetId"</span><span class="tok-punct">:</span> <span class="tok-str">"…"</span><span class="tok-punct">,</span> <span class="tok-key">"spreadsheetUrl"</span><span class="tok-punct">:</span> <span class="tok-str">"…"</span> <span class="tok-punct">}</span>
+
+<span class="tok-com">// 400 — missing accessToken</span>
+<span class="tok-com">// 401 — invalid_access_token (missing_drive_file_scope | tokeninfo_aud_mismatch | etc.)</span>
+<span class="tok-com">// 500 — server misconfigured: KESEFLE_TEMPLATE_SHEET_ID missing</span>
+<span class="tok-com">// 502 — drive api unreachable</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ SHEET SUMMARY ============ -->
+    <article id="ep-sheet-summary" class="endpoint" data-keywords="sheet summary dashboard month expenses income transactions">
+      <header>
+        <span class="method method-GET">GET</span>
+        <code class="ep-url">/api/sheet/summary</code>
+        <span class="pill pill-auth">auth required</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-sheet-summary">Dashboard summary</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Reads the user's <code>תנועות</code> tab via the stored refresh token (server-side OAuth) and returns aggregates for the current month plus the 10 most recent transactions and the top 5 spending categories.
+      </p>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">Rate limit: 30 / minute.</p>
+
+      <h4 class="mt-4 font-bold">Request</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-kw">GET</span> /api/sheet/summary <span class="tok-kw">HTTP</span>/1.1
+<span class="tok-key">Authorization</span>: <span class="tok-str">Bearer &lt;Google ID token&gt;</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">Response</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"month_expenses"</span><span class="tok-punct">:</span> <span class="tok-num">4385.5</span><span class="tok-punct">,</span>
+  <span class="tok-key">"month_income"</span><span class="tok-punct">:</span> <span class="tok-num">8500</span><span class="tok-punct">,</span>
+  <span class="tok-key">"month_count"</span><span class="tok-punct">:</span> <span class="tok-num">42</span><span class="tok-punct">,</span>
+  <span class="tok-key">"month_expenses_delta_pct"</span><span class="tok-punct">:</span> <span class="tok-num">-12</span><span class="tok-punct">,</span>
+  <span class="tok-key">"recent"</span><span class="tok-punct">:</span> [
+    <span class="tok-punct">{</span>
+      <span class="tok-key">"date"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-05-15"</span><span class="tok-punct">,</span>
+      <span class="tok-key">"amount"</span><span class="tok-punct">:</span> <span class="tok-num">245</span><span class="tok-punct">,</span>
+      <span class="tok-key">"is_income"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span><span class="tok-punct">,</span>
+      <span class="tok-key">"category"</span><span class="tok-punct">:</span> <span class="tok-str">"אוכל לבית"</span><span class="tok-punct">,</span>
+      <span class="tok-key">"subcategory"</span><span class="tok-punct">:</span> <span class="tok-str">"סופר"</span><span class="tok-punct">,</span>
+      <span class="tok-key">"description"</span><span class="tok-punct">:</span> <span class="tok-str">"סופר"</span><span class="tok-punct">,</span>
+      <span class="tok-key">"raw"</span><span class="tok-punct">:</span> <span class="tok-str">"245 סופר"</span>
+    <span class="tok-punct">}</span>
+  ]<span class="tok-punct">,</span>
+  <span class="tok-key">"top_categories"</span><span class="tok-punct">:</span> [
+    <span class="tok-punct">{</span> <span class="tok-key">"name"</span><span class="tok-punct">:</span> <span class="tok-str">"אוכל לבית"</span><span class="tok-punct">,</span> <span class="tok-key">"total"</span><span class="tok-punct">:</span> <span class="tok-num">1240</span> <span class="tok-punct">}</span>
+  ]<span class="tok-punct">,</span>
+  <span class="tok-key">"refreshed_at"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-05-16T08:00:00.000Z"</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 404 — user not found | no sheet provisioned</span>
+<span class="tok-com">// 403 — reauth_needed | refresh_token_decrypt_failed</span>
+<span class="tok-com">// 502 — sheets_api_unreachable</span>
+<span class="tok-com">// 5xx — sheets_read_failed (passthrough)</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ WHATSAPP ============ -->
+    <article id="ep-whatsapp" class="endpoint" data-keywords="whatsapp meta webhook hmac signature verify_token messages">
+      <header>
+        <span class="method method-GET">GET</span>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/whatsapp/webhook</code>
+        <span class="pill pill-hmac">HMAC (Meta)</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-whatsapp">WhatsApp Cloud API webhook</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Meta calls this endpoint. <code>GET</code> is the one-time verification handshake; <code>POST</code> delivers messages, signed with <code>X-Hub-Signature-256: sha256=&lt;hex&gt;</code> over the raw body using <code>META_APP_SECRET</code>. We disable the default body parser so we can verify the bytes Meta actually sent. Duplicate <code>message.id</code>s are deduplicated via KV (<code>seen:wa:&lt;id&gt;</code>, 24h TTL).
+      </p>
+
+      <h4 class="mt-4 font-bold">Verification (GET)</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-kw">GET</span> /api/whatsapp/webhook
+  ?hub.mode=subscribe
+  &hub.verify_token=&lt;META_VERIFY_TOKEN&gt;
+  &hub.challenge=1234567890
+
+<span class="tok-com">// 200 OK — body: the challenge string (echoed back)</span>
+<span class="tok-com">// 403 — verify token mismatch</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">Message delivery (POST)</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-kw">POST</span> /api/whatsapp/webhook
+<span class="tok-key">X-Hub-Signature-256</span>: <span class="tok-str">sha256=ab12…</span>
+<span class="tok-key">Content-Type</span>: <span class="tok-str">application/json</span>
+
+<span class="tok-punct">{</span>
+  <span class="tok-key">"object"</span><span class="tok-punct">:</span> <span class="tok-str">"whatsapp_business_account"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"entry"</span><span class="tok-punct">:</span> [<span class="tok-punct">{</span>
+    <span class="tok-key">"changes"</span><span class="tok-punct">:</span> [<span class="tok-punct">{</span>
+      <span class="tok-key">"value"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+        <span class="tok-key">"messaging_product"</span><span class="tok-punct">:</span> <span class="tok-str">"whatsapp"</span><span class="tok-punct">,</span>
+        <span class="tok-key">"messages"</span><span class="tok-punct">:</span> [<span class="tok-punct">{</span>
+          <span class="tok-key">"from"</span><span class="tok-punct">:</span> <span class="tok-str">"972541234567"</span><span class="tok-punct">,</span>
+          <span class="tok-key">"id"</span><span class="tok-punct">:</span> <span class="tok-str">"wamid.HBgM…"</span><span class="tok-punct">,</span>
+          <span class="tok-key">"type"</span><span class="tok-punct">:</span> <span class="tok-str">"text"</span><span class="tok-punct">,</span>
+          <span class="tok-key">"text"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"body"</span><span class="tok-punct">:</span> <span class="tok-str">"245 סופר"</span> <span class="tok-punct">}</span>
+        <span class="tok-punct">}</span>]
+      <span class="tok-punct">}</span>
+    <span class="tok-punct">}</span>]
+  <span class="tok-punct">}</span>]
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 200 OK — always (per Meta best practice; details surfaced inside)</span>
+<span class="tok-com">// 401 — invalid signature | 400 — body read failed | invalid json</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">
+        Special inbound commands handled: <code>STOP / עצור / הסר / ביטול / בטל</code> opts the user out (Meta + Israeli direct-marketing law); <code>START</code> re-subscribes.
+      </p>
+    </article>
+
+    <!-- ============ BILLING CHECKOUT ============ -->
+    <article id="ep-checkout" class="endpoint" data-keywords="billing checkout stripe subscribe pro family">
+      <header>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/billing/checkout</code>
+        <span class="pill pill-auth">auth required</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-checkout">Create a Stripe Checkout Session</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Creates a Stripe subscription Checkout Session with a 14-day trial. The <code>userSub</code> in <code>subscription_data.metadata</code> is taken from the verified ID token, not the request body — so a webhook event can never flip another user's plan.
+      </p>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">Rate limit: 10 / hour.</p>
+
+      <h4 class="mt-4 font-bold">Request</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-punct">{</span>
+  <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span>           <span class="tok-com">// or "family"</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">Response</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"url"</span><span class="tok-punct">:</span> <span class="tok-str">"https://checkout.stripe.com/c/pay/cs_test_…"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"sessionId"</span><span class="tok-punct">:</span> <span class="tok-str">"cs_test_…"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 400 — invalid plan (returns { allowed: ["pro","family"] })</span>
+<span class="tok-com">// 500 — billing_not_configured | plan_price_not_configured</span>
+<span class="tok-com">// 4xx/5xx — stripe_customer_create_failed | stripe_session_create_failed</span>
+<span class="tok-com">// 502 — stripe_unreachable</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ BILLING WEBHOOK ============ -->
+    <article id="ep-billing-webhook" class="endpoint" data-keywords="billing webhook stripe subscription invoice payment hmac">
+      <header>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/billing/webhook</code>
+        <span class="pill pill-hmac">HMAC (Stripe)</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-billing-webhook">Stripe webhook</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Stripe posts subscription lifecycle events here. We verify <code>Stripe-Signature</code> with a 300-second tolerance window, deduplicate by <code>event.id</code> (<code>stripe_event:&lt;id&gt;</code> in KV), and update the user record in KV.
+      </p>
+
+      <h4 class="mt-4 font-bold">Handled event types</h4>
+      <table class="params mt-2">
+        <thead><tr><th>Event</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>checkout.session.completed</code></td><td>Sets <code>plan</code>, <code>stripeCustomerId</code>, <code>stripeSubscriptionId</code>, <code>subscriptionStatus = trialing</code>, <code>subscribedAt</code></td></tr>
+          <tr><td><code>customer.subscription.created</code></td><td>Updates plan + status + period end</td></tr>
+          <tr><td><code>customer.subscription.updated</code></td><td>Updates plan + status + period end</td></tr>
+          <tr><td><code>customer.subscription.deleted</code></td><td>Sets <code>plan = free</code>, <code>subscriptionStatus = canceled</code></td></tr>
+          <tr><td><code>invoice.payment_failed</code></td><td>Logged; future: WhatsApp dunning</td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="mt-4 font-bold">Response</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"processed"</span><span class="tok-punct">:</span> <span class="tok-str">"checkout.session.completed"</span> <span class="tok-punct">}</span>
+
+<span class="tok-com">// 200 OK (replay)</span>
+<span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"duplicate"</span><span class="tok-punct">:</span> <span class="tok-str">"evt_…"</span> <span class="tok-punct">}</span>
+
+<span class="tok-com">// 401 — signature_invalid (with reason: malformed_signature | timestamp_outside_tolerance | signature_mismatch)</span>
+<span class="tok-com">// 400 — invalid_json | body_read_failed</span>
+<span class="tok-com">// 500 — webhook_secret_not_configured</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ ACCOUNT ============ -->
+    <article id="ep-account" class="endpoint" data-keywords="account delete export gdpr privacy portability">
+      <header>
+        <span class="method method-POST">POST</span>
+        <span class="method method-GET">GET</span>
+        <code class="ep-url">/api/account?action=delete|export</code>
+        <span class="pill pill-auth">auth required</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-account">Account self-service (GDPR / Privacy Law)</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Two actions: <code>delete</code> (GDPR Art.17 + Israeli Privacy Law §14) and <code>export</code> (GDPR Art.20). Combined limit: 5 / hour.
+      </p>
+
+      <h4 class="mt-4 font-bold">POST ?action=delete</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// Request</span>
+<span class="tok-punct">{</span> <span class="tok-key">"confirmation"</span><span class="tok-punct">:</span> <span class="tok-str">"DELETE-MY-ACCOUNT"</span> <span class="tok-punct">}</span>
+
+<span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"deleted"</span><span class="tok-punct">:</span> [<span class="tok-str">"user:…"</span><span class="tok-punct">,</span> <span class="tok-str">"sheet:…"</span><span class="tok-punct">,</span> <span class="tok-str">"referral:code:…"</span>]<span class="tok-punct">,</span>
+  <span class="tok-key">"note"</span><span class="tok-punct">:</span> <span class="tok-str">"… The Google Sheet itself remains in your Drive …"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"note_he"</span><span class="tok-punct">:</span> <span class="tok-str">"…"</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 400 — missing or invalid confirmation</span>
+<span class="tok-com">// 404 — user not found</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">
+        The Google OAuth refresh token is revoked at <code>https://oauth2.googleapis.com/revoke</code> as part of deletion. The provisioned spreadsheet stays in the user's Drive — Kesefle never had the permission to delete it.
+      </p>
+
+      <h4 class="mt-4 font-bold">GET ?action=export</h4>
+      <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">
+        Returns <code>Content-Disposition: attachment; filename="kesefle-export-YYYY-MM-DD.json"</code>.
+      </p>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK — application/json (download)</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"export_meta"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"exported_at"</span><span class="tok-punct">:</span> <span class="tok-str">"…"</span><span class="tok-punct">,</span> <span class="tok-key">"format_version"</span><span class="tok-punct">:</span> <span class="tok-str">"1.1"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"profile"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"sub"</span><span class="tok-punct">:</span> <span class="tok-str">"…"</span><span class="tok-punct">,</span> <span class="tok-key">"email"</span><span class="tok-punct">:</span> <span class="tok-str">"…"</span><span class="tok-punct">,</span> <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span><span class="tok-punct">,</span> <span class="tok-key">"…"</span><span class="tok-punct">:</span> <span class="tok-str">"…"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"transactions"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"count"</span><span class="tok-punct">:</span> <span class="tok-num">42</span><span class="tok-punct">,</span> <span class="tok-key">"data"</span><span class="tok-punct">:</span> [<span class="tok-punct">/* … */</span>] <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"referral"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"code"</span><span class="tok-punct">:</span> <span class="tok-str">"AB3CDE"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"not_stored_by_kesefle"</span><span class="tok-punct">:</span> [<span class="tok-str">"…"</span>]<span class="tok-punct">,</span>
+  <span class="tok-key">"your_rights"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"delete"</span><span class="tok-punct">:</span> <span class="tok-str">"POST /api/account?action=delete"</span> <span class="tok-punct">}</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ REFERRAL ============ -->
+    <article id="ep-referral" class="endpoint" data-keywords="referral generate mine redeem code">
+      <header>
+        <span class="method method-POST">POST</span>
+        <span class="method method-GET">GET</span>
+        <code class="ep-url">/api/referral?action=generate|mine|redeem</code>
+        <span class="pill pill-auth">auth required</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-referral">Referral program</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Both referrer and redeemer get one month of Pro free. Combined rate limit: 30 / hour. Codes are 6 characters drawn from <code>A–Z2–9</code> excluding visually-ambiguous <code>0/O/1/I/L</code>.
+      </p>
+
+      <h4 class="mt-4 font-bold">POST ?action=generate</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"code"</span><span class="tok-punct">:</span> <span class="tok-str">"AB3CDE"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"url"</span><span class="tok-punct">:</span> <span class="tok-str">"https://kesefle.vercel.app/referral?ref=AB3CDE"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"reused"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span>      <span class="tok-com">// or "regenerated": true if ?force=1</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">GET ?action=mine</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"code"</span><span class="tok-punct">:</span> <span class="tok-str">"AB3CDE"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"url"</span><span class="tok-punct">:</span> <span class="tok-str">"https://kesefle.vercel.app/referral?ref=AB3CDE"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"count"</span><span class="tok-punct">:</span> <span class="tok-num">3</span><span class="tok-punct">,</span>
+  <span class="tok-key">"redeemers"</span><span class="tok-punct">:</span> [
+    <span class="tok-punct">{</span> <span class="tok-key">"email_initial"</span><span class="tok-punct">:</span> <span class="tok-str">"a***"</span><span class="tok-punct">,</span> <span class="tok-key">"at"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-05-12T10:00:00.000Z"</span> <span class="tok-punct">}</span>
+  ]<span class="tok-punct">,</span>
+  <span class="tok-key">"referral_credit_until"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-06-15T08:00:00.000Z"</span>
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+
+      <h4 class="mt-4 font-bold">POST ?action=redeem</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// Request</span>
+<span class="tok-punct">{</span> <span class="tok-key">"code"</span><span class="tok-punct">:</span> <span class="tok-str">"AB3CDE"</span> <span class="tok-punct">}</span>
+
+<span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"granted_until"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-06-15T08:00:00.000Z"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"referrer_first_name"</span><span class="tok-punct">:</span> <span class="tok-str">"Alice"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"note_he"</span><span class="tok-punct">:</span> <span class="tok-str">"קיבלת חודש Pro חינם. גם החבר שהביא אותך קיבל."</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 400 — invalid_code_format | cannot_redeem_own_code</span>
+<span class="tok-com">// 404 — code_not_found</span>
+<span class="tok-com">// 409 — already_redeemed (returns { prior: { code, referrerSub, at } })</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ ADMIN ============ -->
+    <article id="ep-admin" class="endpoint" data-keywords="admin users metrics jobs audit analytics feature-flags">
+      <header>
+        <span class="method method-GET">GET</span>
+        <span class="method method-POST">POST</span>
+        <code class="ep-url">/api/admin?action=…</code>
+        <span class="pill pill-admin">admin only</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-admin">Admin operations</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Restricted to verified IDs whose <code>email</code> appears in <code>ADMIN_EMAILS</code>. Rate limit: 60 / minute. All actions auto-redact sensitive fields (<code>refreshToken</code>, <code>refreshTokenEnvelope</code>, <code>accessToken</code>) before returning user records.
+      </p>
+
+      <h4 class="mt-4 font-bold">Available actions</h4>
+      <table class="params mt-2">
+        <thead><tr><th>Method</th><th>action</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>users</code></td><td>Paginated user list (?q, ?page, ?limit)</td></tr>
+          <tr><td><code>GET</code></td><td><code>user</code></td><td>Single user (?sub)</td></tr>
+          <tr><td><code>GET</code></td><td><code>jobs</code></td><td>Failed + retrying background jobs</td></tr>
+          <tr><td><code>GET</code></td><td><code>metrics</code></td><td>Total users, byPlan, MRR, DAU/MAU lower bound</td></tr>
+          <tr><td><code>GET</code></td><td><code>analytics</code></td><td>Daily counters + unique sessions (?days=30, max 90)</td></tr>
+          <tr><td><code>GET</code></td><td><code>audit</code></td><td>Audit log entries (?action_filter, ?limit)</td></tr>
+          <tr><td><code>GET</code></td><td><code>feature-flags</code></td><td>All <code>flag:*</code> KV entries</td></tr>
+          <tr><td><code>POST</code></td><td><code>feature-flag-set</code></td><td>Body: <code>{ key, value }</code></td></tr>
+          <tr><td><code>POST</code></td><td><code>user-action</code></td><td>Body: <code>{ action, targetUserSub }</code>; actions: <code>resend_welcome</code>, <code>force_resync</code>, <code>reset_plan_to_free</code>, <code>pause_account</code>, <code>unpause_account</code></td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="mt-4 font-bold">Example: GET ?action=metrics</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"metrics"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-key">"totalUsers"</span><span class="tok-punct">:</span> <span class="tok-num">421</span><span class="tok-punct">,</span>
+    <span class="tok-key">"byPlan"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"free"</span><span class="tok-punct">:</span> <span class="tok-num">380</span><span class="tok-punct">,</span> <span class="tok-key">"pro"</span><span class="tok-punct">:</span> <span class="tok-num">35</span><span class="tok-punct">,</span> <span class="tok-key">"family"</span><span class="tok-punct">:</span> <span class="tok-num">6</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"paidUsers"</span><span class="tok-punct">:</span> <span class="tok-num">41</span><span class="tok-punct">,</span>
+    <span class="tok-key">"mrr"</span><span class="tok-punct">:</span> <span class="tok-num">899</span><span class="tok-punct">,</span>
+    <span class="tok-key">"dau"</span><span class="tok-punct">:</span> <span class="tok-num">112</span><span class="tok-punct">,</span>
+    <span class="tok-key">"mau"</span><span class="tok-punct">:</span> <span class="tok-num">112</span>
+  <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"notes"</span><span class="tok-punct">:</span> [<span class="tok-str">"mau is a 25h-lower-bound based on last_inbound TTL"</span>]
+<span class="tok-punct">}</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+    </article>
+
+    <!-- ============ HEALTH ============ -->
+    <article id="ep-health" class="endpoint" data-keywords="health uptime monitoring liveness deps">
+      <header>
+        <span class="method method-GET">GET</span>
+        <code class="ep-url">/api/health</code>
+        <span class="pill pill-public">public</span>
+      </header>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-health">Health probe</a></h3>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
+        Liveness + dependency reachability. Returns <code>200</code> if all critical dependencies (KV + Google OAuth) are up, else <code>503</code>. Always sets <code>Cache-Control: no-store</code>. Safe to point an external uptime monitor at this URL.
+      </p>
+
+      <h4 class="mt-4 font-bold">Response</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
+<span class="tok-punct">{</span>
+  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"version"</span><span class="tok-punct">:</span> <span class="tok-str">"1bbd640"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"deployed_at"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-05-16T07:55:00Z"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"region"</span><span class="tok-punct">:</span> <span class="tok-str">"fra1"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"response_ms"</span><span class="tok-punct">:</span> <span class="tok-num">183</span><span class="tok-punct">,</span>
+  <span class="tok-key">"deps"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-key">"kv"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-num">200</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"google_oauth"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-num">200</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"sheets_api"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-num">200</span> <span class="tok-punct">}</span>
+  <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"env_configured"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-key">"google_client_id"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"google_client_secret"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"kv"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"meta_verify_token"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"meta_app_secret"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"stripe_secret_key"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"stripe_webhook_secret"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span>
+  <span class="tok-punct">}</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-com">// 503 — same body, ok: false, when KV or Google OAuth is down</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">
+        <code>env_configured</code> flags only report <em>presence</em> of env vars — never values.
+      </p>
+    </article>
+
+    <!-- ============ SDK ============ -->
+    <section id="sdk" class="mt-12">
+      <h2 class="text-2xl font-black">SDK / clients</h2>
+      <div class="mt-3 rounded-2xl border border-dashed border-ink-300 bg-ink-50 p-6 text-sm text-ink-600 dark:border-ink-700 dark:bg-ink-800/40 dark:text-ink-300">
+        <p>
+          <b>Coming soon</b> — we'll publish a TypeScript SDK once the API stabilizes. Until then, every endpoint is <code>fetch()</code>-friendly with no special headers beyond <code>Authorization: Bearer</code> and <code>Content-Type: application/json</code>.
+        </p>
+        <div class="code-wrap mt-4">
+          <pre class="code-block"><code><span class="tok-com">// Minimal client example (browser or Node 18+)</span>
+<span class="tok-kw">async function</span> kesefle(path, init = <span class="tok-punct">{}</span>, idToken) <span class="tok-punct">{</span>
+  <span class="tok-kw">const</span> r = <span class="tok-kw">await</span> fetch(<span class="tok-str">`https://kesefle.vercel.app${path}`</span>, <span class="tok-punct">{</span>
+    ...init,
+    headers: <span class="tok-punct">{</span>
+      <span class="tok-str">'Content-Type'</span>: <span class="tok-str">'application/json'</span>,
+      <span class="tok-str">'Authorization'</span>: <span class="tok-str">`Bearer ${idToken}`</span>,
+      ...(init.headers || <span class="tok-punct">{}</span>),
+    <span class="tok-punct">}</span>,
+  <span class="tok-punct">}</span>)<span class="tok-punct">;</span>
+  <span class="tok-kw">const</span> body = <span class="tok-kw">await</span> r.json()<span class="tok-punct">;</span>
+  <span class="tok-kw">if</span> (!body.ok) <span class="tok-kw">throw</span> Object.assign(<span class="tok-kw">new</span> Error(body.error), <span class="tok-punct">{</span> status: r.status, body <span class="tok-punct">}</span>)<span class="tok-punct">;</span>
+  <span class="tok-kw">return</span> body<span class="tok-punct">;</span>
+<span class="tok-punct">}</span>
+
+<span class="tok-kw">const</span> summary = <span class="tok-kw">await</span> kesefle(<span class="tok-str">'/api/sheet/summary'</span>, <span class="tok-punct">{</span> method: <span class="tok-str">'GET'</span> <span class="tok-punct">}</span>, token)<span class="tok-punct">;</span></code></pre>
+          <button class="copy-btn" data-copy-target="prev">copy</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHANGELOG ============ -->
+    <section id="changelog" class="mt-12">
+      <h2 class="text-2xl font-black">Changelog</h2>
+      <div class="mt-3 rounded-2xl border border-ink-200 bg-white p-6 text-sm text-ink-600 dark:border-ink-700 dark:bg-ink-800/40 dark:text-ink-300">
+        <p>No API-breaking changes yet — this is v1.</p>
+        <p class="mt-2">Product-level updates are listed at <a class="underline" href="/changelog">/changelog</a>. Once the API hits 1.1 we'll keep a dedicated record here.</p>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT ============ -->
+    <section id="contact" class="mt-12 mb-16">
+      <h2 class="text-2xl font-black">Contact</h2>
+      <div class="mt-3 grid gap-3 text-sm md:grid-cols-3">
+        <a href="mailto:api@kesefle.app" class="rounded-2xl border border-ink-200 bg-white p-4 hover:border-brand-500 dark:border-ink-700 dark:bg-ink-800/40">
+          <p class="font-bold dark:text-white">API questions</p>
+          <p class="mt-1 text-ink-500 dark:text-ink-300">api@kesefle.app</p>
+        </a>
+        <a href="/status" class="rounded-2xl border border-ink-200 bg-white p-4 hover:border-brand-500 dark:border-ink-700 dark:bg-ink-800/40">
+          <p class="font-bold dark:text-white">Service status</p>
+          <p class="mt-1 text-ink-500 dark:text-ink-300">kesefle.vercel.app/status</p>
+        </a>
+        <a href="/trust" class="rounded-2xl border border-ink-200 bg-white p-4 hover:border-brand-500 dark:border-ink-700 dark:bg-ink-800/40">
+          <p class="font-bold dark:text-white">Security &amp; privacy</p>
+          <p class="mt-1 text-ink-500 dark:text-ink-300">kesefle.vercel.app/trust</p>
+        </a>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Footer -->
+<footer class="border-t border-ink-200 bg-white py-10 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 text-sm text-ink-500 dark:text-ink-300">
+    <p>© <span class="num">2026</span> Kesefle · <a class="underline hover:text-brand-600" href="/">Home</a> · <a class="underline hover:text-brand-600" href="/status">Status</a> · <a class="underline hover:text-brand-600" href="/changelog">Changelog</a> · <a class="underline hover:text-brand-600" href="/trust">Security</a></p>
+    <p class="font-mono text-xs">API v1 · public</p>
+  </div>
+</footer>
+
+<script>
+  // ---------- Theme ----------
+  (function () {
+    var pref = localStorage.getItem('theme');
+    var dark = pref ? pref === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (dark) document.documentElement.classList.add('dark');
+    var btn = document.getElementById('theme-toggle');
+    if (btn) btn.addEventListener('click', function () {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+  })();
+
+  // ---------- Copy buttons ----------
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+    var text;
+    if (btn.dataset.copy) {
+      text = btn.dataset.copy;
+    } else if (btn.dataset.copyTarget === 'prev') {
+      var pre = btn.parentElement.querySelector('pre');
+      text = pre ? pre.innerText : '';
+    }
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(function () {
+      var original = btn.textContent;
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(function () { btn.textContent = original; btn.classList.remove('copied'); }, 1400);
+    }).catch(function () {
+      btn.textContent = 'err';
+    });
+  });
+
+  // ---------- Tab switcher (HMAC code samples) ----------
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    var name = btn.dataset.tab;
+    // Find sibling tab-btns in same group
+    var group = btn.parentElement;
+    group.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    // Find following sibling tab-pane elements (panes immediately after the tab nav)
+    var pane = group.nextElementSibling;
+    while (pane && pane.classList.contains('tab-pane')) {
+      pane.classList.toggle('hidden', pane.dataset.pane !== name);
+      pane = pane.nextElementSibling;
+    }
+  });
+
+  // ---------- Search filter ----------
+  (function () {
+    var input = document.getElementById('ep-search');
+    if (!input) return;
+    var endpoints = document.querySelectorAll('.endpoint');
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      endpoints.forEach(function (ep) {
+        if (!q) { ep.classList.remove('hidden'); return; }
+        var hay = (ep.dataset.keywords || '') + ' ' + (ep.querySelector('.ep-url')?.textContent || '') + ' ' + (ep.querySelector('h3')?.textContent || '');
+        ep.classList.toggle('hidden', hay.toLowerCase().indexOf(q) === -1);
+      });
+    });
+  })();
+
+  // ---------- Mobile TOC ----------
+  (function () {
+    var sel = document.getElementById('mobile-toc-select');
+    if (!sel) return;
+    sel.addEventListener('change', function () { if (sel.value) location.hash = sel.value; });
+  })();
+
+  // ---------- TOC active section highlight ----------
+  (function () {
+    var links = document.querySelectorAll('#toc a.toc-link');
+    var ids = Array.from(links).map(function (a) { return a.getAttribute('href').slice(1); });
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var id = e.target.id;
+        links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
+      });
+    }, { rootMargin: '-30% 0px -65% 0px' });
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) obs.observe(el);
+    });
+  })();
+
+  // ---------- Service worker ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+    });
+  }
+</script>
+
+<!-- Analytics -->
+<script src="/lib/analytics.js" defer></script>
+
+</body>
+</html>
