@@ -216,9 +216,9 @@ function INSTALL_FINANCIAL_SUMMARY_TAB() {
   sh.getRange('A17').setValue('📉 שנה הכי פחות רווחית:').setFontWeight('bold');
   sh.getRange('B17').setFormula('=INDEX($B$3:$E$3, MATCH(MIN($B$13:$E$13), $B$13:$E$13, 0))');
 
-  // Freeze first 3 rows + first column
+  // Freeze first 3 rows. (Cannot freeze column 1 because row 1 has a merged title
+  // A1:G1 — freezing a subset of merged columns is rejected by Sheets.)
   sh.setFrozenRows(3);
-  sh.setFrozenColumns(1);
 
   try { SpreadsheetApp.getUi().alert('Created tab "סיכום פיננסי" with key metrics + sparkline charts.'); } catch (e) {}
 }
