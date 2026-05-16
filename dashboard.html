@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
   tailwind.config = {
     darkMode: 'class',
@@ -64,6 +65,13 @@
   /* Donut SVG */
   .donut-ring { transform: rotate(-90deg); transform-origin: center; }
   .donut-seg { transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+  /* Refresh icon spin */
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  /* Clickable tx rows */
+  .tx-row { cursor: pointer; }
+  .tx-row:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
 </style>
 </head>
 <body class="min-h-screen bg-ink-50 text-ink-900 dark:bg-ink-900 dark:text-white">
@@ -85,6 +93,22 @@
 </header>
 
 <main class="mx-auto max-w-6xl px-5 py-8">
+
+  <!-- re-auth banner (shows when API returns 401) -->
+  <section id="reauth-banner" class="mb-6 hidden rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/40">
+    <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-3">
+        <div class="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-amber-100 text-lg dark:bg-amber-900/60">🔐</div>
+        <div>
+          <div class="font-bold text-amber-900 dark:text-amber-200">פג תוקף ההזדהות</div>
+          <div class="text-xs text-amber-700 dark:text-amber-300">כדי לטעון את הנתונים שלך מהגיליון, צריך להתחבר מחדש לחשבון Google.</div>
+        </div>
+      </div>
+      <button onclick="kesefleReauth()" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-amber-600">
+        התחבר מחדש
+      </button>
+    </div>
+  </section>
 
   <!-- empty state (when no transactions yet) -->
   <section id="empty-state" class="hidden overflow-hidden rounded-3xl border border-ink-200 bg-gradient-to-br from-brand-50 via-white to-brand-50 shadow-soft dark:border-ink-700 dark:from-ink-800 dark:via-ink-900 dark:to-ink-800">
@@ -227,9 +251,15 @@
 
     <!-- recent transactions -->
     <div class="md:col-span-2 rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-2">
         <h3 class="text-lg font-bold">תנועות אחרונות</h3>
-        <a id="see-all-link" href="#" target="_blank" rel="noopener" class="text-xs font-semibold text-brand-600 hover:underline">ראה הכל בגיליון →</a>
+        <div class="flex items-center gap-2">
+          <button id="refresh-btn" type="button" onclick="kesefleRefresh()" class="inline-flex items-center gap-1.5 rounded-xl border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" title="רענן נתונים">
+            <svg id="refresh-icon" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>רענן</span>
+          </button>
+          <a id="see-all-link" href="#" target="_blank" rel="noopener" class="text-xs font-semibold text-brand-600 hover:underline">ראה הכל בגיליון →</a>
+        </div>
       </div>
       <div id="recent-list" class="mt-4 space-y-2">
         <div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">
@@ -313,6 +343,35 @@
 
 </main>
 
+<!-- transaction action modal (edit/delete) -->
+<div id="tx-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink-900/60 px-4 backdrop-blur-sm" onclick="kesefleCloseTxModal(event)">
+  <div class="w-full max-w-md rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div id="tx-modal-icon" class="cat-chip" style="background:#64748b22;color:#64748b;">💸</div>
+        <div>
+          <div id="tx-modal-title" class="text-lg font-bold">הוצאה</div>
+          <div id="tx-modal-meta" class="text-xs text-ink-500 dark:text-ink-400">—</div>
+        </div>
+      </div>
+      <button type="button" onclick="kesefleCloseTxModal()" class="grid h-8 w-8 place-items-center rounded-full text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-700" aria-label="סגור">✕</button>
+    </div>
+    <div class="mt-5 rounded-2xl bg-ink-50 p-4 dark:bg-ink-900">
+      <div class="text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-ink-500">סכום</div>
+      <div id="tx-modal-amount" class="num mt-1 text-2xl font-black">₪0</div>
+      <div id="tx-modal-raw" class="mt-3 break-words text-sm text-ink-600 dark:text-ink-300"></div>
+    </div>
+    <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <a id="tx-modal-edit" href="#" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-200 px-4 py-2.5 text-sm font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-700">
+        ✏️ ערוך בגיליון
+      </a>
+      <button type="button" onclick="kesefleDeleteTransaction()" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-600">
+        🗑 מחק תנועה
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 function kesefleGetUser() {
   try { return JSON.parse(localStorage.getItem('kesefle_user') || 'null'); } catch { return null; }
@@ -386,6 +445,16 @@ function categoryMeta(name) {
   // partial match
   for (var k in CATEGORY_META) { if (n.indexOf(k) !== -1) return CATEGORY_META[k]; }
   return { icon: '💸', color: '#64748b' };
+}
+
+// Tiny HTML-escape helper for any user-controlled string we drop into innerHTML.
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // Animated number count-up
@@ -465,6 +534,118 @@ function drawDonut(segments, total) {
   });
 }
 
+// ---- Google Identity (One Tap) — obtains a verified ID token for API calls ----
+var GOOGLE_CLIENT_ID = '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
+var GIS_READY = false;
+var REAUTH_PENDING = null; // resolver for the in-flight prompt
+
+function isIdTokenFresh(user) {
+  if (!user || !user.idToken) return false;
+  // 60-second safety window before actual expiry
+  return typeof user.idTokenExpiresAt === 'number' && user.idTokenExpiresAt > Date.now() + 60 * 1000;
+}
+
+function persistIdToken(idToken) {
+  try {
+    var u = kesefleGetUser() || {};
+    // Decode the JWT payload (no verification client-side — server verifies).
+    var parts = idToken.split('.');
+    var payload = parts.length === 3 ? JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/'))) : {};
+    u.idToken = idToken;
+    u.idTokenExpiresAt = (payload.exp || (Math.floor(Date.now()/1000) + 3000)) * 1000;
+    if (payload.email && !u.email) u.email = payload.email;
+    if (payload.name && !u.name) u.name = payload.name;
+    if (payload.picture && !u.picture) u.picture = payload.picture;
+    if (payload.sub && !u.sub) u.sub = payload.sub;
+    localStorage.setItem('kesefle_user', JSON.stringify(u));
+    return u;
+  } catch (e) {
+    console.warn('persistIdToken failed', e);
+    return null;
+  }
+}
+
+function initGoogleIdentity() {
+  if (GIS_READY) return Promise.resolve();
+  return new Promise(function(resolve) {
+    var tries = 0;
+    function check() {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: function(response) {
+              if (response && response.credential) {
+                persistIdToken(response.credential);
+                if (REAUTH_PENDING) { var r = REAUTH_PENDING; REAUTH_PENDING = null; r(true); }
+              } else if (REAUTH_PENDING) { var r2 = REAUTH_PENDING; REAUTH_PENDING = null; r2(false); }
+            },
+            auto_select: false,
+            cancel_on_tap_outside: false,
+            ux_mode: 'popup',
+          });
+          GIS_READY = true;
+          resolve();
+        } catch (e) { console.warn('GIS init failed', e); resolve(); }
+        return;
+      }
+      tries++;
+      if (tries > 60) return resolve(); // give up after ~6s
+      setTimeout(check, 100);
+    }
+    check();
+  });
+}
+
+// Returns a Promise<idToken|null>. Tries cache first, else triggers One Tap prompt.
+async function getOrRefreshIdentity(forcePrompt) {
+  var u = kesefleGetUser();
+  if (!forcePrompt && isIdTokenFresh(u)) return u.idToken;
+  await initGoogleIdentity();
+  if (!GIS_READY) return null;
+  return new Promise(function(resolve) {
+    REAUTH_PENDING = function(ok) {
+      var u2 = kesefleGetUser();
+      resolve(ok && u2 && u2.idToken ? u2.idToken : null);
+    };
+    try {
+      window.google.accounts.id.prompt(function(notification) {
+        if (notification && (notification.isNotDisplayed() || notification.isSkippedMoment())) {
+          // One Tap unavailable (third-party cookies off, etc.) — fallback to redirect-style auth.
+          if (REAUTH_PENDING) { var r = REAUTH_PENDING; REAUTH_PENDING = null; r(false); }
+        }
+      });
+    } catch (e) {
+      console.warn('GIS prompt failed', e);
+      if (REAUTH_PENDING) { var r3 = REAUTH_PENDING; REAUTH_PENDING = null; r3(false); }
+    }
+  });
+}
+
+function kesefleReauth() {
+  document.getElementById('reauth-banner').classList.add('hidden');
+  getOrRefreshIdentity(true).then(function(tok) {
+    if (tok) {
+      kesefleRefresh();
+    } else {
+      // Hard fallback: send the user through the regular sign-in flow on /account
+      window.location.href = '/account?next=' + encodeURIComponent('/dashboard');
+    }
+  });
+}
+
+function showReauthBanner() {
+  document.getElementById('reauth-banner').classList.remove('hidden');
+  document.getElementById('summary-cards').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">לחץ "התחבר מחדש" כדי לטעון את הנתונים.</div>';
+  document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">—</div>';
+}
+
+// Cache of the most recent dashboard payload (for the tx modal).
+var LAST_DASHBOARD = null;
+var LAST_TX = null;
+
 // Init: gate access to authenticated users only
 (function init() {
   var u = kesefleGetUser();
@@ -491,37 +672,151 @@ function drawDonut(segments, total) {
     return;
   }
 
-  // Try to fetch summary from API. If 404 or no data, show empty state.
-  loadDashboard(u, s).catch(function(err) {
-    console.warn('dashboard load failed', err);
-    showEmptyState();
+  // Warm GIS up so One Tap is ready before the user clicks "התחבר מחדש".
+  initGoogleIdentity();
+
+  // Auto-fetch summary on load.
+  kesefleRefresh();
+
+  // Esc closes the tx modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') kesefleCloseTxModal();
   });
 })();
 
+function setLoadingState() {
+  document.getElementById('reauth-banner').classList.add('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('summary-cards').classList.remove('hidden');
+  // soft-reset numeric cards to ₪0 / 0 so countUp animates from 0 each refresh
+  ['month-expenses','month-income','month-balance'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.textContent = '₪0';
+  });
+  var mc = document.getElementById('month-count'); if (mc) mc.textContent = '0';
+  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">טוען תנועות…</div>';
+  document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">טוען…</div>';
+}
+
+async function kesefleRefresh() {
+  var btn = document.getElementById('refresh-btn');
+  var icon = document.getElementById('refresh-icon');
+  if (btn) btn.disabled = true;
+  if (icon) icon.style.animation = 'spin 0.8s linear infinite';
+  setLoadingState();
+  try {
+    var u = kesefleGetUser();
+    var s = kesefleGetSheet();
+    await loadDashboard(u, s);
+  } catch (e) {
+    console.warn('dashboard load failed', e);
+    // Network or other non-401 failure — fall back to empty state.
+    showEmptyState();
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.style.animation = '';
+  }
+}
+
 async function loadDashboard(user, sheet) {
-  // Future: real API call to /api/summary/dashboard?spreadsheetId=...&token=...
-  // For now: try to fetch, fall back to empty state
+  // 1. Make sure we have an ID token. Try cache; if stale, prompt One Tap silently.
+  var idToken = isIdTokenFresh(user) ? user.idToken : await getOrRefreshIdentity(false);
+  if (!idToken) { showReauthBanner(); return; }
+
+  // 2. Call the real endpoint.
   var resp;
   try {
-    resp = await fetch('/api/summary/dashboard?spreadsheetId=' + encodeURIComponent(sheet.spreadsheetId), {
+    resp = await fetch('/api/sheet/summary', {
       method: 'GET',
-      headers: { 'Authorization': 'Bearer ' + (user.idToken || '') }
+      headers: { 'Authorization': 'Bearer ' + idToken, 'Accept': 'application/json' },
     });
-  } catch (e) { throw e; }
+  } catch (e) {
+    throw e; // network: handled upstream
+  }
+
+  if (resp.status === 401) {
+    // Token rejected — could be expired between cache check and server clock skew.
+    // Try one silent retry with a fresh prompt; if still 401, show the reauth banner.
+    var fresh = await getOrRefreshIdentity(true);
+    if (!fresh) { showReauthBanner(); return; }
+    var retry = await fetch('/api/sheet/summary', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + fresh, 'Accept': 'application/json' },
+    });
+    if (retry.status === 401) { showReauthBanner(); return; }
+    resp = retry;
+  }
+
   if (!resp.ok) {
-    // Endpoint not implemented yet — show empty state with WhatsApp CTA
+    // 403 reauth_needed, 404 no sheet, 5xx, etc. — treat as empty for now.
+    var txt = await resp.text().catch(function(){ return ''; });
+    console.warn('summary failed', resp.status, txt.slice(0, 200));
     showEmptyState();
     return;
   }
+
   var data = await resp.json();
+  if (!data || !data.ok) { showEmptyState(); return; }
+
+  LAST_DASHBOARD = data;
+
+  // If API succeeded but the user has zero transactions, surface the empty state.
+  if ((data.month_count || 0) === 0 && (!data.recent || data.recent.length === 0)) {
+    showEmptyState();
+    return;
+  }
+
   renderDashboard(data);
 }
 
 function showEmptyState() {
+  document.getElementById('reauth-banner').classList.add('hidden');
   document.getElementById('summary-cards').classList.add('hidden');
   document.getElementById('empty-state').classList.remove('hidden');
   document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">אין תנועות עדיין. שלח לבוט הודעה ראשונה.</div>';
   document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">אין נתונים עדיין.</div>';
+}
+
+// ---- Transaction modal (edit/delete) ----
+function kesefleOpenTxModal(idx) {
+  var tx = (LAST_DASHBOARD && LAST_DASHBOARD.recent) ? LAST_DASHBOARD.recent[idx] : null;
+  if (!tx) return;
+  LAST_TX = tx;
+  var meta = categoryMeta(tx.subcategory || tx.category);
+  var iconEl = document.getElementById('tx-modal-icon');
+  iconEl.textContent = meta.icon;
+  iconEl.style.background = meta.color + '22';
+  iconEl.style.color = meta.color;
+  document.getElementById('tx-modal-title').textContent = tx.description || tx.subcategory || tx.category || 'תנועה';
+  document.getElementById('tx-modal-meta').textContent = (tx.category || '—') + (tx.subcategory && tx.subcategory !== tx.category ? ' · ' + tx.subcategory : '') + ' · ' + (tx.date || '');
+  var sign = tx.is_income ? '+' : '-';
+  var amountEl = document.getElementById('tx-modal-amount');
+  amountEl.textContent = sign + '₪' + new Intl.NumberFormat('he-IL').format(Math.round(tx.amount || 0));
+  amountEl.className = 'num mt-1 text-2xl font-black ' + (tx.is_income ? 'text-brand-600 dark:text-brand-400' : 'text-red-600 dark:text-red-400');
+  document.getElementById('tx-modal-raw').textContent = tx.raw ? 'הודעה מקורית: "' + tx.raw + '"' : '';
+  var sheetUrl = (kesefleGetSheet() || {}).spreadsheetUrl || '#';
+  document.getElementById('tx-modal-edit').href = sheetUrl;
+  var modal = document.getElementById('tx-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function kesefleCloseTxModal(e) {
+  if (e && e.target && e.target.id !== 'tx-modal') return; // only close on backdrop or programmatic call
+  var modal = document.getElementById('tx-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  LAST_TX = null;
+}
+
+async function kesefleDeleteTransaction() {
+  if (!LAST_TX) return;
+  if (!confirm('למחוק את התנועה? פעולה זו אינה הפיכה.')) return;
+  // TODO: implement /api/transactions/delete on the backend.
+  //   Expected: DELETE /api/transactions/delete, body { date, amount, raw, message_id }
+  //   Must verify ID token (requireAuth), locate row in 'תנועות' tab by message_id or composite key, and delete it.
+  //   For now this is a no-op with a friendly toast.
+  alert('מחיקה ישירה מהדשבורד תהיה זמינה בקרוב. בינתיים אפשר למחוק את השורה בגיליון.');
+  kesefleCloseTxModal();
 }
 
 function renderDashboard(d) {
@@ -584,15 +879,23 @@ function renderDashboard(d) {
   recent.slice(0, 10).forEach(function(t, i) {
     var meta = categoryMeta(t.subcategory || t.category);
     var row = document.createElement('div');
-    row.className = 'row-in flex items-center gap-3 rounded-2xl bg-ink-50 p-3 transition hover:bg-ink-100 dark:bg-ink-900 dark:hover:bg-ink-700';
+    row.className = 'tx-row row-in flex items-center gap-3 rounded-2xl bg-ink-50 p-3 transition hover:bg-ink-100 dark:bg-ink-900 dark:hover:bg-ink-700';
     row.style.animationDelay = (i * 40) + 'ms';
+    row.setAttribute('role', 'button');
+    row.setAttribute('tabindex', '0');
+    row.setAttribute('data-tx-idx', i);
+    row.addEventListener('click', function(){ kesefleOpenTxModal(i); });
+    row.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); kesefleOpenTxModal(i); } });
     var sign = t.is_income ? '+' : '-';
     var amountColor = t.is_income ? 'text-brand-600 dark:text-brand-400' : 'text-ink-900 dark:text-white';
+    var safeDesc = escapeHtml(t.description || t.subcategory || 'הוצאה');
+    var safeSub = escapeHtml(t.subcategory || '—');
+    var safeDate = escapeHtml(t.date || '');
     row.innerHTML =
       '<div class="cat-chip" style="background:' + meta.color + '22;color:' + meta.color + ';">' + meta.icon + '</div>' +
       '<div class="min-w-0 flex-1">' +
-        '<div class="truncate font-semibold">' + (t.description || t.subcategory || 'הוצאה') + '</div>' +
-        '<div class="text-xs text-ink-500 dark:text-ink-400">' + (t.subcategory || '—') + ' · ' + (t.date || '') + '</div>' +
+        '<div class="truncate font-semibold">' + safeDesc + '</div>' +
+        '<div class="text-xs text-ink-500 dark:text-ink-400">' + safeSub + ' · ' + safeDate + '</div>' +
       '</div>' +
       '<div class="' + amountColor + ' num text-base font-black">' + sign + num(t.amount) + '</div>';
     list.appendChild(row);

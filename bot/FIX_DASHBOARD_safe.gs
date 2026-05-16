@@ -1,4 +1,4 @@
-// FIX_DASHBOARD - safe version (ASCII-only comments)
+w// FIX_DASHBOARD - safe version (ASCII-only comments)
 // Functions: DRY_RUN_FIX_DASHBOARD, APPLY_FIX_DASHBOARD, POST_APPLY_VERIFY
 // Sheet ID is hardcoded below.
 
