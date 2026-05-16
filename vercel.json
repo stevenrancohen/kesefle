@@ -1,5 +1,25 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/signup", "destination": "/account", "permanent": false },
+    { "source": "/login", "destination": "/account", "permanent": false },
+    { "source": "/signin", "destination": "/account", "permanent": false },
+    { "source": "/register", "destination": "/account", "permanent": false },
+    { "source": "/careers", "destination": "/about", "permanent": false },
+    { "source": "/jobs", "destination": "/about", "permanent": false },
+    { "source": "/team", "destination": "/about", "permanent": false },
+    { "source": "/security", "destination": "/trust", "permanent": false },
+    { "source": "/contact", "destination": "/about", "permanent": false },
+    { "source": "/support", "destination": "/help", "permanent": false },
+    { "source": "/faq", "destination": "/help", "permanent": false },
+    { "source": "/api-docs", "destination": "/docs", "permanent": false },
+    { "source": "/developers", "destination": "/docs", "permanent": false },
+    { "source": "/api", "destination": "/docs", "permanent": false },
+    { "source": "/affiliate", "destination": "/referral", "permanent": false },
+    { "source": "/invite", "destination": "/referral", "permanent": false },
+    { "source": "/blog/feed", "destination": "/changelog", "permanent": false },
+    { "source": "/rss", "destination": "/changelog", "permanent": false }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -30,6 +50,34 @@
       "source": "/manifest.webmanifest",
       "headers": [
         { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/.well-known/security.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/humans.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
         { "key": "Cache-Control", "value": "public, max-age=3600" }
       ]
     }
