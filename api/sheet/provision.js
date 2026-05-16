@@ -8,7 +8,11 @@
 //   4. Server stores { userSub -> spreadsheetId } in Vercel KV.
 //   5. Server returns the new spreadsheet URL.
 
-export default async function handler(req, res) {
+import { requireAuth } from '../../lib/auth.js';
+import { withRequestId } from '../../lib/log.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
+
+async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }
@@ -21,14 +25,14 @@ export default async function handler(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const accessToken = String(body?.accessToken || '').trim();
-  const userSub = String(body?.userSub || '').trim();
-  const userEmail = String(body?.userEmail || '').trim();
+  // CRITICAL FIX (C4): bind userSub to verified ID-token identity. Previous code accepted
+  // userSub from body, allowing an attacker to supply their own accessToken + the victim's
+  // sub and route the victim's incoming WhatsApp expenses to the attacker's Drive.
+  const userSub = req.user.sub;
+  const userEmail = req.user.email || String(body?.userEmail || '').trim();
 
   if (!accessToken || accessToken.length < 20) {
     return res.status(400).json({ ok: false, error: 'missing accessToken' });
-  }
-  if (!userSub) {
-    return res.status(400).json({ ok: false, error: 'missing userSub' });
   }
 
   const kvUrl = process.env.KV_REST_API_URL;
@@ -135,3 +139,10 @@ export default async function handler(req, res) {
     spreadsheetUrl,
   });
 }
+
+// Apply security middleware: request ID → rate limit (5/hour for sheet provisioning) → auth
+export default withRequestId(
+  withRateLimit({ key: 'sheet_provision', limit: 5, windowSec: 3600 })(
+    requireAuth(handlerImpl)
+  )
+);

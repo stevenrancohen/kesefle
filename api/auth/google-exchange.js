@@ -21,7 +21,11 @@
 //
 // Env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, KV_REST_API_URL, KV_REST_API_TOKEN
 
-export default async function handler(req, res) {
+import { verifyGoogleIdToken } from '../../lib/auth.js';
+import { withRequestId, log } from '../../lib/log.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
+
+async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }
@@ -72,16 +76,17 @@ export default async function handler(req, res) {
     return res.status(502).json({ ok: false, error: 'google_token_endpoint_unreachable', detail: e.message });
   }
 
-  // Decode the ID token to extract user identity (sub, email, name, picture).
-  // ID tokens are JWTs: header.payload.signature. Payload is base64url JSON.
+  // CRITICAL FIX (C3): Verify ID token signature against Google's JWKS using RS256.
+  // The previous code decoded the JWT payload WITHOUT verifying the signature, which
+  // would allow a forged JWT to populate the user record with an arbitrary sub claim.
   let identity = {};
   try {
-    if (tokens.id_token) {
-      const payload = tokens.id_token.split('.')[1];
-      identity = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    }
+    if (!tokens.id_token) throw new Error('no_id_token_in_response');
+    identity = await verifyGoogleIdToken(tokens.id_token, clientId);
+    log.info('exchange.verified', { reqId: req.reqId, userSub: identity.sub });
   } catch (e) {
-    return res.status(400).json({ ok: false, error: 'invalid_id_token' });
+    log.warn('exchange.verify_failed', { reqId: req.reqId, error: e.message });
+    return res.status(400).json({ ok: false, error: 'id_token_verification_failed', detail: e.message });
   }
 
   if (!identity.sub) {
@@ -130,3 +135,9 @@ export default async function handler(req, res) {
     hasRefreshToken: !!tokens.refresh_token,
   });
 }
+
+// Security: request ID → rate limit (10 exchanges/hour per IP).
+// Auth NOT required here — this endpoint IS the auth flow's exchange step.
+export default withRequestId(
+  withRateLimit({ key: 'oauth_exchange', limit: 10, windowSec: 3600 })(handlerImpl)
+);

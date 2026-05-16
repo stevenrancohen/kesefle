@@ -42,7 +42,11 @@ async function revokeGoogleToken(refreshToken) {
   } catch (e) { console.warn('google_revoke_failed', e.message); }
 }
 
-export default async function handler(req, res) {
+import { requireAuth } from '../../lib/auth.js';
+import { withRequestId } from '../../lib/log.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
+
+async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }
@@ -50,10 +54,12 @@ export default async function handler(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
 
-  const userSub = req.headers['x-user-sub'] || body?.userSub;
-  if (!userSub) return res.status(401).json({ ok: false, error: 'missing user identity' });
+  // CRITICAL FIX (C2): use verified ID-token-bound identity. NO MORE trusting X-User-Sub or body.userSub.
+  // An attacker with only a victim's sub used to be able to delete their account.
+  const userSub = req.user.sub;
 
-  // Require an exact confirmation string to prevent accidental/CSRF deletion.
+  // Require an exact confirmation string to prevent accidental deletion.
+  // Note: this string alone is not a security control — the auth+CSRF + rate limit are.
   if (body?.confirmation !== 'DELETE-MY-ACCOUNT') {
     return res.status(400).json({ ok: false, error: 'missing or invalid confirmation' });
   }
@@ -110,3 +116,10 @@ export default async function handler(req, res) {
     note_he: 'החשבון שלך, אסימוני ההזדהות והקישור שלנו לגיליון הוסרו. הגיליון עצמו נשאר ב-Drive שלך בשליטתך — מחק אותו ידנית אם תרצה.',
   });
 }
+
+// Apply security middleware: request ID → rate limit (3/hour for deletion) → auth (verified ID token)
+export default withRequestId(
+  withRateLimit({ key: 'account_delete', limit: 3, windowSec: 3600 })(
+    requireAuth(handlerImpl)
+  )
+);

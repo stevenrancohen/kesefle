@@ -41,15 +41,18 @@ async function exchangeRefreshForAccess(refreshToken) {
   return j.access_token;
 }
 
-export default async function handler(req, res) {
+import { requireAuth } from '../../lib/auth.js';
+import { withRequestId } from '../../lib/log.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
+
+async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }
 
-  // Auth: X-User-Sub header (set by client from their ID token's sub claim).
-  // Production hardening TODO: verify ID token signature server-side instead of trusting client.
-  const userSub = req.headers['x-user-sub'] || req.query.userSub;
-  if (!userSub) return res.status(401).json({ ok: false, error: 'missing user identity' });
+  // CRITICAL FIX (C1): use verified ID-token-bound identity. NO MORE trusting X-User-Sub header.
+  // req.user is set by requireAuth() middleware after JWT signature verification against Google JWKS.
+  const userSub = req.user.sub;
 
   const userRec = await kvGet('user:' + userSub);
   if (!userRec) return res.status(404).json({ ok: false, error: 'user not found' });
@@ -142,3 +145,10 @@ export default async function handler(req, res) {
     refreshed_at: new Date().toISOString(),
   });
 }
+
+// Apply security middleware: request ID → rate limit (30/min) → auth (verified ID token)
+export default withRequestId(
+  withRateLimit({ key: 'sheet_summary', limit: 30, windowSec: 60 })(
+    requireAuth(handlerImpl)
+  )
+);

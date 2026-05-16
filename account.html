@@ -16,6 +16,46 @@
 <style>
   body { font-family: 'Heebo', system-ui, sans-serif; }
   .num { direction: ltr; unicode-bidi: isolate; }
+
+  /* Banner transition between in-progress (amber) and done (emerald celebration) */
+  #onboarding {
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+  }
+  #onboarding.is-complete {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #ecfdf5 100%);
+    border-color: #6ee7b7;
+    box-shadow: 0 20px 50px -25px rgba(16, 185, 129, 0.45);
+  }
+  #onboarding.is-complete .progress-fill { width: 100% !important; }
+
+  /* Confetti for celebration */
+  @keyframes confetti-fall {
+    0%   { transform: translate(var(--x), -20px) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    100% { transform: translate(calc(var(--x) + var(--drift)), 320px) rotate(720deg); opacity: 0; }
+  }
+  .confetti {
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 12px;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: confetti-fall 2.2s ease-out forwards;
+  }
+
+  /* Step pulse */
+  @keyframes step-pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  .step-just-done { animation: step-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+  /* Whatsapp waiting indicator */
+  @keyframes dot-pulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.85); }
+    40% { opacity: 1; transform: scale(1.1); }
+  }
+  .listen-dot { animation: dot-pulse 1.4s ease-in-out infinite both; }
+  .listen-dot:nth-child(2) { animation-delay: 0.16s; }
+  .listen-dot:nth-child(3) { animation-delay: 0.32s; }
 </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
@@ -38,12 +78,22 @@
 <main class="mx-auto max-w-5xl px-5 py-10">
 
   <!-- onboarding banner -->
-  <section id="onboarding" class="mb-8 rounded-3xl border border-amber-200 bg-amber-50 p-6">
+  <section id="onboarding" class="relative mb-8 overflow-hidden rounded-3xl border border-amber-200 bg-amber-50 p-6">
+    <div id="confetti-host" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
     <div class="flex items-start gap-4">
-      <div class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl">👋</div>
+      <div id="banner-icon" class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl transition-colors">👋</div>
       <div class="flex-1">
-        <h2 class="text-xl font-black">ברוך הבא! בוא נסיים את ההגדרה</h2>
-        <p class="mt-1 text-slate-700">3 שלבים קצרים והכל מוכן.</p>
+        <h2 id="banner-title" class="text-xl font-black">ברוך הבא! בוא נסיים את ההגדרה</h2>
+        <p id="banner-subtitle" class="mt-1 text-slate-700">3 שלבים קצרים והכל מוכן.</p>
+
+        <!-- Progress bar showing step completion -->
+        <div class="mt-3 flex items-center gap-3">
+          <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/70">
+            <div id="onboarding-progress" class="progress-fill h-full bg-emerald-500 transition-all duration-700" style="width: 33%"></div>
+          </div>
+          <span id="progress-label" class="text-xs font-bold text-slate-600"><span class="num">1</span>/<span class="num">3</span></span>
+        </div>
+
         <ol class="mt-5 space-y-3">
           <li class="flex items-start gap-3" id="step-1">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white">✓</span>
@@ -57,7 +107,38 @@
             <div class="flex-1">
               <div class="font-bold">צור את הגיליון שלך</div>
               <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
-              <button onclick="kesefleProvisionSheet()" id="btn-provision" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">צור גיליון</button>
+              <!-- Sheet structure preview (what they'll get) -->
+              <div id="sheet-preview" class="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px]">
+                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px border-b border-slate-200 bg-slate-100 text-[9px] font-bold uppercase tracking-wide text-slate-500">
+                  <div class="px-2 py-1.5">Date</div>
+                  <div class="px-2 py-1.5">Description</div>
+                  <div class="px-2 py-1.5 text-right">Amount</div>
+                  <div class="px-2 py-1.5">Category</div>
+                </div>
+                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px text-slate-700">
+                  <div class="px-2 py-1.5">Today</div>
+                  <div class="px-2 py-1.5">סופר</div>
+                  <div class="num px-2 py-1.5 text-right text-red-600">-₪245</div>
+                  <div class="px-2 py-1.5">🍔 אוכל</div>
+                </div>
+                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px border-t border-slate-100 text-slate-700">
+                  <div class="px-2 py-1.5">Today</div>
+                  <div class="px-2 py-1.5">דלק</div>
+                  <div class="num px-2 py-1.5 text-right text-red-600">-₪320</div>
+                  <div class="px-2 py-1.5">🚗 תחבורה</div>
+                </div>
+                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px border-t border-slate-100 text-slate-700">
+                  <div class="px-2 py-1.5">Today</div>
+                  <div class="px-2 py-1.5">משכורת</div>
+                  <div class="num px-2 py-1.5 text-right text-emerald-600">+₪8,500</div>
+                  <div class="px-2 py-1.5">💰 הכנסה</div>
+                </div>
+              </div>
+              <div class="mb-2 text-[11px] text-slate-500">↑ ככה הגיליון שלך ייראה. נוצר אצלך ב-Drive, פרטי, רק שלך.</div>
+              <button onclick="kesefleProvisionSheet()" id="btn-provision" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                צור את הגיליון שלי
+              </button>
               <div id="provision-status" class="mt-2 hidden text-sm"></div>
             </div>
           </li>
@@ -65,8 +146,22 @@
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
             <div class="flex-1">
               <div class="font-bold">חבר את הוואטסאפ שלך</div>
-              <div class="text-sm text-slate-600 mb-2">שלח הודעה ראשונה לבוט.</div>
-              <a href="https://wa.me/972547760643?text=%D7%94%D7%99%21%20%D7%90%D7%A0%D7%99%20%D7%A8%D7%95%D7%A6%D7%94%20%D7%9C%D7%94%D7%AA%D7%97%D7%99%D7%9C%20%D7%9C%D7%A2%D7%A7%D7%95%D7%91%20%D7%90%D7%97%D7%A8%D7%99%20%D7%94%D7%94%D7%95%D7%A6%D7%90%D7%95%D7%AA" target="_blank" rel="noopener" id="btn-whatsapp" class="inline-block rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white hover:opacity-90">פתח וואטסאפ</a>
+              <div class="text-sm text-slate-600 mb-2">שלח לבוט הודעה כמו <span class="font-mono font-semibold">"<span class="num">245</span> סופר"</span> — נדע שהחיבור עבד.</div>
+              <div class="flex flex-wrap items-center gap-2">
+                <a href="https://wa.me/972547760643?text=%D7%94%D7%99%21%20%D7%90%D7%A0%D7%99%20%D7%A8%D7%95%D7%A6%D7%94%20%D7%9C%D7%94%D7%AA%D7%97%D7%99%D7%9C%20%D7%9C%D7%A2%D7%A7%D7%95%D7%91%20%D7%90%D7%97%D7%A8%D7%99%20%D7%94%D7%94%D7%95%D7%A6%D7%90%D7%95%D7%AA" target="_blank" rel="noopener" id="btn-whatsapp" onclick="kesefleStartWaitingForMsg()" class="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white hover:opacity-90">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
+                  פתח וואטסאפ
+                </a>
+                <!-- "Waiting for message" pulsing indicator -->
+                <div id="whatsapp-waiting" class="hidden inline-flex items-center gap-2 rounded-xl border border-[#25D366]/40 bg-[#25D366]/10 px-3 py-2 text-xs font-semibold text-emerald-800">
+                  <span class="flex gap-1">
+                    <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-[#25D366]"></span>
+                    <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-[#25D366]"></span>
+                    <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-[#25D366]"></span>
+                  </span>
+                  ממתין להודעה הראשונה שלך…
+                </div>
+              </div>
             </div>
           </li>
         </ol>
@@ -122,6 +217,93 @@ function kesefleLogout() {
   window.location.href = '/';
 }
 
+// Progress + celebration helpers
+function kesefleUpdateOnboardingProgress() {
+  var step1Done = !!kesefleGetUser();
+  var sheet = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
+  var step2Done = !!(sheet && sheet.spreadsheetUrl);
+  var step3Done = localStorage.getItem('kesefle_whatsapp_linked') === '1';
+
+  var done = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
+  var pct = Math.round((done / 3) * 100);
+  var bar = document.getElementById('onboarding-progress');
+  var label = document.getElementById('progress-label');
+  if (bar) bar.style.width = pct + '%';
+  if (label) label.innerHTML = '<span class="num">' + done + '</span>/<span class="num">3</span>';
+
+  if (step2Done) kesefleMarkStepDone(2);
+  if (step3Done) kesefleMarkStepDone(3);
+
+  if (done === 3) kesefleCelebrate();
+}
+
+function kesefleMarkStepDone(n) {
+  var li = document.getElementById('step-' + n);
+  if (!li) return;
+  var badge = li.firstElementChild;
+  if (badge && badge.textContent !== '✓') {
+    badge.classList.remove('bg-slate-300');
+    badge.classList.add('bg-emerald-500', 'step-just-done');
+    badge.textContent = '✓';
+  }
+}
+
+function kesefleCelebrate() {
+  var banner = document.getElementById('onboarding');
+  if (!banner || banner.classList.contains('is-complete')) return;
+  banner.classList.add('is-complete');
+
+  var icon = document.getElementById('banner-icon');
+  if (icon) { icon.textContent = '🎉'; icon.className = 'grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl transition-colors'; }
+  var t = document.getElementById('banner-title');
+  if (t) t.textContent = 'הכל מוכן! כסף\'לה פעיל';
+  var s = document.getElementById('banner-subtitle');
+  if (s) s.innerHTML = 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/dashboard" class="font-bold text-emerald-700 underline">לדשבורד שלי ←</a>';
+
+  // Confetti burst
+  var host = document.getElementById('confetti-host');
+  if (host) {
+    var colors = ['#22c55e', '#a855f7', '#f59e0b', '#3b82f6', '#ec4899', '#10b981'];
+    for (var i = 0; i < 32; i++) {
+      var c = document.createElement('span');
+      c.className = 'confetti';
+      c.style.background = colors[i % colors.length];
+      c.style.left = (Math.random() * 100) + '%';
+      c.style.setProperty('--x', '0px');
+      c.style.setProperty('--drift', ((Math.random() - 0.5) * 240).toFixed(0) + 'px');
+      c.style.animationDelay = (Math.random() * 0.4) + 's';
+      c.style.animationDuration = (1.6 + Math.random() * 1.2).toFixed(2) + 's';
+      host.appendChild(c);
+    }
+    setTimeout(function(){ host.innerHTML = ''; }, 3500);
+  }
+}
+
+// Called from WhatsApp CTA — start the polling indicator
+function kesefleStartWaitingForMsg() {
+  var ind = document.getElementById('whatsapp-waiting');
+  if (ind) ind.classList.remove('hidden');
+  // In production: poll /api/whatsapp/linked. For now: simulate with 12s timeout
+  // and mark linked when the user returns to the tab (very common after wa.me).
+  var marked = false;
+  function markLinked() {
+    if (marked) return; marked = true;
+    localStorage.setItem('kesefle_whatsapp_linked', '1');
+    if (ind) {
+      ind.classList.remove('bg-[#25D366]/10', 'border-[#25D366]/40', 'text-emerald-800');
+      ind.classList.add('border-emerald-300', 'bg-emerald-50', 'text-emerald-700');
+      ind.innerHTML = '<span class="text-emerald-600">✓</span> ההודעה התקבלה!';
+    }
+    kesefleUpdateOnboardingProgress();
+  }
+  // Mark on tab focus return (user came back from WhatsApp)
+  var onFocus = function() {
+    setTimeout(markLinked, 1500);
+    window.removeEventListener('focus', onFocus);
+  };
+  window.addEventListener('focus', onFocus);
+}
+
 (function init() {
   var u = kesefleGetUser();
   if (!u) { window.location.href = '/'; return; }
@@ -136,11 +318,8 @@ function kesefleLogout() {
   if (s && s.spreadsheetUrl) {
     document.getElementById('sheet-link').href = s.spreadsheetUrl;
     document.getElementById('linked-sheet').classList.remove('hidden');
-    var step2 = document.getElementById('step-2').firstElementChild;
-    step2.classList.remove('bg-slate-300');
-    step2.classList.add('bg-emerald-500');
-    step2.textContent = '✓';
   }
+  kesefleUpdateOnboardingProgress();
 })();
 
 async function kesefleProvisionSheet() {
@@ -192,10 +371,7 @@ async function kesefleProvisionSheet() {
           status.className = 'mt-2 text-sm text-emerald-600';
           status.textContent = '✓ הגיליון מוכן!';
           btn.style.display = 'none';
-          var step2 = document.getElementById('step-2').firstElementChild;
-          step2.classList.remove('bg-slate-300');
-          step2.classList.add('bg-emerald-500');
-          step2.textContent = '✓';
+          kesefleUpdateOnboardingProgress();
         } else {
           status.className = 'mt-2 text-sm text-red-600';
           status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.');

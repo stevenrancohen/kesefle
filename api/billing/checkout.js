@@ -41,7 +41,11 @@ async function kvSet(key, value) {
   return r.ok;
 }
 
-export default async function handler(req, res) {
+import { requireAuth } from '../../lib/auth.js';
+import { withRequestId } from '../../lib/log.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
+
+async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }
@@ -55,13 +59,15 @@ export default async function handler(req, res) {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
 
   const plan = String(body?.plan || '').toLowerCase();
-  const userSub = String(body?.userSub || req.headers['x-user-sub'] || '').trim();
-  const userEmail = String(body?.userEmail || '').trim();
+  // CRITICAL FIX (C5): bind userSub + email to verified ID-token identity, NOT body.
+  // Previously, an attacker could send userSub=<victim> in the body and any later
+  // Stripe webhook event would flip the VICTIM'S plan based on metadata.userSub.
+  const userSub = req.user.sub;
+  const userEmail = req.user.email;
 
   if (!PLAN_PRICES[plan]) {
     return res.status(400).json({ ok: false, error: 'invalid plan', allowed: Object.keys(PLAN_PRICES) });
   }
-  if (!userSub) return res.status(401).json({ ok: false, error: 'missing user identity' });
 
   const priceId = process.env[PLAN_PRICES[plan]];
   if (!priceId) {
@@ -140,3 +146,10 @@ export default async function handler(req, res) {
     plan,
   });
 }
+
+// Security: request ID → rate limit (10/hour for checkout) → auth (verified ID token)
+export default withRequestId(
+  withRateLimit({ key: 'billing_checkout', limit: 10, windowSec: 3600 })(
+    requireAuth(handlerImpl)
+  )
+);

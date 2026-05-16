@@ -270,23 +270,44 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
     return { ok: false, error: 'token_refresh_failed', detail: e.message };
   }
 
+  // CRITICAL FIX (RT3-F6): Sanitize cells to prevent formula injection.
+  // If a user sends "99 =IMPORTXML(...)" the raw text would be evaluated as a formula
+  // by Google Sheets when valueInputOption=USER_ENTERED. Prefix dangerous leading chars
+  // with a tab+apostrophe ("'") which Sheets treats as a literal text marker.
+  function sanitizeCell(v) {
+    if (v == null) return '';
+    if (typeof v === 'number') return v;
+    const s = String(v);
+    if (s.length === 0) return '';
+    // Strip zero-width + bidi override chars that can hide injected formulas
+    const cleaned = s.replace(/[​-‏‪-‮⁦-⁩﻿]/g, '');
+    // Prefix if first non-space char is a formula trigger
+    const firstNonSpace = cleaned.trimStart()[0];
+    if (firstNonSpace === '=' || firstNonSpace === '+' || firstNonSpace === '-' || firstNonSpace === '@' || firstNonSpace === '\t') {
+      return "'" + cleaned;
+    }
+    return cleaned;
+  }
+
   const isoNow = new Date().toISOString();
   const isIncome = !!parsed.is_income;
   const row = [
-    isoNow,                                     // A: timestamp
-    parsed.amount,                              // B: amount
-    parsed.currency || 'ILS',                   // C: currency
-    isIncome ? 'income' : 'expense',            // D: type
-    parsed.category || 'אחר',                   // E: category
-    parsed.subcategory || '',                   // F: subcategory
-    rawText,                                    // G: raw text
-    'whatsapp',                                 // H: source
-    messageId,                                  // I: message_id
+    isoNow,                                            // A: timestamp
+    typeof parsed.amount === 'number' ? parsed.amount : 0,  // B: amount (numeric only)
+    sanitizeCell(parsed.currency || 'ILS'),            // C: currency
+    sanitizeCell(isIncome ? 'income' : 'expense'),     // D: type
+    sanitizeCell(parsed.category || 'אחר'),            // E: category
+    sanitizeCell(parsed.subcategory || ''),            // F: subcategory
+    sanitizeCell(rawText),                             // G: raw text
+    'whatsapp',                                         // H: source (fixed enum, safe)
+    sanitizeCell(messageId),                           // I: message_id
   ];
 
   // Append to the תנועות tab (range 'תנועות'!A:I) with INSERT_ROWS mode.
+  // CRITICAL: valueInputOption=RAW (not USER_ENTERED) — RAW treats values as literals,
+  // blocking formula injection. We pre-sanitized above as defense-in-depth.
   const range = encodeURIComponent("'תנועות'!A:I");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${userRecord.spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${userRecord.spreadsheetId}/values/${range}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
 
   let resp;
   try {
