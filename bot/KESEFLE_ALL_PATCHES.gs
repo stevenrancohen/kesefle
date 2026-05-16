@@ -1,0 +1,213 @@
+// KESEFLE_ALL_PATCHES.gs - one file with everything to paste into Apps Script
+// Contents:
+//   1. KESEFLE_KEYWORDS data (700+ keywords)
+//   2. VERTICAL_FORCE_BIZ list
+//   3. _SRC_classify_v2_(text) classifier function
+//   4. TEST_CLASSIFIER() test runner
+//   5. SORT_TNUOT_NEWEST_FIRST() one-time sort of תנועות
+//   6. ADD_CHECKMARK_COLUMN() add ✅ to existing rows
+//   7. INSTALL_NEWEST_FIRST_TRIGGER() auto-sort trigger
+//   8. _AUTO_SORT_TNUOT_ trigger handler
+//   9. UNINSTALL_NEWEST_FIRST_TRIGGER() rollback for trigger
+//  10. VERIFY_SORT_AND_FEATURES() sanity check
+
+var KESEFLE_SHEET_ID_ALL = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
+
+var KESEFLE_KEYWORDS = {
+  'הכנסה_משכורת': { routes_to: 'personal', sheet: 'תנועות', category: 'הכנסות', subcategory: 'הכנסה 1 — משכורת', is_income: true, keywords: ['משכורת','משכורות','שכר','שכר חודש','שכר עבודה','שכר חודשי','salary','wage','wages','paycheck','paystub','payroll','net pay','הכנסה 1','תלוש','תלוש שכר','net','נטו','עובד','employee'] },
+  'הכנסה_src': { routes_to: 'personal', sheet: 'תנועות', category: 'הכנסות', subcategory: 'הכנסה 2 — עסק SRC', is_income: true, keywords: ['src','src collection','הכנסת src','הכנסה src','הכנסה עסקית','תשלום מלקוח','תשלום לקוח','חשבונית עסקית','חשבונית','invoice paid','הכנסה 2','client payment','customer payment','מכירה','sale','sold','נמכר','הזמנה שולמה','order paid','קנבס נמכר'] },
+  'הכנסה_טלפונים': { routes_to: 'personal', sheet: 'תנועות', category: 'הכנסות', subcategory: 'הכנסה 3 — טלפוניה', is_income: true, keywords: ['טלפונים','מכירת טלפון','מכרתי טלפון','מכרתי אייפון','iphone sale','iphone sold','sold iphone','samsung sale','גלקסי מכירה','הכנסה 3','phone sale','phone resale','used phone','מכשיר יד שניה'] },
+  'הכנסה_שונות': { routes_to: 'personal', sheet: 'תנועות', category: 'הכנסות', subcategory: 'שונות (הכנסות)', is_income: true, keywords: ['בונוס','bonus','תקבול','החזר','החזר מס','tax refund','refund','גמלה','allowance','grant','תמיכה','דיבידנד','dividend','ריבית','interest','תמלוגים','royalty','royalties','קופ"ג','קרן השתלמות','pension payout','קיבלתי','received','cashback','קאשבק'] },
+  'אוכל_לבית': { routes_to: 'personal', sheet: 'תנועות', category: 'אוכל', subcategory: 'אוכל לבית', keywords: ['אוכל לבית','אוכל בבית','קניות לבית','קניות שבועיות','מצרכים','קניות סופר','grocery','groceries','supermarket'], brands: ['סופר','שופרסל','שופר סל','shufersal','יוחננוף','yochananof','רמי לוי','rami levy','ויקטוריה','victory','אושר עד','osher ad','מחסני השוק','machsanei','יינות ביתן','yenot bitan','מגה','mega','קרפור','carrefour','am pm','ampm','טיב טעם','tiv taam','חצי חינם','hatzi hinam','smart','שוק העיר','אנג׳ל','angel','בארשטיין','מאפיה','מאפייה','שוק','ירקן','ירקות','פירות','מעדנייה','מעדניה','קצביה','butcher','דגים','fish market'] },
+  'אוכל_בחוץ': { routes_to: 'personal', sheet: 'תנועות', category: 'אוכל', subcategory: 'אוכל בחוץ', keywords: ['אוכל בחוץ','מסעדה','מסעדות','restaurant','ארוחה','ארוחת בוקר','ארוחת צהריים','ארוחת ערב','breakfast','lunch','dinner','brunch','בראנץ','משלוח אוכל','food delivery'], brands: ['wolt','וולט','וולט פלוס','ten bis','tenbis','10bis','תן ביס','משלוחה','glovo','גלובו','uber eats','קפה','בית קפה','cofix','קופיקס','aroma','ארומה','גרג','greg','arcafe','starbucks','סטארבקס','landwer','לנדוור','espresso','coffee','cappuccino','קפוצ׳ינו','מאפה','קרואסון','בורקס','עוגה','roladin','רולדין','פיצה','pizza','דומינוס','dominos','פיצה האט','גודאיס','goodies','בורגר','המבורגר','burger','bbb','moses','מוזס','agadir','אגאדיר','קוסטה','costa','מקדונלדס','mcdonalds','kfc','קנטקי','popeyes','subway','סאבוויי','שווארמה','שוארמה','חומוס','japanika','ג׳פניקה','נודלס','wok','rib eye','steak','סטייק','סושי','sushi','ramen','ראמן','thai','תאי','תאבון','גריל','מנגל','קבב','פלאפל','falafel','vinotheque','cocktail','בר','pub','פאב','beer','בירה','wine'] },
+  'תחבורה_ציבורית': { routes_to: 'personal', sheet: 'תנועות', category: 'תחבורה', subcategory: 'תחבורה ציבורית', keywords: ['תחבורה ציבורית','public transport','אוטובוס','bus','רכבת','train','israel railways','רכבת ישראל','מטרו','metro','רכבת קלה','light rail','אגד','egged','דן','dan','מטרופולין','metropolin','קווים','kavim','superbus','סופרבוס','רב קו','רב-קו','rav-kav','ravkav','כרטיסיה','חופשי חודשי'] },
+  'מוניות': { routes_to: 'personal', sheet: 'תנועות', category: 'תחבורה', subcategory: 'מונית', keywords: ['מונית','taxi','cab','gett','גט','uber','אובר','yango','יאנגו','יאנדקס','yandex','bolt','בולט','onbi'] },
+  'דלק': { routes_to: 'personal', sheet: 'תנועות', category: 'תחבורה', subcategory: 'דלק', keywords: ['דלק','תדלוק','fuel','gasoline','gas station','תחנת דלק','בנזין','דיזל','95','98','diesel'], brands: ['סונול','sonol','דור אלון','dor alon','פז','paz','delek','דלק חברה','ten','טן','yellow','ילו','אלון','alon','מנטה','menta','BP','TotalEnergies'] },
+  'חניה': { routes_to: 'personal', sheet: 'תנועות', category: 'תחבורה', subcategory: 'חניה', keywords: ['חניה','חנייה','חניון','parking','car park','מדחן','meter','pango','פנגו','חני׳','חני','cellopark','סלופארק','easypark','איזיפארק','אחוזות החוף','שיף חניון','אחוזות','פארק 24','park24','autopark'] },
+  'ביטוח_רכב': { routes_to: 'personal', sheet: 'תנועות', category: 'תחבורה', subcategory: 'ביטוח רכב', keywords: ['ביטוח רכב','ביטוח חובה','ביטוח צד ג','ביטוח מקיף','car insurance','vehicle insurance','טסט רכב','test רכב','רישוי רכב','אגרת רכב','איתוראן','ituran','tracker','שמשה','windshield'], brands: ['הראל','harel','איילון','ayalon','הפניקס','phoenix','כלל','clal','מגדל','migdal','מנורה','menora','שירביט','shirbit','שלמה','shlomo'] },
+  'ליים': { routes_to: 'personal', sheet: 'תנועות', category: 'תחבורה', subcategory: 'ליים', keywords: ['ליים','lime','קורקינט','קורקינט חשמלי','scooter','e-scooter','bird','tier','wind','spin','dott','xiaomi scooter','segway','tel-o-fun','telofun'] },
+  'BMW_S1000': { routes_to: 'personal', sheet: 'תנועות', category: 'תחבורה', subcategory: 'BMW s1000', keywords: ['bmw','ב.מ.וו','אופנוע','motorcycle','s1000','s1000rr','s1000xr','bmw motorrad','motorrad','אופנועים','קסדה','helmet','חלקי אופנוע'] },
+  'בית': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'בית', keywords: ['ארנונה','arnona','property tax','ועד בית','ועד','building committee','שכירות','שכר דירה','rent','בעל בית','landlord','משכנתא','mortgage','משכנתה','דירה','apartment','home','דמי תחזוקה','maintenance fee','מנהל','tabu','טאבו','חשמל','electricity','חברת חשמל','iec','גז','gas','אמישראגז','דור גז','solgas','propane','מים','water','מי אביבים','מי שבע','תאגיד מים'] },
+  'תקשורת': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'תקשורת', keywords: ['תקשורת','סלולר','phone bill','cellular','mobile','פלאפון','pelephone','פרטנר','partner','סלקום','cellcom','גולן','golan','019','012','013','yes','יס','hot','הוט','triple c','בזק','bezeq','בזק בינלאומי','אינטרנט','internet','wifi','ראוטר','router','fiber','סיב אופטי','sting','starlink','סטרלינק'] },
+  'אפליקציות': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'אפליקציות', keywords: ['אפליקציה','אפליקציות','app','apps','אפ','אפ סטור','app store','google play','play store','apple one','apple subscription','subscription','מנוי','מינוי','sub','recurring'], brands: ['netflix','נטפליקס','spotify','ספוטיפיי','apple music','אפל מיוזיק','youtube','יוטיוב','youtube premium','disney+','disney plus','דיסני','amazon prime','prime video','hbo','hbo max','max','paramount','hulu','tidal','deezer','soundcloud','icloud','אייקלאוד','dropbox','google one','onedrive','office 365','microsoft 365','adobe','photoshop','lightroom','creative cloud','figma','notion','obsidian','evernote','todoist','calendly','zoom','chatgpt','openai','claude','anthropic','perplexity','midjourney','runway','github','copilot','cursor','nordvpn','expressvpn','surfshark','protonvpn','1password','lastpass','bitwarden','vpn','antivirus','wolt plus','wolt+'] },
+  'מכון_כושר': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'מכון כושר', keywords: ['מכון כושר','חדר כושר','אימון','כושר','gym','crossfit','קרוספיט','go active','גו אקטיב','holmes place','הולמס פלייס','energy','אנרג׳י','aerobics','אירובי','spinning','ספינינג','pilates','פילאטיס','yoga','יוגה','זומבה','zumba','barre','f45','orangetheory'] },
+  'פלייסטיישן': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'פלייסטיישן', keywords: ['פלייסטיישן','פלייסטישן','playstation','playstation plus','ps plus','ps5','ps4','xbox','xbox live','xbox game pass','game pass','nintendo','switch','steam','epic games','battle.net','ubisoft','ea play','origin','gaming','משחק','משחקים','console','קונסולה'] },
+  'ביטוחים': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'ביטוחים', keywords: ['ביטוח חיים','life insurance','ביטוח בריאות','health insurance','ביטוח דירה','home insurance','ביטוח תכולה','ביטוח נסיעות','travel insurance','ביטוח משכנתא','ביטוח מנהלים','קרן השתלמות','קופת גמל','pension','פנסיה','קרן פנסיה','ביטוח פנסיוני'] },
+  'בריאות': { routes_to: 'personal', sheet: 'תנועות', category: 'בריאות', subcategory: 'בריאות', keywords: ['רופא','doctor','דר׳','ד׳ר','dr','רופאה','medical','clinic','מרפאה','תרופה','תרופות','medicine','prescription','מרשם','קופת חולים','כללית','clalit','מכבי','maccabi','מאוחדת','meuhedet','לאומית','leumit','בית מרקחת','pharmacy','סופר פארם','super pharm','be pharm','ניופארם','newpharm','life pharma','פיזיותרפיה','physio','כירופרקט','chiropractic','נטורופת','naturopath','תזונאית','dietitian','פסיכולוג','psychologist','פסיכיאטר','therapist','טיפול','דנט','dental','dentist','שיניים','אורתודונט','יישור שיניים','אופטומטריסט','optometrist','משקפיים','glasses','עדשות מגע','contacts','חיסון','vaccine','בדיקת דם','blood test','mri','ct','x-ray','אולטרסאונד','ultrasound','מומחה','specialist'] },
+  'חיות': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'חיות', keywords: ['חיה','חיות','חיות מחמד','pet','pets','כלב','dog','dogs','חתול','cat','cats','דג','דגים','fish','תוכי','parrot','אוכל לכלב','dog food','אוכל לחתול','cat food','מזון לכלב','מזון לחתול','וטרינר','vet','veterinary','מרפאה וטרינרית','עיקור','spay','neuter','קולר','collar','רצועה','leash','חיתולי כלב','שמפו לכלב','pet shop','petshop','dogi','petsmart','petco','כלביה','חתולית','אילוף','dog training','dog walker','מטיילת'] },
+  'בידור': { routes_to: 'personal', sheet: 'תנועות', category: 'שונות ואחרים', subcategory: 'בידור', keywords: ['קולנוע','cinema','movie','movies','סינמה','סינמהסיטי','yes planet','planet','רב חן','rav-hen','live nation','תיאטרון','theatre','theater','הקאמרי','הבימה','גשר','מוזיאון','museum','גן חיות','zoo','aquarium','אקווריום','superland','סופרלנד','luna park','לונה פארק','אטרקציה','escape room','חדר בריחה','חדרי בריחה','concert','הופעה','שואו','show','כרטיס','tickets','eventim','איוונטים','tickets.co.il','פסטיבל','festival','בריכה','pool','ים','beach','חוף'] },
+  'נסיעות': { routes_to: 'personal', sheet: 'תנועות', category: 'שונות ואחרים', subcategory: 'נסיעות', keywords: ['טיסה','flight','airline','el al','אל על','ארקיע','arkia','israir','ישראייר','lufthansa','swiss','klm','austrian','aegean','ryanair','easyjet','wizz','wizzair','turkish','pegasus','מלון','hotel','hotels.com','booking','בוקינג','airbnb','איירבנב','expedia','kayak','agoda','tripadvisor','trivago','טיולים','vacation','חופשה','holiday','marriott','מריוט','hilton','הילטון','dan hotels','דן','אסטרל','astral','leonardo','לאונרדו','crowne plaza','sheraton','שרתון','רכב שכור','rent a car','sixt','hertz','avis','budget','europcar','enterprise','eldan','אלדן','eilat','אילת','airport','נתב״ג','נתבג','בן גוריון','passport','דרכון','ויזה','duty free','tax free','המרה','מטח'] },
+  'מתנות': { routes_to: 'personal', sheet: 'תנועות', category: 'שונות ואחרים', subcategory: 'מתנות', keywords: ['מתנה','מתנות','gift','gifts','present','חתונה','wedding','בר מצווה','בת מצווה','יום הולדת','birthday','b-day','bday','כלה','חתן','אירוסין','engagement','חינה','gift card','כרטיס מתנה','tav hazahav','תו הזהב','buyme','פרחים','flowers','זר','bouquet','עציץ','plant','שוקולד','chocolate gift','מנוי מתנה'] },
+  'ביגוד_ונעליים': { routes_to: 'personal', sheet: 'תנועות', category: 'קניות', subcategory: 'ביגוד', keywords: ['ביגוד','בגדים','clothes','clothing','חולצה','shirt','מכנסיים','pants','jeans','ג׳ינס','שמלה','dress','חצאית','skirt','נעליים','shoes','sneakers','סנייקרס','מגפיים','boots','סנדלים','sandals','תחתונים','underwear','גרביים','socks'], brands: ['zara','זארה','h&m','fox','fox home','fox kids','לויס','levis','גאפ','gap','old navy','אדידס','adidas','נייקי','nike','puma','פומה','reebok','ריבוק','under armour','castro','קסטרו','renuar','רנואר','golf','גולף','american eagle','mango','מנגו','north face','columbia','timberland','שילב','shilav','crocs','קרוקס','tommy hilfiger','calvin klein','massimo dutti','aldo','geox','ecco','אקו'] },
+  'טיפוח_ויופי': { routes_to: 'personal', sheet: 'תנועות', category: 'קניות', subcategory: 'טיפוח', keywords: ['טיפוח','בושם','perfume','fragrance','דאודורנט','deodorant','שיער','hair','קרם','cream','מסכה','mask','מספרה','ספרית','barber','salon','מכון יופי','beauty','איפור','makeup','מאניקור','manicure','פדיקור','pedicure','נייל','nails','ציפורניים','sephora','סיפורה','mac','clinique','קליניק','estee lauder','lancome','spa','ספא','עיסוי','massage','שעווה','wax','laser hair','לייזר','botox','בוטוקס','filler','גבות','brows','ריסים','lashes','שיזוף','tanning'] },
+  'לימודים': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'לימודים', keywords: ['לימודים','קורס','course','אוניברסיטה','מכללה','college','university','tuition','שכר לימוד','udemy','אודמי','coursera','edx','linkedin learning','skillshare','masterclass','codecademy','reichman','tau','huji','biu','technion','טכניון','בצלאל','שנקר','workshop','סדנה','שיעור','tutor','מורה פרטי','ספר לימוד','textbook','psychotest'] },
+  'ילדים': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'ילדים', keywords: ['ילדים','children','kids','child','baby','תינוק','תינוקת','גן','גן ילדים','kindergarten','גנון','מעון','daycare','בית ספר','school','יסודי','חטיבה','תיכון','high school','חוג','חוגים','שיעור פרטי','צהרון','tzaharon','קייטנה','camp','toy','toys','lego','לגו','playmobil','barbie','ברבי','שילב','shilav','בייבי','similac','enfamil','חיתולים','diapers','wipes','מגבונים','עגלה','stroller','קרוקס','car seat','בוסטר','booster'] },
+  'גאדגטים': { routes_to: 'personal', sheet: 'תנועות', category: 'קניות', subcategory: 'גאדג׳טים', keywords: ['אלקטרוניקה','electronics','גאדג׳ט','gadget','gadgets','tech','ksp','בק','bug','best buy','ivory','איוורי','last price','ace','אייס','ikea','איקאה','amazon','אמזון','aliexpress','עלי אקספרס','ebay','איביי','shein','שיין','apple store','samsung','iphone','אייפון','ipad','אייפד','airpods','laptop','מחשב נייד','macbook','מקבוק','מסך','monitor','tv','טלוויזיה','speaker','רמקול','sonos','kindle','קינדל','מטען','charger','כבל','cable','כיסוי','case','watch','שעון חכם','garmin','גרמין'] },
+  'חיסכון_השקעות': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'חיסכון/השקעה', keywords: ['חיסכון','חסכון','savings','השקעה','investment','altshuler','אלטשולר','ילין לפידות','yelin','psagot','פסגות','meitav','מיטב דש','crypto','קריפטו','ביטקוין','bitcoin','btc','eth','ethereum','אתריום','binance','בייננס','coinbase','קוינבייס','kraken','etoro','איטורו','interactive brokers','ibkr','plus500','פלוס500','מניות','stocks','etf','קרן סל','index fund','spy','qqq'] },
+  'עמלות_בנק': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות קבועות', subcategory: 'עמלות בנק', keywords: ['עמלה','עמלות','fee','fees','bank fee','עמלת בנק','דמי ניהול','management fee','service charge','transaction fee','עמלת המרה','fx fee','currency conversion','המרה','ריבית','interest','דמי כרטיס','card fee'] },
+  'אבא': { routes_to: 'personal', sheet: 'תנועות', category: 'הוצאות זמניות', subcategory: 'אבא', keywords: ['אבא','להעביר לאבא','דמי כיס','dad','father','transfer to dad','to dad','אבי'] },
+  'לוטו': { routes_to: 'personal', sheet: 'תנועות', category: 'שונות ואחרים', subcategory: 'לוטו', keywords: ['לוטו','פיס','מפעל הפיס','חיש גד','chance','צ׳אנס','toto','טוטו','lottery','lotto','scratch','גירוד','bingo','בינגו','casino','קזינו','poker','פוקר'] },
+  'עסק_שיווק': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'עלות שיווק', biz_only: true, keywords: ['שיווק','marketing','פרסום','ads','קמפיין','campaign','פייסבוק','facebook','meta','meta ads','fb ads','instagram','אינסטגרם','instagram ads','tiktok','טיקטוק','tiktok ads','google ads','adwords','youtube ads','linkedin ads','linkedin','twitter ads','x ads','pinterest ads','snapchat ads','reddit ads','taboola','טאבולה','outbrain','אאוטבריין','influencer','משפיענית','משפיען','shopify ads','klaviyo','mailchimp','sendgrid','postmark','hubspot','salesforce','semrush','ahrefs','seo','קידום אורגני','ppc'] },
+  'עסק_AI_SaaS': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'עלות שיווק', biz_only: true, keywords: ['runway','midjourney','chatgpt','chat gpt','claude','anthropic','openai','open ai','perplexity','gemini','copy.ai','jasper','canva','קאנבה','figma','adobe creative','creative cloud','photoshop','lightroom','premiere','after effects','illustrator','elementor','wordpress','wix','shopify','שופיפי','airtable','notion business','zapier','make','integromat','n8n','typeform','tally','calendly','loom'] },
+  'עסק_יועצים': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'עורכי דין', biz_only: true, keywords: ['רואה חשבון','רו״ח','accountant','cpa','יועץ מס','tax advisor','יועץ','consultant','עורך דין','עו״ד','עוד','lawyer','attorney','משרד עורכי דין','law firm','התייעצות','consultation','tax','מס','דוח שנתי','רשם החברות','vat advisor','יועץ מע״מ'] },
+  'עסק_שילוח': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'שילוח', biz_only: true, keywords: ['משלוח','שילוח','shipping','delivery','דואר','postal','israel post','דואר ישראל','דואר רשום','dhl','fedex','ups','aramex','tnt','שליחויות','שליח','courier','express','חברת שילוח','חברת שליחויות','pickup','איסוף'] },
+  'עסק_אריזה': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'אריזה ומשלוח', biz_only: true, keywords: ['אריזה','packaging','קופסה','box','קרטון','cardboard','ארגז','בועות','bubble wrap','tape','דבק','glue','foam','ספוג','filler','envelope','מעטפה','poly mailer','label','מדבקה','sticker','barcode','ברקוד'] },
+  'עסק_מלאי': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'מלאי', biz_only: true, keywords: ['חבילה','חבילות','רכישה','purchase','מלאי','stock','inventory','supplier','ספק','ספקים','רכישת מלאי','wholesale','סיטונאי','alibaba','עליבאבא','1688','taobao','restock','חדש למלאי'] },
+  'עסק_חומרי_גלם': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'חומרי גלם', biz_only: true, keywords: ['חומרי גלם','חומר גלם','raw material','raw materials','קנבס','canvas','בד קנבס','מסגרת','frame','frames','מסגרות','בלקה','wood stretcher','sub frame','זכוכית','glass','אקריל','acrylic','אקרילי','פרספקס','perspex','plexi','plexiglass','דיו','ink','inkjet','דיו הדפסה','ink cartridge','toner','טונר','נייר','paper','נייר הדפסה','photo paper','קנבס להדפסה','roll canvas','printing canvas','הדפסה','printing','print job','digital print','הדפסה דיגיטלית','uv print','הדפסת uv','laminate','למינציה','varnish','לכה','primer','גסו','gesso','תלייה','wall mount','קולב','hanging','wire','חוט תלייה','sawtooth','הוק','hook','dbond','dibond','דיבונד','foamex','פומקס','sintra','pvc','mdf','עץ','wood','plywood','דיקט'] },
+  'עסק_שכר_עובדים': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'שכר עובדים', biz_only: true, keywords: ['שכר עובד','שכר עובדים','משכורת עובד','salary employee','פרילנסר','freelancer','contractor','קבלן','חשבונית ספק','vendor invoice','פיצויים','severance','בונוס עובד','שעות'] },
+  'עסק_מס_וביטוח_לאומי': { routes_to: 'business', sheet: 'מאזן חברה', category: 'עסק', subcategory: 'חברה / מס הכנסה / ביטוח לאומי', biz_only: true, keywords: ['מס הכנסה','income tax','מע״מ','מעמ','vat','ביטוח לאומי','national insurance','דמי בריאות','מקדמה','advance tax','שומה','קנס','penalty','מס שבח','מס רכישה'] },
+  '_שונות': { routes_to: 'personal', sheet: 'תנועות', category: 'שונות ואחרים', subcategory: 'שונות', keywords: ['שונות','אחר','other','misc','miscellaneous','random','לא ידוע','unknown'] }
+};
+
+var VERTICAL_FORCE_BIZ = ['קנבס','canvas','דיבונד','dibond','אקריל','acrylic','פרספקס','perspex','פומקס','foamex','sintra','dbond','גסו','gesso','roll canvas','קנבס גלילים','uv print','הדפסת uv','הדפסה דיגיטלית','דיו הדפסה','ink cartridge','printing canvas','sawtooth','wall mount עסק'];
+
+function _SRC_classify_v2_(text) {
+  if (!text) return { confidence: 0, matched_keyword: null };
+  var s = String(text);
+  var stripBiz = s.match(/^(עסק|biz|business|work)(?=\s|[:\-–—]|$)\s*[:\-–—]*\s*/i);
+  var isBiz = !!stripBiz;
+  var remainder = isBiz ? s.replace(stripBiz[0], '') : s;
+  var amtMatch = remainder.match(/([\d,]+(?:\.\d+)?)\s*(?:שח|ש"ח|ש״ח|₪|nis|ils|שקל)?/i);
+  var amount = amtMatch ? parseFloat(amtMatch[1].replace(/,/g, '')) : null;
+  var clean = remainder.replace(/[\d,.]+\s*(?:שח|ש"ח|ש״ח|₪|nis|ils|שקל)?/gi, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  function hasWord(text, kw) {
+    var kwL = kw.toLowerCase();
+    if (kwL.length >= 5) return text.indexOf(kwL) >= 0;
+    return new RegExp('(^|[\\s\\-\\.,!?])' + kwL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=[\\s\\-\\.,!?]|$)', 'i').test(text);
+  }
+  for (var v = 0; v < VERTICAL_FORCE_BIZ.length; v++) {
+    if (hasWord(clean, VERTICAL_FORCE_BIZ[v])) {
+      return { category: 'עסק', subcategory: 'חומרי גלם', routes_to: 'business', sheet: 'מאזן חברה', is_income: false, confidence: 85, matched_keyword: VERTICAL_FORCE_BIZ[v], amount: amount, is_biz_prefixed: true, needs_question: false };
+    }
+  }
+  var keys = Object.keys(KESEFLE_KEYWORDS);
+  for (var i = 0; i < keys.length; i++) {
+    var def = KESEFLE_KEYWORDS[keys[i]];
+    var pool = (def.keywords || []).concat(def.brands || []);
+    for (var j = 0; j < pool.length; j++) {
+      var kw = pool[j];
+      if (!hasWord(clean, kw)) continue;
+      if (def.biz_only && !isBiz) {
+        return { category: null, routes_to: null, confidence: 50, matched_keyword: kw, amount: amount, is_biz_prefixed: false, needs_question: true };
+      }
+      if (def.routes_to === 'personal' && isBiz) {
+        return { category: null, routes_to: null, confidence: 50, matched_keyword: kw, amount: amount, is_biz_prefixed: true, needs_question: true };
+      }
+      var conf = (kw.length >= 5) ? 90 : 85;
+      return { category: def.category, subcategory: def.subcategory, routes_to: def.routes_to, sheet: def.sheet, is_income: !!def.is_income, confidence: conf, matched_keyword: kw, amount: amount, is_biz_prefixed: isBiz, needs_question: false };
+    }
+  }
+  return { category: null, routes_to: null, confidence: 0, matched_keyword: null, amount: amount, is_biz_prefixed: isBiz, needs_question: !!amount };
+}
+
+function TEST_CLASSIFIER() {
+  var tests = ['245 סופר', '60 וולט', '42 קפה', 'עסק 300 פייסבוק', '15000 משכורת', 'מכרתי אייפון 1500'];
+  tests.forEach(function(t) {
+    var r = _SRC_classify_v2_(t);
+    Logger.log(t + ' -> ' + r.subcategory + ' [' + r.routes_to + '] conf=' + r.confidence);
+  });
+}
+
+// ============ SORT + CHECKMARK FEATURES ============
+
+var TNUOT_TAB_ALL = 'תנועות';
+var DATE_COL_ALL = 1;
+var STATUS_COL_ALL = 8;
+
+function SORT_TNUOT_NEWEST_FIRST() {
+  var ss = SpreadsheetApp.openById(KESEFLE_SHEET_ID_ALL);
+  var sh = ss.getSheetByName(TNUOT_TAB_ALL);
+  if (!sh) throw new Error('tab not found: ' + TNUOT_TAB_ALL);
+
+  var ts = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyyMMdd_HHmmss');
+  var bakName = '_BAK_tnuot_' + ts;
+  var lastRow = sh.getLastRow();
+  var lastCol = sh.getLastColumn();
+  var bak = ss.insertSheet(bakName);
+  bak.getRange(1, 1, lastRow, lastCol).setValues(sh.getRange(1, 1, lastRow, lastCol).getValues());
+
+  if (lastRow > 2) {
+    sh.getRange(2, 1, lastRow - 1, lastCol).sort({ column: DATE_COL_ALL, ascending: false });
+  }
+  sh.setFrozenRows(1);
+
+  Logger.log('Sorted ' + (lastRow - 1) + ' rows. Backup: ' + bakName);
+  try { SpreadsheetApp.getUi().alert('Sorted ' + (lastRow - 1) + ' rows newest-first.\nBackup: ' + bakName); } catch (e) {}
+}
+
+function INSTALL_NEWEST_FIRST_TRIGGER() {
+  var ss = SpreadsheetApp.openById(KESEFLE_SHEET_ID_ALL);
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === '_AUTO_SORT_TNUOT_') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('_AUTO_SORT_TNUOT_').forSpreadsheet(ss).onChange().create();
+  Logger.log('Installed auto-sort trigger for ' + TNUOT_TAB_ALL);
+  try { SpreadsheetApp.getUi().alert('Auto-sort installed.'); } catch (e) {}
+}
+
+function _AUTO_SORT_TNUOT_(e) {
+  if (e && e.changeType && e.changeType !== 'INSERT_ROW' && e.changeType !== 'OTHER') return;
+  var ss = SpreadsheetApp.openById(KESEFLE_SHEET_ID_ALL);
+  var sh = ss.getSheetByName(TNUOT_TAB_ALL);
+  if (!sh) return;
+  var lastRow = sh.getLastRow();
+  if (lastRow < 3) return;
+  sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).sort({ column: DATE_COL_ALL, ascending: false });
+}
+
+function UNINSTALL_NEWEST_FIRST_TRIGGER() {
+  var triggers = ScriptApp.getProjectTriggers();
+  var removed = 0;
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === '_AUTO_SORT_TNUOT_') {
+      ScriptApp.deleteTrigger(triggers[i]);
+      removed++;
+    }
+  }
+  Logger.log('Removed ' + removed + ' triggers');
+  try { SpreadsheetApp.getUi().alert('Removed ' + removed + ' auto-sort triggers.'); } catch (e) {}
+}
+
+function ADD_CHECKMARK_COLUMN() {
+  var ss = SpreadsheetApp.openById(KESEFLE_SHEET_ID_ALL);
+  var sh = ss.getSheetByName(TNUOT_TAB_ALL);
+  if (!sh) throw new Error('tab not found');
+  var lastRow = sh.getLastRow();
+  if (lastRow < 2) return;
+
+  var hdr = sh.getRange(1, STATUS_COL_ALL).getValue();
+  if (!hdr) sh.getRange(1, STATUS_COL_ALL).setValue('סטטוס');
+
+  var data = sh.getRange(2, STATUS_COL_ALL, lastRow - 1, 1).getValues();
+  var updates = [];
+  for (var i = 0; i < data.length; i++) {
+    updates.push([data[i][0] || '✅']);
+  }
+  sh.getRange(2, STATUS_COL_ALL, updates.length, 1).setValues(updates);
+
+  Logger.log('Marked ' + updates.length + ' rows with checkmark');
+  try { SpreadsheetApp.getUi().alert('Added checkmark to ' + updates.length + ' rows in col H'); } catch (e) {}
+}
+
+function VERIFY_SORT_AND_FEATURES() {
+  var ss = SpreadsheetApp.openById(KESEFLE_SHEET_ID_ALL);
+  var sh = ss.getSheetByName(TNUOT_TAB_ALL);
+  var lastRow = sh.getLastRow();
+  var firstDate = sh.getRange(2, 1).getValue();
+  var lastDate = sh.getRange(lastRow, 1).getValue();
+  var firstStatus = sh.getRange(2, STATUS_COL_ALL).getValue();
+  var triggers = ScriptApp.getProjectTriggers().filter(function(t){return t.getHandlerFunction() === '_AUTO_SORT_TNUOT_';});
+  var report = [
+    'rows total: ' + lastRow,
+    'row 2 date (should be newest): ' + firstDate,
+    'last row date (should be oldest): ' + lastDate,
+    'row 2 col H (checkmark): ' + firstStatus,
+    'auto-sort triggers installed: ' + triggers.length,
+    'frozen rows: ' + sh.getFrozenRows()
+  ];
+  Logger.log(report.join('\n'));
+  try { SpreadsheetApp.getUi().alert(report.join('\n')); } catch (e) {}
+}
