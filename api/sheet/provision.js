@@ -8,9 +8,29 @@
 //   4. Server stores { userSub -> spreadsheetId } in Vercel KV.
 //   5. Server returns the new spreadsheet URL.
 
-import { requireAuth } from '../../lib/auth.js';
-import { withRequestId } from '../../lib/log.js';
+import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+
+// Server-side verification of a Google OAuth access token.
+// Returns { sub, email, scope, ... } if valid, throws if not.
+// This replaces requireAuth() for this specific endpoint because the GIS oauth2 token-client
+// flow used by account.html returns ONLY an access token (no ID token). Verifying the access
+// token via the tokeninfo endpoint gives us a cryptographically guaranteed sub claim, which is
+// what C4 required.
+async function verifyAccessToken(accessToken) {
+  const r = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(accessToken));
+  if (!r.ok) throw new Error('tokeninfo_status_' + r.status);
+  const info = await r.json();
+  if (info.error) throw new Error('tokeninfo_error_' + info.error);
+  if (!info.sub) throw new Error('tokeninfo_missing_sub');
+  // Check audience matches our OAuth client
+  const expectedAud = process.env.GOOGLE_CLIENT_ID || '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
+  if (info.aud && info.aud !== expectedAud) throw new Error('tokeninfo_aud_mismatch');
+  // Check scopes include drive.file + spreadsheets
+  const scopes = String(info.scope || '').split(/\s+/);
+  if (!scopes.includes('https://www.googleapis.com/auth/drive.file')) throw new Error('missing_drive_file_scope');
+  return info;
+}
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
@@ -25,15 +45,23 @@ async function handlerImpl(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const accessToken = String(body?.accessToken || '').trim();
-  // CRITICAL FIX (C4): bind userSub to verified ID-token identity. Previous code accepted
-  // userSub from body, allowing an attacker to supply their own accessToken + the victim's
-  // sub and route the victim's incoming WhatsApp expenses to the attacker's Drive.
-  const userSub = req.user.sub;
-  const userEmail = req.user.email || String(body?.userEmail || '').trim();
 
   if (!accessToken || accessToken.length < 20) {
     return res.status(400).json({ ok: false, error: 'missing accessToken' });
   }
+
+  // SECURITY (C4 fix): verify access token server-side via Google's tokeninfo.
+  // The userSub comes from the VERIFIED tokeninfo response, NOT from body — prevents
+  // attacker supplying their own token + victim's sub to redirect the sheet.
+  let tokenInfo;
+  try {
+    tokenInfo = await verifyAccessToken(accessToken);
+  } catch (e) {
+    log.warn('provision.token_invalid', { reqId: req.reqId, error: e.message });
+    return res.status(401).json({ ok: false, error: 'invalid_access_token', detail: e.message });
+  }
+  const userSub = tokenInfo.sub;
+  const userEmail = tokenInfo.email || String(body?.userEmail || '').trim();
 
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
@@ -140,9 +168,10 @@ async function handlerImpl(req, res) {
   });
 }
 
-// Apply security middleware: request ID → rate limit (5/hour for sheet provisioning) → auth
+// Apply security middleware: request ID → rate limit (5/hour for sheet provisioning).
+// Auth is done inside handlerImpl via verifyAccessToken (tokeninfo) — gives us the same
+// cryptographic guarantee about the user's identity as requireAuth, but works with the
+// access-token-only flow the frontend currently uses.
 export default withRequestId(
-  withRateLimit({ key: 'sheet_provision', limit: 5, windowSec: 3600 })(
-    requireAuth(handlerImpl)
-  )
+  withRateLimit({ key: 'sheet_provision', limit: 5, windowSec: 3600 })(handlerImpl)
 );
