@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>תודה! — כסף'לה</title>
+<meta name="description" content="תודה ששלחת! נחזור אליך בקרוב. בינתיים, ראה מה אנחנו בונים." />
+<meta name="robots" content="noindex,follow">
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#22c55e" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="canonical" href="https://kesefle.vercel.app/thanks" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {
+    fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+    colors: {
+      ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+      brand: { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' }
+    }
+  }}
+};
+</script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+  .confetti span { position: absolute; width: 10px; height: 10px; border-radius: 2px; animation: fall 3.5s linear forwards; opacity: 0.9; }
+  @keyframes fall { 0% { transform: translateY(-10vh) rotate(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+</style>
+</head>
+<body class="bg-ink-50 text-ink-900 dark:bg-ink-900 dark:text-white min-h-screen flex flex-col">
+
+<div class="confetti" id="confetti"></div>
+
+<main class="flex-1 flex items-center justify-center px-5 py-12">
+  <div class="max-w-lg w-full text-center">
+    <div class="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl mb-6 shadow-lg shadow-brand-500/30">✓</div>
+    <h1 class="text-3xl md:text-5xl font-black tracking-tight">תודה ששלחת!</h1>
+    <p class="mt-4 text-lg text-ink-600 dark:text-ink-300">קיבלנו את הפנייה ונחזור אליך בתוך 24 שעות בימי עסקים.</p>
+
+    <div class="mt-10 rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-6 text-right">
+      <p class="font-bold text-lg mb-3">בינתיים — תרצה לראות:</p>
+      <ul class="space-y-3 text-sm">
+        <li><a href="/demo" class="flex items-center justify-between rounded-xl px-4 py-3 bg-ink-50 dark:bg-ink-700 hover:bg-ink-100 dark:hover:bg-ink-600 transition">
+          <span><b>הדמו האינטראקטיבי</b> · 60 שניות, ללא הרשמה</span><span class="text-brand-600">→</span>
+        </a></li>
+        <li><a href="/roadmap" class="flex items-center justify-between rounded-xl px-4 py-3 bg-ink-50 dark:bg-ink-700 hover:bg-ink-100 dark:hover:bg-ink-600 transition">
+          <span><b>מפת הדרכים</b> · 55 משימות פתוחות, הצבע איזו לבנות הבא</span><span class="text-brand-600">→</span>
+        </a></li>
+        <li><a href="/changelog" class="flex items-center justify-between rounded-xl px-4 py-3 bg-ink-50 dark:bg-ink-700 hover:bg-ink-100 dark:hover:bg-ink-600 transition">
+          <span><b>שינויים אחרונים</b> · מה ירד החודש</span><span class="text-brand-600">→</span>
+        </a></li>
+        <li><a href="/blog" class="flex items-center justify-between rounded-xl px-4 py-3 bg-ink-50 dark:bg-ink-700 hover:bg-ink-100 dark:hover:bg-ink-600 transition">
+          <span><b>הבלוג</b> · מדריכים על ניהול כסף לעצמאים ומשפחות</span><span class="text-brand-600">→</span>
+        </a></li>
+      </ul>
+    </div>
+
+    <p class="mt-8 text-xs text-ink-500 dark:text-ink-400">
+      רוצה לוודא שלא פספסת תשובה? בדוק גם בתיקיית "קידום מכירות"/"ספאם" בג'ימייל שלך.
+    </p>
+
+    <a href="/" class="mt-10 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">← חזרה לדף הבית</a>
+  </div>
+</main>
+
+<script>
+  // Theme persistence
+  if (localStorage.getItem('kesefle_theme') === 'dark') document.documentElement.classList.add('dark');
+  // Confetti burst once
+  (function(){
+    var c = document.getElementById('confetti');
+    var colors = ['#22c55e','#16a34a','#86efb1','#22d3ee','#a855f7','#f59e0b'];
+    for (var i = 0; i < 60; i++) {
+      var s = document.createElement('span');
+      s.style.left = (Math.random()*100) + 'vw';
+      s.style.background = colors[i % colors.length];
+      s.style.animationDelay = (Math.random()*0.5) + 's';
+      s.style.animationDuration = (2.5 + Math.random()*2) + 's';
+      c.appendChild(s);
+    }
+    setTimeout(function(){ c.remove(); }, 5500);
+  })();
+  // Service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(function(){}); });
+  }
+</script>
+</body>
+</html>

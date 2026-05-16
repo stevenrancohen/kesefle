@@ -1,0 +1,46 @@
+# humanstxt.org
+# The humans responsible for this site, in order of appearance.
+
+# TEAM
+
+Founder: Steven Ran Cohen
+Contact: srcslcollection [at] gmail.com
+Twitter: -
+Location: Tel Aviv, Israel
+Languages: Hebrew, English
+
+# COLLABORATORS
+
+Engineering & content: Claude (Anthropic) — pair-programming partner.
+Brand & strategy: Steven Ran Cohen.
+Hebrew copy review: Steven Ran Cohen.
+
+# THANKS
+
+To the 100 early users who put up with the rough edges.
+To the open-source maintainers behind Vercel, Upstash, Tailwind, Heebo (the Hebrew font), and Apps Script.
+To everyone who DM'd "wow, finally Hebrew" — that's the energy that kept it going.
+
+# SITE
+
+Last update: 2026-05-16
+Standards: HTML5, Tailwind CSS, ESM, PWA manifest, Service Worker, RTL Hebrew.
+Components: Vanilla JS (no React/Vue/etc).
+Software: Node.js 22 (Vercel serverless), Google Apps Script (bot), Vercel + Upstash KV (state).
+Languages: he-IL primary, en secondary.
+Privacy: AES-256-GCM at rest, drive.file scope only, no third-party trackers.
+
+# THE FUN STUFF
+
+Coffee: Aroma + Cofix.
+Music: Israeli indie (Ravid Plotnik, Static & Ben-El) + Boards of Canada.
+Working hours: erratic, possibly between 22:00 and 03:00.
+The keyboard: Apple Magic Keyboard (despite the discomfort).
+The cause of misclassifications: usually mixed Hebrew+English vendor names.
+
+# THE COMMITMENT
+
+We will never sell your data.
+We will never train AI on your numbers.
+We will keep the free tier free.
+If we ever shut down, we'll give you 90 days notice and a clean export.

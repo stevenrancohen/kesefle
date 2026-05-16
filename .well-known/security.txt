@@ -1,0 +1,30 @@
+# Kesefle Security Policy
+# https://securitytxt.org/
+
+Contact: mailto:security@kesefle.app
+Contact: mailto:srcslcollection@gmail.com
+Expires: 2027-05-16T23:59:59.000Z
+Preferred-Languages: he, en
+Canonical: https://kesefle.vercel.app/.well-known/security.txt
+Policy: https://kesefle.vercel.app/trust
+Acknowledgments: https://kesefle.vercel.app/trust#hall-of-fame
+
+# Responsible disclosure:
+# - Please give us 90 days to remediate before public disclosure.
+# - For critical issues (CVSS >= 9), we aim to respond within 24 hours.
+# - We do not yet run a paid bug bounty, but credit is given on /trust.
+
+# Out of scope:
+# - Social engineering of staff or users.
+# - Physical attacks on infrastructure.
+# - Denial of service against rate-limited endpoints.
+# - Reports requiring physical access to a victim's device.
+
+# In scope:
+# - Authentication bypass on /api/* endpoints.
+# - Information disclosure (especially of refresh tokens, sheets data).
+# - HMAC verification bypass on /api/whatsapp/webhook and /api/billing/webhook.
+# - Formula injection through sheet writes.
+# - Account takeover via OAuth flow.
+
+# Past red-team reports + fixes: https://github.com/stevenrancohen/kesefle/tree/main/docs/security

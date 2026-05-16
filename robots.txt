@@ -2,6 +2,28 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /account
+Disallow: /welcome
+Disallow: /dashboard
+Disallow: /admin
 Disallow: /test
+Disallow: /thanks
+
+# AI crawlers welcome to read our public pages for context.
+# We do not allow scraping of analytics or admin surfaces.
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /api/
 
 Sitemap: https://kesefle.vercel.app/sitemap.xml
