@@ -9,14 +9,24 @@
 
 | Surface | Path | Status |
 |---|---|---|
-| Landing page | `/` | ✓ |
+| Landing page | `/` | ✓ — hero + features + pricing tiers + FAQ + footer |
+| English landing | `/en` | ✓ — LTR English mirror with hreflang alternates |
 | Onboarding | `/account` | ✓ — Google sign-in → sheet provision → redirect to `/welcome` |
 | First-run tour | `/welcome` | ✓ — 5 commands, click-to-copy, WhatsApp CTA |
-| User dashboard | `/dashboard` | ✓ — pulls real data from `/api/sheet/summary` with Google One Tap auth fallback |
-| Admin panel | `/admin` | ✓ — Wix-inspired, gated by `ADMIN_EMAILS`. 9 sections, dark mode |
+| User dashboard | `/dashboard` | ✓ — real data from `/api/sheet/summary` + NPS feedback widget |
+| Admin panel | `/admin` | ✓ — analytics, jobs, users, audit, feature flags |
 | Status page | `/status` | ✓ — 6 services, 30-day uptime, auto-refresh |
-| Pricing | `/pricing` | (building) — standalone page with comparison + ROI calc |
-| Demo | `/demo` | (building) — interactive bot preview, no signup needed |
+| Pricing | `/pricing` | ✓ — comparison + ROI calc |
+| Demo | `/demo` | ✓ — interactive WhatsApp bot preview, no signup |
+| Trust / Security | `/trust` | ✓ — encryption, data sovereignty, red-team reports |
+| Help center | `/help` | ✓ — 34 searchable articles, 6 categories, Hebrew fuzzy search |
+| Roadmap | `/roadmap` | ✓ — 55 items (20 shipped / 8 in-progress / 27 planned), voting |
+| Changelog | `/changelog` | ✓ — release notes with subscribe form |
+| About | `/about` | ✓ — founder story, timeline, values |
+| Press kit | `/press` | ✓ — brand SVGs, boilerplate, palette, founder bio |
+| API docs | `/docs` | ✓ — all 12 endpoints with Node/Python HMAC examples |
+| Referral | `/referral` | ✓ — refer-a-friend, 30-day Pro credit for both sides |
+| Offline fallback | `/offline` | ✓ — PWA offline page (cached by service worker) |
 | Test suite | `/test` | ✓ — 31 automated regression checks |
 | Privacy / Terms | `/privacy`, `/terms` | ✓ — OAuth scope disclosure, Israeli Privacy Law §13 |
 
@@ -24,7 +34,8 @@
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/waitlist` | Pre-launch email collection (rate-limited 5/IP/hr + 3/email/hr) |
+| `POST /api/events?action=waitlist\|track\|nps` | Anonymous: waitlist signup, page-view analytics, NPS feedback. Consolidated to fit the 12-fn limit |
+| `GET/POST /api/referral?action=generate\|mine\|redeem` | Refer-a-friend (30-day Pro credit) |
 | `POST /api/auth/google` + `POST /api/auth/google-exchange` | Server-side OAuth code+PKCE exchange for refresh tokens |
 | `POST /api/sheet/provision` | Copy template sheet to user's Drive, store mapping in KV |
 | `GET /api/sheet/summary` | Read user's transactions, return dashboard JSON (Bearer auth) |
@@ -106,7 +117,7 @@ The repo auto-deploys to Vercel on push to `main`. Required env vars:
 ├── status.html, privacy.html, terms.html, test.html
 ├── og-image.png, robots.txt, sitemap.xml, vercel.json
 ├── api/
-│   ├── waitlist.js, health.js, admin.js
+│   ├── events.js, health.js, admin.js, referral.js, account.js
 │   ├── auth/google.js, auth/google-exchange.js
 │   ├── sheet/provision.js, sheet/summary.js
 │   ├── whatsapp/webhook.js
