@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>מחירים — כסף'לה | תוכנית לכל עסק, בלי הפתעות בחיוב</title>
+<meta name="description" content="מחירי כסף'לה: חינם, Pro ב-19₪/חודש, משפחה ב-39₪/חודש. השוואת תכונות מלאה, מחשבון ROI, ושאלות נפוצות על חיוב. התחל ניסיון Pro בחינם ל-14 ימים." />
+<meta name="theme-color" content="#0f172a" />
+<meta property="og:title" content="מחירים — כסף'לה" />
+<meta property="og:description" content="תוכנית לכל עסק. בלי הפתעות בחיוב. התחל בחינם, שדרג רק כשתצטרך." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta property="og:url" content="https://kesefle.vercel.app/pricing" />
+<meta property="og:site_name" content="כסף'לה" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://kesefle.vercel.app/pricing" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "כסף'לה",
+  "description": "מעקב הוצאות והכנסות דרך וואטסאפ — שלוש תוכניות: חינם, Pro, משפחה.",
+  "brand": { "@type": "Brand", "name": "כסף'לה" },
+  "offers": [
+    { "@type": "Offer", "name": "חינם", "price": "0", "priceCurrency": "ILS", "url": "https://kesefle.vercel.app/account?plan=free" },
+    { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "ILS", "url": "https://kesefle.vercel.app/account?plan=pro" },
+    { "@type": "Offer", "name": "משפחה", "price": "39", "priceCurrency": "ILS", "url": "https://kesefle.vercel.app/account?plan=family" }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+        backgroundImage: {
+          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  /* range slider */
+  input[type="range"].kf-slider { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; }
+  input[type="range"].kf-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 9999px; background: linear-gradient(to left, #22c55e var(--kf-fill, 50%), #dde1ec var(--kf-fill, 50%)); }
+  input[type="range"].kf-slider::-moz-range-track { height: 8px; border-radius: 9999px; background: #dde1ec; }
+  input[type="range"].kf-slider::-moz-range-progress { height: 8px; border-radius: 9999px; background: #22c55e; }
+  input[type="range"].kf-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 9999px; background: #fff; border: 3px solid #16a34a; box-shadow: 0 4px 12px -2px rgba(22,163,74,0.5); margin-top: -8px; cursor: pointer; transition: transform 0.15s; }
+  input[type="range"].kf-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+  input[type="range"].kf-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 9999px; background: #fff; border: 3px solid #16a34a; box-shadow: 0 4px 12px -2px rgba(22,163,74,0.5); cursor: pointer; }
+  .dark input[type="range"].kf-slider::-webkit-slider-runnable-track { background: linear-gradient(to left, #22c55e var(--kf-fill, 50%), #2f3b54 var(--kf-fill, 50%)); }
+</style>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<!-- ============== NAV ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">
+        ₪
+      </span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
+      <a href="/#features" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">תכונות</a>
+      <a href="/pricing" class="text-sm font-semibold text-brand-600 dark:text-brand-400">מחיר</a>
+      <a href="/#faq" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">שאלות נפוצות</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button
+        onclick="kesefleToggleDark()"
+        aria-label="מצב כהה"
+        class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
+        id="dark-toggle"
+      >
+        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a href="/account" class="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800 sm:inline-block">היכנס</a>
+      <a href="/account?plan=pro" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 dark:bg-brand-600 dark:hover:bg-brand-500">התחל חינם</a>
+    </div>
+  </nav>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative overflow-hidden bg-mesh pt-28 pb-12 md:pt-36 md:pb-16">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
+  <div class="mx-auto max-w-3xl px-5 text-center">
+    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
+      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+      מחירים בשקלים. כולל מע"מ. חשבונית אוטומטית.
+    </div>
+    <h1 class="text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl">
+      תוכנית לכל עסק.
+      <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">בלי הפתעות בחיוב.</span>
+    </h1>
+    <p class="mt-5 mx-auto max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+      התחל בחינם, שדרג רק כשתצטרך. <span class="num">14</span> יום ניסיון על Pro ומשפחה. ביטול בלחיצה.
+    </p>
+    <div class="mt-7 flex items-center justify-center gap-5 text-sm text-ink-500 dark:text-ink-300">
+      <div class="flex items-center gap-2">
+        <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+        <span>אין כרטיס אשראי לחינם</span>
+      </div>
+      <div class="hidden sm:flex items-center gap-2">
+        <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+        <span>החזר כספי <span class="num">30</span> יום</span>
+      </div>
+      <div class="hidden md:flex items-center gap-2">
+        <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+        <span>הנתונים שלך, בגוגל דרייב שלך</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== PRICING TIERS ============== -->
+<section id="tiers" class="bg-ink-50 pb-20 dark:bg-ink-900">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="grid gap-6 md:grid-cols-3">
+
+      <!-- free plan -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between">
+          <h3 class="text-2xl font-black dark:text-white">חינם</h3>
+          <span class="rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold text-ink-600 dark:bg-ink-700 dark:text-ink-200">להתחיל</span>
+        </div>
+        <div class="mt-5 flex items-baseline gap-1">
+          <span class="text-5xl font-black dark:text-white"><span class="num">0</span></span>
+          <span class="text-2xl font-bold text-ink-400">₪</span>
+          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+        </div>
+        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">לתמיד. בלי תאריך תפוגה.</p>
+        <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> עד <span class="num">30</span> הוצאות בחודש</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> סיווג אוטומטי בסיסי</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> גיליון Google אחד</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> תצוגת חודש נוכחי</li>
+          <li class="flex items-start gap-2 text-ink-400"><svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M6 18L18 6"/></svg> בלי היסטוריה, בלי ייצוא</li>
+        </ul>
+        <a href="/account?plan=free" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">התחל בחינם</a>
+      </div>
+
+      <!-- pro plan (highlighted) -->
+      <div class="relative rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-50 via-white to-brand-50 p-8 shadow-glow dark:from-brand-500/10 dark:via-ink-800 dark:to-brand-500/10">
+        <div class="absolute -top-3.5 right-6 rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white">הכי פופולרי</div>
+        <div class="flex items-center justify-between">
+          <h3 class="text-2xl font-black dark:text-white">Pro</h3>
+          <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"><span class="num">14</span> יום חינם</span>
+        </div>
+        <div class="mt-5 flex items-baseline gap-1">
+          <span class="text-5xl font-black dark:text-white"><span class="num">19</span></span>
+          <span class="text-2xl font-bold text-ink-400">₪</span>
+          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+        </div>
+        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">או <span class="num">180</span>₪ לשנה — חוסכים <span class="num">21</span>%</p>
+        <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>הוצאות ללא הגבלה</strong></li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> חיתוך לפי קטגוריה ותגית</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> היסטוריה ללא הגבלה</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> התראות על חריגים אוטומטיות</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> סיכום שבועי באימייל</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> דשבורד ROAS לקמפיינים</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> ייצוא CSV / PDF לרו"ח</li>
+        </ul>
+        <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון <span class="num">14</span> ימים</a>
+      </div>
+
+      <!-- family plan -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between">
+          <h3 class="text-2xl font-black dark:text-white">משפחה</h3>
+          <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">עד <span class="num">4</span> בני בית</span>
+        </div>
+        <div class="mt-5 flex items-baseline gap-1">
+          <span class="text-5xl font-black dark:text-white"><span class="num">39</span></span>
+          <span class="text-2xl font-bold text-ink-400">₪</span>
+          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+        </div>
+        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">או <span class="num">348</span>₪ לשנה — חוסכים <span class="num">26</span>%</p>
+        <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>כל מה שב-Pro</strong></li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> עד <span class="num">4</span> בני משפחה בגיליון אחד</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> "מי הוציא הכי הרבה" leaderboard</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> התראות מותאמות לילדים</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> תקציבים פר-משתמש</li>
+          <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> דשבורד הורים מרוכז</li>
+        </ul>
+        <a href="/account?plan=family" onclick="kesefleSelectPlan('family')" class="mt-8 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-500">התחל ניסיון <span class="num">14</span> ימים</a>
+      </div>
+    </div>
+    <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">30</span> יום החזר כספי מלא. בלי שאלות.</p>
+  </div>
+</section>
+
+<!-- ============== FEATURE COMPARISON ============== -->
+<section id="compare" class="bg-white py-20 dark:bg-ink-800 md:py-28">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">השוואה</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">מה את/ה מקבל/ת בכל תוכנית?</h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">הכל פתוח. בלי "צור קשר למחיר", בלי "תכונות ארגוניות חבויות".</p>
+    </div>
+
+    <div class="mt-12 overflow-hidden rounded-3xl border border-ink-200 dark:border-ink-700">
+      <div class="overflow-x-auto no-scrollbar">
+        <table class="w-full min-w-[640px] text-sm">
+          <thead class="bg-ink-50 dark:bg-ink-900">
+            <tr>
+              <th class="px-5 py-4 text-right font-bold text-ink-700 dark:text-ink-100">תכונה</th>
+              <th class="px-5 py-4 text-center font-bold text-ink-700 dark:text-ink-100">חינם</th>
+              <th class="px-5 py-4 text-center font-bold text-brand-700 dark:text-brand-400">Pro</th>
+              <th class="px-5 py-4 text-center font-bold text-accent-600 dark:text-accent-500">משפחה</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white text-ink-700 dark:bg-ink-800 dark:text-ink-200">
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td colspan="4" class="bg-ink-50 px-5 py-2 text-xs font-bold uppercase tracking-wider text-ink-500 dark:bg-ink-900/60 dark:text-ink-300">תיעוד</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">הוצאות בחודש</td>
+              <td class="px-5 py-3.5 text-center"><span class="num">30</span></td>
+              <td class="px-5 py-3.5 text-center font-semibold">ללא הגבלה</td>
+              <td class="px-5 py-3.5 text-center font-semibold">ללא הגבלה</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">משתמשים בגיליון</td>
+              <td class="px-5 py-3.5 text-center"><span class="num">1</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="num">1</span></td>
+              <td class="px-5 py-3.5 text-center font-semibold">עד <span class="num">4</span></td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">קטגוריות מותאמות אישית</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td colspan="4" class="bg-ink-50 px-5 py-2 text-xs font-bold uppercase tracking-wider text-ink-500 dark:bg-ink-900/60 dark:text-ink-300">ניתוחים</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">חיתוך לפי קטגוריה / תגית</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">היסטוריה</td>
+              <td class="px-5 py-3.5 text-center">חודש נוכחי</td>
+              <td class="px-5 py-3.5 text-center font-semibold">ללא הגבלה</td>
+              <td class="px-5 py-3.5 text-center font-semibold">ללא הגבלה</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">דשבורד ROAS לקמפיינים</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">השוואת חודש לחודש</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td colspan="4" class="bg-ink-50 px-5 py-2 text-xs font-bold uppercase tracking-wider text-ink-500 dark:bg-ink-900/60 dark:text-ink-300">התראות</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">התראות חריגים</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">סיכום שבועי באימייל</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">התראות מותאמות לילדים</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">"מי הוציא הכי הרבה" leaderboard</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td colspan="4" class="bg-ink-50 px-5 py-2 text-xs font-bold uppercase tracking-wider text-ink-500 dark:bg-ink-900/60 dark:text-ink-300">ייצוא</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">ייצוא CSV</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">ייצוא PDF (דו"ח לרו"ח)</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td colspan="4" class="bg-ink-50 px-5 py-2 text-xs font-bold uppercase tracking-wider text-ink-500 dark:bg-ink-900/60 dark:text-ink-300">תמיכה</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">זמן תגובה לאימייל</td>
+              <td class="px-5 py-3.5 text-center">עד <span class="num">5</span> ימים</td>
+              <td class="px-5 py-3.5 text-center font-semibold">תוך <span class="num">24</span> שעות</td>
+              <td class="px-5 py-3.5 text-center font-semibold">תוך <span class="num">12</span> שעות</td>
+            </tr>
+            <tr class="border-t border-ink-100 dark:border-ink-700">
+              <td class="px-5 py-3.5">צ'אט עם תמיכה אנושית</td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">—</span></td>
+              <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">✓</td>
+              <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">✓</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== PERSONAS ============== -->
+<section id="personas" class="bg-ink-50 py-20 dark:bg-ink-900 md:py-28">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">למי זה מתאים</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">מי משתמש בכל תוכנית?</h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">לא יודע איזו תוכנית מתאימה לך? תסתכל מי דומה לך.</p>
+    </div>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-3">
+      <!-- free persona -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+        <div class="grid h-12 w-12 place-items-center rounded-2xl bg-ink-100 text-2xl dark:bg-ink-700">🎓</div>
+        <h3 class="mt-5 text-xl font-black dark:text-white">סטודנט / פרילנסר מתחיל</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">"רק רוצה לראות לאן הולך הכסף, בלי להתחייב לכלום. עוד לא יודע אם זה בכלל יהפוך להרגל."</p>
+        <ul class="mt-5 space-y-2 text-sm text-ink-700 dark:text-ink-100">
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-ink-400"></span> פחות מ-<span class="num">30</span> הוצאות בחודש</li>
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-ink-400"></span> מסתפק בתצוגת חודש נוכחי</li>
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-ink-400"></span> אין צורך בדו"ח לרו"ח</li>
+        </ul>
+        <div class="mt-6 rounded-xl bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-700 dark:bg-ink-700/60 dark:text-ink-100">
+          התאמה: <span class="text-ink-900 dark:text-white">חינם</span>
+        </div>
+      </div>
+
+      <!-- pro persona -->
+      <div class="rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-50 via-white to-brand-50 p-8 shadow-soft dark:from-brand-500/10 dark:via-ink-800 dark:to-brand-500/10">
+        <div class="grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-2xl dark:bg-brand-500/20">💼</div>
+        <h3 class="mt-5 text-xl font-black dark:text-white">בעל עסק / פרילנסר מנוסה</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">"מנהל קמפיינים, צריך לדעת מה ה-ROAS, רואה את רואה החשבון פעם בחודש, ורוצה ייצוא PDF בלחיצה."</p>
+        <ul class="mt-5 space-y-2 text-sm text-ink-700 dark:text-ink-100">
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span> <span class="num">100</span>+ הוצאות בחודש</li>
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span> צריך ROAS לקמפיינים</li>
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span> ייצוא חודשי לרו"ח</li>
+        </ul>
+        <div class="mt-6 rounded-xl bg-brand-100 px-4 py-3 text-sm font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+          התאמה: <span class="font-black">Pro</span>
+        </div>
+      </div>
+
+      <!-- family persona -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+        <div class="grid h-12 w-12 place-items-center rounded-2xl bg-accent-500/10 text-2xl">👨‍👩‍👧‍👦</div>
+        <h3 class="mt-5 text-xl font-black dark:text-white">משפחה עם <span class="num">2-4</span> בני בית</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">"רוצה שכל אחד יכתוב את ההוצאות שלו, ושנדע באמת מי קונה הכי הרבה קפה. ושקיפות בתקציב המשותף."</p>
+        <ul class="mt-5 space-y-2 text-sm text-ink-700 dark:text-ink-100">
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span> <span class="num">2-4</span> בני משפחה רושמים</li>
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span> תקציב משפחתי משותף</li>
+          <li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span> רואים מי הוציא הכי הרבה</li>
+        </ul>
+        <div class="mt-6 rounded-xl bg-accent-500/10 px-4 py-3 text-sm font-semibold text-accent-600 dark:text-accent-500">
+          התאמה: <span class="font-black">משפחה</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== UNIVERSAL FEATURES ============== -->
+<section id="universal" class="bg-ink-900 py-20 text-white md:py-28">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-400">לכולם, תמיד</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl">מה כלול בכל הגרסאות?</h2>
+      <p class="mt-4 text-lg text-ink-200">הדברים האלה לא נמצאים בעמודה הצרה — הם הבסיס. גם אם בחרת בחינם.</p>
+    </div>
+
+    <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+        <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24z"/></svg>
+        </div>
+        <h3 class="mt-4 text-lg font-bold">בוט WhatsApp בעברית</h3>
+        <p class="mt-2 text-sm text-ink-300">בלי אפליקציה. בלי טפסים. כתוב "<span class="num">42</span> קפה" — וזה רשום. בכל מכשיר.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+        <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <h3 class="mt-4 text-lg font-bold">גיליון פרטי בגוגל דרייב שלך</h3>
+        <p class="mt-2 text-sm text-ink-300">הגיליון בבעלות שלך, בחשבון Google שלך. גם אם תעזוב — הוא נשאר אצלך.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+        <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h3 class="mt-4 text-lg font-bold">אבטחה ופרטיות</h3>
+        <p class="mt-2 text-sm text-ink-300">תקשורת מוצפנת TLS <span class="num">1.3</span>. אנחנו לא חולקים ולא מוכרים נתונים. אי-פעם.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+        <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+        </div>
+        <h3 class="mt-4 text-lg font-bold">מטבעות מרובים</h3>
+        <p class="mt-2 text-sm text-ink-300">₪, $, €, £ — הבוט מזהה אוטומטית. גם "<span class="num">12</span>$ נטפליקס" עובד.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+        <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 class="mt-4 text-lg font-bold">קטגוריזציה אוטומטית</h3>
+        <p class="mt-2 text-sm text-ink-300"><span class="num">200</span>+ מילים, מותגים ושמות חנויות ישראליים. הבוט לומד אותך עם הזמן.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+        <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg>
+        </div>
+        <h3 class="mt-4 text-lg font-bold">גישה לגיליון בכל מכשיר</h3>
+        <p class="mt-2 text-sm text-ink-300">לפתוח, לערוך, לייצא — מכל מקום, גם בלי כסף'לה. זה הגיליון שלך.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ROI CALCULATOR ============== -->
+<section id="roi" class="bg-white py-20 dark:bg-ink-800 md:py-28">
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">מחשבון</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">כדאי לך לשדרג?</h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">תוך <span class="num">10</span> שניות — נראה לך כמה זמן וכמה כסף תחסוך.</p>
+    </div>
+
+    <div class="mt-12 rounded-3xl border border-ink-200 bg-ink-50 p-6 md:p-10 dark:border-ink-700 dark:bg-ink-900">
+      <!-- input -->
+      <div>
+        <div class="flex items-baseline justify-between">
+          <label for="roi-input" class="text-base font-bold dark:text-white">כמה הוצאות יש לך בחודש?</label>
+          <div class="text-3xl font-black text-brand-600 dark:text-brand-400">
+            <span id="roi-count" class="num">200</span>
+            <span class="text-base font-medium text-ink-500 dark:text-ink-300">/ חודש</span>
+          </div>
+        </div>
+        <input
+          type="range"
+          id="roi-input"
+          class="kf-slider mt-4"
+          min="10"
+          max="500"
+          step="10"
+          value="200"
+          aria-label="הוצאות בחודש"
+        />
+        <div class="mt-2 flex justify-between text-xs text-ink-500 dark:text-ink-300">
+          <span><span class="num">10</span></span>
+          <span><span class="num">100</span></span>
+          <span><span class="num">200</span></span>
+          <span><span class="num">300</span></span>
+          <span><span class="num">500</span>+</span>
+        </div>
+      </div>
+
+      <!-- output -->
+      <div class="mt-10 grid gap-4 sm:grid-cols-3">
+        <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">זמן שתחסוך</div>
+          <div class="mt-2 text-3xl font-black text-ink-900 dark:text-white">
+            <span id="roi-time" class="num">8.3</span>
+            <span class="text-base font-medium text-ink-500 dark:text-ink-300">שעות/חודש</span>
+          </div>
+          <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">
+            לעומת רישום ידני בגיליון
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">שווי הזמן</div>
+          <div class="mt-2 text-3xl font-black text-ink-900 dark:text-white">
+            <span id="roi-value" class="num">499</span>
+            <span class="text-base font-medium text-ink-500 dark:text-ink-300">₪/חודש</span>
+          </div>
+          <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">
+            לפי <span class="num">60</span>₪ לשעה
+          </div>
+        </div>
+
+        <div class="rounded-2xl border-2 border-brand-500 bg-gradient-to-br from-brand-50 via-white to-brand-50 p-5 dark:border-brand-400 dark:from-brand-500/15 dark:via-ink-800 dark:to-brand-500/15">
+          <div class="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-400">החזר השקעה</div>
+          <div class="mt-2 text-3xl font-black text-brand-700 dark:text-brand-300">
+            <span id="roi-ratio" class="num">26</span>×
+          </div>
+          <div class="mt-2 text-xs text-brand-700 dark:text-brand-300">
+            על מנוי Pro של <span class="num">19</span>₪
+          </div>
+        </div>
+      </div>
+
+      <!-- verdict -->
+      <div id="roi-verdict" class="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border-2 border-brand-500 bg-brand-50 p-5 dark:border-brand-400 dark:bg-brand-500/10 sm:flex-row">
+        <div class="flex items-center gap-3 text-right">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500 text-white" id="roi-verdict-icon">✓</div>
+          <div>
+            <div class="text-base font-black text-ink-900 dark:text-white" id="roi-verdict-title">Pro כדאי לך מאוד.</div>
+            <div class="text-sm text-ink-600 dark:text-ink-200" id="roi-verdict-detail">החיסכון בזמן שווה פי <span id="roi-verdict-x" class="num font-bold">26</span> את המחיר.</div>
+          </div>
+        </div>
+        <a id="roi-cta" href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="w-full shrink-0 rounded-2xl bg-brand-600 px-6 py-3 text-center text-sm font-bold text-white shadow-soft transition hover:bg-brand-700 sm:w-auto">התחל ניסיון Pro ←</a>
+      </div>
+
+      <p class="mt-5 text-center text-xs text-ink-500 dark:text-ink-300">
+        החישוב מבוסס על <span class="num">2.5</span> דקות לרישום ידני ממוצע (כולל פתיחת גיליון, רישום, קטלוג, סגירה). בכסף'לה זה <span class="num">2</span> שניות.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============== BILLING FAQ ============== -->
+<section id="billing-faq" class="bg-ink-50 py-20 dark:bg-ink-900 md:py-28">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">חיוב</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">שאלות נפוצות על המחיר</h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">בלי אותיות קטנות. אם משהו לא כתוב — תכתוב לנו.</p>
+    </div>
+
+    <div class="mt-12 divide-y divide-ink-200 rounded-3xl border border-ink-200 bg-white dark:divide-ink-700 dark:border-ink-700 dark:bg-ink-800">
+      <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40" open>
+        <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
+          <span>איך עובד הניסיון של <span class="num">14</span> ימים?</span>
+          <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          נרשמים עם כרטיס אשראי, מקבלים <span class="num">14</span> ימים גישה מלאה לכל תכונות Pro או משפחה — בחינם. החיוב הראשון רק ביום ה-<span class="num">15</span>. אפשר לבטל בכל רגע לפני זה — לא יורד שקל.
+        </p>
+      </details>
+      <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
+        <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
+          <span>אפשר לבטל בכל רגע?</span>
+          <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          כן. בלחיצה אחת בעמוד החשבון, או פשוט כתוב "ביטול" לבוט. אין התחייבות, אין קנסות, אין שיחות שכנוע. גם הנתונים שלך נשארים אצלך — הגיליון שלך בגוגל דרייב.
+        </p>
+      </details>
+      <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
+        <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
+          <span>מה מדיניות ההחזר הכספי?</span>
+          <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          <span class="num">30</span> יום החזר מלא — בלי שאלות. גם אם השתמשת בכל התכונות, גם אם זה היום ה-<span class="num">29</span>. כתוב "החזר" לבוט או שלח אימייל ל-<a href="mailto:hi@kesefle.com" class="font-semibold text-brand-600 hover:underline dark:text-brand-400">hi@kesefle.com</a>, ותוך <span class="num">3</span> ימי עסקים הכסף חוזר לכרטיס.
+        </p>
+      </details>
+      <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
+        <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
+          <span>אפשר לשדרג / להוריד דרגה באמצע?</span>
+          <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          כן, בכל רגע. שדרוג מ-Pro למשפחה מחויב פרופורציונלית לימים שנשארו. הורדת דרגה (למשל ממשפחה ל-Pro או מ-Pro לחינם) נכנסת לתוקף בסוף תקופת החיוב — אתה ממשיך עם התכונות הגבוהות עד אז, בלי לאבד שקל.
+        </p>
+      </details>
+      <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
+        <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
+          <span>אילו אמצעי תשלום אתם מקבלים?</span>
+          <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">
+          ויזה, מאסטרקארד, ישראכרט, American Express, Apple Pay, Google Pay. החיוב דרך ספק PCI-DSS מוסמך — לא שומרים את פרטי הכרטיס אצלנו. חשבונית מס נשלחת אוטומטית לאימייל אחרי כל חיוב.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FINAL CTA ============== -->
+<section id="final-cta" class="relative overflow-hidden py-20 md:py-28">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-br from-ink-900 via-ink-800 to-ink-900"></div>
+  <div class="absolute inset-0 -z-10 bg-mesh opacity-60"></div>
+  <div class="mx-auto max-w-3xl px-5 text-center text-white">
+    <h2 class="text-4xl font-black tracking-tight md:text-5xl">מוכן/ה להפסיק לאבד את החשבון?</h2>
+    <p class="mt-5 text-lg text-ink-200"><span class="num">14</span> ימי ניסיון Pro בחינם. <span class="num">30</span> יום החזר מלא. ביטול בלחיצה.</p>
+    <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-8 py-4 text-base font-black text-white shadow-glow transition hover:bg-brand-400 sm:w-auto">
+        התחל ניסיון Pro בחינם <span class="num">14</span> ימים
+        <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+      </a>
+      <a href="/account?plan=free" onclick="kesefleSelectPlan('free')" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-8 py-4 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto">
+        או התחל בחינם ←
+      </a>
+    </div>
+    <p class="mt-6 text-sm text-ink-300">בלי כרטיס אשראי לחינם. הנתונים שלך נשארים אצלך, בגוגל דרייב.</p>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">מוצר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
+        <li><a href="/#features" class="hover:text-ink-900 dark:hover:text-white">תכונות</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">משפטי</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
+        <li><a href="mailto:hi@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">צור קשר</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    © <span class="num">2026</span> כסף'לה. כל הזכויות שמורות. עשוי באהבה בישראל
+  </div>
+</footer>
+
+<script>
+window.KESEFLE_STATE = window.KESEFLE_STATE || { user: null, plan: 'free' };
+
+// Existing convention used by test.html — keep onclick attrs matching index.html.
+function kesefleSelectPlan(plan) {
+  window.KESEFLE_STATE.plan = plan;
+  try { localStorage.setItem('kesefle_selected_plan', plan); } catch (e) {}
+}
+
+// ============ DARK MODE ============
+function kesefleToggleDark() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle('dark');
+  try { localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light'); } catch (e) {}
+  var m = document.getElementById('icon-moon');
+  var s = document.getElementById('icon-sun');
+  if (m) m.classList.toggle('hidden', isDark);
+  if (s) s.classList.toggle('hidden', !isDark);
+}
+(function initTheme() {
+  var saved = null;
+  try { saved = localStorage.getItem('kesefle_theme'); } catch (e) {}
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    var m = document.getElementById('icon-moon');
+    var s = document.getElementById('icon-sun');
+    if (m) m.classList.add('hidden');
+    if (s) s.classList.remove('hidden');
+  }
+})();
+
+// ============ ROI CALCULATOR ============
+// Assumptions:
+//   - manual entry: 2.5 minutes/expense (open sheet, type, categorize, save)
+//   - kesefle entry: 2 seconds/expense -> ~0 (negligible)
+//   - hourly rate: 60 ILS/hr (Israeli freelancer baseline)
+//   - Pro price: 19 ILS/month
+(function initROI() {
+  var input = document.getElementById('roi-input');
+  if (!input) return;
+
+  var elCount = document.getElementById('roi-count');
+  var elTime  = document.getElementById('roi-time');
+  var elValue = document.getElementById('roi-value');
+  var elRatio = document.getElementById('roi-ratio');
+  var elVerdictTitle  = document.getElementById('roi-verdict-title');
+  var elVerdictDetail = document.getElementById('roi-verdict-detail');
+  var elVerdictX      = document.getElementById('roi-verdict-x');
+  var elVerdictIcon   = document.getElementById('roi-verdict-icon');
+  var elVerdict       = document.getElementById('roi-verdict');
+  var elCta           = document.getElementById('roi-cta');
+
+  var MIN_PER_ENTRY = 2.5;
+  var HOURLY_RATE   = 60;
+  var PRO_PRICE     = 19;
+
+  function fmt(n, digits) {
+    if (digits === undefined) digits = 0;
+    var rounded = Math.round(n * Math.pow(10, digits)) / Math.pow(10, digits);
+    return rounded.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+
+  function update() {
+    var n = parseInt(input.value, 10) || 0;
+    // fill % for the slider track gradient
+    var pct = Math.max(0, Math.min(100, ((n - input.min) / (input.max - input.min)) * 100));
+    input.style.setProperty('--kf-fill', pct + '%');
+
+    var hours      = (n * MIN_PER_ENTRY) / 60;       // hours saved per month
+    var moneyValue = hours * HOURLY_RATE;            // ILS value of saved time
+    var ratio      = moneyValue / PRO_PRICE;         // ROI multiple on Pro
+
+    elCount.textContent = n;
+    elTime.textContent  = fmt(hours, 1);
+    elValue.textContent = fmt(moneyValue);
+    elRatio.textContent = fmt(ratio);
+    elVerdictX.textContent = fmt(ratio);
+
+    // Verdict tiers based on monthly expense volume
+    var title, detail, icon, cls, ctaHref, ctaText, plan;
+    if (n <= 30) {
+      // Free tier is enough
+      plan = 'free';
+      title  = 'התוכנית החינמית מספיקה לך.';
+      detail = 'עד ' + n + ' הוצאות בחודש זה בדיוק מה שכלול בחינם. תשדרג רק כשתעבור את ה-30.';
+      icon   = '✓';
+      cls    = 'border-ink-400 bg-ink-100 dark:border-ink-500 dark:bg-ink-700/60';
+      ctaHref = '/account?plan=free';
+      ctaText = 'התחל בחינם ←';
+    } else if (n <= 150) {
+      // Pro starts paying off
+      plan = 'pro';
+      title  = 'Pro מתחיל להיות כדאי.';
+      detail = 'תחסוך כ-' + fmt(hours, 1) + ' שעות (שווי ~' + fmt(moneyValue) + '₪) — פי ' + fmt(ratio) + ' מהמנוי.';
+      icon   = '✓';
+      cls    = 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-500/10';
+      ctaHref = '/account?plan=pro';
+      ctaText = 'התחל ניסיון Pro ←';
+    } else if (n <= 400) {
+      // Pro is clearly worth it
+      plan = 'pro';
+      title  = 'Pro כדאי לך מאוד.';
+      detail = 'החיסכון בזמן (' + fmt(hours, 1) + ' שעות) שווה פי ' + fmt(ratio) + ' את המחיר.';
+      icon   = '★';
+      cls    = 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-500/10';
+      ctaHref = '/account?plan=pro';
+      ctaText = 'התחל ניסיון Pro ←';
+    } else {
+      // Heavy user — Family becomes interesting (more users probably involved)
+      plan = 'family';
+      title  = 'בנפח כזה, גם משפחה משתלמת.';
+      detail = 'אם יש מי שיעזור לרשום — ' + fmt(hours, 1) + ' שעות יתחלקו על ' + ((n > 450) ? '3-4' : '2-3') + ' אנשים. פי ' + fmt(ratio) + ' מהמחיר של Pro.';
+      icon   = '★';
+      cls    = 'border-accent-500 bg-accent-500/10 dark:border-accent-500 dark:bg-accent-500/10';
+      ctaHref = '/account?plan=family';
+      ctaText = 'בדוק תוכנית משפחה ←';
+    }
+
+    elVerdictTitle.textContent  = title;
+    elVerdictDetail.textContent = detail;
+    elVerdictIcon.textContent   = icon;
+    elVerdict.className = 'mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border-2 p-5 sm:flex-row ' + cls;
+    elCta.href = ctaHref;
+    elCta.textContent = ctaText;
+    elCta.setAttribute('onclick', "kesefleSelectPlan('" + plan + "')");
+    // also tint the CTA button to match the plan
+    if (plan === 'family') {
+      elCta.className = 'w-full shrink-0 rounded-2xl bg-accent-600 px-6 py-3 text-center text-sm font-bold text-white shadow-soft transition hover:bg-accent-500 sm:w-auto';
+    } else if (plan === 'free') {
+      elCta.className = 'w-full shrink-0 rounded-2xl bg-ink-900 px-6 py-3 text-center text-sm font-bold text-white shadow-soft transition hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100 sm:w-auto';
+    } else {
+      elCta.className = 'w-full shrink-0 rounded-2xl bg-brand-600 px-6 py-3 text-center text-sm font-bold text-white shadow-soft transition hover:bg-brand-700 sm:w-auto';
+    }
+  }
+
+  input.addEventListener('input', update);
+  update();
+})();
+</script>
+
+</body>
+</html>
