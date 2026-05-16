@@ -67,7 +67,25 @@ var TESTS = [
   { id: 'no-placeholder-wa', name: '27. מספר WhatsApp Placeholder הוסר', run: testNoPlaceholderWa },
   { id: 'pricing-tiers-3', name: '28. שלוש דרגות מחיר (חינם / Pro / משפחה)', run: testPricingTiers3 },
   { id: 'heebo-font',      name: '29. גופן Heebo נטען', run: testHeeboFont },
-  { id: 'rtl-direction',   name: '30. RTL מוגדר בדף', run: testRtl }
+  { id: 'rtl-direction',   name: '30. RTL מוגדר בדף', run: testRtl },
+  { id: 'trust-page',      name: '31. דף /trust זמין', run: testTrustPage },
+  { id: 'help-page',       name: '32. דף /help זמין', run: testHelpPage },
+  { id: 'roadmap-page',    name: '33. דף /roadmap זמין', run: testRoadmapPage },
+  { id: 'changelog-page',  name: '34. דף /changelog זמין', run: testChangelogPage },
+  { id: 'en-page',         name: '35. דף /en (אנגלית) זמין', run: testEnPage },
+  { id: 'referral-page',   name: '36. דף /referral זמין', run: testReferralPage },
+  { id: 'about-page',      name: '37. דף /about זמין', run: testAboutPage },
+  { id: 'press-page',      name: '38. דף /press זמין', run: testPressPage },
+  { id: 'docs-page',       name: '39. דף /docs זמין', run: testDocsPage },
+  { id: 'compare-page',    name: '40. דף /compare זמין', run: testComparePage },
+  { id: 'pwa-manifest',    name: '41. PWA manifest זמין', run: testPwaManifest },
+  { id: 'service-worker',  name: '42. Service Worker זמין', run: testServiceWorker },
+  { id: 'offline-page',    name: '43. דף /offline זמין (PWA fallback)', run: testOfflinePage },
+  { id: 'security-txt',    name: '44. /.well-known/security.txt זמין', run: testSecurityTxt },
+  { id: 'robots-txt',      name: '45. /robots.txt זמין', run: testRobotsTxt },
+  { id: 'sitemap-xml',     name: '46. /sitemap.xml זמין', run: testSitemapXml },
+  { id: 'api-events-nps',  name: '47. /api/events?action=nps API חי', run: testApiEventsNps },
+  { id: 'analytics-lib',   name: '48. /lib/analytics.js נטען', run: testAnalyticsLib }
 ];
 
 function el(id) { return document.getElementById(id); }
@@ -331,6 +349,79 @@ async function testRtl(id) {
     var hasDir = h.indexOf('dir="rtl"') >= 0;
     var hasLang = h.indexOf('lang="he"') >= 0;
     setStatus(id, hasDir && hasLang, (hasDir?'✓dir=rtl ':'')+(hasLang?'✓lang=he':''));
+  } catch (e) { setStatus(id, false, e.message); }
+}
+
+// === New routes added in 2026-05-16 sprint ===
+async function fetchOk(id, url, label) {
+  try { var r = await fetch(url, { cache: 'no-store' }); setStatus(id, r.ok || r.status === 200, r.status === 200 ? (label || 'נטען (200)') : 'סטטוס ' + r.status); }
+  catch (e) { setStatus(id, false, e.message); }
+}
+async function testTrustPage(id)     { await fetchOk(id, '/trust'); }
+async function testHelpPage(id)      { await fetchOk(id, '/help'); }
+async function testRoadmapPage(id)   { await fetchOk(id, '/roadmap'); }
+async function testChangelogPage(id) { await fetchOk(id, '/changelog'); }
+async function testEnPage(id)        { await fetchOk(id, '/en'); }
+async function testReferralPage(id)  { await fetchOk(id, '/referral'); }
+async function testAboutPage(id)     { await fetchOk(id, '/about'); }
+async function testPressPage(id)     { await fetchOk(id, '/press'); }
+async function testDocsPage(id)      { await fetchOk(id, '/docs'); }
+async function testComparePage(id)   { await fetchOk(id, '/compare'); }
+async function testPwaManifest(id) {
+  try {
+    var r = await fetch('/manifest.webmanifest'); var j = await r.json();
+    var ok = r.ok && j && j.icons && j.icons.length >= 2 && j.start_url;
+    setStatus(id, ok, ok ? 'תקין (' + j.icons.length + ' icons)' : 'manifest פגום');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testServiceWorker(id) {
+  try {
+    var r = await fetch('/sw.js', { cache: 'no-store' });
+    var t = await r.text();
+    var ok = r.ok && t.indexOf('addEventListener(\'install\'') >= 0 && t.indexOf('cache') >= 0;
+    setStatus(id, ok, ok ? 'נטען + יש install handler' : 'sw.js לא תקין');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testOfflinePage(id)   { await fetchOk(id, '/offline'); }
+async function testSecurityTxt(id) {
+  try {
+    var r = await fetch('/.well-known/security.txt');
+    var t = await r.text();
+    var ok = r.ok && t.indexOf('Contact:') >= 0;
+    setStatus(id, ok, ok ? 'תקין (יש Contact)' : 'חסר Contact');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testRobotsTxt(id) {
+  try {
+    var r = await fetch('/robots.txt');
+    var t = await r.text();
+    var ok = r.ok && t.indexOf('Sitemap:') >= 0;
+    setStatus(id, ok, ok ? 'יש Sitemap directive' : 'חסר Sitemap');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testSitemapXml(id) {
+  try {
+    var r = await fetch('/sitemap.xml');
+    var t = await r.text();
+    var urlCount = (t.match(/<loc>/g) || []).length;
+    var ok = r.ok && urlCount >= 10;
+    setStatus(id, ok, ok ? urlCount + ' כתובות' : 'מעט מדי');
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testApiEventsNps(id) {
+  try {
+    var r = await fetch('/api/events?action=nps', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ score: 10, session: 'selftest' + Date.now(), path: '/test' }) });
+    var j = await r.json();
+    var ok = r.ok && j.ok && (j.bucket === 'promoter');
+    setStatus(id, ok, ok ? 'NPS פעיל (bucket=' + j.bucket + ')' : 'שגיאה ' + r.status);
+  } catch (e) { setStatus(id, false, e.message); }
+}
+async function testAnalyticsLib(id) {
+  try {
+    var r = await fetch('/lib/analytics.js');
+    var t = await r.text();
+    var ok = r.ok && t.indexOf('track') >= 0 && t.indexOf('sendBeacon') >= 0;
+    setStatus(id, ok, ok ? 'נטען + מכיל track() + sendBeacon' : 'analytics.js פגום');
   } catch (e) { setStatus(id, false, e.message); }
 }
 </script>
