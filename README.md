@@ -26,9 +26,34 @@
 | Press kit | `/press` | ✓ — brand SVGs, boilerplate, palette, founder bio |
 | API docs | `/docs` | ✓ — all 12 endpoints with Node/Python HMAC examples |
 | Referral | `/referral` | ✓ — refer-a-friend, 30-day Pro credit for both sides |
+| Compare | `/compare` | ✓ — Kesefle vs Excel/Riseup/Bank/YNAB/Quicken, 22 rows |
+| Testimonials | `/testimonials` | ✓ — example quotes (clearly labeled), NPS metrics, submit-your-story |
+| Case studies | `/cases` | ✓ — 4 persona-rich use cases + interactive quiz |
+| Blog | `/blog` | ✓ — Hebrew SEO content + articles |
+| Free tools | `/tools` | ✓ — 4 calculators (profitability, budget, VAT, cashflow) |
+| Thanks | `/thanks` | ✓ — confirmation page after form submissions |
+| 404 | `/404` | ✓ — branded 404 with helpful next-step links |
 | Offline fallback | `/offline` | ✓ — PWA offline page (cached by service worker) |
-| Test suite | `/test` | ✓ — 31 automated regression checks |
+| Test suite | `/test` | ✓ — 48 automated regression checks |
 | Privacy / Terms | `/privacy`, `/terms` | ✓ — OAuth scope disclosure, Israeli Privacy Law §13 |
+
+## URL redirects (vercel.json)
+
+Convenience aliases pointing to the canonical pages:
+- `/signup`, `/login`, `/signin`, `/register` → `/account`
+- `/careers`, `/jobs`, `/team`, `/contact` → `/about`
+- `/security` → `/trust`
+- `/support`, `/faq` → `/help`
+- `/api-docs`, `/developers`, `/api` → `/docs`
+- `/affiliate`, `/invite` → `/referral`
+
+## Discoverability files
+
+- `/.well-known/security.txt` — responsible disclosure policy
+- `/humans.txt` — team credits + product commitments
+- `/robots.txt` — explicit allowlist for GPTBot/ClaudeBot/Google-Extended/anthropic-ai
+- `/sitemap.xml` — all public URLs, hreflang alternates for /, /en
+- `/opensearch.xml` — browser search-box integration for /help
 
 ## API surface (12 endpoints — at Vercel Hobby function limit)
 
