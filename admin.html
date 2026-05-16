@@ -837,7 +837,7 @@ function initApp() {
       const flag = cb.getAttribute('data-flag');
       try {
         // TODO: POST /api/admin/feature-flags with { flag, enabled: cb.checked }
-        await adminFetch('/api/admin/feature-flags', {
+        await adminFetch('/api/admin?action=feature-flags', {
           method: 'POST',
           body: JSON.stringify({ flag, enabled: cb.checked })
         }).catch(() => {});
@@ -893,7 +893,7 @@ async function loadOverview() {
   let data;
   try {
     // TODO: GET /api/admin/overview — expects { active_users, mrr, arpu, churn_pct, errors_today, weekly: [n], feed: [{...}] }
-    data = await adminFetch('/api/admin/overview');
+    data = await adminFetch('/api/admin?action=metrics');
   } catch {
     // Placeholder fallback so the UI renders during development
     data = {
@@ -958,7 +958,7 @@ async function loadUsers() {
   tbody.innerHTML = skeletonRows(6, 8);
   try {
     // TODO: GET /api/admin/users — expects { users: [{ id, email, phone, plan, signup_at, last_active_at, sheet_status, tx_count, status }] }
-    const data = await adminFetch('/api/admin/users');
+    const data = await adminFetch('/api/admin?action=users');
     usersCache = data.users || [];
   } catch {
     usersCache = [
@@ -1042,7 +1042,7 @@ async function userAction(uid, action) {
   if (action === 'suspend' && !confirm('להשהות את המשתמש?')) return;
   try {
     // TODO: POST /api/admin/users/:id/action  body: { action }
-    await adminFetch(`/api/admin/users/${uid}/action`, { method: 'POST', body: JSON.stringify({ action }) });
+    await adminFetch(`/api/admin?action=users/${uid}/action`, { method: 'POST', body: JSON.stringify({ action }) });
     toast(`פעולה "${action}" בוצעה`);
     loadUsers();
   } catch (e) {
@@ -1074,7 +1074,7 @@ async function loadTransactions() {
       to: $('#tx-to').value || '',
       type: $('#tx-type-filter').value || ''
     });
-    data = await adminFetch('/api/admin/transactions?' + params);
+    data = await adminFetch('/api/admin?action=transactions&' + params);
   } catch {
     data = {
       transactions: [
@@ -1112,7 +1112,7 @@ async function loadJobs(tab = 'failed') {
   let data;
   try {
     // TODO: GET /api/admin/jobs?status=failed|pending|completed
-    data = await adminFetch('/api/admin/jobs?status=' + tab);
+    data = await adminFetch('/api/admin?action=jobs&status=' + tab);
   } catch {
     const fakeBase = [
       { id: 'j1', time: new Date(Date.now()-1000*60*15).toISOString(), type: 'sheet:append', user: 'noa.cohen@gmail.com', error: 'Rate limit (429) from Google Sheets API', attempts: 3 },
@@ -1155,7 +1155,7 @@ function jobStatusPill(t) {
 async function retryJob(id) {
   try {
     // TODO: POST /api/admin/jobs/:id/retry
-    await adminFetch(`/api/admin/jobs/${id}/retry`, { method: 'POST' });
+    await adminFetch(`/api/admin?action=jobs/${id}/retry`, { method: 'POST' });
     toast('Job הוחזר לתור');
     loadJobs('failed');
   } catch (e) { toast('שגיאה: ' + e.message, true); }
@@ -1173,7 +1173,7 @@ async function loadAnalytics() {
   let data;
   try {
     // TODO: GET /api/admin/analytics
-    data = await adminFetch('/api/admin/analytics');
+    data = await adminFetch('/api/admin?action=metrics');
   } catch {
     data = {
       funnel: [
@@ -1247,7 +1247,7 @@ async function supportLookup() {
   result.classList.remove('hidden');
   try {
     // TODO: GET /api/admin/lookup?q=...  expects { user: {...} | null, recent_tx: [], recent_events: [] }
-    const data = await adminFetch('/api/admin/lookup?q=' + encodeURIComponent(q));
+    const data = await adminFetch('/api/admin?action=users&q=' + encodeURIComponent(q));
     if (!data.user) {
       result.classList.add('hidden');
       notFound.classList.remove('hidden');
@@ -1323,7 +1323,7 @@ async function loadAudit() {
   let data;
   try {
     // TODO: GET /api/admin/audit-logs?sort=newest&action=&q=
-    data = await adminFetch('/api/admin/audit-logs');
+    data = await adminFetch('/api/admin?action=audit');
   } catch {
     data = {
       logs: [
@@ -1372,7 +1372,7 @@ async function loadHealth() {
   let data;
   try {
     // TODO: GET /api/admin/health  expects { api_up, uptime_pct, p95_ms, errors_24h, error_rate_pct, wa_up, wa_last_ts, latencies: [ms], services: [{name,status,latency}], quotas: [{name,used,total}] }
-    data = await adminFetch('/api/admin/health');
+    data = await adminFetch('/api/admin?action=metrics');
   } catch {
     try {
       // fallback: try the existing /api/health
@@ -1466,7 +1466,7 @@ function synthesizeHealth(real) {
 async function loadSettings() {
   try {
     // TODO: GET /api/admin/settings  expects { flags: {...}, env: { google, wa, claude, kv, stripe: 'ok'|'missing'|'invalid' } }
-    const data = await adminFetch('/api/admin/settings');
+    const data = await adminFetch('/api/admin?action=feature-flags');
     if (data.flags) {
       Object.entries(data.flags).forEach(([flag, enabled]) => {
         const cb = $(`input[data-flag="${flag}"]`);
@@ -1512,7 +1512,7 @@ async function dangerZone(action) {
   if (!confirm(msgs[action] || 'בטוח?')) return;
   try {
     // TODO: POST /api/admin/danger  body: { action }
-    await adminFetch('/api/admin/danger', { method: 'POST', body: JSON.stringify({ action }) });
+    await adminFetch('/api/admin?action=user-action', { method: 'POST', body: JSON.stringify({ action }) });
     toast('בוצע');
   } catch (e) { toast('שגיאה: ' + e.message, true); }
 }
