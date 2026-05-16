@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>הדשבורד שלי — כסף'לה</title>
+<meta name="theme-color" content="#0f172a" />
+<link rel="canonical" href="https://kesefle.vercel.app/dashboard" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand: { 50:'#f0fdf6', 100:'#dcfce9', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' }
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; }
+</style>
+</head>
+<body class="min-h-screen bg-ink-50 text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<!-- nav -->
+<header class="border-b border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-900">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="flex items-center gap-3">
+      <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden rounded-xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">📊 פתח גיליון</a>
+      <img id="user-picture" class="hidden h-9 w-9 rounded-full ring-2 ring-brand-200" alt="" />
+      <span id="user-name" class="text-sm font-semibold">טוען...</span>
+      <button onclick="kesefleLogout()" class="rounded-xl border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-800">התנתק</button>
+    </div>
+  </nav>
+</header>
+
+<main class="mx-auto max-w-6xl px-5 py-8">
+
+  <!-- empty state (when no transactions yet) -->
+  <section id="empty-state" class="hidden rounded-3xl border-2 border-dashed border-brand-300 bg-brand-50 p-10 text-center dark:border-brand-700 dark:bg-ink-800">
+    <div class="text-5xl">📱</div>
+    <h2 class="mt-4 text-2xl font-black">שלח את ההוצאה הראשונה שלך</h2>
+    <p class="mt-2 text-ink-500 dark:text-ink-300">פתח וואטסאפ ושלח לבוט הודעה כמו "245 סופר" — נראה אותה כאן תוך 2 שניות.</p>
+    <a id="empty-whatsapp" href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" class="mt-5 inline-block rounded-xl bg-[#25D366] px-6 py-3 font-bold text-white hover:opacity-90">פתח וואטסאפ ושלח</a>
+  </section>
+
+  <!-- summary cards -->
+  <section id="summary-cards" class="grid gap-4 md:grid-cols-4">
+    <div class="rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+      <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">החודש — הוצאות</div>
+      <div class="mt-1 text-3xl font-black"><span class="num" id="month-expenses">₪0</span></div>
+      <div class="mt-1 text-xs text-ink-500 dark:text-ink-400" id="month-expenses-delta">—</div>
+    </div>
+    <div class="rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+      <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">החודש — הכנסות</div>
+      <div class="mt-1 text-3xl font-black"><span class="num" id="month-income">₪0</span></div>
+      <div class="mt-1 text-xs text-ink-500 dark:text-ink-400" id="month-income-delta">—</div>
+    </div>
+    <div class="rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+      <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מאזן החודש</div>
+      <div class="mt-1 text-3xl font-black"><span class="num" id="month-balance">₪0</span></div>
+      <div class="mt-1 text-xs text-ink-500 dark:text-ink-400" id="month-balance-status">—</div>
+    </div>
+    <div class="rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+      <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">תנועות החודש</div>
+      <div class="mt-1 text-3xl font-black"><span class="num" id="month-count">0</span></div>
+      <div class="mt-1 text-xs text-ink-500 dark:text-ink-400" id="month-count-detail">—</div>
+    </div>
+  </section>
+
+  <!-- two-column: recent + categories -->
+  <section class="mt-6 grid gap-6 md:grid-cols-3">
+
+    <!-- recent transactions -->
+    <div class="md:col-span-2 rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold">תנועות אחרונות</h3>
+        <a id="see-all-link" href="#" target="_blank" rel="noopener" class="text-xs font-semibold text-brand-600 hover:underline">ראה הכל בגיליון →</a>
+      </div>
+      <div id="recent-list" class="mt-4 space-y-2">
+        <div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">
+          טוען תנועות…
+        </div>
+      </div>
+    </div>
+
+    <!-- top categories -->
+    <div class="rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+      <h3 class="text-lg font-bold">קטגוריות מובילות</h3>
+      <div id="categories-list" class="mt-4 space-y-3">
+        <div class="text-sm text-ink-500 dark:text-ink-400">טוען…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- quick actions -->
+  <section class="mt-6 grid gap-4 md:grid-cols-3">
+    <a href="https://wa.me/972547760643?text=%D7%99%D7%95%D7%9E%D7%99%3F" target="_blank" rel="noopener" class="rounded-3xl border border-ink-200 bg-white p-6 text-center hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+      <div class="text-2xl">💬</div>
+      <div class="mt-2 font-bold">שאל סיכום יומי</div>
+      <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">"יומי?" בוואטסאפ</div>
+    </a>
+    <a href="https://wa.me/972547760643?text=%D7%97%D7%95%D7%93%D7%A9%D7%99%3F" target="_blank" rel="noopener" class="rounded-3xl border border-ink-200 bg-white p-6 text-center hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+      <div class="text-2xl">📊</div>
+      <div class="mt-2 font-bold">סיכום חודשי</div>
+      <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">"חודשי?" בוואטסאפ</div>
+    </a>
+    <a href="#settings" onclick="openSettings(event)" class="rounded-3xl border border-ink-200 bg-white p-6 text-center hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+      <div class="text-2xl">⚙️</div>
+      <div class="mt-2 font-bold">הגדרות וחיוב</div>
+      <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">מנוי, חיבור Google, ייצוא</div>
+    </a>
+  </section>
+
+  <!-- settings panel (collapsed by default) -->
+  <section id="settings-panel" class="mt-6 hidden rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+    <h3 class="text-lg font-bold">הגדרות</h3>
+    <div class="mt-4 space-y-3 text-sm">
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+        <div><span class="font-semibold">חשבון Google</span> · <span id="settings-email" class="text-ink-500 dark:text-ink-400">—</span></div>
+        <button onclick="kesefleLogout()" class="text-xs font-semibold text-red-600 hover:underline">התנתק</button>
+      </div>
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+        <div><span class="font-semibold">הגיליון שלך</span> · <a id="settings-sheet" target="_blank" rel="noopener" href="#" class="text-brand-600 hover:underline">פתח בגיליון →</a></div>
+      </div>
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+        <div><span class="font-semibold">תוכנית</span> · <span id="settings-plan">חינם</span></div>
+        <a href="/account#plan" class="text-xs font-semibold text-brand-600 hover:underline">שדרג →</a>
+      </div>
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+        <div><span class="font-semibold">ייצוא נתונים</span></div>
+        <a id="export-csv" href="#" class="text-xs font-semibold text-brand-600 hover:underline">הורד CSV (מהגיליון)</a>
+      </div>
+      <div class="flex items-center justify-between rounded-2xl bg-red-50 p-3 dark:bg-red-950">
+        <div><span class="font-semibold text-red-700 dark:text-red-300">מחיקת חשבון</span></div>
+        <a href="mailto:srcslcollection@gmail.com?subject=מחיקת%20חשבון" class="text-xs font-semibold text-red-600 hover:underline">שלח בקשה →</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+function kesefleGetUser() {
+  try { return JSON.parse(localStorage.getItem('kesefle_user') || 'null'); } catch { return null; }
+}
+function kesefleGetSheet() {
+  try { return JSON.parse(localStorage.getItem('kesefle_sheet') || 'null'); } catch { return null; }
+}
+function kesefleLogout() {
+  localStorage.removeItem('kesefle_user');
+  localStorage.removeItem('kesefle_sheet');
+  window.location.href = '/';
+}
+function openSettings(e) {
+  if (e) e.preventDefault();
+  document.getElementById('settings-panel').classList.toggle('hidden');
+  document.getElementById('settings-panel').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Init: gate access to authenticated users only
+(function init() {
+  var u = kesefleGetUser();
+  if (!u) { window.location.href = '/'; return; }
+
+  document.getElementById('user-name').textContent = u.name || u.email || 'משתמש';
+  if (u.picture) {
+    var img = document.getElementById('user-picture');
+    img.src = u.picture;
+    img.classList.remove('hidden');
+  }
+  document.getElementById('settings-email').textContent = u.email || '—';
+
+  var s = kesefleGetSheet();
+  if (s && s.spreadsheetUrl) {
+    document.getElementById('sheet-link-nav').href = s.spreadsheetUrl;
+    document.getElementById('sheet-link-nav').classList.remove('hidden');
+    document.getElementById('see-all-link').href = s.spreadsheetUrl;
+    document.getElementById('settings-sheet').href = s.spreadsheetUrl;
+    document.getElementById('export-csv').href = s.spreadsheetUrl + '/export?format=csv';
+  } else {
+    // No sheet provisioned yet — redirect to /account
+    window.location.href = '/account';
+    return;
+  }
+
+  // Try to fetch summary from API. If 404 or no data, show empty state.
+  loadDashboard(u, s).catch(function(err) {
+    console.warn('dashboard load failed', err);
+    showEmptyState();
+  });
+})();
+
+async function loadDashboard(user, sheet) {
+  // Future: real API call to /api/summary/dashboard?spreadsheetId=...&token=...
+  // For now: try to fetch, fall back to empty state
+  var resp;
+  try {
+    resp = await fetch('/api/summary/dashboard?spreadsheetId=' + encodeURIComponent(sheet.spreadsheetId), {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + (user.idToken || '') }
+    });
+  } catch (e) { throw e; }
+  if (!resp.ok) {
+    // Endpoint not implemented yet — show empty state with WhatsApp CTA
+    showEmptyState();
+    return;
+  }
+  var data = await resp.json();
+  renderDashboard(data);
+}
+
+function showEmptyState() {
+  document.getElementById('summary-cards').classList.add('hidden');
+  document.getElementById('empty-state').classList.remove('hidden');
+  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">אין תנועות עדיין. שלח לבוט הודעה ראשונה.</div>';
+  document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">אין נתונים עדיין.</div>';
+}
+
+function renderDashboard(d) {
+  function num(n) { return '₪' + new Intl.NumberFormat('he-IL').format(Math.round(n || 0)); }
+
+  document.getElementById('month-expenses').textContent = num(d.month_expenses);
+  document.getElementById('month-income').textContent = num(d.month_income);
+  var bal = (d.month_income || 0) - (d.month_expenses || 0);
+  var balEl = document.getElementById('month-balance');
+  balEl.textContent = num(Math.abs(bal));
+  balEl.className = 'num ' + (bal >= 0 ? 'text-brand-600' : 'text-red-600');
+  document.getElementById('month-balance-status').textContent = bal >= 0 ? 'יתרה חיובית' : 'יתרה שלילית';
+  document.getElementById('month-count').textContent = d.month_count || 0;
+  document.getElementById('month-count-detail').textContent = (d.month_count || 0) + ' תנועות';
+
+  if (d.month_expenses_delta_pct != null) {
+    var sign = d.month_expenses_delta_pct >= 0 ? '+' : '';
+    document.getElementById('month-expenses-delta').textContent = sign + d.month_expenses_delta_pct + '% מהחודש שעבר';
+  }
+
+  // Recent transactions
+  var recent = d.recent || [];
+  if (recent.length === 0) { showEmptyState(); return; }
+  var list = document.getElementById('recent-list');
+  list.innerHTML = '';
+  recent.slice(0, 10).forEach(function(t) {
+    var row = document.createElement('div');
+    row.className = 'flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900';
+    var sign = t.is_income ? '+' : '-';
+    var color = t.is_income ? 'text-brand-600' : 'text-ink-900 dark:text-white';
+    row.innerHTML = '<div class="min-w-0"><div class="font-semibold truncate">' + (t.description || t.subcategory || 'הוצאה') + '</div><div class="text-xs text-ink-500 dark:text-ink-400">' + (t.subcategory || '—') + ' · ' + (t.date || '') + '</div></div><div class="' + color + ' font-bold num">' + sign + num(t.amount) + '</div>';
+    list.appendChild(row);
+  });
+
+  // Top categories
+  var cats = d.top_categories || [];
+  var cl = document.getElementById('categories-list');
+  cl.innerHTML = '';
+  var max = Math.max.apply(null, cats.map(function(c){return c.total;}).concat([1]));
+  cats.slice(0, 5).forEach(function(c) {
+    var pct = Math.round((c.total / max) * 100);
+    var row = document.createElement('div');
+    row.innerHTML = '<div class="flex items-center justify-between text-sm"><span class="font-semibold">' + c.name + '</span><span class="num text-ink-500 dark:text-ink-400">' + num(c.total) + '</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900"><div class="h-full bg-brand-500" style="width:' + pct + '%"></div></div>';
+    cl.appendChild(row);
+  });
+}
+</script>
+
+</body>
+</html>

@@ -99,6 +99,28 @@ export default async function handler(req, res) {
         headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(record),
       });
+
+      // Also merge into the user record (which has the refresh token from /api/auth/google-exchange)
+      // so that the webhook's phone:<E.164> lookup gets the full picture.
+      try {
+        const userRes = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, {
+          headers: { 'Authorization': `Bearer ${kvToken}` },
+        });
+        const userJson = await userRes.json();
+        const userRec = userJson?.result ? JSON.parse(userJson.result) : null;
+        if (userRec) {
+          userRec.spreadsheetId = spreadsheetId;
+          userRec.spreadsheetUrl = spreadsheetUrl;
+          userRec.provisioned = record.provisioned;
+          await fetch(`${kvUrl}/set/${encodeURIComponent('user:' + userSub)}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(userRec),
+          });
+        }
+      } catch (e) {
+        console.warn('user_record_merge_failed', e);
+      }
     } catch (e) {
       console.error('KV save failed', e);
     }
