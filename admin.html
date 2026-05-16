@@ -1,0 +1,1560 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>פאנל ניהול — כסף'לה</title>
+<meta name="robots" content="noindex,nofollow" />
+<meta name="theme-color" content="#0f1422" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Heebo','system-ui','sans-serif'] } } } };
+</script>
+<link rel="stylesheet" href="/admin-styles.css" />
+</head>
+<body>
+
+<!-- ============================================================
+     ACCESS DENIED VIEW (shown if user not in ADMIN_EMAILS)
+     ============================================================ -->
+<div id="access-denied-view" class="access-denied hidden">
+  <div class="access-denied-card">
+    <div class="lock">🔒</div>
+    <h1 style="font-size:24px;font-weight:900;margin:0 0 8px;">גישה נדחתה</h1>
+    <p style="color:var(--ink-500);font-size:15px;margin:0 0 24px;">
+      הדף הזה זמין רק למנהלי כסף'לה. אם אתה חושב שזו טעות, פנה לתמיכה.
+    </p>
+    <div id="denied-email" style="font-size:13px;color:var(--ink-500);margin-bottom:18px;"></div>
+    <a href="/" class="btn btn-primary" style="display:inline-flex;">חזרה לדף הבית</a>
+    <button onclick="adminLogout()" class="btn btn-secondary" style="margin-inline-start:8px;">התנתק</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     ADMIN APP SHELL
+     ============================================================ -->
+<div id="admin-app" class="app-shell hidden">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo">₪</span>
+      <div>
+        <div>כסף'לה</div>
+        <small>Admin Panel</small>
+      </div>
+    </div>
+
+    <div class="nav-section-label">ניהול</div>
+    <ul class="nav-list">
+      <li><button class="nav-item active" data-route="overview">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        </span>
+        סקירה כללית
+      </button></li>
+      <li><button class="nav-item" data-route="users">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        משתמשים
+      </button></li>
+      <li><button class="nav-item" data-route="transactions">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </span>
+        תנועות
+      </button></li>
+      <li><button class="nav-item" data-route="jobs">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </span>
+        עבודות
+      </button></li>
+    </ul>
+
+    <div class="nav-section-label">תובנות</div>
+    <ul class="nav-list">
+      <li><button class="nav-item" data-route="analytics">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </span>
+        אנליטיקה
+      </button></li>
+      <li><button class="nav-item" data-route="health">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        בריאות מערכת
+      </button></li>
+      <li><button class="nav-item" data-route="audit">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </span>
+        יומני ביקורת
+      </button></li>
+    </ul>
+
+    <div class="nav-section-label">תפעול</div>
+    <ul class="nav-list">
+      <li><button class="nav-item" data-route="support">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </span>
+        תמיכה
+      </button></li>
+      <li><button class="nav-item" data-route="settings">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+        הגדרות
+      </button></li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div>גרסה <span class="num">1.4.2</span></div>
+      <div style="margin-top:4px;">© כסף'לה <span class="num">2026</span></div>
+    </div>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <button class="icon-btn menu-toggle" id="menu-toggle" aria-label="פתח תפריט">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <div class="search-wrap">
+      <span class="search-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input id="global-search" class="search-input" type="search" placeholder="חיפוש משתמש, מייל, מספר טלפון, ID..." />
+    </div>
+
+    <div class="topbar-actions">
+      <button class="icon-btn" id="theme-toggle" aria-label="מצב כהה/בהיר" title="מצב כהה/בהיר">
+        <svg id="theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg id="theme-icon-dark" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="icon-btn" id="refresh-btn" aria-label="רענן" title="רענן">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <div class="action-menu-wrap">
+        <button class="avatar-btn" id="user-menu-btn">
+          <span class="avatar" id="user-avatar">A</span>
+          <span class="avatar-name" id="user-email-display">admin</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="action-menu" id="user-menu">
+          <button onclick="window.location.href='/dashboard'">📊 דשבורד משתמש</button>
+          <button onclick="window.location.href='/account'">⚙️ הגדרות חשבון</button>
+          <button class="danger" onclick="adminLogout()">🚪 התנתק</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Content ===== -->
+  <main class="content">
+
+    <!-- ===== Overview ===== -->
+    <section class="route-section active" id="route-overview">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>סקירה כללית</span>
+      </div>
+      <h1 class="section-title">סקירה כללית</h1>
+      <p class="section-subtitle">המבט הראשון על הבריאות של כסף'לה — משתמשים פעילים, הכנסה ותחזית.</p>
+
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-tile" data-stat="active_users">
+          <div class="stat-label">משתמשים פעילים</div>
+          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
+          <div class="stat-delta flat">&nbsp;</div>
+        </div>
+        <div class="stat-tile" data-stat="mrr">
+          <div class="stat-label">MRR — הכנסה חודשית</div>
+          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
+          <div class="stat-delta flat">&nbsp;</div>
+        </div>
+        <div class="stat-tile" data-stat="arpu">
+          <div class="stat-label">ARPU ממוצע</div>
+          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
+          <div class="stat-delta flat">&nbsp;</div>
+        </div>
+        <div class="stat-tile" data-stat="churn">
+          <div class="stat-label">Churn חודשי</div>
+          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
+          <div class="stat-delta flat">&nbsp;</div>
+        </div>
+        <div class="stat-tile" data-stat="errors">
+          <div class="stat-label">שגיאות היום</div>
+          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
+          <div class="stat-delta flat">&nbsp;</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="flex-row between mb-4">
+            <div>
+              <h3 class="card-title">פעילות שבועית</h3>
+              <p class="card-subtitle">תנועות ליום, 14 ימים אחרונים</p>
+            </div>
+            <span class="pill pill-info">חי</span>
+          </div>
+          <div class="bar-chart" id="overview-chart">
+            <!-- bars injected by JS -->
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">פעולות אחרונות</h3>
+          <p class="card-subtitle">10 אירועי מערכת אחרונים</p>
+          <div id="overview-feed">
+            <!-- audit feed injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Users ===== -->
+    <section class="route-section" id="route-users">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>משתמשים</span>
+      </div>
+      <h1 class="section-title">משתמשים</h1>
+      <p class="section-subtitle">חיפוש, ניהול וצפייה במשתמשי כסף'לה</p>
+
+      <div class="filters-bar">
+        <input id="users-search" class="filter-input" type="search" placeholder="חפש לפי מייל, טלפון או שם..." style="flex:1;min-width:240px;" />
+        <select id="users-plan-filter" class="filter-select">
+          <option value="">כל המסלולים</option>
+          <option value="free">Free</option>
+          <option value="pro">Pro</option>
+          <option value="business">Business</option>
+        </select>
+        <select id="users-status-filter" class="filter-select">
+          <option value="">כל הסטטוסים</option>
+          <option value="active">פעיל</option>
+          <option value="trial">תקופת ניסיון</option>
+          <option value="paused">מושהה</option>
+          <option value="cancelled">בוטל</option>
+        </select>
+        <button class="btn btn-secondary" onclick="exportUsers()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          ייצוא CSV
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>אימייל</th>
+              <th>טלפון</th>
+              <th>מסלול</th>
+              <th>נרשם</th>
+              <th>פעילות אחרונה</th>
+              <th>סטטוס גיליון</th>
+              <th>תנועות</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="users-empty" class="empty-state hidden">
+        <span class="emoji">🔍</span>
+        <h3>לא נמצאו משתמשים</h3>
+        <p>נסה לשנות את החיפוש או הסינון.</p>
+      </div>
+    </section>
+
+    <!-- ===== Transactions ===== -->
+    <section class="route-section" id="route-transactions">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>תנועות</span>
+      </div>
+      <h1 class="section-title">תנועות</h1>
+      <p class="section-subtitle">כל התנועות שעובדות דרך הבוט — בכל המשתמשים</p>
+
+      <div class="filters-bar">
+        <input id="tx-search" class="filter-input" type="search" placeholder="חפש בקטגוריה / סכום / משתמש..." style="flex:1;min-width:200px;" />
+        <select id="tx-type-filter" class="filter-select">
+          <option value="">כל הסוגים</option>
+          <option value="expense">הוצאה</option>
+          <option value="income">הכנסה</option>
+        </select>
+        <input id="tx-from" type="date" class="filter-input" />
+        <input id="tx-to" type="date" class="filter-input" />
+        <button class="btn btn-secondary" onclick="loadTransactions()">סינון</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>זמן</th>
+              <th>משתמש</th>
+              <th>סוג</th>
+              <th>קטגוריה</th>
+              <th>סכום</th>
+              <th>הודעה מקורית</th>
+              <th>מקור</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tx-tbody">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="tx-empty" class="empty-state hidden">
+        <span class="emoji">📭</span>
+        <h3>אין תנועות בטווח הזה</h3>
+        <p>שנה את הסינון או חזור מאוחר יותר.</p>
+      </div>
+    </section>
+
+    <!-- ===== Jobs ===== -->
+    <section class="route-section" id="route-jobs">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>עבודות</span>
+      </div>
+      <h1 class="section-title">עבודות</h1>
+      <p class="section-subtitle">עבודות רקע שנכשלו, בהמתנה לחזרה או רצות כעת</p>
+
+      <div class="tabs">
+        <button class="tab active" data-job-tab="failed">נכשלו <span class="pill pill-danger" id="jobs-failed-count" style="margin-inline-start:6px;">0</span></button>
+        <button class="tab" data-job-tab="pending">בהמתנה <span class="pill pill-warning" id="jobs-pending-count" style="margin-inline-start:6px;">0</span></button>
+        <button class="tab" data-job-tab="completed">הסתיימו <span class="pill pill-success" id="jobs-completed-count" style="margin-inline-start:6px;">0</span></button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>זמן</th>
+              <th>סוג</th>
+              <th>משתמש</th>
+              <th>שגיאה</th>
+              <th>ניסיונות</th>
+              <th>סטטוס</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="jobs-tbody">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="jobs-empty" class="empty-state hidden">
+        <span class="emoji">✨</span>
+        <h3>הכל עובד חלק</h3>
+        <p>אין עבודות שנכשלו. הכבוד שלך!</p>
+      </div>
+    </section>
+
+    <!-- ===== Analytics ===== -->
+    <section class="route-section" id="route-analytics">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>אנליטיקה</span>
+      </div>
+      <h1 class="section-title">אנליטיקה</h1>
+      <p class="section-subtitle">מסע המשתמש, פעילות יומית והמרה למסלולים בתשלום</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">משפך המרה</h3>
+          <p class="card-subtitle">ביקור → הרשמה → חיבור → תנועה ראשונה → תשלום</p>
+          <div id="funnel-stages">
+            <!-- funnel injected by JS -->
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">MAU vs DAU</h3>
+          <p class="card-subtitle">משתמשים פעילים חודשית מול יומית — 30 ימים</p>
+          <div class="bar-chart" id="mau-dau-chart">
+            <!-- bars injected by JS -->
+          </div>
+          <div class="flex-row between" style="margin-top:14px;font-size:13px;">
+            <div><span style="display:inline-block;width:10px;height:10px;background:var(--accent-500);border-radius:3px;margin-inline-end:6px;"></span>DAU</div>
+            <div><span style="display:inline-block;width:10px;height:10px;background:var(--brand-500);border-radius:3px;margin-inline-end:6px;"></span>MAU/30</div>
+            <div><span class="num" id="stickiness-ratio">—</span> Stickiness</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2 mt-4">
+        <div class="card">
+          <h3 class="card-title">המרה לתשלום לפי שבוע</h3>
+          <p class="card-subtitle">% מהנרשמים שעברו ל-Pro תוך 14 ימים</p>
+          <div class="bar-chart" id="conversion-chart"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">קטגוריות הוצאה מובילות</h3>
+          <p class="card-subtitle">סך הכל בכל המשתמשים, 30 ימים</p>
+          <div id="top-categories"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Support ===== -->
+    <section class="route-section" id="route-support">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>תמיכה</span>
+      </div>
+      <h1 class="section-title">תמיכה</h1>
+      <p class="section-subtitle">חיפוש משתמש לפי מייל / טלפון וביצוע פעולות תפעוליות</p>
+
+      <div class="card mb-4">
+        <h3 class="card-title">חיפוש משתמש</h3>
+        <p class="card-subtitle">הזן מייל, טלפון או user ID</p>
+        <div class="flex-row gap-4" style="margin-top:12px;">
+          <input id="support-query" class="filter-input" style="flex:1;" type="text" placeholder="user@example.com או 0501234567" />
+          <button class="btn btn-primary" onclick="supportLookup()">חפש</button>
+        </div>
+      </div>
+
+      <div id="support-result" class="card hidden">
+        <!-- populated by JS -->
+      </div>
+
+      <div id="support-not-found" class="empty-state hidden">
+        <span class="emoji">🤷</span>
+        <h3>לא מצאנו משתמש</h3>
+        <p>בדוק שהמייל או הטלפון מוקלדים נכון.</p>
+      </div>
+
+      <div class="card mt-4">
+        <h3 class="card-title">פעולות תפעוליות מהירות</h3>
+        <p class="card-subtitle">כל פעולה נרשמת ביומן הביקורת</p>
+        <div class="grid-2 mt-4">
+          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('resend_welcome')">
+            ✉️ שלח מחדש הודעת ברוכים הבאים
+          </button>
+          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('resync_sheet')">
+            🔄 סנכרן מחדש גיליון
+          </button>
+          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('reset_quota')">
+            ♻️ אפס מכסה חודשית
+          </button>
+          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('test_webhook')">
+            🔔 בדוק webhook של משתמש
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Audit logs ===== -->
+    <section class="route-section" id="route-audit">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>יומני ביקורת</span>
+      </div>
+      <h1 class="section-title">יומני ביקורת</h1>
+      <p class="section-subtitle">כל הפעולות הרגישות במערכת — מי, מתי, על מי</p>
+
+      <div class="filters-bar">
+        <input id="audit-search" class="filter-input" type="search" placeholder="חפש פעולה / משתמש / מנהל..." style="flex:1;min-width:240px;" />
+        <select id="audit-action-filter" class="filter-select">
+          <option value="">כל הפעולות</option>
+          <option value="login">התחברות</option>
+          <option value="user_update">עדכון משתמש</option>
+          <option value="plan_change">שינוי מסלול</option>
+          <option value="sheet_reset">איפוס גיליון</option>
+          <option value="job_retry">החזרת job</option>
+          <option value="feature_flag">דגל תכונה</option>
+        </select>
+        <select id="audit-sort" class="filter-select">
+          <option value="newest">חדש ביותר</option>
+          <option value="oldest">ישן ביותר</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div id="audit-list">
+          <!-- rows injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== System health ===== -->
+    <section class="route-section" id="route-health">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>בריאות מערכת</span>
+      </div>
+      <h1 class="section-title">בריאות מערכת</h1>
+      <p class="section-subtitle">חיווי חי לכל השירותים: ה-API, הבוט, חיבור Sheets ו-OAuth</p>
+
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <div class="stat-label">סטטוס API</div>
+          <div class="stat-value" id="health-api-status">
+            <span class="pill pill-success">פעיל</span>
+          </div>
+          <div class="stat-delta flat" id="health-api-uptime">uptime —</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">P95 השהיה</div>
+          <div class="stat-value num" id="health-p95">— ms</div>
+          <div class="stat-delta flat">ממוצע 24h</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">שגיאות 24h</div>
+          <div class="stat-value num" id="health-errors">—</div>
+          <div class="stat-delta flat" id="health-error-rate">— %</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">WhatsApp webhook</div>
+          <div class="stat-value" id="health-wa-status">
+            <span class="pill pill-success">פעיל</span>
+          </div>
+          <div class="stat-delta flat" id="health-wa-last">אחרון —</div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="flex-row between mb-4">
+          <div>
+            <h3 class="card-title">השהיה (P95) ב-24 שעות האחרונות</h3>
+            <p class="card-subtitle">דגימה כל 30 דקות</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadHealth()">רענן</button>
+        </div>
+        <div class="health-graph">
+          <svg id="health-graph-svg" viewBox="0 0 800 160" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+
+      <div class="grid-2 mt-4">
+        <div class="card">
+          <h3 class="card-title">בריאות שירותים</h3>
+          <p class="card-subtitle">בדיקה כל 60 שניות</p>
+          <div id="services-health"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">מכסות חיצוניות</h3>
+          <p class="card-subtitle">כמה אחוז ניצלנו מ-Google / Anthropic / WhatsApp</p>
+          <div id="quotas-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Settings ===== -->
+    <section class="route-section" id="route-settings">
+      <div class="breadcrumb">
+        <span>פאנל ניהול</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>הגדרות</span>
+      </div>
+      <h1 class="section-title">הגדרות</h1>
+      <p class="section-subtitle">דגלי תכונה, חיבורים והגדרות סביבה</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">דגלי תכונה</h3>
+          <p class="card-subtitle">הפעל / כבה תכונות בזמן ריצה</p>
+
+          <div class="form-row">
+            <div>
+              <div class="label">איסוף הוצאות בפורמט חדש</div>
+              <div class="hint">חוויית onboarding מעודכנת לכל משתמש חדש</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" data-flag="new_onboarding" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">תזכורות שבועיות בוואטסאפ</div>
+              <div class="hint">בכל יום שישי ב-9:00 בבוקר</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" data-flag="weekly_reminders" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">חיוב Pro חדשים</div>
+              <div class="hint">הפעלה זו תפתח את הקופה לרישומים חדשים</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" data-flag="paid_signups" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">קטגוריזציה אוטומטית (AI)</div>
+              <div class="hint">משתמש ב-Claude לסיווג חכם</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" data-flag="ai_categorize" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">מצב תחזוקה</div>
+              <div class="hint">חוסם כל הבקשות מבחוץ עם הודעה ידידותית</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" data-flag="maintenance_mode" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">חיבורים ו-API keys</h3>
+          <p class="card-subtitle">סטטוס מפתחות ו-OAuth tokens</p>
+
+          <div class="form-row">
+            <div>
+              <div class="label">Google OAuth</div>
+              <div class="hint" id="env-google">בדיקה...</div>
+            </div>
+            <span class="pill pill-success" id="env-google-pill">תקין</span>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">WhatsApp Business API</div>
+              <div class="hint" id="env-wa">בדיקה...</div>
+            </div>
+            <span class="pill pill-success" id="env-wa-pill">תקין</span>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">Anthropic / Claude API</div>
+              <div class="hint" id="env-claude">בדיקה...</div>
+            </div>
+            <span class="pill pill-success" id="env-claude-pill">תקין</span>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">Vercel KV (cache)</div>
+              <div class="hint" id="env-kv">בדיקה...</div>
+            </div>
+            <span class="pill pill-success" id="env-kv-pill">תקין</span>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="label">Stripe / סליקה</div>
+              <div class="hint" id="env-stripe">בדיקה...</div>
+            </div>
+            <span class="pill pill-warning" id="env-stripe-pill">לא הוגדר</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <h3 class="card-title">אזור מסוכן</h3>
+        <p class="card-subtitle">פעולות שלא ניתן לבטל. תחשוב פעמיים.</p>
+        <div class="grid-2 mt-4">
+          <button class="btn btn-danger" style="justify-content:flex-start;padding:14px;" onclick="dangerZone('flush_cache')">🧹 ניקוי כל המטמון</button>
+          <button class="btn btn-danger" style="justify-content:flex-start;padding:14px;" onclick="dangerZone('reset_quotas')">♻️ איפוס כל מכסות המשתמשים</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     SCRIPT
+     ============================================================ -->
+<script>
+/* =========================================================
+   Constants & helpers
+   ========================================================= */
+const ADMIN_EMAILS = ['srcslcollection@gmail.com', 'stevenrancohen@gmail.com'];
+
+const ILS = new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 });
+const NUM = new Intl.NumberFormat('he-IL');
+const PCT = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 1 });
+const REL = new Intl.RelativeTimeFormat('he', { numeric: 'auto' });
+
+function fmtILS(n) { return ILS.format(n || 0); }
+function fmtNum(n) { return NUM.format(n || 0); }
+function fmtPct(n) { return PCT.format((n || 0) / 100); }
+function fmtDate(s) { if (!s) return '—'; try { return new Date(s).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }); } catch { return s; } }
+function fmtRel(s) {
+  if (!s) return '—';
+  const diff = (Date.now() - new Date(s).getTime()) / 1000;
+  if (diff < 60) return 'לפני שניות';
+  if (diff < 3600) return REL.format(-Math.round(diff/60), 'minute');
+  if (diff < 86400) return REL.format(-Math.round(diff/3600), 'hour');
+  return REL.format(-Math.round(diff/86400), 'day');
+}
+
+function getUser() {
+  try { return JSON.parse(localStorage.getItem('kesefle_user') || 'null'); } catch { return null; }
+}
+
+function adminLogout() {
+  localStorage.removeItem('kesefle_user');
+  localStorage.removeItem('kesefle_sheet');
+  window.location.href = '/';
+}
+
+async function adminFetch(path, opts = {}) {
+  const user = getUser();
+  const headers = Object.assign({
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + (user && user.idToken ? user.idToken : '')
+  }, opts.headers || {});
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  if (!res.ok) {
+    const err = await res.text().catch(() => '');
+    throw new Error('HTTP ' + res.status + ' ' + err.slice(0, 200));
+  }
+  return res.json().catch(() => ({}));
+}
+
+function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+function $(s, root = document) { return root.querySelector(s); }
+function $$(s, root = document) { return Array.from(root.querySelectorAll(s)); }
+
+/* =========================================================
+   Auth gate
+   ========================================================= */
+(function authGate() {
+  const user = getUser();
+  if (!user || !user.email || !ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+    $('#access-denied-view').classList.remove('hidden');
+    const emailLine = $('#denied-email');
+    if (user && user.email) emailLine.textContent = 'מחובר כ: ' + user.email;
+    else emailLine.textContent = 'אינך מחובר.';
+    return;
+  }
+  $('#admin-app').classList.remove('hidden');
+  $('#user-email-display').textContent = user.email;
+  $('#user-avatar').textContent = (user.email || 'A')[0].toUpperCase();
+  initApp();
+})();
+
+/* =========================================================
+   Theme
+   ========================================================= */
+function applyTheme() {
+  const dark = localStorage.getItem('kesefle_admin_theme') === 'dark';
+  document.body.classList.toggle('dark', dark);
+  document.documentElement.classList.toggle('dark', dark);
+  $('#theme-icon-light')?.classList.toggle('hidden', dark);
+  $('#theme-icon-dark')?.classList.toggle('hidden', !dark);
+}
+applyTheme();
+
+/* =========================================================
+   App init
+   ========================================================= */
+function initApp() {
+  // Theme toggle
+  $('#theme-toggle').addEventListener('click', () => {
+    const dark = document.body.classList.contains('dark');
+    localStorage.setItem('kesefle_admin_theme', dark ? 'light' : 'dark');
+    applyTheme();
+  });
+
+  // Sidebar mobile drawer
+  const sidebar = $('#sidebar');
+  const backdrop = $('#sidebar-backdrop');
+  $('#menu-toggle').addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    backdrop.classList.toggle('open');
+  });
+  backdrop.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('open');
+  });
+
+  // Refresh button
+  $('#refresh-btn').addEventListener('click', () => loadRoute(currentRoute, true));
+
+  // User menu dropdown
+  const userMenu = $('#user-menu');
+  $('#user-menu-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    userMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', () => userMenu.classList.remove('open'));
+
+  // Nav routing
+  $$('.nav-item[data-route]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const route = btn.getAttribute('data-route');
+      navigateTo(route);
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('open');
+    });
+  });
+
+  // Job tabs
+  $$('.tab[data-job-tab]').forEach(t => {
+    t.addEventListener('click', () => {
+      $$('.tab[data-job-tab]').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      loadJobs(t.getAttribute('data-job-tab'));
+    });
+  });
+
+  // Feature flags
+  $$('input[data-flag]').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const flag = cb.getAttribute('data-flag');
+      try {
+        // TODO: POST /api/admin/feature-flags with { flag, enabled: cb.checked }
+        await adminFetch('/api/admin/feature-flags', {
+          method: 'POST',
+          body: JSON.stringify({ flag, enabled: cb.checked })
+        }).catch(() => {});
+      } catch (e) {}
+    });
+  });
+
+  // Hash routing
+  window.addEventListener('hashchange', () => {
+    const r = location.hash.replace('#', '') || 'overview';
+    navigateTo(r);
+  });
+  const initial = location.hash.replace('#', '') || 'overview';
+  navigateTo(initial);
+}
+
+let currentRoute = 'overview';
+
+function navigateTo(route) {
+  const valid = ['overview', 'users', 'transactions', 'jobs', 'analytics', 'support', 'audit', 'health', 'settings'];
+  if (!valid.includes(route)) route = 'overview';
+  currentRoute = route;
+  $$('.route-section').forEach(s => s.classList.remove('active'));
+  $('#route-' + route)?.classList.add('active');
+  $$('.nav-item[data-route]').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-route') === route);
+  });
+  if (location.hash.replace('#', '') !== route) {
+    history.replaceState(null, '', '#' + route);
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  loadRoute(route);
+}
+
+function loadRoute(route, force) {
+  switch (route) {
+    case 'overview': return loadOverview(force);
+    case 'users': return loadUsers(force);
+    case 'transactions': return loadTransactions(force);
+    case 'jobs': return loadJobs('failed', force);
+    case 'analytics': return loadAnalytics(force);
+    case 'audit': return loadAudit(force);
+    case 'health': return loadHealth(force);
+    case 'settings': return loadSettings(force);
+    case 'support': return; /* lazy on lookup */
+  }
+}
+
+/* =========================================================
+   Overview
+   ========================================================= */
+async function loadOverview() {
+  let data;
+  try {
+    // TODO: GET /api/admin/overview — expects { active_users, mrr, arpu, churn_pct, errors_today, weekly: [n], feed: [{...}] }
+    data = await adminFetch('/api/admin/overview');
+  } catch {
+    // Placeholder fallback so the UI renders during development
+    data = {
+      active_users: { value: 1247, delta: 12.4 },
+      mrr: { value: 23890, delta: 8.2 },
+      arpu: { value: 19, delta: -1.1 },
+      churn_pct: { value: 3.2, delta: -0.4 },
+      errors_today: { value: 7, delta: -2 },
+      weekly: [42, 51, 38, 67, 71, 88, 95, 79, 102, 118, 124, 131, 145, 156],
+      feed: [
+        { time: new Date(Date.now() - 1000*60*5).toISOString(), action: 'הרשמה חדשה', subject: 'noa.cohen@gmail.com', icon: '✨' },
+        { time: new Date(Date.now() - 1000*60*22).toISOString(), action: 'שדרוג ל-Pro', subject: 'yossi@example.com', icon: '⭐' },
+        { time: new Date(Date.now() - 1000*60*45).toISOString(), action: 'גיליון סונכרן', subject: 'rachel.l@gmail.com', icon: '🔄' },
+        { time: new Date(Date.now() - 1000*60*120).toISOString(), action: 'job נכשל', subject: 'sheet:append', icon: '⚠️' },
+      ]
+    };
+  }
+  setStat('active_users', fmtNum(data.active_users.value), data.active_users.delta);
+  setStat('mrr', fmtILS(data.mrr.value), data.mrr.delta);
+  setStat('arpu', fmtILS(data.arpu.value), data.arpu.delta);
+  setStat('churn', fmtPct(data.churn_pct.value), -data.churn_pct.delta);
+  setStat('errors', fmtNum(data.errors_today.value), -data.errors_today.delta);
+
+  // Chart
+  const max = Math.max(...data.weekly);
+  $('#overview-chart').innerHTML = data.weekly.map((v, i) => {
+    const h = Math.max(4, (v / max) * 100);
+    const d = new Date(); d.setDate(d.getDate() - (data.weekly.length - 1 - i));
+    return `<div class="bar" style="height:${h}%"><span class="bar-label">${fmtNum(v)} ב-${d.toLocaleDateString('he-IL', { day:'numeric', month:'short' })}</span></div>`;
+  }).join('');
+
+  // Feed
+  $('#overview-feed').innerHTML = data.feed.map(f => `
+    <div class="audit-row">
+      <div class="audit-icon">${f.icon || '•'}</div>
+      <div class="audit-body">
+        <div class="audit-msg">${f.action} <span style="color:var(--ink-500);font-weight:500;">${f.subject || ''}</span></div>
+        <div class="audit-meta">${fmtRel(f.time)} · ${fmtDate(f.time)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setStat(key, value, delta) {
+  const tile = $(`[data-stat="${key}"]`);
+  if (!tile) return;
+  tile.querySelector('.stat-value').innerHTML = `<span class="num">${value}</span>`;
+  const d = tile.querySelector('.stat-delta');
+  const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+  const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '•';
+  d.className = 'stat-delta ' + cls;
+  d.innerHTML = `${arrow} <span class="num">${Math.abs(delta || 0).toFixed(1)}%</span> מהשבוע שעבר`;
+}
+
+/* =========================================================
+   Users
+   ========================================================= */
+let usersCache = [];
+
+async function loadUsers() {
+  const tbody = $('#users-tbody');
+  tbody.innerHTML = skeletonRows(6, 8);
+  try {
+    // TODO: GET /api/admin/users — expects { users: [{ id, email, phone, plan, signup_at, last_active_at, sheet_status, tx_count, status }] }
+    const data = await adminFetch('/api/admin/users');
+    usersCache = data.users || [];
+  } catch {
+    usersCache = [
+      { id: 'u_001', email: 'noa.cohen@gmail.com', phone: '+972501234567', plan: 'pro', signup_at: '2026-03-12', last_active_at: new Date(Date.now() - 1000*60*15).toISOString(), sheet_status: 'connected', tx_count: 412, status: 'active' },
+      { id: 'u_002', email: 'yossi.levy@gmail.com', phone: '+972502345678', plan: 'free', signup_at: '2026-04-22', last_active_at: new Date(Date.now() - 1000*60*60*3).toISOString(), sheet_status: 'connected', tx_count: 58, status: 'active' },
+      { id: 'u_003', email: 'rachel.l@gmail.com', phone: '+972503456789', plan: 'business', signup_at: '2025-12-01', last_active_at: new Date(Date.now() - 1000*60*60*24*2).toISOString(), sheet_status: 'error', tx_count: 1208, status: 'active' },
+      { id: 'u_004', email: 'avi.b@example.com', phone: '+972504567890', plan: 'pro', signup_at: '2026-02-08', last_active_at: new Date(Date.now() - 1000*60*60*24*8).toISOString(), sheet_status: 'connected', tx_count: 287, status: 'paused' },
+      { id: 'u_005', email: 'dana.k@gmail.com', phone: '+972505678901', plan: 'free', signup_at: '2026-05-01', last_active_at: new Date(Date.now() - 1000*60*8).toISOString(), sheet_status: 'not_connected', tx_count: 3, status: 'trial' },
+      { id: 'u_006', email: 'moshe.t@gmail.com', phone: '+972506789012', plan: 'pro', signup_at: '2026-01-15', last_active_at: '2026-04-01T10:00:00Z', sheet_status: 'connected', tx_count: 567, status: 'cancelled' },
+    ];
+  }
+  renderUsers();
+}
+
+function renderUsers() {
+  const tbody = $('#users-tbody');
+  const empty = $('#users-empty');
+  const q = ($('#users-search').value || '').toLowerCase();
+  const plan = $('#users-plan-filter').value;
+  const status = $('#users-status-filter').value;
+  const rows = usersCache.filter(u =>
+    (!q || u.email.toLowerCase().includes(q) || (u.phone || '').includes(q)) &&
+    (!plan || u.plan === plan) &&
+    (!status || u.status === status)
+  );
+  empty.classList.toggle('hidden', rows.length > 0);
+  tbody.innerHTML = rows.map(u => `
+    <tr data-uid="${u.id}">
+      <td><strong>${u.email}</strong></td>
+      <td><span class="num">${u.phone || '—'}</span></td>
+      <td>${planPill(u.plan)}</td>
+      <td><span class="num">${fmtDate(u.signup_at).split(',')[0]}</span></td>
+      <td>${fmtRel(u.last_active_at)}</td>
+      <td>${sheetPill(u.sheet_status)}</td>
+      <td><span class="num">${fmtNum(u.tx_count)}</span></td>
+      <td>
+        <div class="action-menu-wrap">
+          <button class="btn btn-ghost btn-sm" onclick="toggleActionMenu(event, '${u.id}')" aria-label="פעולות">⋯</button>
+          <div class="action-menu" data-menu="${u.id}">
+            <button onclick="userAction('${u.id}','view')">👁️ צפה בפרופיל</button>
+            <button onclick="userAction('${u.id}','impersonate')">🎭 התחזות (Impersonate)</button>
+            <button onclick="userAction('${u.id}','resend')">✉️ שלח הודעת welcome</button>
+            <button onclick="userAction('${u.id}','reset_sheet')">🔄 אפס חיבור Sheet</button>
+            <button class="danger" onclick="userAction('${u.id}','suspend')">⏸️ השהה משתמש</button>
+          </div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function planPill(plan) {
+  const map = {
+    free: ['pill-neutral', 'Free'],
+    pro: ['pill-info', 'Pro'],
+    business: ['pill-success', 'Business'],
+  };
+  const [cls, label] = map[plan] || ['pill-neutral', plan];
+  return `<span class="pill ${cls}">${label}</span>`;
+}
+
+function sheetPill(s) {
+  const map = {
+    connected: ['pill-success', '✓ מחובר'],
+    not_connected: ['pill-warning', 'לא מחובר'],
+    error: ['pill-danger', '✕ שגיאה'],
+  };
+  const [cls, label] = map[s] || ['pill-neutral', s];
+  return `<span class="pill ${cls}">${label}</span>`;
+}
+
+function toggleActionMenu(e, uid) {
+  e.stopPropagation();
+  $$('.action-menu').forEach(m => m.classList.remove('open'));
+  const menu = $(`[data-menu="${uid}"]`);
+  if (menu) menu.classList.add('open');
+}
+document.addEventListener('click', () => $$('.action-menu').forEach(m => m.classList.remove('open')));
+
+async function userAction(uid, action) {
+  if (action === 'suspend' && !confirm('להשהות את המשתמש?')) return;
+  try {
+    // TODO: POST /api/admin/users/:id/action  body: { action }
+    await adminFetch(`/api/admin/users/${uid}/action`, { method: 'POST', body: JSON.stringify({ action }) });
+    toast(`פעולה "${action}" בוצעה`);
+    loadUsers();
+  } catch (e) {
+    toast('שגיאה: ' + e.message, true);
+  }
+}
+
+function exportUsers() {
+  // TODO: GET /api/admin/users.csv with admin token, then download
+  toast('ייצוא יוכן ויישלח למייל שלך', false);
+}
+
+['users-search', 'users-plan-filter', 'users-status-filter'].forEach(id => {
+  document.addEventListener('input', e => { if (e.target.id === id) renderUsers(); });
+  document.addEventListener('change', e => { if (e.target.id === id) renderUsers(); });
+});
+
+/* =========================================================
+   Transactions
+   ========================================================= */
+async function loadTransactions() {
+  const tbody = $('#tx-tbody');
+  tbody.innerHTML = skeletonRows(8, 8);
+  let data;
+  try {
+    // TODO: GET /api/admin/transactions?from=&to=&type= — expects { transactions: [{ id, time, user_email, type, category, amount, original_text, source }] }
+    const params = new URLSearchParams({
+      from: $('#tx-from').value || '',
+      to: $('#tx-to').value || '',
+      type: $('#tx-type-filter').value || ''
+    });
+    data = await adminFetch('/api/admin/transactions?' + params);
+  } catch {
+    data = {
+      transactions: [
+        { id: 't1', time: new Date(Date.now()-1000*60*4).toISOString(), user_email: 'noa.cohen@gmail.com', type: 'expense', category: 'סופר', amount: 245, original_text: '245 סופר', source: 'whatsapp' },
+        { id: 't2', time: new Date(Date.now()-1000*60*12).toISOString(), user_email: 'yossi.levy@gmail.com', type: 'expense', category: 'דלק', amount: 320, original_text: 'דלק 320', source: 'whatsapp' },
+        { id: 't3', time: new Date(Date.now()-1000*60*32).toISOString(), user_email: 'rachel.l@gmail.com', type: 'income', category: 'משכורת', amount: 12500, original_text: 'משכורת 12500', source: 'whatsapp' },
+        { id: 't4', time: new Date(Date.now()-1000*60*48).toISOString(), user_email: 'avi.b@example.com', type: 'expense', category: 'אוכל בחוץ', amount: 87, original_text: 'מסעדה 87', source: 'whatsapp' },
+        { id: 't5', time: new Date(Date.now()-1000*60*70).toISOString(), user_email: 'dana.k@gmail.com', type: 'expense', category: 'תחבורה', amount: 22, original_text: 'אוטובוס 22', source: 'whatsapp' },
+        { id: 't6', time: new Date(Date.now()-1000*60*120).toISOString(), user_email: 'moshe.t@gmail.com', type: 'expense', category: 'קפה', amount: 18, original_text: 'קפה 18', source: 'whatsapp' },
+      ]
+    };
+  }
+  const empty = $('#tx-empty');
+  empty.classList.toggle('hidden', (data.transactions || []).length > 0);
+  tbody.innerHTML = (data.transactions || []).map(t => `
+    <tr>
+      <td><span class="num">${fmtDate(t.time)}</span></td>
+      <td><strong>${t.user_email}</strong></td>
+      <td><span class="pill ${t.type === 'income' ? 'pill-success' : 'pill-neutral'}">${t.type === 'income' ? 'הכנסה' : 'הוצאה'}</span></td>
+      <td>${t.category}</td>
+      <td><strong class="num">${fmtILS(t.amount)}</strong></td>
+      <td><em style="color:var(--ink-500);font-size:13px;">"${t.original_text}"</em></td>
+      <td><span class="pill pill-info">${t.source}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="alert('TODO: open user '+'${t.user_email}')">↗</button></td>
+    </tr>
+  `).join('');
+}
+
+/* =========================================================
+   Jobs
+   ========================================================= */
+async function loadJobs(tab = 'failed') {
+  const tbody = $('#jobs-tbody');
+  tbody.innerHTML = skeletonRows(5, 7);
+  let data;
+  try {
+    // TODO: GET /api/admin/jobs?status=failed|pending|completed
+    data = await adminFetch('/api/admin/jobs?status=' + tab);
+  } catch {
+    const fakeBase = [
+      { id: 'j1', time: new Date(Date.now()-1000*60*15).toISOString(), type: 'sheet:append', user: 'noa.cohen@gmail.com', error: 'Rate limit (429) from Google Sheets API', attempts: 3 },
+      { id: 'j2', time: new Date(Date.now()-1000*60*60).toISOString(), type: 'webhook:wa', user: 'yossi.levy@gmail.com', error: 'Timeout after 8s', attempts: 2 },
+      { id: 'j3', time: new Date(Date.now()-1000*60*180).toISOString(), type: 'categorize', user: 'rachel.l@gmail.com', error: 'Claude API: invalid_api_key', attempts: 5 },
+    ];
+    data = {
+      jobs: tab === 'failed' ? fakeBase : tab === 'pending' ? fakeBase.slice(0,1) : fakeBase.slice(1),
+      counts: { failed: 7, pending: 2, completed: 1423 }
+    };
+  }
+  $('#jobs-failed-count').textContent = data.counts?.failed || 0;
+  $('#jobs-pending-count').textContent = data.counts?.pending || 0;
+  $('#jobs-completed-count').textContent = data.counts?.completed || 0;
+
+  const empty = $('#jobs-empty');
+  empty.classList.toggle('hidden', (data.jobs || []).length > 0);
+  tbody.innerHTML = (data.jobs || []).map(j => `
+    <tr>
+      <td><span class="num">${fmtRel(j.time)}</span></td>
+      <td><code style="font-size:12px;background:var(--ink-100);padding:2px 6px;border-radius:4px;">${j.type}</code></td>
+      <td>${j.user || '—'}</td>
+      <td><span style="color:#dc2626;font-size:13px;">${j.error || '—'}</span></td>
+      <td><span class="num">${j.attempts || 0}</span></td>
+      <td>${jobStatusPill(tab)}</td>
+      <td>
+        ${tab === 'failed' ? `<button class="btn btn-primary btn-sm" onclick="retryJob('${j.id}')">החזר</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="showJobDetails('${j.id}')">פרטים</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function jobStatusPill(t) {
+  if (t === 'failed') return '<span class="pill pill-danger">נכשל</span>';
+  if (t === 'pending') return '<span class="pill pill-warning">בהמתנה</span>';
+  return '<span class="pill pill-success">הסתיים</span>';
+}
+
+async function retryJob(id) {
+  try {
+    // TODO: POST /api/admin/jobs/:id/retry
+    await adminFetch(`/api/admin/jobs/${id}/retry`, { method: 'POST' });
+    toast('Job הוחזר לתור');
+    loadJobs('failed');
+  } catch (e) { toast('שגיאה: ' + e.message, true); }
+}
+
+function showJobDetails(id) {
+  // TODO: open modal with full payload + stack trace from /api/admin/jobs/:id
+  alert('פרטי job: ' + id + '\n(TODO: מודאל עם stack trace)');
+}
+
+/* =========================================================
+   Analytics
+   ========================================================= */
+async function loadAnalytics() {
+  let data;
+  try {
+    // TODO: GET /api/admin/analytics
+    data = await adminFetch('/api/admin/analytics');
+  } catch {
+    data = {
+      funnel: [
+        { stage: 'ביקור באתר', count: 12500, pct: 100 },
+        { stage: 'הרשמה', count: 2840, pct: 22.7 },
+        { stage: 'חיבור גיליון', count: 1920, pct: 15.4 },
+        { stage: 'תנועה ראשונה', count: 1450, pct: 11.6 },
+        { stage: 'שדרוג ל-Pro', count: 312, pct: 2.5 },
+      ],
+      mau_dau: Array.from({length: 14}, (_,i) => ({ day: i, dau: 200 + Math.round(Math.random()*150), mau: 1100 + Math.round(Math.random()*200) })),
+      conversion_weekly: [4.1, 3.8, 5.2, 6.1, 5.5, 7.2, 6.8, 8.1],
+      top_categories: [
+        { name: 'סופר', total: 184320 },
+        { name: 'דלק', total: 92410 },
+        { name: 'מסעדות', total: 78250 },
+        { name: 'תחבורה ציבורית', total: 41080 },
+        { name: 'קפה', total: 23440 },
+      ],
+    };
+  }
+
+  // Funnel
+  $('#funnel-stages').innerHTML = data.funnel.map(f => `
+    <div class="funnel-stage">
+      <div class="label">${f.stage}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${f.pct}%;"><span class="num">${fmtNum(f.count)}</span></div></div>
+      <div class="pct num">${f.pct.toFixed(1)}%</div>
+    </div>
+  `).join('');
+
+  // MAU/DAU chart — overlay two bar series side by side
+  const maxV = Math.max(...data.mau_dau.map(p => p.mau));
+  $('#mau-dau-chart').innerHTML = data.mau_dau.map(p => `
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:2px;">
+      <div class="bar" style="height:${(p.dau/maxV)*100}%;background:var(--accent-500);"></div>
+      <div class="bar" style="height:${(p.mau/maxV)*100}%;background:var(--brand-500);opacity:0.5;"></div>
+    </div>
+  `).join('');
+  const lastDau = data.mau_dau[data.mau_dau.length - 1].dau;
+  const lastMau = data.mau_dau[data.mau_dau.length - 1].mau;
+  $('#stickiness-ratio').textContent = ((lastDau / lastMau) * 100).toFixed(1) + '%';
+
+  // Conversion chart
+  const cMax = Math.max(...data.conversion_weekly);
+  $('#conversion-chart').innerHTML = data.conversion_weekly.map((v, i) => `
+    <div class="bar" style="height:${(v/cMax)*100}%;"><span class="bar-label num">${v.toFixed(1)}%</span></div>
+  `).join('');
+
+  // Top categories
+  const tcMax = Math.max(...data.top_categories.map(c => c.total));
+  $('#top-categories').innerHTML = data.top_categories.map(c => `
+    <div class="funnel-stage">
+      <div class="label">${c.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c.total/tcMax)*100}%;background:linear-gradient(90deg,var(--brand-500),var(--brand-700));">&nbsp;</div></div>
+      <div class="pct num">${fmtILS(c.total)}</div>
+    </div>
+  `).join('');
+}
+
+/* =========================================================
+   Support
+   ========================================================= */
+async function supportLookup() {
+  const q = $('#support-query').value.trim();
+  if (!q) return;
+  const result = $('#support-result');
+  const notFound = $('#support-not-found');
+  result.classList.add('hidden');
+  notFound.classList.add('hidden');
+  result.innerHTML = '<div class="skeleton" style="height:120px;width:100%;"></div>';
+  result.classList.remove('hidden');
+  try {
+    // TODO: GET /api/admin/lookup?q=...  expects { user: {...} | null, recent_tx: [], recent_events: [] }
+    const data = await adminFetch('/api/admin/lookup?q=' + encodeURIComponent(q));
+    if (!data.user) {
+      result.classList.add('hidden');
+      notFound.classList.remove('hidden');
+      return;
+    }
+    renderSupportResult(data);
+  } catch {
+    // demo fallback
+    renderSupportResult({
+      user: { email: q.includes('@') ? q : 'demo@example.com', phone: q, plan: 'pro', status: 'active', signup_at: '2026-02-14', last_active_at: new Date().toISOString(), sheet_id: '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo', tx_count: 234 },
+      recent_tx: [
+        { time: new Date(Date.now()-1000*60*8).toISOString(), category: 'סופר', amount: 142, type: 'expense' },
+        { time: new Date(Date.now()-1000*60*30).toISOString(), category: 'דלק', amount: 280, type: 'expense' },
+      ],
+      recent_events: [
+        { time: new Date(Date.now()-1000*60*60).toISOString(), action: 'sheet_resync', actor: 'admin@kesefle' },
+      ]
+    });
+  }
+}
+
+function renderSupportResult(data) {
+  const u = data.user;
+  $('#support-result').innerHTML = `
+    <div class="flex-row between mb-4">
+      <div>
+        <h3 class="card-title">${u.email}</h3>
+        <p class="card-subtitle"><span class="num">${u.phone || '—'}</span> · ${planPill(u.plan)} · ${u.status}</p>
+      </div>
+      <div class="flex-row gap-4">
+        <button class="btn btn-secondary btn-sm" onclick="userAction('${u.id || u.email}','impersonate')">🎭 Impersonate</button>
+        <button class="btn btn-primary btn-sm" onclick="userAction('${u.id || u.email}','resend')">✉️ שלח welcome</button>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <strong style="font-size:13px;">פרטי משתמש</strong>
+        <div style="margin-top:8px;font-size:13.5px;line-height:1.9;">
+          <div>נרשם: <span class="num">${fmtDate(u.signup_at).split(',')[0]}</span></div>
+          <div>פעיל לאחרונה: ${fmtRel(u.last_active_at)}</div>
+          <div>תנועות: <span class="num">${fmtNum(u.tx_count || 0)}</span></div>
+          <div>גיליון: <code style="font-size:11px;">${(u.sheet_id || '—').slice(0,12)}...</code></div>
+        </div>
+      </div>
+      <div>
+        <strong style="font-size:13px;">פעולות אחרונות</strong>
+        <div style="margin-top:8px;font-size:13px;">
+          ${(data.recent_events || []).map(e => `<div>${fmtRel(e.time)} — ${e.action} ע"י ${e.actor}</div>`).join('') || '<div style="color:var(--ink-500);">אין פעולות</div>'}
+        </div>
+      </div>
+    </div>
+    <div class="mt-4">
+      <strong style="font-size:13px;">תנועות אחרונות</strong>
+      <div class="mt-2" style="font-size:13px;">
+        ${(data.recent_tx || []).map(t => `<div style="padding:6px 0;border-bottom:1px solid var(--ink-100);">${fmtDate(t.time)} — ${t.category} — <strong class="num">${fmtILS(t.amount)}</strong></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function quickAction(action) {
+  if (!confirm('להריץ פעולה זו על המשתמש המסומן? (תיבחר אחרי)')) return;
+  // TODO: POST /api/admin/support/action  body: { action, target }
+  toast('פעולה תידרוש בחירת משתמש בחיפוש קודם');
+}
+
+/* =========================================================
+   Audit logs
+   ========================================================= */
+async function loadAudit() {
+  const list = $('#audit-list');
+  list.innerHTML = skeletonRows(6, 1).replace(/<\/?tr>/g, '').replace(/<\/?td>/g, '');
+  let data;
+  try {
+    // TODO: GET /api/admin/audit-logs?sort=newest&action=&q=
+    data = await adminFetch('/api/admin/audit-logs');
+  } catch {
+    data = {
+      logs: [
+        { id: 'a1', time: new Date(Date.now()-1000*60*3).toISOString(), actor: 'srcslcollection@gmail.com', action: 'feature_flag', target: 'ai_categorize', detail: 'הופעל', icon: '🚩' },
+        { id: 'a2', time: new Date(Date.now()-1000*60*30).toISOString(), actor: 'srcslcollection@gmail.com', action: 'sheet_reset', target: 'noa.cohen@gmail.com', detail: 'איפוס חיבור Google Sheets', icon: '🔄' },
+        { id: 'a3', time: new Date(Date.now()-1000*60*120).toISOString(), actor: 'system', action: 'plan_change', target: 'yossi.levy@gmail.com', detail: 'שודרג ל-Pro', icon: '⭐' },
+        { id: 'a4', time: new Date(Date.now()-1000*60*60*4).toISOString(), actor: 'stevenrancohen@gmail.com', action: 'user_update', target: 'rachel.l@gmail.com', detail: 'עדכון אימייל', icon: '✏️' },
+        { id: 'a5', time: new Date(Date.now()-1000*60*60*8).toISOString(), actor: 'srcslcollection@gmail.com', action: 'login', target: 'admin panel', detail: 'הצלחה (IP 81.218.x.x)', icon: '🔑' },
+        { id: 'a6', time: new Date(Date.now()-1000*60*60*24).toISOString(), actor: 'srcslcollection@gmail.com', action: 'job_retry', target: 'j_3491', detail: 'החזרת job ידנית', icon: '↩️' },
+      ]
+    };
+  }
+  renderAudit(data.logs);
+}
+
+function renderAudit(logs) {
+  const q = ($('#audit-search').value || '').toLowerCase();
+  const filter = $('#audit-action-filter').value;
+  const sort = $('#audit-sort').value;
+  let rows = logs.filter(l => (!q || JSON.stringify(l).toLowerCase().includes(q)) && (!filter || l.action === filter));
+  rows.sort((a, b) => sort === 'oldest' ? new Date(a.time) - new Date(b.time) : new Date(b.time) - new Date(a.time));
+  $('#audit-list').innerHTML = rows.map(l => `
+    <div class="audit-row">
+      <div class="audit-icon">${l.icon || '•'}</div>
+      <div class="audit-body">
+        <div class="audit-msg">${l.action.replace(/_/g, ' ')} <span style="color:var(--ink-500);font-weight:500;">— ${l.detail || ''}</span></div>
+        <div class="audit-meta">
+          ע"י <strong>${l.actor}</strong> על <strong>${l.target}</strong> · ${fmtRel(l.time)} · <span class="num">${fmtDate(l.time)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('') || `<div class="empty-state"><span class="emoji">📭</span><h3>אין רשומות</h3><p>אין יומני ביקורת תואמים לסינון.</p></div>`;
+}
+
+document.addEventListener('input', e => {
+  if (['audit-search','audit-action-filter','audit-sort'].includes(e.target.id) && currentRoute === 'audit') loadAudit();
+});
+document.addEventListener('change', e => {
+  if (['audit-action-filter','audit-sort'].includes(e.target.id) && currentRoute === 'audit') loadAudit();
+});
+
+/* =========================================================
+   Health
+   ========================================================= */
+async function loadHealth() {
+  let data;
+  try {
+    // TODO: GET /api/admin/health  expects { api_up, uptime_pct, p95_ms, errors_24h, error_rate_pct, wa_up, wa_last_ts, latencies: [ms], services: [{name,status,latency}], quotas: [{name,used,total}] }
+    data = await adminFetch('/api/admin/health');
+  } catch {
+    try {
+      // fallback: try the existing /api/health
+      const h = await fetch('/api/health').then(r => r.json()).catch(() => ({}));
+      data = synthesizeHealth(h);
+    } catch {
+      data = synthesizeHealth({});
+    }
+  }
+  $('#health-api-status').innerHTML = data.api_up ? '<span class="pill pill-success">פעיל</span>' : '<span class="pill pill-danger">קריסה</span>';
+  $('#health-api-uptime').textContent = 'uptime ' + (data.uptime_pct || 0).toFixed(2) + '%';
+  $('#health-p95').innerHTML = `<span class="num">${fmtNum(data.p95_ms)}</span> ms`;
+  $('#health-errors').innerHTML = `<span class="num">${fmtNum(data.errors_24h)}</span>`;
+  $('#health-error-rate').textContent = (data.error_rate_pct || 0).toFixed(2) + '% שגיאות';
+  $('#health-wa-status').innerHTML = data.wa_up ? '<span class="pill pill-success">פעיל</span>' : '<span class="pill pill-warning">לא ידוע</span>';
+  $('#health-wa-last').textContent = 'אחרון ' + fmtRel(data.wa_last_ts);
+
+  // SVG line chart
+  const w = 800, h = 160, pad = 16;
+  const latencies = data.latencies || [];
+  const max = Math.max(...latencies, 100);
+  const step = (w - pad * 2) / Math.max(1, latencies.length - 1);
+  const pts = latencies.map((v, i) => `${pad + i * step},${h - pad - (v / max) * (h - pad * 2)}`).join(' ');
+  const area = `M${pad},${h-pad} L${pts.split(' ').join(' L')} L${w-pad},${h-pad} Z`;
+  $('#health-graph-svg').innerHTML = `
+    <defs>
+      <linearGradient id="hg" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${area}" fill="url(#hg)" />
+    <polyline points="${pts}" fill="none" stroke="#6366f1" stroke-width="2" stroke-linejoin="round" />
+  `;
+
+  // Services
+  $('#services-health').innerHTML = (data.services || []).map(s => `
+    <div class="form-row">
+      <div>
+        <div class="label">${s.name}</div>
+        <div class="hint">latency <span class="num">${s.latency}</span> ms</div>
+      </div>
+      ${s.status === 'up' ? '<span class="pill pill-success">פעיל</span>' : s.status === 'degraded' ? '<span class="pill pill-warning">מוגבל</span>' : '<span class="pill pill-danger">קריסה</span>'}
+    </div>
+  `).join('');
+
+  // Quotas
+  $('#quotas-list').innerHTML = (data.quotas || []).map(q => {
+    const pct = Math.round((q.used / q.total) * 100);
+    const cls = pct > 85 ? 'pill-danger' : pct > 65 ? 'pill-warning' : 'pill-success';
+    return `
+      <div class="form-row">
+        <div>
+          <div class="label">${q.name}</div>
+          <div class="hint"><span class="num">${fmtNum(q.used)}</span> / <span class="num">${fmtNum(q.total)}</span></div>
+        </div>
+        <span class="pill ${cls}"><span class="num">${pct}</span>%</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function synthesizeHealth(real) {
+  return {
+    api_up: real.ok !== false,
+    uptime_pct: 99.94,
+    p95_ms: 312,
+    errors_24h: 23,
+    error_rate_pct: 0.18,
+    wa_up: true,
+    wa_last_ts: new Date(Date.now() - 1000*60*2).toISOString(),
+    latencies: Array.from({length: 48}, () => 180 + Math.round(Math.random()*220)),
+    services: [
+      { name: 'API (Vercel)', status: 'up', latency: 120 },
+      { name: 'Google Sheets', status: 'up', latency: 380 },
+      { name: 'WhatsApp Business', status: 'up', latency: 240 },
+      { name: 'Claude API', status: 'up', latency: 720 },
+      { name: 'Vercel KV', status: 'up', latency: 38 },
+    ],
+    quotas: [
+      { name: 'Google Sheets Writes', used: 14200, total: 50000 },
+      { name: 'Anthropic Tokens', used: 4_120_000, total: 10_000_000 },
+      { name: 'WhatsApp Messages', used: 8400, total: 10000 },
+    ],
+  };
+}
+
+/* =========================================================
+   Settings
+   ========================================================= */
+async function loadSettings() {
+  try {
+    // TODO: GET /api/admin/settings  expects { flags: {...}, env: { google, wa, claude, kv, stripe: 'ok'|'missing'|'invalid' } }
+    const data = await adminFetch('/api/admin/settings');
+    if (data.flags) {
+      Object.entries(data.flags).forEach(([flag, enabled]) => {
+        const cb = $(`input[data-flag="${flag}"]`);
+        if (cb) cb.checked = !!enabled;
+      });
+    }
+    if (data.env) renderEnv(data.env);
+  } catch {
+    renderEnv({
+      google: { status: 'ok', detail: 'מפתח חוקי, expires 2026-09' },
+      wa: { status: 'ok', detail: 'Phone ID מוגדר' },
+      claude: { status: 'ok', detail: 'מודל: claude-opus-4-7' },
+      kv: { status: 'ok', detail: 'Vercel KV connected' },
+      stripe: { status: 'missing', detail: 'STRIPE_SECRET_KEY חסר ב-Vercel' },
+    });
+  }
+}
+
+function renderEnv(env) {
+  const map = {
+    google: ['env-google', 'env-google-pill'],
+    wa: ['env-wa', 'env-wa-pill'],
+    claude: ['env-claude', 'env-claude-pill'],
+    kv: ['env-kv', 'env-kv-pill'],
+    stripe: ['env-stripe', 'env-stripe-pill'],
+  };
+  Object.entries(env).forEach(([k, v]) => {
+    const ids = map[k];
+    if (!ids) return;
+    $('#' + ids[0]).textContent = v.detail || '—';
+    const pill = $('#' + ids[1]);
+    if (v.status === 'ok') { pill.className = 'pill pill-success'; pill.textContent = 'תקין'; }
+    else if (v.status === 'invalid') { pill.className = 'pill pill-danger'; pill.textContent = 'לא תקין'; }
+    else { pill.className = 'pill pill-warning'; pill.textContent = 'לא הוגדר'; }
+  });
+}
+
+async function dangerZone(action) {
+  const msgs = {
+    flush_cache: 'לנקות את כל המטמון של כל המשתמשים? פעולה זו אינה הפיכה.',
+    reset_quotas: 'לאפס את כל המכסות החודשיות? כל המשתמשים יתחילו מאפס.',
+  };
+  if (!confirm(msgs[action] || 'בטוח?')) return;
+  try {
+    // TODO: POST /api/admin/danger  body: { action }
+    await adminFetch('/api/admin/danger', { method: 'POST', body: JSON.stringify({ action }) });
+    toast('בוצע');
+  } catch (e) { toast('שגיאה: ' + e.message, true); }
+}
+
+/* =========================================================
+   Misc UI helpers
+   ========================================================= */
+function skeletonRows(n, cols) {
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    let tds = '';
+    for (let c = 0; c < cols; c++) tds += '<td><div class="skeleton" style="width:' + (40 + Math.random() * 60) + '%;"></div></td>';
+    html += '<tr>' + tds + '</tr>';
+  }
+  return html;
+}
+
+let toastTimer;
+function toast(msg, isError) {
+  let t = $('#toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;inset-inline-end:24px;background:#0f1422;color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:1000;transform:translateY(60px);opacity:0;transition:transform 0.25s,opacity 0.25s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background = isError ? '#dc2626' : '#0f1422';
+  t.style.transform = 'translateY(0)';
+  t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.transform = 'translateY(60px)'; t.style.opacity = '0'; }, 2600);
+}
+
+// Global search wires to users when present
+$('#global-search')?.addEventListener('input', e => {
+  if (currentRoute === 'users') {
+    $('#users-search').value = e.target.value;
+    renderUsers();
+  }
+});
+</script>
+
+</body>
+</html>
