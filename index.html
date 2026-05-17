@@ -37,7 +37,7 @@
   "inLanguage": "he-IL",
   "offers": [
     { "@type": "Offer", "name": "חינם", "price": "0", "priceCurrency": "ILS" },
-    { "@type": "Offer", "name": "Pro", "priceCurrency": "ILS" },
+    { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "ILS" },
     { "@type": "Offer", "name": "משפחה", "price": "39", "priceCurrency": "ILS" }
   ],
   "publisher": {
@@ -291,7 +291,7 @@
         <span><span class="text-brand-400">▸</span> זמן תגובה ממוצע: <span class="num">187</span>ms</span>
       </div>
     </div>
-    <a href="/admin" class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-brand-400 hover:text-brand-300">לוח בקרה ←</a>
+    <a href="/dashboard" class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-brand-400 hover:text-brand-300">לוח בקרה ←</a>
   </div>
 </div>
 
@@ -1298,11 +1298,15 @@
   }
 
   function botBubble(emoji, amount, sub, time) {
+    var isIncome = String(sub).indexOf('משכורת') >= 0 || String(sub).indexOf('הכנסה') >= 0;
+    var sign = isIncome ? '+' : '';
+    var color = isIncome ? 'text-emerald-600' : 'text-ink-900';
     return '<div class="bubble flex justify-start">' +
-      '<div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">' +
-      '✅ נרשם: <span class="num">₪' + amount + '</span><br>' +
+      '<div class="max-w-[85%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">' +
+      '✅ נרשם: <span class="num font-bold ' + color + '">' + sign + '₪' + amount + '</span><br>' +
       '<span class="text-ink-500 text-[12px]">' + emoji + ' ' + escapeText(sub) + '</span>' +
-      '<div class="mt-1 text-left text-[10px] text-ink-400">' + time + '</div>' +
+      '<div class="mt-1 flex items-center gap-1 text-[10px] text-emerald-600 font-semibold"><svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>נשמר ב-Google Sheets</div>' +
+      '<div class="mt-0.5 text-left text-[10px] text-ink-400">' + time + ' · AI סיווג ב-200ms</div>' +
       '</div></div>';
   }
 
@@ -1331,6 +1335,30 @@
     if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   };
 
+  // Quick-fix category chips for ambiguous inputs (e.g. "120 שופ" → buttons)
+  function quickFixBubble(amount, time) {
+    return '<div class="bubble flex justify-start">' +
+      '<div class="max-w-[85%] rounded-2xl rounded-tr-md bg-amber-50 px-3.5 py-2 text-[13px] text-ink-900 shadow-sm border border-amber-200">' +
+      '<div class="font-semibold">🤔 לא זיהיתי בדיוק — לחץ קטגוריה:</div>' +
+      '<div class="mt-1.5 flex flex-wrap gap-1">' +
+      '<button onclick="kfQuickFix(this,&quot;ביגוד&quot;,&quot;' + amount + '&quot;,&quot;👕&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">👕 ביגוד</button>' +
+      '<button onclick="kfQuickFix(this,&quot;קניות&quot;,&quot;' + amount + '&quot;,&quot;🛍️&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">🛍️ קניות</button>' +
+      '<button onclick="kfQuickFix(this,&quot;מסעדה&quot;,&quot;' + amount + '&quot;,&quot;🍔&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">🍔 מסעדה</button>' +
+      '<button onclick="kfQuickFix(this,&quot;שונות&quot;,&quot;' + amount + '&quot;,&quot;📝&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">📝 אחר</button>' +
+      '</div>' +
+      '<div class="mt-1 text-left text-[10px] text-ink-400">' + time + '</div>' +
+      '</div></div>';
+  }
+
+  window.kfQuickFix = function(btn, cat, amount, emoji) {
+    var chat = document.getElementById('hero-chat');
+    var bubble = btn.closest('.bubble');
+    if (bubble) bubble.remove();
+    chat.insertAdjacentHTML('beforeend', botBubble(emoji, amount, cat, nowHHMM()));
+    chat.scrollTop = chat.scrollHeight;
+    if (window.kfl) window.kfl.track('hero_demo_quickfix', { cat: cat });
+  };
+
   // Expose the form-submit handler globally
   window.kfHeroSend = function(e) {
     if (e && e.preventDefault) e.preventDefault();
@@ -1357,7 +1385,12 @@
           '<div class="bubble flex justify-start"><div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">לא זיהיתי סכום 🤔 נסי: <b>245 סופר</b><div class="mt-1 text-left text-[10px] text-ink-400">' + time + '</div></div></div>');
       } else {
         var cat = categorize(parsed.desc);
-        chat.insertAdjacentHTML('beforeend', botBubble(cat.emoji, parsed.amount, cat.sub, time));
+        // If categorizer fell through to "שונות", offer quick-fix buttons (autonomy demo)
+        if (cat.cat === 'שונות' && parsed.desc !== 'ללא פירוט') {
+          chat.insertAdjacentHTML('beforeend', quickFixBubble(parsed.amount, time));
+        } else {
+          chat.insertAdjacentHTML('beforeend', botBubble(cat.emoji, parsed.amount, cat.sub, time));
+        }
       }
       chat.scrollTop = chat.scrollHeight;
       if (window.kfl) window.kfl.track('hero_demo_sent', { len: text.length });

@@ -166,21 +166,75 @@
           <li class="flex items-start gap-3" id="step-3">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
             <div class="flex-1">
-              <div class="font-bold">חבר את הוואטסאפ שלך</div>
-              <div class="text-sm text-slate-600 mb-2">שלח לבוט הודעה כמו <span class="font-mono font-semibold">"<span class="num">245</span> סופר"</span> — נדע שהחיבור עבד.</div>
-              <div class="flex flex-wrap items-center gap-2">
-                <a href="https://wa.me/17745448053?text=%D7%94%D7%99%21%20%D7%90%D7%A0%D7%99%20%D7%A8%D7%95%D7%A6%D7%94%20%D7%9C%D7%94%D7%AA%D7%97%D7%99%D7%9C%20%D7%9C%D7%A2%D7%A7%D7%95%D7%91%20%D7%90%D7%97%D7%A8%D7%99%20%D7%94%D7%94%D7%95%D7%A6%D7%90%D7%95%D7%AA" target="_blank" rel="noopener" id="btn-whatsapp" onclick="kesefleStartWaitingForMsg()" class="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white hover:opacity-90">
-                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
-                  פתח וואטסאפ
-                </a>
-                <!-- "Waiting for message" pulsing indicator -->
-                <div id="whatsapp-waiting" class="hidden inline-flex items-center gap-2 rounded-xl border border-[#25D366]/40 bg-[#25D366]/10 px-3 py-2 text-xs font-semibold text-emerald-800">
-                  <span class="flex gap-1">
-                    <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-[#25D366]"></span>
-                    <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-[#25D366]"></span>
-                    <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-[#25D366]"></span>
-                  </span>
-                  ממתין להודעה הראשונה שלך…
+              <div class="font-bold">חבר/י את מספר הוואטסאפ שלך</div>
+              <div class="text-sm text-slate-600 mb-3">הזיני את מספר הוואטסאפ שלך, ושלחי קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אלייך.</div>
+
+              <!-- Sub-state A: not yet linked — show phone input + Generate Code button -->
+              <div id="link-state-input">
+                <div class="flex flex-wrap items-center gap-2">
+                  <input
+                    id="link-phone-input"
+                    type="tel"
+                    inputmode="tel"
+                    autocomplete="tel"
+                    placeholder="054-123-4567"
+                    dir="ltr"
+                    class="flex-1 min-w-[180px] rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-800 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    onclick="kesefleLinkRequestCode()"
+                    id="link-gen-btn"
+                    class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+                    צרי קוד חיבור
+                  </button>
+                </div>
+                <div id="link-error" class="mt-2 hidden text-xs text-red-600"></div>
+              </div>
+
+              <!-- Sub-state B: code issued — show code + WhatsApp deeplink -->
+              <div id="link-state-code" class="hidden">
+                <div class="rounded-2xl border-2 border-brand-300 bg-brand-50 p-4 dark:border-brand-500/40 dark:bg-brand-500/10">
+                  <div class="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300">קוד החיבור שלך:</div>
+                  <div id="link-code-display" class="mt-1.5 font-mono text-3xl font-black tracking-[0.2em] text-ink-900 dark:text-white">000000</div>
+                  <div class="mt-1 text-[11px] text-ink-500 dark:text-ink-400">תקף ל-<span id="link-code-ttl">10:00</span> דקות</div>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <a
+                    id="link-wa-deeplink"
+                    href="#"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white hover:opacity-90"
+                  >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
+                    פתחי וואטסאפ ושלחי "קוד <span id="link-code-inline">000000</span>"
+                  </a>
+                  <div class="inline-flex items-center gap-2 rounded-xl border border-brand-400/40 bg-brand-50/50 px-3 py-2 text-xs font-semibold text-brand-800 dark:bg-brand-500/10 dark:text-brand-300">
+                    <span class="flex gap-1">
+                      <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                      <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                      <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                    </span>
+                    ממתינה לקוד מהוואטסאפ…
+                  </div>
+                </div>
+                <div class="mt-2 text-[11px] text-ink-500 dark:text-ink-400">
+                  אם הקוד לא עובר, <button type="button" onclick="kesefleLinkResetState()" class="underline hover:text-ink-800 dark:hover:text-ink-200">נסי קוד חדש</button>
+                </div>
+              </div>
+
+              <!-- Sub-state C: linked successfully -->
+              <div id="link-state-success" class="hidden rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-500/40 dark:bg-emerald-500/10">
+                <div class="flex items-start gap-3">
+                  <div class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-white">✓</div>
+                  <div>
+                    <div class="font-bold text-emerald-900 dark:text-emerald-200">החיבור הושלם!</div>
+                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. אפשר לשלוח הוצאות לבוט.</div>
+                    <a href="/welcome" class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">המשיכי למסך הפתיחה ←</a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -300,30 +354,208 @@ function kesefleCelebrate() {
   }
 }
 
-// Called from WhatsApp CTA — start the polling indicator
+// Called from WhatsApp CTA — start the polling indicator (legacy, kept for older callers)
 function kesefleStartWaitingForMsg() {
-  var ind = document.getElementById('whatsapp-waiting');
-  if (ind) ind.classList.remove('hidden');
-  // In production: poll /api/whatsapp/linked. For now: simulate with 12s timeout
-  // and mark linked when the user returns to the tab (very common after wa.me).
-  var marked = false;
-  function markLinked() {
-    if (marked) return; marked = true;
-    localStorage.setItem('kesefle_whatsapp_linked', '1');
-    if (ind) {
-      ind.classList.remove('bg-[#25D366]/10', 'border-[#25D366]/40', 'text-emerald-800');
-      ind.classList.add('border-emerald-300', 'bg-emerald-50', 'text-emerald-700');
-      ind.innerHTML = '<span class="text-emerald-600">✓</span> ההודעה התקבלה!';
-    }
-    kesefleUpdateOnboardingProgress();
-  }
-  // Mark on tab focus return (user came back from WhatsApp)
-  var onFocus = function() {
-    setTimeout(markLinked, 1500);
-    window.removeEventListener('focus', onFocus);
-  };
-  window.addEventListener('focus', onFocus);
+  // No-op — superseded by the proper link-code flow below. Old buttons removed.
 }
+
+// ============================================================
+// 📞 PHONE LINKING FLOW (Step 3 — multi-tenant onboarding)
+// ============================================================
+// State machine:
+//   input   → user enters phone, clicks "Generate code"
+//   code    → 6-digit code displayed, polls /api/whatsapp/link?phone= every 4s
+//   success → confirmed linked, shows confirmation + link to /welcome
+
+var KESEFLE_BOT_NUMBER = '17745448053'; // Numero US, registered with Meta 2026-05-18
+var kflLinkPollTimer = null;
+var kflLinkTtlTimer = null;
+var kflLinkPhone = null;
+var kflLinkCode = null;
+
+function _kflNormalizeIsraelPhone(input) {
+  if (!input) return null;
+  var s = String(input).replace(/\D+/g, '');
+  if (!s) return null;
+  // 0xx... → 972xx...
+  if (s.charAt(0) === '0') s = '972' + s.slice(1);
+  // 5x... → 9725x... (user typed without leading 0)
+  if (s.length === 9 && s.charAt(0) === '5') s = '972' + s;
+  if (s.length < 9 || s.length > 15) return null;
+  return s;
+}
+
+function _kflShowLinkError(msg) {
+  var el = document.getElementById('link-error');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(function() { el.classList.add('hidden'); }, 5000);
+}
+
+function _kflSetLinkState(state) {
+  ['input', 'code', 'success'].forEach(function(s) {
+    var el = document.getElementById('link-state-' + s);
+    if (el) {
+      if (s === state) el.classList.remove('hidden');
+      else el.classList.add('hidden');
+    }
+  });
+}
+
+async function kesefleLinkRequestCode() {
+  var input = document.getElementById('link-phone-input');
+  var btn = document.getElementById('link-gen-btn');
+  if (!input) return;
+  var phone = _kflNormalizeIsraelPhone(input.value);
+  if (!phone) {
+    _kflShowLinkError('המספר לא תקין. נסי בפורמט 054-123-4567');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = '...יוצרת קוד'; }
+
+  // We need the user's access token. The provision flow stores it in window.kfl
+  // or we can grab it fresh via initTokenClient. Simpler path: trigger a fresh
+  // token client request (cached, won't show consent if already granted).
+  var accessToken = null;
+  try {
+    accessToken = await _kflGetFreshAccessToken();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'צרי קוד חיבור'; }
+    _kflShowLinkError('שגיאת אימות: ' + (e.message || e));
+    return;
+  }
+
+  try {
+    var r = await fetch('/api/whatsapp/link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken: accessToken, phone: phone }),
+    });
+    var j = await r.json();
+    if (btn) { btn.disabled = false; btn.textContent = 'צרי קוד חיבור'; }
+    if (!j.ok) {
+      _kflShowLinkError(j.error || 'שגיאה ביצירת קוד');
+      return;
+    }
+    if (j.alreadyLinked) {
+      // User already has this phone linked — jump straight to success.
+      _kflShowLinkSuccess(j.phone || phone);
+      return;
+    }
+    // Display the code + start polling
+    kflLinkCode = j.code;
+    kflLinkPhone = phone;
+    _kflDisplayCode(j.code, j.expiresIn || 600);
+    _kflStartPolling(phone);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'צרי קוד חיבור'; }
+    _kflShowLinkError('שגיאת רשת: ' + (e.message || e));
+  }
+}
+
+async function _kflGetFreshAccessToken() {
+  return new Promise(function(resolve, reject) {
+    var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
+    if (!cid || cid.indexOf('__') === 0) return reject(new Error('Google Client ID לא מוגדר'));
+    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+      return reject(new Error('Google SDK טרם נטען. רענני את הדף.'));
+    }
+    var client = window.google.accounts.oauth2.initTokenClient({
+      client_id: cid,
+      scope: 'openid email profile https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+      callback: function(tokenResponse) {
+        if (tokenResponse.error || !tokenResponse.access_token) {
+          return reject(new Error(tokenResponse.error || 'לא קיבלנו אישור'));
+        }
+        resolve(tokenResponse.access_token);
+      }
+    });
+    // No prompt: if user already authorized, returns silently; otherwise shows consent.
+    client.requestAccessToken({ prompt: '' });
+  });
+}
+
+function _kflDisplayCode(code, ttlSec) {
+  var display = document.getElementById('link-code-display');
+  var inline = document.getElementById('link-code-inline');
+  var waLink = document.getElementById('link-wa-deeplink');
+  var ttlEl = document.getElementById('link-code-ttl');
+  if (display) display.textContent = code;
+  if (inline) inline.textContent = code;
+  if (waLink) {
+    // Pre-fill the WhatsApp message with "קוד 482917"
+    var msg = encodeURIComponent('קוד ' + code);
+    waLink.href = 'https://wa.me/' + KESEFLE_BOT_NUMBER + '?text=' + msg;
+  }
+  _kflSetLinkState('code');
+  // TTL countdown
+  var remaining = ttlSec;
+  function tickTtl() {
+    if (remaining <= 0) {
+      if (ttlEl) ttlEl.textContent = '00:00';
+      _kflShowLinkError('הקוד פג תוקף — צרי קוד חדש');
+      _kflSetLinkState('input');
+      _kflStopPolling();
+      return;
+    }
+    var m = Math.floor(remaining / 60);
+    var s = remaining % 60;
+    if (ttlEl) ttlEl.textContent = m + ':' + (s < 10 ? '0' + s : s);
+    remaining--;
+  }
+  if (kflLinkTtlTimer) clearInterval(kflLinkTtlTimer);
+  tickTtl();
+  kflLinkTtlTimer = setInterval(tickTtl, 1000);
+}
+
+function _kflStartPolling(phone) {
+  _kflStopPolling();
+  // Poll /api/whatsapp/link?phone=<E164> every 4 seconds.
+  // The Vercel side returns { linked: true } once the bot confirms the code.
+  kflLinkPollTimer = setInterval(async function() {
+    try {
+      var r = await fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone));
+      var j = await r.json();
+      if (j.ok && j.linked) {
+        _kflStopPolling();
+        if (kflLinkTtlTimer) { clearInterval(kflLinkTtlTimer); kflLinkTtlTimer = null; }
+        _kflShowLinkSuccess(phone);
+      }
+    } catch (e) { /* network blip — keep polling */ }
+  }, 4000);
+}
+
+function _kflStopPolling() {
+  if (kflLinkPollTimer) { clearInterval(kflLinkPollTimer); kflLinkPollTimer = null; }
+}
+
+function _kflShowLinkSuccess(phone) {
+  var el = document.getElementById('link-confirmed-phone');
+  if (el) el.textContent = '+' + phone;
+  _kflSetLinkState('success');
+  localStorage.setItem('kesefle_whatsapp_linked', '1');
+  localStorage.setItem('kesefle_whatsapp_phone', phone);
+  kesefleUpdateOnboardingProgress();
+  // Confetti for the win
+  try { kesefleCelebrate && kesefleCelebrate(); } catch (e) {}
+}
+
+function kesefleLinkResetState() {
+  _kflStopPolling();
+  if (kflLinkTtlTimer) { clearInterval(kflLinkTtlTimer); kflLinkTtlTimer = null; }
+  kflLinkCode = null;
+  kflLinkPhone = null;
+  _kflSetLinkState('input');
+}
+
+// On page load: if the user is already linked, jump straight to success.
+(function checkExistingLink() {
+  var phone = localStorage.getItem('kesefle_whatsapp_phone');
+  if (phone) {
+    setTimeout(function() { _kflShowLinkSuccess(phone); }, 600);
+  }
+})();
 
 // ============ REFERRAL CODE PICKUP ============
 // Read ?ref=<code> (or sessionStorage from /referral landing) and remember it.

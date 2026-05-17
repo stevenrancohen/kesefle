@@ -84,25 +84,62 @@
     </button>
   </section>
 
-  <!-- Status chip -->
-  <section class="mt-10 grid gap-3 md:grid-cols-3 max-w-3xl mx-auto">
-    <div class="rounded-2xl border border-brand-200 bg-brand-50 dark:bg-ink-800 dark:border-brand-700 p-4 text-center">
-      <div class="text-xs text-brand-700 dark:text-brand-300 font-semibold">חשבון</div>
-      <div class="mt-1 font-bold text-ink-900 dark:text-white">✓ מקושר ל-Google</div>
+  <!-- Setup progress bar (gamified) -->
+  <section class="mt-10 max-w-3xl mx-auto">
+    <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:bg-ink-800 dark:border-ink-700">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">השלמת הגדרה</div>
+        <div class="text-xs font-bold text-brand-600 dark:text-brand-400"><span id="setup-pct">66</span>% הושלם</div>
+      </div>
+      <div class="h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900">
+        <div id="setup-progress" class="h-full rounded-full bg-gradient-to-l from-brand-500 to-emerald-400 transition-all duration-700" style="width: 66%"></div>
+      </div>
+      <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+        <div class="rounded-xl bg-brand-50 dark:bg-brand-500/10 p-2.5">
+          <div class="text-lg">✅</div>
+          <div class="text-[11px] font-bold text-brand-700 dark:text-brand-300 mt-0.5">חשבון Google</div>
+        </div>
+        <div class="rounded-xl bg-brand-50 dark:bg-brand-500/10 p-2.5">
+          <div class="text-lg">✅</div>
+          <div class="text-[11px] font-bold text-brand-700 dark:text-brand-300 mt-0.5">גיליון Drive</div>
+        </div>
+        <div id="checkpoint-bot" class="rounded-xl bg-amber-50 dark:bg-amber-500/10 p-2.5 ring-2 ring-amber-300 dark:ring-amber-500/50 animate-pulse">
+          <div class="text-lg">📲</div>
+          <div class="text-[11px] font-bold text-amber-700 dark:text-amber-300 mt-0.5">הודעה ראשונה →</div>
+        </div>
+      </div>
     </div>
-    <div class="rounded-2xl border border-brand-200 bg-brand-50 dark:bg-ink-800 dark:border-brand-700 p-4 text-center">
-      <div class="text-xs text-brand-700 dark:text-brand-300 font-semibold">גיליון</div>
-      <div class="mt-1 font-bold text-ink-900 dark:text-white">✓ נוצר ב-Drive</div>
-    </div>
-    <div class="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-ink-800 dark:border-amber-700 p-4 text-center">
-      <div class="text-xs text-amber-700 dark:text-amber-300 font-semibold">בוט WhatsApp</div>
-      <div class="mt-1 font-bold text-ink-900 dark:text-white pulse-dot">מחכה להודעה ראשונה</div>
+  </section>
+
+  <!-- ONE-CLICK first message (autonomous primary action) -->
+  <section class="mt-10 max-w-3xl mx-auto">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-brand-700 p-7 text-white shadow-2xl md:p-9">
+      <div class="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+      <div class="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-yellow-300/20 blur-2xl"></div>
+      <div class="relative">
+        <div class="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider backdrop-blur">
+          <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span></span>
+          הצעד הבא · 10 שניות
+        </div>
+        <h2 class="mt-3 text-2xl font-black md:text-3xl">שלח הודעה אחת — וסיימת.</h2>
+        <p class="mt-2 text-sm opacity-90 md:text-base">לחץ למטה, ההודעה מוכנה — רק תשלח. הבוט יחזיר אישור תוך 2 שניות וסטטוס ההגדרה ייצבע ירוק.</p>
+        <a href="https://wa.me/17745448053?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="onFirstClick();" class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-emerald-700 shadow-lg hover:shadow-2xl hover:-translate-y-0.5 transition">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
+          פתח וואטסאפ ושלח "245 סופר"
+        </a>
+        <div class="mt-3 flex flex-wrap items-center gap-3 text-[11px] opacity-90">
+          <span>או נסה:</span>
+          <a href="https://wa.me/17745448053?text=42%20%D7%A7%D7%A4%D7%94" target="_blank" onclick="onFirstClick();" rel="noopener" class="rounded-full bg-white/20 px-2.5 py-1 font-semibold hover:bg-white/30">☕ 42 קפה</a>
+          <a href="https://wa.me/17745448053?text=8500%20%D7%9E%D7%A9%D7%9B%D7%95%D7%A8%D7%AA" target="_blank" onclick="onFirstClick();" rel="noopener" class="rounded-full bg-white/20 px-2.5 py-1 font-semibold hover:bg-white/30">💵 8500 משכורת</a>
+          <a href="https://wa.me/17745448053?text=60%20%D7%90%D7%95%D7%91%D7%A8" target="_blank" onclick="onFirstClick();" rel="noopener" class="rounded-full bg-white/20 px-2.5 py-1 font-semibold hover:bg-white/30">🚕 60 אובר</a>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- 5 commands tour -->
   <section class="mt-14">
-    <h2 class="text-2xl font-black text-center">5 פקודות שכדאי לזכור</h2>
+    <h2 class="text-2xl font-black text-center">רוצה לדעת עוד? 5 פקודות שכדאי לזכור</h2>
     <p class="mt-2 text-center text-ink-500 dark:text-ink-400">לחץ על כל פקודה כדי להעתיק אותה לקליפבורד</p>
 
     <div class="mt-8 grid gap-4 md:grid-cols-2">
@@ -168,15 +205,13 @@
     </div>
   </section>
 
-  <!-- Send first message CTA -->
-  <section class="mt-14 rounded-3xl bg-gradient-to-br from-brand-500 to-emerald-700 p-8 md:p-12 text-center text-white">
-    <h2 class="text-3xl font-black md:text-4xl">מוכן? שלח את ההוצאה הראשונה</h2>
-    <p class="mt-3 opacity-90">2 שניות, בלי טפסים, בלי אפליקציה.</p>
-    <a href="https://wa.me/17745448053?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="window.kfl && window.kfl.track('cta_click', { source: 'welcome_whatsapp' });" class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-base font-bold text-emerald-700 hover:bg-emerald-50">
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
-      פתח WhatsApp ושלח "245 סופר"
-    </a>
-    <div class="mt-4 text-xs opacity-75">השם של הבוט בוואטסאפ: <span class="font-mono">+1-774-544-8053</span></div>
+  <!-- Bot phone number reference (small footer chip) -->
+  <section class="mt-10 text-center">
+    <div class="inline-flex items-center gap-2 rounded-full bg-ink-100 px-4 py-2 text-xs text-ink-700 dark:bg-ink-800 dark:text-ink-300">
+      <span>📞</span>
+      <span>מספר הבוט: <span class="font-mono font-bold">+1-774-544-8053</span></span>
+      <button onclick="copyText(event, '+17745448053')" class="rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-brand-700 hover:bg-brand-50 dark:bg-ink-700 dark:text-brand-300">העתק</button>
+    </div>
   </section>
 
   <!-- Tips -->
@@ -259,6 +294,55 @@ if (!sessionStorage.getItem('kfl_welcome_seen')) {
   sessionStorage.setItem('kfl_welcome_seen', '1');
   setTimeout(function() { confettiBurst(); }, 500);
 }
+
+// Mark setup complete once user clicks the WhatsApp CTA (autonomy: feedback loop)
+function onFirstClick() {
+  try {
+    localStorage.setItem('kfl_first_msg_clicked', '1');
+    if (window.kfl) window.kfl.track('cta_click', { source: 'welcome_whatsapp_v2' });
+  } catch (e) {}
+  // Update visual progress to 100%
+  var bar = document.getElementById('setup-progress');
+  var pct = document.getElementById('setup-pct');
+  var cp = document.getElementById('checkpoint-bot');
+  if (bar) bar.style.width = '100%';
+  if (pct) pct.textContent = '100';
+  if (cp) {
+    cp.classList.remove('bg-amber-50','dark:bg-amber-500/10','ring-2','ring-amber-300','dark:ring-amber-500/50','animate-pulse');
+    cp.classList.add('bg-brand-50','dark:bg-brand-500/10');
+    cp.querySelector('div.text-lg').textContent = '✅';
+    var lbl = cp.querySelector('div:last-child');
+    if (lbl) { lbl.textContent = 'נשלחה הודעה'; lbl.classList.remove('text-amber-700','dark:text-amber-300'); lbl.classList.add('text-brand-700','dark:text-brand-300'); }
+  }
+  setTimeout(function() { confettiBurst(); }, 400);
+}
+
+// On page load: if user previously clicked the CTA, show 100% state
+if (localStorage.getItem('kfl_first_msg_clicked') === '1') {
+  setTimeout(onFirstClick, 100);
+}
+
+// Smart suggestion: pick a contextual first-expense based on time of day.
+// Morning → "12 קפה", Lunch → "60 וולט", Evening → "245 סופר", Night → "55 נטפליקס".
+(function suggestByTime(){
+  var hour = new Date().getHours();
+  var sug;
+  if (hour >= 6 && hour < 11)        sug = { txt: '12 קפה',     emoji: '☕', label: 'בוקר טוב — קפה?' };
+  else if (hour >= 11 && hour < 15)  sug = { txt: '60 וולט',    emoji: '🍔', label: 'הגיע זמן צהריים?' };
+  else if (hour >= 15 && hour < 19)  sug = { txt: '245 סופר',   emoji: '🛒', label: 'קניות אחר הצהריים?' };
+  else if (hour >= 19 && hour < 23)  sug = { txt: '85 משלוח',   emoji: '🍕', label: 'משהו לערב?' };
+  else                                sug = { txt: '55 נטפליקס', emoji: '📺', label: 'מנוי לילי?' };
+  // Insert a contextual chip above the main CTA (only after DOM ready)
+  document.addEventListener('DOMContentLoaded', function() {
+    var section = document.querySelector('main section:nth-of-type(2)');
+    if (!section) return;
+    var hint = document.createElement('div');
+    hint.className = 'mb-3 text-center text-xs font-semibold text-brand-700 dark:text-brand-300';
+    hint.innerHTML = '<span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 dark:bg-brand-500/15">' + sug.emoji + ' ' + sug.label + ' נסה: <b>' + sug.txt + '</b></span>';
+    // Insert before the inner gradient panel
+    section.insertBefore(hint, section.firstChild);
+  });
+})();
 </script>
 
 <script>

@@ -1662,6 +1662,42 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+// ============ SMART REFERRER-BASED SURFACING ============
+// When user lands on /help from another Kesefle page, auto-surface the
+// most relevant articles for that page's context (no interaction needed).
+(function smartReferrer() {
+  try {
+    if (location.hash || (document.getElementById('search') && document.getElementById('search').value)) {
+      return; // user already navigated somewhere — respect their intent
+    }
+    var ref = document.referrer || '';
+    var url = '';
+    try { url = ref ? new URL(ref).pathname : ''; } catch (e) { url = ''; }
+    var path = String(url).toLowerCase();
+    var hint = null;
+    if (path.indexOf('/welcome') >= 0) {
+      hint = { title: 'הגעת מעמוד הברכה — אלו השאלות הכי פופולריות אחרי הרשמה', q: ['איך לשלוח הוצאה', 'הבוט לא עונה', 'איך לראות את הגיליון'] };
+    } else if (path.indexOf('/dashboard') >= 0) {
+      hint = { title: 'הגעת מהדשבורד — נראה לעזור עם', q: ['הסנכרון לא עובד', 'מחק תנועה', 'עריכת קטגוריה'] };
+    } else if (path.indexOf('/account') >= 0) {
+      hint = { title: 'הגעת מהגדרות החשבון — שאלות שכיחות', q: ['drive.file', 'חיבור Google', 'ביטול מנוי'] };
+    } else if (path.indexOf('/pricing') >= 0 || path.indexOf('/compare') >= 0) {
+      hint = { title: 'שאלות נפוצות לפני שנרשמים', q: ['מה ההבדל בין החבילות', 'ניסיון חינם', 'ביטול בכל עת'] };
+    }
+    if (!hint) return;
+    var home = document.getElementById('view-home');
+    if (!home) return;
+    var chipsHtml = hint.q.map(function(q){
+      var safe = String(q).replace(/'/g,"\\'");
+      return '<button onclick="kesefleQuickSearch(\'' + safe + '\')" class="rounded-full border border-brand-300 bg-white px-3 py-1.5 text-xs font-bold text-brand-700 shadow-sm hover:bg-brand-50 dark:bg-ink-800 dark:text-brand-300 dark:border-brand-500/50">' + q + ' →</button>';
+    }).join('');
+    var banner = document.createElement('div');
+    banner.className = 'mb-6 rounded-2xl border-2 border-brand-200 bg-gradient-to-bl from-brand-50 to-white p-4 shadow-soft dark:border-brand-500/40 dark:from-ink-800 dark:to-ink-900';
+    banner.innerHTML = '<div class="flex items-start gap-3"><div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-100 text-lg dark:bg-brand-500/20">💡</div><div class="flex-1"><div class="text-sm font-bold text-ink-900 dark:text-white">' + hint.title + '</div><div class="mt-2 flex flex-wrap gap-1.5">' + chipsHtml + '</div></div><button onclick="this.closest(\'.mb-6\').remove();" class="text-ink-400 hover:text-ink-600 dark:hover:text-white" aria-label="סגור"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>';
+    home.parentNode.insertBefore(banner, home);
+  } catch (e) { /* never break the page */ }
+})();
+
 // ============ INIT ============
 renderSidebar();
 kesefleRoute();

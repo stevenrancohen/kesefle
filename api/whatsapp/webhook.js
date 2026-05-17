@@ -204,7 +204,7 @@ export default async function handler(req, res) {
   const userRecord = await kvGet(`phone:${fromPhone}`);
   if (!userRecord) {
     await sendReply(fromPhone,
-      'שלום! 👋\nלא מצאתי חשבון מקושר למספר הזה.\nכדי להתחיל, היכנס ל-https://kesefle.app וחבר את הוואטסאפ שלך.');
+      'שלום! 👋\nלא מצאתי חשבון מקושר למספר הזה.\nכדי להתחיל, היכנס ל-https://kesefle.vercel.app וחבר את הוואטסאפ שלך.');
     return res.status(200).json({ ok: true, unregistered: true });
   }
 

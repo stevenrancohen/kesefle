@@ -26,11 +26,13 @@ const DASHBOARD_SHEET = 'מאזן שנתי';
 
 const VERIFY_TOKEN = 'expense_bot_verify_2026';
 const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHATSAPP_TOKEN') || '';
-// New bot number: +17745448053 (Numero US, registered with Meta)
-// Phone Number ID must be set in Script Properties as WHATSAPP_PHONE_NUMBER_ID
-// (get it from https://developers.facebook.com/apps → WhatsApp → API Setup)
-const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1086749664527399';
+// New bot number: +17745448053 (Numero US, registered with Meta 2026-05-18)
+// Phone Number ID: 1090404180828069 (from Meta API Setup)
+// WABA ID: 986476207210292
+// Script Properties can override the default if needed.
+const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1090404180828069';
 const BOT_PHONE_E164 = '+17745448053';
+const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.vercel.app';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -953,6 +955,14 @@ function processExpense(text) {
     return { reply: getCurrenciesMessage() };
   }
 
+  // Multi-tenant account linking: "קוד 482917" / "code 482917" / "link 482917"
+  // Bot's `from` phone (the sender) is provided by doPost in the calling context.
+  // We accept the command anywhere in the text in case the user wrote extras.
+  var codeMatch = text.match(/(?:קוד|code|link)\s*[:\-]?\s*(\d{6})\b/i);
+  if (codeMatch) {
+    return { reply: handleLinkCode_(codeMatch[1], (typeof __from_ !== 'undefined' ? __from_ : null) || (this && this.__from_) || '') };
+  }
+
   const fx = parseForeignCurrencyHint(text);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : text);
   if (!parsed || !parsed.items || parsed.items.length === 0) {
@@ -1517,6 +1527,53 @@ function getEngineStatus() {
       '🔒 הכל נשמר ב-Drive שלך. לא אצלנו.';
   } catch (e) {
     return '❌ לא הצלחתי לקרוא מצב מנוע: ' + e.message;
+  }
+}
+
+// Multi-tenant account linking handler.
+// Called when the bot sees "קוד XXXXXX" / "code XXXXXX" / "link XXXXXX" from a sender.
+// Sends the code + sender phone to /api/whatsapp/link?action=confirm on Vercel.
+// The Vercel side resolves the code → userSub, then permanently stores phone:<E164> → userSub
+// in KV, which the webhook + every future bot message uses to route to the right sheet.
+function handleLinkCode_(code, fromPhone) {
+  if (!fromPhone) {
+    return '⚠️ לא הצלחתי לזהות את המספר שלך מההודעה. נסה לשלוח שוב מאותו וואטסאפ.';
+  }
+  var url = KESEFLE_API_BASE + '/api/whatsapp/link?action=confirm';
+  var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
+  var payload = { code: String(code), phone: String(fromPhone) };
+  try {
+    var resp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: botSecret ? { 'x-kesefle-bot-secret': botSecret } : {},
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    var status = resp.getResponseCode();
+    var body = {};
+    try { body = JSON.parse(resp.getContentText() || '{}'); } catch (e) {}
+    if (status === 200 && body.ok) {
+      return '✅ *הקישור הושלם!*\n' +
+        '━━━━━━━━━━━━━━━━━━\n\n' +
+        'מהרגע הזה, כל הוצאה שתשלח/י תיכתב אוטומטית לגיליון שלך.\n\n' +
+        '💡 *לדוגמה — נסה/י:*\n' +
+        '  • "245 סופר"\n' +
+        '  • "42 קפה"\n' +
+        '  • "8500 משכורת"\n\n' +
+        'כתבי "עזרה" לרשימת הפקודות המלאה.';
+    }
+    if (status === 404) {
+      return '⏰ הקוד פג תוקף או לא תקין.\nחזרי ל-https://kesefle.vercel.app/account וצרי קוד חדש (תקף ל-10 דק׳).';
+    }
+    if (status === 401) {
+      return '🔒 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי). פנה לתמיכה.';
+    }
+    Logger.log('handleLinkCode_: unexpected status=' + status + ' body=' + JSON.stringify(body));
+    return '⚠️ משהו השתבש. נסה שוב או צור קוד חדש ב-https://kesefle.vercel.app/account';
+  } catch (e) {
+    Logger.log('handleLinkCode_ error: ' + (e && e.stack || e));
+    return '⚠️ שגיאת רשת. נסה שוב בעוד רגע.';
   }
 }
 

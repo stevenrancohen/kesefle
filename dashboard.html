@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>הדשבורד שלי — כסף'לה</title>
+<meta name="description" content="הדשבורד האישי שלך בכסף'לה — תנועות אחרונות, סיכום חודשי וניתוחים מהגוגל שיט שלך." />
+<meta name="robots" content="noindex,follow" />
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -11,6 +13,13 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="canonical" href="https://kesefle.vercel.app/dashboard" />
+<meta property="og:title" content="הדשבורד שלי — כסף'לה" />
+<meta property="og:description" content="הדשבורד האישי שלך בכסף'לה." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:url" content="https://kesefle.vercel.app/dashboard" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" />
@@ -119,6 +128,16 @@
 
   <!-- empty state (when no transactions yet) -->
   <section id="empty-state" class="hidden overflow-hidden rounded-3xl border border-ink-200 bg-gradient-to-br from-brand-50 via-white to-brand-50 shadow-soft dark:border-ink-700 dark:from-ink-800 dark:via-ink-900 dark:to-ink-800">
+    <!-- Demo preview toggle: shows users what the dashboard WILL look like once they have data -->
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-ink-200 bg-white/60 px-5 py-2.5 text-xs dark:border-ink-700 dark:bg-ink-900/40">
+      <span class="inline-flex items-center gap-1.5 font-bold text-ink-600 dark:text-ink-300">
+        <span class="grid h-5 w-5 place-items-center rounded-md bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">i</span>
+        אין עדיין נתונים — אבל הנה איך הדשבורד שלך ייראה בעוד דקה
+      </span>
+      <button type="button" id="demo-preview-btn" onclick="kesefleToggleDemoPreview()" class="rounded-lg bg-ink-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
+        ✨ הראה לי תצוגת הדגמה
+      </button>
+    </div>
     <div class="grid items-center gap-0 md:grid-cols-2">
       <!-- left: copy + CTA -->
       <div class="p-8 md:p-10">
@@ -629,6 +648,61 @@ function kesefleCopyDemoMsg(e) {
     ta.value = txt; document.body.appendChild(ta); ta.select();
     try { document.execCommand('copy'); done(true); } catch(_) { done(false); }
     document.body.removeChild(ta);
+  }
+}
+
+// Demo data preview — fills the dashboard with sample numbers so the user
+// sees what their populated dashboard will look like. Honest: a "DEMO" badge
+// is shown on every panel + a banner across the top.
+var DEMO_PREVIEW_ON = false;
+function kesefleToggleDemoPreview() {
+  DEMO_PREVIEW_ON = !DEMO_PREVIEW_ON;
+  var btn = document.getElementById('demo-preview-btn');
+  if (DEMO_PREVIEW_ON) {
+    if (btn) btn.textContent = '× חזור לתצוגת ריקה';
+    var fake = {
+      ok: true,
+      month_expenses: 6420,
+      month_income: 9800,
+      month_balance: 3380,
+      month_count: 23,
+      prev_month_expenses: 7100,
+      prev_month_income: 9800,
+      recent: [
+        { date: 'היום', description: 'סופרסל', amount: -245, category: 'אוכל לבית' },
+        { date: 'אתמול', description: 'אובר', amount: -60, category: 'מונית/אובר' },
+        { date: 'אתמול', description: 'משכורת', amount: 8500, category: 'משכורת' },
+        { date: 'לפני יומיים', description: 'נטפליקס', amount: -55, category: 'אפליקציות' },
+        { date: 'לפני יומיים', description: 'דלק', amount: -320, category: 'דלק' },
+        { date: '24/4', description: 'וולט · משלוח', amount: -85, category: 'אוכל בחוץ' },
+        { date: '23/4', description: 'ארנונה', amount: -812, category: 'בית' },
+      ],
+      categories: [
+        { name: 'אוכל לבית', amount: 1850 },
+        { name: 'דלק', amount: 1100 },
+        { name: 'בית', amount: 920 },
+        { name: 'אוכל בחוץ', amount: 740 },
+        { name: 'אפליקציות', amount: 230 },
+      ],
+      _demo: true
+    };
+    document.getElementById('summary-cards').classList.remove('hidden');
+    renderDashboard(fake);
+    // Inject a clear DEMO ribbon so users don't confuse it with real data
+    var ribbon = document.getElementById('demo-ribbon');
+    if (!ribbon) {
+      ribbon = document.createElement('div');
+      ribbon.id = 'demo-ribbon';
+      ribbon.className = 'mb-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-300';
+      ribbon.innerHTML = '<span class="inline-flex items-center gap-2"><span class="grid h-6 w-6 place-items-center rounded-full bg-amber-200 text-amber-900 dark:bg-amber-500/30 dark:text-amber-200">!</span>זוהי תצוגת הדגמה — לא הנתונים שלך</span><a href="https://wa.me/17745448053?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs text-white hover:bg-amber-700">שלח הודעה אמיתית →</a>';
+      var main = document.querySelector('main');
+      if (main) main.insertBefore(ribbon, main.firstChild);
+    }
+  } else {
+    if (btn) btn.textContent = '✨ הראה לי תצוגת הדגמה';
+    var r = document.getElementById('demo-ribbon');
+    if (r) r.remove();
+    showEmptyState();
   }
 }
 
