@@ -1301,27 +1301,33 @@ document.addEventListener('keydown', function(e) {
 // backward compat in case other scripts reference kesefleToggleDark.
 function kesefleToggleDark() { /* no-op: dark only */ }
 
-// Hide OAuth buttons whose Client ID is still a placeholder.
-// Only iterate the OAuth provider buttons — NOT the waitlist submit button.
+// Hide OAuth buttons whose Client ID is still a placeholder — across BOTH
+// the signup section and the hero quick-OAuth row. The hero row buttons
+// use scrollIntoView + setTimeout(kesefleStartXxx, 600) onclick, so we
+// match them by aria-label as well as by the signup-section selectors.
 (function hideUnconfiguredAuth() {
   var cfg = window.KESEFLE_CONFIG || {};
   function isPlaceholder(v) { return !v || v.indexOf('__') === 0; }
   var providers = [
-    { key: 'GOOGLE_CLIENT_ID',   sel: 'button[onclick="kesefleStartGoogle()"]' },
-    { key: 'FACEBOOK_APP_ID',    sel: 'button[onclick="kesefleStartFacebook()"]' },
-    { key: 'APPLE_CLIENT_ID',    sel: 'button[onclick="kesefleStartApple()"]' }
+    { key: 'GOOGLE_CLIENT_ID',   sel: 'button[onclick="kesefleStartGoogle()"]',   ariaLabel: 'Google' },
+    { key: 'FACEBOOK_APP_ID',    sel: 'button[onclick="kesefleStartFacebook()"]', ariaLabel: 'Facebook' },
+    { key: 'APPLE_CLIENT_ID',    sel: 'button[onclick="kesefleStartApple()"]',    ariaLabel: 'Apple' }
   ];
   providers.forEach(function(p) {
     if (isPlaceholder(cfg[p.key])) {
+      // Hide the signup-section button + its hint
       var btn = document.querySelector(p.sel);
       if (btn) {
         btn.style.display = 'none';
-        // Hide the "כולל Instagram" hint right after the FB button
         if (p.key === 'FACEBOOK_APP_ID') {
           var hint = btn.nextElementSibling;
           if (hint && hint.tagName === 'P') hint.style.display = 'none';
         }
       }
+      // Hide the hero quick-row chip (matched by aria-label)
+      document.querySelectorAll('button[aria-label="' + p.ariaLabel + '"]').forEach(function(b){
+        b.style.display = 'none';
+      });
     }
   });
   // If ALL OAuth are hidden, hide the "או" divider too
@@ -1332,6 +1338,15 @@ function kesefleToggleDark() { /* no-op: dark only */ }
   if (!anyVisible) {
     var divider = document.querySelector('#auth-buttons .my-4');
     if (divider) divider.style.display = 'none';
+  }
+  // If both Facebook and Apple are gone, hide the "או התחבר ב-1 קליק" label
+  // in the hero too — it'd look weird with just one button.
+  var heroLabel = document.querySelector('#kfl-hero span.text-xs.font-semibold');
+  if (heroLabel) {
+    var heroChipsVisible = providers.filter(function(p) {
+      return !isPlaceholder(cfg[p.key]);
+    }).length;
+    if (heroChipsVisible <= 1) heroLabel.style.display = 'none';
   }
 })();
 </script>
