@@ -116,6 +116,20 @@ function doGet(e) {
     }
   }
 
+  // Sort the תנועות sheet ascending (oldest top, newest bottom) — one-shot
+  // remediation for sheets whose existing data is in wrong order. Safe to call
+  // multiple times: the bot's auto-sort-after-append will keep it correct.
+  if (action === 'sortchrono' && e.parameter.secret === VERIFY_TOKEN) {
+    try {
+      sortTransactionsChronological();
+      var ss = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+      var lr = ss ? ss.getLastRow() : 0;
+      return ContentService.createTextOutput('OK — sorted ' + Math.max(0, lr - 1) + ' rows ascending (oldest at top, newest at bottom)');
+    } catch (err) {
+      return ContentService.createTextOutput('Sort error: ' + err.message + '\n' + err.stack);
+    }
+  }
+
   const mode = e.parameter['hub.mode'];
   const token = e.parameter['hub.verify_token'];
   const challenge = e.parameter['hub.challenge'];
