@@ -15,3 +15,4 @@ node_modules/
 .fastembed_cache/
 admin.html.bak.*
 .DS_Store
+bot/ExpenseBot_FIXED.gs.bak.*
