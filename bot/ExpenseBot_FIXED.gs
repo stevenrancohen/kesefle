@@ -1431,6 +1431,37 @@ function deleteLastTransaction() {
   return '🗑️ נמחק:\nסכום: ₪' + data[2] + '\nתת-קטגוריה: ' + data[4] + '\nפירוט: ' + data[5];
 }
 
+// Auto-duplicate detection — flags if the same amount+description was added
+// within the last 10 minutes. Returns null if no dupe, or {row, when} if found.
+function detectDuplicate(amount, description) {
+  try {
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return null;
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return null;
+    const lookback = Math.min(15, lastRow - 1);
+    const startRow = lastRow - lookback + 1;
+    const data = sheet.getRange(startRow, 1, lookback, 7).getValues();
+    const now = new Date();
+    const tenMinAgo = now.getTime() - 10*60*1000;
+    const descNorm = String(description || '').trim().toLowerCase();
+    for (let i = data.length - 1; i >= 0; i--) {
+      const row = data[i];
+      const rowDate = row[0] instanceof Date ? row[0].getTime() : new Date(row[0]).getTime();
+      if (isNaN(rowDate) || rowDate < tenMinAgo) continue;
+      const rowAmount = Number(row[2]);
+      const rowDesc = String(row[5] || '').trim().toLowerCase();
+      if (Math.abs(rowAmount - amount) < 0.01 && rowDesc === descNorm) {
+        return { row: startRow + i, when: new Date(rowDate), amount: rowAmount, desc: rowDesc };
+      }
+    }
+    return null;
+  } catch (e) {
+    Logger.log('detectDuplicate error: ' + e);
+    return null;
+  }
+}
+
 function getHelpMessage() {
   return '🤖 *כסף\'לה — מדריך מהיר*\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
