@@ -56,7 +56,7 @@ Required by Israeli Privacy Law Amendment 13 (cross-border data flow).
 Without verification, Google shows "App not verified" warning. **Doesn't block development**, but reduces conversion rate.
 
 ### 6. Dedicated WhatsApp Business number
-Currently the test setup uses Steven's personal number `+972547760643`. Production should use a dedicated number from Meta (purchased + verified through Meta Business Manager).
+Currently the test setup uses Steven's personal number `+17745448053`. Production should use a dedicated number from Meta (purchased + verified through Meta Business Manager).
 
 ## 🟢 Polish + growth (no blockers)
 

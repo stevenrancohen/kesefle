@@ -12,7 +12,7 @@ Open Apps Script → ⚙ (gear) → Project Settings → Script Properties → E
 | `WA_TOKEN` | Meta Cloud API access token (System User permanent, ideally) | `EAAR...` (long string) |
 | `WA_PHONE_ID` | Meta WhatsApp Business Phone Number ID | `123456789012345` (15-digit number) |
 | `WA_GRAPH_VERSION` | (optional) Meta Graph API version | `v18.0` (default) |
-| `SUBSCRIBERS` | JSON array of recipient phones (international, no `+`) | `["972547760643"]` |
+| `SUBSCRIBERS` | JSON array of recipient phones (international, no `+`) | `["17745448053"]` |
 
 ## Where to get the values
 

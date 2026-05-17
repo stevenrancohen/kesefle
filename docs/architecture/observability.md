@@ -8,7 +8,7 @@
 | Server logs | **Vercel Log Drains → Better Stack (Logtail)** — free tier 1 GB/mo | Searchable, alerting on log patterns, 30-day retention. Backup option = pump to S3 every hour. |
 | Uptime | **BetterStack Uptime** or **UptimeRobot** | 1-min checks on `/api/health`, public status page. |
 | Metrics | **Vercel Analytics** for traffic + custom **PostHog** events for product analytics | Founder gets one place to see DAU/MAU + funnel from waitlist → signup → first WA message. |
-| Alerts | **Slack + email + WhatsApp** via `lib/alerts.js` (single function, multiple sinks) | The founder is on +972547760643 — critical pages go there. |
+| Alerts | **Slack + email + WhatsApp** via `lib/alerts.js` (single function, multiple sinks) | The founder is on +17745448053 — critical pages go there. |
 
 Avoid Datadog/New Relic — overkill at <10k users.
 
@@ -220,7 +220,7 @@ async function whatsapp(text) {
   // Send via Meta API to founder's phone
   const phoneId = process.env.META_PHONE_NUMBER_ID;
   const token = process.env.META_ACCESS_TOKEN;
-  const to = process.env.ALERT_PHONE || '972547760643';
+  const to = process.env.ALERT_PHONE || '17745448053';
   if (!phoneId || !token) return;
   await fetch(`https://graph.facebook.com/v19.0/${phoneId}/messages`, {
     method: 'POST',

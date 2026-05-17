@@ -19,7 +19,7 @@ Bilingual step-by-step. Estimated total: ~35 minutes (you can do them in any ord
 8. Add your phone to the subscriber list:
    - Bottom-left gear ⚙️ → **Project Settings** → scroll to **Script Properties** → **Edit script properties** → Add property:
      - Key: `SUBSCRIBERS`
-     - Value: `["972547760643"]` (your phone in international format inside a JSON array, with quotes and brackets)
+     - Value: `["17745448053"]` (your phone in international format inside a JSON array, with quotes and brackets)
    - Save.
 9. Test it: in the editor, function dropdown at top → select **`RUN_WEEKLY_DIGEST_NOW`** → **"הפעלה"**.
 10. Open WhatsApp — within ~20 seconds you should receive a digest message.
@@ -36,7 +36,7 @@ Bilingual step-by-step. Estimated total: ~35 minutes (you can do them in any ord
 8. הוסף את מספר הטלפון שלך לרשימת המנויים:
    - הגדרות (⚙️) → **Project Settings** → **Script Properties** → **Edit script properties** → הוסף:
      - Key: `SUBSCRIBERS`
-     - Value: `["972547760643"]` (המספר שלך בפורמט בינלאומי בתוך מערך JSON)
+     - Value: `["17745448053"]` (המספר שלך בפורמט בינלאומי בתוך מערך JSON)
    - שמור.
 9. בדיקה: בעורך, תפריט פונקציות למעלה → בחר **`RUN_WEEKLY_DIGEST_NOW`** → **"הפעלה"**.
 10. פתח WhatsApp — בתוך ~20 שניות אמורה להגיע הודעת סיכום.

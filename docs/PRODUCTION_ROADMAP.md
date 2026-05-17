@@ -55,7 +55,7 @@ Generated 2026-05-16 after 3-agent strategic review (Product / Tech / Risk).
 | 1 | **Front-end OAuth flow not yet switched to PKCE code flow** | 4 hr | Update `account.html` to redirect to Google with `response_type=code&access_type=offline&prompt=consent`, handle the callback, POST to `/api/auth/google-exchange`. Backend is ready. | required for refresh tokens (currently GIS-only = 1hr tokens = bot can't write) |
 | 2 | **Vercel + Upstash regions in US, not EU** | 1 hr | Change Vercel region to `cdg1` or `arn1`; create Upstash KV in `eu-west-1`. Israeli law (PPA Amendment 13) prohibits transfer to non-whitelisted countries without explicit consent. | risk agent |
 | 3 | **Refresh tokens stored plaintext in KV** | 3 hr | Implement AES-256-GCM encryption in `lib/crypto.js` (no npm). Add `KESEFLE_DB_KEY` env. Wrap KV reads/writes that touch `refreshToken`. | risk agent (sensitive financial data) |
-| 4 | **Dedicated WhatsApp business number** | 2 weeks | Procure separate phone number (`+972-xx-xxx-xxxx`), register with Meta Business, submit display-name approval. Personal `+972547760643` will fail Meta business verification. | risk agent |
+| 4 | **Dedicated WhatsApp business number** | 2 weeks | Procure separate phone number (`+972-xx-xxx-xxxx`), register with Meta Business, submit display-name approval. Personal `+17745448053` will fail Meta business verification. | risk agent |
 | 5 | **Google OAuth verification (CASA Tier 2)** | 6-12 weeks | Submit OAuth verification (drive.file is restricted scope = mandatory). Record demo video (3 min, script in `docs/compliance/google-oauth-verification.md`). Pay CASA Tier 2 audit ~$1.5-4k. | risk agent |
 | 6 | **Stripe products + prices not created** | 30 min | In Stripe Dashboard: create Product "Kesefle Pro" ₪19/mo + "Kesefle Family" ₪39/mo. Copy price IDs to `STRIPE_PRICE_PRO` + `STRIPE_PRICE_FAMILY` env vars in Vercel. | billing |
 | 7 | **Env vars not set in Vercel** | 30 min | Add: `GOOGLE_CLIENT_SECRET`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, `META_VERIFY_TOKEN`, `META_APP_SECRET`, `META_PHONE_NUMBER_ID`, `META_ACCESS_TOKEN`, `KESEFLE_TEMPLATE_SHEET_ID`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_FAMILY`. | deployment |
@@ -142,7 +142,7 @@ The product is launch-ready when ALL of these are true:
 |-------------------------|--------|
 | User can register | ✓ Google sign-in |
 | User can connect Google | ⚠ partial — server-side OAuth code exists in `/api/auth/google-exchange.js` but `account.html` still uses GIS-only. Server-side flow returns refresh tokens needed for bot writes. |
-| User can connect WhatsApp | ⚠ partial — bot is wired; needs dedicated business number (still using +972547760643) |
+| User can connect WhatsApp | ⚠ partial — bot is wired; needs dedicated business number (still using +17745448053) |
 | User can send income/expense messages | ✓ — webhook writer now real (was stub), Sheets API call uses encrypted refresh token, RAW mode (no formula injection) |
 | Bot correctly parses + confirms | ✓ — KESEFLE_KEYWORDS_v2 700-keyword classifier + DROPDOWN_FOR_UNSURE.gs + BOT_COMMANDS.gs |
 | Transactions saved internally | ⚠ KV stores user metadata; full transaction mirroring still pending (currently sheet-only) |

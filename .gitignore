@@ -12,3 +12,6 @@ node_modules/
 .context-brain.db-journal
 .context-brain.db-wal
 .context-brain.db-shm
+.fastembed_cache/
+admin.html.bak.*
+.DS_Store

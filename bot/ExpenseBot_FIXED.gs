@@ -26,9 +26,17 @@ const DASHBOARD_SHEET = 'מאזן שנתי';
 
 const VERIFY_TOKEN = 'expense_bot_verify_2026';
 const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHATSAPP_TOKEN') || '';
-const WHATSAPP_PHONE_NUMBER_ID = '1086749664527399';
+// New bot number: +17745448053 (Numero US, registered with Meta)
+// Phone Number ID must be set in Script Properties as WHATSAPP_PHONE_NUMBER_ID
+// (get it from https://developers.facebook.com/apps → WhatsApp → API Setup)
+const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1086749664527399';
+const BOT_PHONE_E164 = '+17745448053';
 
-const ALLOWED_PHONE = '972547760643';
+// ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
+// from any phone and routes them to the sender's own Sheet via KV lookup.
+// Keep this commented for reference / rollback:
+// const ALLOWED_PHONE = '972547760643';
+const ALLOWED_PHONE = '';
 
 // ============================================================
 // 🗂️ מילון קטגוריות

@@ -131,7 +131,7 @@ The repo auto-deploys to Vercel on push to `main`. Required env vars:
 
 - **Google OAuth verification (CASA Tier 2)** — required for `drive.file` restricted scope. Documents in `docs/compliance/google-oauth-verification.md`. 4-6 week lead time.
 - **Israeli Privacy Protection Law (Amendment 13, Aug 2025)** — privacy.html includes the §13 disclosure, scope justification, data retention. Self-serve deletion + export wired. Cross-border note: production should move Vercel + Upstash to EU regions (currently `iad1` — see roadmap blocker #2).
-- **WhatsApp Business policy** — STOP/`עצור`/`הסר` handler implemented + 24h-window tracking in webhook. Need dedicated business number (currently using personal `+972547760643`).
+- **WhatsApp Business policy** — STOP/`עצור`/`הסר` handler implemented + 24h-window tracking in webhook. Need dedicated business number (currently using personal `+17745448053`).
 
 ## Project structure
 

@@ -108,7 +108,7 @@ Required steps with Meta:
 1. **Create a Meta Business Account** at business.facebook.com using a verified business email (use a corporate email, not gmail.com — gmail addresses get extra scrutiny).
 2. **Add the WhatsApp Business Cloud API product** in Meta Business Suite.
 3. **Verify the business** — upload incorporation certificate of SRC Solutions (תעודת התאגדות / עוסק מורשה). For Israeli sole proprietor: תעודת עוסק מורשה + תעודת זהות. For ח״פ: תדפיס רשם החברות.
-4. **Register the phone number** — must be a number NOT currently used in personal WhatsApp. The current `+972-54-776-0643` listed in privacy.html appears to be Steven's personal WhatsApp — **DO NOT use this for the API**. Procure a dedicated number (Twilio, MessageBird, or an Israeli SIM never used for WhatsApp).
+4. **Register the phone number** — must be a number NOT currently used in personal WhatsApp. The current `+1-774-544-8053` listed in privacy.html appears to be Steven's personal WhatsApp — **DO NOT use this for the API**. Procure a dedicated number (Twilio, MessageBird, or an Israeli SIM never used for WhatsApp).
 5. **Set the display name** — "Kesefle" or "כסף'לה". Meta reviews this in 1–3 days. Display name **cannot** contain "Bot", "Official", or generic words like "Service".
 6. **Choose messaging tier** — start at Tier 1 (1,000 conversations/24h). Auto-upgrade to Tier 2 at 50% quality + 2k unique users in 7d.
 
