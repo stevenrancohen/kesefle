@@ -591,7 +591,15 @@ function getMonthlySummary() {
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (row[1] !== monthKey) continue;
+    // Column B can be either a String "2026-05" or a Date depending on cell
+    // formatting in the sheet. Normalize to "yyyy-MM" before comparing.
+    var rowMonth = row[1];
+    if (rowMonth instanceof Date) {
+      rowMonth = Utilities.formatDate(rowMonth, 'Asia/Jerusalem', 'yyyy-MM');
+    } else if (rowMonth) {
+      rowMonth = String(rowMonth).slice(0, 7); // handle "2026-05-01" etc.
+    }
+    if (rowMonth !== monthKey) continue;
     const amount = parseFloat(row[2]) || 0;
     const category = row[3];
 

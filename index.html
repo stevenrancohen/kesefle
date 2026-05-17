@@ -1081,26 +1081,54 @@ async function kesefleStartGoogle() {
     return kesefleShowAuthMsg('Google SDK טרם נטען. נסה שוב בעוד רגע.', 'err');
   }
   if (window.kfl) window.kfl.track('signup_start', { source: 'google', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' });
-  window.google.accounts.id.initialize({
-    client_id: cid,
-    callback: async function(response) {
-      kesefleShowAuthMsg('מתחבר…', 'info');
-      try {
-        var r = await fetch('/api/auth/google', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credential: response.credential, plan: window.KESEFLE_STATE.plan })
-        });
-        var j = await r.json();
-        if (j.ok) kesefleShowSuccess(j.user);
-        else kesefleShowAuthMsg('שגיאה: ' + (j.error || 'אימות נכשל'), 'err');
-      } catch (e) {
-        kesefleShowAuthMsg('שגיאת רשת. נסה שוב.', 'err');
-      }
-    },
-    auto_select: false,
-  });
-  window.google.accounts.id.prompt();
+
+  // Use One Tap prompt. Falls back to a redirect to /account if dismissed,
+  // skipped, or unavailable (e.g. incognito mode blocks 3rd-party cookies).
+  var fellBack = false;
+  function fallbackToAccount() {
+    if (fellBack) return;
+    fellBack = true;
+    kesefleShowAuthMsg('פותח חלון התחברות…', 'info');
+    // /account uses oauth2.initTokenClient which works in incognito (popup).
+    window.location.href = '/account?from=hero&plan=' + encodeURIComponent((window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free');
+  }
+
+  try {
+    window.google.accounts.id.initialize({
+      client_id: cid,
+      callback: async function(response) {
+        kesefleShowAuthMsg('מתחבר…', 'info');
+        try {
+          var r = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential, plan: window.KESEFLE_STATE.plan })
+          });
+          var j = await r.json();
+          if (j.ok) {
+            // Authenticated — now hop to /account so it can grant Drive scope + provision the sheet.
+            window.location.href = '/account?welcome=1';
+          } else {
+            kesefleShowAuthMsg('שגיאה: ' + (j.error || 'אימות נכשל'), 'err');
+          }
+        } catch (e) {
+          kesefleShowAuthMsg('שגיאת רשת. נסה שוב.', 'err');
+        }
+      },
+      auto_select: false,
+    });
+    window.google.accounts.id.prompt(function(notification) {
+      // GIS notification — if One Tap is unavailable, fall back to redirect flow.
+      if (!notification) return;
+      if (notification.isNotDisplayed && notification.isNotDisplayed()) { fallbackToAccount(); return; }
+      if (notification.isSkippedMoment && notification.isSkippedMoment()) { fallbackToAccount(); return; }
+      if (notification.isDismissedMoment && notification.isDismissedMoment()) { fallbackToAccount(); return; }
+    });
+    // Safety net: if nothing happens in 2.5s (incognito quietly blocks), redirect.
+    setTimeout(fallbackToAccount, 2500);
+  } catch (e) {
+    fallbackToAccount();
+  }
 }
 
 async function kesefleStartFacebook() {
