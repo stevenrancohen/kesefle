@@ -399,11 +399,20 @@ function processExpense(text) {
       runningTotal += finalAmount;
       _coerceCategoryBySubcategory(matched);
       Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory);
-      // Simple append. New rows go to the BOTTOM (= newest position in
-      // ascending order). No re-sort here — keeps natural chronological
-      // order as long as the sheet was sorted ascending once.
       sheet.appendRow([now, monthKey, finalAmount, matched.category, matched.subcategory, item.description, 'WhatsApp', true]);
       Logger.log('processExpense: appendRow DONE, lastRow=' + sheet.getLastRow());
+      // Keep the sheet sorted ascending (oldest at top → newest at bottom).
+      // Runs on every append so the order is always correct without user
+      // intervention. Sort 8 columns (A–H) to keep checkbox synced with row.
+      try {
+        var __lastRow = sheet.getLastRow();
+        if (__lastRow > 2) {
+          sheet.getRange(2, 1, __lastRow - 1, 8).sort({ column: 1, ascending: true });
+          Logger.log('processExpense: sorted asc (oldest top)');
+        }
+      } catch (__sortErr) {
+        Logger.log('processExpense: sort err: ' + (__sortErr && __sortErr.message));
+      }
       if (fx && fx.note) {
         try { setDashboardNoteForTransaction_(matched.category, matched.subcategory, monthKey, fx.note); } catch (eN) { Logger.log('note err: ' + eN.message); }
       }
