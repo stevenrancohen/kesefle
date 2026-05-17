@@ -321,6 +321,14 @@
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
             </button>
           </form>
+          <!-- quick-try chips: click a chip → input fills + submits, lets visitors test without typing -->
+          <div class="mt-2 flex flex-wrap items-center gap-1.5 px-1 pb-1" id="kf-hero-chips">
+            <span class="text-[10px] font-semibold text-ink-500">⚡ נסי:</span>
+            <button type="button" onclick="kfHeroTry('42 קפה')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">☕ 42 קפה</button>
+            <button type="button" onclick="kfHeroTry('245 סופר')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">🛒 245 סופר</button>
+            <button type="button" onclick="kfHeroTry('60 אובר')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">🚕 60 אובר</button>
+            <button type="button" onclick="kfHeroTry('8500 משכורת')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">💵 8500 משכורת</button>
+          </div>
         </div>
       </div>
       <!-- floating tag -->
@@ -977,6 +985,17 @@
   function escapeText(s) {
     return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
   }
+
+  // Quick-try chip handler — fills input then submits + tracks the chip click
+  window.kfHeroTry = function(text) {
+    var input = document.getElementById('hero-input');
+    if (!input) return;
+    input.value = text;
+    input.focus();
+    if (window.kfl) window.kfl.track('hero_demo_chip', { text: text });
+    var form = input.closest('form');
+    if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  };
 
   // Expose the form-submit handler globally
   window.kfHeroSend = function(e) {
