@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const VERSION = 'v3-2026-05-17';
+const VERSION = 'v5-2026-05-17';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -33,11 +33,13 @@ const PRECACHE_URLS = [
   '/og-image.png',
 ];
 
-// Hosts we will runtime-cache (fonts, CDN scripts).
+// Hosts we will runtime-cache.
+// IMPORTANT: cdn.tailwindcss.com is intentionally NOT cached here.
+// The Tailwind JIT script must always be fresh — a stale cached copy will
+// silently break the entire page layout (no class -> default styles).
 const RUNTIME_CACHEABLE_HOSTS = [
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'cdn.tailwindcss.com',
 ];
 
 // ---------------------------------------------------------------------------
