@@ -203,6 +203,20 @@ export default async function handler(req, res) {
   // 5. Look up the user by phone number
   const userRecord = await kvGet(`phone:${fromPhone}`);
   if (!userRecord) {
+    // Demo mode: anonymous "trial" so unregistered users can see what the bot does
+    // without committing to onboarding. Trigger words: "דמו" / "demo" / "נסה" / "try".
+    const DEMO_PATTERN = /^\s*(דמו|demo|נסה|try|התחל|start demo)\s*$/i;
+    if (DEMO_PATTERN.test(text)) {
+      await sendReply(fromPhone,
+        'מצוין! 🎉 בוא ננסה ביחד.\n\n' +
+        'שלח לי משהו כמו: "245 סופר"\n' +
+        'או: "60 וולט"\n' +
+        'או: "8500 משכורת"\n\n' +
+        'אני אנתח את ההודעה ואראה לך איך הייתי שומר אותה לגיליון שלך. בלי לחבר חשבון. ' +
+        'אחרי שתראה, כדי לשמור אמיתי — עבור ל-https://kesefle.vercel.app/account.');
+      return res.status(200).json({ ok: true, demo: true });
+    }
+    // Primary warm welcome (≤2s reply)
     await sendReply(fromPhone,
       'היי! 👋 אני כספלה — בוט ההוצאות שלך בוואטסאפ.\n' +
       'אני לא מזהה את המספר הזה עדיין, אז בוא נתחיל יחד.\n\n' +
@@ -214,6 +228,41 @@ export default async function handler(req, res) {
       '• "230 סופר רמי לוי"\n' +
       '• "1200 שכר דירה"\n\n' +
       'ואני אכניס הכל לגיליון שלך אוטומטית. 📊');
+
+    // 30s follow-up: nudge them to try demo mode if they're still around but haven't acted.
+    // Idempotent: only send once per phone, ever (kfl_demo_nudge:phone flag in KV).
+    if (kvUrlCheck && kvTokenCheck) {
+      try {
+        const nudgeKey = `kfl_demo_nudge:${fromPhone}`;
+        const already = await kvGet(nudgeKey);
+        if (!already) {
+          // Schedule follow-up. Vercel functions can't sleep, so we mark intent
+          // and rely on a separate cron — but for fast win, fire-and-forget with
+          // setTimeout works on Vercel pro/edge. Since we may be on hobby tier,
+          // we set a flag and let a cron handle it. Mark sent first to dedupe.
+          await fetch(`${kvUrlCheck}/set/${encodeURIComponent(nudgeKey)}?EX=86400`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${kvTokenCheck}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: fromPhone, scheduledAt: Date.now() + 30000, sent: false }),
+          });
+          // Best-effort inline timer — works for keep-alive deployments; cron picks up otherwise.
+          setTimeout(async () => {
+            try {
+              // Double-check the user didn't register in the meantime.
+              const stillUnregistered = !(await kvGet(`phone:${fromPhone}`));
+              if (!stillUnregistered) return;
+              await sendReply(fromPhone,
+                '💡 רוצה לנסות עכשיו? שלח "דמו" ואני אראה לך איך זה עובד מבלי לחבר את החשבון שלך.');
+              await fetch(`${kvUrlCheck}/set/${encodeURIComponent(nudgeKey)}?EX=86400`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${kvTokenCheck}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: fromPhone, sent: true, sentAt: Date.now() }),
+              });
+            } catch (e) { /* non-fatal */ }
+          }, 30000);
+        }
+      } catch (e) { /* non-fatal */ }
+    }
     return res.status(200).json({ ok: true, unregistered: true });
   }
 

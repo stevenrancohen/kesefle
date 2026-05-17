@@ -102,10 +102,70 @@
 }
 .animate-blob { animation: kfl-blob-drift 14s ease-in-out infinite; }
 
+/* subtle film-grain noise — adds premium depth to flat dark surfaces */
+.kfl-noise {
+  position: relative;
+}
+.kfl-noise::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/></svg>");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+
+/* magnetic CTA — JS lifts buttons subtly toward the cursor */
+.magnetic-cta {
+  transition: transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+/* marquee — single-row vendor logo strip, infinite scroll */
+@keyframes kfl-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.kfl-marquee-track {
+  display: flex; gap: 3rem; width: max-content;
+  animation: kfl-marquee 35s linear infinite;
+}
+.kfl-marquee:hover .kfl-marquee-track { animation-play-state: paused; }
+.kfl-marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+          mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+/* outline-then-fill SVG icon stroke draw on scroll into view */
+@keyframes kfl-stroke-draw { to { stroke-dashoffset: 0; } }
+.kfl-icon-draw path, .kfl-icon-draw line, .kfl-icon-draw circle, .kfl-icon-draw rect, .kfl-icon-draw polyline {
+  stroke-dasharray: 240; stroke-dashoffset: 240;
+}
+.kfl-icon-draw.kfl-in-view path, .kfl-icon-draw.kfl-in-view line, .kfl-icon-draw.kfl-in-view circle, .kfl-icon-draw.kfl-in-view rect, .kfl-icon-draw.kfl-in-view polyline {
+  animation: kfl-stroke-draw 1.2s ease-out forwards;
+}
+
+/* corner status pill — link to /status, always-on heartbeat */
+.kfl-status-pill {
+  position: fixed; bottom: 18px; left: 18px; z-index: 60;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.85rem; border-radius: 9999px;
+  background: rgba(15, 20, 34, 0.78); backdrop-filter: blur(14px);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; font-weight: 600; color: rgba(187, 247, 211, 0.95);
+  text-decoration: none; box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s, border-color 0.2s;
+}
+.kfl-status-pill:hover { transform: translateY(-2px); border-color: rgba(34, 197, 94, 0.55); }
+@media (max-width: 640px) { .kfl-status-pill { display: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .holo-text, .matrix-grid, .neon-card, .scan-line::before, .live-dot, .type-cursor::after,
-  .animate-gradient, .shimmer-overlay, .counter-pop, .animate-blob {
+  .animate-gradient, .shimmer-overlay, .counter-pop, .animate-blob,
+  .kfl-marquee-track, .kfl-icon-draw.kfl-in-view path,
+  .kfl-icon-draw.kfl-in-view line, .kfl-icon-draw.kfl-in-view circle,
+  .kfl-icon-draw.kfl-in-view rect, .kfl-icon-draw.kfl-in-view polyline {
     animation: none !important;
   }
-  .tilt-soft:hover { transform: none; }
+  .tilt-soft:hover, .magnetic-cta { transform: none !important; }
 }

@@ -56,6 +56,53 @@
   .listen-dot { animation: dot-pulse 1.4s ease-in-out infinite both; }
   .listen-dot:nth-child(2) { animation-delay: 0.16s; }
   .listen-dot:nth-child(3) { animation-delay: 0.32s; }
+
+  /* "Why?" tooltip — pure CSS, mobile-friendly via :focus */
+  .why-tip { position: relative; display: inline-flex; }
+  .why-tip > button {
+    display: inline-grid; place-items: center;
+    width: 18px; height: 18px; border-radius: 9999px;
+    background: #e2e8f0; color: #475569;
+    font-size: 11px; font-weight: 800; cursor: help;
+    border: 0; padding: 0;
+  }
+  .why-tip > button:hover, .why-tip > button:focus { background: #cbd5e1; outline: none; }
+  .why-tip > .why-body {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    width: max-content; max-width: 240px;
+    background: #0f172a; color: #f8fafc;
+    padding: 8px 10px; border-radius: 10px;
+    font-size: 11px; line-height: 1.45; font-weight: 500;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none;
+    transform: translateY(-4px); transition: opacity 0.15s, transform 0.15s;
+    z-index: 30;
+  }
+  .why-tip > button:hover + .why-body,
+  .why-tip > button:focus + .why-body,
+  .why-tip > .why-body:hover {
+    opacity: 1; pointer-events: auto; transform: translateY(0);
+  }
+  @media (max-width: 640px) {
+    .why-tip > .why-body { left: auto; right: 0; max-width: 200px; }
+  }
+
+  /* Loading step list (sheet provisioning) */
+  .prov-step { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .prov-step .prov-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid #cbd5e1; flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .prov-step.done .prov-dot { background: #10b981; border-color: #10b981; }
+  .prov-step.done .prov-dot::after { content: '✓'; color: white; font-size: 9px; font-weight: 900; display: block; line-height: 10px; text-align: center; }
+  .prov-step.active .prov-dot {
+    border-color: #10b981; border-top-color: transparent;
+    animation: spin 0.8s linear infinite;
+  }
+  .prov-step.active { color: #047857; font-weight: 700; }
+  .prov-step.done { color: #475569; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 <script src="/lib/analytics.js" defer></script>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -99,10 +146,10 @@
   </section>
 
   <!-- onboarding banner -->
-  <section id="onboarding" class="relative mb-8 overflow-hidden rounded-3xl border border-amber-200 bg-amber-50 p-6">
+  <section id="onboarding" class="relative mb-8 overflow-hidden rounded-3xl border border-brand-200 bg-brand-50 p-6">
     <div id="confetti-host" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
     <div class="flex items-start gap-4">
-      <div id="banner-icon" class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-amber-100 text-2xl transition-colors">👋</div>
+      <div id="banner-icon" class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-brand-100 text-2xl transition-colors">👋</div>
       <div class="flex-1">
         <h2 id="banner-title" class="text-xl font-black">ברוך הבא! בוא נסיים את ההגדרה</h2>
         <p id="banner-subtitle" class="mt-1 text-slate-700">3 שלבים קצרים והכל מוכן.</p>
@@ -126,7 +173,13 @@
           <li class="flex items-start gap-3" id="step-2">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">2</span>
             <div class="flex-1">
-              <div class="font-bold">צור את הגיליון שלך</div>
+              <div class="flex items-center gap-2 font-bold">
+                <span>צור את הגיליון שלך</span>
+                <span class="why-tip">
+                  <button type="button" aria-label="למה צריך גישה ל-Drive?">?</button>
+                  <span class="why-body">למה צריך הרשאה ל-Google Drive? כדי להעתיק תבנית גיליון לדרייב שלך — הגיליון נשמר אצלך, פרטי, רק שלך. אנחנו לא רואים את הקבצים האחרים שלך.</span>
+                </span>
+              </div>
               <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
               <!-- Sheet structure preview (what they'll get) -->
               <div id="sheet-preview" class="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px]">
@@ -156,17 +209,30 @@
                 </div>
               </div>
               <div class="mb-2 text-[11px] text-slate-500">↑ ככה הגיליון שלך ייראה. נוצר אצלך ב-Drive, פרטי, רק שלך.</div>
-              <button onclick="kesefleProvisionSheet()" id="btn-provision" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">
+              <button onclick="kesefleProvisionSheet()" id="btn-provision" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 צור את הגיליון שלי
               </button>
+              <!-- Granular live progress steps (shown during provisioning) -->
+              <div id="provision-progress" class="mt-3 hidden space-y-2 rounded-xl border border-emerald-100 bg-white p-3">
+                <div class="prov-step" id="prov-step-auth"><span class="prov-dot"></span><span>מבקש הרשאה מגוגל…</span></div>
+                <div class="prov-step" id="prov-step-drive"><span class="prov-dot"></span><span>מתחבר ל-Google Drive…</span></div>
+                <div class="prov-step" id="prov-step-copy"><span class="prov-dot"></span><span>מעתיק את התבנית לדרייב שלך…</span></div>
+                <div class="prov-step" id="prov-step-finish"><span class="prov-dot"></span><span>מסיים ומקשר…</span></div>
+              </div>
               <div id="provision-status" class="mt-2 hidden text-sm"></div>
             </div>
           </li>
           <li class="flex items-start gap-3" id="step-3">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
             <div class="flex-1">
-              <div class="font-bold">חבר/י את מספר הוואטסאפ שלך</div>
+              <div class="flex items-center gap-2 font-bold">
+                <span>חבר/י את מספר הוואטסאפ שלך</span>
+                <span class="why-tip">
+                  <button type="button" aria-label="למה צריך את המספר?">?</button>
+                  <span class="why-body">למה צריך את המספר? כדי שכשתשלחי הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
+                </span>
+              </div>
               <div class="text-sm text-slate-600 mb-3">הזיני את מספר הוואטסאפ שלך, ושלחי קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אלייך.</div>
 
               <!-- Sub-state A: not yet linked — show phone input + Generate Code button -->
@@ -377,6 +443,10 @@ function _kflNormalizeIsraelPhone(input) {
   if (!input) return null;
   var s = String(input).replace(/\D+/g, '');
   if (!s) return null;
+  // Auto-strip duplicated country code: "+972 972 54..." or "972972..." → "972..."
+  while (s.indexOf('972972') === 0) s = s.slice(3);
+  // Common paste case: user pasted full E.164 then typed 0 in front → "0972..." → "972..."
+  if (s.indexOf('0972') === 0) s = s.slice(1);
   // 0xx... → 972xx...
   if (s.charAt(0) === '0') s = '972' + s.slice(1);
   // 5x... → 9725x... (user typed without leading 0)
@@ -388,9 +458,17 @@ function _kflNormalizeIsraelPhone(input) {
 function _kflShowLinkError(msg) {
   var el = document.getElementById('link-error');
   if (!el) return;
-  el.textContent = msg;
+  // WHAT + WHY + WHAT TO DO with a Try-again button.
+  var safe = String(msg || 'שגיאה').replace(/</g,'&lt;');
+  el.innerHTML = '<div class="rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-700">' +
+                 '<div class="font-bold">' + safe + '</div>' +
+                 '<div class="mt-1 flex flex-wrap gap-2 items-center">' +
+                 '<button type="button" onclick="kesefleLinkRequestCode()" class="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700">נסי שוב</button>' +
+                 '<details class="text-[11px] text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary>' +
+                 '<div class="mt-1">לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודאי שהמספר בפורמט 054-123-4567 ונסי שוב.</div>' +
+                 '</details></div></div>';
   el.classList.remove('hidden');
-  setTimeout(function() { el.classList.add('hidden'); }, 5000);
+  setTimeout(function() { el.classList.add('hidden'); }, 12000);
 }
 
 function _kflSetLinkState(state) {
@@ -557,6 +635,35 @@ function kesefleLinkResetState() {
   }
 })();
 
+// Live-feedback on phone input: auto-strip duplicate +972 country codes as user types/pastes.
+// Shows a soft hint with the canonical form so the user can visually confirm.
+(function wirePhoneLiveFeedback(){
+  var input = document.getElementById('link-phone-input');
+  if (!input) return;
+  var hint = document.createElement('div');
+  hint.id = 'link-phone-hint';
+  hint.className = 'mt-1 text-[11px] text-emerald-700 hidden';
+  if (input.parentElement && input.parentElement.parentElement) {
+    input.parentElement.parentElement.insertBefore(hint, document.getElementById('link-error'));
+  }
+  function update(){
+    var raw = input.value || '';
+    // If user pasted "+972 +972 54..." or similar duplicate, clean visually too.
+    if (/972\s*972|\+972.*\+972/.test(raw)) {
+      input.value = raw.replace(/(\+?972[\s-]*)+/, '+972 ');
+    }
+    var norm = _kflNormalizeIsraelPhone(input.value);
+    if (norm && input.value.replace(/\D+/g,'').length >= 9) {
+      hint.textContent = 'יזוהה כ: +' + norm;
+      hint.classList.remove('hidden');
+    } else {
+      hint.classList.add('hidden');
+    }
+  }
+  input.addEventListener('input', update);
+  input.addEventListener('paste', function(){ setTimeout(update, 10); });
+})();
+
 // ============ REFERRAL CODE PICKUP ============
 // Read ?ref=<code> (or sessionStorage from /referral landing) and remember it.
 // On first successful signup (kesefle_user with idToken present), POST it to /api/referral?action=redeem.
@@ -663,7 +770,7 @@ function kesefleAccountStartSignin() {
     return;
   }
   var btn = document.getElementById('account-signin-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '...מתחבר'; }
+  if (btn) { btn.disabled = true; btn.textContent = '…אנחנו בודקים את ההרשאות'; }
   var client = window.google.accounts.oauth2.initTokenClient({
     client_id: cid,
     scope: 'openid email profile https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
@@ -770,22 +877,40 @@ function kesefleShowSigninPrompt() {
   kesefleUpdateOnboardingProgress();
 })();
 
+// Drive provisioning step helpers — updates the visual checklist
+function _kflSetProvStep(id, state) {
+  var el = document.getElementById('prov-step-' + id);
+  if (!el) return;
+  el.classList.remove('active', 'done');
+  if (state) el.classList.add(state);
+}
+function _kflResetProvSteps() {
+  ['auth','drive','copy','finish'].forEach(function(s){ _kflSetProvStep(s, ''); });
+}
+
 async function kesefleProvisionSheet() {
   var u = kesefleGetUser();
   if (!u) return;
   var btn = document.getElementById('btn-provision');
   var status = document.getElementById('provision-status');
+  var prog = document.getElementById('provision-progress');
   btn.disabled = true;
   btn.textContent = 'יוצר…';
   status.className = 'mt-2 text-sm text-slate-500';
-  status.textContent = 'מבקש הרשאה ל-Google Drive…';
-  status.classList.remove('hidden');
+  status.textContent = '';
+  status.classList.add('hidden');
+  if (prog) { prog.classList.remove('hidden'); _kflResetProvSteps(); _kflSetProvStep('auth', 'active'); }
 
   if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-    status.className = 'mt-2 text-sm text-red-600';
-    status.textContent = '✗ Google SDK לא נטען. רענן את הדף ונסה שוב.';
+    if (prog) prog.classList.add('hidden');
+    status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
+    status.innerHTML = '<div class="font-bold">לא הצלחנו להתחיל את ההתחברות לגוגל.</div>' +
+                       '<div class="text-xs mt-1 text-red-600">למה? קוד ההתחברות של גוגל לא נטען (לרוב חוסם פרסומות או חיבור איטי).</div>' +
+                       '<div class="mt-2 flex flex-wrap gap-2"><button onclick="location.reload()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">רענני את הדף ונסי שוב</button>' +
+                       '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary><div class="mt-1">הספריה של Google Sign-In לא הספיקה לטעון. רענון בדרך כלל פותר את זה.</div></details></div>';
+    status.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'נסה שוב';
+    btn.textContent = 'נסי שוב';
     return;
   }
 
@@ -797,13 +922,24 @@ async function kesefleProvisionSheet() {
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
     callback: async function(tokenResponse) {
       if (tokenResponse.error || !tokenResponse.access_token) {
-        status.className = 'mt-2 text-sm text-red-600';
-        status.textContent = '✗ נדרשת הרשאה ל-Drive כדי ליצור גיליון. ' + (tokenResponse.error || '');
+        if (prog) prog.classList.add('hidden');
+        status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
+        status.innerHTML = '<div class="font-bold">לא קיבלנו אישור מגוגל.</div>' +
+                           '<div class="text-xs mt-1 text-red-600">למה? צריך לאשר ל-כסף\'לה גישה כדי שנוכל ליצור גיליון בדרייב שלך.</div>' +
+                           '<div class="mt-2 flex flex-wrap gap-2"><button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">נסי שוב — אשרי הכל</button>' +
+                           '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary><div class="mt-1">בחלון של גוגל לוחצים על Allow / "אישור" עבור כל ההרשאות (Drive + Sheets). בלי זה לא נוכל להעתיק את התבנית.</div></details></div>';
+        status.classList.remove('hidden');
         btn.disabled = false;
-        btn.textContent = 'אשר הרשאה';
+        btn.textContent = 'אשרי הרשאה';
         return;
       }
-      status.textContent = 'מעתיק תבנית ל-Drive שלך…';
+      // Auth done → moving on to drive copy
+      _kflSetProvStep('auth', 'done');
+      _kflSetProvStep('drive', 'active');
+      setTimeout(function(){
+        _kflSetProvStep('drive', 'done');
+        _kflSetProvStep('copy', 'active');
+      }, 350);
       try {
         var r = await fetch('/api/sheet/provision', {
           method: 'POST',
@@ -816,11 +952,15 @@ async function kesefleProvisionSheet() {
         });
         var j = await r.json();
         if (j.ok) {
+          _kflSetProvStep('copy', 'done');
+          _kflSetProvStep('finish', 'active');
+          setTimeout(function(){ _kflSetProvStep('finish', 'done'); }, 250);
           localStorage.setItem('kesefle_sheet', JSON.stringify(j));
           document.getElementById('sheet-link').href = j.spreadsheetUrl;
           document.getElementById('linked-sheet').classList.remove('hidden');
-          status.className = 'mt-2 text-sm text-emerald-600';
-          status.textContent = '✓ הגיליון מוכן! מעביר אותך למסך ההכרות…';
+          status.className = 'mt-2 text-sm font-bold text-emerald-700';
+          status.innerHTML = '✓ הגיליון מוכן! מעבירה אותך למסך הברוך הבא…';
+          status.classList.remove('hidden');
           btn.style.display = 'none';
           if (window.kfl) window.kfl.track('sheet_provisioned', { plan: u.plan || 'free' });
           kesefleUpdateOnboardingProgress();
@@ -831,49 +971,89 @@ async function kesefleProvisionSheet() {
             setTimeout(function() { window.location.href = '/welcome'; }, 1500);
           }
         } else {
-          status.className = 'mt-2 text-sm text-red-600 break-words';
+          if (prog) prog.classList.add('hidden');
+          status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
           var detail = j.detail || '';
-          // Smart fix suggestions based on the actual error string returned
-          // by Google. We surface a one-click recovery action when possible,
-          // instead of just printing the raw API error.
-          var friendly = (j.error || 'נכשל. נסה שוב.') + (detail ? ' — ' + detail : '');
+          // WHAT happened + WHY + WHAT TO DO — every branch must answer all three.
+          var what = j.error || 'לא הצלחנו ליצור את הגיליון.';
+          var why = '';
           var fix = '';
-          if (/drive\.googleapis\.com.*has not been used/i.test(detail) ||
-              /drive\s*api.*disabled/i.test(detail)) {
-            friendly = '✗ Google Drive API לא מופעל בפרויקט שלך.';
-            fix = 'תיקון מהיר: <a class="text-brand-700 underline" target="_blank" href="https://console.developers.google.com/apis/api/drive.googleapis.com/overview">לחצי כאן להפעלת Drive API</a> → Enable → המתיני 60 שניות → נסי שוב.';
+          var fixLabel = 'נסי שוב';
+          var fixIsLink = false;
+          var fixHref = '';
+          if (/drive\.googleapis\.com.*has not been used/i.test(detail) || /drive\s*api.*disabled/i.test(detail)) {
+            what = 'לא הצלחנו ליצור את הגיליון שלך.';
+            why = 'למה? Google Drive API לא מופעל בפרויקט שלך.';
+            fix = 'לחצי על הכפתור למטה, לחצי ENABLE, חכי 60 שניות וחזרי לכאן.';
+            fixLabel = 'הפעילי Drive API ←';
+            fixIsLink = true;
+            fixHref = 'https://console.developers.google.com/apis/api/drive.googleapis.com/overview';
           } else if (/sheets\.googleapis\.com.*has not been used/i.test(detail)) {
-            friendly = '✗ Google Sheets API לא מופעל בפרויקט שלך.';
-            fix = 'תיקון: <a class="text-brand-700 underline" target="_blank" href="https://console.developers.google.com/apis/api/sheets.googleapis.com/overview">לחצי כאן להפעלת Sheets API</a> → Enable → המתיני 60 שניות → נסי שוב.';
+            what = 'לא הצלחנו ליצור את הגיליון שלך.';
+            why = 'למה? Google Sheets API לא מופעל בפרויקט שלך.';
+            fix = 'לחצי על הכפתור, לחצי ENABLE, חכי 60 שניות וחזרי.';
+            fixLabel = 'הפעילי Sheets API ←';
+            fixIsLink = true;
+            fixHref = 'https://console.developers.google.com/apis/api/sheets.googleapis.com/overview';
           } else if (/file not found/i.test(detail) || /notFound/i.test(detail)) {
-            friendly = '✗ קובץ התבנית לא נמצא.';
-            fix = 'ייתכן שה-Sheet ID ב-Vercel שגוי או שהתבנית לא משותפת. צרי קשר עם התמיכה.';
+            what = 'לא מצאנו את תבנית הגיליון.';
+            why = 'למה? קובץ התבנית הופסק מקובץ ההגדרות שלנו.';
+            fix = 'זו תקלה שלנו — לחצי על הכפתור לשלוח אימייל ונסדר מיד.';
+            fixLabel = 'שלחי לתמיכה ←';
+            fixIsLink = true;
+            fixHref = 'mailto:srcslcollection@gmail.com?subject=Drive%20copy%20file%20not%20found';
           } else if (/insufficient.*permission/i.test(detail) || /permissionDenied/i.test(detail)) {
-            friendly = '✗ הרשאות חסרות מהחשבון שלך.';
-            fix = 'תיקון: התנתקי וחזרי, ושימי לב שאישרת את ההרשאות Drive + Spreadsheets בהתחברות.';
+            what = 'חסרות הרשאות מהחשבון שלך.';
+            why = 'למה? כשהתחברת לגוגל, לא אישרת את אחת ההרשאות שצריך (Drive או Sheets).';
+            fix = 'לחצי על הכפתור — נשאל שוב והפעם אשרי הכל.';
           } else if (/quota/i.test(detail) || /rate limit/i.test(detail)) {
-            friendly = '✗ חרגנו ממכסת ה-API לרגע.';
-            fix = 'המתיני 30 שניות ונסי שוב.';
+            what = 'חרגנו ממכסת השרת לרגע.';
+            why = 'למה? יותר מדי בקשות בו-זמנית מצד גוגל.';
+            fix = 'חכי 30 שניות ונסי שוב.';
+            fixLabel = 'נסי שוב בעוד 30 שניות';
           } else if (/invalid_access_token/i.test(j.error || '')) {
-            friendly = '✗ ההתחברות פגה.';
-            fix = 'תיקון: <a class="text-brand-700 underline" href="/">חזרי להתחברות</a> ואשרי שוב.';
+            what = 'ההתחברות פגה.';
+            why = 'למה? עברו יותר מ-60 דקות מאז ההתחברות שלך.';
+            fix = 'חזרי להתחברות וננסה שוב.';
+            fixLabel = 'חזרי להתחברות ←';
+            fixIsLink = true;
+            fixHref = '/';
           } else if (/missing_drive_readonly_scope/i.test(detail) || /missing_drive_readonly_scope/i.test(j.error || '')) {
-            friendly = '✗ נדרשת הרשאה נוספת לקריאת התבנית.';
-            fix = 'לחצי שוב על "צור את הגיליון שלך" ואשרי את כל ההרשאות בחלון של גוגל (כולל "View files in your Google Drive").';
+            what = 'נדרשת הרשאה נוספת.';
+            why = 'למה? כדי להעתיק את התבנית מהדרייב שלנו לדרייב שלך, צריך אישור לקריאת קבצים.';
+            fix = 'לחצי שוב על "צור את הגיליון" ואשרי את כל ההרשאות (כולל "View files in your Google Drive").';
+          } else {
+            why = detail ? 'פרטים טכניים: ' + detail.slice(0, 120) : 'למה? לא בטוחים — זו תקלה לא צפויה.';
+            fix = 'נסי שוב. אם זה ממשיך, שלחי לנו אימייל.';
           }
-          status.innerHTML = friendly + (fix ? '<br><span class="text-xs text-ink-500 dark:text-ink-300">' + fix + '</span>' : '');
+          var fixBtnHtml = fixIsLink
+            ? '<a target="_blank" rel="noopener" href="' + fixHref + '" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">' + fixLabel + '</a>'
+            : '<button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">' + fixLabel + '</button>';
+          status.innerHTML = '<div class="font-bold">' + what + '</div>' +
+                             (why ? '<div class="text-xs mt-1 text-red-600">' + why + '</div>' : '') +
+                             '<div class="text-xs mt-1 text-red-700">' + fix + '</div>' +
+                             '<div class="mt-2 flex flex-wrap gap-2 items-center">' + fixBtnHtml +
+                             '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary>' +
+                             '<div class="mt-1">' + (detail ? detail.slice(0, 220) : 'זו שגיאה כללית שמגיעה מצד גוגל. אם הפתרון לא עוזר, אימייל אלינו פותר את זה תוך דקות.') + '</div></details></div>';
+          status.classList.remove('hidden');
           try { console.error('provision failed', j); } catch(_e){}
           btn.disabled = false;
-          btn.textContent = 'נסה שוב';
+          btn.textContent = 'נסי שוב';
         }
       } catch (e) {
-        status.className = 'mt-2 text-sm text-red-600';
+        if (prog) prog.classList.add('hidden');
+        status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
         var em = (e && e.message) || '';
-        status.innerHTML = '✗ שגיאת רשת' + (em ? ': ' + em : '') +
-          '<br><span class="text-xs text-ink-500 dark:text-ink-300">בדקי חיבור לאינטרנט ונסי שוב. אם התקלה ממשיכה, רעני את הדף.</span>';
+        status.innerHTML = '<div class="font-bold">שגיאת רשת — לא הצלחנו להגיע לשרת.</div>' +
+                           '<div class="text-xs mt-1 text-red-600">למה? נראה שהחיבור לאינטרנט שלך התנתק או שהשרת שלנו לא זמין כרגע.</div>' +
+                           '<div class="text-xs mt-1 text-red-700">בדקי חיבור ל-WiFi/סלולר ונסי שוב.</div>' +
+                           '<div class="mt-2 flex flex-wrap gap-2 items-center">' +
+                           '<button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">נסי שוב</button>' +
+                           '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary><div class="mt-1">' + (em ? em : 'הבקשה לשרת לא הגיעה. רוב הזמן זה בעיית רשת לרגע.') + '</div></details></div>';
+        status.classList.remove('hidden');
         try { console.error('provision network error', e); } catch(_e){}
         btn.disabled = false;
-        btn.textContent = 'נסה שוב';
+        btn.textContent = 'נסי שוב';
       }
     }
   });

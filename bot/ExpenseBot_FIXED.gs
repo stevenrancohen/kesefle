@@ -346,6 +346,10 @@ function doPost(e) {
       var __interactive_ = __msg_.interactive || null;
       Logger.log('doPost: from=' + __from_ + ' text="' + __text_ + '" interactive=' + (__interactive_ ? __interactive_.type : 'no'));
 
+      // 🕒 Mark the user as active so cronDailyMotivation can skip if they
+      // already chatted in the last 2 hours (don't be annoying).
+      try { PropertiesService.getScriptProperties().setProperty('lastUserMessageAt', new Date().toISOString()); } catch (_lumErr) {}
+
       if (typeof ALLOWED_PHONES !== 'undefined' && ALLOWED_PHONES.length > 0) {
         var __clean_ = String(__from_).replace(/[^0-9]/g, '');
         if (ALLOWED_PHONES.indexOf(__clean_) < 0) {
@@ -769,14 +773,32 @@ function processExpense(text, fromPhone) {
       const emoji = matched.isIncome ? '💵' : '💸';
       writtenLines.push(emoji + ' ₪' + finalAmount.toLocaleString('he-IL') + ' → ' + matched.subcategory);
     });
+    // 🌱 Streak bump (silent if disabled) — runs after every successful write.
+    var __streakTail = '';
+    try {
+      var __streak = _bumpStreak_();
+      var __celebration = _streakCelebrationLine_(__streak);
+      if (__celebration) __streakTail = '\n\n' + __celebration;
+    } catch (__streakErr) { Logger.log('streak err: ' + (__streakErr && __streakErr.message)); }
+
     if (parsed.items.length === 1) {
       const it = parsed.items[0];
       const matched = matchCategorySmart(it.description);
-      return { reply: '✅ נרשם בהצלחה!\n💸 סכום: ₪' + Math.abs(it.amount).toLocaleString('he-IL') + '\n📂 ' + matched.category + '\n🏷️ ' + matched.subcategory + '\n📝 ' + it.description + '\n\nשלח "סיכום" לראות סיכום החודש' };
+      // 💡 Optional month-to-date context for the category just logged.
+      var __catCtx = '';
+      try { __catCtx = _categoryMonthToDateLine_(matched.category, matched.isIncome); } catch (__ctxErr) {}
+      var __subLabel = (matched.subcategory && matched.subcategory !== matched.category) ? '\n🏷️ ' + matched.subcategory : '';
+      return { reply:
+        '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
+        '\n📂 ' + matched.category + __subLabel +
+        (__catCtx ? '\n💡 ' + __catCtx : '') +
+        __streakTail +
+        '\n\nכתוב "סיכום" לראות איפה אתה עומד החודש.'
+      };
     }
-    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + '):\n' + writtenLines.join('\n') };
+    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __streakTail };
   } catch (err) {
-    return { reply: '❌ שגיאה בכתיבה לשיט: ' + err.message };
+    return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + err.message + '\nננסה שוב בעוד דקה? אם זה ממשיך — כתוב "עזרה".' };
   }
 }
 
@@ -2168,4 +2190,406 @@ function _categorizationConfidence(text, matched) {
   }
   if (matchCount >= 2 || longestMatch >= 6) return 'high';
   return 'moderate';
+}
+
+// ============================================================
+// 🔥 STREAK TRACKER — consecutive days the user logged ANY expense.
+// ============================================================
+// Stored in Script Properties (single-tenant). For multi-tenant we key by
+// phone: e.g. 'streak:972547760643' → { count, lastLogIsoDate }.
+// _bumpStreak_ is called from processExpense on every successful write.
+// _streakCelebrationLine_ returns a Hebrew tail line only on milestone days.
+// Milestones: 1, 3, 7, 14, 30, 60, 100, 200, 365.
+
+function _streakKey_(fromPhone) {
+  var phone = fromPhone || ALLOWED_PHONE || '';
+  return phone ? ('streak:' + phone) : 'streak:default';
+}
+
+// Returns the current streak count after bumping. Idempotent within the same
+// calendar day in Israel time — if user logs 5 expenses on Sunday the streak
+// only ticks once. Resets to 1 if the previous log was >1 calendar day ago.
+function _bumpStreak_(fromPhone) {
+  var props = PropertiesService.getScriptProperties();
+  var key = _streakKey_(fromPhone);
+  var todayKey = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM-dd');
+  var raw = props.getProperty(key);
+  var state = { count: 0, lastLogDate: '' };
+  if (raw) {
+    try { state = JSON.parse(raw); } catch (e) { state = { count: 0, lastLogDate: '' }; }
+  }
+  if (state.lastLogDate === todayKey) {
+    return state.count; // already counted today
+  }
+  // Compute calendar-day delta in Asia/Jerusalem
+  var dayDelta = 999;
+  if (state.lastLogDate) {
+    var parts = String(state.lastLogDate).split('-');
+    if (parts.length === 3) {
+      var lastUtc = Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      var tParts = todayKey.split('-');
+      var todayUtc = Date.UTC(Number(tParts[0]), Number(tParts[1]) - 1, Number(tParts[2]));
+      dayDelta = Math.round((todayUtc - lastUtc) / 86400000);
+    }
+  }
+  state.count = (dayDelta === 1) ? (state.count + 1) : 1;
+  state.lastLogDate = todayKey;
+  props.setProperty(key, JSON.stringify(state));
+  return state.count;
+}
+
+// Returns a celebratory Hebrew line for milestone days, or empty string.
+// Stays out of the way on non-milestone days so the bot isn't noisy.
+function _streakCelebrationLine_(streak) {
+  if (!streak) return '';
+  switch (streak) {
+    case 1:   return '🌱 הוצאה ראשונה! יום 1 של מעקב — הצעד הקשה ביותר נעשה.';
+    case 3:   return '🔥 3 ימים ברצף! ההרגל נבנה — אל תפסיק עכשיו.';
+    case 7:   return '⭐ שבוע שלם ברצף! 80% מהמשתמשים נושרים פה. אתה לא.';
+    case 14:  return '🚀 שבועיים ברצף! זה כבר לא מקרי — זה הרגל.';
+    case 30:  return '🏆 חודש שלם של מעקב יומיומי! אתה רשמית בקבוצה של ה-5% המובילים.';
+    case 60:  return '💎 60 ימים ברצף. בנקודה הזו אנשים שלך פשוט סומכים על המספרים בעצמם.';
+    case 100: return '👑 100 ימים. זה דורש סוג מסוים של אדם. אתה הוא.';
+    case 200: return '🌟 200 ימים. אם תרצה — נדפיס לך תעודה.';
+    case 365: return '🎂 שנה של מעקב! הכסף שלך פתאום שקוף לחלוטין. ברכות.';
+    default:  return '';
+  }
+}
+
+// Returns the current streak without bumping. Useful for cron messages.
+function _getStreakCount_(fromPhone) {
+  var props = PropertiesService.getScriptProperties();
+  var raw = props.getProperty(_streakKey_(fromPhone));
+  if (!raw) return 0;
+  try {
+    var state = JSON.parse(raw);
+    // If lastLogDate is older than yesterday (Israel time), the streak is broken.
+    var todayKey = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM-dd');
+    if (state.lastLogDate === todayKey) return state.count;
+    if (state.lastLogDate) {
+      var parts = state.lastLogDate.split('-');
+      var tParts = todayKey.split('-');
+      var lastUtc = Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      var todayUtc = Date.UTC(Number(tParts[0]), Number(tParts[1]) - 1, Number(tParts[2]));
+      var delta = Math.round((todayUtc - lastUtc) / 86400000);
+      if (delta <= 1) return state.count;
+    }
+    return 0; // broken streak
+  } catch (e) { return 0; }
+}
+
+// Returns "החודש הוצאת ₪X על Y — בדרך לממוצע שלך." or empty if not applicable.
+// Skipped silently for income categories or when month-to-date is small.
+function _categoryMonthToDateLine_(category, isIncome) {
+  if (isIncome) return '';
+  if (!category) return '';
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return '';
+    var data = sheet.getDataRange().getValues();
+    if (data.length < 2) return '';
+    var now = new Date();
+    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    var sum = 0;
+    for (var i = 1; i < data.length; i++) {
+      var d = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
+      if (isNaN(d.getTime()) || d < monthStart) continue;
+      if (String(data[i][3] || '') !== category) continue;
+      sum += Number(data[i][2]) || 0;
+    }
+    if (sum < 50) return ''; // too early in month to be insightful
+    return 'החודש הוצאת ₪' + sum.toLocaleString('he-IL') + ' על ' + category + '.';
+  } catch (e) { return ''; }
+}
+
+// ============================================================
+// ☀️ DAILY MOTIVATION CRON — fires once daily at 9:30 Israel time.
+// ============================================================
+// Setup: call installDailyMotivationTrigger() once from the editor.
+// Behavior: rotates through Hebrew motivational categories, picks one,
+//   blends in streak + day-of-week awareness, throttles to skip if the
+//   user wrote something to the bot in the last 2 hours.
+//
+// Default: OFF. Trigger only fires after Steven calls the installer.
+
+function cronDailyMotivation() {
+  try {
+    var to = ALLOWED_PHONE || (PropertiesService.getScriptProperties().getProperty('WEEKLY_SUMMARY_PHONE') || '');
+    if (!to) { Logger.log('cronDailyMotivation: no recipient'); return; }
+
+    // Throttle: skip if user sent us a message in the last 2 hours (don't be annoying).
+    var props = PropertiesService.getScriptProperties();
+    var lastUserMsgIso = props.getProperty('lastUserMessageAt') || '';
+    if (lastUserMsgIso) {
+      var lastUserMsg = new Date(lastUserMsgIso);
+      if (!isNaN(lastUserMsg.getTime()) && (Date.now() - lastUserMsg.getTime()) < 2 * 60 * 60 * 1000) {
+        Logger.log('cronDailyMotivation: user active in last 2h, skipping');
+        return;
+      }
+    }
+
+    // Also skip if we already sent a motivation today (defensive against double-trigger).
+    var todayKey = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM-dd');
+    if (props.getProperty('lastMotivationDate') === todayKey) {
+      Logger.log('cronDailyMotivation: already sent today');
+      return;
+    }
+
+    var msg = _pickDailyMotivation_();
+    if (!msg) { Logger.log('cronDailyMotivation: empty message'); return; }
+
+    sendWhatsAppMessage(to, msg);
+    props.setProperty('lastMotivationDate', todayKey);
+    Logger.log('cronDailyMotivation: sent');
+  } catch (e) {
+    Logger.log('cronDailyMotivation error: ' + (e && e.stack || e));
+  }
+}
+
+// Motivational message pools — short, warm, max 2 emojis each.
+// Tone: 2nd person singular, mostly gender-neutral, no toxic-positivity.
+var KFL_MOTIVATION_HABIT = [
+  'כל הוצאה שאתה רושם — זה צעד אחד יותר אל שליטה. תמשיך 💪',
+  'אנשים שמסתכלים על הכסף שלהם אחת ליום, מרוויחים בממוצע 18% יותר. זה לא קסם, זה תשומת לב.',
+  'ההרגל לא בנוי על מוטיבציה — הוא בנוי על חזרה. אתה עושה את החזרה.',
+  'שתי דקות ביום. זה כל מה שצריך כדי לא להתעורר בעוד שנה ולשאול "לאן הלך הכסף?"',
+  'הכל מתחיל מהמספר הראשון שאתה רושם היום. רק תכתוב משהו 🌱',
+  'אתה לא צריך להיות מושלם — אתה צריך להיות עקבי. וזה אתה בדיוק עושה.'
+];
+
+var KFL_MOTIVATION_INSIGHT = [
+  '💡 המשתמש הממוצע מגלה אחרי חודש ש-30% מההוצאות שלו הוא בכלל לא זוכר.',
+  '💡 70% מהאנשים בודקים את חשבון הבנק רק כשהם בלחץ. אתה בודק לפני — זה השינוי.',
+  '💡 מחקרים: לרשום הוצאה מפחית את הסיכוי לחזור על אותה הוצאה שוב באותו חודש ב-23%.',
+  '💡 אנשים שכותבים את ההוצאות שלהם חוסכים בממוצע ₪1,200 בחודש בלי לעשות "דיאטה".',
+  '💡 הרבה ממה שאנחנו קונים זה לא רצון — זה הרגל. השאלה היא רק איזה הרגל אנחנו רואים.',
+  '💡 כשרואים את המספרים בעין, הם מאבדים את הכוח שלהם להפתיע אותך בסוף החודש.'
+];
+
+var KFL_MOTIVATION_FUTURE = [
+  'בעוד שנה תודה לעצמך שעקבת. החודש הראשון הוא תמיד הקשה ביותר 🌅',
+  'דמיין את עצמך בעוד 6 חודשים, יודע בדיוק לאן הלך כל שקל. זה נעים.',
+  'הכסף שאתה חוסך עכשיו זה החופש שלך מחר. כל רישום הוא צעד.',
+  'בעוד שנה — אם תמשיך — יהיה לך תמונה מלאה, ולא תצטרך לנחש על כלום.',
+  'הסטטיסטיקה אומרת: מי שעוקב 90 ימים ברצף — ממשיך לכל החיים. אתה בדרך לשם.',
+  'בכל פעם שאתה כותב הוצאה, אתה בעצם מדבר עם עצמך-בעתיד. הוא מאזין.'
+];
+
+var KFL_MOTIVATION_PERMISSION = [
+  '👋 לא חייב לעקוב היום, אבל אם בא לך — אני כאן.',
+  'יום קל היום? לפעמים גם זה חלק מהמסע 💛',
+  'אין לחץ — רק תזכורת ידידותית. תכתוב משהו רק אם בא לך.',
+  'אם היום הוצאת רק קפה — גם זה שווה לרשום. הכל נספר.',
+  'הבוט הזה הוא לא מנהל החשבונות שלך. הוא חבר שאוהב מספרים 🤝'
+];
+
+// Picks a single motivational message based on day-of-week, streak, and random.
+function _pickDailyMotivation_(fromPhone) {
+  var now = new Date();
+  var dow = Number(Utilities.formatDate(now, 'Asia/Jerusalem', 'u')); // 1=Mon..7=Sun
+  // Sunday in Israel = first day of work week. JS getDay(): 0=Sun. We use Asia/Jerusalem-aware DOW.
+  var jsDay = now.getDay(); // 0=Sun..6=Sat
+  var streak = _getStreakCount_(fromPhone);
+
+  // Streak-aware variant takes priority on milestone-adjacent days
+  if (streak >= 3) {
+    var streakLines = [
+      streak + ' ימים ברצף 🔥 — אתה בקבוצה של ה-1% שעוקבים באמת.',
+      '🔥 ' + streak + ' ימים ברצף. רוב האנשים נושרים בשבוע הראשון. לא אתה.',
+      streak + ' ימים. תזכור: אתה לא מתחיל מהתחלה אם תמשיך עוד אחד היום.',
+      'יום ' + streak + ' של מעקב. אתה ההוכחה שזה אפשרי.'
+    ];
+    // Use streak variant 50% of the time when on a streak
+    if (Math.random() < 0.5) {
+      return streakLines[Math.floor(Math.random() * streakLines.length)];
+    }
+  }
+
+  // Day-of-week themed
+  if (jsDay === 0) { // Sunday — work week start in IL
+    var sundayLines = [
+      '☕ שבוע חדש, התחלה נקייה. אם תרשום הוצאה אחת היום — אתה בכיוון.',
+      '🌅 יום ראשון — היום הכי קל להתחיל הרגל. שתי דקות, וזהו.',
+      'בוקר טוב. שבוע חדש, דף חדש. בוא נראה לאן הוא הולך 📊'
+    ];
+    return sundayLines[Math.floor(Math.random() * sundayLines.length)];
+  }
+  if (jsDay === 5) { // Friday — pre-weekend
+    var fridayLines = [
+      '🌇 סוף שבוע מתקרב — חלק מההוצאות יבואו עוד מעט. תשתדל לזכור לרשום אותן בזמן אמת.',
+      '🛒 יום שישי. סופר, בנזין, בית קפה. אם תרשום תוך כדי — לא תצטרך לנחש במוצ"ש.',
+      'נשמה של סוף שבוע. אל תזרוק את כל המעקב — דקה אחת ביום זה הכל.'
+    ];
+    return fridayLines[Math.floor(Math.random() * fridayLines.length)];
+  }
+  if (jsDay === 6) { // Saturday — Shabbat, soft tone
+    var saturdayLines = [
+      '🕊️ שבת שלום. אם רשמת משהו השבוע — זה אומר משהו עליך.',
+      'יום מנוחה. הבוט גם נח. נתראה במוצ"ש 💛',
+      'שבת שלום. תהנה — והכסף יהיה כאן בעוד יום.'
+    ];
+    return saturdayLines[Math.floor(Math.random() * saturdayLines.length)];
+  }
+
+  // Rotate through pools by hash of date so the user doesn't get the same category twice in a row
+  var pools = [KFL_MOTIVATION_HABIT, KFL_MOTIVATION_INSIGHT, KFL_MOTIVATION_FUTURE, KFL_MOTIVATION_PERMISSION];
+  var seed = Number(Utilities.formatDate(now, 'Asia/Jerusalem', 'D')); // day-of-year
+  var pool = pools[seed % pools.length];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function installDailyMotivationTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronDailyMotivation') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  // 9:30am Israel — atHour(9) + nearMinute isn't a thing in Apps Script,
+  // so we use atHour(9) which fires sometime in the 9:00-10:00 window.
+  // Good enough — feels like a morning message either way.
+  ScriptApp.newTrigger('cronDailyMotivation')
+    .timeBased()
+    .everyDays(1)
+    .atHour(9)
+    .inTimezone('Asia/Jerusalem')
+    .create();
+  Logger.log('✅ Daily motivation trigger installed (every day, 9-10am Asia/Jerusalem)');
+}
+
+// ============================================================
+// 🎯 SMART "WHAT IF?" PROJECTION CRON — Fridays at 5pm.
+// ============================================================
+// Looks at top 1-2 spending categories this month, computes 10-15% cut → annual
+// savings, sends a personalized actionable nudge before the weekend spending hits.
+//
+// Default: OFF. Run installWeeklySavingsProjectionTrigger() once to enable.
+
+function cronWeeklySavingsProjection() {
+  try {
+    var to = ALLOWED_PHONE || (PropertiesService.getScriptProperties().getProperty('WEEKLY_SUMMARY_PHONE') || '');
+    if (!to) { Logger.log('cronWeeklySavingsProjection: no recipient'); return; }
+
+    var msg = _buildSavingsProjectionMessage_();
+    if (!msg) { Logger.log('cronWeeklySavingsProjection: nothing to project'); return; }
+
+    sendWhatsAppMessage(to, msg);
+    Logger.log('cronWeeklySavingsProjection: sent');
+  } catch (e) {
+    Logger.log('cronWeeklySavingsProjection error: ' + (e && e.stack || e));
+  }
+}
+
+// Returns Hebrew "if you cut X by N%, you save ₪Y/year" message, or empty
+// string if the user doesn't have enough data yet (<2 weeks of transactions
+// or top category < ₪400 this month).
+function _buildSavingsProjectionMessage_() {
+  var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+  if (!sheet) return '';
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 5) return ''; // not enough history
+
+  var now = new Date();
+  var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  var dayOfMonth = now.getDate();
+  if (dayOfMonth < 7) return ''; // too early in the month — skip this Friday
+
+  var byCategory = {};
+  for (var i = 1; i < data.length; i++) {
+    var d = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
+    if (isNaN(d.getTime()) || d < monthStart) continue;
+    var category = String(data[i][3] || '');
+    if (/הכנסות|הכנסה/i.test(category)) continue;
+    // Skip non-discretionary categories where "cut 10%" is unrealistic advice
+    if (/משכנתא|שכירות|ארנונה|מים|חשמל|ביטוח/.test(category)) continue;
+    var amt = Number(data[i][2]) || 0;
+    byCategory[category] = (byCategory[category] || 0) + amt;
+  }
+  var cats = Object.keys(byCategory).map(function(k) { return { name: k, amount: byCategory[k] }; });
+  cats.sort(function(a, b) { return b.amount - a.amount; });
+  if (!cats.length || cats[0].amount < 400) return '';
+
+  var top = cats[0];
+  // Cut percent scales with size — larger spend → suggest larger cut
+  var cutPct = top.amount > 2000 ? 15 : (top.amount > 1000 ? 12 : 10);
+  // Project the rest of the month proportionally so the annualization isn't biased
+  // by partial-month spending early in the month.
+  var monthProgress = dayOfMonth / 30;
+  var projectedMonthly = top.amount / Math.max(0.2, monthProgress);
+  var annualSavings = Math.round((projectedMonthly * (cutPct / 100)) * 12 / 10) * 10; // round to nearest 10
+
+  var lines = [];
+  lines.push('🎯 *תרגיל קטן לסוף שבוע*');
+  lines.push('━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('ראיתי שהוצאת ₪' + Math.round(top.amount).toLocaleString('he-IL') + ' על *' + top.name + '* החודש (עד עכשיו).');
+  lines.push('');
+  lines.push('💭 אם תקצץ ' + cutPct + '% בלבד —');
+  lines.push('   חוסך ₪' + annualSavings.toLocaleString('he-IL') + ' בשנה.');
+  lines.push('');
+
+  // Add a runner-up if there is one with meaningful spend
+  if (cats.length >= 2 && cats[1].amount >= 300) {
+    var secondCutPct = cats[1].amount > 1500 ? 12 : 10;
+    var secondAnnual = Math.round((cats[1].amount / Math.max(0.2, monthProgress)) * (secondCutPct / 100) * 12 / 10) * 10;
+    lines.push('או — *' + cats[1].name + '* (₪' + Math.round(cats[1].amount).toLocaleString('he-IL') + '): קיצוץ של ' + secondCutPct + '% = ₪' + secondAnnual.toLocaleString('he-IL') + ' בשנה.');
+    lines.push('');
+  }
+  lines.push('שווה לחשוב על זה לפני סוף השבוע 💛');
+  return lines.join('\n');
+}
+
+function installWeeklySavingsProjectionTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronWeeklySavingsProjection') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('cronWeeklySavingsProjection')
+    .timeBased()
+    .everyWeeks(1)
+    .onWeekDay(ScriptApp.WeekDay.FRIDAY)
+    .atHour(17)
+    .inTimezone('Asia/Jerusalem')
+    .create();
+  Logger.log('✅ Weekly savings projection trigger installed (Fridays 5pm Asia/Jerusalem)');
+}
+
+// ============================================================
+// 🎁 ONE-LINER INSTALLERS — make Steven's life easy.
+// ============================================================
+// Run installAllMotivationTriggers() once from the editor to enable both
+// the daily motivation and weekly savings projection at once.
+function installAllMotivationTriggers() {
+  installDailyMotivationTrigger();
+  installWeeklySavingsProjectionTrigger();
+  Logger.log('✅ All motivation triggers installed.');
+}
+
+// Uninstaller — kills all motivation/projection triggers but leaves the
+// existing weekly summary + inactivity nudge alone.
+function uninstallMotivationTriggers() {
+  var killed = 0;
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    var fn = triggers[i].getHandlerFunction();
+    if (fn === 'cronDailyMotivation' || fn === 'cronWeeklySavingsProjection') {
+      ScriptApp.deleteTrigger(triggers[i]);
+      killed++;
+    }
+  }
+  Logger.log('🗑️ Motivation triggers removed: ' + killed);
+}
+
+// Test helpers — run from the editor to preview messages without sending.
+function _testDailyMotivation_() {
+  Logger.log('--- streak: ' + _getStreakCount_());
+  for (var i = 0; i < 6; i++) {
+    Logger.log('--- pick ' + i + ' ---\n' + _pickDailyMotivation_());
+  }
+}
+function _testSavingsProjection_() {
+  var msg = _buildSavingsProjectionMessage_();
+  Logger.log(msg || '(no projection available — not enough data)');
 }

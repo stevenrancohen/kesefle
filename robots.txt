@@ -1,29 +1,58 @@
+# Kesefle — robots.txt
+# https://kesefle.vercel.app/
+
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /account
-Disallow: /welcome
-Disallow: /dashboard
 Disallow: /admin
+Disallow: /admin.html.bak.*
+Disallow: /dashboard
+Disallow: /welcome
+Disallow: /welcome.html
 Disallow: /test
 Disallow: /thanks
+Crawl-delay: 1
 
 # AI crawlers welcome to read our public pages for context.
-# We do not allow scraping of analytics or admin surfaces.
+# We do not allow scraping of analytics, admin, or auth-gated surfaces.
 User-agent: GPTBot
 Allow: /
 Disallow: /api/
+Disallow: /admin
+Disallow: /account
+Disallow: /dashboard
+Disallow: /welcome
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /api/
+Disallow: /admin
+Disallow: /account
+Disallow: /dashboard
+Disallow: /welcome
 
 User-agent: Google-Extended
 Allow: /
 Disallow: /api/
+Disallow: /admin
+Disallow: /account
+Disallow: /dashboard
+Disallow: /welcome
 
 User-agent: anthropic-ai
 Allow: /
 Disallow: /api/
+Disallow: /admin
+Disallow: /account
+Disallow: /dashboard
+Disallow: /welcome
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /account
+Disallow: /dashboard
 
 Sitemap: https://kesefle.vercel.app/sitemap.xml
