@@ -193,7 +193,9 @@
 </div>
 
 <!-- ============== HERO ============== -->
-<section class="relative overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
+<section id="kfl-hero" class="relative overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
+  <!-- cursor-following spotlight (Vercel-style) -->
+  <div id="kfl-spotlight" class="pointer-events-none absolute inset-0 -z-[5] opacity-0 transition-opacity duration-500" style="background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%), rgba(34,197,94,0.18), transparent 60%); mix-blend-mode: screen;"></div>
   <!-- aurora gradient mesh background (premium) -->
   <div class="absolute inset-0 -z-10 aurora"></div>
   <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/70 via-white/40 to-white/80 dark:from-ink-900/70 dark:via-ink-900/30 dark:to-ink-900/80"></div>
@@ -1490,6 +1492,30 @@ function kesefleToggleDark() { /* no-op: dark only */ }
   window.addEventListener('scroll', check, { passive: true });
   window.addEventListener('resize', check);
   check();
+})();
+
+// Cursor spotlight on hero (Vercel-style — adds depth without lying about numbers)
+(function(){
+  var hero = document.getElementById('kfl-hero');
+  var spot = document.getElementById('kfl-spotlight');
+  if (!hero || !spot) return;
+  // Skip on touch / reduced-motion (no cursor)
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia && window.matchMedia('(hover: none)').matches) return;
+  var raf = 0;
+  var pendingX = 0, pendingY = 0;
+  function apply() {
+    var rect = hero.getBoundingClientRect();
+    spot.style.setProperty('--mx', (pendingX - rect.left) + 'px');
+    spot.style.setProperty('--my', (pendingY - rect.top) + 'px');
+    raf = 0;
+  }
+  hero.addEventListener('mouseenter', function(){ spot.style.opacity = '1'; });
+  hero.addEventListener('mouseleave', function(){ spot.style.opacity = '0'; });
+  hero.addEventListener('mousemove', function(e){
+    pendingX = e.clientX; pendingY = e.clientY;
+    if (!raf) raf = requestAnimationFrame(apply);
+  }, { passive: true });
 })();
 
 // Scroll progress bar — continuous visual flow across all sections

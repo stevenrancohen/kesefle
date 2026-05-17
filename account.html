@@ -511,18 +511,42 @@ async function kesefleProvisionSheet() {
           }
         } else {
           status.className = 'mt-2 text-sm text-red-600 break-words';
-          // Show BOTH the error label AND the underlying detail so we
-          // can diagnose 'drive copy failed' instead of guessing.
-          var detail = j.detail ? ' — ' + j.detail : '';
-          status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.') + detail;
-          // Also log full response to console for further debugging
+          var detail = j.detail || '';
+          // Smart fix suggestions based on the actual error string returned
+          // by Google. We surface a one-click recovery action when possible,
+          // instead of just printing the raw API error.
+          var friendly = (j.error || 'נכשל. נסה שוב.') + (detail ? ' — ' + detail : '');
+          var fix = '';
+          if (/drive\.googleapis\.com.*has not been used/i.test(detail) ||
+              /drive\s*api.*disabled/i.test(detail)) {
+            friendly = '✗ Google Drive API לא מופעל בפרויקט שלך.';
+            fix = 'תיקון מהיר: <a class="text-brand-700 underline" target="_blank" href="https://console.developers.google.com/apis/api/drive.googleapis.com/overview">לחצי כאן להפעלת Drive API</a> → Enable → המתיני 60 שניות → נסי שוב.';
+          } else if (/sheets\.googleapis\.com.*has not been used/i.test(detail)) {
+            friendly = '✗ Google Sheets API לא מופעל בפרויקט שלך.';
+            fix = 'תיקון: <a class="text-brand-700 underline" target="_blank" href="https://console.developers.google.com/apis/api/sheets.googleapis.com/overview">לחצי כאן להפעלת Sheets API</a> → Enable → המתיני 60 שניות → נסי שוב.';
+          } else if (/file not found/i.test(detail) || /notFound/i.test(detail)) {
+            friendly = '✗ קובץ התבנית לא נמצא.';
+            fix = 'ייתכן שה-Sheet ID ב-Vercel שגוי או שהתבנית לא משותפת. צרי קשר עם התמיכה.';
+          } else if (/insufficient.*permission/i.test(detail) || /permissionDenied/i.test(detail)) {
+            friendly = '✗ הרשאות חסרות מהחשבון שלך.';
+            fix = 'תיקון: התנתקי וחזרי, ושימי לב שאישרת את ההרשאות Drive + Spreadsheets בהתחברות.';
+          } else if (/quota/i.test(detail) || /rate limit/i.test(detail)) {
+            friendly = '✗ חרגנו ממכסת ה-API לרגע.';
+            fix = 'המתיני 30 שניות ונסי שוב.';
+          } else if (/invalid_access_token/i.test(j.error || '')) {
+            friendly = '✗ ההתחברות פגה.';
+            fix = 'תיקון: <a class="text-brand-700 underline" href="/">חזרי להתחברות</a> ואשרי שוב.';
+          }
+          status.innerHTML = friendly + (fix ? '<br><span class="text-xs text-ink-500 dark:text-ink-300">' + fix + '</span>' : '');
           try { console.error('provision failed', j); } catch(_e){}
           btn.disabled = false;
           btn.textContent = 'נסה שוב';
         }
       } catch (e) {
         status.className = 'mt-2 text-sm text-red-600';
-        status.textContent = '✗ שגיאת רשת: ' + (e && e.message || '');
+        var em = (e && e.message) || '';
+        status.innerHTML = '✗ שגיאת רשת' + (em ? ': ' + em : '') +
+          '<br><span class="text-xs text-ink-500 dark:text-ink-300">בדקי חיבור לאינטרנט ונסי שוב. אם התקלה ממשיכה, רעני את הדף.</span>';
         try { console.error('provision network error', e); } catch(_e){}
         btn.disabled = false;
         btn.textContent = 'נסה שוב';
