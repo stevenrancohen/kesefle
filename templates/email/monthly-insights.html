@@ -1,0 +1,365 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="x-apple-disable-message-reformatting"/>
+  <meta name="color-scheme" content="dark light"/>
+  <meta name="supported-color-schemes" content="dark light"/>
+  <title>מצב חודש {{monthName}} — תובנות אישיות</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style type="text/css">
+    body,table,td,a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table,td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; }
+    body { margin:0 !important; padding:0 !important; width:100% !important; }
+    a { text-decoration:none; }
+    @media screen and (max-width:600px) {
+      .container { width:100% !important; max-width:100% !important; }
+      .px-mobile { padding-left:12px !important; padding-right:12px !important; }
+      .net-number { font-size:48px !important; }
+      .stack { display:block !important; width:100% !important; }
+      .btn { width:100% !important; display:block !important; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .body-bg { background-color:#081114 !important; }
+      .card-bg { background-color:#2e4e55 !important; }
+    }
+  </style>
+</head>
+<body class="body-bg" style="margin:0;padding:0;background-color:#081114;font-family:Arial,Helvetica,'Heebo',sans-serif;">
+
+  <div style="display:none;font-size:1px;color:#081114;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    סיכום חודשי לחודש {{monthName}}: נטו &#8362;{{netAmount}}. {{insight1Title}}.
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="body-bg" style="border-collapse:collapse;background-color:#081114;">
+    <tr>
+      <td align="center" style="padding:0;">
+
+        <!-- HEADER -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#081114;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:24px 16px 12px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td align="right" dir="rtl">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td valign="middle">
+                          <span style="display:inline-block;width:36px;height:36px;background-color:#f1e926;border-radius:50%;text-align:center;line-height:36px;color:#081114;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;font-weight:bold;">&#8362;</span>
+                        </td>
+                        <td valign="middle" style="padding:0 10px 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:20px;font-weight:bold;color:#f1e926;">כסף'לה</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- HERO: NET FOR THE MONTH -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;background-color:{{netBgColor}};border-radius:16px;">
+                <tr>
+                  <td align="center" dir="rtl" style="padding:42px 24px 36px 24px;background-color:#2e4e55;border-radius:16px;">
+                    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;text-transform:uppercase;letter-spacing:1.5px;">
+                      סיכום חודש &middot; {{monthName}} {{year}}
+                    </p>
+                    <h1 style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;color:#c2d2d6;font-weight:500;">
+                      {{firstName}}, החודש הזה
+                    </h1>
+                    <p class="net-number" style="margin:12px 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:60px;color:{{netColor}};font-weight:900;line-height:1;letter-spacing:-2px;">
+                      {{netSign}}&#8362;{{netAmount}}
+                    </p>
+                    <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#c2d2d6;">
+                      {{netLabel}}
+                    </p>
+
+                    <!-- Income vs Expense breakdown -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:24px;width:100%;max-width:420px;">
+                      <tr>
+                        <td class="stack" align="center" width="50%" style="padding:14px 12px;background-color:#064e3b;border-radius:10px 0 0 10px;">
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#a7f3d0;text-transform:uppercase;letter-spacing:1px;">הכנסות</p>
+                          <p style="margin:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:20px;color:#d1fae5;font-weight:800;">&#8362;{{income}}</p>
+                        </td>
+                        <td class="stack" align="center" width="50%" style="padding:14px 12px;background-color:#7f1d1d;border-radius:0 10px 10px 0;">
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#fecaca;text-transform:uppercase;letter-spacing:1px;">הוצאות</p>
+                          <p style="margin:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:20px;color:#fee2e2;font-weight:800;">&#8362;{{expenses}}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- AI INSIGHTS -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td dir="rtl" style="padding:0 4px 14px 4px;">
+                    <h2 style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:22px;color:#f1e926;font-weight:700;">
+                      &#129504; 3 תובנות לחודש הזה
+                    </h2>
+                    <p style="margin:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">
+                      מה שהדאטה שלך מספרת
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Insight 1 -->
+                <tr>
+                  <td dir="rtl" style="padding:20px 22px;background-color:#2e4e55;border-right:3px solid #06b6d4;border-radius:10px;">
+                    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#67e8f9;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">תובנה 01</p>
+                    <h3 style="margin:0 0 8px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:16px;color:#ffffff;font-weight:700;line-height:1.4;">
+                      {{insight1Title}}
+                    </h3>
+                    <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#c2d2d6;line-height:1.7;">
+                      {{insight1Body}}
+                    </p>
+                  </td>
+                </tr>
+                <tr><td style="height:12px;line-height:12px;font-size:1px;">&nbsp;</td></tr>
+
+                <!-- Insight 2 -->
+                <tr>
+                  <td dir="rtl" style="padding:20px 22px;background-color:#2e4e55;border-right:3px solid #8b5cf6;border-radius:10px;">
+                    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#c4b5fd;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">תובנה 02</p>
+                    <h3 style="margin:0 0 8px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:16px;color:#ffffff;font-weight:700;line-height:1.4;">
+                      {{insight2Title}}
+                    </h3>
+                    <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#c2d2d6;line-height:1.7;">
+                      {{insight2Body}}
+                    </p>
+                  </td>
+                </tr>
+                <tr><td style="height:12px;line-height:12px;font-size:1px;">&nbsp;</td></tr>
+
+                <!-- Insight 3 -->
+                <tr>
+                  <td dir="rtl" style="padding:20px 22px;background-color:#2e4e55;border-right:3px solid #f59e0b;border-radius:10px;">
+                    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#fcd34d;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">תובנה 03</p>
+                    <h3 style="margin:0 0 8px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:16px;color:#ffffff;font-weight:700;line-height:1.4;">
+                      {{insight3Title}}
+                    </h3>
+                    <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#c2d2d6;line-height:1.7;">
+                      {{insight3Body}}
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- YEAR-OVER-YEAR COMPARISON -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td dir="rtl" style="padding:0 4px 14px 4px;">
+                    <h2 style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:20px;color:#f1e926;font-weight:700;">
+                      &#128202; השוואה לשנה שעברה
+                    </h2>
+                  </td>
+                </tr>
+                <tr>
+                  <td dir="rtl" style="padding:24px;background-color:#2e4e55;border-radius:12px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td class="stack" align="center" width="33%" style="padding:8px 6px;">
+                          <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;">{{monthName}} {{prevYear}}</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;color:#c2d2d6;font-weight:bold;">&#8362;{{yoyLastYear}}</p>
+                        </td>
+                        <td class="stack" align="center" width="34%" style="padding:8px 6px;">
+                          <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;">{{monthName}} {{year}}</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:22px;color:#f1e926;font-weight:bold;">&#8362;{{expenses}}</p>
+                        </td>
+                        <td class="stack" align="center" width="33%" style="padding:8px 6px;">
+                          <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;">שינוי</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;color:{{yoyDeltaColor}};font-weight:bold;">{{yoyDeltaArrow}} {{yoyDeltaPct}}%</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- GOAL PROGRESS -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td dir="rtl" style="padding:0 4px 14px 4px;">
+                    <h2 style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:20px;color:#f1e926;font-weight:700;">
+                      &#127919; התקדמות יעדים
+                    </h2>
+                  </td>
+                </tr>
+
+                <!-- Goal 1 -->
+                <tr>
+                  <td dir="rtl" style="padding:20px 22px;background-color:#2e4e55;border-radius:10px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td dir="rtl" style="padding:0 0 8px 0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                            <tr>
+                              <td dir="rtl" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:15px;color:#ffffff;font-weight:bold;">{{goal1Name}}</td>
+                              <td dir="ltr" align="left" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">&#8362;{{goal1Current}} / &#8362;{{goal1Target}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#1f3a40;border-radius:4px;">
+                            <tr>
+                              <td style="height:12px;font-size:1px;line-height:12px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                  <tr>
+                                    <td width="{{goal1Pct}}%" bgcolor="#10b981" style="height:12px;background-color:#10b981;border-radius:4px;line-height:12px;font-size:1px;">&nbsp;</td>
+                                    <td bgcolor="#1f3a40" style="height:12px;line-height:12px;font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;">{{goal1Pct}}% הושג &middot; {{goal1DaysLeft}} ימים נשארו</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr><td style="height:12px;line-height:12px;font-size:1px;">&nbsp;</td></tr>
+
+                <!-- Goal 2 -->
+                <tr>
+                  <td dir="rtl" style="padding:20px 22px;background-color:#2e4e55;border-radius:10px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td dir="rtl" style="padding:0 0 8px 0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                            <tr>
+                              <td dir="rtl" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:15px;color:#ffffff;font-weight:bold;">{{goal2Name}}</td>
+                              <td dir="ltr" align="left" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">&#8362;{{goal2Current}} / &#8362;{{goal2Target}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#1f3a40;border-radius:4px;">
+                            <tr>
+                              <td style="height:12px;font-size:1px;line-height:12px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                  <tr>
+                                    <td width="{{goal2Pct}}%" bgcolor="#f59e0b" style="height:12px;background-color:#f59e0b;border-radius:4px;line-height:12px;font-size:1px;">&nbsp;</td>
+                                    <td bgcolor="#1f3a40" style="height:12px;line-height:12px;font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;">{{goal2Pct}}% הושג &middot; {{goal2DaysLeft}} ימים נשארו</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- BIG CTA -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:24px 16px 32px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td align="center" dir="rtl">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td align="center" bgcolor="#f1e926" style="border-radius:12px;">
+                          <a href="https://kesefle.vercel.app/dashboard?range=month" target="_blank" class="btn" style="display:inline-block;padding:16px 36px;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:16px;font-weight:bold;color:#081114;text-decoration:none;border-radius:12px;background-color:#f1e926;">
+                            ראה דשבורד מלא &laquo;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin:14px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">
+                      מיילי תובנות חודשיים הם אופציונליים. <a href="https://kesefle.vercel.app/account#notifications" target="_blank" style="color:#f1e926;text-decoration:underline;">העדפות</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- FOOTER -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" dir="rtl" lang="he" style="border-collapse:collapse;background-color:#081114;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:32px 16px 24px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td style="padding:0 0 24px 0;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="height:1px;background-color:#2e4e55;line-height:1px;font-size:1px;">&nbsp;</td></tr></table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0 0 12px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+                    <a href="https://kesefle.vercel.app/privacy" target="_blank" style="color:#9ab1b6;text-decoration:underline;">פרטיות</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="https://kesefle.vercel.app/terms" target="_blank" style="color:#9ab1b6;text-decoration:underline;">תנאי שימוש</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="https://kesefle.vercel.app/help" target="_blank" style="color:#9ab1b6;text-decoration:underline;">עזרה</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0 0 12px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+                    תובנות חודשיות ב-<span style="color:#f1e926;">{{userEmail}}</span>.<br/>
+                    <a href="https://kesefle.vercel.app/account#notifications" target="_blank" style="color:#9ab1b6;text-decoration:underline;">העדפות מייל</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="{{unsubscribeUrl}}" target="_blank" style="color:#9ab1b6;text-decoration:underline;">ביטול הרשמה</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#5a7479;line-height:1.5;">
+                    <strong style="color:#9ab1b6;">כסף'לה</strong> &middot; ניהול הוצאות בעברית דרך וואטסאפ<br/>
+                    תל אביב, ישראל &middot; &copy; 2026 Kesefle Ltd.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!--
+  Kesefle - Shared Email Footer Partial
+  Include via your templating engine (Handlebars, Liquid, MJML, etc.)
+  Variables expected:
+    {{userEmail}}      - subscriber's email (for unsubscribe link)
+    {{unsubscribeUrl}} - one-click unsubscribe URL (RFC 8058)
+    {{emailType}}      - "welcome" | "digest" | "receipt" | "alert"
+  Compliance: includes List-Unsubscribe, physical address, opt-out per CAN-SPAM / GDPR Art. 13
+-->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" dir="rtl" lang="he" style="border-collapse:collapse;background-color:#081114;">
+  <tr>
+    <td align="center" style="padding:32px 16px 24px 16px;">
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse:collapse;max-width:600px;width:100%;">
+
+        <!-- Divider -->
+        <tr>
+          <td style="padding:0 0 24px 0;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+              <tr>
+                <td style="height:1px;background-color:#2e4e55;line-height:1px;font-size:1px;">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Social links -->
+        <tr>
+          <td align="center" style="padding:0 0 16px 0;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              <tr>
+                <td align="center" style="padding:0 8px;">
+                  <a href="https://kesefle.vercel.app" target="_blank" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#f1e926;text-decoration:none;">אתר</a>
+                </td>
+                <td align="center" style="color:#2e4e55;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;">&middot;</td>
+                <td align="center" style="padding:0 8px;">
+                  <a href="https://kesefle.vercel.app/help" target="_blank" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#f1e926;text-decoration:none;">עזרה</a>
+                </td>
+                <td align="center" style="color:#2e4e55;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;">&middot;</td>
+                <td align="center" style="padding:0 8px;">
+                  <a href="https://kesefle.vercel.app/blog" target="_blank" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#f1e926;text-decoration:none;">בלוג</a>
+                </td>
+                <td align="center" style="color:#2e4e55;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;">&middot;</td>
+                <td align="center" style="padding:0 8px;">
+                  <a href="https://twitter.com/kesefle" target="_blank" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#f1e926;text-decoration:none;">טוויטר</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Legal links -->
+        <tr>
+          <td align="center" style="padding:0 0 12px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+            <a href="https://kesefle.vercel.app/privacy" target="_blank" style="color:#9ab1b6;text-decoration:underline;">פרטיות</a>
+            &nbsp;&middot;&nbsp;
+            <a href="https://kesefle.vercel.app/terms" target="_blank" style="color:#9ab1b6;text-decoration:underline;">תנאי שימוש</a>
+            &nbsp;&middot;&nbsp;
+            <a href="https://kesefle.vercel.app/trust" target="_blank" style="color:#9ab1b6;text-decoration:underline;">אמון ואבטחה</a>
+            &nbsp;&middot;&nbsp;
+            <a href="https://kesefle.vercel.app/account" target="_blank" style="color:#9ab1b6;text-decoration:underline;">החשבון שלי</a>
+          </td>
+        </tr>
+
+        <!-- Unsubscribe -->
+        <tr>
+          <td align="center" style="padding:0 0 16px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+            קיבלת את המייל הזה כי נרשמת לכסף'לה עם <span style="color:#f1e926;">{{userEmail}}</span>.<br/>
+            <a href="{{unsubscribeUrl}}" target="_blank" style="color:#9ab1b6;text-decoration:underline;">ביטול הרשמה</a>
+            &nbsp;&middot;&nbsp;
+            <a href="https://kesefle.vercel.app/account#notifications" target="_blank" style="color:#9ab1b6;text-decoration:underline;">העדפות מייל</a>
+          </td>
+        </tr>
+
+        <!-- Brand mark -->
+        <tr>
+          <td align="center" style="padding:0 0 8px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#5a7479;line-height:1.5;">
+            <strong style="color:#9ab1b6;">כסף'לה</strong> &middot; ניהול הוצאות בעברית דרך וואטסאפ<br/>
+            תל אביב, ישראל &middot; &copy; 2026 Kesefle Ltd.
+          </td>
+        </tr>
+
+        <!-- Tracking pixel placeholder (replace with provider's open tracking) -->
+        <tr>
+          <td align="center" style="padding:0;">
+            <!-- {{trackingPixel}} -->
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

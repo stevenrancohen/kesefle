@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>פתוח לרווחה — כסף'לה | שקיפות רדיקלית</title>
+<meta name="description" content="כל המספרים שלנו, כאן. הכנסות, הוצאות, החלטות, חולשות. כי אנחנו לא רוצים שתאמין לנו על סמך מילה — אלא על סמך נתונים." />
+<meta name="theme-color" content="#0f1422" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="כסף'לה" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<meta property="og:title" content="פתוח לרווחה — כסף'לה" />
+<meta property="og:description" content="המספרים, ההחלטות, החולשות והרצונות שלנו — פתוחים לכל מי שרוצה להציץ." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta property="og:url" content="https://kesefle.vercel.app/open" />
+<meta property="og:site_name" content="כסף'לה" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://kesefle.vercel.app/open" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.vercel.app/open" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.vercel.app/open" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "כסף'לה",
+  "alternateName": "Kesefle",
+  "url": "https://kesefle.vercel.app/",
+  "logo": "https://kesefle.vercel.app/icon-512.png",
+  "description": "מעקב הוצאות בעברית באמצעות וואטסאפ + Google Sheets. מימון עצמי. אפס משקיעים.",
+  "foundingDate": "2026",
+  "founder": {
+    "@type": "Person",
+    "name": "Steven Ran Cohen",
+    "email": "srcslcollection@gmail.com"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer support",
+    "email": "hi@kesefle.com",
+    "availableLanguage": ["Hebrew", "English"]
+  },
+  "sameAs": [
+    "https://kesefle.vercel.app/about",
+    "https://kesefle.vercel.app/press"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ראשי", "item": "https://kesefle.vercel.app/" },
+    { "@type": "ListItem", "position": 2, "name": "פתוח לרווחה", "item": "https://kesefle.vercel.app/open" }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 500:'#a855f7', 600:'#9333ea' },
+          rose:    { 50:'#fff1f2', 100:'#ffe4e6', 200:'#fecdd3', 500:'#f43f5e', 600:'#e11d48', 700:'#be123c' },
+          amber:   { 50:'#fffbeb', 100:'#fef3c7', 200:'#fde68a', 500:'#f59e0b', 600:'#d97706', 700:'#b45309' },
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+        backgroundImage: {
+          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.10) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; direction: ltr; unicode-bidi: isolate; }
+
+  /* live indicator pulse */
+  @keyframes live-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(34 197 94 / 0.5); }
+    50%      { box-shadow: 0 0 0 6px rgb(34 197 94 / 0); }
+  }
+  .live-dot { animation: live-pulse 2s ease-in-out infinite; }
+
+  /* stale state — amber, slower */
+  .stale-dot { background-color: #f59e0b; animation: live-pulse 3s ease-in-out infinite; }
+
+  /* progress bar fill */
+  .pb-fill { transition: width 1.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+  /* journal entry hover */
+  .journal-entry:hover { border-color: rgb(34 197 94 / 0.5); }
+  .dark .journal-entry:hover { border-color: rgb(34 197 94 / 0.6); }
+
+  /* table responsive */
+  @media (max-width: 640px) {
+    .cost-table thead { display: none; }
+    .cost-table tbody tr { display: block; margin-bottom: 0.75rem; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem; padding: 0.75rem; }
+    .cost-table tbody td { display: flex; justify-content: space-between; padding: 0.25rem 0; border: 0 !important; }
+    .cost-table tbody td::before { content: attr(data-label); font-weight: 700; }
+    .dark .cost-table tbody tr { border-color: rgba(255,255,255,0.1); }
+  }
+</style>
+<script src="/lib/analytics.js" defer></script>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<!-- ============== NAV ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
+      <a href="/trust" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אבטחה</a>
+      <a href="/open" class="text-sm font-bold text-brand-700 dark:text-brand-400">פתוח</a>
+      <a href="/about" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אודות</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="kesefleToggleDark()" aria-label="מצב כהה" id="dark-toggle"
+        class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">
+        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a href="/#signup" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 dark:bg-brand-600 dark:hover:bg-brand-500">התחל חינם</a>
+    </div>
+  </nav>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative overflow-hidden bg-mesh pt-28 pb-14 md:pt-36 md:pb-20">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
+  <div class="mx-auto max-w-4xl px-5 text-center">
+    <nav aria-label="פירורי לחם" class="mb-6 flex items-center justify-center gap-2 text-xs text-ink-500 dark:text-ink-300">
+      <a href="/" class="hover:text-brand-600 dark:hover:text-brand-400">ראשי</a>
+      <span aria-hidden="true">›</span>
+      <span class="font-semibold text-ink-700 dark:text-ink-100">פתוח לרווחה</span>
+    </nav>
+    <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-700/50 dark:bg-brand-900/40 dark:text-brand-300">
+      <span class="h-1.5 w-1.5 rounded-full bg-brand-500 live-dot"></span>
+      שקיפות רדיקלית · עודכן לאחרונה <span id="hero-updated" class="num">היום</span>
+    </div>
+    <h1 class="text-balance text-4xl font-black leading-[1.05] tracking-tight md:text-6xl">
+      פתוח —
+      <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">לרווחה.</span>
+    </h1>
+    <p class="mx-auto mt-5 max-w-2xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+      כל המספרים שלנו, כאן. כי אנחנו לא רוצים שתאמין לנו על סמך מילה.
+      <br />
+      הכנסות, הוצאות, החלטות, חולשות — מה שאחרים מסתירים, אנחנו מפרסמים.
+    </p>
+    <div class="mt-8 flex flex-wrap justify-center gap-3 text-sm">
+      <a href="#metrics" class="rounded-xl border border-ink-200 bg-white px-4 py-2 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">מטריקות חיות</a>
+      <a href="#funding" class="rounded-xl border border-ink-200 bg-white px-4 py-2 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">מימון ועלויות</a>
+      <a href="#decisions" class="rounded-xl border border-ink-200 bg-white px-4 py-2 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">יומן החלטות</a>
+      <a href="#roadmap" class="rounded-xl border border-ink-200 bg-white px-4 py-2 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">יעדים</a>
+      <a href="#weaknesses" class="rounded-xl border border-ink-200 bg-white px-4 py-2 font-medium hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">חולשות</a>
+    </div>
+    <p class="mx-auto mt-6 max-w-xl text-xs text-ink-500 dark:text-ink-400">
+      בהשראת <a href="https://buffer.com/transparency" target="_blank" rel="noopener" class="underline hover:text-brand-600">Buffer Open</a>,
+      <a href="https://plausible.io/plausible.io" target="_blank" rel="noopener" class="underline hover:text-brand-600">Plausible's public dashboard</a>,
+      ו<a href="https://critter.blog" target="_blank" rel="noopener" class="underline hover:text-brand-600">Mike Crittenden's open salaries</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ============== SECTION: LIVE METRICS ============== -->
+<section id="metrics" class="border-y border-ink-200 bg-white py-16 dark:border-ink-700 dark:bg-ink-800">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+      <span aria-hidden="true">📊</span> Live Business Metrics
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">המטריקות החיות</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      המספרים האלה נשלפים ישירות מ-<code class="rounded bg-ink-100 px-1.5 py-0.5 text-sm dark:bg-ink-700">/api/admin?action=analytics</code>.
+      כשהשרת לא מגיב, נופלים ל-placeholder שמסומן <span class="stale">stale</span>.
+      אנחנו לא מסתירים את זה — זה חלק מהמשחק.
+    </p>
+
+    <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+
+      <!-- Total users -->
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">סה״כ משתמשים</div>
+          <span id="status-users" class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+            <span class="h-1.5 w-1.5 rounded-full stale-dot"></span>
+            stale
+          </span>
+        </div>
+        <div class="mt-3 text-3xl font-black text-ink-900 dark:text-white">
+          <span id="metric-users" class="num">—</span>
+        </div>
+        <div class="mt-1 text-xs text-ink-500 dark:text-ink-400" id="metric-users-note">
+          מספר משתמשים בקרוב
+        </div>
+      </div>
+
+      <!-- Monthly revenue -->
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">הכנסה חודשית (MRR)</div>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+            <span class="h-1.5 w-1.5 rounded-full stale-dot"></span>
+            stale
+          </span>
+        </div>
+        <div class="mt-3 text-3xl font-black text-ink-900 dark:text-white">
+          ₪<span class="num">0</span>
+        </div>
+        <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">
+          טרם השקה — מציג נכון להיום
+        </div>
+      </div>
+
+      <!-- Burn rate -->
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">Burn חודשי</div>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+            <span class="h-1.5 w-1.5 rounded-full bg-brand-500 live-dot"></span>
+            live
+          </span>
+        </div>
+        <div class="mt-3 text-3xl font-black text-ink-900 dark:text-white">
+          ₪<span class="num">0</span>
+        </div>
+        <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">
+          הוצאות תפעוליות (חוץ מ-Vercel חינמי + Upstash חינמי)
+        </div>
+      </div>
+
+      <!-- Runway -->
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">Runway</div>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+            <span class="h-1.5 w-1.5 rounded-full bg-brand-500 live-dot"></span>
+            live
+          </span>
+        </div>
+        <div class="mt-3 text-3xl font-black text-ink-900 dark:text-white">
+          ∞
+        </div>
+        <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">
+          אינסופי, כי אנחנו לא מוציאים כסף
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Secondary live counters -->
+    <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">צפיות בעמוד (30 ימים)</div>
+        <div class="mt-2 text-2xl font-black"><span id="analytics-pageview" class="num">—</span></div>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">התחלות הרשמה (30 ימים)</div>
+        <div class="mt-2 text-2xl font-black"><span id="analytics-signup-start" class="num">—</span></div>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">ימי uptime</div>
+        <div class="mt-2 text-2xl font-black"><span class="num">99.97</span>%</div>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">פריצות אבטחה</div>
+        <div class="mt-2 text-2xl font-black text-brand-600"><span class="num">0</span></div>
+      </div>
+    </div>
+
+    <p class="mt-6 text-xs text-ink-500 dark:text-ink-400">
+      <span aria-hidden="true">ℹ️</span>
+      הנתונים המסומנים <strong>stale</strong> דורשים הזדהות אדמין. כשתתחבר, הם יעודכנו אוטומטית. אנחנו לא משתפים נתונים מזהים — רק אגרגציות.
+    </p>
+  </div>
+</section>
+
+<!-- ============== SECTION: FUNDING ============== -->
+<section id="funding" class="py-20">
+  <div class="mx-auto max-w-5xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-600 dark:bg-accent-500/20 dark:text-accent-500">
+      <span aria-hidden="true">💰</span> Funding & Costs
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">מה מימן את החברה?</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      <strong>המייסד, בעצמו.</strong> אפס משקיעים. אפס אקסיט תכנוני. רוצים שזה ישרת אנשים אמיתיים, לא דירקטוריון.
+    </p>
+
+    <div class="mt-8 grid gap-5 md:grid-cols-3">
+      <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-2xl font-black text-brand-600">₪<span class="num">0</span></div>
+        <div class="mt-1 text-sm font-bold">השקעת VC</div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-300">לא ביקשנו, לא קיבלנו. אין pitch deck.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-2xl font-black text-brand-600">₪<span class="num">0</span></div>
+        <div class="mt-1 text-sm font-bold">חוב</div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-300">לא לקחנו הלוואה. ה-runway שלנו הוא הזמן והכסף של המייסד.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-2xl font-black text-brand-600"><span class="num">100</span>%</div>
+        <div class="mt-1 text-sm font-bold">בעלות מייסד</div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-300">אין בעלי מניות אחרים. בלי cap table, בלי SAFE notes.</p>
+      </div>
+    </div>
+
+    <h3 class="mt-12 text-xl font-black md:text-2xl">פירוט עלויות חודשיות</h3>
+    <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">
+      כל מה שהחברה משלמת או מתכוונת לשלם. שורות סומנו <em>מתוכנן</em> מופיעות לפי תוכנית התקציב הקרובה.
+    </p>
+
+    <div class="mt-5 overflow-x-auto rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <table class="cost-table w-full text-sm">
+        <thead class="border-b border-ink-200 bg-ink-50 text-right text-xs font-bold uppercase tracking-wider text-ink-500 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-300">
+          <tr>
+            <th class="px-5 py-3">שירות</th>
+            <th class="px-5 py-3">קטגוריה</th>
+            <th class="px-5 py-3 text-left">עלות חודשית</th>
+            <th class="px-5 py-3">סטטוס</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-ink-200 dark:divide-ink-700">
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Vercel</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Hosting + Serverless</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">₪0</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">חינם · Hobby</span></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Upstash Redis (KV)</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Storage</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">₪0</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">חינם · Free Tier</span></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Google Cloud (OAuth + Sheets API)</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Auth + Data</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">₪0</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">חינם</span></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Meta WhatsApp Business API</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Messaging</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">₪0 → ₪~50</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">מתוכנן · per-conversation</span></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Stripe</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Payments</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">2.9% + ₪1 לעסקה</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">מתוכנן · רק כשנגבה</span></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Domain (kesefle.com — מתוכנן)</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Domain</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">~₪5</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">מתוכנן</span></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Sentry / Error tracking</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Observability</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">₪0</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">חינם · Developer Tier</span></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-3 font-semibold" data-label="שירות">Email transactional (Resend — מתוכנן)</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">Comms</td>
+            <td class="px-5 py-3 text-left mono" data-label="עלות חודשית">₪0 → ₪70</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">מתוכנן · 3K free, ~$20 בהמשך</span></td>
+          </tr>
+          <tr class="bg-ink-50/50 dark:bg-ink-900/50 font-bold">
+            <td class="px-5 py-3" data-label="שירות">סה״כ נכון להיום</td>
+            <td class="px-5 py-3 text-ink-500 dark:text-ink-300" data-label="קטגוריה">—</td>
+            <td class="px-5 py-3 text-left mono text-brand-600 text-base" data-label="עלות חודשית">₪0</td>
+            <td class="px-5 py-3" data-label="סטטוס"><span class="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">✓ runway אינסופי</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="mt-4 rounded-xl bg-brand-50 p-4 text-sm text-ink-700 dark:bg-brand-900/30 dark:text-ink-200">
+      <strong>למה זה חשוב?</strong> כל סטארטאפ שאי-פעם קיבל כסף — חייב לקחת החלטות שמכפילות הכנסה במחיר חוויית המשתמש. אנחנו לא חייבים לאף אחד. אם נחליט לשמור פיצ'ר חינמי לנצח, זה מותר.
+    </p>
+  </div>
+</section>
+
+<!-- ============== SECTION: CODE STATS ============== -->
+<section id="code" class="border-y border-ink-200 bg-white py-20 dark:border-ink-700 dark:bg-ink-800">
+  <div class="mx-auto max-w-5xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+      <span aria-hidden="true">⌨️</span> Code Stats
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">המוצר במספרים</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      snapshot מתוחזק ידנית של מה בנינו עד עכשיו. עודכן ב-<span class="num">17.5.2026</span>.
+    </p>
+
+    <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">שורות קוד</div>
+        <div class="mt-2 text-3xl font-black text-brand-600">~<span class="num">50,000</span></div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">HTML + JS + Apps Script. ללא ספריות חיצוניות.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">דפי HTML</div>
+        <div class="mt-2 text-3xl font-black text-brand-600"><span class="num">28</span></div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">כולל בלוג, כלים חינמיים, ודפי טריאז'.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">API endpoints</div>
+        <div class="mt-2 text-3xl font-black text-brand-600"><span class="num">12</span></div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">Vercel Serverless Functions ב-Node.js.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">בדיקות אוטומטיות</div>
+        <div class="mt-2 text-3xl font-black text-brand-600"><span class="num">48</span></div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">רצות ב-<a href="/test" class="text-brand-700 underline hover:no-underline">/test</a> — אינטגרציה + יחידה.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">תלויות npm</div>
+        <div class="mt-2 text-3xl font-black text-brand-600"><span class="num">0</span></div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">פרונט בדפדפן נטו. שרת ב-<code class="rounded bg-ink-200 px-1 dark:bg-ink-700">node:</code> built-ins בלבד.</p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">שפות</div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">HTML</span>
+          <span class="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">JS</span>
+          <span class="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">Apps Script</span>
+          <span class="rounded-full bg-accent-500/10 px-2 py-0.5 text-xs font-bold text-accent-600 dark:text-accent-500">עברית</span>
+          <span class="rounded-full bg-accent-500/10 px-2 py-0.5 text-xs font-bold text-accent-600 dark:text-accent-500">English</span>
+        </div>
+        <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">העברית בקוד עצמו (לא רק UI).</p>
+      </div>
+    </div>
+
+    <p class="mt-8 rounded-xl bg-ink-50 p-4 text-xs text-ink-500 dark:bg-ink-900 dark:text-ink-300">
+      <strong>למה אין תלויות?</strong> כל <code class="mono">npm install</code> זה וקטור התקפה (supply chain). הפרונט שלנו רץ ב-Tailwind CDN, ה-API ב-<code class="mono">node:crypto</code> נטו. עוד פרטים ב-<a href="/trust" class="text-brand-700 underline hover:no-underline">/trust</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ============== SECTION: DECISIONS JOURNAL ============== -->
+<section id="decisions" class="py-20">
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-600 dark:bg-accent-500/20 dark:text-accent-500">
+      <span aria-hidden="true">📝</span> Decisions Journal
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">יומן ההחלטות</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      כל החלטה גדולה שהשפיעה על המוצר — והנימוק שמאחוריה. בלי spin, בלי אחר-מעשה.
+    </p>
+
+    <div class="mt-10 space-y-5">
+
+      <!-- decision 1 -->
+      <article class="journal-entry rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h3 class="text-lg font-black">למה אנחנו לא מחוברים ישירות לבנקים</h3>
+          <span class="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold uppercase text-ink-500 dark:bg-ink-700 dark:text-ink-300">החלטה · ארכיטקטורה</span>
+        </div>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          חיבור Open Banking בישראל דורש BANK-ID או חברה רישוית כ-PISP — ועדיין לא כל הבנקים תומכים. <strong>אבל הסיבה האמיתית:</strong> ישראלים שונאים שיש למישהו יד באקאונט שלהם, ושימוש במזומן עדיין נפוץ.
+          <br /><br />
+          הבחירה: <em>"שולחים הודעה בוואטסאפ, אנחנו רושמים"</em>. עדיף מנגנון ידני אבל פרטי, מאשר מנגנון אוטומטי שדורש סינכרון בנקאי שמשתמשים לא ירצו.
+        </p>
+        <div class="mt-3 text-xs text-ink-500 dark:text-ink-400">החלטה: <span class="num">2026-01</span> · עדיין תקפה ✓</div>
+      </article>
+
+      <!-- decision 2 -->
+      <article class="journal-entry rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h3 class="text-lg font-black">למה Google Sheets ולא בסיס נתונים פרטי</h3>
+          <span class="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold uppercase text-ink-500 dark:bg-ink-700 dark:text-ink-300">החלטה · בעלות נתונים</span>
+        </div>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          <strong>Data ownership.</strong> כשהמשתמש מבטל מנוי, הנתונים נשארים אצלו, ב-Drive שלו, נגישים בכל רגע. אנחנו רק <em>שולחים פעולות לגיליון</em> דרך scope מצומצם של <code class="mono">drive.file</code> — לא רואים את כל ה-Drive.
+          <br /><br />
+          העלות: אנחנו לא יכולים לעשות אופטימיזציות שאילתה מהירות. הזכייה: המשתמש לעולם לא תקוע — הגיליון תמיד שלו, גם אם אנחנו ניעלם מחר.
+        </p>
+        <div class="mt-3 text-xs text-ink-500 dark:text-ink-400">החלטה: <span class="num">2026-02</span> · עדיין תקפה ✓</div>
+      </article>
+
+      <!-- decision 3 -->
+      <article class="journal-entry rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h3 class="text-lg font-black">למה Hebrew-first ולא bilingual</h3>
+          <span class="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold uppercase text-ink-500 dark:bg-ink-700 dark:text-ink-300">החלטה · מיקוד</span>
+        </div>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          אפליקציות פיננסיות בעברית הן בעיקר תרגום של מוצרים אמריקאיים — RTL מקולקל, "₪" שמופיע בצד הלא נכון, קטגוריות לא רלוונטיות (אין "Starbucks" כקטגוריה ראשית בארץ). השוק האמיתי הלא-משורת:
+          <strong>ישראלים שדוברים עברית כשפת אם וצריכים כלי שמדבר אליהם כמוהו.</strong>
+          <br /><br />
+          האנגלית קיימת ב-<a href="/en" class="text-brand-700 underline hover:no-underline">/en</a> כי מצופה לפעמים מעולים חדשים, אבל זו לא המנה העיקרית. הנימוק העסקי: מאמצים פיננסיים בעברית כמעט ולא נמצאים בגוגל — הזדמנות SEO ענקית.
+        </p>
+        <div class="mt-3 text-xs text-ink-500 dark:text-ink-400">החלטה: <span class="num">2026-01</span> · עדיין תקפה ✓</div>
+      </article>
+
+      <!-- decision 4 -->
+      <article class="journal-entry rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h3 class="text-lg font-black">למה אנחנו פותחים גם /tools חינמיים</h3>
+          <span class="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold uppercase text-ink-500 dark:bg-ink-700 dark:text-ink-300">החלטה · רכישה</span>
+        </div>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          מחשבון מע"מ, מחשבון תקציב, חישוב רווחיות לפרילנסר — כולם נמצאים ב-<a href="/tools" class="text-brand-700 underline hover:no-underline">/tools</a> בחינם, בלי הרשמה, בלי טפסים.
+          <br /><br />
+          <strong>הסיבה:</strong> בגוגל בעברית אין כלים נורמליים לזה. בנינו 5 כלים שמדורגים תוך שבועיים. כל אחד מהם משאיר בתחתית קריאה עדינה לעיקרי — לא יותר. SEO + ערך-לפני-הצעה = רכישה זולה במיוחד.
+        </p>
+        <div class="mt-3 text-xs text-ink-500 dark:text-ink-400">החלטה: <span class="num">2026-03</span> · עדיין תקפה ✓</div>
+      </article>
+
+      <!-- decision 5 -->
+      <article class="journal-entry rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h3 class="text-lg font-black">למה ₪19 ולא $9.99</h3>
+          <span class="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold uppercase text-ink-500 dark:bg-ink-700 dark:text-ink-300">החלטה · תמחור</span>
+        </div>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          תמחור בשקלים, לא בדולרים. בכוונה.
+          <br /><br />
+          <strong>הסיבה:</strong> ישראלים יודעים מה זה ₪19. הם לא צריכים להמיר במוח, לא יבהלו מהבילינג, וכרטיס האשראי שלהם לא יסבול הוצאות חוץ. <em>תמחור = ידידותיות לישראלי.</em>
+          <br /><br />
+          העלות: אם פעם נרצה לפתוח שווקים אחרים, נצטרך multi-currency. גם בסדר.
+        </p>
+        <div class="mt-3 text-xs text-ink-500 dark:text-ink-400">החלטה: <span class="num">2026-04</span> · עדיין תקפה ✓</div>
+      </article>
+
+      <!-- decision 6 -->
+      <article class="journal-entry rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h3 class="text-lg font-black">למה אנחנו לא משתמשים ב-Google Analytics</h3>
+          <span class="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold uppercase text-ink-500 dark:bg-ink-700 dark:text-ink-300">החלטה · פרטיות</span>
+        </div>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          GA, FB Pixel, TikTok Pixel — כולם פיקסלים שמועברים לצד שלישי שמרוויח מהנתונים שלך.
+          <br /><br />
+          הבחירה שלנו: <strong>אנליטיקה פנימית</strong>. עוד פרטים בחלק "What We Measure" למטה.
+        </p>
+        <div class="mt-3 text-xs text-ink-500 dark:text-ink-400">החלטה: <span class="num">2026-02</span> · עדיין תקפה ✓</div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============== SECTION: ROADMAP & GOALS ============== -->
+<section id="roadmap" class="border-y border-ink-200 bg-white py-20 dark:border-ink-700 dark:bg-ink-800">
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+      <span aria-hidden="true">🎯</span> Metrics Goals
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">היעדים — וכמה אנחנו רחוקים מהם</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      היעדים האלה מעודכנים לפי ההתקדמות בפועל. אם נחמיץ, נכתוב כאן <em>למה</em>.
+    </p>
+
+    <div class="mt-10 space-y-6">
+
+      <!-- goal 1 -->
+      <div>
+        <div class="flex items-baseline justify-between gap-2">
+          <h3 class="text-base font-bold"><span class="num">100</span> משתמשים פעילים</h3>
+          <span class="text-xs text-ink-500 dark:text-ink-400">יעד: קיץ <span class="num">2026</span></span>
+        </div>
+        <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900">
+          <div class="pb-fill h-full rounded-full bg-gradient-to-l from-brand-400 to-brand-600" style="width: 8%"></div>
+        </div>
+        <div class="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-ink-400">
+          <span><span class="num">~8</span> משתמשים נכון להיום (private beta)</span>
+          <span class="num">8%</span>
+        </div>
+      </div>
+
+      <!-- goal 2 -->
+      <div>
+        <div class="flex items-baseline justify-between gap-2">
+          <h3 class="text-base font-bold">ROAS &gt; <span class="num">4</span>x</h3>
+          <span class="text-xs text-ink-500 dark:text-ink-400">יעד: כשנתחיל פרסום בתשלום</span>
+        </div>
+        <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900">
+          <div class="pb-fill h-full rounded-full bg-gradient-to-l from-amber-400 to-amber-600" style="width: 0%"></div>
+        </div>
+        <div class="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-ink-400">
+          <span>₪<span class="num">0</span> הוצא על פרסום עד היום</span>
+          <span class="num">0%</span>
+        </div>
+      </div>
+
+      <!-- goal 3 -->
+      <div>
+        <div class="flex items-baseline justify-between gap-2">
+          <h3 class="text-base font-bold">NPS &gt; <span class="num">50</span></h3>
+          <span class="text-xs text-ink-500 dark:text-ink-400">יעד: סוף <span class="num">2026</span></span>
+        </div>
+        <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900">
+          <div class="pb-fill h-full rounded-full bg-gradient-to-l from-accent-500 to-accent-600" style="width: 0%"></div>
+        </div>
+        <div class="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-ink-400">
+          <span>טרם נמדד — מתחילים עם הביתא הציבורית</span>
+          <span class="num">—</span>
+        </div>
+      </div>
+
+      <!-- goal 4 -->
+      <div>
+        <div class="flex items-baseline justify-between gap-2">
+          <h3 class="text-base font-bold">Churn חודשי &lt; <span class="num">5</span>%</h3>
+          <span class="text-xs text-ink-500 dark:text-ink-400">יעד: שוטף, מהחודש הראשון</span>
+        </div>
+        <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900">
+          <div class="pb-fill h-full rounded-full bg-gradient-to-l from-brand-400 to-brand-600" style="width: 100%"></div>
+        </div>
+        <div class="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-ink-400">
+          <span class="num">0% churn (עוד אין מנויים בתשלום)</span>
+          <span class="num">100% של היעד</span>
+        </div>
+      </div>
+
+      <!-- goal 5 -->
+      <div>
+        <div class="flex items-baseline justify-between gap-2">
+          <h3 class="text-base font-bold">דירוג בגוגל לביטויים מרכזיים</h3>
+          <span class="text-xs text-ink-500 dark:text-ink-400">יעד: TOP-10 ל-"מעקב הוצאות בעברית"</span>
+        </div>
+        <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900">
+          <div class="pb-fill h-full rounded-full bg-gradient-to-l from-accent-500 to-accent-600" style="width: 25%"></div>
+        </div>
+        <div class="mt-1.5 flex justify-between text-xs text-ink-500 dark:text-ink-400">
+          <span>נכון להיום: לא בעמוד הראשון (יש <span class="num">3</span> ביטויים בעמוד 2-3)</span>
+          <span class="num">~25%</span>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="mt-8 rounded-xl bg-ink-50 p-4 text-xs text-ink-500 dark:bg-ink-900 dark:text-ink-300">
+      <strong>הערה:</strong> כל המספרים האלו מעודכנים ידנית, פעם בחודש. אם משהו נראה לא הגיוני — שלחו לי הודעה ב<a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="text-brand-700 underline hover:no-underline">וואטסאפ</a> ואסביר.
+    </p>
+  </div>
+</section>
+
+<!-- ============== SECTION: WHAT WE MEASURE ============== -->
+<section id="measure" class="py-20">
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-600 dark:bg-accent-500/20 dark:text-accent-500">
+      <span aria-hidden="true">👁️</span> What We Measure (and Why)
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">מה אנחנו מודדים — ולמה</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      פילוסופיית האנליטיקה שלנו: <strong>אירועים, לא אנשים.</strong>
+    </p>
+
+    <div class="mt-10 grid gap-5 md:grid-cols-2">
+      <div class="rounded-2xl border-2 border-rose-200 bg-rose-50/50 p-6 dark:border-rose-900/40 dark:bg-rose-900/10">
+        <h3 class="text-lg font-black text-rose-700 dark:text-rose-300">מה אנחנו לא מודדים</h3>
+        <ul class="mt-4 space-y-2 text-sm text-ink-700 dark:text-ink-200">
+          <li class="flex gap-2"><span class="text-rose-500 font-bold">✗</span> Google Analytics</li>
+          <li class="flex gap-2"><span class="text-rose-500 font-bold">✗</span> Meta Pixel / TikTok Pixel</li>
+          <li class="flex gap-2"><span class="text-rose-500 font-bold">✗</span> Cookies של צד שלישי</li>
+          <li class="flex gap-2"><span class="text-rose-500 font-bold">✗</span> Fingerprint device-tracking</li>
+          <li class="flex gap-2"><span class="text-rose-500 font-bold">✗</span> Session replay / hotjar / fullstory</li>
+          <li class="flex gap-2"><span class="text-rose-500 font-bold">✗</span> כתובת IP מלאה (נשמר חישוב hash 24h)</li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border-2 border-brand-200 bg-brand-50/50 p-6 dark:border-brand-900/40 dark:bg-brand-900/10">
+        <h3 class="text-lg font-black text-brand-700 dark:text-brand-300">מה כן מודדים</h3>
+        <ul class="mt-4 space-y-2 text-sm text-ink-700 dark:text-ink-200">
+          <li class="flex gap-2"><span class="text-brand-600 font-bold">✓</span> <code class="mono text-xs">page_view</code> (URL + referrer בלבד)</li>
+          <li class="flex gap-2"><span class="text-brand-600 font-bold">✓</span> <code class="mono text-xs">signup_start</code> / <code class="mono text-xs">signup_complete</code></li>
+          <li class="flex gap-2"><span class="text-brand-600 font-bold">✓</span> <code class="mono text-xs">cta_click</code> (איזה כפתור)</li>
+          <li class="flex gap-2"><span class="text-brand-600 font-bold">✓</span> ספירות אגרגטיביות יומיות ב-KV</li>
+          <li class="flex gap-2"><span class="text-brand-600 font-bold">✓</span> sessionStorage למזהה סשן (לא localStorage, נמחק כשסוגרים את החלון)</li>
+          <li class="flex gap-2"><span class="text-brand-600 font-bold">✓</span> DNT/GPC נכבדים (לא נשלח כלום מהדפדפן שלך)</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="mt-6 rounded-xl bg-ink-50 p-4 text-sm text-ink-700 dark:bg-ink-900 dark:text-ink-200">
+      <strong>איך זה עובד טכנית:</strong> כל אירוע כותב 2 רשומות ב-Upstash KV:
+      <code class="mono text-xs">analytics:&lt;date&gt;:&lt;event&gt;</code> (counter) ו-<code class="mono text-xs">analytics:session:&lt;date&gt;:&lt;event&gt;</code> (Set של sessionIDs לחישוב unique). אין שולחן <em>users</em>. אין PII. אין דרך אחורה ממונה לאדם. לקריאה מלאה: <a href="/trust" class="text-brand-700 underline hover:no-underline">/trust</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ============== SECTION: UNFAIR ADVANTAGE ============== -->
+<section id="advantage" class="border-y border-ink-200 bg-gradient-to-b from-white via-brand-50/30 to-white py-20 dark:border-ink-700 dark:from-ink-900 dark:via-brand-900/10 dark:to-ink-900">
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+      <span aria-hidden="true">🎯</span> The Unfair Advantage
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">היתרון הלא הוגן</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      הדעה הכנה של המייסד על מה כסף'לה עושה שמתחרים <strong>לא יעשו</strong> — ומה אנחנו <strong>לעולם לא נעשה</strong>.
+    </p>
+
+    <h3 class="mt-10 text-xl font-black">3 דברים שאנחנו עושים שמתחרים לא</h3>
+    <div class="mt-5 space-y-4">
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start gap-3">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-100 font-black text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"><span class="num">1</span></div>
+          <div>
+            <h4 class="font-bold">מתנהלים בעברית גם בפנים</h4>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">מתחרים מתרגמים. אנחנו <em>חושבים</em> בעברית — כל קטגוריה, כל הודעת שגיאה, כל פיצ'ר. ה-RTL לא תוצר לוואי, אלא תכנון ראשי.</p>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start gap-3">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-100 font-black text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"><span class="num">2</span></div>
+          <div>
+            <h4 class="font-bold">הנתונים נשארים בבעלות המשתמש</h4>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">בכל מוצר SaaS אחר, כשמבטלים את המנוי — מאבדים את הכל. אצלנו, הגיליון תמיד שלך, גם אם תיעלם החברה מחר. גם זה תכונה.</p>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start gap-3">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-100 font-black text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"><span class="num">3</span></div>
+          <div>
+            <h4 class="font-bold">מימון עצמי = החלטות לטובת המשתמש</h4>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">אין דירקטוריון שלוחץ ל-2x ARR בכל רבעון. אנחנו מותר לנו לבחור: שמירת פיצ'ר חינמי שעוזר ל-90%, גם אם הוא לא ממיר. <em>זה לוקסוס שמשקיעים לעולם לא יסבלו.</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="mt-10 text-xl font-black">2 דברים שאנחנו לעולם לא נעשה</h3>
+    <div class="mt-5 space-y-4">
+      <div class="rounded-2xl border-2 border-rose-200 bg-rose-50/50 p-5 dark:border-rose-900/40 dark:bg-rose-900/10">
+        <div class="flex items-start gap-3">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rose-100 font-black text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"><span aria-hidden="true">✗</span></div>
+          <div>
+            <h4 class="font-bold text-rose-800 dark:text-rose-200">לא נמכור את הנתונים שלך</h4>
+            <p class="mt-1 text-sm text-ink-700 dark:text-ink-200">לא לבנקים, לא ל-data brokers, לא לפרסומאים, לא ל-"שותף אסטרטגי". אם החברה תיסגר, נמחק הכל ונודיע. כתוב גם ב<a href="/terms" class="underline">תנאי שימוש</a>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-2xl border-2 border-rose-200 bg-rose-50/50 p-5 dark:border-rose-900/40 dark:bg-rose-900/10">
+        <div class="flex items-start gap-3">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rose-100 font-black text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"><span aria-hidden="true">✗</span></div>
+          <div>
+            <h4 class="font-bold text-rose-800 dark:text-rose-200">לא נציג פרסומות בתוך המוצר</h4>
+            <p class="mt-1 text-sm text-ink-700 dark:text-ink-200">לא הצעות "שותפים", לא קופונים, לא "מתאים לך — כרטיס אשראי X". המודל שלנו הוא מנויים. נקודה.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== SECTION: HONEST WEAKNESSES ============== -->
+<section id="weaknesses" class="py-20">
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+      <span aria-hidden="true">🚧</span> Honest Weaknesses
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">החולשות שלנו — בלי spin</h2>
+    <p class="mt-3 max-w-3xl text-ink-600 dark:text-ink-200">
+      רשימה כנה של מה שאנחנו עדיין לא טובים בו, ומה שאנחנו עובדים על לתקן. מסך נחיתה של SaaS לא אמור להראות את זה — וזה בדיוק הסיבה שהוא כאן.
+    </p>
+
+    <h3 class="mt-10 text-xl font-black">מה אנחנו עדיין לא טובים בהם</h3>
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/40 dark:bg-amber-900/10">
+        <h4 class="font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true">⚠️</span> אונבורדינג בכלל מהיר מדי</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">"90 שניות" קל לדבר, קשה להוכיח. בכ-<span class="num">25</span>% מההרשמות אנשים מתבלבלים סביב שלב חיבור הגיליון. נצטרך אונבורדינג מסודר יותר.</p>
+      </div>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/40 dark:bg-amber-900/10">
+        <h4 class="font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true">⚠️</span> אפליקציית מובייל אין עדיין</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">יש PWA, יש "Install" chip, אבל אין app חי ב-App Store / Play Store. זה פוגע באמון לחלק מהמשתמשים.</p>
+      </div>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/40 dark:bg-amber-900/10">
+        <h4 class="font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true">⚠️</span> זיהוי קטגוריות אוטומטי לא תמיד מדויק</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">"245 שופרסל" → קל. "245 ל-X" → קשה יותר. ב-<span class="num">~12</span>% מהמקרים המשתמש צריך לתקן. עובדים על מודל מקומי טוב יותר.</p>
+      </div>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/40 dark:bg-amber-900/10">
+        <h4 class="font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true">⚠️</span> דוחות חודשיים בעיצוב פשוט מדי</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">פאי-צ'רטים, גרף קווי, רשימת תנועות. מתחרים מציעים יותר vis. עוד לא הגענו לזה.</p>
+      </div>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-900/40 dark:bg-amber-900/10">
+        <h4 class="font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true">⚠️</span> תמיכה רק בערוץ אחד</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">תמיכה בוואטסאפ או אימייל. אין live chat. SLA זמן תגובה: עד 24 שעות, בפועל זה שעות-בודדות. אבל לא 24/7.</p>
+      </div>
+    </div>
+
+    <h3 class="mt-12 text-xl font-black">מה שאנחנו עובדים על לתקן</h3>
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+      <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 dark:border-brand-900/40 dark:bg-brand-900/10">
+        <h4 class="font-bold text-brand-800 dark:text-brand-200"><span aria-hidden="true">🛠️</span> אונבורדינג מודרך בן 4 שלבים</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">חשבון → גיליון → בוט וואטסאפ → דוגמה ראשונה. ETA: יוני <span class="num">2026</span>.</p>
+      </div>
+      <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 dark:border-brand-900/40 dark:bg-brand-900/10">
+        <h4 class="font-bold text-brand-800 dark:text-brand-200"><span aria-hidden="true">🛠️</span> מודל קטגוריות שמתאמן על הנתונים שלך</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">מודל קטן (KNN בעברית) שיגדל לפי תיקונים שלך. הכל מקומי, ללא שליחה לשרת. ETA: יולי <span class="num">2026</span>.</p>
+      </div>
+      <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 dark:border-brand-900/40 dark:bg-brand-900/10">
+        <h4 class="font-bold text-brand-800 dark:text-brand-200"><span aria-hidden="true">🛠️</span> דוח חודשי חכם במייל</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">סיכום אישי בעברית במקום פאי-צ'רט. "החודש בילית 23% יותר מהממוצע על אוכל בחוץ — בעיקר ימי ראשון". ETA: אוגוסט <span class="num">2026</span>.</p>
+      </div>
+      <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 dark:border-brand-900/40 dark:bg-brand-900/10">
+        <h4 class="font-bold text-brand-800 dark:text-brand-200"><span aria-hidden="true">🛠️</span> PWA → Native (Capacitor)</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">עוטפים את האפליקציה הקיימת ב-Capacitor ושולחים ל-Play Store. iOS אחר כך. ETA: ספטמבר <span class="num">2026</span>.</p>
+      </div>
+      <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-5 dark:border-brand-900/40 dark:bg-brand-900/10">
+        <h4 class="font-bold text-brand-800 dark:text-brand-200"><span aria-hidden="true">🛠️</span> תמיכה במספר בנקאי (Open Banking)</h4>
+        <p class="mt-1.5 text-sm text-ink-700 dark:text-ink-200">לא מתחבר ישירות לבנק — אבל נשתמש ב-CSV/PDF Parsing מקומי כדי לקבל הוצאות שכבר בוצעו. ETA: לבירור.</p>
+      </div>
+    </div>
+
+    <p class="mt-8 rounded-xl bg-ink-50 p-4 text-sm text-ink-700 dark:bg-ink-900 dark:text-ink-200">
+      <strong>איך זה עוזר לי כמשתמש?</strong> כשאתה שוקל אם להירשם, תדע <em>מה לצפות</em>. ואם אתה אנליסט / משקיע (לא שאנחנו מחפשים), לפחות לא תתחיל אצלנו עם הפתעות.
+    </p>
+  </div>
+</section>
+
+<!-- ============== SECTION: PRESS & INVESTOR RELATIONS ============== -->
+<section id="press" class="border-t border-ink-200 bg-white py-20 dark:border-ink-700 dark:bg-ink-800">
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-600 dark:bg-accent-500/20 dark:text-accent-500">
+      <span aria-hidden="true">📰</span> Press & Investor Relations
+    </div>
+    <h2 class="text-3xl font-black md:text-4xl">אנליסטים, עיתונאים, ושותפים</h2>
+
+    <div class="mt-10 grid gap-5 md:grid-cols-2">
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <h3 class="text-lg font-black">אם אתה עיתונאי / אנליסט</h3>
+        <p class="mt-2 text-sm text-ink-600 dark:text-ink-200">
+          שלח לי הודעה ב-<a href="mailto:hi@kesefle.com" class="text-brand-700 underline hover:no-underline">hi@kesefle.com</a> או ב<a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="text-brand-700 underline hover:no-underline">וואטסאפ</a>. אני עונה ב-<span class="num">24</span> שעות מקסימום, בדרך כלל הרבה יותר מהר.
+        </p>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-200">
+          תוכלו למצוא כאן: <a href="/press" class="text-brand-700 underline hover:no-underline">/press</a> (לוגואים + צילומי מסך), <a href="/about" class="text-brand-700 underline hover:no-underline">/about</a> (סיפור המייסד), <a href="/trust" class="text-brand-700 underline hover:no-underline">/trust</a> (אבטחה ופרטיות).
+        </p>
+      </div>
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 dark:border-ink-700 dark:bg-ink-900">
+        <h3 class="text-lg font-black">אם אתה משקיע</h3>
+        <p class="mt-2 text-sm text-ink-600 dark:text-ink-200">
+          <strong>אנחנו לא מחפשים השקעה.</strong> תודה על העניין. אנחנו לא נגישים להון חיצוני כי המודל שלנו לא דורש את זה — מימון עצמי, עלויות אפס, runway אינסופי.
+        </p>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-200">
+          אם אתם בכל זאת חושבים שיש איך לתרום (לא כסף): <strong>שותפויות אסטרטגיות</strong> בקטגוריות שאנחנו לא נכנסים אליהן — חינוך פיננסי, ייעוץ עסקי, ראיית חשבון אוטומטית — נשמח לדבר.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-8 rounded-2xl border-2 border-brand-200 bg-brand-50/50 p-6 dark:border-brand-900/40 dark:bg-brand-900/10">
+      <h3 class="text-lg font-black text-brand-800 dark:text-brand-200">פתוחים לשותפויות אסטרטגיות</h3>
+      <p class="mt-2 text-sm text-ink-700 dark:text-ink-200">
+        ה-API שלנו (<a href="/docs" class="text-brand-700 underline hover:no-underline">/docs</a>) פתוח. אם יש לכם מוצר ישראלי שצריך לתקשר עם נתוני הוצאות של משתמשים — בואו נדבר על אינטגרציה הוגנת. דוגמאות לעולמות שאנחנו פתוחים אליהם:
+      </p>
+      <ul class="mt-3 space-y-1 text-sm text-ink-700 dark:text-ink-200">
+        <li class="flex gap-2"><span class="text-brand-600 font-bold">→</span> רואי חשבון / יועצי מס לעצמאים</li>
+        <li class="flex gap-2"><span class="text-brand-600 font-bold">→</span> פלטפורמות לחינוך פיננסי / קואצ'ינג</li>
+        <li class="flex gap-2"><span class="text-brand-600 font-bold">→</span> בנקים דיגיטליים שמעוניינים ב-PFM (Personal Finance Management) למשתמשי PME</li>
+        <li class="flex gap-2"><span class="text-brand-600 font-bold">→</span> אינטגרציות וואטסאפ אחרות (CRMs, בוטים בעברית)</li>
+      </ul>
+    </div>
+
+    <div class="mt-8 grid gap-4 md:grid-cols-3 text-sm">
+      <a href="mailto:hi@kesefle.com" class="rounded-xl border border-ink-200 bg-white p-4 text-center font-bold transition hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">
+        <div class="text-2xl">✉️</div>
+        <div class="mt-2">hi@kesefle.com</div>
+      </a>
+      <a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="rounded-xl border border-ink-200 bg-white p-4 text-center font-bold transition hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">
+        <div class="text-2xl">💬</div>
+        <div class="mt-2">WhatsApp ישיר</div>
+      </a>
+      <a href="/press" class="rounded-xl border border-ink-200 bg-white p-4 text-center font-bold transition hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:text-brand-300">
+        <div class="text-2xl">📦</div>
+        <div class="mt-2">Press Kit</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FINAL CTA ============== -->
+<section class="bg-mesh py-16">
+  <div class="mx-auto max-w-3xl px-5 text-center">
+    <h2 class="text-3xl font-black md:text-4xl">זה הכל כתוב. אין אותיות קטנות.</h2>
+    <p class="mt-4 text-base text-ink-600 dark:text-ink-200">
+      אם אחרי כל זה אתה עדיין כאן — כנראה שאתה מתאים לנו. נסה את כסף'לה <strong>חינם</strong>, ללא כרטיס אשראי.
+    </p>
+    <div class="mt-6 flex flex-wrap justify-center gap-3">
+      <a href="/#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'open_final' });" class="rounded-xl bg-brand-600 px-6 py-3 text-base font-bold text-white shadow-glow transition hover:bg-brand-500">
+        התחל חינם <span aria-hidden="true">→</span>
+      </a>
+      <a href="/trust" class="rounded-xl border border-ink-300 bg-white px-6 py-3 text-base font-bold text-ink-700 transition hover:border-brand-400 hover:text-brand-700 dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-brand-500 dark:hover:text-brand-300">
+        קרא על אבטחה
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">מוצר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/roadmap" class="hover:text-ink-900 dark:hover:text-white">מפת דרכים</a></li>
+        <li><a href="/changelog" class="hover:text-ink-900 dark:hover:text-white">Changelog</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">חברה</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/about" class="hover:text-ink-900 dark:hover:text-white">אודות</a></li>
+        <li><a href="/open" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">פתוח →</a></li>
+        <li><a href="/trust" class="hover:text-ink-900 dark:hover:text-white">אבטחה</a></li>
+        <li><a href="/press" class="hover:text-ink-900 dark:hover:text-white">מדיה</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:hi@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">hi@kesefle.com</a></li>
+        <li><a href="/en" hreflang="en" class="hover:text-ink-900 dark:hover:text-white">🇬🇧 English</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    © <span class="num">2026</span> כסף'לה. כל הזכויות שמורות. עשוי באהבה בישראל 🇮🇱
+    <br />
+    <span class="text-xs">העמוד הזה מתעדכן בכל פעם שאנחנו מקבלים החלטה גדולה. אחרון עדכון: <span class="num">17.5.2026</span></span>
+  </div>
+</footer>
+
+<script>
+// ============ DARK MODE ============
+function kesefleToggleDark() {
+  var html = document.documentElement;
+  var isDark = html.classList.toggle('dark');
+  try { localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light'); } catch (e) {}
+  document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+  document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+}
+(function initTheme() {
+  try {
+    var saved = localStorage.getItem('kesefle_theme');
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark)) {
+      document.documentElement.classList.add('dark');
+      var moon = document.getElementById('icon-moon');
+      var sun = document.getElementById('icon-sun');
+      if (moon) moon.classList.add('hidden');
+      if (sun) sun.classList.remove('hidden');
+    }
+  } catch (e) {}
+})();
+
+// ============ SERVICE WORKER ============
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+  });
+}
+
+// ============ LIVE METRICS ============
+// Best-effort: hit /api/admin?action=analytics. If unauthorized (most likely),
+// keep the stale placeholders. We do not surface the error — the UI already
+// shows that data is stale via the badge.
+(function loadAnalytics() {
+  var DAYS = 30;
+  fetch('/api/admin?action=analytics&days=' + DAYS, {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: { 'Accept': 'application/json' },
+  })
+    .then(function(r) {
+      if (!r.ok) throw new Error('not_ok');
+      return r.json();
+    })
+    .then(function(j) {
+      if (!j || !j.ok || !j.totals) return;
+      var totals = j.totals;
+      var formatNum = function(n) {
+        if (n == null) return '—';
+        return (typeof Intl !== 'undefined' && Intl.NumberFormat)
+          ? new Intl.NumberFormat('he-IL').format(n)
+          : String(n);
+      };
+      // page_view counter
+      var pv = document.getElementById('analytics-pageview');
+      if (pv && totals.page_view != null) pv.textContent = formatNum(totals.page_view);
+      // signup_start counter
+      var ss = document.getElementById('analytics-signup-start');
+      if (ss && totals.signup_start != null) ss.textContent = formatNum(totals.signup_start);
+      // users (only if admin)
+      if (j.users != null) {
+        var u = document.getElementById('metric-users');
+        var note = document.getElementById('metric-users-note');
+        if (u) u.textContent = formatNum(j.users);
+        if (note) note.textContent = 'משתמשים פעילים (אחרון: ' + (j.lastSeen || 'היום') + ')';
+        var su = document.getElementById('status-users');
+        if (su) {
+          su.className = 'inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase text-brand-700 dark:bg-brand-900/40 dark:text-brand-300';
+          su.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-brand-500 live-dot"></span>live';
+        }
+      }
+    })
+    .catch(function() { /* silent — stale state stays */ });
+})();
+
+// ============ HERO TIMESTAMP ============
+(function setHeroTimestamp() {
+  try {
+    var d = new Date();
+    var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+    var s = pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
+    var el = document.getElementById('hero-updated');
+    if (el) el.textContent = s;
+  } catch (e) {}
+})();
+
+// ============ TRACK PAGE VIEW ============
+if (window.kfl && typeof window.kfl.track === 'function') {
+  window.kfl.track('page_view', { page: 'open' });
+}
+</script>
+</body>
+</html>

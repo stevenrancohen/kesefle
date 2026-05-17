@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="x-apple-disable-message-reformatting"/>
+  <meta name="color-scheme" content="dark light"/>
+  <meta name="supported-color-schemes" content="dark light"/>
+  <title>קבלה — תשלום על {{planName}}</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style type="text/css">
+    body,table,td,a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table,td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; }
+    body { margin:0 !important; padding:0 !important; width:100% !important; }
+    a { text-decoration:none; }
+    @media screen and (max-width:600px) {
+      .container { width:100% !important; max-width:100% !important; }
+      .px-mobile { padding-left:12px !important; padding-right:12px !important; }
+      .amount-hero { font-size:44px !important; }
+      .btn { width:100% !important; display:block !important; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .body-bg { background-color:#081114 !important; }
+      .card-bg { background-color:#2e4e55 !important; }
+      .text-primary { color:#ffffff !important; }
+    }
+    @media print {
+      .no-print { display:none !important; }
+      body { background:#ffffff !important; color:#000000 !important; }
+    }
+  </style>
+</head>
+<body class="body-bg" style="margin:0;padding:0;background-color:#081114;font-family:Arial,Helvetica,'Heebo',sans-serif;">
+
+  <div style="display:none;font-size:1px;color:#081114;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    קבלה על תשלום {{planName}} בסך &#8362;{{amount}}. מספר חשבונית: {{invoiceNumber}}.
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="body-bg" style="border-collapse:collapse;background-color:#081114;">
+    <tr>
+      <td align="center" style="padding:0;">
+
+        <!-- HEADER -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#081114;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:24px 16px 12px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td align="right" dir="rtl">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td valign="middle">
+                          <span style="display:inline-block;width:36px;height:36px;background-color:#f1e926;border-radius:50%;text-align:center;line-height:36px;color:#081114;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;font-weight:bold;">&#8362;</span>
+                        </td>
+                        <td valign="middle" style="padding:0 10px 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:20px;font-weight:bold;color:#f1e926;">כסף'לה</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- SUCCESS BANNER -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;background-color:#064e3b;border:1px solid #10b981;border-radius:12px;">
+                <tr>
+                  <td align="center" dir="rtl" style="padding:24px;">
+                    <span style="display:inline-block;width:48px;height:48px;background-color:#10b981;border-radius:50%;text-align:center;line-height:48px;color:#ffffff;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:28px;font-weight:bold;">&#10004;</span>
+                    <h1 style="margin:14px 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:22px;color:#d1fae5;font-weight:700;">
+                      התשלום התקבל בהצלחה
+                    </h1>
+                    <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#a7f3d0;">
+                      תודה {{firstName}}, החשבון שלך פעיל לתקופה הבאה
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- RECEIPT BLOCK -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:0 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container card-bg" style="border-collapse:collapse;max-width:600px;width:100%;background-color:#2e4e55;border-radius:14px;">
+
+                <!-- Receipt header strip -->
+                <tr>
+                  <td dir="rtl" style="padding:24px 28px 16px 28px;border-bottom:1px solid #1f3a40;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td dir="rtl" align="right">
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:1px;">חשבונית מס &middot; קבלה</p>
+                          <p style="margin:4px 0 0 0;font-family:'Courier New',Courier,monospace;font-size:14px;color:#ffffff;font-weight:bold;">#{{invoiceNumber}}</p>
+                        </td>
+                        <td dir="ltr" align="left">
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:1px;">DATE</p>
+                          <p style="margin:4px 0 0 0;font-family:'Courier New',Courier,monospace;font-size:14px;color:#ffffff;font-weight:bold;">{{paymentDate}}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Plan -->
+                <tr>
+                  <td dir="rtl" style="padding:20px 28px;border-bottom:1px solid #1f3a40;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td dir="rtl" align="right">
+                          <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">המסלול שלך</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;color:#ffffff;font-weight:700;">{{planName}}</p>
+                          <p style="margin:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;">{{billingCycle}} &middot; חידוש אוטומטי</p>
+                        </td>
+                        <td dir="ltr" align="left" valign="top">
+                          <p class="amount-hero" style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:36px;color:#f1e926;font-weight:900;line-height:1;">&#8362;{{amount}}</p>
+                          <p style="margin:6px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;">כולל מע&quot;מ</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Itemized breakdown -->
+                <tr>
+                  <td dir="rtl" style="padding:18px 28px;border-bottom:1px solid #1f3a40;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td dir="rtl" style="padding:6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#c2d2d6;">{{planName}}</td>
+                        <td dir="ltr" align="left" style="padding:6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#c2d2d6;">&#8362;{{subtotal}}</td>
+                      </tr>
+                      <tr>
+                        <td dir="rtl" style="padding:6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#c2d2d6;">מע&quot;מ (17%)</td>
+                        <td dir="ltr" align="left" style="padding:6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#c2d2d6;">&#8362;{{vat}}</td>
+                      </tr>
+                      <tr>
+                        <td dir="rtl" style="padding:10px 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;font-weight:bold;border-top:1px solid #1f3a40;">סה&quot;כ</td>
+                        <td dir="ltr" align="left" style="padding:10px 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:16px;color:#f1e926;font-weight:bold;border-top:1px solid #1f3a40;">&#8362;{{amount}}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Payment Method -->
+                <tr>
+                  <td dir="rtl" style="padding:18px 28px;border-bottom:1px solid #1f3a40;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td dir="rtl" align="right">
+                          <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;">אמצעי תשלום</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;">{{cardBrand}} &middot; &middot; &middot; &middot; {{cardLast4}}</p>
+                        </td>
+                        <td dir="ltr" align="left">
+                          <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;">NEXT BILLING</p>
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;">{{nextBillingDate}}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Billed To -->
+                <tr>
+                  <td dir="rtl" style="padding:18px 28px 22px 28px;">
+                    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;">חויב ל</p>
+                    <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;line-height:1.6;">
+                      {{customerName}}<br/>
+                      <span style="color:#c2d2d6;">{{userEmail}}</span>
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Action buttons -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="no-print" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:16px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td align="center" dir="rtl">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td align="center" bgcolor="#f1e926" style="border-radius:10px;padding:0 6px;">
+                          <a href="{{pdfUrl}}" target="_blank" class="btn" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;font-weight:bold;color:#081114;text-decoration:none;border-radius:10px;background-color:#f1e926;">
+                            הורד קבלה PDF
+                          </a>
+                        </td>
+                        <td style="width:8px;">&nbsp;</td>
+                        <td align="center" style="border-radius:10px;border:1.5px solid #2e4e55;padding:0;">
+                          <a href="https://kesefle.vercel.app/account#billing" target="_blank" class="btn" style="display:inline-block;padding:13px 26px;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;font-weight:bold;color:#f1e926;text-decoration:none;border-radius:10px;">
+                            צפה בחשבון
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Help line -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td align="center" dir="rtl" style="padding:16px 20px;background-color:#2e4e55;border-radius:10px;">
+                    <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#c2d2d6;line-height:1.6;">
+                      שאלות לגבי החשבונית? כתוב לנו ב-<a href="mailto:billing@kesefle.vercel.app" style="color:#f1e926;text-decoration:underline;">billing@kesefle.vercel.app</a><br/>
+                      פרטים על מסלולים: <a href="https://kesefle.vercel.app/pricing" style="color:#f1e926;text-decoration:underline;">דף מחירים</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- FOOTER -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" dir="rtl" lang="he" style="border-collapse:collapse;background-color:#081114;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:32px 16px 24px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td style="padding:0 0 24px 0;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="height:1px;background-color:#2e4e55;line-height:1px;font-size:1px;">&nbsp;</td></tr></table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0 0 12px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+                    <a href="https://kesefle.vercel.app/privacy" target="_blank" style="color:#9ab1b6;text-decoration:underline;">פרטיות</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="https://kesefle.vercel.app/terms" target="_blank" style="color:#9ab1b6;text-decoration:underline;">תנאי שימוש</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="https://kesefle.vercel.app/pricing" target="_blank" style="color:#9ab1b6;text-decoration:underline;">מחירים</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="https://kesefle.vercel.app/account" target="_blank" style="color:#9ab1b6;text-decoration:underline;">החשבון שלי</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0 0 12px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+                    קבלה זו נשלחה ל-<span style="color:#f1e926;">{{userEmail}}</span>.<br/>
+                    מיילי קבלות הם חובה ולא ניתן להסיר מהם הרשמה.
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#5a7479;line-height:1.5;">
+                    <strong style="color:#9ab1b6;">כסף'לה</strong> &middot; ח.פ. 516000000<br/>
+                    תל אביב, ישראל &middot; &copy; 2026 Kesefle Ltd.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="x-apple-disable-message-reformatting"/>
+  <meta name="color-scheme" content="dark light"/>
+  <meta name="supported-color-schemes" content="dark light"/>
+  <title>סיכום השבוע — {{weekRange}}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body,table,td,a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table,td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; }
+    body { margin:0 !important; padding:0 !important; width:100% !important; }
+    a { text-decoration:none; }
+    @media screen and (max-width:600px) {
+      .container { width:100% !important; max-width:100% !important; }
+      .px-mobile { padding-left:12px !important; padding-right:12px !important; }
+      .hero-number { font-size:42px !important; }
+      .bar-row { display:block !important; width:100% !important; }
+      .btn { width:100% !important; display:block !important; }
+      .stack { display:block !important; width:100% !important; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .body-bg { background-color:#081114 !important; }
+      .card-bg { background-color:#2e4e55 !important; }
+      .text-primary { color:#ffffff !important; }
+      .text-muted { color:#9ab1b6 !important; }
+    }
+  </style>
+</head>
+<body class="body-bg" style="margin:0;padding:0;background-color:#081114;font-family:Arial,Helvetica,'Heebo',sans-serif;">
+
+  <!-- Preheader -->
+  <div style="display:none;font-size:1px;color:#081114;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    הוצאת השבוע: &#8362;{{totalSpend}}. {{spikeCount}} התראות חריגות. הקטגוריה הגדולה: {{topCategory}}.
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="body-bg" style="border-collapse:collapse;background-color:#081114;">
+    <tr>
+      <td align="center" style="padding:0;">
+
+        <!-- HEADER -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#081114;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:24px 16px 12px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td align="right" dir="rtl">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td valign="middle">
+                          <span style="display:inline-block;width:36px;height:36px;background-color:#f1e926;border-radius:50%;text-align:center;line-height:36px;color:#081114;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;font-weight:bold;">&#8362;</span>
+                        </td>
+                        <td valign="middle" style="padding:0 10px 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:20px;font-weight:bold;color:#f1e926;">כסף'לה</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- HERO -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;background-color:#2e4e55;border-radius:16px;">
+                <tr>
+                  <td align="center" dir="rtl" style="padding:36px 24px 32px 24px;">
+                    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;text-transform:uppercase;letter-spacing:1.5px;">
+                      סיכום שבועי &middot; {{weekRange}}
+                    </p>
+                    <h1 style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:18px;color:#c2d2d6;font-weight:500;">
+                      {{firstName}}, השבוע הוצאת
+                    </h1>
+                    <p class="hero-number" style="margin:8px 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:56px;color:#f1e926;font-weight:900;line-height:1;letter-spacing:-1.5px;">
+                      &#8362;{{totalSpend}}
+                    </p>
+                    <p style="margin:12px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#c2d2d6;">
+                      על פני <strong style="color:#ffffff;">{{transactionCount}}</strong> רישומים בקטגוריות <strong style="color:#ffffff;">{{categoryCount}}</strong>
+                    </p>
+
+                    <!-- Week-over-week -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:18px;">
+                      <tr>
+                        <td bgcolor="{{deltaColor}}" style="padding:6px 14px;border-radius:8px;background-color:#10b981;">
+                          <span style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#ffffff;font-weight:bold;">
+                            {{deltaArrow}} {{deltaPercent}}% לעומת שבוע שעבר
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- SPIKE ALERTS -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;background-color:#7f1d1d;border-right:4px solid #ef4444;border-radius:10px;">
+                <tr>
+                  <td dir="rtl" style="padding:18px 22px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td valign="top" style="padding:0 0 0 10px;" width="32">
+                          <span style="font-size:22px;line-height:1;">&#9888;</span>
+                        </td>
+                        <td valign="top" dir="rtl">
+                          <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;font-weight:bold;color:#fecaca;">
+                            התראת חריגה: {{spikeCategoryName}}
+                          </p>
+                          <p style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#fee2e2;line-height:1.5;">
+                            הוצאת <strong>&#8362;{{spikeAmount}}</strong> — זה {{spikeMultiplier}}x מהממוצע השבועי שלך ({{spikeAverage}}). שווה בדיקה.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- CATEGORY BREAKDOWN -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:8px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td dir="rtl" style="padding:0 4px 14px 4px;">
+                    <h2 style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:22px;color:#f1e926;font-weight:700;">
+                      פירוט לפי קטגוריה
+                    </h2>
+                    <p style="margin:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">
+                      5 הקטגוריות הגדולות השבוע
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td dir="rtl" style="padding:20px 22px;background-color:#2e4e55;border-radius:12px;">
+
+                    <!-- Category Row 1 -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:16px;">
+                      <tr>
+                        <td dir="rtl" style="padding:0 0 6px 0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                            <tr>
+                              <td dir="rtl" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;font-weight:bold;">{{cat1Name}}</td>
+                              <td dir="ltr" align="left" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#f1e926;font-weight:bold;">&#8362;{{cat1Amount}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#1f3a40;border-radius:4px;">
+                            <tr>
+                              <td style="height:10px;font-size:1px;line-height:10px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                  <tr>
+                                    <td width="{{cat1Pct}}%" bgcolor="#f1e926" style="height:10px;background-color:#f1e926;border-radius:4px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                    <td bgcolor="#1f3a40" style="height:10px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;">{{cat1Pct}}% מההוצאות &middot; {{cat1Count}} רישומים</td>
+                      </tr>
+                    </table>
+
+                    <!-- Category Row 2 -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:16px;">
+                      <tr>
+                        <td dir="rtl" style="padding:0 0 6px 0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                            <tr>
+                              <td dir="rtl" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;font-weight:bold;">{{cat2Name}}</td>
+                              <td dir="ltr" align="left" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#f1e926;font-weight:bold;">&#8362;{{cat2Amount}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#1f3a40;border-radius:4px;">
+                            <tr>
+                              <td style="height:10px;font-size:1px;line-height:10px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                  <tr>
+                                    <td width="{{cat2Pct}}%" bgcolor="#10b981" style="height:10px;background-color:#10b981;border-radius:4px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                    <td bgcolor="#1f3a40" style="height:10px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;">{{cat2Pct}}% מההוצאות &middot; {{cat2Count}} רישומים</td>
+                      </tr>
+                    </table>
+
+                    <!-- Category Row 3 -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:16px;">
+                      <tr>
+                        <td dir="rtl" style="padding:0 0 6px 0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                            <tr>
+                              <td dir="rtl" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;font-weight:bold;">{{cat3Name}}</td>
+                              <td dir="ltr" align="left" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#f1e926;font-weight:bold;">&#8362;{{cat3Amount}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#1f3a40;border-radius:4px;">
+                            <tr>
+                              <td style="height:10px;font-size:1px;line-height:10px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                  <tr>
+                                    <td width="{{cat3Pct}}%" bgcolor="#06b6d4" style="height:10px;background-color:#06b6d4;border-radius:4px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                    <td bgcolor="#1f3a40" style="height:10px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;">{{cat3Pct}}% מההוצאות &middot; {{cat3Count}} רישומים</td>
+                      </tr>
+                    </table>
+
+                    <!-- Category Row 4 -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:16px;">
+                      <tr>
+                        <td dir="rtl" style="padding:0 0 6px 0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                            <tr>
+                              <td dir="rtl" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;font-weight:bold;">{{cat4Name}}</td>
+                              <td dir="ltr" align="left" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#f1e926;font-weight:bold;">&#8362;{{cat4Amount}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#1f3a40;border-radius:4px;">
+                            <tr>
+                              <td style="height:10px;font-size:1px;line-height:10px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                  <tr>
+                                    <td width="{{cat4Pct}}%" bgcolor="#8b5cf6" style="height:10px;background-color:#8b5cf6;border-radius:4px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                    <td bgcolor="#1f3a40" style="height:10px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;">{{cat4Pct}}% מההוצאות &middot; {{cat4Count}} רישומים</td>
+                      </tr>
+                    </table>
+
+                    <!-- Category Row 5 -->
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr>
+                        <td dir="rtl" style="padding:0 0 6px 0;">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                            <tr>
+                              <td dir="rtl" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;font-weight:bold;">{{cat5Name}}</td>
+                              <td dir="ltr" align="left" style="font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#f1e926;font-weight:bold;">&#8362;{{cat5Amount}}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#1f3a40;border-radius:4px;">
+                            <tr>
+                              <td style="height:10px;font-size:1px;line-height:10px;">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                  <tr>
+                                    <td width="{{cat5Pct}}%" bgcolor="#f59e0b" style="height:10px;background-color:#f59e0b;border-radius:4px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                    <td bgcolor="#1f3a40" style="height:10px;line-height:10px;font-size:1px;">&nbsp;</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#9ab1b6;">{{cat5Pct}}% מההוצאות &middot; {{cat5Count}} רישומים</td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- TOP 5 EXPENSES TABLE -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:16px 16px 16px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td dir="rtl" style="padding:0 4px 14px 4px;">
+                    <h2 style="margin:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:22px;color:#f1e926;font-weight:700;">
+                      5 ההוצאות הגדולות השבוע
+                    </h2>
+                  </td>
+                </tr>
+                <tr>
+                  <td dir="rtl" style="background-color:#2e4e55;border-radius:12px;overflow:hidden;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <thead>
+                        <tr>
+                          <th align="right" dir="rtl" style="padding:14px 18px;background-color:#1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">תאריך</th>
+                          <th align="right" dir="rtl" style="padding:14px 18px;background-color:#1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">תיאור</th>
+                          <th align="left" dir="ltr" style="padding:14px 18px;background-color:#1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">סכום</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">{{exp1Date}}</td>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;">{{exp1Desc}}</td>
+                          <td align="left" dir="ltr" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:15px;color:#f1e926;font-weight:bold;">&#8362;{{exp1Amount}}</td>
+                        </tr>
+                        <tr>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">{{exp2Date}}</td>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;">{{exp2Desc}}</td>
+                          <td align="left" dir="ltr" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:15px;color:#f1e926;font-weight:bold;">&#8362;{{exp2Amount}}</td>
+                        </tr>
+                        <tr>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">{{exp3Date}}</td>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;">{{exp3Desc}}</td>
+                          <td align="left" dir="ltr" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:15px;color:#f1e926;font-weight:bold;">&#8362;{{exp3Amount}}</td>
+                        </tr>
+                        <tr>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">{{exp4Date}}</td>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;">{{exp4Desc}}</td>
+                          <td align="left" dir="ltr" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:15px;color:#f1e926;font-weight:bold;">&#8362;{{exp4Amount}}</td>
+                        </tr>
+                        <tr>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">{{exp5Date}}</td>
+                          <td align="right" dir="rtl" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:14px;color:#ffffff;">{{exp5Desc}}</td>
+                          <td align="left" dir="ltr" style="padding:14px 18px;border-top:1px solid #1f3a40;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:15px;color:#f1e926;font-weight:bold;">&#8362;{{exp5Amount}}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- CTA Big -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:24px 16px 32px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td align="center" dir="rtl">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td align="center" bgcolor="#f1e926" style="border-radius:12px;">
+                          <a href="https://kesefle.vercel.app/dashboard" target="_blank" class="btn" style="display:inline-block;padding:16px 36px;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:16px;font-weight:bold;color:#081114;text-decoration:none;border-radius:12px;background-color:#f1e926;">
+                            פתח את הדשבורד &laquo;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin:14px 0 0 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:13px;color:#9ab1b6;">
+                      רוצה לקבל פחות מיילים? <a href="https://kesefle.vercel.app/account#notifications" target="_blank" style="color:#f1e926;text-decoration:underline;">העדפות התראות</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- FOOTER -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" dir="rtl" lang="he" style="border-collapse:collapse;background-color:#081114;">
+          <tr>
+            <td align="center" class="px-mobile" style="padding:32px 16px 24px 16px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="border-collapse:collapse;max-width:600px;width:100%;">
+                <tr>
+                  <td style="padding:0 0 24px 0;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                      <tr><td style="height:1px;background-color:#2e4e55;line-height:1px;font-size:1px;">&nbsp;</td></tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0 0 12px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+                    <a href="https://kesefle.vercel.app/privacy" target="_blank" style="color:#9ab1b6;text-decoration:underline;">פרטיות</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="https://kesefle.vercel.app/terms" target="_blank" style="color:#9ab1b6;text-decoration:underline;">תנאי שימוש</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="https://kesefle.vercel.app/help" target="_blank" style="color:#9ab1b6;text-decoration:underline;">עזרה</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0 0 12px 0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:12px;color:#9ab1b6;line-height:1.6;">
+                    קיבלת סיכום שבועי ב-<span style="color:#f1e926;">{{userEmail}}</span>.<br/>
+                    <a href="https://kesefle.vercel.app/account#notifications" target="_blank" style="color:#9ab1b6;text-decoration:underline;">העדפות מייל</a>
+                    &nbsp;&middot;&nbsp;
+                    <a href="{{unsubscribeUrl}}" target="_blank" style="color:#9ab1b6;text-decoration:underline;">ביטול הרשמה</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0;font-family:Arial,Helvetica,'Heebo',sans-serif;font-size:11px;color:#5a7479;line-height:1.5;">
+                    <strong style="color:#9ab1b6;">כסף'לה</strong> &middot; ניהול הוצאות בעברית דרך וואטסאפ<br/>
+                    תל אביב, ישראל &middot; &copy; 2026 Kesefle Ltd.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
