@@ -241,9 +241,8 @@
     </a>
     <div class="hidden gap-7 md:flex">
       <a href="#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
-      <a href="#features" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">תכונות</a>
+      <a href="#features" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">המנוע</a>
       <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
-      <a href="/compare" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">השוואה</a>
       <a href="/trust" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אבטחה</a>
       <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
     </div>
@@ -264,46 +263,6 @@
     <span class="text-xs opacity-80">פתח ←</span>
   </a>
 </div>
-
-<!-- ============== LIVE ACTIVITY TICKER (Bloomberg-style strip) ============== -->
-<div class="relative overflow-hidden border-b border-ink-200/60 bg-ink-950/95 text-white dark:border-ink-700/60" style="margin-top:60px">
-  <div class="relative flex items-center gap-3 px-5 py-1.5 text-xs">
-    <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-500/20 px-2 py-0.5 font-bold uppercase tracking-wider text-brand-400">
-      <span class="relative flex h-1.5 w-1.5">
-        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
-        <span class="live-dot relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-400"></span>
-      </span>
-      <span class="font-mono">LIVE</span>
-    </div>
-    <div class="relative flex-1 overflow-hidden">
-      <div id="kfl-ticker" class="flex animate-[ticker-scroll_60s_linear_infinite] gap-8 whitespace-nowrap font-mono text-ink-300">
-        <span><span class="text-brand-400">▸</span> משתמש חדש מ-תל אביב הצטרף לרגע <span class="num">2</span> דק</span>
-        <span><span class="text-accent-500">▸</span> AI סיווג <span dir="rtl">"הופעה של עומר אדם"</span> → אירועים / בילויים</span>
-        <span><span class="text-brand-400">▸</span> <span class="num">1,247</span> הודעות עובדו היום</span>
-        <span><span class="text-brand-400">▸</span> משתמש מ-חיפה רשם <span class="num">8</span> הוצאות החודש</span>
-        <span><span class="text-accent-500">▸</span> מנוע 3-tier — <span class="num">99.5</span>% דיוק</span>
-        <span><span class="text-brand-400">▸</span> <span class="num">63</span> קריאות AI היום • $<span class="num">0.019</span></span>
-        <span><span class="text-brand-400">▸</span> משתמש חדש מ-ירושלים הצטרף לרגע <span class="num">7</span> דק</span>
-        <span><span class="text-accent-500">▸</span> AI סיווג <span dir="rtl">"חתונה של רוני"</span> → אירועים / אירועים</span>
-        <span><span class="text-brand-400">▸</span> <span class="num">1,480</span> מילות מפתח במילון</span>
-        <span><span class="text-brand-400">▸</span> משתמש מ-באר שבע סיכם החודש — <span class="num">3,247</span>₪</span>
-        <span><span class="text-accent-500">▸</span> AI סיווג <span dir="rtl">"חבילת אומגה 3"</span> → בריאות / תוספים</span>
-        <span><span class="text-brand-400">▸</span> זמן תגובה ממוצע: <span class="num">187</span>ms</span>
-      </div>
-    </div>
-    <a href="/dashboard" class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-brand-400 hover:text-brand-300">לוח בקרה ←</a>
-  </div>
-</div>
-
-<style>
-  @keyframes ticker-scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    #kfl-ticker { animation: none !important; }
-  }
-</style>
 
 <!-- ============== HERO ============== -->
 <section id="kfl-hero" class="relative overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
@@ -326,17 +285,15 @@
           <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
           <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
         </span>
-        <span class="font-mono">LIVE</span>
-        <span class="opacity-50">•</span>
-        <span>בטא פתוח לראשונים</span>
+        <span>הדרך החכמה לנהל את הכסף שלך</span>
       </div>
       <h1 class="text-balance text-5xl font-black leading-[1.02] tracking-tight md:text-7xl dark:text-white">
-        רישום הוצאות
-        <span class="block holo-text">לא צריך אפליקציה.</span>
+        שולחים הוצאה.
+        <span class="block holo-text">הכסף מנהל את עצמו.</span>
       </h1>
       <p class="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
-        רוב אנשי החינוך לכסף אומרים <span class="font-semibold text-ink-900 dark:text-white">"תרשמו כל הוצאה"</span>. רוב האנשים לא עושים את זה כי זה מעצבן.<br>
-        ב-כסף'לה כותבים בוואטסאפ <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון Google Drive שלך, מקוטלג.
+        כולם יודעים שצריך לעקוב אחרי הוצאות. אף אחד לא עושה את זה כי זה מעצבן.<br>
+        ב-כסף'לה כותבים בוואטסאפ <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון Google Drive שלכם, מקוטלג, מסוכם, מוכן לשליפה.
       </p>
       <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'hero' });" class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-l from-brand-600 via-brand-600 to-brand-700 px-7 py-4 text-base font-bold text-white shadow-glow transition-all hover:shadow-2xl hover:-translate-y-0.5">
@@ -554,29 +511,6 @@
   })();
 </script>
 
-<!-- ============== HONEST FOUNDER NOTE ============== -->
-<section class="border-y border-ink-200 bg-white py-10 dark:border-ink-700 dark:bg-ink-900">
-  <div class="mx-auto max-w-3xl px-5">
-    <div class="rounded-3xl border border-ink-200 bg-gradient-to-br from-ink-50 to-white p-6 md:p-8 dark:border-ink-700 dark:from-ink-800 dark:to-ink-900">
-      <div class="flex items-start gap-4">
-        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white shadow-soft">S</div>
-        <div class="text-right">
-          <p class="text-sm font-bold text-brand-600 dark:text-brand-400">מסטיבן — היוצר</p>
-          <p class="mt-2 text-base leading-relaxed text-ink-700 dark:text-ink-100">
-            <span class="font-semibold dark:text-white">הבעיה:</span> רוב האנשים יודעים שכדאי לעקוב אחרי הוצאות, וכמעט אף אחד לא עושה את זה. אפליקציות מנהלות תקציב דורשות התקנה, הגדרות וזיכרון לפתוח אותן. בנקאות פתוחה לא רואה מזומן, ביט, או הוצאות עסקיות.
-          </p>
-          <p class="mt-3 text-base leading-relaxed text-ink-700 dark:text-ink-100">
-            <span class="font-semibold dark:text-white">הפתרון:</span> את כותבת בוואטסאפ "<span class="num">245</span> סופר". זה כבר בגיליון Google Drive שלך. שום הגדרה, שום התקנה. זה עובד כי וואטסאפ הוא כבר במסך הראשי שלך.
-          </p>
-          <p class="mt-3 text-sm leading-relaxed text-ink-500 dark:text-ink-300">
-            כסף'לה היא בבטא. אנחנו מצרפים <span class="font-semibold">משתמשים ראשונים</span> כדי לתקן יחד את הפרטים הקטנים לפני שנעלה רחב.
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ============== TRUST (3rd section — moved up) ============== -->
 <section class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
   <div class="pointer-events-none absolute inset-0 -z-10 dotgrid text-ink-300/30 dark:text-white/[0.04]"></div>
@@ -591,11 +525,13 @@
     </div>
     <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">אמון</p>
     <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">"למה אני אתן לבוט וואטסאפ <span class="holo-text">גישה לכסף</span> שלי?"</h2>
-    <p class="mt-6 text-lg leading-relaxed text-ink-600 dark:text-ink-200">
-      הבוט <strong>לא רואה</strong> את חשבון הבנק שלך, <strong>לא מתחבר</strong> אליו, ולא רוצה להתחבר.
-      הוא רושם בדיוק מה שאתה כותב לו — לא יותר. כל המידע נשמר בגוגל שיטס בחשבון הגוגל הפרטי שלך,
-      <strong>לא אצלנו בשרת</strong> — מחק את הקובץ, ונעלמנו מחייך.
-    </p>
+    <div class="mx-auto mt-6 max-w-2xl space-y-3 text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+      <p>הבוט <strong>לא רואה</strong> את חשבון הבנק שלכם.</p>
+      <p><strong>לא מתחבר</strong> אליו. ולא רוצה להתחבר.</p>
+      <p>הוא רושם בדיוק מה שאתם כותבים לו — לא יותר.</p>
+      <p>כל המידע נשמר בגוגל שיטס בחשבון הגוגל הפרטי שלכם, <strong>לא אצלנו בשרת</strong>.</p>
+      <p class="text-base text-ink-500 dark:text-ink-300">מחקתם את הקובץ? נעלמנו מחייכם. ככה פשוט.</p>
+    </div>
     <div class="mt-10 grid gap-4 sm:grid-cols-3">
       <div class="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-right tilt-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
         <div class="pointer-events-none absolute -top-10 -left-10 h-24 w-24 rounded-full bg-brand-400/20 blur-2xl opacity-0 transition group-hover:opacity-100"></div>
@@ -630,8 +566,8 @@
   <div class="mx-auto max-w-6xl px-5">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-sm font-bold uppercase tracking-wider text-brand-600">איך זה עובד</p>
-      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl">שלושה צעדים. דקה. סיימת.</h2>
-      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">אין משהו ללמוד. אין הגדרות אינסופיות. כמו להוסיף איש קשר.</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl">מהרישום הראשון, <span class="holo-text">בדקה אחת.</span></h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">בלי אפליקציה להוריד. בלי הגדרות לזכור. שלוש לחיצות וזה כבר עובד.</p>
     </div>
     <div class="mt-14 grid items-stretch gap-6 md:grid-cols-3">
       <!-- step 1 -->
@@ -708,204 +644,272 @@
 </section>
 
 <!-- ============== FEATURES ============== -->
-<section id="features" class="bg-ink-900 py-20 text-white md:py-28">
-  <div class="mx-auto max-w-6xl px-5">
-    <div class="mx-auto max-w-2xl text-center">
-      <p class="text-sm font-bold uppercase tracking-wider text-brand-400">⚡ STACK • מה בפנים</p>
-      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl">
-        זה לא בוט.
-        <span class="holo-text">זה מנוע.</span>
-      </h2>
-      <p class="mt-4 text-base text-ink-300">ארכיטקטורת AI היברידית — קאש, מילון, מודל שפה. בלי לדעת שיש פה דבר כזה.</p>
-    </div>
-    <div class="mt-14 grid gap-5 md:grid-cols-3">
-      <!-- feature 1 -->
-      <div class="rounded-3xl border border-white/10 bg-white/5 p-7 backdrop-blur">
-        <div class="grid h-12 w-12 place-items-center rounded-2xl bg-brand-500/20 text-brand-300">
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-        </div>
-        <h3 class="mt-5 text-xl font-bold">בלי טפסים, בלי לחיצות</h3>
-        <p class="mt-2.5 leading-relaxed text-ink-300">שלח הודעה רגילה, בעברית, כמו שאתה כותב לחבר. אנחנו מבינים.</p>
-      </div>
-      <!-- feature 2 -->
-      <div class="rounded-3xl border border-white/10 bg-white/5 p-7 backdrop-blur">
-        <div class="grid h-12 w-12 place-items-center rounded-2xl bg-accent-500/20 text-accent-500">
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        </div>
-        <h3 class="mt-5 text-xl font-bold">מקטלג לבד, חכם</h3>
-        <p class="mt-2.5 leading-relaxed text-ink-300">"אוכל", "דלק", "חשבונות" — הבוט מזהה לפי המילים שלך ומשבץ בקטגוריה הנכונה.</p>
-      </div>
-      <!-- feature 3 -->
-      <div class="rounded-3xl border border-white/10 bg-white/5 p-7 backdrop-blur">
-        <div class="grid h-12 w-12 place-items-center rounded-2xl bg-brand-500/20 text-brand-300">
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
-        </div>
-        <h3 class="mt-5 text-xl font-bold">השיט שלך, בבעלותך</h3>
-        <p class="mt-2.5 leading-relaxed text-ink-300">הכל נכתב לגוגל שיטס שמחובר לחשבון שלך. תייצא, תערוך, תמחק — זה שלך.</p>
-      </div>
-    </div>
-
-    <!-- secondary features grid -->
-    <div class="mt-6 grid gap-5 md:grid-cols-4">
-      <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div class="text-2xl">📊</div>
-        <h4 class="mt-3 font-bold">סיכום חודשי</h4>
-        <p class="mt-1 text-sm text-ink-400">"כמה הוצאתי החודש על אוכל?" — קבל תשובה ב-2 שניות.</p>
-      </div>
-      <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div class="text-2xl">🌍</div>
-        <h4 class="mt-3 font-bold">מטבעות מרובים</h4>
-        <p class="mt-1 text-sm text-ink-400">₪, $, € — כותב במטבע, מתרגם אוטומטית לשקלים.</p>
-      </div>
-      <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div class="text-2xl">↩️</div>
-        <h4 class="mt-3 font-bold">ביטול אחרון</h4>
-        <p class="mt-1 text-sm text-ink-400">טעית? "מחק אחרון" — נמחק. בלי דרמות.</p>
-      </div>
-      <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <div class="text-2xl">🔒</div>
-        <h4 class="mt-3 font-bold">בלי גישה לבנק</h4>
-        <p class="mt-1 text-sm text-ink-400">לא רואים. לא רוצים. רק מה שאתה כותב.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============== AI ENGINE SHOWCASE (futuristic, replaces beta section) ============== -->
-<section class="relative overflow-hidden bg-ink-900 py-20 text-white md:py-28">
-  <!-- animated matrix grid -->
-  <div class="absolute inset-0 -z-10 matrix-grid opacity-50"></div>
-  <!-- aurora glow -->
-  <div class="pointer-events-none absolute top-1/3 left-1/4 -z-10 h-[28rem] w-[28rem] rounded-full bg-brand-500/20 blur-3xl animate-blob"></div>
-  <div class="pointer-events-none absolute bottom-1/4 right-1/4 -z-10 h-[28rem] w-[28rem] rounded-full bg-accent-500/20 blur-3xl animate-blob" style="animation-delay:-3s"></div>
-  <!-- top + bottom gradient fade -->
+<section id="features" class="relative overflow-hidden bg-ink-900 py-20 text-white md:py-28">
+  <!-- ambient background -->
+  <div class="absolute inset-0 -z-10 matrix-grid opacity-30"></div>
+  <div class="pointer-events-none absolute top-0 left-1/4 -z-10 h-[36rem] w-[36rem] rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
+  <div class="pointer-events-none absolute bottom-0 right-1/4 -z-10 h-[36rem] w-[36rem] rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-4s"></div>
   <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-ink-900 to-transparent"></div>
   <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-ink-900 to-transparent"></div>
 
   <div class="mx-auto max-w-6xl px-5">
+    <!-- headline (kept — user explicitly liked this) -->
     <div class="mx-auto max-w-2xl text-center">
       <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-400/40 bg-brand-500/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-300 backdrop-blur">
         <span class="relative flex h-2 w-2">
           <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
           <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span>
         </span>
-        LIVE ENGINE • פועל כרגע
+        <span class="font-mono">3-TIER AI</span>
+        <span class="opacity-50">•</span>
+        <span>פועל כרגע</span>
       </div>
-      <h2 class="text-4xl font-black tracking-tight md:text-5xl">
-        מנוע הבינה
-        <span class="holo-text">מבין עברית</span>
-        כמו אדם.
+      <h2 class="text-5xl font-black tracking-tight md:text-6xl">
+        זה לא בוט.
+        <span class="block holo-text mt-2">זה מנוע.</span>
       </h2>
       <p class="mt-5 text-lg text-ink-300">
-        ארכיטקטורת AI היברידית. <span class="num">3</span> שכבות. <span class="num">1,480</span> מילים מאומנות. גיבוי Claude Haiku <span class="num">3.5</span>. בלי לדעת שזה שם.
+        ארכיטקטורת AI היברידית. שלוש שכבות. אלף וארבע מאות מילים מאומנות.<br>
+        אתם רק כותבים. הוא מבין בעצמו.
       </p>
     </div>
 
-    <!-- live console — 3 columns: input → engine → output -->
-    <div class="mt-14 grid gap-5 lg:grid-cols-3">
-      <!-- column 1: input stream -->
-      <div class="scan-line relative overflow-hidden rounded-3xl border border-brand-500/30 bg-ink-800/60 p-6 backdrop-blur">
-        <div class="mb-4 flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-brand-400">קלט • HEBREW INPUT</span>
-          <span class="font-mono text-[10px] text-ink-400">▌ stdin</span>
-        </div>
-        <div class="space-y-2.5 font-mono text-[13px]">
-          <div class="text-ink-100"><span class="text-brand-500">$</span> <span class="num">245</span> wolt דאלי</div>
-          <div class="text-ink-100"><span class="text-brand-500">$</span> <span class="num">1800</span> ארנונה</div>
-          <div class="text-ink-100"><span class="text-brand-500">$</span> <span class="num">89</span> spotify</div>
-          <div class="text-ink-100"><span class="text-brand-500">$</span> <span class="num">8500</span> משכורת</div>
-          <div class="text-ink-100"><span class="text-brand-500">$</span> <span class="num">450</span> מאוחדת שיניים</div>
-          <div class="text-brand-300"><span class="text-brand-500">$</span> <span class="num">42</span> קפה<span class="type-cursor"></span></div>
-        </div>
+    <!-- LIVE FLOW: animated message → AI thinking → sheet entry -->
+    <div class="relative mt-16">
+      <!-- animated connector lines (decorative) -->
+      <div class="pointer-events-none absolute inset-0 hidden lg:block">
+        <svg class="h-full w-full opacity-30" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="kfl-flow-grad" x1="0%" y1="50%" x2="100%" y2="50%">
+              <stop offset="0%" stop-color="#22c55e" stop-opacity="0" />
+              <stop offset="50%" stop-color="#22c55e" stop-opacity="0.7" />
+              <stop offset="100%" stop-color="#a855f7" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <line x1="0" y1="50" x2="100" y2="50" stroke="url(#kfl-flow-grad)" stroke-width="0.3" stroke-dasharray="2 2">
+            <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="3s" repeatCount="indefinite"/>
+          </line>
+        </svg>
       </div>
 
-      <!-- column 2: engine internals -->
-      <div class="neon-card relative overflow-hidden rounded-3xl border-2 border-brand-500/50 bg-gradient-to-br from-brand-900/30 via-ink-900/80 to-accent-500/10 p-6 backdrop-blur">
-        <div class="mb-4 flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-brand-300">המנוע • 3-TIER AI</span>
-          <span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500/20 text-base text-brand-300">⚡</span>
-        </div>
-        <div class="space-y-3">
-          <div class="rounded-xl border border-brand-500/20 bg-ink-900/60 p-3">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="font-bold text-brand-300">T1 • CACHE</span>
-              <span class="font-mono text-ink-400"><span class="num">30</span>%</span>
-            </div>
-            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-ink-700">
-              <div class="h-full w-[30%] rounded-full bg-gradient-to-r from-brand-500 to-brand-300"></div>
-            </div>
-            <div class="mt-1.5 font-mono text-[10px] text-ink-400">~<span class="num">50</span>ms • $<span class="num">0.00</span></div>
+      <div class="grid gap-6 lg:grid-cols-[1fr_auto_1.2fr_auto_1fr] items-center">
+        <!-- LEFT — incoming WhatsApp message -->
+        <div class="relative">
+          <div class="absolute -top-3 right-4 z-10 inline-flex items-center gap-1 rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-brand-300">
+            <span class="live-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-400"></span>
+            INCOMING
           </div>
-          <div class="rounded-xl border border-brand-500/20 bg-ink-900/60 p-3">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="font-bold text-brand-300">T2 • KEYWORDS</span>
-              <span class="font-mono text-ink-400"><span class="num">65</span>%</span>
+          <div class="rounded-3xl border border-brand-500/30 bg-gradient-to-br from-[#0a3d2a] via-ink-900 to-ink-800 p-5 backdrop-blur" dir="rtl">
+            <div class="flex items-center gap-2 border-b border-white/10 pb-3">
+              <div class="grid h-7 w-7 place-items-center rounded-full bg-brand-500 text-xs font-bold text-white">₪</div>
+              <div class="flex-1">
+                <div class="text-xs font-bold">כסף'לה</div>
+                <div class="text-[9px] text-ink-400">פעיל עכשיו</div>
+              </div>
+              <span class="text-[9px] text-emerald-400">●  WhatsApp</span>
             </div>
-            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-ink-700">
-              <div class="h-full w-[65%] rounded-full bg-gradient-to-r from-accent-500 to-brand-400"></div>
+            <div class="mt-4 flex justify-end" id="kfl-anim-msg">
+              <div class="max-w-[85%] rounded-2xl rounded-tl-md bg-[#005c4b] px-3.5 py-2 text-[14px] text-white shadow-lg">
+                <span id="kfl-anim-text"><span class="num">245</span> wolt דאלי</span>
+                <div class="mt-1 flex justify-end text-[9px] text-emerald-200/70">14:23 ✓✓</div>
+              </div>
             </div>
-            <div class="mt-1.5 font-mono text-[10px] text-ink-400">~<span class="num">5</span>ms • <span class="num">1,480</span> מילים</div>
-          </div>
-          <div class="rounded-xl border border-accent-500/30 bg-ink-900/60 p-3">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="font-bold text-accent-500">T3 • CLAUDE AI</span>
-              <span class="font-mono text-ink-400"><span class="num">5</span>%</span>
-            </div>
-            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-ink-700">
-              <div class="h-full w-[5%] rounded-full bg-gradient-to-r from-accent-500 to-pink-400"></div>
-            </div>
-            <div class="mt-1.5 font-mono text-[10px] text-ink-400">~<span class="num">800</span>ms • $<span class="num">0.0001</span></div>
           </div>
         </div>
-      </div>
 
-      <!-- column 3: output stream -->
-      <div class="scan-line relative overflow-hidden rounded-3xl border border-brand-500/30 bg-ink-800/60 p-6 backdrop-blur">
-        <div class="mb-4 flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-brand-400">פלט • CATEGORIZED</span>
-          <span class="font-mono text-[10px] text-ink-400">stdout ▌</span>
+        <!-- arrow 1 (mobile + desktop) -->
+        <div class="flex items-center justify-center text-brand-400 lg:rotate-180">
+          <svg class="h-8 w-8 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </div>
-        <div class="space-y-2.5 font-mono text-[13px]">
-          <div><span class="text-brand-400">▸</span> <span class="text-ink-100">אוכל</span> <span class="text-ink-500">/</span> <span class="text-ink-400">אוכל בחוץ</span></div>
-          <div><span class="text-brand-400">▸</span> <span class="text-ink-100">הוצאות קבועות</span> <span class="text-ink-500">/</span> <span class="text-ink-400">בית</span></div>
-          <div><span class="text-brand-400">▸</span> <span class="text-ink-100">הוצאות קבועות</span> <span class="text-ink-500">/</span> <span class="text-ink-400">אפליקציות</span></div>
-          <div><span class="text-brand-400">▸</span> <span class="text-ink-100">הכנסות</span> <span class="text-ink-500">/</span> <span class="text-ink-400">משכורת</span></div>
-          <div><span class="text-brand-400">▸</span> <span class="text-ink-100">בריאות</span> <span class="text-ink-500">/</span> <span class="text-ink-400">בריאות</span></div>
-          <div><span class="text-accent-500">▸</span> <span class="text-ink-100">אוכל</span> <span class="text-ink-500">/</span> <span class="text-ink-400 type-cursor">בית קפה</span></div>
+
+        <!-- CENTER — the engine (the showpiece) -->
+        <div class="relative">
+          <div class="absolute -inset-1 -z-10 rounded-[2rem] bg-gradient-to-r from-brand-500 via-accent-500 to-brand-500 opacity-40 blur-xl animate-pulse"></div>
+          <div class="neon-card relative overflow-hidden rounded-3xl border-2 border-brand-500/60 bg-gradient-to-br from-brand-900/40 via-ink-900 to-accent-500/10 p-6 backdrop-blur">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-brand-300">THE ENGINE</span>
+              <div class="flex items-center gap-2 text-[10px] text-ink-400 font-mono">
+                <span class="live-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-400"></span>
+                <span>v36 • 1,480 keywords</span>
+              </div>
+            </div>
+
+            <div class="mt-4 space-y-2.5">
+              <!-- Tier 1 — Cache -->
+              <div class="flex items-center gap-3" id="kfl-tier-1">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-500/20 text-brand-300 font-bold">1</span>
+                <div class="flex-1">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <span class="text-sm font-bold text-white">CACHE</span>
+                    <span class="text-[10px] font-mono text-brand-300">~50ms · חינם</span>
+                  </div>
+                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+                    <div class="h-full w-[30%] rounded-full bg-gradient-to-r from-brand-500 to-brand-300"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Tier 2 — Keywords -->
+              <div class="flex items-center gap-3" id="kfl-tier-2">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-500/30 text-brand-200 font-bold">2</span>
+                <div class="flex-1">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <span class="text-sm font-bold text-white">KEYWORDS</span>
+                    <span class="text-[10px] font-mono text-brand-300">~5ms · 1,480 מילים</span>
+                  </div>
+                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+                    <div class="h-full w-[65%] rounded-full bg-gradient-to-r from-accent-500 to-brand-400"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Tier 3 — AI -->
+              <div class="flex items-center gap-3" id="kfl-tier-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent-500/30 text-accent-300 font-bold">3</span>
+                <div class="flex-1">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <span class="text-sm font-bold text-white">CLAUDE AI</span>
+                    <span class="text-[10px] font-mono text-accent-300">~800ms · גיבוי</span>
+                  </div>
+                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+                    <div class="h-full w-[5%] rounded-full bg-gradient-to-r from-accent-500 to-pink-400"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- live "thinking" indicator -->
+            <div class="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-brand-500/20 bg-ink-900/60 py-2">
+              <span class="flex gap-1">
+                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-400 animate-bounce" style="animation-delay:0ms"></span>
+                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-400 animate-bounce" style="animation-delay:150ms"></span>
+                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-400 animate-bounce" style="animation-delay:300ms"></span>
+              </span>
+              <span class="text-[11px] font-mono text-brand-300" id="kfl-thinking-text">מנתח...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- arrow 2 -->
+        <div class="flex items-center justify-center text-accent-400 lg:rotate-180">
+          <svg class="h-8 w-8 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation-delay:600ms"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </div>
+
+        <!-- RIGHT — sheet row output -->
+        <div class="relative">
+          <div class="absolute -top-3 right-4 z-10 inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-emerald-300">
+            <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+            SAVED
+          </div>
+          <div class="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/40 via-ink-900 to-ink-800 p-5 backdrop-blur" dir="rtl">
+            <div class="flex items-center gap-2 border-b border-white/10 pb-3">
+              <svg class="h-6 w-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm-7 14H7v-3h5v3zm0-4H7v-2h5v2zm0-3H7V7h5v3zm5 7h-4v-3h4v3zm0-4h-4v-2h4v2zm0-3h-4V7h4v3z"/></svg>
+              <div class="flex-1">
+                <div class="text-xs font-bold">Google Sheet</div>
+                <div class="text-[9px] text-ink-400">תנועות · שורה <span class="num">847</span></div>
+              </div>
+            </div>
+            <div class="mt-4 space-y-1.5 text-[12px]">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-ink-500 w-16">תאריך</span>
+                <span class="font-mono text-white"><span class="num">18.05.26</span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-ink-500 w-16">סכום</span>
+                <span class="font-mono font-bold text-emerald-300">-₪<span class="num">245</span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-ink-500 w-16">קטגוריה</span>
+                <span class="rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-emerald-300 font-semibold">🍔 אוכל בחוץ</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-ink-500 w-16">פירוט</span>
+                <span class="text-ink-200">wolt דאלי</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- bottom stats bar -->
-    <div class="mt-10 grid grid-cols-2 gap-4 rounded-3xl border border-brand-500/20 bg-ink-800/40 p-6 backdrop-blur md:grid-cols-4">
-      <div class="text-center">
-        <div class="text-3xl font-black holo-text md:text-4xl"><span class="num">1480</span></div>
-        <div class="mt-1 text-[10px] font-bold uppercase tracking-wider text-ink-400">מילים מאומנות</div>
+    <!-- BOTTOM — floating stat ribbons (alive, not boxes) -->
+    <div class="mt-16 flex flex-wrap items-center justify-center gap-3">
+      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
+        <span class="font-mono font-black text-brand-300"><span class="num">1,480</span></span>
+        <span class="text-ink-300 mr-1">מילים</span>
       </div>
-      <div class="text-center">
-        <div class="text-3xl font-black holo-text md:text-4xl"><span class="num">77</span></div>
-        <div class="mt-1 text-[10px] font-bold uppercase tracking-wider text-ink-400">קטגוריות</div>
+      <div class="rounded-full border border-accent-500/30 bg-accent-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
+        <span class="font-mono font-black text-accent-300"><span class="num">77</span></span>
+        <span class="text-ink-300 mr-1">קטגוריות</span>
       </div>
-      <div class="text-center">
-        <div class="text-3xl font-black holo-text md:text-4xl"><span class="num">50</span>ms</div>
-        <div class="mt-1 text-[10px] font-bold uppercase tracking-wider text-ink-400">זמן תגובה</div>
+      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
+        <span class="font-mono font-black text-brand-300"><span class="num">99.5</span>%</span>
+        <span class="text-ink-300 mr-1">דיוק</span>
       </div>
-      <div class="text-center">
-        <div class="text-3xl font-black holo-text md:text-4xl"><span class="num">99.5</span>%</div>
-        <div class="mt-1 text-[10px] font-bold uppercase tracking-wider text-ink-400">דיוק קטלוג</div>
+      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
+        <span class="font-mono font-black text-brand-300"><span class="num">50</span>ms</span>
+        <span class="text-ink-300 mr-1">תגובה</span>
       </div>
-    </div>
-
-    <!-- founder note (truth-in-beta, integrated, slim) -->
-    <div class="mx-auto mt-10 max-w-2xl rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-      <div class="flex items-start gap-3 text-right">
-        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-black text-white">S</span>
-        <div class="flex-1 text-sm text-ink-300">
-          <span class="font-bold text-white">בטא אמיתית.</span> אני (היוצר) משתמש בבוט הזה <span class="num">4</span> שנים. הקוד פתוח לסקירה. לא נמציא ביקורות של "מיכל וגיא" — נחזיר אותן כשיהיו לנו <span class="num">50</span> משתמשים אמיתיים.
-        </div>
+      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
+        <span class="font-mono font-black text-brand-300">$<span class="num">0.0001</span></span>
+        <span class="text-ink-300 mr-1">לבקשת AI</span>
+      </div>
+      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
+        <span class="font-mono font-black text-brand-300">$, €, ₪</span>
+        <span class="text-ink-300 mr-1">המרה אוטומטית</span>
       </div>
     </div>
   </div>
+
+  <!-- live demo loop — cycles through sample expenses -->
+  <script>
+    (function kflEngineDemo(){
+      if (window.kflEngineDemoInit) return;
+      window.kflEngineDemoInit = true;
+      var samples = [
+        { text: '245 wolt דאלי', cat: '🍔 אוכל בחוץ', amount: 245 },
+        { text: '1800 ארנונה', cat: '🏠 בית', amount: 1800 },
+        { text: '89 spotify', cat: '🎵 אפליקציות', amount: 89 },
+        { text: '8500 משכורת', cat: '💰 משכורת', amount: 8500, income: true },
+        { text: '42 קפה ארומה', cat: '☕ בית קפה', amount: 42 },
+        { text: '450 מאוחדת', cat: '🏥 בריאות', amount: 450 },
+        { text: '50$ amazon', cat: '🛒 קניות מקוונות', amount: 183 },
+        { text: '120 חתונה רוני', cat: '🎉 אירועים', amount: 120 }
+      ];
+      var i = 0;
+      var msgEl = document.getElementById('kfl-anim-text');
+      var thinkEl = document.getElementById('kfl-thinking-text');
+      var sheetSection = document.querySelector('#features .grid > .relative:last-child');
+      function cycle() {
+        var s = samples[i % samples.length];
+        if (msgEl) msgEl.textContent = s.text;
+        // thinking states
+        if (thinkEl) {
+          thinkEl.textContent = 'בודק cache...';
+          setTimeout(function() { thinkEl.textContent = 'מחפש מילון...'; }, 400);
+          setTimeout(function() { thinkEl.textContent = '✓ נמצא — ' + s.cat; }, 800);
+        }
+        // update sheet row
+        if (sheetSection) {
+          var amt = sheetSection.querySelector('.font-mono.font-bold');
+          var cat = sheetSection.querySelector('.rounded-md.bg-emerald-500\\/20');
+          var det = sheetSection.querySelector('.text-ink-200');
+          if (amt) amt.innerHTML = (s.income ? '+' : '-') + '₪<span class="num">' + s.amount.toLocaleString() + '</span>';
+          if (cat) cat.textContent = s.cat;
+          if (det) det.textContent = s.text.replace(/^\d+\s*/, '');
+        }
+        i++;
+      }
+      cycle();
+      var io = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (e.isIntersecting && !window.kflEngineDemoTimer) {
+            window.kflEngineDemoTimer = setInterval(cycle, 3500);
+          }
+        });
+      }, { threshold: 0.3 });
+      var section = document.getElementById('features');
+      if (section) io.observe(section);
+    })();
+  </script>
 </section>
 
 <!-- ============== PRICING ============== -->
@@ -918,8 +922,8 @@
     </div>
     <div class="mt-10 flex justify-center">
       <div class="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
-        <span>🧪</span>
-        <span>במצב בטא — אנחנו עוד מתכווננים, מחיר נשאר נמוך</span>
+        <span>✨</span>
+        <span>חודש ראשון חינם · ביטול בלחיצה · בלי כרטיס אשראי</span>
       </div>
     </div>
     <div class="mt-8 grid gap-6 md:grid-cols-3">
@@ -989,21 +993,6 @@
     </div>
     <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">30</span> יום החזר כספי מלא. בלי שאלות. תכתוב "ביטול" בוואטסאפ — וזהו.</p>
     <p class="mt-3 text-center text-sm text-ink-500 dark:text-ink-300">חיוב חודשי בכרטיס אשראי. חשבונית מס נשלחת אוטומטית.</p>
-
-    <!-- comparison link -->
-    <div class="mt-12 mx-auto max-w-3xl rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800 md:p-8">
-      <div class="flex flex-col items-center gap-5 md:flex-row md:items-center md:justify-between md:gap-6">
-        <div class="text-center md:text-right">
-          <p class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">השוואה לתחרות</p>
-          <h3 class="mt-1.5 text-xl font-black tracking-tight dark:text-white md:text-2xl">איך אנחנו לעומת Excel, YNAB ו-Riseup?</h3>
-          <p class="mt-2 text-sm text-ink-600 dark:text-ink-200">ההשוואה ההוגנת — כולל מה שאנחנו לא טובים בו. <span class="num">22</span> תכונות, <span class="num">6</span> פתרונות, בלי שיווק זול.</p>
-        </div>
-        <a href="/compare" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-ink-300 bg-white px-5 py-3 text-sm font-bold text-ink-900 transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">
-          לטבלת ההשוואה
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
-        </a>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -1176,32 +1165,21 @@
       <p class="font-bold dark:text-white">מוצר</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
         <li><a href="#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
-        <li><a href="#features" class="hover:text-ink-900 dark:hover:text-white">תכונות</a></li>
+        <li><a href="#features" class="hover:text-ink-900 dark:hover:text-white">המנוע</a></li>
         <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
         <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">דמו אינטראקטיבי</a></li>
-        <li><a href="/compare" class="hover:text-ink-900 dark:hover:text-white">השוואה לתחרות</a></li>
-        <li><a href="/cases" class="hover:text-ink-900 dark:hover:text-white">סיפורי שימוש</a></li>
         <li><a href="/tools" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">כלים חינמיים →</a></li>
-        <li><a href="/blog" class="hover:text-ink-900 dark:hover:text-white">בלוג</a></li>
-        <li><a href="/roadmap" class="hover:text-ink-900 dark:hover:text-white">מפת דרכים</a></li>
-        <li><a href="/changelog" class="hover:text-ink-900 dark:hover:text-white">Changelog</a></li>
         <li><a href="/referral" class="hover:text-ink-900 dark:hover:text-white">חבר מביא חבר</a></li>
-        <li><a href="/install" class="hover:text-ink-900 dark:hover:text-white">📱 התקנת PWA</a></li>
         <li><a href="/help" class="hover:text-ink-900 dark:hover:text-white">מרכז עזרה</a></li>
-        <li><a href="/docs" class="hover:text-ink-900 dark:hover:text-white">API Docs <span class="text-[10px] font-bold uppercase tracking-wide text-brand-600">למפתחים</span></a></li>
       </ul>
     </div>
     <div>
       <p class="font-bold dark:text-white">חברה</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
         <li><a href="/about" class="hover:text-ink-900 dark:hover:text-white">אודות</a></li>
-        <li><a href="/testimonials" class="hover:text-ink-900 dark:hover:text-white">ציטוטים מלקוחות</a></li>
-        <li><a href="/press" class="hover:text-ink-900 dark:hover:text-white">מדיה</a></li>
-        <li><a href="/open" class="hover:text-ink-900 dark:hover:text-white inline-flex items-center gap-1.5">פתוח לרווחה <span class="inline-flex items-center rounded-full bg-brand-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">Open</span></a></li>
         <li><a href="/trust" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">אבטחה ופרטיות →</a></li>
         <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
         <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
-        <li><a href="mailto:hi@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">צור קשר</a></li>
       </ul>
     </div>
     <div>
