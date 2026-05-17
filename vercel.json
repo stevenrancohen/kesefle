@@ -18,7 +18,11 @@
     { "source": "/affiliate", "destination": "/referral", "permanent": false },
     { "source": "/invite", "destination": "/referral", "permanent": false },
     { "source": "/blog/feed", "destination": "/changelog", "permanent": false },
-    { "source": "/rss", "destination": "/changelog", "permanent": false }
+    { "source": "/rss", "destination": "/changelog", "permanent": false },
+    { "source": "/pwa", "destination": "/install", "permanent": false },
+    { "source": "/download", "destination": "/install", "permanent": false },
+    { "source": "/app", "destination": "/install", "permanent": false },
+    { "source": "/install-app", "destination": "/install", "permanent": false }
   ],
   "headers": [
     {
