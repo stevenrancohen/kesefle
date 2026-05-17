@@ -678,8 +678,185 @@ function _matchCategory_orig(description) {
 }
 
 // Alias for callers using matchCategorySmart
+// Smart entry-point: tries (1) learned cache from user corrections,
+// (2) keyword maps, (3) LLM fallback via Claude API for the long tail.
+// Falls back to DEFAULT_CATEGORY only if everything fails.
 function matchCategorySmart(text) {
-  return matchCategory(text);
+  // Step 1: learned cache (user-corrected categorizations)
+  var cached = _learnedLookup(text);
+  if (cached) {
+    Logger.log('matchCategorySmart: cache hit "' + text + '" → ' + cached.subcategory);
+    return cached;
+  }
+
+  // Step 2: keyword maps (CATEGORY_MAP + BUSINESS_CATEGORY_MAP)
+  var matched = matchCategory(text);
+  var isDefault = matched && matched.category === DEFAULT_CATEGORY.category &&
+                  matched.subcategory === DEFAULT_CATEGORY.subcategory;
+
+  if (!isDefault) return matched;
+
+  // Step 3: LLM fallback for ambiguous / new vendor names
+  var ai = _aiCategorize(text);
+  if (ai) {
+    Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory);
+    _learnedSave(text, ai); // remember for next time
+    return ai;
+  }
+
+  return matched; // DEFAULT_CATEGORY
+}
+
+// ============================================================
+// 🤖 LLM Fallback — Claude Haiku via Anthropic API
+// ============================================================
+// Triggered only when local keyword matching returns DEFAULT_CATEGORY.
+// Sends ~30 input tokens to Claude Haiku 3.5; cost is <$0.0001 per call.
+// Requires ANTHROPIC_API_KEY in Script Properties (no key → silently
+// returns null so the bot still works without AI).
+function _aiCategorize(text) {
+  try {
+    var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+    if (!apiKey) return null;
+
+    var prompt = 'תקטלג את תיאור ההוצאה הישראלית הבא לקטגוריה.\n' +
+      'תיאור: "' + String(text || '').slice(0, 200) + '"\n\n' +
+      'החזר אך ורק שורה אחת בפורמט "קטגוריה / תת-קטגוריה" — בלי שום הסבר.\n' +
+      'קטגוריות חוקיות: הכנסות, אוכל, תחבורה, הוצאות קבועות, הוצאות זמניות, קניות, שונות ואחרים, בריאות, עסק.\n' +
+      'דוגמאות:\n' +
+      '"wolt" → אוכל / אוכל בחוץ\n' +
+      '"ארנונה" → הוצאות קבועות / בית\n' +
+      '"netflix" → הוצאות קבועות / אפליקציות\n' +
+      '"בנזין דלק" → תחבורה / דלק\n' +
+      '"שיניים" → בריאות / בריאות\n' +
+      '"booking" → קניות / קניות מקוונות\n' +
+      '"chatgpt" → הוצאות קבועות / אפליקציות';
+
+    var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      payload: JSON.stringify({
+        model: 'claude-3-5-haiku-20241022',
+        max_tokens: 30,
+        messages: [{ role: 'user', content: prompt }]
+      }),
+      muteHttpExceptions: true
+    });
+
+    if (response.getResponseCode() !== 200) {
+      Logger.log('_aiCategorize: API error ' + response.getResponseCode() + ': ' + response.getContentText().slice(0, 200));
+      return null;
+    }
+
+    var body = JSON.parse(response.getContentText());
+    var reply = (body.content && body.content[0] && body.content[0].text) || '';
+    var clean = String(reply).replace(/["״'`]/g, '').trim();
+    var parts = clean.split('/').map(function(s){ return s.trim(); }).filter(Boolean);
+    if (parts.length < 2) return null;
+
+    var validCats = ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','שונות ואחרים','בריאות','עסק'];
+    if (validCats.indexOf(parts[0]) < 0) {
+      Logger.log('_aiCategorize: invalid category from AI: ' + parts[0]);
+      return null;
+    }
+    return { category: parts[0], subcategory: parts[1] };
+  } catch (e) {
+    Logger.log('_aiCategorize error: ' + e.message);
+    return null;
+  }
+}
+
+// ============================================================
+// 📚 Learning cache — remembers user corrections + AI inferences
+// Stored in the 'מילון לימוד' tab so it survives between executions.
+// ============================================================
+var _LEARNED_TAB_NAME = 'מילון לימוד';
+var _learnedCache = null;
+var _learnedCacheLoadedAt = 0;
+
+function _learnedLoad() {
+  var now = Date.now();
+  // Cache for 60s within an execution
+  if (_learnedCache && (now - _learnedCacheLoadedAt < 60000)) return _learnedCache;
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
+    if (!sh) {
+      sh = ss.insertSheet(_LEARNED_TAB_NAME);
+      sh.appendRow(['keyword', 'category', 'subcategory', 'source', 'updated_at']);
+    }
+    var data = sh.getDataRange().getValues();
+    var map = {};
+    for (var i = 1; i < data.length; i++) {
+      var kw = String(data[i][0] || '').toLowerCase().trim();
+      if (!kw) continue;
+      map[kw] = { category: data[i][1], subcategory: data[i][2] };
+    }
+    _learnedCache = map;
+    _learnedCacheLoadedAt = now;
+    return map;
+  } catch (e) {
+    Logger.log('_learnedLoad error: ' + e.message);
+    return {};
+  }
+}
+
+function _learnedLookup(text) {
+  var t = String(text || '').toLowerCase().trim();
+  if (!t) return null;
+  var map = _learnedLoad();
+  // Exact match first
+  if (map[t]) return map[t];
+  // Substring: pick the longest learned keyword contained in text
+  var bestKw = null;
+  var bestLen = 0;
+  for (var kw in map) {
+    if (kw.length > bestLen && t.indexOf(kw) >= 0) {
+      bestKw = kw;
+      bestLen = kw.length;
+    }
+  }
+  return bestKw ? map[bestKw] : null;
+}
+
+function _learnedSave(text, result, source) {
+  try {
+    var t = String(text || '').toLowerCase().trim();
+    if (!t || !result || !result.category || !result.subcategory) return;
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
+    if (!sh) {
+      sh = ss.insertSheet(_LEARNED_TAB_NAME);
+      sh.appendRow(['keyword', 'category', 'subcategory', 'source', 'updated_at']);
+    }
+    // Refuse duplicates (last writer wins by replacing row)
+    var data = sh.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0] || '').toLowerCase().trim() === t) {
+        sh.getRange(i + 1, 2).setValue(result.category);
+        sh.getRange(i + 1, 3).setValue(result.subcategory);
+        sh.getRange(i + 1, 4).setValue(source || 'ai');
+        sh.getRange(i + 1, 5).setValue(new Date());
+        _learnedCacheLoadedAt = 0; // invalidate cache
+        return;
+      }
+    }
+    sh.appendRow([t, result.category, result.subcategory, source || 'ai', new Date()]);
+    _learnedCacheLoadedAt = 0; // invalidate
+  } catch (e) {
+    Logger.log('_learnedSave error: ' + e.message);
+  }
+}
+
+// Public: user can manually teach the bot via WhatsApp:
+// "תלמד: קפה ארומה → אוכל / אוכל בחוץ"
+function teachCategory(text, category, subcategory) {
+  _learnedSave(text, { category: category, subcategory: subcategory }, 'user');
+  return 'נלמד: "' + text + '" → ' + category + ' / ' + subcategory;
 }
 
 // ============================================================
