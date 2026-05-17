@@ -1106,7 +1106,10 @@ async function kesefleStartGoogle() {
           });
           var j = await r.json();
           if (j.ok) {
-            // Authenticated — now hop to /account so it can grant Drive scope + provision the sheet.
+            // CRITICAL: persist user in localStorage BEFORE redirecting.
+            // /account checks kesefleGetUser() and bounces to / if missing.
+            try { localStorage.setItem('kesefle_user', JSON.stringify(j.user)); } catch(_e) {}
+            kesefleShowAuthMsg('מתחבר… מעביר אותך לחשבון', 'info');
             window.location.href = '/account?welcome=1';
           } else {
             kesefleShowAuthMsg('שגיאה: ' + (j.error || 'אימות נכשל'), 'err');
