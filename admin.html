@@ -1,1658 +1,993 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="dark">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>פאנל ניהול — כסף'לה</title>
 <meta name="robots" content="noindex,nofollow" />
 <meta name="theme-color" content="#0f1422" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" />
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <script>
-  tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Heebo','system-ui','sans-serif'] } } } };
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 400:'#c084fc', 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+      },
+    },
+  };
 </script>
-<link rel="stylesheet" href="/admin-styles.css" />
-  <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#22c55e">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="stylesheet" href="/assets/futuristic.css" />
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  /* slide-in for live feed */
+  @keyframes slide-in-top {
+    from { opacity: 0; transform: translateY(-10px); max-height: 0; }
+    to   { opacity: 1; transform: translateY(0); max-height: 200px; }
+  }
+  .slide-in { animation: slide-in-top 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  /* sparkline stroke draw */
+  @keyframes draw-line { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+  .sparkline path { stroke-dasharray: 200; stroke-dashoffset: 200; animation: draw-line 2.2s ease-out forwards; }
+  /* map pulse */
+  @keyframes map-pulse {
+    0%   { transform: scale(1);   opacity: 1; }
+    100% { transform: scale(3.5); opacity: 0; }
+  }
+  .map-pulse { animation: map-pulse 2.4s ease-out infinite; transform-origin: center; }
+  /* counter pop */
+  @keyframes count-pop { 0% { transform: scale(0.85); opacity:0.4; } 100% { transform: scale(1); opacity:1; } }
+  .count-pop { animation: count-pop 0.5s ease-out both; }
+  /* gentle bar grow */
+  @keyframes bar-grow { from { width: 0%; } }
+  .bar-grow { animation: bar-grow 1.4s cubic-bezier(0.22,0.61,0.36,1) both; }
+  /* skeleton */
+  @keyframes skel-shine { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  .skel { background: linear-gradient(90deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.04) 100%); background-size: 200% 100%; animation: skel-shine 1.8s infinite; }
+  /* hover lift */
+  .lift { transition: transform 0.25s cubic-bezier(0.22,0.61,0.36,1), box-shadow 0.25s; }
+  .lift:hover { transform: translateY(-3px); box-shadow: 0 18px 50px -18px rgba(15,20,34,0.45); }
+  /* status dot */
+  .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; }
+  /* horizontal bar (custom container) */
+  .hbar { height: 8px; border-radius: 999px; background: rgba(34,197,94,0.10); overflow: hidden; }
+  .hbar > span { display:block; height:100%; border-radius: inherit; }
+  /* tiny "ripple ring" around live counters */
+  @keyframes ring { 0%{box-shadow:0 0 0 0 rgba(34,197,94,0.55)} 100%{box-shadow:0 0 0 14px rgba(34,197,94,0)} }
+  .ring-pulse { animation: ring 1.8s ease-out infinite; }
+  /* table row hover */
+  tbody tr.user-row:hover { background: rgba(34,197,94,0.04); }
+  .dark tbody tr.user-row:hover { background: rgba(34,197,94,0.08); }
+  /* mobile-friendly horizontal scroll for table */
+  .scroll-x { overflow-x: auto; }
+  .scroll-x::-webkit-scrollbar { height: 6px; }
+  .scroll-x::-webkit-scrollbar-thumb { background: rgba(127,127,127,0.3); border-radius: 999px; }
+  /* gate */
+  .gate-blur { filter: blur(6px); pointer-events: none; user-select: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .slide-in, .sparkline path, .map-pulse, .count-pop, .bar-grow, .skel, .ring-pulse { animation: none !important; }
+  }
+</style>
 </head>
-<body>
+<body class="bg-ink-50 text-ink-900 antialiased dark:bg-ink-900 dark:text-white">
 
-<!-- ============================================================
-     ACCESS DENIED VIEW (shown if user not in ADMIN_EMAILS)
-     ============================================================ -->
-<div id="access-denied-view" class="access-denied hidden">
-  <div class="access-denied-card">
-    <div class="lock">🔒</div>
-    <h1 style="font-size:24px;font-weight:900;margin:0 0 8px;">גישה נדחתה</h1>
-    <p style="color:var(--ink-500);font-size:15px;margin:0 0 24px;">
-      הדף הזה זמין רק למנהלי כסף'לה. אם אתה חושב שזו טעות, פנה לתמיכה.
-    </p>
-    <div id="denied-email" style="font-size:13px;color:var(--ink-500);margin-bottom:18px;"></div>
-    <a href="/" class="btn btn-primary" style="display:inline-flex;">חזרה לדף הבית</a>
-    <button onclick="adminLogout()" class="btn btn-secondary" style="margin-inline-start:8px;">התנתק</button>
+<!-- ============== AUTH GATE OVERLAY ============== -->
+<div id="kfl-gate" class="fixed inset-0 z-[100] flex items-center justify-center bg-ink-900/95 backdrop-blur-md">
+  <div class="relative max-w-md w-[90vw] rounded-3xl border border-ink-700/60 bg-ink-800/80 p-8 shadow-glow glass-panel scan-line">
+    <div class="absolute -inset-1 -z-10 rounded-3xl bg-gradient-to-br from-brand-500/20 to-accent-500/20 blur-2xl"></div>
+    <div class="mb-5 flex items-center gap-3">
+      <span class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-2xl font-black text-white shadow-glow">₪</span>
+      <div>
+        <div class="text-lg font-extrabold tracking-tight holo-text">כסף'לה Admin</div>
+        <div class="text-xs text-ink-400">פאנל ניהול פנימי</div>
+      </div>
+    </div>
+    <h2 class="text-2xl font-black mb-1">גישה מוגבלת</h2>
+    <p class="text-sm text-ink-300 mb-5">כדי להמשיך, הזן את סיסמת הניהול.</p>
+    <form id="gate-form" class="flex flex-col gap-3">
+      <input id="gate-pw" type="password" autocomplete="off" placeholder="סיסמה" class="w-full rounded-xl border border-ink-700 bg-ink-900/70 px-4 py-3 text-base text-white placeholder:text-ink-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30" dir="ltr" />
+      <div id="gate-error" class="hidden text-xs font-semibold text-red-400">סיסמה שגויה. נסה שוב.</div>
+      <button type="submit" class="rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-glow transition hover:bg-brand-500">היכנס לפאנל</button>
+    </form>
+    <div class="mt-4 text-[11px] text-ink-500 text-center">דף זה אינו מקושר חיצונית. אם הגעת בטעות, <a href="/" class="text-brand-400 hover:underline">חזור לאתר</a>.</div>
   </div>
 </div>
 
-<!-- ============================================================
-     ADMIN APP SHELL
-     ============================================================ -->
-<div id="admin-app" class="app-shell hidden">
-
-  <!-- ===== Sidebar ===== -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <span class="logo">₪</span>
-      <div>
-        <div>כסף'לה</div>
-        <small>Admin Panel</small>
-      </div>
-    </div>
-
-    <div class="nav-section-label">ניהול</div>
-    <ul class="nav-list">
-      <li><button class="nav-item active" data-route="overview">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-        </span>
-        סקירה כללית
-      </button></li>
-      <li><button class="nav-item" data-route="users">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </span>
-        משתמשים
-      </button></li>
-      <li><button class="nav-item" data-route="transactions">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        </span>
-        תנועות
-      </button></li>
-      <li><button class="nav-item" data-route="jobs">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        </span>
-        עבודות
-      </button></li>
-    </ul>
-
-    <div class="nav-section-label">תובנות</div>
-    <ul class="nav-list">
-      <li><button class="nav-item" data-route="analytics">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        </span>
-        אנליטיקה
-      </button></li>
-      <li><button class="nav-item" data-route="health">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </span>
-        בריאות מערכת
-      </button></li>
-      <li><button class="nav-item" data-route="audit">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </span>
-        יומני ביקורת
-      </button></li>
-    </ul>
-
-    <div class="nav-section-label">תפעול</div>
-    <ul class="nav-list">
-      <li><button class="nav-item" data-route="support">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        </span>
-        תמיכה
-      </button></li>
-      <li><button class="nav-item" data-route="settings">
-        <span class="nav-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </span>
-        הגדרות
-      </button></li>
-    </ul>
-
-    <div class="sidebar-footer">
-      <div>גרסה <span class="num">1.4.2</span></div>
-      <div style="margin-top:4px;">© כסף'לה <span class="num">2026</span></div>
-    </div>
-  </aside>
-
-  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
-
-  <!-- ===== Top bar ===== -->
-  <header class="topbar">
-    <button class="icon-btn menu-toggle" id="menu-toggle" aria-label="פתח תפריט">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-
-    <div class="search-wrap">
-      <span class="search-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+<!-- ============== NAV (matches site) ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>כסף'לה</span>
+      <span class="hidden sm:inline-flex items-center gap-1 rounded-full bg-accent-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-500">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Admin
       </span>
-      <input id="global-search" class="search-input" type="search" placeholder="חיפוש משתמש, מייל, מספר טלפון, ID..." />
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">בית</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
+      <a href="/compare" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">השוואה</a>
+      <a href="/trust" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אבטחה</a>
+      <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
     </div>
+    <div class="flex items-center gap-2">
+      <button id="theme-toggle" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-200 bg-white/70 text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:bg-ink-700" aria-label="מצב כהה/בהיר" title="מצב כהה/בהיר">
+        <svg id="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg id="theme-icon-dark" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <a href="/account" class="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800 sm:inline-block">החשבון שלי</a>
+      <button id="admin-logout" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">התנתק</button>
+    </div>
+  </nav>
+</header>
 
-    <div class="topbar-actions">
-      <button class="icon-btn" id="theme-toggle" aria-label="מצב כהה/בהיר" title="מצב כהה/בהיר">
-        <svg id="theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-        <svg id="theme-icon-dark" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
-      <button class="icon-btn" id="refresh-btn" aria-label="רענן" title="רענן">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </button>
-      <div class="action-menu-wrap">
-        <button class="avatar-btn" id="user-menu-btn">
-          <span class="avatar" id="user-avatar">A</span>
-          <span class="avatar-name" id="user-email-display">admin</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+<!-- ============== APP SHELL ============== -->
+<main id="kfl-app" class="gate-blur mx-auto max-w-7xl px-5 pt-24 pb-24">
+
+  <!-- ====== SECTION 1: WELCOME HEADER ====== -->
+  <section class="mb-8">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-400">
+          <span class="live-dot inline-block h-2 w-2 rounded-full bg-brand-500"></span>
+          LIVE • <span class="num" id="now-clock">00:00:00</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight">
+          ברוך שובך, <span class="holo-text">Steven</span>
+        </h1>
+        <p class="mt-2 text-ink-500 dark:text-ink-300">הנה תמונת מצב מלאה של כסף'לה — נכון לרגע זה.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 px-3 py-1.5 text-xs font-bold text-white shadow-soft">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          תוכנית Pro
+        </span>
+        <a href="https://kesefle.vercel.app" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
+          <span class="status-dot bg-brand-500"></span>
+          kesefle.vercel.app
+        </a>
+        <a href="https://kesefle.vercel.app" target="_blank" rel="noopener" class="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
+          צפה באתר
+        </a>
+        <button onclick="alert('עורך האתר עדיין בפיתוח. בקרוב.')" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
+          ערוך אתר
         </button>
-        <div class="action-menu" id="user-menu">
-          <button onclick="window.location.href='/dashboard'">📊 דשבורד משתמש</button>
-          <button onclick="window.location.href='/account'">⚙️ הגדרות חשבון</button>
-          <button class="danger" onclick="adminLogout()">🚪 התנתק</button>
-        </div>
       </div>
     </div>
-  </header>
+  </section>
 
-  <!-- ===== Content ===== -->
-  <main class="content">
-
-    <!-- ===== Overview ===== -->
-    <section class="route-section active" id="route-overview">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>סקירה כללית</span>
+  <!-- ====== SECTION 2: REAL-TIME ANALYTICS ====== -->
+  <section class="mb-10">
+    <div class="mb-4 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">אנליטיקה בזמן אמת</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">מבקרים, דפים פעילים ומקורות תנועה — עכשיו.</p>
       </div>
-      <h1 class="section-title">סקירה כללית</h1>
-      <p class="section-subtitle">המבט הראשון על הבריאות של כסף'לה — משתמשים פעילים, הכנסה ותחזית.</p>
+      <div class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-[11px] font-bold text-brand-400">
+        <span class="live-dot h-2 w-2 rounded-full bg-brand-500"></span>
+        LIVE
+      </div>
+    </div>
 
-      <div class="stat-grid" id="stat-grid">
-        <div class="stat-tile" data-stat="active_users">
-          <div class="stat-label">משתמשים פעילים</div>
-          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
-          <div class="stat-delta flat">&nbsp;</div>
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+
+      <!-- 2a: Visitors counters -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מבקרים ב-30 הדקות האחרונות</div>
+          <span class="text-[11px] font-bold text-brand-500">+3 ↑</span>
         </div>
-        <div class="stat-tile" data-stat="mrr">
-          <div class="stat-label">MRR — הכנסה חודשית</div>
-          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
-          <div class="stat-delta flat">&nbsp;</div>
-        </div>
-        <div class="stat-tile" data-stat="arpu">
-          <div class="stat-label">ARPU ממוצע</div>
-          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
-          <div class="stat-delta flat">&nbsp;</div>
-        </div>
-        <div class="stat-tile" data-stat="churn">
-          <div class="stat-label">Churn חודשי</div>
-          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
-          <div class="stat-delta flat">&nbsp;</div>
-        </div>
-        <div class="stat-tile" data-stat="errors">
-          <div class="stat-label">שגיאות היום</div>
-          <div class="stat-value num"><span class="skeleton" style="width:120px;display:inline-block;height:32px;"></span></div>
-          <div class="stat-delta flat">&nbsp;</div>
+        <div class="text-5xl font-black tracking-tight num count-pop" data-counter="15" data-from="0">15</div>
+        <!-- sparkline -->
+        <svg class="sparkline mt-3 w-full" viewBox="0 0 200 40" preserveAspectRatio="none" height="40">
+          <defs><linearGradient id="spark1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity="0.4"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,30 L20,28 L40,25 L60,22 L80,28 L100,18 L120,15 L140,20 L160,10 L180,12 L200,6" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M0,30 L20,28 L40,25 L60,22 L80,28 L100,18 L120,15 L140,20 L160,10 L180,12 L200,6 L200,40 L0,40 Z" fill="url(#spark1)"/>
+        </svg>
+        <div class="mt-6 border-t border-ink-100 pt-4 dark:border-ink-700">
+          <div class="mb-1 flex items-center justify-between">
+            <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מבקרים פעילים כעת</div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-500">
+              <span class="live-dot h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+              LIVE
+            </span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <div class="text-4xl font-black num count-pop" data-counter="2" data-from="0">2</div>
+            <div class="relative h-3 w-3 ring-pulse rounded-full bg-brand-500"></div>
+          </div>
+          <div class="mt-1 text-xs text-ink-500 dark:text-ink-300">צופים באתר עכשיו</div>
         </div>
       </div>
 
-      <div class="grid-2">
-        <div class="card">
-          <div class="flex-row between mb-4">
-            <div>
-              <h3 class="card-title">פעילות שבועית</h3>
-              <p class="card-subtitle">תנועות ליום, 14 ימים אחרונים</p>
+      <!-- 2b: Map + countries -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מיקום מבקרים</div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-ink-400">15 בסך הכל</span>
+        </div>
+        <!-- Mini world / Israel SVG -->
+        <div class="relative rounded-2xl bg-gradient-to-br from-brand-500/10 to-accent-500/10 p-3 h-40 overflow-hidden border border-ink-100 dark:border-ink-700">
+          <svg viewBox="0 0 240 160" class="w-full h-full">
+            <!-- simplified middle-east continents shape -->
+            <path d="M40,40 Q60,20 100,30 Q150,20 180,40 Q210,60 200,90 Q190,120 160,130 Q120,140 80,130 Q40,120 30,90 Q30,60 40,40 Z" fill="rgba(34,197,94,0.10)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+            <path d="M130,55 Q140,50 145,55 Q150,65 148,80 Q146,95 140,100 Q134,95 132,80 Q130,65 130,55 Z" fill="rgba(34,197,94,0.45)" stroke="#22c55e" stroke-width="1.5"/>
+            <!-- Tel Aviv pin pulse -->
+            <g transform="translate(140,72)">
+              <circle r="5" fill="#22c55e"/>
+              <circle r="5" fill="#22c55e" class="map-pulse" opacity="0.6"/>
+              <circle r="2" fill="#fff"/>
+            </g>
+            <!-- Romania pin -->
+            <g transform="translate(105,40)">
+              <circle r="3" fill="#a855f7"/>
+              <circle r="3" fill="#a855f7" class="map-pulse" opacity="0.6" style="animation-delay:1s"/>
+            </g>
+            <text x="148" y="68" font-size="9" fill="currentColor" class="text-ink-700 dark:text-white" font-weight="700">ת״א</text>
+          </svg>
+        </div>
+        <div class="mt-4 space-y-2">
+          <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🇮🇱</span>
+              <span class="font-semibold">ישראל</span>
             </div>
-            <span class="pill pill-info">חי</span>
+            <div class="flex items-center gap-3">
+              <div class="hbar w-24"><span class="bar-grow bg-brand-500" style="width:93%;animation-delay:.2s"></span></div>
+              <span class="num font-black w-6 text-end">14</span>
+            </div>
           </div>
-          <div class="bar-chart" id="overview-chart">
-            <!-- bars injected by JS -->
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">פעולות אחרונות</h3>
-          <p class="card-subtitle">10 אירועי מערכת אחרונים</p>
-          <div id="overview-feed">
-            <!-- audit feed injected by JS -->
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Users ===== -->
-    <section class="route-section" id="route-users">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>משתמשים</span>
-      </div>
-      <h1 class="section-title">משתמשים</h1>
-      <p class="section-subtitle">חיפוש, ניהול וצפייה במשתמשי כסף'לה</p>
-
-      <div class="filters-bar">
-        <input id="users-search" class="filter-input" type="search" placeholder="חפש לפי מייל, טלפון או שם..." style="flex:1;min-width:240px;" />
-        <select id="users-plan-filter" class="filter-select">
-          <option value="">כל המסלולים</option>
-          <option value="free">Free</option>
-          <option value="pro">Pro</option>
-          <option value="business">Business</option>
-        </select>
-        <select id="users-status-filter" class="filter-select">
-          <option value="">כל הסטטוסים</option>
-          <option value="active">פעיל</option>
-          <option value="trial">תקופת ניסיון</option>
-          <option value="paused">מושהה</option>
-          <option value="cancelled">בוטל</option>
-        </select>
-        <button class="btn btn-secondary" onclick="exportUsers()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          ייצוא CSV
-        </button>
-      </div>
-
-      <div class="table-wrap">
-        <table class="data">
-          <thead>
-            <tr>
-              <th>אימייל</th>
-              <th>טלפון</th>
-              <th>מסלול</th>
-              <th>נרשם</th>
-              <th>פעילות אחרונה</th>
-              <th>סטטוס גיליון</th>
-              <th>תנועות</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody">
-            <!-- rows injected by JS -->
-          </tbody>
-        </table>
-      </div>
-      <div id="users-empty" class="empty-state hidden">
-        <span class="emoji">🔍</span>
-        <h3>לא נמצאו משתמשים</h3>
-        <p>נסה לשנות את החיפוש או הסינון.</p>
-      </div>
-    </section>
-
-    <!-- ===== Transactions ===== -->
-    <section class="route-section" id="route-transactions">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>תנועות</span>
-      </div>
-      <h1 class="section-title">תנועות</h1>
-      <p class="section-subtitle">כל התנועות שעובדות דרך הבוט — בכל המשתמשים</p>
-
-      <div class="filters-bar">
-        <input id="tx-search" class="filter-input" type="search" placeholder="חפש בקטגוריה / סכום / משתמש..." style="flex:1;min-width:200px;" />
-        <select id="tx-type-filter" class="filter-select">
-          <option value="">כל הסוגים</option>
-          <option value="expense">הוצאה</option>
-          <option value="income">הכנסה</option>
-        </select>
-        <input id="tx-from" type="date" class="filter-input" />
-        <input id="tx-to" type="date" class="filter-input" />
-        <button class="btn btn-secondary" onclick="loadTransactions()">סינון</button>
-      </div>
-
-      <div class="table-wrap">
-        <table class="data">
-          <thead>
-            <tr>
-              <th>זמן</th>
-              <th>משתמש</th>
-              <th>סוג</th>
-              <th>קטגוריה</th>
-              <th>סכום</th>
-              <th>הודעה מקורית</th>
-              <th>מקור</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="tx-tbody">
-            <!-- rows injected by JS -->
-          </tbody>
-        </table>
-      </div>
-      <div id="tx-empty" class="empty-state hidden">
-        <span class="emoji">📭</span>
-        <h3>אין תנועות בטווח הזה</h3>
-        <p>שנה את הסינון או חזור מאוחר יותר.</p>
-      </div>
-    </section>
-
-    <!-- ===== Jobs ===== -->
-    <section class="route-section" id="route-jobs">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>עבודות</span>
-      </div>
-      <h1 class="section-title">עבודות</h1>
-      <p class="section-subtitle">עבודות רקע שנכשלו, בהמתנה לחזרה או רצות כעת</p>
-
-      <div class="tabs">
-        <button class="tab active" data-job-tab="failed">נכשלו <span class="pill pill-danger" id="jobs-failed-count" style="margin-inline-start:6px;">0</span></button>
-        <button class="tab" data-job-tab="pending">בהמתנה <span class="pill pill-warning" id="jobs-pending-count" style="margin-inline-start:6px;">0</span></button>
-        <button class="tab" data-job-tab="completed">הסתיימו <span class="pill pill-success" id="jobs-completed-count" style="margin-inline-start:6px;">0</span></button>
-      </div>
-
-      <div class="table-wrap">
-        <table class="data">
-          <thead>
-            <tr>
-              <th>זמן</th>
-              <th>סוג</th>
-              <th>משתמש</th>
-              <th>שגיאה</th>
-              <th>ניסיונות</th>
-              <th>סטטוס</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="jobs-tbody">
-            <!-- rows injected by JS -->
-          </tbody>
-        </table>
-      </div>
-      <div id="jobs-empty" class="empty-state hidden">
-        <span class="emoji">✨</span>
-        <h3>הכל עובד חלק</h3>
-        <p>אין עבודות שנכשלו. הכבוד שלך!</p>
-      </div>
-    </section>
-
-    <!-- ===== Analytics ===== -->
-    <section class="route-section" id="route-analytics">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>אנליטיקה</span>
-      </div>
-      <h1 class="section-title">אנליטיקה</h1>
-      <p class="section-subtitle">מסע המשתמש, פעילות יומית והמרה למסלולים בתשלום</p>
-
-      <div class="grid-2">
-        <div class="card">
-          <h3 class="card-title">משפך המרה</h3>
-          <p class="card-subtitle">ביקור → הרשמה → השלמת הרשמה → הקצאת גיליון → הודעה ראשונה</p>
-          <div id="funnel-stages">
-            <!-- funnel injected by JS -->
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">סשנים ייחודיים יומיים</h3>
-          <p class="card-subtitle">דה-דופ לפי session ID — 30 ימים</p>
-          <div id="analytics-unique-sessions" style="min-height:160px;">
-            <!-- SVG line chart injected by JS -->
+          <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🇷🇴</span>
+              <span class="font-semibold">רומניה</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="hbar w-24"><span class="bar-grow bg-accent-500" style="width:7%;animation-delay:.4s"></span></div>
+              <span class="num font-black w-6 text-end">1</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="card mt-4">
-        <h3 class="card-title">אירועים יומיים — 30 ימים</h3>
-        <p class="card-subtitle">ספירה לכל יום, פר אירוע. לחץ על אירוע כדי לסנן</p>
-        <div id="analytics-event-tabs" class="flex-row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
-        <div id="analytics-line-chart" style="min-height:280px;"></div>
-      </div>
-    </section>
-
-    <!-- ===== Support ===== -->
-    <section class="route-section" id="route-support">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>תמיכה</span>
-      </div>
-      <h1 class="section-title">תמיכה</h1>
-      <p class="section-subtitle">חיפוש משתמש לפי מייל / טלפון וביצוע פעולות תפעוליות</p>
-
-      <div class="card mb-4">
-        <h3 class="card-title">חיפוש משתמש</h3>
-        <p class="card-subtitle">הזן מייל, טלפון או user ID</p>
-        <div class="flex-row gap-4" style="margin-top:12px;">
-          <input id="support-query" class="filter-input" style="flex:1;" type="text" placeholder="user@example.com או 0501234567" />
-          <button class="btn btn-primary" onclick="supportLookup()">חפש</button>
-        </div>
-      </div>
-
-      <div id="support-result" class="card hidden">
-        <!-- populated by JS -->
-      </div>
-
-      <div id="support-not-found" class="empty-state hidden">
-        <span class="emoji">🤷</span>
-        <h3>לא מצאנו משתמש</h3>
-        <p>בדוק שהמייל או הטלפון מוקלדים נכון.</p>
-      </div>
-
-      <div class="card mt-4">
-        <h3 class="card-title">פעולות תפעוליות מהירות</h3>
-        <p class="card-subtitle">כל פעולה נרשמת ביומן הביקורת</p>
-        <div class="grid-2 mt-4">
-          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('resend_welcome')">
-            ✉️ שלח מחדש הודעת ברוכים הבאים
-          </button>
-          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('resync_sheet')">
-            🔄 סנכרן מחדש גיליון
-          </button>
-          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('reset_quota')">
-            ♻️ אפס מכסה חודשית
-          </button>
-          <button class="btn btn-secondary" style="justify-content:flex-start;padding:14px;" onclick="quickAction('test_webhook')">
-            🔔 בדוק webhook של משתמש
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Audit logs ===== -->
-    <section class="route-section" id="route-audit">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>יומני ביקורת</span>
-      </div>
-      <h1 class="section-title">יומני ביקורת</h1>
-      <p class="section-subtitle">כל הפעולות הרגישות במערכת — מי, מתי, על מי</p>
-
-      <div class="filters-bar">
-        <input id="audit-search" class="filter-input" type="search" placeholder="חפש פעולה / משתמש / מנהל..." style="flex:1;min-width:240px;" />
-        <select id="audit-action-filter" class="filter-select">
-          <option value="">כל הפעולות</option>
-          <option value="login">התחברות</option>
-          <option value="user_update">עדכון משתמש</option>
-          <option value="plan_change">שינוי מסלול</option>
-          <option value="sheet_reset">איפוס גיליון</option>
-          <option value="job_retry">החזרת job</option>
-          <option value="feature_flag">דגל תכונה</option>
-        </select>
-        <select id="audit-sort" class="filter-select">
-          <option value="newest">חדש ביותר</option>
-          <option value="oldest">ישן ביותר</option>
-        </select>
-      </div>
-
-      <div class="card">
-        <div id="audit-list">
-          <!-- rows injected by JS -->
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== System health ===== -->
-    <section class="route-section" id="route-health">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>בריאות מערכת</span>
-      </div>
-      <h1 class="section-title">בריאות מערכת</h1>
-      <p class="section-subtitle">חיווי חי לכל השירותים: ה-API, הבוט, חיבור Sheets ו-OAuth</p>
-
-      <div class="stat-grid">
-        <div class="stat-tile">
-          <div class="stat-label">סטטוס API</div>
-          <div class="stat-value" id="health-api-status">
-            <span class="pill pill-success">פעיל</span>
-          </div>
-          <div class="stat-delta flat" id="health-api-uptime">uptime —</div>
-        </div>
-        <div class="stat-tile">
-          <div class="stat-label">P95 השהיה</div>
-          <div class="stat-value num" id="health-p95">— ms</div>
-          <div class="stat-delta flat">ממוצע 24h</div>
-        </div>
-        <div class="stat-tile">
-          <div class="stat-label">שגיאות 24h</div>
-          <div class="stat-value num" id="health-errors">—</div>
-          <div class="stat-delta flat" id="health-error-rate">— %</div>
-        </div>
-        <div class="stat-tile">
-          <div class="stat-label">WhatsApp webhook</div>
-          <div class="stat-value" id="health-wa-status">
-            <span class="pill pill-success">פעיל</span>
-          </div>
-          <div class="stat-delta flat" id="health-wa-last">אחרון —</div>
-        </div>
-      </div>
-
-      <div class="card mt-4">
-        <div class="flex-row between mb-4">
+      <!-- 2c: Device + Recent visitors -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 text-sm font-semibold text-ink-500 dark:text-ink-300">מכשירים</div>
+        <div class="flex items-center gap-4">
+          <!-- Donut chart pure SVG -->
+          <svg viewBox="0 0 42 42" class="h-24 w-24 -rotate-90">
+            <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="rgba(34,197,94,0.15)" stroke-width="6"/>
+            <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#22c55e" stroke-width="6" stroke-dasharray="100 0" stroke-dashoffset="0" stroke-linecap="round"/>
+          </svg>
           <div>
-            <h3 class="card-title">השהיה (P95) ב-24 שעות האחרונות</h3>
-            <p class="card-subtitle">דגימה כל 30 דקות</p>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="loadHealth()">רענן</button>
-        </div>
-        <div class="health-graph">
-          <svg id="health-graph-svg" viewBox="0 0 800 160" preserveAspectRatio="none"></svg>
-        </div>
-      </div>
-
-      <div class="grid-2 mt-4">
-        <div class="card">
-          <h3 class="card-title">בריאות שירותים</h3>
-          <p class="card-subtitle">בדיקה כל 60 שניות</p>
-          <div id="services-health"></div>
-        </div>
-        <div class="card">
-          <h3 class="card-title">מכסות חיצוניות</h3>
-          <p class="card-subtitle">כמה אחוז ניצלנו מ-Google / Anthropic / WhatsApp</p>
-          <div id="quotas-list"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Settings ===== -->
-    <section class="route-section" id="route-settings">
-      <div class="breadcrumb">
-        <span>פאנל ניהול</span>
-        <span class="breadcrumb-sep">›</span>
-        <span>הגדרות</span>
-      </div>
-      <h1 class="section-title">הגדרות</h1>
-      <p class="section-subtitle">דגלי תכונה, חיבורים והגדרות סביבה</p>
-
-      <div class="grid-2">
-        <div class="card">
-          <h3 class="card-title">דגלי תכונה</h3>
-          <p class="card-subtitle">הפעל / כבה תכונות בזמן ריצה</p>
-
-          <div class="form-row">
-            <div>
-              <div class="label">איסוף הוצאות בפורמט חדש</div>
-              <div class="hint">חוויית onboarding מעודכנת לכל משתמש חדש</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" data-flag="new_onboarding" />
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">תזכורות שבועיות בוואטסאפ</div>
-              <div class="hint">בכל יום שישי ב-9:00 בבוקר</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" data-flag="weekly_reminders" />
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">חיוב Pro חדשים</div>
-              <div class="hint">הפעלה זו תפתח את הקופה לרישומים חדשים</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" data-flag="paid_signups" />
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">קטגוריזציה אוטומטית (AI)</div>
-              <div class="hint">משתמש ב-Claude לסיווג חכם</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" data-flag="ai_categorize" checked />
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">מצב תחזוקה</div>
-              <div class="hint">חוסם כל הבקשות מבחוץ עם הודעה ידידותית</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" data-flag="maintenance_mode" />
-              <span class="slider"></span>
-            </label>
+            <div class="flex items-center gap-2"><span class="status-dot bg-brand-500"></span><span class="text-sm font-semibold">מובייל</span><span class="num font-black text-lg">100%</span></div>
+            <div class="flex items-center gap-2 opacity-60"><span class="status-dot bg-ink-400"></span><span class="text-sm">דסקטופ</span><span class="num text-sm">0%</span></div>
+            <div class="flex items-center gap-2 opacity-60"><span class="status-dot bg-ink-400"></span><span class="text-sm">טאבלט</span><span class="num text-sm">0%</span></div>
           </div>
         </div>
-
-        <div class="card">
-          <h3 class="card-title">חיבורים ו-API keys</h3>
-          <p class="card-subtitle">סטטוס מפתחות ו-OAuth tokens</p>
-
-          <div class="form-row">
-            <div>
-              <div class="label">Google OAuth</div>
-              <div class="hint" id="env-google">בדיקה...</div>
-            </div>
-            <span class="pill pill-success" id="env-google-pill">תקין</span>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">WhatsApp Business API</div>
-              <div class="hint" id="env-wa">בדיקה...</div>
-            </div>
-            <span class="pill pill-success" id="env-wa-pill">תקין</span>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">Anthropic / Claude API</div>
-              <div class="hint" id="env-claude">בדיקה...</div>
-            </div>
-            <span class="pill pill-success" id="env-claude-pill">תקין</span>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">Vercel KV (cache)</div>
-              <div class="hint" id="env-kv">בדיקה...</div>
-            </div>
-            <span class="pill pill-success" id="env-kv-pill">תקין</span>
-          </div>
-
-          <div class="form-row">
-            <div>
-              <div class="label">Stripe / סליקה</div>
-              <div class="hint" id="env-stripe">בדיקה...</div>
-            </div>
-            <span class="pill pill-warning" id="env-stripe-pill">לא הוגדר</span>
-          </div>
+        <div class="mt-5 border-t border-ink-100 pt-4 dark:border-ink-700">
+          <div class="mb-2 text-sm font-semibold text-ink-500 dark:text-ink-300">מבקרים אחרונים</div>
+          <ul class="space-y-2 text-sm">
+            <li class="flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500/15 text-[10px] font-bold text-brand-500 num">A92</span><span class="num text-ink-500 dark:text-ink-300">user_a92f</span></span>
+              <span class="text-xs text-brand-500 font-semibold">גולש</span>
+            </li>
+            <li class="flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-accent-500/15 text-[10px] font-bold text-accent-500 num">7B1</span><span class="num text-ink-500 dark:text-ink-300">user_7b1e</span></span>
+              <span class="text-xs text-ink-400">לפני 3 דק׳</span>
+            </li>
+            <li class="flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500/15 text-[10px] font-bold text-brand-500 num">CD4</span><span class="num text-ink-500 dark:text-ink-300">user_cd4a</span></span>
+              <span class="text-xs text-ink-400">לפני 8 דק׳</span>
+            </li>
+            <li class="flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-accent-500/15 text-[10px] font-bold text-accent-500 num">5F8</span><span class="num text-ink-500 dark:text-ink-300">user_5f80</span></span>
+              <span class="text-xs text-ink-400">לפני 12 דק׳</span>
+            </li>
+            <li class="flex items-center justify-between">
+              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500/15 text-[10px] font-bold text-brand-500 num">19D</span><span class="num text-ink-500 dark:text-ink-300">user_19d3</span></span>
+              <span class="text-xs text-ink-400">לפני 18 דק׳</span>
+            </li>
+          </ul>
         </div>
       </div>
 
-      <div class="card mt-4">
-        <h3 class="card-title">אזור מסוכן</h3>
-        <p class="card-subtitle">פעולות שלא ניתן לבטל. תחשוב פעמיים.</p>
-        <div class="grid-2 mt-4">
-          <button class="btn btn-danger" style="justify-content:flex-start;padding:14px;" onclick="dangerZone('flush_cache')">🧹 ניקוי כל המטמון</button>
-          <button class="btn btn-danger" style="justify-content:flex-start;padding:14px;" onclick="dangerZone('reset_quotas')">♻️ איפוס כל מכסות המשתמשים</button>
+      <!-- 2d: Page views table -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift lg:col-span-1">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">דפים פופולריים</div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-ink-400">19 צפיות</span>
+        </div>
+        <ul class="space-y-2.5 text-sm">
+          <li>
+            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/homepage</span><span class="num font-bold">8</span></div>
+            <div class="hbar"><span class="bar-grow bg-brand-500" style="width:100%"></span></div>
+          </li>
+          <li>
+            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/pricing</span><span class="num font-bold">5</span></div>
+            <div class="hbar"><span class="bar-grow bg-brand-500" style="width:62%;animation-delay:.1s"></span></div>
+          </li>
+          <li>
+            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/compare</span><span class="num font-bold">3</span></div>
+            <div class="hbar"><span class="bar-grow bg-accent-500" style="width:38%;animation-delay:.2s"></span></div>
+          </li>
+          <li>
+            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/trust</span><span class="num font-bold">2</span></div>
+            <div class="hbar"><span class="bar-grow bg-accent-500" style="width:25%;animation-delay:.3s"></span></div>
+          </li>
+          <li>
+            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/account</span><span class="num font-bold">1</span></div>
+            <div class="hbar"><span class="bar-grow bg-ink-400" style="width:12%;animation-delay:.4s"></span></div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 2e: Traffic sources -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 text-sm font-semibold text-ink-500 dark:text-ink-300">מקורות תנועה</div>
+        <ul class="space-y-3 text-sm">
+          <li class="flex items-center justify-between">
+            <div class="flex items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/15 text-blue-500 font-black">f</span>
+              <div>
+                <div class="font-semibold">Facebook</div>
+                <div class="text-[11px] text-ink-400">Paid Ads</div>
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="num font-black text-lg">8</div>
+              <div class="text-[11px] text-ink-400">53%</div>
+            </div>
+          </li>
+          <li class="flex items-center justify-between">
+            <div class="flex items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-pink-500 to-yellow-500 text-white font-black">IG</span>
+              <div>
+                <div class="font-semibold">Instagram</div>
+                <div class="text-[11px] text-ink-400">Paid Ads</div>
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="num font-black text-lg">5</div>
+              <div class="text-[11px] text-ink-400">33%</div>
+            </div>
+          </li>
+          <li class="flex items-center justify-between">
+            <div class="flex items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-500/15 text-brand-500">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg></span>
+              <div>
+                <div class="font-semibold">ישיר</div>
+                <div class="text-[11px] text-ink-400">Direct</div>
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="num font-black text-lg">1</div>
+              <div class="text-[11px] text-ink-400">7%</div>
+            </div>
+          </li>
+        </ul>
+        <button class="mt-4 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">צפה בדוח מלא ←</button>
+      </div>
+
+      <!-- 2f: Live activity feed -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">פעילות חיה</div>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-500">
+            <span class="live-dot h-1.5 w-1.5 rounded-full bg-brand-500"></span>LIVE
+          </span>
+        </div>
+        <ul id="live-feed" class="space-y-2 text-sm max-h-72 overflow-y-auto pr-1">
+          <li class="slide-in flex items-start gap-2 rounded-lg bg-brand-500/5 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-brand-500 flex-shrink-0"></span><div><div class="font-medium">צופה ב <span class="font-mono text-brand-500">/homepage</span></div><div class="text-[11px] text-ink-400">user_a92f • לפני שניות</div></div></li>
+          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-accent-500 flex-shrink-0"></span><div><div class="font-medium">לחץ על <span class="font-mono text-accent-500">CTA "התחל חינם"</span></div><div class="text-[11px] text-ink-400">user_7b1e • לפני 2 דק׳</div></div></li>
+          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-brand-500 flex-shrink-0"></span><div><div class="font-medium">צופה ב <span class="font-mono text-brand-500">/pricing</span></div><div class="text-[11px] text-ink-400">user_cd4a • לפני 5 דק׳</div></div></li>
+          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-accent-500 flex-shrink-0"></span><div><div class="font-medium">התחיל הרשמה (לא סיים)</div><div class="text-[11px] text-ink-400">user_5f80 • לפני 9 דק׳</div></div></li>
+          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-brand-500 flex-shrink-0"></span><div><div class="font-medium">צופה ב <span class="font-mono text-brand-500">/compare</span></div><div class="text-[11px] text-ink-400">user_19d3 • לפני 14 דק׳</div></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SECTION 3: KEY STATS GRID ====== -->
+  <section class="mb-10">
+    <h2 class="mb-4 text-2xl font-black tracking-tight">סטטיסטיקות מפתח</h2>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300">סשנים באתר</div>
+            <div class="mt-1 text-3xl font-black num count-pop" data-counter="3994" data-from="0">3,994</div>
+          </div>
+          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 17V7h10l-10 10z"/></svg>
+            +245%
+          </span>
+        </div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">לעומת אתמול (1,158)</div>
+      </div>
+
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300">הרשמות היום</div>
+            <div class="mt-1 text-3xl font-black num count-pop" data-counter="47" data-from="0">47</div>
+          </div>
+          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">+292%</span>
+        </div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">אתמול: <span class="num font-bold">12</span></div>
+      </div>
+
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300">הודעות בוט היום</div>
+            <div class="mt-1 text-3xl font-black num count-pop" data-counter="1247" data-from="0">1,247</div>
+          </div>
+          <span class="inline-flex items-center gap-1 rounded-full bg-accent-500/15 px-2 py-1 text-[11px] font-bold text-accent-500">WhatsApp</span>
+        </div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">ממוצע: <span class="num font-bold">14.2</span>/דקה</div>
+      </div>
+
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300">קריאות AI (Tier 3)</div>
+            <div class="mt-1 text-3xl font-black num count-pop" data-counter="63" data-from="0">63</div>
+          </div>
+          <span class="inline-flex items-center gap-1 rounded-full bg-accent-500/15 px-2 py-1 text-[11px] font-bold text-accent-500">$0.019</span>
+        </div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">עלות ממוצעת: <span class="num font-bold">$0.0003</span> / קריאה</div>
+      </div>
+
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300">זמן תגובה ממוצע</div>
+            <div class="mt-1 text-3xl font-black num count-pop" data-counter="187" data-from="0">187<span class="text-base text-ink-400">ms</span></div>
+          </div>
+          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">תקין</span>
+        </div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">p95: <span class="num font-bold">412ms</span> • p99: <span class="num font-bold">680ms</span></div>
+      </div>
+
+      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-300">הצלחת הקצאת שיט</div>
+            <div class="mt-1 text-3xl font-black num count-pop" data-counter="98.4" data-from="0" data-decimal="1">98.4<span class="text-base text-ink-400">%</span></div>
+          </div>
+          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">תקין</span>
+        </div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">3 שגיאות מתוך <span class="num font-bold">189</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ====== SECTION 4: BOT HEALTH ====== -->
+  <section class="mb-10">
+    <div class="mb-4 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">בריאות הבוט</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">חלוקת קריאות לפי שכבת זיהוי — ככל שיותר T1/T2 ההוצאה נמוכה יותר.</p>
+      </div>
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-accent-500/10 px-3 py-1 text-[11px] font-bold text-accent-500">
+        Anthropic API: <span class="num">$9.81</span> / $10
+      </span>
+    </div>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift scan-line">
+        <div class="mb-1 flex items-center gap-2">
+          <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-500/15 text-brand-500 font-black">T1</span>
+          <div>
+            <div class="text-sm font-bold">Cache Hit</div>
+            <div class="text-[11px] text-ink-400">חיפוש במטמון</div>
+          </div>
+        </div>
+        <div class="mt-3 text-4xl font-black num count-pop" data-counter="30" data-from="0">30%</div>
+        <div class="hbar mt-3"><span class="bar-grow bg-brand-500" style="width:30%"></span></div>
+        <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+          <div><div class="text-ink-400">עלות</div><div class="num font-bold">$0.00</div></div>
+          <div><div class="text-ink-400">זמן</div><div class="num font-bold">12ms</div></div>
         </div>
       </div>
-    </section>
 
-  </main>
-</div>
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift scan-line">
+        <div class="mb-1 flex items-center gap-2">
+          <span class="grid h-8 w-8 place-items-center rounded-lg bg-accent-500/15 text-accent-500 font-black">T2</span>
+          <div>
+            <div class="text-sm font-bold">Keyword Match</div>
+            <div class="text-[11px] text-ink-400">חיפוש מילות מפתח</div>
+          </div>
+        </div>
+        <div class="mt-3 text-4xl font-black num count-pop" data-counter="65" data-from="0">65%</div>
+        <div class="hbar mt-3"><span class="bar-grow bg-accent-500" style="width:65%"></span></div>
+        <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+          <div><div class="text-ink-400">עלות</div><div class="num font-bold">$0.00</div></div>
+          <div><div class="text-ink-400">זמן</div><div class="num font-bold">38ms</div></div>
+        </div>
+      </div>
 
-<!-- ============================================================
-     SCRIPT
-     ============================================================ -->
+      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift scan-line">
+        <div class="mb-1 flex items-center gap-2">
+          <span class="grid h-8 w-8 place-items-center rounded-lg bg-orange-500/15 text-orange-500 font-black">T3</span>
+          <div>
+            <div class="text-sm font-bold">AI Fallback</div>
+            <div class="text-[11px] text-ink-400">Claude Haiku</div>
+          </div>
+        </div>
+        <div class="mt-3 text-4xl font-black num count-pop" data-counter="5" data-from="0">5%</div>
+        <div class="hbar mt-3"><span class="bar-grow bg-orange-500" style="width:5%"></span></div>
+        <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+          <div><div class="text-ink-400">עלות</div><div class="num font-bold">$0.019</div></div>
+          <div><div class="text-ink-400">זמן</div><div class="num font-bold">680ms</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget bar -->
+    <div class="mt-4 rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm font-semibold">Anthropic API — יתרה חודשית</div>
+        <div class="text-sm"><span class="num font-black text-brand-500">$9.81</span><span class="text-ink-400 num"> / $10.00</span></div>
+      </div>
+      <div class="hbar h-3"><span class="bar-grow bg-gradient-to-r from-brand-500 to-accent-500" style="width:98%"></span></div>
+      <div class="mt-2 text-[11px] text-ink-500 dark:text-ink-300">מקצב צריכה: <span class="num font-bold">$0.019/יום</span> • צפי גמר: <span class="num font-bold">~516 ימים</span></div>
+    </div>
+  </section>
+
+  <!-- ====== SECTION 5: USER MANAGEMENT TABLE ====== -->
+  <section class="mb-10">
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">משתמשים</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">10 מתוך 47 שנרשמו ב-30 הימים האחרונים.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button class="filter-chip rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white" data-filter="all">הכל (10)</button>
+        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="active">פעיל (5)</button>
+        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="trial">ניסיון (3)</button>
+        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="paused">מושהה (1)</button>
+        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="cancelled">בוטל (1)</button>
+        <input type="search" placeholder="חיפוש..." class="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs dark:border-ink-700 dark:bg-ink-800" id="user-search">
+      </div>
+    </div>
+
+    <div class="rounded-3xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800 overflow-hidden">
+      <div class="scroll-x">
+        <table class="w-full text-sm" id="users-table">
+          <thead class="bg-ink-50 text-[11px] uppercase tracking-wider text-ink-500 dark:bg-ink-900/50 dark:text-ink-300">
+            <tr>
+              <th class="p-3 text-start font-bold cursor-pointer hover:text-brand-500" data-sort="email">אימייל ▾</th>
+              <th class="p-3 text-start font-bold">טלפון</th>
+              <th class="p-3 text-start font-bold cursor-pointer hover:text-brand-500" data-sort="plan">תוכנית ▾</th>
+              <th class="p-3 text-start font-bold cursor-pointer hover:text-brand-500" data-sort="signup">הרשמה ▾</th>
+              <th class="p-3 text-start font-bold">פעילות אחרונה</th>
+              <th class="p-3 text-center font-bold">שיט</th>
+              <th class="p-3 text-end font-bold cursor-pointer hover:text-brand-500" data-sort="tx">תנועות ▾</th>
+              <th class="p-3 text-start font-bold">סטטוס</th>
+              <th class="p-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-ink-100 dark:divide-ink-700" id="users-tbody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SECTION 6: ACTIVITY FEED ====== -->
+  <section class="mb-10">
+    <div class="mb-4 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">יומן פעילות</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">כל מה שקרה במערכת בזמן האחרון.</p>
+      </div>
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-[11px] font-bold text-brand-500">
+        <span class="live-dot h-2 w-2 rounded-full bg-brand-500"></span>
+        מתעדכן אוטומטית
+      </span>
+    </div>
+    <div class="rounded-3xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <ul id="activity-feed" class="divide-y divide-ink-100 dark:divide-ink-700">
+        <!-- populated by JS, plus auto-prepend every 8s -->
+      </ul>
+      <div class="border-t border-ink-100 p-3 text-center dark:border-ink-700">
+        <button class="text-xs font-semibold text-brand-500 hover:underline">טען עוד אירועים</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SECTION 7: DAILY INSIGHTS ====== -->
+  <section class="mb-10">
+    <h2 class="mb-1 text-2xl font-black tracking-tight">תובנות יומיות</h2>
+    <p class="mb-4 text-sm text-ink-500 dark:text-ink-300">ניתוחים אוטומטיים מבוססי הנתונים של היום.</p>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+
+      <div class="relative overflow-hidden rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-50 to-white p-6 shadow-soft dark:border-brand-500/40 dark:from-brand-900/20 dark:to-ink-800 lift">
+        <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-500/15 blur-3xl"></div>
+        <div class="relative">
+          <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            <span>📈</span> תובנת שיווק
+          </div>
+          <h3 class="text-base font-extrabold leading-snug">חלון השיא לפיק הרשמות: יום שישי 16:00-20:00</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">12 מתוך 47 הרשמות (25%) קרו בחלון הזה. תזמן פוסטים בפייסבוק/אינסטגרם לשעות אלו.</p>
+          <button class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline">תזמן פוסט עכשיו ←</button>
+        </div>
+      </div>
+
+      <div class="relative overflow-hidden rounded-3xl border border-accent-500/30 bg-gradient-to-br from-purple-50 to-white p-6 shadow-soft dark:border-accent-500/40 dark:from-purple-900/20 dark:to-ink-800 lift">
+        <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent-500/15 blur-3xl"></div>
+        <div class="relative">
+          <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-accent-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-600 dark:text-accent-400">
+            <span>💌</span> שימור משתמשים
+          </div>
+          <h3 class="text-base font-extrabold leading-snug">5 משתמשים לא שלחו הודעה ב-7 ימים</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">שקול לשלוח הודעת re-engagement עם דוגמת שימוש או טיפ קצר.</p>
+          <button class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-accent-600 dark:text-accent-400 hover:underline">שלח הודעה חוזרת ←</button>
+        </div>
+      </div>
+
+      <div class="relative overflow-hidden rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-50 to-white p-6 shadow-soft dark:border-orange-500/40 dark:from-orange-900/20 dark:to-ink-800 lift">
+        <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-orange-500/15 blur-3xl"></div>
+        <div class="relative">
+          <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+            <span>⚠️</span> מעקב עלויות
+          </div>
+          <h3 class="text-base font-extrabold leading-snug">עלות AI עלתה ב-23% היום</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">הגידול מונע ע״י הקטגוריה "אירועים" (חופעות, סרטים, וכו'). שקול להוסיף keywords ל-T2.</p>
+          <button class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline">צפה בפירוט קטגוריות ←</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SECTION 8: SUGGESTED ACTIONS ====== -->
+  <section class="mb-12">
+    <h2 class="mb-1 text-2xl font-black tracking-tight">מומלץ בשבילך</h2>
+    <p class="mb-4 text-sm text-ink-500 dark:text-ink-300">פעולות שיעזרו לכסף'לה לגדול בצורה אוטונומית.</p>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <h3 class="text-sm font-extrabold">חבר Stripe להפעלת חיוב</h3>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">כדי להמיר משתמשי ניסיון לתשלום. עכשיו 14 משתמשים בניסיון.</p>
+        <button class="mt-3 w-full rounded-xl bg-ink-900 px-3 py-2 text-xs font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">חבר Stripe</button>
+      </div>
+
+      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 text-white">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h3 class="text-sm font-extrabold">הגדר אימייל ברוך הבא</h3>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">משתמש שמקבל אימייל ברוך הבא נטה לחזור ב-37% יותר.</p>
+        <button class="mt-3 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">הגדר תבנית</button>
+      </div>
+
+      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-teal-500 text-white">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3 class="text-sm font-extrabold">קונפיגר Cron לסיכום שבועי</h3>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">שלח אוטומטית סיכום שבועי לכל המשתמשים ביום שישי בבוקר.</p>
+        <button class="mt-3 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">הפעל אוטומציה</button>
+      </div>
+
+      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
+        </div>
+        <h3 class="text-sm font-extrabold">הוסף בדיקות מערכת</h3>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">קבל התראה ב-Telegram אם זמן תגובה > 1s או יתרת API < $1.</p>
+        <button class="mt-3 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">חבר Telegram</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============== SCRIPTS ============== -->
 <script>
-/* =========================================================
-   Constants & helpers
-   ========================================================= */
-const ADMIN_EMAILS = ['srcslcollection@gmail.com', 'stevenrancohen@gmail.com'];
+(function(){
+  'use strict';
 
-const ILS = new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 });
-const NUM = new Intl.NumberFormat('he-IL');
-const PCT = new Intl.NumberFormat('he-IL', { style: 'percent', maximumFractionDigits: 1 });
-const REL = new Intl.RelativeTimeFormat('he', { numeric: 'auto' });
+  // ===== AUTH GATE =====
+  const GATE_KEY = 'kesefle_admin';
+  const PASSWORD = 'kesefle2026';
+  const gate = document.getElementById('kfl-gate');
+  const app = document.getElementById('kfl-app');
+  const gateForm = document.getElementById('gate-form');
+  const gatePw = document.getElementById('gate-pw');
+  const gateErr = document.getElementById('gate-error');
 
-function fmtILS(n) { return ILS.format(n || 0); }
-function fmtNum(n) { return NUM.format(n || 0); }
-function fmtPct(n) { return PCT.format((n || 0) / 100); }
-function fmtDate(s) { if (!s) return '—'; try { return new Date(s).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }); } catch { return s; } }
-function fmtRel(s) {
-  if (!s) return '—';
-  const diff = (Date.now() - new Date(s).getTime()) / 1000;
-  if (diff < 60) return 'לפני שניות';
-  if (diff < 3600) return REL.format(-Math.round(diff/60), 'minute');
-  if (diff < 86400) return REL.format(-Math.round(diff/3600), 'hour');
-  return REL.format(-Math.round(diff/86400), 'day');
-}
-
-function getUser() {
-  try { return JSON.parse(localStorage.getItem('kesefle_user') || 'null'); } catch { return null; }
-}
-
-function adminLogout() {
-  localStorage.removeItem('kesefle_user');
-  localStorage.removeItem('kesefle_sheet');
-  window.location.href = '/';
-}
-
-async function adminFetch(path, opts = {}) {
-  const user = getUser();
-  const headers = Object.assign({
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + (user && user.idToken ? user.idToken : '')
-  }, opts.headers || {});
-  const res = await fetch(path, Object.assign({}, opts, { headers }));
-  if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    throw new Error('HTTP ' + res.status + ' ' + err.slice(0, 200));
+  function openApp() {
+    gate.classList.add('hidden');
+    app.classList.remove('gate-blur');
+    setTimeout(initAll, 50);
   }
-  return res.json().catch(() => ({}));
-}
-
-function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
-function $(s, root = document) { return root.querySelector(s); }
-function $$(s, root = document) { return Array.from(root.querySelectorAll(s)); }
-
-/* =========================================================
-   Auth gate
-   ========================================================= */
-(function authGate() {
-  const user = getUser();
-  if (!user || !user.email || !ADMIN_EMAILS.includes(user.email.toLowerCase())) {
-    $('#access-denied-view').classList.remove('hidden');
-    const emailLine = $('#denied-email');
-    if (user && user.email) emailLine.textContent = 'מחובר כ: ' + user.email;
-    else emailLine.textContent = 'אינך מחובר.';
-    return;
+  function lockApp() {
+    gate.classList.remove('hidden');
+    app.classList.add('gate-blur');
+    setTimeout(() => gatePw.focus(), 100);
   }
-  $('#admin-app').classList.remove('hidden');
-  $('#user-email-display').textContent = user.email;
-  $('#user-avatar').textContent = (user.email || 'A')[0].toUpperCase();
-  initApp();
-})();
-
-/* =========================================================
-   Theme
-   ========================================================= */
-function applyTheme() {
-  const dark = localStorage.getItem('kesefle_admin_theme') === 'dark';
-  document.body.classList.toggle('dark', dark);
-  document.documentElement.classList.toggle('dark', dark);
-  $('#theme-icon-light')?.classList.toggle('hidden', dark);
-  $('#theme-icon-dark')?.classList.toggle('hidden', !dark);
-}
-applyTheme();
-
-/* =========================================================
-   App init
-   ========================================================= */
-function initApp() {
-  // Theme toggle
-  $('#theme-toggle').addEventListener('click', () => {
-    const dark = document.body.classList.contains('dark');
-    localStorage.setItem('kesefle_admin_theme', dark ? 'light' : 'dark');
-    applyTheme();
-  });
-
-  // Sidebar mobile drawer
-  const sidebar = $('#sidebar');
-  const backdrop = $('#sidebar-backdrop');
-  $('#menu-toggle').addEventListener('click', () => {
-    sidebar.classList.toggle('open');
-    backdrop.classList.toggle('open');
-  });
-  backdrop.addEventListener('click', () => {
-    sidebar.classList.remove('open');
-    backdrop.classList.remove('open');
-  });
-
-  // Refresh button
-  $('#refresh-btn').addEventListener('click', () => loadRoute(currentRoute, true));
-
-  // User menu dropdown
-  const userMenu = $('#user-menu');
-  $('#user-menu-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    userMenu.classList.toggle('open');
-  });
-  document.addEventListener('click', () => userMenu.classList.remove('open'));
-
-  // Nav routing
-  $$('.nav-item[data-route]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const route = btn.getAttribute('data-route');
-      navigateTo(route);
-      sidebar.classList.remove('open');
-      backdrop.classList.remove('open');
-    });
-  });
-
-  // Job tabs
-  $$('.tab[data-job-tab]').forEach(t => {
-    t.addEventListener('click', () => {
-      $$('.tab[data-job-tab]').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      loadJobs(t.getAttribute('data-job-tab'));
-    });
-  });
-
-  // Feature flags
-  $$('input[data-flag]').forEach(cb => {
-    cb.addEventListener('change', async () => {
-      const flag = cb.getAttribute('data-flag');
-      try {
-        // TODO: POST /api/admin/feature-flags with { flag, enabled: cb.checked }
-        await adminFetch('/api/admin?action=feature-flags', {
-          method: 'POST',
-          body: JSON.stringify({ flag, enabled: cb.checked })
-        }).catch(() => {});
-      } catch (e) {}
-    });
-  });
-
-  // Hash routing
-  window.addEventListener('hashchange', () => {
-    const r = location.hash.replace('#', '') || 'overview';
-    navigateTo(r);
-  });
-  const initial = location.hash.replace('#', '') || 'overview';
-  navigateTo(initial);
-}
-
-let currentRoute = 'overview';
-
-function navigateTo(route) {
-  const valid = ['overview', 'users', 'transactions', 'jobs', 'analytics', 'support', 'audit', 'health', 'settings'];
-  if (!valid.includes(route)) route = 'overview';
-  currentRoute = route;
-  $$('.route-section').forEach(s => s.classList.remove('active'));
-  $('#route-' + route)?.classList.add('active');
-  $$('.nav-item[data-route]').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-route') === route);
-  });
-  if (location.hash.replace('#', '') !== route) {
-    history.replaceState(null, '', '#' + route);
+  if (localStorage.getItem(GATE_KEY) === 'true') {
+    openApp();
+  } else {
+    lockApp();
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  loadRoute(route);
-}
+  gateForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (gatePw.value === PASSWORD) {
+      localStorage.setItem(GATE_KEY, 'true');
+      gateErr.classList.add('hidden');
+      openApp();
+    } else {
+      gateErr.classList.remove('hidden');
+      gatePw.value = '';
+      gatePw.focus();
+    }
+  });
+  document.getElementById('admin-logout').addEventListener('click', () => {
+    localStorage.removeItem(GATE_KEY);
+    lockApp();
+  });
 
-function loadRoute(route, force) {
-  switch (route) {
-    case 'overview': return loadOverview(force);
-    case 'users': return loadUsers(force);
-    case 'transactions': return loadTransactions(force);
-    case 'jobs': return loadJobs('failed', force);
-    case 'analytics': return loadAnalytics(force);
-    case 'audit': return loadAudit(force);
-    case 'health': return loadHealth(force);
-    case 'settings': return loadSettings(force);
-    case 'support': return; /* lazy on lookup */
+  // ===== THEME TOGGLE =====
+  const themeBtn = document.getElementById('theme-toggle');
+  const iconL = document.getElementById('theme-icon-light');
+  const iconD = document.getElementById('theme-icon-dark');
+  function applyTheme(mode) {
+    if (mode === 'light') {
+      document.documentElement.classList.remove('dark');
+      iconL.classList.add('hidden'); iconD.classList.remove('hidden');
+    } else {
+      document.documentElement.classList.add('dark');
+      iconD.classList.add('hidden'); iconL.classList.remove('hidden');
+    }
+    localStorage.setItem('kesefle_theme', mode);
   }
-}
+  applyTheme(localStorage.getItem('kesefle_theme') || 'dark');
+  themeBtn.addEventListener('click', () => {
+    const cur = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  });
 
-/* =========================================================
-   Overview
-   ========================================================= */
-async function loadOverview() {
-  let data;
-  try {
-    // TODO: GET /api/admin/overview — expects { active_users, mrr, arpu, churn_pct, errors_today, weekly: [n], feed: [{...}] }
-    data = await adminFetch('/api/admin?action=metrics');
-  } catch {
-    // Placeholder fallback so the UI renders during development
-    data = {
-      active_users: { value: 1247, delta: 12.4 },
-      mrr: { value: 23890, delta: 8.2 },
-      arpu: { value: 19, delta: -1.1 },
-      churn_pct: { value: 3.2, delta: -0.4 },
-      errors_today: { value: 7, delta: -2 },
-      weekly: [42, 51, 38, 67, 71, 88, 95, 79, 102, 118, 124, 131, 145, 156],
-      feed: [
-        { time: new Date(Date.now() - 1000*60*5).toISOString(), action: 'הרשמה חדשה', subject: 'noa.cohen@gmail.com', icon: '✨' },
-        { time: new Date(Date.now() - 1000*60*22).toISOString(), action: 'שדרוג ל-Pro', subject: 'yossi@example.com', icon: '⭐' },
-        { time: new Date(Date.now() - 1000*60*45).toISOString(), action: 'גיליון סונכרן', subject: 'rachel.l@gmail.com', icon: '🔄' },
-        { time: new Date(Date.now() - 1000*60*120).toISOString(), action: 'job נכשל', subject: 'sheet:append', icon: '⚠️' },
-      ]
-    };
+  // ===== CLOCK =====
+  function tickClock() {
+    const el = document.getElementById('now-clock');
+    if (!el) return;
+    const d = new Date();
+    el.textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
   }
-  setStat('active_users', fmtNum(data.active_users.value), data.active_users.delta);
-  setStat('mrr', fmtILS(data.mrr.value), data.mrr.delta);
-  setStat('arpu', fmtILS(data.arpu.value), data.arpu.delta);
-  setStat('churn', fmtPct(data.churn_pct.value), -data.churn_pct.delta);
-  setStat('errors', fmtNum(data.errors_today.value), -data.errors_today.delta);
+  setInterval(tickClock, 1000); tickClock();
 
-  // Chart
-  const max = Math.max(...data.weekly);
-  $('#overview-chart').innerHTML = data.weekly.map((v, i) => {
-    const h = Math.max(4, (v / max) * 100);
-    const d = new Date(); d.setDate(d.getDate() - (data.weekly.length - 1 - i));
-    return `<div class="bar" style="height:${h}%"><span class="bar-label">${fmtNum(v)} ב-${d.toLocaleDateString('he-IL', { day:'numeric', month:'short' })}</span></div>`;
-  }).join('');
-
-  // Feed
-  $('#overview-feed').innerHTML = data.feed.map(f => `
-    <div class="audit-row">
-      <div class="audit-icon">${f.icon || '•'}</div>
-      <div class="audit-body">
-        <div class="audit-msg">${f.action} <span style="color:var(--ink-500);font-weight:500;">${f.subject || ''}</span></div>
-        <div class="audit-meta">${fmtRel(f.time)} · ${fmtDate(f.time)}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function setStat(key, value, delta) {
-  const tile = $(`[data-stat="${key}"]`);
-  if (!tile) return;
-  tile.querySelector('.stat-value').innerHTML = `<span class="num">${value}</span>`;
-  const d = tile.querySelector('.stat-delta');
-  const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
-  const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '•';
-  d.className = 'stat-delta ' + cls;
-  d.innerHTML = `${arrow} <span class="num">${Math.abs(delta || 0).toFixed(1)}%</span> מהשבוע שעבר`;
-}
-
-/* =========================================================
-   Users
-   ========================================================= */
-let usersCache = [];
-
-async function loadUsers() {
-  const tbody = $('#users-tbody');
-  tbody.innerHTML = skeletonRows(6, 8);
-  try {
-    // TODO: GET /api/admin/users — expects { users: [{ id, email, phone, plan, signup_at, last_active_at, sheet_status, tx_count, status }] }
-    const data = await adminFetch('/api/admin?action=users');
-    usersCache = data.users || [];
-  } catch {
-    usersCache = [
-      { id: 'u_001', email: 'noa.cohen@gmail.com', phone: '+972501234567', plan: 'pro', signup_at: '2026-03-12', last_active_at: new Date(Date.now() - 1000*60*15).toISOString(), sheet_status: 'connected', tx_count: 412, status: 'active' },
-      { id: 'u_002', email: 'yossi.levy@gmail.com', phone: '+972502345678', plan: 'free', signup_at: '2026-04-22', last_active_at: new Date(Date.now() - 1000*60*60*3).toISOString(), sheet_status: 'connected', tx_count: 58, status: 'active' },
-      { id: 'u_003', email: 'rachel.l@gmail.com', phone: '+972503456789', plan: 'business', signup_at: '2025-12-01', last_active_at: new Date(Date.now() - 1000*60*60*24*2).toISOString(), sheet_status: 'error', tx_count: 1208, status: 'active' },
-      { id: 'u_004', email: 'avi.b@example.com', phone: '+972504567890', plan: 'pro', signup_at: '2026-02-08', last_active_at: new Date(Date.now() - 1000*60*60*24*8).toISOString(), sheet_status: 'connected', tx_count: 287, status: 'paused' },
-      { id: 'u_005', email: 'dana.k@gmail.com', phone: '+972505678901', plan: 'free', signup_at: '2026-05-01', last_active_at: new Date(Date.now() - 1000*60*8).toISOString(), sheet_status: 'not_connected', tx_count: 3, status: 'trial' },
-      { id: 'u_006', email: 'moshe.t@gmail.com', phone: '+972506789012', plan: 'pro', signup_at: '2026-01-15', last_active_at: '2026-04-01T10:00:00Z', sheet_status: 'connected', tx_count: 567, status: 'cancelled' },
-    ];
+  // ===== ANIMATED COUNTERS =====
+  function animateCounter(el) {
+    const target = parseFloat(el.dataset.counter);
+    const from = parseFloat(el.dataset.from || '0');
+    const decimal = parseInt(el.dataset.decimal || '0', 10);
+    const duration = 1400;
+    const start = performance.now();
+    const suffix = el.textContent.match(/[^\d.,\s]+$/)?.[0] || '';
+    const innerHTML = el.innerHTML;
+    const suffixHTML = innerHTML.match(/<[^>]+>[\s\S]*$/)?.[0] || '';
+    function frame(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = from + (target - from) * eased;
+      const display = decimal ? v.toFixed(decimal) : Math.round(v).toLocaleString('en-US');
+      el.innerHTML = display + suffixHTML;
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
   }
-  renderUsers();
-}
 
-function renderUsers() {
-  const tbody = $('#users-tbody');
-  const empty = $('#users-empty');
-  const q = ($('#users-search').value || '').toLowerCase();
-  const plan = $('#users-plan-filter').value;
-  const status = $('#users-status-filter').value;
-  const rows = usersCache.filter(u =>
-    (!q || u.email.toLowerCase().includes(q) || (u.phone || '').includes(q)) &&
-    (!plan || u.plan === plan) &&
-    (!status || u.status === status)
-  );
-  empty.classList.toggle('hidden', rows.length > 0);
-  tbody.innerHTML = rows.map(u => `
-    <tr data-uid="${u.id}">
-      <td><strong>${u.email}</strong></td>
-      <td><span class="num">${u.phone || '—'}</span></td>
-      <td>${planPill(u.plan)}</td>
-      <td><span class="num">${fmtDate(u.signup_at).split(',')[0]}</span></td>
-      <td>${fmtRel(u.last_active_at)}</td>
-      <td>${sheetPill(u.sheet_status)}</td>
-      <td><span class="num">${fmtNum(u.tx_count)}</span></td>
-      <td>
-        <div class="action-menu-wrap">
-          <button class="btn btn-ghost btn-sm" onclick="toggleActionMenu(event, '${u.id}')" aria-label="פעולות">⋯</button>
-          <div class="action-menu" data-menu="${u.id}">
-            <button onclick="userAction('${u.id}','view')">👁️ צפה בפרופיל</button>
-            <button onclick="userAction('${u.id}','impersonate')">🎭 התחזות (Impersonate)</button>
-            <button onclick="userAction('${u.id}','resend')">✉️ שלח הודעת welcome</button>
-            <button onclick="userAction('${u.id}','reset_sheet')">🔄 אפס חיבור Sheet</button>
-            <button class="danger" onclick="userAction('${u.id}','suspend')">⏸️ השהה משתמש</button>
+  // ===== USERS TABLE DATA =====
+  const USERS = [
+    { name: 'אביב כהן',      email: 'aviv.cohen@gmail.com',       phone: '+972-52-3942910', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-17', signupRaw: 'לפני 14 דק׳',    activity:'לפני 2 דק׳',  sheet:'ok',  tx: 247, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
+    { name: 'דנה לוי',        email: 'dana.levi@gmail.com',         phone: '+972-50-8273410', plan: 'משפחה',  planClass:'bg-accent-500/15 text-accent-500', signup: '2026-05-16', signupRaw: 'לפני יום',        activity:'לפני 38 דק׳', sheet:'ok',  tx: 184, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
+    { name: 'רונן מזרחי',    email: 'ronen.mizrahi@gmail.com',    phone: '+972-54-1923948', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-15', signupRaw: 'לפני יומיים',     activity:'לפני 3 שעות', sheet:'ok',  tx: 392, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
+    { name: 'נועה שטרן',    email: 'noa.shtern@gmail.com',         phone: '+972-52-7193821', plan: 'חינם',   planClass:'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200', signup: '2026-05-14', signupRaw: 'לפני 3 ימים',    activity:'לפני יום',    sheet:'ok',  tx: 28,  status:'trial',     statusLabel:'ניסיון',   statusClass:'bg-yellow-500/15 text-yellow-600' },
+    { name: 'אורי שמיר',    email: 'uri.shamir@gmail.com',         phone: '+972-50-2837461', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-12', signupRaw: 'לפני 5 ימים',    activity:'לפני 2 שעות', sheet:'ok',  tx: 218, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
+    { name: 'מיכל ברק',     email: 'michal.barak@gmail.com',      phone: '+972-54-9182734', plan: 'משפחה',  planClass:'bg-accent-500/15 text-accent-500', signup: '2026-05-10', signupRaw: 'לפני שבוע',       activity:'לפני 4 ימים', sheet:'err', tx: 41,  status:'paused',    statusLabel:'מושהה',   statusClass:'bg-orange-500/15 text-orange-600' },
+    { name: 'יואב אזולאי',  email: 'yoav.azulay@gmail.com',       phone: '+972-52-8273940', plan: 'חינם',   planClass:'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200', signup: '2026-05-09', signupRaw: 'לפני 8 ימים',    activity:'לפני 6 שעות', sheet:'ok',  tx: 67,  status:'trial',     statusLabel:'ניסיון',   statusClass:'bg-yellow-500/15 text-yellow-600' },
+    { name: 'תמר בן-דוד', email: 'tamar.bendavid@gmail.com',     phone: '+972-50-3829471', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-08', signupRaw: 'לפני 9 ימים',    activity:'לפני 12 שעות',sheet:'ok',  tx: 156, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
+    { name: 'גיא פרץ',      email: 'guy.peretz@gmail.com',         phone: '+972-54-1827394', plan: 'חינם',   planClass:'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200', signup: '2026-05-06', signupRaw: 'לפני 11 ימים',  activity:'לפני 9 ימים', sheet:'no',  tx: 0,   status:'cancelled', statusLabel:'בוטל',    statusClass:'bg-red-500/15 text-red-600' },
+    { name: 'שירה אלון',  email: 'shira.alon@gmail.com',         phone: '+972-52-9384721', plan: 'משפחה',  planClass:'bg-accent-500/15 text-accent-500', signup: '2026-05-04', signupRaw: 'לפני 13 ימים',  activity:'לפני 5 שעות', sheet:'ok',  tx: 89,  status:'trial',     statusLabel:'ניסיון',   statusClass:'bg-yellow-500/15 text-yellow-600' },
+  ];
+
+  function sheetIcon(s) {
+    if (s === 'ok')  return '<span title="שיט תקין" class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-brand-500/15 text-brand-600 font-black">✓</span>';
+    if (s === 'err') return '<span title="שגיאה בשיט" class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-500/15 text-red-600 font-black">!</span>';
+    return '<span title="ללא שיט" class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-ink-100 text-ink-500 dark:bg-ink-700 dark:text-ink-300 font-black">—</span>';
+  }
+
+  function renderUsers(list) {
+    const tbody = document.getElementById('users-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = list.map(u => `
+      <tr class="user-row" data-status="${u.status}">
+        <td class="p-3">
+          <div class="flex items-center gap-2">
+            <span class="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-brand-400 to-accent-500 text-[10px] font-black text-white">${u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</span>
+            <div>
+              <div class="font-semibold">${u.name}</div>
+              <div class="text-[11px] text-ink-500 dark:text-ink-400 num" dir="ltr">${u.email}</div>
+            </div>
           </div>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function planPill(plan) {
-  const map = {
-    free: ['pill-neutral', 'Free'],
-    pro: ['pill-info', 'Pro'],
-    business: ['pill-success', 'Business'],
-  };
-  const [cls, label] = map[plan] || ['pill-neutral', plan];
-  return `<span class="pill ${cls}">${label}</span>`;
-}
-
-function sheetPill(s) {
-  const map = {
-    connected: ['pill-success', '✓ מחובר'],
-    not_connected: ['pill-warning', 'לא מחובר'],
-    error: ['pill-danger', '✕ שגיאה'],
-  };
-  const [cls, label] = map[s] || ['pill-neutral', s];
-  return `<span class="pill ${cls}">${label}</span>`;
-}
-
-function toggleActionMenu(e, uid) {
-  e.stopPropagation();
-  $$('.action-menu').forEach(m => m.classList.remove('open'));
-  const menu = $(`[data-menu="${uid}"]`);
-  if (menu) menu.classList.add('open');
-}
-document.addEventListener('click', () => $$('.action-menu').forEach(m => m.classList.remove('open')));
-
-async function userAction(uid, action) {
-  if (action === 'suspend' && !confirm('להשהות את המשתמש?')) return;
-  try {
-    // TODO: POST /api/admin/users/:id/action  body: { action }
-    await adminFetch(`/api/admin?action=users/${uid}/action`, { method: 'POST', body: JSON.stringify({ action }) });
-    toast(`פעולה "${action}" בוצעה`);
-    loadUsers();
-  } catch (e) {
-    toast('שגיאה: ' + e.message, true);
+        </td>
+        <td class="p-3 num text-xs" dir="ltr">${u.phone}</td>
+        <td class="p-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${u.planClass}">${u.plan}</span></td>
+        <td class="p-3 num text-xs" dir="ltr">${u.signup}<div class="text-[10px] text-ink-400">${u.signupRaw}</div></td>
+        <td class="p-3 text-xs">${u.activity}</td>
+        <td class="p-3 text-center">${sheetIcon(u.sheet)}</td>
+        <td class="p-3 text-end num font-bold">${u.tx}</td>
+        <td class="p-3"><span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${u.statusClass}"><span class="h-1.5 w-1.5 rounded-full bg-current opacity-70"></span>${u.statusLabel}</span></td>
+        <td class="p-3">
+          <button class="rounded-lg p-1.5 hover:bg-ink-100 dark:hover:bg-ink-700" title="פעולות">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+        </td>
+      </tr>
+    `).join('');
   }
-}
 
-function exportUsers() {
-  // TODO: GET /api/admin/users.csv with admin token, then download
-  toast('ייצוא יוכן ויישלח למייל שלך', false);
-}
-
-['users-search', 'users-plan-filter', 'users-status-filter'].forEach(id => {
-  document.addEventListener('input', e => { if (e.target.id === id) renderUsers(); });
-  document.addEventListener('change', e => { if (e.target.id === id) renderUsers(); });
-});
-
-/* =========================================================
-   Transactions
-   ========================================================= */
-async function loadTransactions() {
-  const tbody = $('#tx-tbody');
-  tbody.innerHTML = skeletonRows(8, 8);
-  let data;
-  try {
-    // TODO: GET /api/admin/transactions?from=&to=&type= — expects { transactions: [{ id, time, user_email, type, category, amount, original_text, source }] }
-    const params = new URLSearchParams({
-      from: $('#tx-from').value || '',
-      to: $('#tx-to').value || '',
-      type: $('#tx-type-filter').value || ''
+  function bindFilters() {
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(c => {
+          c.classList.remove('bg-brand-600','text-white');
+          c.classList.add('border','border-ink-200','text-ink-700','dark:border-ink-700','dark:text-ink-200');
+        });
+        chip.classList.add('bg-brand-600','text-white');
+        chip.classList.remove('border','border-ink-200','text-ink-700','dark:border-ink-700','dark:text-ink-200');
+        const f = chip.dataset.filter;
+        const filtered = f === 'all' ? USERS : USERS.filter(u => u.status === f);
+        renderUsers(filtered);
+      });
     });
-    data = await adminFetch('/api/admin?action=transactions&' + params);
-  } catch {
-    data = {
-      transactions: [
-        { id: 't1', time: new Date(Date.now()-1000*60*4).toISOString(), user_email: 'noa.cohen@gmail.com', type: 'expense', category: 'סופר', amount: 245, original_text: '245 סופר', source: 'whatsapp' },
-        { id: 't2', time: new Date(Date.now()-1000*60*12).toISOString(), user_email: 'yossi.levy@gmail.com', type: 'expense', category: 'דלק', amount: 320, original_text: 'דלק 320', source: 'whatsapp' },
-        { id: 't3', time: new Date(Date.now()-1000*60*32).toISOString(), user_email: 'rachel.l@gmail.com', type: 'income', category: 'משכורת', amount: 12500, original_text: 'משכורת 12500', source: 'whatsapp' },
-        { id: 't4', time: new Date(Date.now()-1000*60*48).toISOString(), user_email: 'avi.b@example.com', type: 'expense', category: 'אוכל בחוץ', amount: 87, original_text: 'מסעדה 87', source: 'whatsapp' },
-        { id: 't5', time: new Date(Date.now()-1000*60*70).toISOString(), user_email: 'dana.k@gmail.com', type: 'expense', category: 'תחבורה', amount: 22, original_text: 'אוטובוס 22', source: 'whatsapp' },
-        { id: 't6', time: new Date(Date.now()-1000*60*120).toISOString(), user_email: 'moshe.t@gmail.com', type: 'expense', category: 'קפה', amount: 18, original_text: 'קפה 18', source: 'whatsapp' },
-      ]
-    };
-  }
-  const empty = $('#tx-empty');
-  empty.classList.toggle('hidden', (data.transactions || []).length > 0);
-  tbody.innerHTML = (data.transactions || []).map(t => `
-    <tr>
-      <td><span class="num">${fmtDate(t.time)}</span></td>
-      <td><strong>${t.user_email}</strong></td>
-      <td><span class="pill ${t.type === 'income' ? 'pill-success' : 'pill-neutral'}">${t.type === 'income' ? 'הכנסה' : 'הוצאה'}</span></td>
-      <td>${t.category}</td>
-      <td><strong class="num">${fmtILS(t.amount)}</strong></td>
-      <td><em style="color:var(--ink-500);font-size:13px;">"${t.original_text}"</em></td>
-      <td><span class="pill pill-info">${t.source}</span></td>
-      <td><button class="btn btn-ghost btn-sm" onclick="alert('TODO: open user '+'${t.user_email}')">↗</button></td>
-    </tr>
-  `).join('');
-}
-
-/* =========================================================
-   Jobs
-   ========================================================= */
-async function loadJobs(tab = 'failed') {
-  const tbody = $('#jobs-tbody');
-  tbody.innerHTML = skeletonRows(5, 7);
-  let data;
-  try {
-    // TODO: GET /api/admin/jobs?status=failed|pending|completed
-    data = await adminFetch('/api/admin?action=jobs&status=' + tab);
-  } catch {
-    const fakeBase = [
-      { id: 'j1', time: new Date(Date.now()-1000*60*15).toISOString(), type: 'sheet:append', user: 'noa.cohen@gmail.com', error: 'Rate limit (429) from Google Sheets API', attempts: 3 },
-      { id: 'j2', time: new Date(Date.now()-1000*60*60).toISOString(), type: 'webhook:wa', user: 'yossi.levy@gmail.com', error: 'Timeout after 8s', attempts: 2 },
-      { id: 'j3', time: new Date(Date.now()-1000*60*180).toISOString(), type: 'categorize', user: 'rachel.l@gmail.com', error: 'Claude API: invalid_api_key', attempts: 5 },
-    ];
-    data = {
-      jobs: tab === 'failed' ? fakeBase : tab === 'pending' ? fakeBase.slice(0,1) : fakeBase.slice(1),
-      counts: { failed: 7, pending: 2, completed: 1423 }
-    };
-  }
-  $('#jobs-failed-count').textContent = data.counts?.failed || 0;
-  $('#jobs-pending-count').textContent = data.counts?.pending || 0;
-  $('#jobs-completed-count').textContent = data.counts?.completed || 0;
-
-  const empty = $('#jobs-empty');
-  empty.classList.toggle('hidden', (data.jobs || []).length > 0);
-  tbody.innerHTML = (data.jobs || []).map(j => `
-    <tr>
-      <td><span class="num">${fmtRel(j.time)}</span></td>
-      <td><code style="font-size:12px;background:var(--ink-100);padding:2px 6px;border-radius:4px;">${j.type}</code></td>
-      <td>${j.user || '—'}</td>
-      <td><span style="color:#dc2626;font-size:13px;">${j.error || '—'}</span></td>
-      <td><span class="num">${j.attempts || 0}</span></td>
-      <td>${jobStatusPill(tab)}</td>
-      <td>
-        ${tab === 'failed' ? `<button class="btn btn-primary btn-sm" onclick="retryJob('${j.id}')">החזר</button>` : ''}
-        <button class="btn btn-ghost btn-sm" onclick="showJobDetails('${j.id}')">פרטים</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function jobStatusPill(t) {
-  if (t === 'failed') return '<span class="pill pill-danger">נכשל</span>';
-  if (t === 'pending') return '<span class="pill pill-warning">בהמתנה</span>';
-  return '<span class="pill pill-success">הסתיים</span>';
-}
-
-async function retryJob(id) {
-  try {
-    // TODO: POST /api/admin/jobs/:id/retry
-    await adminFetch(`/api/admin?action=jobs/${id}/retry`, { method: 'POST' });
-    toast('Job הוחזר לתור');
-    loadJobs('failed');
-  } catch (e) { toast('שגיאה: ' + e.message, true); }
-}
-
-function showJobDetails(id) {
-  // TODO: open modal with full payload + stack trace from /api/admin/jobs/:id
-  alert('פרטי job: ' + id + '\n(TODO: מודאל עם stack trace)');
-}
-
-/* =========================================================
-   Analytics
-   ========================================================= */
-// ---- Analytics: privacy-friendly conversion tracker ----
-// Pulls from /api/admin?action=analytics (KV-backed counters from /api/analytics).
-// Renders: funnel, unique-sessions sparkline, 30-day per-event line chart.
-
-const EVENT_LABELS_HE = {
-  page_view: 'צפיות בדף',
-  cta_click: 'לחיצות CTA',
-  signup_start: 'התחלת הרשמה',
-  signup_complete: 'השלמת הרשמה',
-  sheet_provisioned: 'הקצאת גיליון',
-  first_message_received: 'הודעה ראשונה',
-  subscribe_clicked: 'לחיצה על מנוי',
-  export_downloaded: 'הורדת ייצוא',
-  feature_used: 'שימוש בפיצ\'ר',
-};
-const FUNNEL_ORDER = ['page_view', 'signup_start', 'signup_complete', 'sheet_provisioned', 'first_message_received'];
-const CHART_COLORS = ['#22c55e', '#3b82f6', '#a855f7', '#f59e0b', '#ec4899', '#06b6d4', '#84cc16', '#ef4444', '#14b8a6'];
-
-let _ANALYTICS_DATA = null;
-let _ANALYTICS_SELECTED = 'page_view';
-
-async function loadAnalytics() {
-  let data;
-  try {
-    data = await adminFetch('/api/admin?action=analytics&days=30');
-  } catch {
-    // Demo fallback — synthesizes 30 days of believable funnel data
-    data = synthAnalyticsDemo();
-  }
-  _ANALYTICS_DATA = data;
-  renderFunnel(data);
-  renderUniqueSessions(data);
-  renderEventTabs(data);
-  renderLineChart(data, _ANALYTICS_SELECTED);
-}
-
-function synthAnalyticsDemo() {
-  const events = Object.keys(EVENT_LABELS_HE);
-  const days = [];
-  const now = new Date();
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10);
-    const ev = {}; const us = {};
-    ev.page_view = 80 + Math.round(Math.random() * 90);
-    ev.cta_click = Math.round(ev.page_view * 0.18);
-    ev.signup_start = Math.round(ev.page_view * 0.08);
-    ev.signup_complete = Math.round(ev.signup_start * 0.62);
-    ev.sheet_provisioned = Math.round(ev.signup_complete * 0.85);
-    ev.first_message_received = Math.round(ev.sheet_provisioned * 0.72);
-    ev.subscribe_clicked = Math.round(ev.first_message_received * 0.18);
-    ev.export_downloaded = Math.round(Math.random() * 4);
-    ev.feature_used = Math.round(ev.first_message_received * 1.4);
-    events.forEach(e => { us[e] = Math.max(1, Math.round((ev[e] || 0) * 0.7)); });
-    days.push({ date, events: ev, unique_sessions: us });
-  }
-  const totals = {};
-  events.forEach(e => { totals[e] = days.reduce((s, d) => s + (d.events[e] || 0), 0); });
-  const funnel = FUNNEL_ORDER.map(e => ({ event: e, count: totals[e] }));
-  return { ok: true, window_days: 30, events, days, totals, funnel };
-}
-
-function renderFunnel(data) {
-  const top = (data.funnel[0] && data.funnel[0].count) || 1;
-  $('#funnel-stages').innerHTML = data.funnel.map(f => {
-    const pct = top > 0 ? (f.count / top) * 100 : 0;
-    return `
-      <div class="funnel-stage">
-        <div class="label">${EVENT_LABELS_HE[f.event] || f.event}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(1)}%;"><span class="num">${fmtNum(f.count)}</span></div></div>
-        <div class="pct num">${pct.toFixed(1)}%</div>
-      </div>
-    `;
-  }).join('');
-}
-
-function renderUniqueSessions(data) {
-  // Build an SVG sparkline from unique_sessions[page_view] per day.
-  const series = data.days.map(d => (d.unique_sessions && d.unique_sessions.page_view) || 0);
-  $('#analytics-unique-sessions').innerHTML = buildLineChartSVG([{
-    name: 'סשנים ייחודיים', color: '#22c55e', values: series,
-  }], data.days.map(d => d.date), { height: 160, showAxis: true });
-}
-
-function renderEventTabs(data) {
-  const events = data.events || Object.keys(EVENT_LABELS_HE);
-  $('#analytics-event-tabs').innerHTML = events.map((e, i) => {
-    const isSel = e === _ANALYTICS_SELECTED;
-    const c = CHART_COLORS[i % CHART_COLORS.length];
-    return `<button class="tab ${isSel ? 'active' : ''}" data-event="${e}" style="border-color:${isSel ? c : 'transparent'};color:${isSel ? c : 'inherit'};">${EVENT_LABELS_HE[e] || e}<span class="pill" style="margin-inline-start:6px;background:${c}22;color:${c};">${fmtNum(data.totals[e] || 0)}</span></button>`;
-  }).join('');
-  // Bind clicks
-  $('#analytics-event-tabs').querySelectorAll('button[data-event]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _ANALYTICS_SELECTED = btn.dataset.event;
-      renderEventTabs(_ANALYTICS_DATA);
-      renderLineChart(_ANALYTICS_DATA, _ANALYTICS_SELECTED);
-    });
-  });
-}
-
-function renderLineChart(data, event) {
-  const idx = (data.events || []).indexOf(event);
-  const color = CHART_COLORS[idx >= 0 ? idx : 0];
-  const series = data.days.map(d => (d.events && d.events[event]) || 0);
-  const sessSeries = data.days.map(d => (d.unique_sessions && d.unique_sessions[event]) || 0);
-  $('#analytics-line-chart').innerHTML = buildLineChartSVG([
-    { name: EVENT_LABELS_HE[event] || event, color: color, values: series },
-    { name: 'סשנים ייחודיים', color: '#94a3b8', values: sessSeries, dashed: true },
-  ], data.days.map(d => d.date), { height: 280, showAxis: true, showLegend: true });
-}
-
-// Pure-vanilla SVG line chart builder — no Chart.js, no D3.
-function buildLineChartSVG(seriesList, labels, opts) {
-  const W = 720, H = (opts && opts.height) || 240;
-  const PAD_L = 36, PAD_R = 10, PAD_T = 14, PAD_B = (opts && opts.showAxis) ? 28 : 8;
-  const innerW = W - PAD_L - PAD_R, innerH = H - PAD_T - PAD_B;
-  const n = labels.length;
-  if (n === 0) return '<div class="empty-state">אין נתונים עדיין.</div>';
-  const allVals = seriesList.flatMap(s => s.values);
-  const max = Math.max(1, ...allVals);
-  const xStep = n > 1 ? innerW / (n - 1) : 0;
-
-  function px(i) { return PAD_L + i * xStep; }
-  function py(v) { return PAD_T + innerH - (v / max) * innerH; }
-
-  // Y-axis grid lines (5 lines)
-  let grid = '';
-  for (let k = 0; k <= 4; k++) {
-    const y = PAD_T + (innerH * k) / 4;
-    const val = Math.round(max * (1 - k / 4));
-    grid += `<line x1="${PAD_L}" y1="${y}" x2="${W - PAD_R}" y2="${y}" stroke="currentColor" stroke-opacity="0.08"/>`;
-    if (opts && opts.showAxis) grid += `<text x="${PAD_L - 6}" y="${y + 3}" font-size="10" text-anchor="end" fill="currentColor" opacity="0.55">${val}</text>`;
-  }
-
-  // Lines + dots
-  let lines = '';
-  seriesList.forEach((s) => {
-    if (!s.values.length) return;
-    const d = s.values.map((v, i) => (i === 0 ? 'M' : 'L') + px(i).toFixed(1) + ',' + py(v).toFixed(1)).join(' ');
-    lines += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${s.dashed ? ' stroke-dasharray="4,4"' : ''}/>`;
-    s.values.forEach((v, i) => {
-      lines += `<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="2.5" fill="${s.color}"><title>${labels[i]}: ${v}</title></circle>`;
-    });
-  });
-
-  // X-axis labels (every ~5 days)
-  let xLabels = '';
-  if (opts && opts.showAxis) {
-    const labelStep = Math.max(1, Math.floor(n / 6));
-    for (let i = 0; i < n; i += labelStep) {
-      const shortLbl = labels[i].slice(5); // MM-DD
-      xLabels += `<text x="${px(i).toFixed(1)}" y="${H - 8}" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">${shortLbl}</text>`;
-    }
-  }
-
-  // Legend
-  let legend = '';
-  if (opts && opts.showLegend) {
-    let lx = PAD_L;
-    legend = seriesList.map((s) => {
-      const item = `<g transform="translate(${lx},${PAD_T - 4})"><rect width="10" height="10" fill="${s.color}" rx="2"/><text x="14" y="9" font-size="11" fill="currentColor" opacity="0.8">${s.name}</text></g>`;
-      lx += 14 + (s.name.length * 7) + 14;
-      return item;
-    }).join('');
-  }
-
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="max-width:100%;display:block;">${grid}${lines}${xLabels}${legend}</svg>`;
-}
-
-/* =========================================================
-   Support
-   ========================================================= */
-async function supportLookup() {
-  const q = $('#support-query').value.trim();
-  if (!q) return;
-  const result = $('#support-result');
-  const notFound = $('#support-not-found');
-  result.classList.add('hidden');
-  notFound.classList.add('hidden');
-  result.innerHTML = '<div class="skeleton" style="height:120px;width:100%;"></div>';
-  result.classList.remove('hidden');
-  try {
-    // TODO: GET /api/admin/lookup?q=...  expects { user: {...} | null, recent_tx: [], recent_events: [] }
-    const data = await adminFetch('/api/admin?action=users&q=' + encodeURIComponent(q));
-    if (!data.user) {
-      result.classList.add('hidden');
-      notFound.classList.remove('hidden');
-      return;
-    }
-    renderSupportResult(data);
-  } catch {
-    // demo fallback
-    renderSupportResult({
-      user: { email: q.includes('@') ? q : 'demo@example.com', phone: q, plan: 'pro', status: 'active', signup_at: '2026-02-14', last_active_at: new Date().toISOString(), sheet_id: '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo', tx_count: 234 },
-      recent_tx: [
-        { time: new Date(Date.now()-1000*60*8).toISOString(), category: 'סופר', amount: 142, type: 'expense' },
-        { time: new Date(Date.now()-1000*60*30).toISOString(), category: 'דלק', amount: 280, type: 'expense' },
-      ],
-      recent_events: [
-        { time: new Date(Date.now()-1000*60*60).toISOString(), action: 'sheet_resync', actor: 'admin@kesefle' },
-      ]
-    });
-  }
-}
-
-function renderSupportResult(data) {
-  const u = data.user;
-  $('#support-result').innerHTML = `
-    <div class="flex-row between mb-4">
-      <div>
-        <h3 class="card-title">${u.email}</h3>
-        <p class="card-subtitle"><span class="num">${u.phone || '—'}</span> · ${planPill(u.plan)} · ${u.status}</p>
-      </div>
-      <div class="flex-row gap-4">
-        <button class="btn btn-secondary btn-sm" onclick="userAction('${u.id || u.email}','impersonate')">🎭 Impersonate</button>
-        <button class="btn btn-primary btn-sm" onclick="userAction('${u.id || u.email}','resend')">✉️ שלח welcome</button>
-      </div>
-    </div>
-    <div class="grid-2">
-      <div>
-        <strong style="font-size:13px;">פרטי משתמש</strong>
-        <div style="margin-top:8px;font-size:13.5px;line-height:1.9;">
-          <div>נרשם: <span class="num">${fmtDate(u.signup_at).split(',')[0]}</span></div>
-          <div>פעיל לאחרונה: ${fmtRel(u.last_active_at)}</div>
-          <div>תנועות: <span class="num">${fmtNum(u.tx_count || 0)}</span></div>
-          <div>גיליון: <code style="font-size:11px;">${(u.sheet_id || '—').slice(0,12)}...</code></div>
-        </div>
-      </div>
-      <div>
-        <strong style="font-size:13px;">פעולות אחרונות</strong>
-        <div style="margin-top:8px;font-size:13px;">
-          ${(data.recent_events || []).map(e => `<div>${fmtRel(e.time)} — ${e.action} ע"י ${e.actor}</div>`).join('') || '<div style="color:var(--ink-500);">אין פעולות</div>'}
-        </div>
-      </div>
-    </div>
-    <div class="mt-4">
-      <strong style="font-size:13px;">תנועות אחרונות</strong>
-      <div class="mt-2" style="font-size:13px;">
-        ${(data.recent_tx || []).map(t => `<div style="padding:6px 0;border-bottom:1px solid var(--ink-100);">${fmtDate(t.time)} — ${t.category} — <strong class="num">${fmtILS(t.amount)}</strong></div>`).join('')}
-      </div>
-    </div>
-  `;
-}
-
-async function quickAction(action) {
-  if (!confirm('להריץ פעולה זו על המשתמש המסומן? (תיבחר אחרי)')) return;
-  // TODO: POST /api/admin/support/action  body: { action, target }
-  toast('פעולה תידרוש בחירת משתמש בחיפוש קודם');
-}
-
-/* =========================================================
-   Audit logs
-   ========================================================= */
-async function loadAudit() {
-  const list = $('#audit-list');
-  list.innerHTML = skeletonRows(6, 1).replace(/<\/?tr>/g, '').replace(/<\/?td>/g, '');
-  let data;
-  try {
-    // TODO: GET /api/admin/audit-logs?sort=newest&action=&q=
-    data = await adminFetch('/api/admin?action=audit');
-  } catch {
-    data = {
-      logs: [
-        { id: 'a1', time: new Date(Date.now()-1000*60*3).toISOString(), actor: 'srcslcollection@gmail.com', action: 'feature_flag', target: 'ai_categorize', detail: 'הופעל', icon: '🚩' },
-        { id: 'a2', time: new Date(Date.now()-1000*60*30).toISOString(), actor: 'srcslcollection@gmail.com', action: 'sheet_reset', target: 'noa.cohen@gmail.com', detail: 'איפוס חיבור Google Sheets', icon: '🔄' },
-        { id: 'a3', time: new Date(Date.now()-1000*60*120).toISOString(), actor: 'system', action: 'plan_change', target: 'yossi.levy@gmail.com', detail: 'שודרג ל-Pro', icon: '⭐' },
-        { id: 'a4', time: new Date(Date.now()-1000*60*60*4).toISOString(), actor: 'stevenrancohen@gmail.com', action: 'user_update', target: 'rachel.l@gmail.com', detail: 'עדכון אימייל', icon: '✏️' },
-        { id: 'a5', time: new Date(Date.now()-1000*60*60*8).toISOString(), actor: 'srcslcollection@gmail.com', action: 'login', target: 'admin panel', detail: 'הצלחה (IP 81.218.x.x)', icon: '🔑' },
-        { id: 'a6', time: new Date(Date.now()-1000*60*60*24).toISOString(), actor: 'srcslcollection@gmail.com', action: 'job_retry', target: 'j_3491', detail: 'החזרת job ידנית', icon: '↩️' },
-      ]
-    };
-  }
-  renderAudit(data.logs);
-}
-
-function renderAudit(logs) {
-  const q = ($('#audit-search').value || '').toLowerCase();
-  const filter = $('#audit-action-filter').value;
-  const sort = $('#audit-sort').value;
-  let rows = logs.filter(l => (!q || JSON.stringify(l).toLowerCase().includes(q)) && (!filter || l.action === filter));
-  rows.sort((a, b) => sort === 'oldest' ? new Date(a.time) - new Date(b.time) : new Date(b.time) - new Date(a.time));
-  $('#audit-list').innerHTML = rows.map(l => `
-    <div class="audit-row">
-      <div class="audit-icon">${l.icon || '•'}</div>
-      <div class="audit-body">
-        <div class="audit-msg">${l.action.replace(/_/g, ' ')} <span style="color:var(--ink-500);font-weight:500;">— ${l.detail || ''}</span></div>
-        <div class="audit-meta">
-          ע"י <strong>${l.actor}</strong> על <strong>${l.target}</strong> · ${fmtRel(l.time)} · <span class="num">${fmtDate(l.time)}</span>
-        </div>
-      </div>
-    </div>
-  `).join('') || `<div class="empty-state"><span class="emoji">📭</span><h3>אין רשומות</h3><p>אין יומני ביקורת תואמים לסינון.</p></div>`;
-}
-
-document.addEventListener('input', e => {
-  if (['audit-search','audit-action-filter','audit-sort'].includes(e.target.id) && currentRoute === 'audit') loadAudit();
-});
-document.addEventListener('change', e => {
-  if (['audit-action-filter','audit-sort'].includes(e.target.id) && currentRoute === 'audit') loadAudit();
-});
-
-/* =========================================================
-   Health
-   ========================================================= */
-async function loadHealth() {
-  let data;
-  try {
-    // TODO: GET /api/admin/health  expects { api_up, uptime_pct, p95_ms, errors_24h, error_rate_pct, wa_up, wa_last_ts, latencies: [ms], services: [{name,status,latency}], quotas: [{name,used,total}] }
-    data = await adminFetch('/api/admin?action=metrics');
-  } catch {
-    try {
-      // fallback: try the existing /api/health
-      const h = await fetch('/api/health').then(r => r.json()).catch(() => ({}));
-      data = synthesizeHealth(h);
-    } catch {
-      data = synthesizeHealth({});
-    }
-  }
-  $('#health-api-status').innerHTML = data.api_up ? '<span class="pill pill-success">פעיל</span>' : '<span class="pill pill-danger">קריסה</span>';
-  $('#health-api-uptime').textContent = 'uptime ' + (data.uptime_pct || 0).toFixed(2) + '%';
-  $('#health-p95').innerHTML = `<span class="num">${fmtNum(data.p95_ms)}</span> ms`;
-  $('#health-errors').innerHTML = `<span class="num">${fmtNum(data.errors_24h)}</span>`;
-  $('#health-error-rate').textContent = (data.error_rate_pct || 0).toFixed(2) + '% שגיאות';
-  $('#health-wa-status').innerHTML = data.wa_up ? '<span class="pill pill-success">פעיל</span>' : '<span class="pill pill-warning">לא ידוע</span>';
-  $('#health-wa-last').textContent = 'אחרון ' + fmtRel(data.wa_last_ts);
-
-  // SVG line chart
-  const w = 800, h = 160, pad = 16;
-  const latencies = data.latencies || [];
-  const max = Math.max(...latencies, 100);
-  const step = (w - pad * 2) / Math.max(1, latencies.length - 1);
-  const pts = latencies.map((v, i) => `${pad + i * step},${h - pad - (v / max) * (h - pad * 2)}`).join(' ');
-  const area = `M${pad},${h-pad} L${pts.split(' ').join(' L')} L${w-pad},${h-pad} Z`;
-  $('#health-graph-svg').innerHTML = `
-    <defs>
-      <linearGradient id="hg" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35"/>
-        <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
-    <path d="${area}" fill="url(#hg)" />
-    <polyline points="${pts}" fill="none" stroke="#6366f1" stroke-width="2" stroke-linejoin="round" />
-  `;
-
-  // Services
-  $('#services-health').innerHTML = (data.services || []).map(s => `
-    <div class="form-row">
-      <div>
-        <div class="label">${s.name}</div>
-        <div class="hint">latency <span class="num">${s.latency}</span> ms</div>
-      </div>
-      ${s.status === 'up' ? '<span class="pill pill-success">פעיל</span>' : s.status === 'degraded' ? '<span class="pill pill-warning">מוגבל</span>' : '<span class="pill pill-danger">קריסה</span>'}
-    </div>
-  `).join('');
-
-  // Quotas
-  $('#quotas-list').innerHTML = (data.quotas || []).map(q => {
-    const pct = Math.round((q.used / q.total) * 100);
-    const cls = pct > 85 ? 'pill-danger' : pct > 65 ? 'pill-warning' : 'pill-success';
-    return `
-      <div class="form-row">
-        <div>
-          <div class="label">${q.name}</div>
-          <div class="hint"><span class="num">${fmtNum(q.used)}</span> / <span class="num">${fmtNum(q.total)}</span></div>
-        </div>
-        <span class="pill ${cls}"><span class="num">${pct}</span>%</span>
-      </div>
-    `;
-  }).join('');
-}
-
-function synthesizeHealth(real) {
-  return {
-    api_up: real.ok !== false,
-    uptime_pct: 99.94,
-    p95_ms: 312,
-    errors_24h: 23,
-    error_rate_pct: 0.18,
-    wa_up: true,
-    wa_last_ts: new Date(Date.now() - 1000*60*2).toISOString(),
-    latencies: Array.from({length: 48}, () => 180 + Math.round(Math.random()*220)),
-    services: [
-      { name: 'API (Vercel)', status: 'up', latency: 120 },
-      { name: 'Google Sheets', status: 'up', latency: 380 },
-      { name: 'WhatsApp Business', status: 'up', latency: 240 },
-      { name: 'Claude API', status: 'up', latency: 720 },
-      { name: 'Vercel KV', status: 'up', latency: 38 },
-    ],
-    quotas: [
-      { name: 'Google Sheets Writes', used: 14200, total: 50000 },
-      { name: 'Anthropic Tokens', used: 4_120_000, total: 10_000_000 },
-      { name: 'WhatsApp Messages', used: 8400, total: 10000 },
-    ],
-  };
-}
-
-/* =========================================================
-   Settings
-   ========================================================= */
-async function loadSettings() {
-  try {
-    // TODO: GET /api/admin/settings  expects { flags: {...}, env: { google, wa, claude, kv, stripe: 'ok'|'missing'|'invalid' } }
-    const data = await adminFetch('/api/admin?action=feature-flags');
-    if (data.flags) {
-      Object.entries(data.flags).forEach(([flag, enabled]) => {
-        const cb = $(`input[data-flag="${flag}"]`);
-        if (cb) cb.checked = !!enabled;
+    const search = document.getElementById('user-search');
+    if (search) {
+      search.addEventListener('input', () => {
+        const q = search.value.toLowerCase().trim();
+        if (!q) return renderUsers(USERS);
+        renderUsers(USERS.filter(u =>
+          u.name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          u.phone.includes(q)
+        ));
       });
     }
-    if (data.env) renderEnv(data.env);
-  } catch {
-    renderEnv({
-      google: { status: 'ok', detail: 'מפתח חוקי, expires 2026-09' },
-      wa: { status: 'ok', detail: 'Phone ID מוגדר' },
-      claude: { status: 'ok', detail: 'מודל: claude-opus-4-7' },
-      kv: { status: 'ok', detail: 'Vercel KV connected' },
-      stripe: { status: 'missing', detail: 'STRIPE_SECRET_KEY חסר ב-Vercel' },
-    });
   }
-}
 
-function renderEnv(env) {
-  const map = {
-    google: ['env-google', 'env-google-pill'],
-    wa: ['env-wa', 'env-wa-pill'],
-    claude: ['env-claude', 'env-claude-pill'],
-    kv: ['env-kv', 'env-kv-pill'],
-    stripe: ['env-stripe', 'env-stripe-pill'],
-  };
-  Object.entries(env).forEach(([k, v]) => {
-    const ids = map[k];
-    if (!ids) return;
-    $('#' + ids[0]).textContent = v.detail || '—';
-    const pill = $('#' + ids[1]);
-    if (v.status === 'ok') { pill.className = 'pill pill-success'; pill.textContent = 'תקין'; }
-    else if (v.status === 'invalid') { pill.className = 'pill pill-danger'; pill.textContent = 'לא תקין'; }
-    else { pill.className = 'pill pill-warning'; pill.textContent = 'לא הוגדר'; }
-  });
-}
+  // ===== ACTIVITY FEED =====
+  const ACTIVITIES = [
+    { icon:'👤', tone:'brand',  text:'<b>אביב כהן</b> נרשם לכסף\'לה',                                                         time:'לפני 14 דק׳' },
+    { icon:'💬', tone:'accent', text:'הבוט עיבד <b class="num">45</b> הודעות מ-<span class="num font-mono">user_2934</span>',  time:'לפני 23 דק׳' },
+    { icon:'🤖', tone:'brand',  text:'AI סיווג: <i>״הופעה של עומר אדם״</i> → <b>אירועים / בילויים</b>',                       time:'לפני 31 דק׳' },
+    { icon:'📊', tone:'accent', text:'הוקצה שיט חדש ל-<span class="num font-mono">ronen.mizrahi@gmail.com</span>',             time:'לפני 47 דק׳' },
+    { icon:'📧', tone:'brand',  text:'סיכום שבועי נשלח ל-<b class="num">12</b> משתמשים',                                        time:'לפני שעה' },
+    { icon:'💳', tone:'accent', text:'<b>דנה לוי</b> שדרגה לתוכנית משפחה (₪39/חודש)',                                          time:'לפני שעתיים' },
+    { icon:'⚡', tone:'brand',  text:'AI fallback ירד מ-7% ל-<b class="num">5%</b> אחרי הוספת keyword חדש',                     time:'לפני 3 שעות' },
+    { icon:'⚠️', tone:'orange', text:'שגיאה בהקצאת שיט ל-<span class="num font-mono">user_88f1</span> — חזרה אוטומטית הצליחה',  time:'לפני 4 שעות' },
+    { icon:'🔄', tone:'accent', text:'Cron יומי הסתיים בהצלחה — <b class="num">1,247</b> תנועות נסונכרנו',                       time:'לפני 5 שעות' },
+    { icon:'💰', tone:'brand',  text:'הכנסה חודשית (MRR) עברה את ה-<b class="num">₪500</b> לראשונה',                            time:'לפני 6 שעות' },
+    { icon:'📱', tone:'accent', text:'<b>אורי שמיר</b> שלח <b class="num">12</b> הוצאות בו-זמנית',                              time:'לפני 8 שעות' },
+    { icon:'🎯', tone:'brand',  text:'קמפיין Facebook "Pro Trial" — <b class="num">8</b> הרשמות, CPA ₪4.20',                    time:'לפני 9 שעות' },
+  ];
 
-async function dangerZone(action) {
-  const msgs = {
-    flush_cache: 'לנקות את כל המטמון של כל המשתמשים? פעולה זו אינה הפיכה.',
-    reset_quotas: 'לאפס את כל המכסות החודשיות? כל המשתמשים יתחילו מאפס.',
-  };
-  if (!confirm(msgs[action] || 'בטוח?')) return;
-  try {
-    // TODO: POST /api/admin/danger  body: { action }
-    await adminFetch('/api/admin?action=user-action', { method: 'POST', body: JSON.stringify({ action }) });
-    toast('בוצע');
-  } catch (e) { toast('שגיאה: ' + e.message, true); }
-}
-
-/* =========================================================
-   Misc UI helpers
-   ========================================================= */
-function skeletonRows(n, cols) {
-  let html = '';
-  for (let i = 0; i < n; i++) {
-    let tds = '';
-    for (let c = 0; c < cols; c++) tds += '<td><div class="skeleton" style="width:' + (40 + Math.random() * 60) + '%;"></div></td>';
-    html += '<tr>' + tds + '</tr>';
+  function toneClasses(tone) {
+    if (tone === 'brand')  return 'bg-brand-500/10 text-brand-600 dark:text-brand-400';
+    if (tone === 'accent') return 'bg-accent-500/10 text-accent-500';
+    if (tone === 'orange') return 'bg-orange-500/10 text-orange-500';
+    return 'bg-ink-500/10 text-ink-500';
   }
-  return html;
-}
 
-let toastTimer;
-function toast(msg, isError) {
-  let t = $('#toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'toast';
-    t.style.cssText = 'position:fixed;bottom:24px;inset-inline-end:24px;background:#0f1422;color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:1000;transform:translateY(60px);opacity:0;transition:transform 0.25s,opacity 0.25s;';
-    document.body.appendChild(t);
+  function activityRow(act, slideIn=false) {
+    return `
+      <li class="${slideIn?'slide-in':''} flex items-center gap-3 p-4">
+        <span class="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full ${toneClasses(act.tone)} text-base">${act.icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm">${act.text}</div>
+          <div class="text-[11px] text-ink-400">${act.time}</div>
+        </div>
+        <button class="hidden sm:block rounded-lg px-2 py-1 text-[11px] font-semibold text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-700">צפה</button>
+      </li>
+    `;
   }
-  t.textContent = msg;
-  t.style.background = isError ? '#dc2626' : '#0f1422';
-  t.style.transform = 'translateY(0)';
-  t.style.opacity = '1';
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.transform = 'translateY(60px)'; t.style.opacity = '0'; }, 2600);
-}
 
-// Global search wires to users when present
-$('#global-search')?.addEventListener('input', e => {
-  if (currentRoute === 'users') {
-    $('#users-search').value = e.target.value;
-    renderUsers();
+  function renderActivityFeed() {
+    const ul = document.getElementById('activity-feed');
+    if (!ul) return;
+    ul.innerHTML = ACTIVITIES.map(a => activityRow(a)).join('');
   }
-});
+
+  // ===== LIVE FEED (Wix-style "Visitors live") - prepend every 8s =====
+  const LIVE_TEMPLATES = [
+    { tone:'brand',  path:'/homepage' },
+    { tone:'accent', path:'/pricing' },
+    { tone:'brand',  path:'/compare' },
+    { tone:'accent', path:'/trust' },
+    { tone:'brand',  path:'/help' },
+  ];
+
+  function randomUid() {
+    return 'user_' + Math.random().toString(36).slice(2, 6);
+  }
+
+  function prependLive() {
+    const ul = document.getElementById('live-feed');
+    if (!ul) return;
+    const t = LIVE_TEMPLATES[Math.floor(Math.random() * LIVE_TEMPLATES.length)];
+    const uid = randomUid();
+    const li = document.createElement('li');
+    li.className = 'slide-in flex items-start gap-2 rounded-lg bg-brand-500/5 p-2';
+    li.innerHTML = `<span class="mt-1 h-1.5 w-1.5 rounded-full bg-${t.tone === 'brand' ? 'brand' : 'accent'}-500 flex-shrink-0"></span>
+      <div><div class="font-medium">צופה ב <span class="font-mono text-${t.tone === 'brand' ? 'brand' : 'accent'}-500">${t.path}</span></div>
+      <div class="text-[11px] text-ink-400">${uid} • זה עתה</div></div>`;
+    ul.insertBefore(li, ul.firstChild);
+    while (ul.children.length > 8) ul.removeChild(ul.lastChild);
+  }
+
+  // ===== ACTIVITY FEED auto-prepend =====
+  const NEW_ACTIVITIES_POOL = [
+    { icon:'👤', tone:'brand',  text:'משתמש חדש נרשם דרך <b>Facebook Ads</b>' },
+    { icon:'💬', tone:'accent', text:'הבוט עיבד הודעה חדשה — <i>״250 דלק״</i>' },
+    { icon:'🤖', tone:'brand',  text:'AI סיווג: <i>״קפה ארומה״</i> → <b>קפה / מסעדות</b>' },
+    { icon:'📊', tone:'accent', text:'גיליון שיט עודכן עם תנועה חדשה' },
+    { icon:'⚡', tone:'brand',  text:'Cache hit חדש נשמר ל-T1' },
+    { icon:'💳', tone:'accent', text:'משתמש שדרג לתוכנית Pro' },
+  ];
+
+  function prependActivity() {
+    const ul = document.getElementById('activity-feed');
+    if (!ul) return;
+    const t = NEW_ACTIVITIES_POOL[Math.floor(Math.random() * NEW_ACTIVITIES_POOL.length)];
+    const html = activityRow({ ...t, time: 'זה עתה' }, true);
+    ul.insertAdjacentHTML('afterbegin', html);
+    while (ul.children.length > 14) ul.removeChild(ul.lastChild);
+  }
+
+  // ===== INIT =====
+  function initAll() {
+    // animate counters
+    document.querySelectorAll('[data-counter]').forEach(el => animateCounter(el));
+    // table
+    renderUsers(USERS);
+    bindFilters();
+    // activity
+    renderActivityFeed();
+    // live feed auto-update
+    setInterval(prependLive,    8000);
+    setInterval(prependActivity, 14000);
+  }
+
+  // if already opened (no gate), init
+  if (!gate.classList.contains('hidden')) {
+    // initial pw focus
+    setTimeout(() => gatePw.focus(), 200);
+  }
+})();
 </script>
-
-<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
 </body>
 </html>
