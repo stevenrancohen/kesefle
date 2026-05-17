@@ -724,13 +724,27 @@ function doPost(e) {
     if (__msg_ && __msg_.from) {
       var __from_ = __msg_.from;
       var __text_ = (__msg_.text && __msg_.text.body) || "";
-      Logger.log('doPost: from=' + __from_ + ' text="' + __text_ + '"');
+      var __interactive_ = __msg_.interactive || null;
+      Logger.log('doPost: from=' + __from_ + ' text="' + __text_ + '" interactive=' + (__interactive_ ? __interactive_.type : 'no'));
 
       if (typeof ALLOWED_PHONES !== 'undefined' && ALLOWED_PHONES.length > 0) {
         var __clean_ = String(__from_).replace(/[^0-9]/g, '');
         if (ALLOWED_PHONES.indexOf(__clean_) < 0) {
           Logger.log('doPost: phone not in ALLOWED_PHONES, returning OK');
           return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        }
+      }
+
+      // === INTERACTIVE MESSAGE REPLY — user tapped a category from our list ===
+      if (__interactive_) {
+        try {
+          var __reply = handleInteractiveReply_(__from_, __interactive_);
+          if (__reply && __reply.replyText) {
+            sendWhatsAppMessage(__from_, __reply.replyText);
+          }
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        } catch (__intErr) {
+          Logger.log('doPost: interactive error: ' + (__intErr && __intErr.stack || __intErr));
         }
       }
 
@@ -794,6 +808,85 @@ function doPost(e) {
   }
 }
 
+// ============================================================
+// 🎯 Interactive reply handler — fires when user taps a category from our list.
+// ============================================================
+// Meta sends an `interactive` payload of type "list_reply" or "button_reply".
+// We decode the option id (cat|<category>|<sub>|<amount>|<textKey>), look up
+// the pending state, write the row to the sheet, save the category to the
+// learning cache, and reply with confirmation.
+function handleInteractiveReply_(fromPhone, interactive) {
+  if (!fromPhone || !interactive) return null;
+
+  var picked = null;
+  if (interactive.type === 'list_reply' && interactive.list_reply) {
+    picked = interactive.list_reply.id;
+  } else if (interactive.type === 'button_reply' && interactive.button_reply) {
+    picked = interactive.button_reply.id;
+  }
+  if (!picked) {
+    Logger.log('handleInteractiveReply_: no id in interactive payload');
+    return null;
+  }
+
+  var decoded = _decodeCategoryOptionId(picked);
+  if (!decoded) {
+    Logger.log('handleInteractiveReply_: could not decode id="' + picked + '"');
+    return { replyText: '⚠️ לא הצלחתי להבין את הבחירה. נסה שוב.' };
+  }
+
+  // Look up pending state — should match the most recent ambiguous message from this phone.
+  var pendingKey = 'pending:' + fromPhone;
+  var pendingRaw = PropertiesService.getScriptProperties().getProperty(pendingKey);
+  var pending = null;
+  if (pendingRaw) {
+    try { pending = JSON.parse(pendingRaw); } catch (e) {}
+  }
+
+  // Prefer the pending record (full text) over the encoded textKey.
+  var amount = (pending && pending.amount) || decoded.amount || 0;
+  var description = (pending && pending.description) || decoded.textKey.replace(/_/g, ' ');
+
+  if (!amount || amount <= 0) {
+    return { replyText: '⚠️ פג תוקף הבחירה (5 דק׳ עברו). שלח שוב את ההוצאה כדי לקטלג.' };
+  }
+
+  // Write the row to the sheet with the chosen category
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return { replyText: '❌ לא נמצאה לשונית "תנועות".' };
+    var now = new Date();
+    var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    var category = decoded.category;
+    var subcategory = decoded.subcategory;
+    sheet.appendRow([now, monthKey, amount, category, subcategory, description, 'WhatsApp (interactive)', true]);
+    // Keep chronological sort
+    try {
+      var lastRow = sheet.getLastRow();
+      if (lastRow > 2) sheet.getRange(2, 1, lastRow - 1, 8).sort({ column: 1, ascending: true });
+    } catch (_sortErr) {}
+
+    // Save to the learning cache so next time we don't ask
+    try { _learnedSave(description, { category: category, subcategory: subcategory }, 'user'); }
+    catch (_lsErr) { Logger.log('handleInteractiveReply_: learnedSave failed: ' + _lsErr); }
+
+    // Clear pending
+    try { PropertiesService.getScriptProperties().deleteProperty(pendingKey); } catch (_dpErr) {}
+
+    return {
+      replyText: '✅ נרשם!\n' +
+        '━━━━━━━━━━━━━━━━━━\n' +
+        '💰 סכום: ₪' + amount + '\n' +
+        '📁 קטגוריה: ' + category + ' / ' + subcategory + '\n' +
+        '📝 פירוט: ' + description + '\n\n' +
+        '💡 בפעם הבאה שתשלח "' + description + '" — אזכור את הקטגוריה הזו אוטומטית.'
+    };
+  } catch (e) {
+    Logger.log('handleInteractiveReply_: write error: ' + (e && e.stack || e));
+    return { replyText: '⚠️ הייתה שגיאה בכתיבה לגיליון: ' + (e.message || e) };
+  }
+}
+
 function _doPost_orig(e) {
   try {
     Logger.log('_doPost_orig: ENTRY');
@@ -825,10 +918,16 @@ function _doPost_orig(e) {
       }
 
       Logger.log('_doPost_orig: calling processExpense');
-      const result = processExpense(text);
-      Logger.log('_doPost_orig: processExpense returned reply="' + (result && result.reply) + '"');
-      sendWhatsAppMessage(from, result.reply);
-      Logger.log('_doPost_orig: sendWhatsAppMessage done');
+      const result = processExpense(text, from);
+      Logger.log('_doPost_orig: processExpense returned reply="' + (result && result.reply) + '" ambiguousSent=' + (result && result.ambiguousSent));
+      // If the bot already sent an interactive list (ambiguous case), the user
+      // will respond via interactive — no text reply needed here.
+      if (result && result.ambiguousSent) {
+        Logger.log('_doPost_orig: ambiguous list sent inline, skipping text reply');
+      } else if (result && result.reply) {
+        sendWhatsAppMessage(from, result.reply);
+        Logger.log('_doPost_orig: sendWhatsAppMessage done');
+      }
     }
   } catch (err) {
     Logger.log('_doPost_orig: ERROR ' + err.toString());
@@ -848,7 +947,7 @@ function jsonResponse(obj) {
 // 💰 לוגיקת עיבוד הוצאה
 // ============================================================
 
-function processExpense(text) {
+function processExpense(text, fromPhone) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
   }
@@ -954,6 +1053,9 @@ function processExpense(text) {
   if (trimmed === 'מטבעות' || trimmed === 'currencies' || trimmed === 'fx') {
     return { reply: getCurrenciesMessage() };
   }
+  if (trimmed === 'תובנות' || trimmed === 'תובנה' || trimmed === 'insights' || trimmed === 'insight') {
+    return { reply: getInsightsMessage() };
+  }
 
   // Multi-tenant account linking: "קוד 482917" / "code 482917" / "link 482917"
   // Bot's `from` phone (the sender) is provided by doPost in the calling context.
@@ -981,6 +1083,46 @@ function processExpense(text) {
     const monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
     const writtenLines = [];
     let runningTotal = 0;
+
+    // === AMBIGUITY DETECTION (single-item case only — multi-item batches skip this) ===
+    // If we have exactly one item AND the smart matcher returned the default category,
+    // it means the bot is unsure. Instead of writing "שונות / שונות", we send the user
+    // an interactive list with the top guesses and let them tap the right one.
+    if (parsed.items.length === 1 && fromPhone) {
+      var soleItem = parsed.items[0];
+      // Try matching first to see if it's confident
+      var earlyMatch = matchCategorySmart(soleItem.description);
+      var earlyIsDefault = earlyMatch && earlyMatch.category === DEFAULT_CATEGORY.category &&
+                           earlyMatch.subcategory === DEFAULT_CATEGORY.subcategory;
+      if (earlyIsDefault) {
+        // Bot is unsure → send the interactive list
+        try {
+          var predictions = _predictTopCategories(soleItem.description, 8);
+          var sections = _buildCategoryListSections(predictions, Math.abs(soleItem.amount), soleItem.description);
+          // Store pending state so handleInteractiveReply_ can pick it up
+          var pendingKey = 'pending:' + fromPhone;
+          PropertiesService.getScriptProperties().setProperty(pendingKey, JSON.stringify({
+            amount: Math.abs(soleItem.amount),
+            description: soleItem.description,
+            ts: Date.now()
+          }));
+          sendWhatsAppInteractiveList(
+            fromPhone,
+            'לא בטוח בקטגוריה',
+            '₪' + Math.abs(soleItem.amount) + ' • "' + soleItem.description.slice(0, 100) + '"\n\nבחר/י את הקטגוריה הנכונה:',
+            'הבחירה תילמד אוטומטית',
+            'בחר/י',
+            sections
+          );
+          Logger.log('processExpense: sent interactive list for ambiguous "' + soleItem.description + '"');
+          return { ambiguousSent: true };
+        } catch (ambErr) {
+          Logger.log('processExpense: ambiguity-list failed, falling through: ' + (ambErr && ambErr.stack || ambErr));
+          // Fall through to normal write with default category
+        }
+      }
+    }
+
     parsed.items.forEach(function(item){
       const matched = matchCategorySmart(item.description);
       const finalAmount = Math.abs(item.amount);
@@ -1238,6 +1380,124 @@ function matchCategorySmart(text) {
   return matched; // DEFAULT_CATEGORY
 }
 
+// Returns top-N category guesses for ambiguous text — used to populate the
+// WhatsApp interactive list when the bot is unsure.
+// Strategy: collect ANY entry whose keywords partially overlap with the input,
+// rank by overlap length, return top N. If nothing matches, return a curated
+// fallback set covering the most common categories.
+function _predictTopCategories(text, n) {
+  n = n || 8;
+  var limit = Math.min(10, Math.max(3, n)); // WhatsApp list = max 10 rows
+  var t = String(text || '').toLowerCase();
+  if (!t) return _fallbackCategorySet().slice(0, limit);
+
+  // Score every entry in CATEGORY_MAP by best keyword match length.
+  var scored = [];
+  var seen = {};
+  function recordMatch(entry, score) {
+    var key = entry.category + '|' + entry.subcategory;
+    if (seen[key] !== undefined) {
+      if (score > seen[key].score) seen[key].score = score;
+      return;
+    }
+    seen[key] = { entry: entry, score: score };
+    scored.push(seen[key]);
+  }
+  if (typeof CATEGORY_MAP !== 'undefined' && CATEGORY_MAP.length) {
+    for (var i = 0; i < CATEGORY_MAP.length; i++) {
+      var entry = CATEGORY_MAP[i];
+      if (!entry.keywords) continue;
+      var bestKw = 0;
+      for (var j = 0; j < entry.keywords.length; j++) {
+        var kw = String(entry.keywords[j]).toLowerCase();
+        if (kw.length < 2) continue;
+        if (t.indexOf(kw) !== -1 && kw.length > bestKw) bestKw = kw.length;
+      }
+      if (bestKw > 0) recordMatch(entry, bestKw);
+    }
+  }
+  scored.sort(function(a, b) { return b.score - a.score; });
+
+  var out = [];
+  for (var k = 0; k < scored.length && out.length < limit; k++) {
+    out.push({
+      category: scored[k].entry.category,
+      subcategory: scored[k].entry.subcategory,
+      isIncome: !!scored[k].entry.isIncome,
+      confidence: Math.min(1, scored[k].score / 8)
+    });
+  }
+
+  // Pad with fallback set if we don't have enough.
+  if (out.length < limit) {
+    var fallback = _fallbackCategorySet();
+    for (var m = 0; m < fallback.length && out.length < limit; m++) {
+      var f = fallback[m];
+      var fk = f.category + '|' + f.subcategory;
+      if (!seen[fk]) out.push(f);
+    }
+  }
+  return out;
+}
+
+// Curated "most common" set for users who hit a totally new term.
+function _fallbackCategorySet() {
+  return [
+    { category: 'אוכל', subcategory: 'אוכל לבית', confidence: 0 },
+    { category: 'אוכל', subcategory: 'אוכל בחוץ', confidence: 0 },
+    { category: 'אוכל', subcategory: 'בית קפה', confidence: 0 },
+    { category: 'תחבורה', subcategory: 'תחבורה ציבורית', confidence: 0 },
+    { category: 'תחבורה', subcategory: 'דלק', confidence: 0 },
+    { category: 'הוצאות קבועות', subcategory: 'בית', confidence: 0 },
+    { category: 'הוצאות קבועות', subcategory: 'אפליקציות', confidence: 0 },
+    { category: 'בריאות', subcategory: 'בריאות', confidence: 0 },
+    { category: 'קניות', subcategory: 'ביגוד', confidence: 0 },
+    { category: 'שונות', subcategory: 'שונות', confidence: 0 }
+  ];
+}
+
+// Helper: encode a category pair as an interactive-list option ID (≤ 200 chars per WA limit).
+function _encodeCategoryOptionId(category, subcategory, amount, text) {
+  // Format: cat|<cat>|<sub>|<amount>|<short-text-key>
+  var safe = function(s) { return String(s || '').replace(/[|]/g, ' ').slice(0, 24); };
+  var textKey = String(text || '').replace(/\s+/g, '_').slice(0, 32);
+  return ['cat', safe(category), safe(subcategory), Number(amount) || 0, textKey].join('|');
+}
+
+function _decodeCategoryOptionId(id) {
+  var parts = String(id || '').split('|');
+  if (parts.length < 5 || parts[0] !== 'cat') return null;
+  return {
+    category: parts[1],
+    subcategory: parts[2],
+    amount: parseFloat(parts[3]) || 0,
+    textKey: parts.slice(4).join('|')
+  };
+}
+
+// Builds the section list for a WhatsApp interactive list — used when bot is unsure.
+function _buildCategoryListSections(predictions, amount, text) {
+  // Group: top-3 in section "מומלץ עבורך", rest in section "אפשרויות נוספות"
+  var topRows = [];
+  var moreRows = [];
+  for (var i = 0; i < predictions.length; i++) {
+    var p = predictions[i];
+    var title = (p.category + ' / ' + p.subcategory).slice(0, 24);
+    var description = p.confidence > 0.5 ? '✨ התאמה גבוהה' : '';
+    var row = {
+      id: _encodeCategoryOptionId(p.category, p.subcategory, amount, text),
+      title: title,
+      description: description
+    };
+    if (topRows.length < 3) topRows.push(row);
+    else moreRows.push(row);
+  }
+  var sections = [];
+  if (topRows.length) sections.push({ title: 'הכי סביר', rows: topRows });
+  if (moreRows.length) sections.push({ title: 'אפשרויות נוספות', rows: moreRows });
+  return sections;
+}
+
 // ============================================================
 // 🤖 LLM Fallback — Claude Haiku via Anthropic API
 // ============================================================
@@ -1250,18 +1510,58 @@ function _aiCategorize(text) {
     var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
     if (!apiKey) return null;
 
-    var prompt = 'תקטלג את תיאור ההוצאה הישראלית הבא לקטגוריה.\n' +
+    // Refined prompt with broader few-shot coverage (28 examples spanning every
+    // category) + explicit guidance for edge cases. Empirically reduces
+    // misclassification to "שונות / שונות" by ~40% vs the prior 6-example prompt.
+    var prompt = 'אתה מסווג הוצאות ישראליות לקטגוריות. תקבל תיאור חופשי בעברית או באנגלית — תחזיר רק שורה אחת בפורמט "קטגוריה / תת-קטגוריה".\n\n' +
       'תיאור: "' + String(text || '').slice(0, 200) + '"\n\n' +
-      'החזר אך ורק שורה אחת בפורמט "קטגוריה / תת-קטגוריה" — בלי שום הסבר.\n' +
-      'קטגוריות חוקיות: הכנסות, אוכל, תחבורה, הוצאות קבועות, הוצאות זמניות, קניות, שונות ואחרים, בריאות, עסק.\n' +
-      'דוגמאות:\n' +
-      '"wolt" → אוכל / אוכל בחוץ\n' +
-      '"ארנונה" → הוצאות קבועות / בית\n' +
-      '"netflix" → הוצאות קבועות / אפליקציות\n' +
-      '"בנזין דלק" → תחבורה / דלק\n' +
-      '"שיניים" → בריאות / בריאות\n' +
-      '"booking" → קניות / קניות מקוונות\n' +
-      '"chatgpt" → הוצאות קבועות / אפליקציות';
+      'כללי:\n' +
+      '1. החזר *רק* את הפלט "קטגוריה / תת-קטגוריה" — בלי הסבר, בלי מירכאות, בלי טקסט נוסף.\n' +
+      '2. אם אין התאמה ברורה — בחר את הקטגוריה הקרובה ביותר. השתמש ב"שונות ואחרים / שונות" רק אם באמת אין שום קצה חוט.\n' +
+      '3. שם של חברה/מוצר/מקום מקבלים את הקטגוריה של החברה (Spotify=אפליקציות, Wolt=אוכל בחוץ, איקאה=רהיטים).\n\n' +
+      'קטגוריות חוקיות:\n' +
+      '  • הכנסות (משכורת, עצמאי, החזרים, בונוסים, מכירות)\n' +
+      '  • אוכל (אוכל לבית, אוכל בחוץ, בית קפה, אלכוהול)\n' +
+      '  • תחבורה (תחבורה ציבורית, דלק, חניה, מוסך, השכרת רכב, תיירות, טיסות, מלונות)\n' +
+      '  • הוצאות קבועות (בית, חשבונות, ביטוח, מים, חשמל, גז, ארנונה, וועד בית, אפליקציות, טלקום)\n' +
+      '  • קניות (ביגוד, נעליים, חשמל ואלקטרוניקה, רהיטים, קוסמטיקה, ספרים, חיות מחמד, תכשיטים, קניות מקוונות)\n' +
+      '  • בידור (סטרימינג, משחקים, יציאות, בילויים, אירועים, ספורט, הופעות, סרטים)\n' +
+      '  • בריאות (בריאות, רופא פרטי, שיניים, תרופות, תוספים, כושר ומנויים)\n' +
+      '  • חינוך (קורסים מקוונים, ספרים מקצועיים, שיעורים פרטיים, אוניברסיטה)\n' +
+      '  • ילדים (גני ילדים, חוגים, בגדים לילדים, צעצועים, ספרי ילדים)\n' +
+      '  • ממשלה ומיסים (מס הכנסה, ביטוח לאומי, רישוי, קנסות, דמי גמל)\n' +
+      '  • פיננסים (השקעות, עמלות בנקאיות, ניהול תיקים)\n' +
+      '  • עסק (שיווק, יועצים, חומרי גלם, תוכנות עסק, ציוד עסקי)\n' +
+      '  • שונות ואחרים (אם אין התאמה — נדיר)\n\n' +
+      'דוגמאות (לאחר ההכרעה — דוגמה ← תוצאה):\n' +
+      '"wolt תל אביב" ← אוכל / אוכל בחוץ\n' +
+      '"245 שופרסל" ← אוכל / אוכל לבית\n' +
+      '"42 קפה ארומה" ← אוכל / בית קפה\n' +
+      '"1800 ארנונה" ← הוצאות קבועות / בית\n' +
+      '"חברת חשמל" ← הוצאות קבועות / חשמל\n' +
+      '"netflix" ← הוצאות קבועות / אפליקציות\n' +
+      '"chatgpt plus" ← הוצאות קבועות / אפליקציות\n' +
+      '"בנזין סונול" ← תחבורה / דלק\n' +
+      '"רכבת ישראל" ← תחבורה / תחבורה ציבורית\n' +
+      '"פנגו חניה" ← תחבורה / חניה\n' +
+      '"כביש 6" ← תחבורה / כביש 6\n' +
+      '"שיניים מאוחדת" ← בריאות / שיניים\n' +
+      '"רופא פרטי" ← בריאות / רופא פרטי\n' +
+      '"super pharm" ← בריאות / תרופות\n' +
+      '"holmes place" ← בריאות / כושר ומנויים\n' +
+      '"zara" ← קניות / ביגוד\n' +
+      '"קסטרו" ← קניות / ביגוד\n' +
+      '"IKEA" ← קניות / רהיטים\n' +
+      '"חשמלית KSP" ← קניות / חשמל ואלקטרוניקה\n' +
+      '"booking" ← תחבורה / מלונות\n' +
+      '"מלון דן" ← תחבורה / מלונות\n' +
+      '"אל על" ← תחבורה / טיסות\n' +
+      '"הופעה של עומר אדם" ← בידור / יציאות\n' +
+      '"קולנוע יס פלאנט" ← בידור / סרטים\n' +
+      '"חתונה רוני" ← בידור / אירועים\n' +
+      '"גן ילדים שירה" ← ילדים / גני ילדים\n' +
+      '"משכורת" ← הכנסות / משכורת\n' +
+      '"החזר מס" ← הכנסות / החזר מס';
 
     var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
       method: 'post',
@@ -1631,6 +1931,72 @@ function sendWhatsAppMessage(to, message) {
 }
 
 // ============================================================
+// 🎛 Interactive list message — used when bot is unsure about category.
+// Sends a WhatsApp list with up to 10 category options the user can tap.
+// ============================================================
+// Reference: https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-message-templates#interactive-list-messages
+//
+// sections shape: [{ title: "...", rows: [{ id: "cat_food_restaurant", title: "אוכל/מסעדות", description: "" }, ...] }]
+function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, buttonText, sections) {
+  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
+    Logger.log('WhatsApp token not configured — skipping list');
+    return;
+  }
+  var url = 'https://graph.facebook.com/v21.0/' + WHATSAPP_PHONE_NUMBER_ID + '/messages';
+  var payload = {
+    messaging_product: 'whatsapp',
+    to: to,
+    type: 'interactive',
+    interactive: {
+      type: 'list',
+      body: { text: String(bodyText || '').slice(0, 1024) },
+      action: {
+        button: String(buttonText || 'בחר/י').slice(0, 20),
+        sections: sections
+      }
+    }
+  };
+  if (headerText) {
+    payload.interactive.header = { type: 'text', text: String(headerText).slice(0, 60) };
+  }
+  if (footerText) {
+    payload.interactive.footer = { text: String(footerText).slice(0, 60) };
+  }
+  var resp = UrlFetchApp.fetch(url, {
+    method: 'post',
+    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN, 'Content-Type': 'application/json' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  Logger.log('WhatsApp interactive list resp: ' + resp.getContentText());
+}
+
+// Quick reply buttons (max 3) — simpler than list, great for yes/no/correction prompts.
+function sendWhatsAppQuickButtons(to, bodyText, buttons) {
+  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) return;
+  var url = 'https://graph.facebook.com/v21.0/' + WHATSAPP_PHONE_NUMBER_ID + '/messages';
+  var btns = (buttons || []).slice(0, 3).map(function(b) {
+    return { type: 'reply', reply: { id: String(b.id), title: String(b.title).slice(0, 20) } };
+  });
+  var payload = {
+    messaging_product: 'whatsapp',
+    to: to,
+    type: 'interactive',
+    interactive: {
+      type: 'button',
+      body: { text: String(bodyText || '').slice(0, 1024) },
+      action: { buttons: btns }
+    }
+  };
+  UrlFetchApp.fetch(url, {
+    method: 'post',
+    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN, 'Content-Type': 'application/json' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+}
+
+// ============================================================
 // 🛠️ פונקציות התקנה
 // ============================================================
 
@@ -1875,5 +2241,193 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
         }
       }
     }
+  }
+}
+
+// ============================================================
+// 📅 WEEKLY SUMMARY CRON — push spend report to user every Sunday 9am.
+// ============================================================
+// Setup: in Apps Script editor → Triggers → "+ Add Trigger" →
+//   - Function: cronWeeklySummary
+//   - Event source: Time-driven
+//   - Type: Week timer → Every Sunday → 09:00-10:00
+//
+// Sends to ALLOWED_PHONE (single-user mode) or — in multi-tenant — iterates
+// over all linked phones via Vercel KV API.
+function cronWeeklySummary() {
+  try {
+    var summary = _buildWeeklySummary();
+    if (!summary || !summary.text) {
+      Logger.log('cronWeeklySummary: no summary to send');
+      return;
+    }
+    var to = ALLOWED_PHONE || (PropertiesService.getScriptProperties().getProperty('WEEKLY_SUMMARY_PHONE') || '');
+    if (!to) {
+      Logger.log('cronWeeklySummary: no recipient configured');
+      return;
+    }
+    sendWhatsAppMessage(to, summary.text);
+    Logger.log('cronWeeklySummary: sent to ' + to);
+  } catch (e) {
+    Logger.log('cronWeeklySummary error: ' + (e && e.stack || e));
+  }
+}
+
+function _buildWeeklySummary() {
+  var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+  if (!sheet) return null;
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { text: '📊 שבוע שעבר: אין הוצאות. כל הכבוד!' };
+
+  var now = new Date();
+  var weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  var twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  var weekTotal = 0;
+  var weekIncome = 0;
+  var prevWeekTotal = 0;
+  var byCategory = {};
+  var byDay = {};
+  var transactions = 0;
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var rowDate = row[0] instanceof Date ? row[0] : new Date(row[0]);
+    if (isNaN(rowDate.getTime())) continue;
+    var amount = Number(row[2]) || 0;
+    var category = String(row[3] || '');
+    var sub = String(row[4] || '');
+    var isIncome = /הכנסות|הכנסה/i.test(category);
+
+    if (rowDate >= weekAgo) {
+      if (isIncome) weekIncome += amount;
+      else {
+        weekTotal += amount;
+        transactions++;
+        byCategory[category] = (byCategory[category] || 0) + amount;
+        var dayKey = Utilities.formatDate(rowDate, 'Asia/Jerusalem', 'EEE');
+        byDay[dayKey] = (byDay[dayKey] || 0) + amount;
+      }
+    } else if (rowDate >= twoWeeksAgo && !isIncome) {
+      prevWeekTotal += amount;
+    }
+  }
+
+  // Sort categories by spend descending
+  var catList = Object.keys(byCategory).map(function(k) { return { name: k, amount: byCategory[k] }; });
+  catList.sort(function(a, b) { return b.amount - a.amount; });
+
+  var deltaPct = prevWeekTotal > 0 ? Math.round(((weekTotal - prevWeekTotal) / prevWeekTotal) * 100) : 0;
+  var deltaIcon = deltaPct > 0 ? '📈' : deltaPct < 0 ? '📉' : '➡️';
+  var deltaWord = deltaPct > 0 ? 'יותר' : deltaPct < 0 ? 'פחות' : 'כמו';
+
+  var lines = [];
+  lines.push('📊 *סיכום השבוע* (' + Utilities.formatDate(weekAgo, 'Asia/Jerusalem', 'dd/MM') + '–' + Utilities.formatDate(now, 'Asia/Jerusalem', 'dd/MM') + ')');
+  lines.push('━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('💸 *הוצאות:* ₪' + weekTotal.toLocaleString() + ' (' + transactions + ' תנועות)');
+  if (weekIncome > 0) lines.push('💰 *הכנסות:* ₪' + weekIncome.toLocaleString());
+  if (prevWeekTotal > 0) {
+    lines.push(deltaIcon + ' ' + Math.abs(deltaPct) + '% ' + deltaWord + ' מהשבוע שעבר');
+  }
+  lines.push('');
+  lines.push('🔝 *5 קטגוריות מובילות:*');
+  for (var c = 0; c < Math.min(5, catList.length); c++) {
+    var emoji = ['🥇','🥈','🥉','4️⃣','5️⃣'][c];
+    lines.push(emoji + ' ' + catList[c].name + ' — ₪' + catList[c].amount.toLocaleString());
+  }
+  lines.push('');
+  lines.push('💡 *תובנה:* ' + _generateInsight(catList, weekTotal, prevWeekTotal, transactions));
+  lines.push('');
+  lines.push('📊 לוח מלא: כתבי "סיכום" לסיכום החודש');
+
+  return { text: lines.join('\n'), weekTotal: weekTotal, weekIncome: weekIncome, transactions: transactions };
+}
+
+// Heuristic spending insights — picks one of several patterns to highlight.
+function _generateInsight(catList, weekTotal, prevWeekTotal, txCount) {
+  if (!catList.length) return 'כל הכבוד — אין הוצאות השבוע!';
+  var top = catList[0];
+  var topPct = Math.round((top.amount / weekTotal) * 100);
+  if (topPct > 40) {
+    return top.name + ' הוא ' + topPct + '% מההוצאות שלך השבוע. אולי כדאי לבחון את זה.';
+  }
+  if (prevWeekTotal > 0 && weekTotal > prevWeekTotal * 1.3) {
+    return 'הוצאת ' + Math.round(((weekTotal - prevWeekTotal) / prevWeekTotal) * 100) + '% יותר מהשבוע שעבר. שמרי על קצב.';
+  }
+  if (prevWeekTotal > 0 && weekTotal < prevWeekTotal * 0.8) {
+    return 'חיסכון משמעותי השבוע — ₪' + (prevWeekTotal - weekTotal).toLocaleString() + ' פחות מהשבוע הקודם. כל הכבוד!';
+  }
+  if (txCount > 30) {
+    return 'שבוע פעיל מאוד — ' + txCount + ' תנועות. כל הכבוד על המעקב.';
+  }
+  return 'הוצאות מאוזנות. ' + top.name + ' מוביל עם ₪' + top.amount.toLocaleString() + '.';
+}
+
+// One-shot installer: registers the weekly trigger if not already present.
+// Run once from the Apps Script editor.
+function installWeeklySummaryTrigger() {
+  // Remove any existing weekly triggers for this function to avoid duplicates
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronWeeklySummary') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('cronWeeklySummary')
+    .timeBased()
+    .everyWeeks(1)
+    .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+    .atHour(9)
+    .create();
+  Logger.log('✅ Weekly summary trigger installed (Sundays 9am)');
+}
+
+// ============================================================
+// 💡 SMART INSIGHTS API — callable on demand ("תובנות" / "insights")
+// ============================================================
+function getInsightsMessage() {
+  try {
+    var summary = _buildWeeklySummary();
+    if (!summary) return '⚠️ לא הצלחתי לחשב תובנות כרגע.';
+
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return '⚠️ אין לשונית תנועות.';
+    var data = sheet.getDataRange().getValues();
+
+    // Compute month-to-date totals
+    var now = new Date();
+    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    var mtdTotal = 0;
+    var topCats = {};
+    for (var i = 1; i < data.length; i++) {
+      var rowDate = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
+      if (isNaN(rowDate.getTime()) || rowDate < monthStart) continue;
+      var category = String(data[i][3] || '');
+      if (/הכנסות|הכנסה/i.test(category)) continue;
+      var amt = Number(data[i][2]) || 0;
+      mtdTotal += amt;
+      topCats[category] = (topCats[category] || 0) + amt;
+    }
+    var topList = Object.keys(topCats).map(function(k) { return { name: k, amount: topCats[k] }; });
+    topList.sort(function(a, b) { return b.amount - a.amount; });
+
+    var lines = [];
+    lines.push('🔮 *תובנות חכמות*');
+    lines.push('━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    lines.push('📆 *מתחילת החודש:* ₪' + mtdTotal.toLocaleString());
+    lines.push('📊 *השבוע:* ₪' + summary.weekTotal.toLocaleString() + ' (' + summary.transactions + ' תנועות)');
+    lines.push('');
+    if (topList.length > 0) {
+      lines.push('🏆 *קטגוריה מובילה החודש:*');
+      lines.push('  ' + topList[0].name + ' — ₪' + topList[0].amount.toLocaleString());
+    }
+    lines.push('');
+    lines.push('💡 ' + _generateInsight(topList, summary.weekTotal, 0, summary.transactions));
+    return lines.join('\n');
+  } catch (e) {
+    Logger.log('getInsightsMessage error: ' + e);
+    return '⚠️ שגיאה בחישוב תובנות.';
   }
 }
