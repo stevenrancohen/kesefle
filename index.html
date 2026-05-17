@@ -288,16 +288,15 @@
             </div>
             <svg class="h-5 w-5 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a3 3 0 100-6 3 3 0 000 6zM12 14a3 3 0 100-6 3 3 0 000 6zM12 20a3 3 0 100-6 3 3 0 000 6z"/></svg>
           </div>
-          <!-- chat body -->
-          <div class="space-y-2.5 px-2.5 py-4">
-            <!-- user msg 1 -->
+          <!-- chat body (interactive!) -->
+          <div class="space-y-2.5 px-2.5 py-4 max-h-[280px] overflow-y-auto no-scrollbar" id="hero-chat">
+            <!-- seed bubble (will be replaced once user types) -->
             <div class="bubble flex justify-end">
               <div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">
                 <span class="num">245</span> סופר
                 <div class="mt-1 text-left text-[10px] text-ink-500">14:23 ✓✓</div>
               </div>
             </div>
-            <!-- bot reply 1 -->
             <div class="bubble flex justify-start">
               <div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">
                 ✅ נרשם: <span class="num">₪245</span><br>
@@ -305,29 +304,21 @@
                 <div class="mt-1 text-left text-[10px] text-ink-400">14:23</div>
               </div>
             </div>
-            <!-- user msg 2 -->
-            <div class="bubble flex justify-end">
-              <div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">
-                <span class="num">60</span> אובר לעבודה
-                <div class="mt-1 text-left text-[10px] text-ink-500">17:48 ✓✓</div>
-              </div>
-            </div>
-            <!-- bot reply 2 -->
-            <div class="bubble flex justify-start">
-              <div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">
-                ✅ נרשם: <span class="num">₪60</span><br>
-                <span class="text-ink-500 text-[12px]">קטגוריה: תחבורה • Uber</span>
-                <div class="mt-1 text-left text-[10px] text-ink-400">17:48</div>
-              </div>
-            </div>
           </div>
-          <!-- input bar -->
-          <div class="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-inner">
-            <div class="flex-1 rounded-full bg-ink-100 px-3 py-1.5 text-[12px] text-ink-400">הודעה...</div>
-            <button class="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-white">
+          <!-- live input bar — typing here works! -->
+          <form class="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-inner" onsubmit="return kfHeroSend(event)">
+            <input
+              type="text"
+              id="hero-input"
+              dir="rtl"
+              placeholder="נסי: 42 קפה"
+              autocomplete="off"
+              class="flex-1 rounded-full bg-ink-100 px-3 py-1.5 text-[13px] text-ink-900 placeholder-ink-400 focus:bg-white focus:ring-2 focus:ring-brand-300 focus:outline-none"
+            />
+            <button type="submit" class="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-white transition hover:bg-brand-600 active:scale-95">
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
             </button>
-          </div>
+          </form>
         </div>
       </div>
       <!-- floating tag -->
@@ -369,7 +360,7 @@
       <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl">שלושה צעדים. דקה. סיימת.</h2>
       <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">אין משהו ללמוד. אין הגדרות אינסופיות. כמו להוסיף איש קשר.</p>
     </div>
-    <div class="mt-14 grid gap-6 md:grid-cols-3">
+    <div class="mt-14 grid items-stretch gap-6 md:grid-cols-3">
       <!-- step 1 -->
       <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 transition hover:border-brand-300 hover:shadow-soft dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
         <div class="flex items-center gap-3">
@@ -386,13 +377,50 @@
         </div>
         <p class="mt-3 text-ink-600 leading-relaxed dark:text-ink-200">פותח שיחה עם הבוט. שלח "שלום" — קיבלת אישור. זהו. אתה מחובר.</p>
       </div>
-      <!-- step 3 -->
-      <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 transition hover:border-brand-300 hover:shadow-soft dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
-        <div class="flex items-center gap-3">
-          <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-lg font-black text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">3</div>
-          <h3 class="text-xl font-bold dark:text-white">תכתוב הוצאה. הכל.</h3>
+      <!-- step 3 — interactive mini transcript -->
+      <div class="group relative overflow-hidden rounded-3xl border-2 border-brand-300 bg-gradient-to-br from-brand-50 via-white to-accent-50 p-7 transition hover:shadow-glow dark:border-brand-500/40 dark:from-brand-500/10 dark:via-ink-800 dark:to-accent-500/10">
+        <div class="absolute -top-10 -left-10 h-32 w-32 rounded-full bg-brand-400/20 blur-2xl"></div>
+        <div class="relative flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-600 text-lg font-black text-white shadow-glow">3</div>
+          <h3 class="text-xl font-bold dark:text-white">כתבי הוצאה. הכל.</h3>
         </div>
-        <p class="mt-3 text-ink-600 leading-relaxed dark:text-ink-200">"<span class="num">42</span> קפה", "<span class="num">1800</span> ארנונה", "<span class="num">8500</span> משכורת" — הבוט מבין, מקטלג, רושם.</p>
+        <p class="relative mt-3 text-sm text-ink-600 dark:text-ink-200">הבוט מקטלג אוטומטית. בלי תפריטים, בלי טפסים.</p>
+        <!-- mini whatsapp transcript -->
+        <div class="relative mt-4 space-y-2" dir="rtl">
+          <div class="bubble flex justify-end">
+            <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+              <span class="num">42</span> קפה
+              <span class="ms-1 text-[9px] text-ink-500">09:14 ✓✓</span>
+            </div>
+          </div>
+          <div class="bubble flex justify-start">
+            <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+              ✅ ☕ בית קפה • <span class="num">₪42</span>
+            </div>
+          </div>
+          <div class="bubble flex justify-end">
+            <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+              <span class="num">1800</span> ארנונה
+              <span class="ms-1 text-[9px] text-ink-500">10:02 ✓✓</span>
+            </div>
+          </div>
+          <div class="bubble flex justify-start">
+            <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+              ✅ 🏠 בית • <span class="num">₪1,800</span>
+            </div>
+          </div>
+          <div class="bubble flex justify-end">
+            <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+              <span class="num">8500</span> משכורת
+              <span class="ms-1 text-[9px] text-ink-500">28/05 ✓✓</span>
+            </div>
+          </div>
+          <div class="bubble flex justify-start">
+            <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+              ✅ 💵 משכורת • <span class="num">₪8,500</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- live demo link -->
@@ -571,8 +599,9 @@
         </ul>
         <a href="#signup" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">התחל בחינם</a>
       </div>
-      <!-- pro plan -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+      <!-- pro plan (recommended) -->
+      <div class="relative rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-500/10 via-white to-accent-50 p-8 shadow-glow dark:from-brand-500/20 dark:via-ink-800 dark:to-accent-500/10">
+        <div class="absolute -top-3.5 right-6 rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white">מומלץ לאדם בודד</div>
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">Pro</h3>
           <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">חודש חינם</span>
@@ -593,11 +622,10 @@
         <a href="#signup" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון של חודש</a>
       </div>
       <!-- family plan -->
-      <div class="relative rounded-3xl border-2 border-accent-500 bg-gradient-to-br from-accent-500/10 via-white to-brand-50 p-8 shadow-glow dark:from-accent-500/20 dark:via-ink-800 dark:to-brand-500/10">
-        <div class="absolute -top-3.5 right-6 rounded-full bg-accent-600 px-3 py-1 text-xs font-bold text-white">הכי פופולרי</div>
+      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">משפחה</h3>
-          <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">הכי משתלם לזוגות</span>
+          <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">לזוגות ולמשפחות</span>
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num">39</span></span>
@@ -869,6 +897,142 @@
 </div>
 
 <script>
+// =====================================================
+// Interactive hero chat — type, see the bot respond.
+// Tiny client-side categorizer mirrors the real bot logic.
+// =====================================================
+(function kfHeroChat() {
+  var CATEGORIES = [
+    // [keyword list, category, subcategory, emoji]
+    [['קפה','בית קפה','starbucks','cofix','אספרסו'], 'אוכל', 'בית קפה', '☕'],
+    [['סופר','שופרסל','רמי לוי','יוחננוף','ויקטורי','אושר עד','קרפור','אוכל לבית'], 'אוכל', 'אוכל לבית', '🛒'],
+    [['מסעדה','wolt','וולט','ten bis','משלוח אוכל','אוכל בחוץ','פיצה','בורגר','המבורגר','סושי'], 'אוכל', 'אוכל בחוץ', '🍔'],
+    [['דלק','תדלוק','סונול','דור אלון','פז'], 'תחבורה', 'דלק', '⛽'],
+    [['חניה','חנייה','חניון','pango','פנגו','cellopark'], 'תחבורה', 'חניה', '🅿️'],
+    [['אובר','uber','gett','מונית','אוטובוס','רכבת'], 'תחבורה', 'מונית/אובר', '🚕'],
+    [['ארנונה','חשמל','מים','בזק','סלקום','פרטנר','פלאפון','אינטרנט'], 'הוצאות קבועות', 'בית', '🏠'],
+    [['ביטוח','איתורן'], 'הוצאות קבועות', 'ביטוח', '🛡️'],
+    [['משכורת','שכר','שכר עבודה'], 'הכנסות', 'משכורת', '💵'],
+    [['בונוס','החזר','תקבול','הכנסה'], 'הכנסות', 'הכנסה', '💰'],
+    [['נטפליקס','netflix','spotify','ספוטיפיי','youtube','icloud','אפליקציה'], 'הוצאות קבועות', 'אפליקציות', '📱'],
+    [['בגדים','ביגוד','zara','h&m','fox'], 'קניות', 'ביגוד', '👕'],
+    [['בית מרקחת','סופר פארם','super pharm','תרופה','רופא'], 'בריאות', 'בריאות', '⚕️'],
+  ];
+
+  function categorize(text) {
+    var t = String(text || '').toLowerCase();
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      var entry = CATEGORIES[i];
+      for (var k = 0; k < entry[0].length; k++) {
+        if (t.indexOf(entry[0][k].toLowerCase()) >= 0) {
+          return { cat: entry[1], sub: entry[2], emoji: entry[3] };
+        }
+      }
+    }
+    return { cat: 'שונות', sub: 'שונות', emoji: '📝' };
+  }
+
+  function parse(text) {
+    var m = String(text || '').match(/^\s*(\d+(?:\.\d+)?)\s*(.*)$/);
+    if (!m) return null;
+    var amt = parseFloat(m[1]);
+    var rest = (m[2] || '').trim() || 'ללא פירוט';
+    return { amount: amt, desc: rest };
+  }
+
+  function nowHHMM() {
+    var d = new Date();
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  function userBubble(text, time) {
+    return '<div class="bubble flex justify-end">' +
+      '<div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">' +
+      escapeText(text) +
+      '<div class="mt-1 text-left text-[10px] text-ink-500">' + time + ' ✓✓</div>' +
+      '</div></div>';
+  }
+
+  function botBubble(emoji, amount, sub, time) {
+    return '<div class="bubble flex justify-start">' +
+      '<div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">' +
+      '✅ נרשם: <span class="num">₪' + amount + '</span><br>' +
+      '<span class="text-ink-500 text-[12px]">' + emoji + ' ' + escapeText(sub) + '</span>' +
+      '<div class="mt-1 text-left text-[10px] text-ink-400">' + time + '</div>' +
+      '</div></div>';
+  }
+
+  function typingBubble() {
+    return '<div class="bubble flex justify-start" id="kf-typing">' +
+      '<div class="rounded-2xl rounded-tr-md bg-white px-4 py-3 shadow-sm">' +
+      '<span class="inline-flex gap-1">' +
+      '<span class="h-1.5 w-1.5 rounded-full bg-ink-400 animate-bounce" style="animation-delay:0ms"></span>' +
+      '<span class="h-1.5 w-1.5 rounded-full bg-ink-400 animate-bounce" style="animation-delay:120ms"></span>' +
+      '<span class="h-1.5 w-1.5 rounded-full bg-ink-400 animate-bounce" style="animation-delay:240ms"></span>' +
+      '</span></div></div>';
+  }
+
+  function escapeText(s) {
+    return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+  }
+
+  // Expose the form-submit handler globally
+  window.kfHeroSend = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var input = document.getElementById('hero-input');
+    var chat = document.getElementById('hero-chat');
+    if (!input || !chat) return false;
+    var text = input.value.trim();
+    if (!text) return false;
+    var parsed = parse(text);
+    var time = nowHHMM();
+    chat.insertAdjacentHTML('beforeend', userBubble(text, time));
+    chat.scrollTop = chat.scrollHeight;
+    input.value = '';
+    // typing indicator
+    setTimeout(function(){
+      chat.insertAdjacentHTML('beforeend', typingBubble());
+      chat.scrollTop = chat.scrollHeight;
+    }, 250);
+    // bot reply
+    setTimeout(function(){
+      var t = document.getElementById('kf-typing'); if (t) t.remove();
+      if (!parsed) {
+        chat.insertAdjacentHTML('beforeend',
+          '<div class="bubble flex justify-start"><div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">לא זיהיתי סכום 🤔 נסי: <b>245 סופר</b><div class="mt-1 text-left text-[10px] text-ink-400">' + time + '</div></div></div>');
+      } else {
+        var cat = categorize(parsed.desc);
+        chat.insertAdjacentHTML('beforeend', botBubble(cat.emoji, parsed.amount, cat.sub, time));
+      }
+      chat.scrollTop = chat.scrollHeight;
+      if (window.kfl) window.kfl.track('hero_demo_sent', { len: text.length });
+    }, 900);
+    return false;
+  };
+
+  // Rotating placeholder examples (only until user starts typing)
+  var EXAMPLES = [
+    '42 קפה',
+    '245 סופר',
+    '1800 ארנונה',
+    '60 אובר',
+    '8500 משכורת',
+    '120 נטפליקס',
+    '350 דלק',
+  ];
+  var input = document.getElementById('hero-input');
+  if (input) {
+    var idx = 0;
+    var rot = setInterval(function(){
+      if (document.activeElement === input || input.value) { clearInterval(rot); return; }
+      idx = (idx + 1) % EXAMPLES.length;
+      input.setAttribute('placeholder', 'נסי: ' + EXAMPLES[idx]);
+    }, 2400);
+    // Stop rotation once they interact
+    input.addEventListener('focus', function(){ clearInterval(rot); }, { once: true });
+  }
+})();
+
 function kesefleSelectPlan(plan) {
   window.KESEFLE_STATE.plan = plan;
   var hidden = document.getElementById('selected-plan');
@@ -1250,13 +1414,28 @@ function kesefleToggleDark() { /* no-op: dark only */ }
 })();
 </script>
 
-<!-- Sticky mobile bottom CTA (only on mobile, after scrolling past hero) -->
-<div id="kfl-mobile-cta" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:60;padding:12px 16px 18px;background:linear-gradient(180deg,rgba(255,255,255,0) 0,rgba(255,255,255,0.95) 30%);backdrop-filter:blur(8px);pointer-events:none">
-  <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'mobile_sticky' });" style="pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:8px;background:#16a34a;color:white;padding:14px 16px;border-radius:14px;font-weight:800;font-size:15px;font-family:'Heebo',sans-serif;text-decoration:none;box-shadow:0 12px 32px -8px rgba(22,163,74,0.55)">
-    <span>התחל חינם — 90 שניות</span>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+<!-- Scroll progress bar (continuous visual flow across sections) -->
+<div id="kfl-scroll-bar" style="position:fixed;top:0;left:0;right:0;height:2px;z-index:100;pointer-events:none">
+  <div id="kfl-scroll-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#22c55e 0%,#16a34a 50%,#84cc16 100%);transition:width 60ms linear;box-shadow:0 0 8px rgba(34,197,94,0.5)"></div>
+</div>
+
+<!-- Sticky mobile bottom CTA with live heartbeat (mobile only, after hero) -->
+<div id="kfl-mobile-cta" style="display:none;position:fixed;bottom:12px;left:12px;right:12px;z-index:60;padding:10px 14px;background:rgba(15,20,34,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(34,197,94,0.3);border-radius:18px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.5);align-items:center;justify-content:space-between;gap:10px;font-family:'Heebo',sans-serif">
+  <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:#cbd5e1;flex:1;min-width:0">
+    <span style="position:relative;display:inline-flex;width:8px;height:8px;flex-shrink:0">
+      <span style="position:absolute;inset:0;background:#4ade80;border-radius:9999px;opacity:0.7;animation:kflPing 1.5s cubic-bezier(0,0,0.2,1) infinite"></span>
+      <span style="position:relative;width:8px;height:8px;background:#22c55e;border-radius:9999px"></span>
+    </span>
+    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">הבוט פעיל • זמן תגובה ~<span class="num">2</span>s</span>
+  </div>
+  <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'mobile_sticky' });" style="display:inline-flex;align-items:center;gap:6px;background:#22c55e;color:white;padding:9px 14px;border-radius:12px;font-weight:800;font-size:13.5px;text-decoration:none;flex-shrink:0">
+    התחל
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
   </a>
 </div>
+<style>
+  @keyframes kflPing { 0% { transform: scale(1); opacity: 0.7 } 75%, 100% { transform: scale(2.2); opacity: 0 } }
+</style>
 <style>
   @media (max-width: 767px) {
     #kfl-mobile-cta.visible { display: block !important; }
@@ -1264,20 +1443,41 @@ function kesefleToggleDark() { /* no-op: dark only */ }
   .dark #kfl-mobile-cta { background: linear-gradient(180deg, rgba(15,20,34,0) 0, rgba(15,20,34,0.95) 30%); }
 </style>
 <script>
+// Mobile sticky CTA — show after scrolling past hero, hide near bottom
 (function(){
   var cta = document.getElementById('kfl-mobile-cta');
   if (!cta) return;
-  var shown = false;
   function check(){
-    if (window.matchMedia('(min-width: 768px)').matches) { cta.classList.remove('visible'); return; }
+    if (window.matchMedia('(min-width: 768px)').matches) {
+      cta.style.display = 'none';
+      return;
+    }
     var y = window.scrollY || document.documentElement.scrollTop || 0;
     var atBottom = (window.innerHeight + y) >= (document.documentElement.scrollHeight - 200);
-    if (y > 500 && !atBottom) { cta.classList.add('visible'); shown = true; }
-    else cta.classList.remove('visible');
+    cta.style.display = (y > 500 && !atBottom) ? 'flex' : 'none';
   }
   window.addEventListener('scroll', check, { passive: true });
   window.addEventListener('resize', check);
   check();
+})();
+
+// Scroll progress bar — continuous visual flow across all sections
+(function(){
+  var fill = document.getElementById('kfl-scroll-bar-fill');
+  if (!fill) return;
+  var ticking = false;
+  function update(){
+    var h = document.documentElement;
+    var scrolled = (h.scrollTop || document.body.scrollTop);
+    var max = (h.scrollHeight - h.clientHeight);
+    var pct = max > 0 ? (scrolled / max * 100) : 0;
+    fill.style.width = pct.toFixed(1) + '%';
+    ticking = false;
+  }
+  window.addEventListener('scroll', function(){
+    if (!ticking) { requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+  update();
 })();
 </script>
 
