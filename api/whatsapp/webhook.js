@@ -204,7 +204,16 @@ export default async function handler(req, res) {
   const userRecord = await kvGet(`phone:${fromPhone}`);
   if (!userRecord) {
     await sendReply(fromPhone,
-      'שלום! 👋\nלא מצאתי חשבון מקושר למספר הזה.\nכדי להתחיל, היכנס ל-https://kesefle.vercel.app וחבר את הוואטסאפ שלך.');
+      'היי! 👋 אני כספלה — בוט ההוצאות שלך בוואטסאפ.\n' +
+      'אני לא מזהה את המספר הזה עדיין, אז בוא נתחיל יחד.\n\n' +
+      '1️⃣ פתח: https://kesefle.vercel.app/account\n' +
+      '2️⃣ התחבר עם Google\n' +
+      '3️⃣ קשר את המספר הזה — לוקח 30 שניות\n\n' +
+      'אחרי שנקשרים, תוכל לשלוח לי דברים כמו:\n' +
+      '• "45 קפה"\n' +
+      '• "230 סופר רמי לוי"\n' +
+      '• "1200 שכר דירה"\n\n' +
+      'ואני אכניס הכל לגיליון שלך אוטומטית. 📊');
     return res.status(200).json({ ok: true, unregistered: true });
   }
 
