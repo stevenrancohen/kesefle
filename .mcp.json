@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "context-brain": {
+      "command": "/Users/stevenrancohen/.local/bin/context-brain",
+      "args": ["serve", "--project", "."]
+    }
+  }
+}

@@ -6,3 +6,9 @@ node_modules/
 *.log
 .idea/
 .vscode/
+
+# context-brain MCP local index/db
+.context-brain.db
+.context-brain.db-journal
+.context-brain.db-wal
+.context-brain.db-shm
