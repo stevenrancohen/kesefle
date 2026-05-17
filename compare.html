@@ -50,6 +50,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link rel="stylesheet" href="/assets/futuristic.css">
 <script>
   tailwind.config = {
     darkMode: 'class',
@@ -150,14 +151,21 @@
 <!-- ============== HERO ============== -->
 <section class="relative overflow-hidden bg-mesh pt-28 pb-12 md:pt-36 md:pb-16">
   <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
+  <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-40"></div>
+  <div class="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
   <div class="mx-auto max-w-3xl px-5 text-center">
-    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
-      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
-      ההשוואה ההוגנת · עודכן בפברואר <span class="num">2026</span>
+    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
+      <span class="relative flex h-2 w-2">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+        <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
+      </span>
+      <span class="font-mono">COMPARE</span>
+      <span class="opacity-50">•</span>
+      <span>עודכן <span class="num">02</span>/<span class="num">2026</span></span>
     </div>
     <h1 class="text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl">
       ההשוואה
-      <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">ההוגנת.</span>
+      <span class="block holo-text">ההוגנת.</span>
     </h1>
     <p class="mt-5 mx-auto max-w-2xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
       רוב אפליקציות ההוצאות נכשלות בישראל כי הן נבנו עבור אמריקאים שמקבלים פייצ'ק חודשי, משלמים בכרטיס לכל דבר, ולא מכירים את ביט, גמ"ח, צ'יקים חתומים על שולחן או מזומן לבייביסיטר. אנחנו לא טובים מהמתחרים בכל קטגוריה — והדף הזה אומר לך בדיוק במה.

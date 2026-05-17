@@ -932,6 +932,15 @@ function processExpense(text) {
   if (trimmed === 'מחק אחרון' || trimmed === 'undo') {
     return { reply: deleteLastTransaction() };
   }
+  if (trimmed === 'מנוע' || trimmed === 'engine' || trimmed === 'status' || trimmed === 'stats') {
+    return { reply: getEngineStatus() };
+  }
+  if (trimmed === 'מילון' || trimmed === 'dict' || trimmed === 'dictionary') {
+    return { reply: getDictionaryLink() };
+  }
+  if (trimmed === 'גיליון' || trimmed === 'sheet') {
+    return { reply: '📊 הגיליון שלך:\nhttps://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit' };
+  }
 
   const fx = parseForeignCurrencyHint(text);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : text);
@@ -1378,16 +1387,61 @@ function deleteLastTransaction() {
 }
 
 function getHelpMessage() {
-  return '🤖 בוט הוצאות - איך להשתמש:\n\n' +
-    '📝 רישום הוצאה:\n' +
-    '   "85 סופר רמי לוי"\n' +
-    '   "1200 ארנונה"\n' +
-    '   "סופר 250"\n\n' +
-    '📊 פקודות:\n' +
-    '   "סיכום" - סיכום החודש\n' +
-    '   "מחק אחרון" - מחיקת הרישום האחרון\n' +
-    '   "עזרה" - הודעה זו\n\n' +
-    '💡 הבוט מזהה אוטומטית קטגוריות לפי מילות מפתח. ערוך את CATEGORY_MAP בסקריפט להוספת מילים.';
+  return '🤖 *כסף\'לה — מדריך מהיר*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    '📝 *רישום הוצאה:*\n' +
+    '  • "85 סופר רמי לוי"\n' +
+    '  • "1200 ארנונה"\n' +
+    '  • "245 wolt דאלי"\n' +
+    '  • "50$ amazon" (מטבע זר → ILS)\n\n' +
+    '💰 *רישום הכנסה:*\n' +
+    '  • "8500 משכורת"\n' +
+    '  • "3000 הכנסה עסקית"\n\n' +
+    '💳 *פיצול לתשלומים:*\n' +
+    '  • "5000 ב-10 תשלומים מחשב"\n\n' +
+    '📊 *פקודות מהירות:*\n' +
+    '  • "סיכום" — סיכום החודש\n' +
+    '  • "מחק אחרון" — בטל את האחרון\n' +
+    '  • "סנכרן" — ריענון דשבורד\n' +
+    '  • "מילון" — קישור ללשונית הלמידה\n' +
+    '  • "מנוע" — מצב המנוע (AI/cache/keywords)\n' +
+    '  • "עזרה" — הודעה זו\n\n' +
+    '🧠 *המנוע:*\n' +
+    'המנוע מקטלג ב-3 שכבות — cache, 1,480 מילים, ו-Claude AI לגיבוי.\n' +
+    'דיוק >99% אחרי 30-50 הוצאות.\n\n' +
+    '🔒 הנתונים נשמרים *רק* בגיליון Drive שלך. לא אצלנו.';
+}
+
+function getEngineStatus() {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('מילון לימוד');
+    var learnedCount = sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
+    var aiEnabled = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+    var keywordCount = (typeof CATEGORY_MAP !== 'undefined') ? CATEGORY_MAP.reduce(function(a,b){ return a + (b.keywords ? b.keywords.length : 0); }, 0) : 0;
+    var categoryCount = (typeof CATEGORY_MAP !== 'undefined') ? CATEGORY_MAP.length : 0;
+    return '⚡ *מצב המנוע*\n' +
+      '━━━━━━━━━━━━━━━━━━\n\n' +
+      '🥇 *שכבה 1 — Cache*\n' +
+      '   ' + learnedCount + ' מילים שנלמדו אישית\n' +
+      '   ~50ms • חינם\n\n' +
+      '🥈 *שכבה 2 — Keywords*\n' +
+      '   ' + keywordCount + ' מילים פרושות על ' + categoryCount + ' קטגוריות\n' +
+      '   ~5ms • חינם\n\n' +
+      '🥉 *שכבה 3 — Claude AI*\n' +
+      '   ' + (aiEnabled ? '✅ מופעל (claude-3-5-haiku)' : '⚠️ לא מופעל (חסר API key)') + '\n' +
+      '   ~800ms • $0.0001/קריאה\n\n' +
+      '🔒 הכל נשמר ב-Drive שלך. לא אצלנו.';
+  } catch (e) {
+    return '❌ לא הצלחתי לקרוא מצב מנוע: ' + e.message;
+  }
+}
+
+function getDictionaryLink() {
+  return '📖 *לשונית "מילון לימוד" בגיליון שלך:*\n' +
+    'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit\n\n' +
+    'שם הלשונית: *מילון לימוד*\n' +
+    'מבנה: keyword | category | subcategory | source | updated_at\n\n' +
+    '💡 אתה יכול לערוך ידנית כדי ללמד את הבוט מילה חדשה.';
 }
 
 // ============================================================

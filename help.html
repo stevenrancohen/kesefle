@@ -15,6 +15,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%82%AA%3C/text%3E%3C/svg%3E" />
 
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/futuristic.css">
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
@@ -101,14 +102,22 @@
 </header>
 
 <!-- ============== HERO + SEARCH ============== -->
-<section class="relative border-b border-ink-200/60 bg-gradient-to-b from-brand-50 via-white to-white px-4 py-12 dark:border-ink-700/60 dark:from-brand-500/10 dark:via-ink-900 dark:to-ink-900 sm:px-6 md:py-16">
+<section class="relative overflow-hidden border-b border-ink-200/60 bg-gradient-to-b from-brand-50 via-white to-white px-4 py-12 dark:border-ink-700/60 dark:from-brand-500/10 dark:via-ink-900 dark:to-ink-900 sm:px-6 md:py-16">
+  <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-40"></div>
+  <div class="pointer-events-none absolute -top-32 -left-20 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
+  <div class="pointer-events-none absolute -top-32 -right-20 -z-10 h-80 w-80 rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-3s"></div>
   <div class="mx-auto max-w-3xl text-center">
-    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-500/40 dark:bg-ink-800 dark:text-brand-300">
-      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
-      תשובות מהירות, בעברית, <span class="num">24/7</span>
+    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-ink-800 dark:text-brand-300">
+      <span class="relative flex h-2 w-2">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+        <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
+      </span>
+      <span class="font-mono">HELP</span>
+      <span class="opacity-50">•</span>
+      <span>תשובות בעברית · <span class="num">24/7</span></span>
     </div>
     <h1 class="text-balance text-3xl font-black leading-tight tracking-tight md:text-5xl">
-      איך אפשר לעזור?
+      איך אפשר <span class="holo-text">לעזור?</span>
     </h1>
     <p class="mt-3 text-base text-ink-600 dark:text-ink-300 md:text-lg">
       מחפש איך להתחיל? נתקעת? יש לנו את התשובה.
@@ -430,23 +439,54 @@ var CATEGORIES = [
       },
       {
         id: 'wa-categories',
-        title: 'איך הבוט מזהה קטגוריה אוטומטית',
-        summary: 'איך עובד ה-AI שמסווג את ההוצאות שלך.',
-        tags: ['קטגוריה','ai','זיהוי','אוטומטי','סיווג'],
+        title: 'איך הבוט מזהה קטגוריה אוטומטית (3-Tier AI)',
+        summary: 'מנוע AI היברידי: cache → 1,480 מילים → Claude Haiku 3.5.',
+        tags: ['קטגוריה','ai','זיהוי','אוטומטי','סיווג','claude','haiku','engine'],
         body: `
-          <p>הבוט משתמש בשילוב של זיהוי טקסט וקטלוג מבוסס למידה, כדי לקבוע אוטומטית את הקטגוריה של כל הוצאה.</p>
-          <h2>איך זה עובד</h2>
-          <p>כשאתה כותב <code><span class="num">245</span> שופרסל</code>, הבוט:</p>
+          <p>הבוט הוא <strong>מנוע AI היברידי בן 3 שכבות</strong>. כל הודעה עוברת דרך השכבות לפי הסדר — הראשונה שיודעת לענות, מנצחת.</p>
+
+          <h2>🥇 שכבה 1 — Cache (לשונית <code>מילון לימוד</code>)</h2>
+          <p><strong>~30% מההודעות. ~50ms. חינם.</strong></p>
+          <p>בלשונית <code>מילון לימוד</code> שנוצרת אוטומטית בגיליון שלך, נשמרת כל תשובה שהבוט נתן בעבר. בפעם הבאה שאותו ספק חוזר — נקרא מיד מהגיליון בלי לחשב מחדש.</p>
+          <pre style="background:#0f1422;color:#22c55e;padding:12px;border-radius:8px;direction:ltr;text-align:left;font-size:12px;overflow:auto"><code>keyword                 | category | subcategory | source | updated_at
+גלידריה של אבי         | אוכל      | אוכל בחוץ   | ai     | 2026-05-17
+חתונה של רוני          | אירועים  | אירועים     | ai     | 2026-05-17</code></pre>
+          <p>אתה גם יכול לערוך את הלשונית הזו ידנית כדי "ללמד" את הבוט מילה חדשה — בפעם הבאה זה יעבוד.</p>
+
+          <h2>🥈 שכבה 2 — מילון מילות מפתח (<span class="num">1,480</span> מילים)</h2>
+          <p><strong>~65% מההודעות. ~5ms. חינם.</strong></p>
+          <p>אם השכבה הראשונה לא ידעה, השכבה השנייה מחפשת בתוך מילון מובנה של <span class="num">1,480</span> מילים פרושות על <span class="num">77</span> קטגוריות:</p>
           <ul>
-            <li>מזהה את "שופרסל" כרשת סופרמרקטים → קטגוריה "מזון וצריכה".</li>
-            <li>מסתכל בהיסטוריה שלך — אם בפעם הקודמת שאלת על שופרסל וסיווגת כ"מצרכים", הוא יזכור.</li>
-            <li>אם הוא לא בטוח (נניח "פז" — תחנת דלק או חנות נוחות?), ישאל אותך פעם אחת.</li>
+            <li><strong>~30 רשתות סופר</strong>: שופרסל, רמי לוי, יוחננוף, AM:PM, חצי חינם, יינות ביתן, ויקטורי…</li>
+            <li><strong>~50 מסעדות / קפה</strong>: וולט, ארומה, גרג, קופיקס, רולדין, BBB, Cibus, פיצה האט…</li>
+            <li><strong>~15 בנקים + פינטק</strong>: הפועלים, לאומי, מזרחי, איסראקארד, ביט, PayPal, eToro…</li>
+            <li><strong>~25 חברות ביטוח</strong>: הראל, כלל, מגדל, הפניקס, מנורה, איילון…</li>
+            <li><strong>כל ה-HMOs + 25 בתי חולים</strong>: כללית, מכבי, מאוחדת, שיבא, איכילוב…</li>
+            <li><strong>כל ~50 חברות המים</strong> לפי עיר + גז (פזגז, אמישראגז, סופרגז…)</li>
+            <li><strong>כל הטלקום</strong>: פרטנר, סלקום, פלאפון, הוט מובייל, גולן, בזק…</li>
+            <li><strong>תחבורה</strong>: אגד, דן, מטרופולין, רכבת ישראל, רכבת קלה, אל על, איסראייר…</li>
+            <li><strong>200+ מנויים</strong>: Netflix, Spotify, ChatGPT, Claude, GitHub, Figma, Notion…</li>
+            <li><strong>ממשלה</strong>: ביטוח לאומי, מס הכנסה, מד"א, משרד הרישוי, דואר ישראל…</li>
           </ul>
-          <h2>הקטגוריות המובנות</h2>
-          <p>יש <span class="num">12</span> קטגוריות בסיסיות: מזון, דלק/תחבורה, דיור, בילוי, מסעדות, ביגוד, בריאות, חינוך, מתנות, מנויים, חיות, ואחר. ב-Pro אפשר להוסיף בלי הגבלה.</p>
+
+          <h2>🥉 שכבה 3 — Claude Haiku 3.5 (AI fallback)</h2>
+          <p><strong>~5% מההודעות. ~800ms. ~$<span class="num">0.0001</span> לקריאה.</strong></p>
+          <p>אם הבוט לא מצא תשובה גם בשכבה 2 (לדוגמה: <code>120 חתונה של רוני</code> — מילים שלא נמצאות במילון), הוא שולח את ההודעה למודל <code>claude-3-5-haiku</code> של Anthropic. ה-AI מחזיר קטגוריה ותת-קטגוריה תוך פחות משנייה, ואז הבוט שומר את התשובה ב-cache (שכבה 1) — כך בפעם הבאה אותה הודעה תהיה מיידית וחינמית.</p>
+          <blockquote><strong>💸 עלות:</strong> אם אתה שולח <span class="num">100</span> הוצאות בחודש ו-<span class="num">5</span> מהן באמת חדשות → עלות ה-AI היא ₪<span class="num">0.02</span> בחודש. כן, שני אגורות.</blockquote>
+
+          <h2>📊 פילוח לכל <span class="num">1,000</span> הודעות</h2>
+          <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px">
+            <thead><tr style="border-bottom:2px solid #22c55e"><th style="text-align:right;padding:8px">שכבה</th><th style="text-align:right;padding:8px">אחוז</th><th style="text-align:right;padding:8px">עלות</th></tr></thead>
+            <tbody>
+              <tr><td style="padding:8px">Cache (T1)</td><td style="padding:8px"><span class="num">30</span>%</td><td style="padding:8px">$<span class="num">0.00</span></td></tr>
+              <tr><td style="padding:8px">Keywords (T2)</td><td style="padding:8px"><span class="num">65</span>%</td><td style="padding:8px">$<span class="num">0.00</span></td></tr>
+              <tr><td style="padding:8px">Claude AI (T3)</td><td style="padding:8px"><span class="num">5</span>%</td><td style="padding:8px">$<span class="num">0.005</span> ≈ ₪<span class="num">0.02</span></td></tr>
+            </tbody>
+          </table>
+
           <h2>אם הבוט טעה</h2>
-          <p>פשוט ענה: <code>זה היה בילוי</code> או <code>קטגוריה: דלק</code> — הבוט יתקן את ההוצאה <strong>ויזכור</strong> בפעם הבאה.</p>
-          <p>אחרי <span class="num">30</span>-<span class="num">50</span> הוצאות, רמת הדיוק עוברת <span class="num">95</span>%. הבוט באמת לומד את הסגנון שלך, את החנויות האהובות עליך, ואת ההרגלים שלך.</p>
+          <p>פשוט ענה: <code>זה היה בילוי</code> או <code>קטגוריה: דלק</code> — הבוט יתקן את ההוצאה <strong>ויזכור</strong> בפעם הבאה (נשמר ב-cache).</p>
+          <p>אחרי <span class="num">30</span>-<span class="num">50</span> הוצאות, רמת הדיוק עוברת <span class="num">99</span>%. ה-cache הופך את הבוט להיות אישי לך — הוא לומד את הסגנון, החנויות, וההרגלים שלך.</p>
         `,
       },
       {

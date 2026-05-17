@@ -1,0 +1,111 @@
+/* ===========================================================
+ * Kesefle Futuristic Effects — shared CSS layer
+ * Include via: <link rel="stylesheet" href="/assets/futuristic.css">
+ * Honors prefers-reduced-motion.
+ * =========================================================== */
+
+/* holographic gradient sweep */
+@keyframes kfl-holo-sweep { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.holo-text {
+  background-image: linear-gradient(110deg, #22c55e 0%, #a855f7 25%, #06b6d4 50%, #a855f7 75%, #22c55e 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: kfl-holo-sweep 5s linear infinite;
+}
+
+/* animated matrix grid background */
+@keyframes kfl-grid-shift {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+.matrix-grid {
+  background-image:
+    linear-gradient(rgba(34,197,94,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,197,94,0.08) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: kfl-grid-shift 24s linear infinite;
+}
+
+/* neon border pulse */
+@keyframes kfl-neon-pulse {
+  0%,100% { box-shadow: 0 0 20px rgba(34,197,94,0.25), 0 0 40px rgba(34,197,94,0.10), inset 0 0 20px rgba(34,197,94,0.04); }
+  50%     { box-shadow: 0 0 40px rgba(34,197,94,0.45), 0 0 80px rgba(34,197,94,0.20), inset 0 0 30px rgba(34,197,94,0.08); }
+}
+.neon-card { animation: kfl-neon-pulse 3.5s ease-in-out infinite; }
+
+/* scan-line sweep */
+@keyframes kfl-scan-line { 0% { transform: translateY(-100%); } 100% { transform: translateY(2200%); } }
+.scan-line { position: relative; overflow: hidden; }
+.scan-line::before {
+  content:""; position:absolute; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, rgba(34,197,94,0.7), transparent);
+  animation: kfl-scan-line 5s linear infinite; pointer-events: none;
+}
+
+/* live blink dot */
+@keyframes kfl-live-blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+.live-dot { animation: kfl-live-blink 1.3s ease-in-out infinite; }
+
+/* typing cursor */
+@keyframes kfl-type-cursor { 0%,100% { opacity:1 } 50% { opacity:0 } }
+.type-cursor::after { content:"▌"; margin-right:2px; animation: kfl-type-cursor 0.9s steps(2) infinite; color:#22c55e; }
+
+/* tilt 3d on hover */
+.tilt-soft { transition: transform 0.3s cubic-bezier(0.22,0.61,0.36,1); }
+.tilt-soft:hover { transform: perspective(900px) rotateX(2deg) rotateY(-2deg) translateY(-4px); }
+
+/* glass panel */
+.glass-panel {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* dot-grid backdrop (already in index but re-declared so subpages get it) */
+.dotgrid { background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0); background-size: 24px 24px; }
+
+/* gradient sweep across text (lighter than holo) */
+@keyframes kfl-gradient-sweep { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.animate-gradient { background-size: 200% 200%; animation: kfl-gradient-sweep 6s ease infinite; }
+
+/* aurora gradient mesh — premium depth */
+.aurora {
+  background-image:
+    radial-gradient(at 18% 22%, rgba(34,197,94,0.22) 0px, transparent 50%),
+    radial-gradient(at 82% 18%, rgba(99,102,241,0.20) 0px, transparent 55%),
+    radial-gradient(at 55% 90%, rgba(244,114,182,0.18) 0px, transparent 55%),
+    radial-gradient(at 12% 78%, rgba(56,189,248,0.20) 0px, transparent 55%);
+}
+
+/* shimmer overlay on primary CTAs */
+@keyframes kfl-shimmer-move { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.shimmer-overlay {
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background-image: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.4) 50%, transparent 65%);
+  background-size: 200% 100%; animation: kfl-shimmer-move 3s linear infinite;
+}
+
+/* counter animation (entry zoom) */
+@keyframes kfl-counter-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.counter-pop { animation: kfl-counter-pop 0.8s cubic-bezier(0.22,0.61,0.36,1) both; }
+
+/* blob drift (re-declared) */
+@keyframes kfl-blob-drift {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(28px,-38px) scale(1.08); }
+  66%     { transform: translate(-22px,24px) scale(0.94); }
+}
+.animate-blob { animation: kfl-blob-drift 14s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-text, .matrix-grid, .neon-card, .scan-line::before, .live-dot, .type-cursor::after,
+  .animate-gradient, .shimmer-overlay, .counter-pop, .animate-blob {
+    animation: none !important;
+  }
+  .tilt-soft:hover { transform: none; }
+}
