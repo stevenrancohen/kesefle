@@ -976,6 +976,99 @@
   </script>
 </section>
 
+<!-- ============== ROI CALCULATOR (interactive) ============== -->
+<section class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
+  <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-30"></div>
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">🧮 חישוב חיסכון</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">
+        כמה כסף <span class="holo-text">תחסכו</span> בשנה?
+      </h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">
+        מחקרים מראים שאנשים שעוקבים אחרי הוצאות חוסכים <span class="font-bold">5-12%</span> מההוצאות החודשיות. תזיזו את הסליידרים.
+      </p>
+    </div>
+
+    <div class="mt-10 rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 md:p-10">
+      <!-- Slider 1: monthly spend -->
+      <div>
+        <div class="flex items-baseline justify-between">
+          <label for="kfl-roi-spend" class="text-sm font-bold dark:text-white">הוצאות חודשיות</label>
+          <span class="font-mono text-2xl font-black holo-text"><span id="kfl-roi-spend-val">8000</span>₪</span>
+        </div>
+        <input id="kfl-roi-spend" type="range" min="2000" max="40000" step="500" value="8000" oninput="kflRoiUpdate()" class="mt-3 w-full accent-brand-500">
+        <div class="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-ink-400">
+          <span>₪2,000</span>
+          <span>₪40,000</span>
+        </div>
+      </div>
+
+      <!-- Slider 2: tracking impact (% savings) -->
+      <div class="mt-8">
+        <div class="flex items-baseline justify-between">
+          <label for="kfl-roi-pct" class="text-sm font-bold dark:text-white">% חיסכון משוער</label>
+          <span class="font-mono text-2xl font-black holo-text"><span id="kfl-roi-pct-val">8</span>%</span>
+        </div>
+        <input id="kfl-roi-pct" type="range" min="2" max="15" step="1" value="8" oninput="kflRoiUpdate()" class="mt-3 w-full accent-brand-500">
+        <div class="mt-1 flex justify-between text-[10px] text-ink-500 dark:text-ink-400">
+          <span>2% (קל)</span>
+          <span>15% (אגרסיבי)</span>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="mt-10 grid gap-4 sm:grid-cols-3">
+        <div class="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-center dark:border-brand-500/30 dark:bg-brand-500/10">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300">חיסכון חודשי</div>
+          <div class="mt-2 text-3xl font-black text-brand-700 dark:text-brand-300">₪<span id="kfl-roi-monthly">640</span></div>
+        </div>
+        <div class="rounded-2xl border border-brand-300 bg-gradient-to-br from-brand-500 to-brand-700 p-5 text-center text-white shadow-glow">
+          <div class="text-[11px] font-bold uppercase tracking-wider opacity-90">חיסכון שנתי</div>
+          <div class="mt-2 text-3xl font-black">₪<span id="kfl-roi-annual">7,680</span></div>
+        </div>
+        <div class="rounded-2xl border border-ink-200 bg-white p-5 text-center dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">עלות כסף'לה</div>
+          <div class="mt-2 text-3xl font-black dark:text-white">₪<span class="num">228</span></div>
+          <div class="mt-0.5 text-[10px] text-ink-500 dark:text-ink-400">בשנה (Pro)</div>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-2xl bg-emerald-50 p-4 text-center dark:bg-emerald-500/10">
+        <p class="text-sm font-bold text-emerald-900 dark:text-emerald-200">
+          ROI: כל ₪1 שהוצאתם על כסף'לה — <span id="kfl-roi-multiple" class="font-black">×33</span> חיסכון
+        </p>
+        <a href="#signup" class="mt-3 inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-5 py-2 text-sm font-bold text-white hover:bg-brand-700">
+          התחל לחסוך עכשיו →
+        </a>
+      </div>
+    </div>
+
+    <p class="mt-6 text-center text-xs text-ink-500 dark:text-ink-400">
+      * מבוסס על מחקרים של רייזאפ, YNAB ו-NerdWallet. אינדיבידואלית התוצאות שונות.
+    </p>
+  </div>
+
+  <script>
+    (function(){
+      if (window.kflRoiInit) return;
+      window.kflRoiInit = true;
+      window.kflRoiUpdate = function() {
+        var spend = parseInt(document.getElementById('kfl-roi-spend').value);
+        var pct = parseInt(document.getElementById('kfl-roi-pct').value);
+        var monthly = Math.round(spend * pct / 100);
+        var annual = monthly * 12;
+        var multiple = Math.round(annual / 228);
+        document.getElementById('kfl-roi-spend-val').textContent = spend.toLocaleString();
+        document.getElementById('kfl-roi-pct-val').textContent = pct;
+        document.getElementById('kfl-roi-monthly').textContent = monthly.toLocaleString();
+        document.getElementById('kfl-roi-annual').textContent = annual.toLocaleString();
+        document.getElementById('kfl-roi-multiple').textContent = '×' + multiple;
+      };
+    })();
+  </script>
+</section>
+
 <!-- ============== PRICING ============== -->
 <section id="pricing" class="bg-ink-50 py-20 md:py-28 dark:bg-ink-900">
   <div class="mx-auto max-w-6xl px-5">
