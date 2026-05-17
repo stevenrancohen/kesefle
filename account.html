@@ -473,7 +473,10 @@ async function kesefleProvisionSheet() {
 
   var tokenClient = window.google.accounts.oauth2.initTokenClient({
     client_id: window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+    // drive.readonly is needed to copy the template file (drive.file alone
+    // only grants access to files the app already created/opened with picker).
+    // drive.file is kept for ongoing access to files we provision.
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
     callback: async function(tokenResponse) {
       if (tokenResponse.error || !tokenResponse.access_token) {
         status.className = 'mt-2 text-sm text-red-600';
