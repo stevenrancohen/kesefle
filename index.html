@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -175,17 +175,8 @@
       <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
     </div>
     <div class="flex items-center gap-2">
-      <button
-        onclick="kesefleToggleDark()"
-        aria-label="מצב כהה"
-        class="grid h-9 w-9 place-items-center rounded-xl text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
-        id="dark-toggle"
-      >
-        <svg id="icon-moon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg id="icon-sun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-      </button>
-      <a href="#signup" class="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800 sm:inline-block">היכנס</a>
-      <a href="#signup" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 dark:bg-brand-600 dark:hover:bg-brand-500">התחל חינם</a>
+      <a href="#signup" class="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-ink-200 hover:bg-ink-800 sm:inline-block">היכנס</a>
+      <a href="#signup" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">התחל חינם</a>
     </div>
   </nav>
 </header>
@@ -220,14 +211,15 @@
           <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
           <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
         </span>
-        כבר עוקב אחרי <span class="num">₪479,000</span> ב-<span class="num">368</span> הוצאות אמיתיות • <span class="num">4</span> שנות פיתוח
+        בהקמה — בטא פתוח לראשונים
       </div>
       <h1 class="text-balance text-5xl font-black leading-[1.02] tracking-tight md:text-7xl dark:text-white">
-        הוצאה ב-וואטסאפ.
-        <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-500 bg-clip-text text-transparent animate-gradient">רשומה בשנייה.</span>
+        רישום הוצאות
+        <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-500 bg-clip-text text-transparent animate-gradient">לא צריך אפליקציה.</span>
       </h1>
       <p class="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
-        בלי אפליקציה. בלי טפסים. בלי לזכור. כותב <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון שלך, מקוטלג.
+        רוב אנשי החינוך לכסף אומרים <span class="font-semibold text-ink-900 dark:text-white">"תרשמו כל הוצאה"</span>. רוב האנשים לא עושים את זה כי זה מעצבן.<br>
+        ב-כסף'לה כותבים בוואטסאפ <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון Google Drive שלך, מקוטלג.
       </p>
       <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'hero' });" class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-l from-brand-600 via-brand-600 to-brand-700 px-7 py-4 text-base font-bold text-white shadow-glow transition-all hover:shadow-2xl hover:-translate-y-0.5">
@@ -346,21 +338,24 @@
   </div>
 </section>
 
-<!-- ============== LIVE STATS BAR ============== -->
-<section class="border-y border-ink-200 bg-white py-8 dark:border-ink-700 dark:bg-ink-900">
-  <div class="mx-auto max-w-6xl px-5">
-    <div class="grid gap-6 text-center md:grid-cols-3">
-      <div>
-        <div class="text-3xl font-black text-brand-600 dark:text-brand-400">₪<span class="num" id="stat-money">479,000</span>+</div>
-        <div class="mt-1 text-sm text-ink-500 dark:text-ink-300">נרשמו בארבע השנים האחרונות</div>
-      </div>
-      <div>
-        <div class="text-3xl font-black text-accent-600 dark:text-accent-500"><span class="num" id="stat-orders">368</span></div>
-        <div class="mt-1 text-sm text-ink-500 dark:text-ink-300">הוצאות אמיתיות בגיליון אחד</div>
-      </div>
-      <div>
-        <div class="text-3xl font-black text-ink-900 dark:text-white"><span class="num">2</span> שניות</div>
-        <div class="mt-1 text-sm text-ink-500 dark:text-ink-300">מהודעה ל-וואטסאפ ועד שורה בגיליון</div>
+<!-- ============== HONEST FOUNDER NOTE ============== -->
+<section class="border-y border-ink-200 bg-white py-10 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto max-w-3xl px-5">
+    <div class="rounded-3xl border border-ink-200 bg-gradient-to-br from-ink-50 to-white p-6 md:p-8 dark:border-ink-700 dark:from-ink-800 dark:to-ink-900">
+      <div class="flex items-start gap-4">
+        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white shadow-soft">S</div>
+        <div class="text-right">
+          <p class="text-sm font-bold text-brand-600 dark:text-brand-400">מסטיבן — היוצר</p>
+          <p class="mt-2 text-base leading-relaxed text-ink-700 dark:text-ink-100">
+            <span class="font-semibold dark:text-white">הבעיה:</span> רוב האנשים יודעים שכדאי לעקוב אחרי הוצאות, וכמעט אף אחד לא עושה את זה. אפליקציות מנהלות תקציב דורשות התקנה, הגדרות וזיכרון לפתוח אותן. בנקאות פתוחה לא רואה מזומן, ביט, או הוצאות עסקיות.
+          </p>
+          <p class="mt-3 text-base leading-relaxed text-ink-700 dark:text-ink-100">
+            <span class="font-semibold dark:text-white">הפתרון:</span> את כותבת בוואטסאפ "<span class="num">245</span> סופר". זה כבר בגיליון Google Drive שלך. שום הגדרה, שום התקנה. זה עובד כי וואטסאפ הוא כבר במסך הראשי שלך.
+          </p>
+          <p class="mt-3 text-sm leading-relaxed text-ink-500 dark:text-ink-300">
+            כסף'לה היא בבטא. אנחנו מצרפים <span class="font-semibold">משתמשים ראשונים</span> כדי לתקן יחד את הפרטים הקטנים לפני שנעלה רחב.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -1111,23 +1106,11 @@ document.addEventListener('keydown', function(e) {
   } catch (e) { /* private mode — banner stays hidden */ }
 })();
 
-// ============ DARK MODE ============
-function kesefleToggleDark() {
-  var html = document.documentElement;
-  var isDark = html.classList.toggle('dark');
-  localStorage.setItem('kesefle_theme', isDark ? 'dark' : 'light');
-  document.getElementById('icon-moon').classList.toggle('hidden', isDark);
-  document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
-}
-(function initTheme() {
-  var saved = localStorage.getItem('kesefle_theme');
-  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  if (saved === 'dark' || (!saved && prefersDark)) {
-    document.documentElement.classList.add('dark');
-    document.getElementById('icon-moon').classList.add('hidden');
-    document.getElementById('icon-sun').classList.remove('hidden');
-  }
-})();
+// ============ DARK MODE (forced) ============
+// Kesefle is dark-mode only by design. The `dark` class is set on <html>
+// at parse time so first paint is correct; this no-op stub remains for
+// backward compat in case other scripts reference kesefleToggleDark.
+function kesefleToggleDark() { /* no-op: dark only */ }
 
 // Hide OAuth buttons whose Client ID is still a placeholder.
 // Only iterate the OAuth provider buttons — NOT the waitlist submit button.
