@@ -941,6 +941,9 @@ function processExpense(text) {
   if (trimmed === 'גיליון' || trimmed === 'sheet') {
     return { reply: '📊 הגיליון שלך:\nhttps://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit' };
   }
+  if (trimmed === 'מטבעות' || trimmed === 'currencies' || trimmed === 'fx') {
+    return { reply: getCurrenciesMessage() };
+  }
 
   const fx = parseForeignCurrencyHint(text);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : text);
@@ -998,21 +1001,63 @@ function processExpense(text) {
   }
 }
 
+// Rough fixed-rate conversion table — used when user writes "50$ amazon" without ILS amount.
+// Rates conservative for late 2025/early 2026. Bot prefers user-supplied ILS amount when present.
+var KFL_FX_RATES = {
+  USD: 3.65, EUR: 3.95, GBP: 4.65,
+  '$': 3.65, '€': 3.95, '£': 4.65
+};
+
+function _kfl_fxLookup(symbolOrCode) {
+  if (!symbolOrCode) return null;
+  var k = String(symbolOrCode).toUpperCase().trim();
+  if (KFL_FX_RATES[k]) return KFL_FX_RATES[k];
+  if (/דולר/i.test(symbolOrCode)) return KFL_FX_RATES.USD;
+  if (/יורו|אירו/i.test(symbolOrCode)) return KFL_FX_RATES.EUR;
+  if (/פאונד/i.test(symbolOrCode)) return KFL_FX_RATES.GBP;
+  return null;
+}
+
 function parseForeignCurrencyHint(text) {
   if (!text) return null;
   var s = String(text);
   var foreignRe = /(\$|€|£|usd|eur|gbp|דולר|דולרים|יורו|אירו|פאונד)/i;
   if (!foreignRe.test(s)) return null;
+
+  // Path A — user gave both amounts (e.g. "50$ amazon 180 שח")
   var ilsRe = /(\d+(?:[.,]\d+)?)\s*(?:שקל(?:ים)?|ש["״']?ח|nis|ils)/i;
   var m = s.match(ilsRe);
-  var ilsAmount = m ? Number(String(m[1]).replace(/,/g, '')) : null;
-  if (!ilsAmount || isNaN(ilsAmount)) return null;
-  var note = s.trim();
-  var fxBlockRe = /(\$|€|£|\d)[^,\n]{0,80}?(שקל|ש["״']?ח|nis|ils)/i;
-  var blockMatch = s.match(fxBlockRe);
-  if (blockMatch && blockMatch[0].length < note.length) note = blockMatch[0].trim();
-  var cleanedText = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|usd|eur|gbp|דולר(?:ים)?|יורו|אירו|פאונד|שקל(?:ים)?|ש["״']?ח|nis|ils)/gi, '').replace(/[\\\/]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return { ilsAmount: ilsAmount, note: note, cleanedText: cleanedText };
+  if (m) {
+    var ilsAmount = Number(String(m[1]).replace(/,/g, ''));
+    if (!isNaN(ilsAmount) && ilsAmount > 0) {
+      var note = s.trim();
+      var fxBlockRe = /(\$|€|£|\d)[^,\n]{0,80}?(שקל|ש["״']?ח|nis|ils)/i;
+      var blockMatch = s.match(fxBlockRe);
+      if (blockMatch && blockMatch[0].length < note.length) note = blockMatch[0].trim();
+      var cleanedTextA = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|usd|eur|gbp|דולר(?:ים)?|יורו|אירו|פאונד|שקל(?:ים)?|ש["״']?ח|nis|ils)/gi, '').replace(/[\\\/]+/g, ' ').replace(/\s+/g, ' ').trim();
+      return { ilsAmount: ilsAmount, note: note, cleanedText: cleanedTextA, autoConverted: false };
+    }
+  }
+
+  // Path B — auto-convert from foreign currency using fixed rates.
+  // Patterns: "50$ amazon", "$50 amazon", "50 usd amazon", "50 דולר", "12 יורו spotify"
+  var foreignAmountRe = /(\d+(?:[.,]\d+)?)\s*(\$|€|£|usd|eur|gbp|דולר(?:ים)?|יורו|אירו|פאונד)/i;
+  var foreignSymRe = /(\$|€|£)\s*(\d+(?:[.,]\d+)?)/i;
+  var fm = s.match(foreignAmountRe) || s.match(foreignSymRe);
+  if (!fm) return null;
+  var amount, sym;
+  if (fm[1] && isNaN(parseFloat(fm[1]))) {
+    sym = fm[1]; amount = parseFloat(String(fm[2]).replace(',', '.'));
+  } else {
+    amount = parseFloat(String(fm[1]).replace(',', '.')); sym = fm[2] || fm[1];
+  }
+  if (!amount || isNaN(amount) || amount <= 0) return null;
+  var rate = _kfl_fxLookup(sym);
+  if (!rate) return null;
+  var converted = Math.round(amount * rate * 100) / 100;
+  var noteB = sym + ' ' + amount + ' → ₪' + converted;
+  var cleanedTextB = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|usd|eur|gbp|דולר(?:ים)?|יורו|אירו|פאונד)/gi, '').replace(/(\$|€|£)\s*\d+(?:[.,]\d+)?/gi, '').replace(/\s+/g, ' ').trim();
+  return { ilsAmount: converted, note: noteB, cleanedText: cleanedTextB, autoConverted: true, fxRate: rate, foreignAmount: amount, foreignSymbol: sym };
 }
 
 function parseAmountAndDescription(text) {
@@ -1434,6 +1479,20 @@ function getEngineStatus() {
   } catch (e) {
     return '❌ לא הצלחתי לקרוא מצב מנוע: ' + e.message;
   }
+}
+
+function getCurrenciesMessage() {
+  return '💱 *המרות מטבע אוטומטיות*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    'שערים נוכחיים (מקובעים):\n' +
+    '  • USD ($) → ₪' + KFL_FX_RATES.USD + '\n' +
+    '  • EUR (€) → ₪' + KFL_FX_RATES.EUR + '\n' +
+    '  • GBP (£) → ₪' + KFL_FX_RATES.GBP + '\n\n' +
+    '*דוגמאות:*\n' +
+    '  • "50$ amazon"\n' +
+    '  • "12 יורו spotify"\n' +
+    '  • "£25 amazon uk"\n\n' +
+    'הבוט ירשום את הסכום ב-₪ אוטומטית ויציין במקור שזה הומר.';
 }
 
 function getDictionaryLink() {

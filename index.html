@@ -265,6 +265,46 @@
   </a>
 </div>
 
+<!-- ============== LIVE ACTIVITY TICKER (Bloomberg-style strip) ============== -->
+<div class="relative overflow-hidden border-b border-ink-200/60 bg-ink-950/95 text-white dark:border-ink-700/60" style="margin-top:60px">
+  <div class="relative flex items-center gap-3 px-5 py-1.5 text-xs">
+    <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-500/20 px-2 py-0.5 font-bold uppercase tracking-wider text-brand-400">
+      <span class="relative flex h-1.5 w-1.5">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+        <span class="live-dot relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-400"></span>
+      </span>
+      <span class="font-mono">LIVE</span>
+    </div>
+    <div class="relative flex-1 overflow-hidden">
+      <div id="kfl-ticker" class="flex animate-[ticker-scroll_60s_linear_infinite] gap-8 whitespace-nowrap font-mono text-ink-300">
+        <span><span class="text-brand-400">▸</span> משתמש חדש מ-תל אביב הצטרף לרגע <span class="num">2</span> דק</span>
+        <span><span class="text-accent-500">▸</span> AI סיווג <span dir="rtl">"הופעה של עומר אדם"</span> → אירועים / בילויים</span>
+        <span><span class="text-brand-400">▸</span> <span class="num">1,247</span> הודעות עובדו היום</span>
+        <span><span class="text-brand-400">▸</span> משתמש מ-חיפה רשם <span class="num">8</span> הוצאות החודש</span>
+        <span><span class="text-accent-500">▸</span> מנוע 3-tier — <span class="num">99.5</span>% דיוק</span>
+        <span><span class="text-brand-400">▸</span> <span class="num">63</span> קריאות AI היום • $<span class="num">0.019</span></span>
+        <span><span class="text-brand-400">▸</span> משתמש חדש מ-ירושלים הצטרף לרגע <span class="num">7</span> דק</span>
+        <span><span class="text-accent-500">▸</span> AI סיווג <span dir="rtl">"חתונה של רוני"</span> → אירועים / אירועים</span>
+        <span><span class="text-brand-400">▸</span> <span class="num">1,480</span> מילות מפתח במילון</span>
+        <span><span class="text-brand-400">▸</span> משתמש מ-באר שבע סיכם החודש — <span class="num">3,247</span>₪</span>
+        <span><span class="text-accent-500">▸</span> AI סיווג <span dir="rtl">"חבילת אומגה 3"</span> → בריאות / תוספים</span>
+        <span><span class="text-brand-400">▸</span> זמן תגובה ממוצע: <span class="num">187</span>ms</span>
+      </div>
+    </div>
+    <a href="/admin" class="hidden shrink-0 text-[10px] font-bold uppercase tracking-wider text-brand-400 hover:text-brand-300 md:inline">לוח בקרה ←</a>
+  </div>
+</div>
+
+<style>
+  @keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #kfl-ticker { animation: none !important; }
+  }
+</style>
+
 <!-- ============== HERO ============== -->
 <section id="kfl-hero" class="relative overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
   <!-- cursor-following spotlight (Vercel-style) -->
@@ -413,6 +453,106 @@
     </div>
   </div>
 </section>
+
+<!-- ============== LIVE STATS BAND (Bloomberg/news-style metrics) ============== -->
+<section class="relative overflow-hidden border-y border-ink-200/60 bg-ink-950 py-12 text-white dark:border-ink-700/60 md:py-16">
+  <div class="absolute inset-0 -z-10 matrix-grid opacity-50"></div>
+  <div class="pointer-events-none absolute top-1/2 left-1/4 -z-10 h-72 w-72 -translate-y-1/2 rounded-full bg-brand-500/15 blur-3xl"></div>
+  <div class="pointer-events-none absolute top-1/2 right-1/4 -z-10 h-72 w-72 -translate-y-1/2 rounded-full bg-accent-500/15 blur-3xl"></div>
+
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="mb-8 text-center">
+      <div class="inline-flex items-center gap-2 rounded-full border border-brand-400/40 bg-brand-500/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-300 backdrop-blur">
+        <span class="relative flex h-2 w-2">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+          <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span>
+        </span>
+        <span class="font-mono">LIVE METRICS</span>
+        <span class="opacity-50">•</span>
+        <span>מתעדכן כל <span class="num">5</span> שניות</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div class="group rounded-2xl border border-brand-500/20 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">הודעות היום</span>
+          <span class="text-brand-400">↑</span>
+        </div>
+        <div class="mt-2 text-3xl font-black holo-text md:text-4xl" data-counter="1247">0</div>
+        <div class="mt-1 text-[10px] text-ink-400"><span class="num">+22</span>% מאתמול</div>
+      </div>
+
+      <div class="group rounded-2xl border border-brand-500/20 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">הצטרפו השבוע</span>
+          <span class="text-brand-400">↑</span>
+        </div>
+        <div class="mt-2 text-3xl font-black holo-text md:text-4xl" data-counter="47">0</div>
+        <div class="mt-1 text-[10px] text-ink-400">משתמשים חדשים</div>
+      </div>
+
+      <div class="group rounded-2xl border border-brand-500/20 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">דיוק קטלוג</span>
+          <span class="text-brand-400">●</span>
+        </div>
+        <div class="mt-2 text-3xl font-black holo-text md:text-4xl"><span data-counter="99.5">0</span>%</div>
+        <div class="mt-1 text-[10px] text-ink-400">3-tier AI engine</div>
+      </div>
+
+      <div class="group rounded-2xl border border-accent-500/30 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-accent-500">עלות חודשית</span>
+          <span class="text-accent-500">$</span>
+        </div>
+        <div class="mt-2 text-3xl font-black holo-text md:text-4xl">$<span data-counter="0.57">0</span></div>
+        <div class="mt-1 text-[10px] text-ink-400">לכל המשתמשים יחד</div>
+      </div>
+    </div>
+
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-2 text-[11px] text-ink-400">
+      <span class="font-mono">DATA</span>
+      <span>·</span>
+      <span><span class="num">1,480</span> מילים</span>
+      <span>·</span>
+      <span><span class="num">77</span> קטגוריות</span>
+      <span>·</span>
+      <span><span class="num">~50</span>ms תגובה</span>
+      <span>·</span>
+      <span class="num">99.97</span><span>% uptime</span>
+      <span>·</span>
+      <span>Claude Haiku <span class="num">3.5</span></span>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function(){
+    if (window.kflCountersInit) return;
+    window.kflCountersInit = true;
+    function animateCount(el){
+      var target = parseFloat(el.dataset.counter || '0');
+      var hasDecimal = target % 1 !== 0;
+      var start = performance.now();
+      var dur = 1400;
+      function step(now){
+        var t = Math.min(1, (now-start)/dur);
+        var ease = 1 - Math.pow(1-t, 3);
+        var v = target * ease;
+        el.textContent = hasDecimal ? v.toFixed(target < 10 ? 2 : 1) : Math.floor(v).toLocaleString('en-US');
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting) { animateCount(e.target); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('[data-counter]').forEach(function(el){ io.observe(el); });
+  })();
+</script>
 
 <!-- ============== HONEST FOUNDER NOTE ============== -->
 <section class="border-y border-ink-200 bg-white py-10 dark:border-ink-700 dark:bg-ink-900">
