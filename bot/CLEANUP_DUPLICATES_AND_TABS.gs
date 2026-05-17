@@ -1,18 +1,21 @@
 // =====================================================================
-// CLEANUP_DUPLICATES_AND_TABS.gs
+// CLEANUP_DUPLICATES_AND_TABS.gs  (v2 — no UI popups, works in standalone scripts)
 // 1) Removes the DUPLICATE "סיכום פיננסי — תמונת מצב 4 שנים" section
 //    in מאזן חברה (keeps the first; deletes the second).
 // 2) Audits tabs and deletes/hides+renames the ones the bot added.
 //
-// USAGE (run in this order):
-//   STEP1_REMOVE_DUPLICATE_SUMMARY    — fixes the dashboard duplicate
-//   STEP2_AUDIT_TABS                  — read-only; shows what will happen
-//   STEP3_APPLY_TAB_CLEANUP           — actually deletes/hides
+// USAGE — run in this order:
+//   STEP1A_PREVIEW_DUPLICATE     — read-only; logs the plan
+//   STEP1B_APPLY_DUPLICATE       — actually deletes the duplicate
+//   STEP2_AUDIT_TABS             — read-only; logs the plan
+//   STEP3_APPLY_TAB_CLEANUP      — actually deletes/hides
+//
+// After each run, click "יומן ביצוע" (Execution log) at the bottom to see the result.
 // =====================================================================
 
 var KFL_CL_SHEET_ID = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
-var KFL_CL_DASH      = 'מאזן חברה';
-var KFL_CL_MARKER    = 'EMBEDDED_FINANCIAL_SUMMARY';
+var KFL_CL_DASH     = 'מאזן חברה';
+var KFL_CL_MARKER   = 'EMBEDDED_FINANCIAL_SUMMARY';
 
 // Tabs that get deleted outright (backup / scratch / test residue)
 var KFL_CL_SAFE_DELETE = [
@@ -25,7 +28,7 @@ var KFL_CL_SAFE_DELETE = [
   /^עותק של /,
 ];
 
-// Tabs that get hidden + renamed to dontdeleteN (useful as reference, not visible)
+// Tabs that get hidden + renamed to dontdeleteN (useful as reference)
 var KFL_CL_HIDE_RENAME = [
   /^סיכום פיננסי$/,
   /^FINANCIAL/i,
@@ -42,19 +45,57 @@ var KFL_CL_USER_TABS = [
   'דוחות', 'תקציב', 'פרויקטים', 'תזרים', 'לקוחות', 'ספקים',
 ];
 
-// =====================================================================
-// STEP 1 — remove duplicate "סיכום פיננסי" section
-// =====================================================================
-function STEP1_REMOVE_DUPLICATE_SUMMARY() {
-  var ui = SpreadsheetApp.getUi();
+// ============================================================
+// STEP 1A — PREVIEW duplicate removal (logs only)
+// ============================================================
+function STEP1A_PREVIEW_DUPLICATE() {
+  var result = findDuplicate_();
+  if (!result.ok) {
+    Logger.log('❌ ' + result.msg);
+    return;
+  }
+  Logger.log('📋 תכנית מחיקה (טרם הוחל):');
+  Logger.log('  נמצאו ' + result.starts.length + ' מופעים של "סיכום פיננסי".');
+  Logger.log('  מקטע ראשון (נשמר):  שורות ' + result.starts[0] + ' - ' + result.ends[0]);
+  Logger.log('  מקטע שני (למחיקה): שורות ' + result.s2 + ' - ' + result.e2 + ' (' + result.rowsToDelete + ' שורות)');
+  if (result.usingFallback) {
+    Logger.log('  ⚠ הסימונים הנסתרים בעמודה H לא נמצאו — שיערתי גודל מקטע. בדוק לאחר מכן.');
+  }
+  Logger.log('');
+  Logger.log('✅ אם זה נראה תקין — הרץ עכשיו STEP1B_APPLY_DUPLICATE');
+}
+
+// ============================================================
+// STEP 1B — APPLY duplicate removal (actually deletes)
+// ============================================================
+function STEP1B_APPLY_DUPLICATE() {
+  var result = findDuplicate_();
+  if (!result.ok) {
+    Logger.log('❌ ' + result.msg);
+    return;
+  }
+  if (result.rowsToDelete < 5 || result.rowsToDelete > 60) {
+    Logger.log('🛑 עצרתי — חישוב חשוד. ' + result.rowsToDelete + ' שורות נראה לא תקין. בדוק שורות ' + result.s2 + '-' + result.e2);
+    return;
+  }
   var ss = SpreadsheetApp.openById(KFL_CL_SHEET_ID);
   var dash = ss.getSheetByName(KFL_CL_DASH);
-  if (!dash) { ui.alert('לא נמצאה לשונית: ' + KFL_CL_DASH); return; }
+  dash.deleteRows(result.s2, result.rowsToDelete);
+  Logger.log('✅ הוסר. נמחקו ' + result.rowsToDelete + ' שורות.');
+  Logger.log('   המופע הראשון בשורות ' + result.starts[0] + '-' + result.ends[0] + ' נשמר.');
+  Logger.log('   פתח את הגיליון "מאזן חברה" כדי לוודא.');
+}
+
+// Internal: locates the duplicate. Returns {ok, starts, ends, s2, e2, rowsToDelete, usingFallback, msg}
+function findDuplicate_() {
+  var ss = SpreadsheetApp.openById(KFL_CL_SHEET_ID);
+  var dash = ss.getSheetByName(KFL_CL_DASH);
+  if (!dash) return { ok: false, msg: 'לא נמצאה לשונית: ' + KFL_CL_DASH };
 
   var lastRow = dash.getLastRow();
-  if (lastRow < 5) { ui.alert('הלשונית ריקה.'); return; }
+  if (lastRow < 5) return { ok: false, msg: 'הלשונית ריקה.' };
 
-  // Pass 1: look for the hidden START/END markers in column H
+  // Pass 1: hidden markers in column H
   var colH = dash.getRange(1, 8, lastRow, 1).getValues();
   var starts = [], ends = [];
   for (var i = 0; i < colH.length; i++) {
@@ -65,7 +106,7 @@ function STEP1_REMOVE_DUPLICATE_SUMMARY() {
 
   var usingFallback = false;
   if (starts.length < 2 || ends.length < 2) {
-    // Pass 2 (fallback): the markers might have been cleared. Search column A header text.
+    // Pass 2 (fallback): search col A header text
     var colA = dash.getRange(1, 1, lastRow, 1).getValues();
     var headerHits = [];
     for (var j = 0; j < colA.length; j++) {
@@ -75,51 +116,24 @@ function STEP1_REMOVE_DUPLICATE_SUMMARY() {
       }
     }
     if (headerHits.length < 2) {
-      ui.alert(
-        'לא נמצאה כפילות.',
-        'מצאתי: ' + headerHits.length + ' כותרת + ' + starts.length + ' START + ' + ends.length + ' END.',
-        ui.ButtonSet.OK
-      );
-      return;
+      return { ok: false, msg: 'לא נמצאה כפילות. (כותרות=' + headerHits.length + ', START=' + starts.length + ', END=' + ends.length + ')' };
     }
-    // Estimate the section length from the first occurrence
-    var firstHeader = headerHits[0];
-    // section spans header → ~25 rows of: data table + delta row + insights
-    // measure: distance to next non-empty block break (>2 consecutive empties in col A)
-    var sectionLen = measureSectionLen_(dash, firstHeader, lastRow);
-    starts = [firstHeader, headerHits[1]];
-    ends   = [firstHeader + sectionLen - 1, headerHits[1] + sectionLen - 1];
+    var sectionLen = measureSectionLen_(dash, headerHits[0], lastRow);
+    starts = [headerHits[0], headerHits[1]];
+    ends   = [headerHits[0] + sectionLen - 1, headerHits[1] + sectionLen - 1];
     usingFallback = true;
   }
 
   if (starts.length < 2 || ends.length < 2) {
-    ui.alert('יש רק מופע אחד — אין כפילות למחוק.');
-    return;
+    return { ok: false, msg: 'יש רק מופע אחד — אין כפילות.' };
   }
 
   var s2 = starts[1], e2 = ends[1];
-  var rowsToDelete = e2 - s2 + 1;
-
-  if (rowsToDelete < 5 || rowsToDelete > 60) {
-    ui.alert('עצרתי — חישוב חשוד.', 'מנסה למחוק ' + rowsToDelete + ' שורות (' + s2 + '-' + e2 + '). זה לא נראה תקין.', ui.ButtonSet.OK);
-    return;
-  }
-
-  var msg = 'נמצאו ' + starts.length + ' מופעים של "סיכום פיננסי".\n\n';
-  msg += 'מקטע ראשון (נשמר): שורות ' + starts[0] + '-' + ends[0] + '\n';
-  msg += 'מקטע שני (למחיקה): שורות ' + s2 + '-' + e2 + ' (' + rowsToDelete + ' שורות)\n';
-  if (usingFallback) msg += '\n⚠ הסימונים הנסתרים לא נמצאו — שיערתי את גודל המקטע. בדוק לאחר מכן.\n';
-  msg += '\nלהמשיך?';
-
-  if (ui.alert('אישור מחיקת כפילות', msg, ui.ButtonSet.YES_NO) !== ui.Button.YES) {
-    ui.alert('בוטל.');
-    return;
-  }
-
-  dash.deleteRows(s2, rowsToDelete);
-  ui.alert('✓ הוסר',
-    'נמחקו ' + rowsToDelete + ' שורות.\nהמופע הראשון בשורות ' + starts[0] + '-' + ends[0] + ' נשמר.',
-    ui.ButtonSet.OK);
+  return {
+    ok: true, starts: starts, ends: ends,
+    s2: s2, e2: e2, rowsToDelete: e2 - s2 + 1,
+    usingFallback: usingFallback,
+  };
 }
 
 // Heuristic: walk down until we hit ≥3 consecutive empty rows in col A
@@ -131,44 +145,43 @@ function measureSectionLen_(sh, startRow, lastRow) {
     var v = String(col[r][0] || '').trim();
     if (v === '') emptyStreak++;
     else emptyStreak = 0;
-    if (emptyStreak >= 3) return r - 2;   // section ended 2 rows back
+    if (emptyStreak >= 3) return r - 2;
   }
-  return Math.min(25, maxLook);            // safe default
+  return Math.min(25, maxLook);
 }
 
-// =====================================================================
-// STEP 2 — audit tabs (read-only)
-// =====================================================================
+// ============================================================
+// STEP 2 — audit tabs (read-only, logs only)
+// ============================================================
 function STEP2_AUDIT_TABS() {
-  var ui = SpreadsheetApp.getUi();
   var plan = buildTabPlan_();
-  var msg = 'תכנית ניקוי לשוניות (טרם הוחל):\n\n';
-  msg += '🗑️ למחיקה (' + plan.del.length + '):\n';
-  msg += (plan.del.length ? plan.del.map(function(n){return '  • ' + n;}).join('\n') : '  (אין)') + '\n\n';
-  msg += '👁️ להסתרה + שינוי שם ל-dontdeleteN (' + plan.hide.length + '):\n';
-  msg += (plan.hide.length ? plan.hide.map(function(n){return '  • ' + n;}).join('\n') : '  (אין)') + '\n\n';
-  msg += '✅ נשמרות (' + plan.keep.length + '):\n';
-  msg += plan.keep.map(function(n){return '  • ' + n;}).join('\n');
-  msg += '\n\nכדי להחיל — הרץ STEP3_APPLY_TAB_CLEANUP';
-  Logger.log(msg);
-  ui.alert('AUDIT — תכנית', msg, ui.ButtonSet.OK);
+  Logger.log('📋 תכנית ניקוי לשוניות (טרם הוחל):');
+  Logger.log('');
+  Logger.log('🗑️ למחיקה (' + plan.del.length + '):');
+  if (plan.del.length === 0) Logger.log('  (אין)');
+  else plan.del.forEach(function(n){ Logger.log('  • ' + n); });
+  Logger.log('');
+  Logger.log('👁️ להסתרה + שינוי שם ל-dontdeleteN (' + plan.hide.length + '):');
+  if (plan.hide.length === 0) Logger.log('  (אין)');
+  else plan.hide.forEach(function(n){ Logger.log('  • ' + n); });
+  Logger.log('');
+  Logger.log('✅ נשמרות (' + plan.keep.length + '):');
+  plan.keep.forEach(function(n){ Logger.log('  • ' + n); });
+  Logger.log('');
+  if (plan.del.length === 0 && plan.hide.length === 0) {
+    Logger.log('🎉 אין מה לנקות.');
+  } else {
+    Logger.log('▶️ אם זה נראה תקין — הרץ עכשיו STEP3_APPLY_TAB_CLEANUP');
+  }
 }
 
-// =====================================================================
-// STEP 3 — apply tab cleanup
-// =====================================================================
+// ============================================================
+// STEP 3 — apply tab cleanup (actually deletes/hides)
+// ============================================================
 function STEP3_APPLY_TAB_CLEANUP() {
-  var ui = SpreadsheetApp.getUi();
   var plan = buildTabPlan_();
-
   if (plan.del.length === 0 && plan.hide.length === 0) {
-    ui.alert('אין מה לנקות.');
-    return;
-  }
-
-  var preview = 'יימחקו: ' + plan.del.length + ' לשוניות\nיוסתרו+ישונה שם: ' + plan.hide.length + '\n\nלהמשיך?';
-  if (ui.alert('אישור החלת ניקוי', preview, ui.ButtonSet.YES_NO) !== ui.Button.YES) {
-    ui.alert('בוטל.');
+    Logger.log('🎉 אין מה לנקות.');
     return;
   }
 
@@ -188,7 +201,7 @@ function STEP3_APPLY_TAB_CLEANUP() {
   });
 
   var deleted = [], renamed = [];
-  // Hide+rename first (deletion of others may shift indices, but rename doesn't)
+  // Hide+rename first
   plan.hide.forEach(function(name) {
     var sh = nameToSheet[name];
     if (!sh) return;
@@ -207,13 +220,18 @@ function STEP3_APPLY_TAB_CLEANUP() {
     catch (e) { Logger.log('delete failed: ' + name + ' — ' + e.message); }
   });
 
-  var report = '✓ הסתיים\n\n';
-  report += 'נמחקו (' + deleted.length + '):\n' + (deleted.length ? deleted.map(function(n){return '• ' + n;}).join('\n') : '(אין)');
-  report += '\n\nהוסתרו+שונה שם (' + renamed.length + '):\n' + (renamed.length ? renamed.map(function(n){return '• ' + n;}).join('\n') : '(אין)');
-  ui.alert('סיכום ניקוי', report, ui.ButtonSet.OK);
+  Logger.log('✅ הסתיים.');
+  Logger.log('');
+  Logger.log('נמחקו (' + deleted.length + '):');
+  if (deleted.length === 0) Logger.log('  (אין)');
+  else deleted.forEach(function(n){ Logger.log('  • ' + n); });
+  Logger.log('');
+  Logger.log('הוסתרו + שונה שם (' + renamed.length + '):');
+  if (renamed.length === 0) Logger.log('  (אין)');
+  else renamed.forEach(function(n){ Logger.log('  • ' + n); });
 }
 
-// Internal: builds {del, hide, keep} for the tab plan
+// Internal: builds {del, hide, keep}
 function buildTabPlan_() {
   var ss = SpreadsheetApp.openById(KFL_CL_SHEET_ID);
   var sheets = ss.getSheets();
