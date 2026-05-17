@@ -539,6 +539,9 @@ async function kesefleProvisionSheet() {
           } else if (/invalid_access_token/i.test(j.error || '')) {
             friendly = '✗ ההתחברות פגה.';
             fix = 'תיקון: <a class="text-brand-700 underline" href="/">חזרי להתחברות</a> ואשרי שוב.';
+          } else if (/missing_drive_readonly_scope/i.test(detail) || /missing_drive_readonly_scope/i.test(j.error || '')) {
+            friendly = '✗ נדרשת הרשאה נוספת לקריאת התבנית.';
+            fix = 'לחצי שוב על "צור את הגיליון שלך" ואשרי את כל ההרשאות בחלון של גוגל (כולל "View files in your Google Drive").';
           }
           status.innerHTML = friendly + (fix ? '<br><span class="text-xs text-ink-500 dark:text-ink-300">' + fix + '</span>' : '');
           try { console.error('provision failed', j); } catch(_e){}
@@ -556,7 +559,10 @@ async function kesefleProvisionSheet() {
       }
     }
   });
-  tokenClient.requestAccessToken();
+  // Force consent prompt so existing users re-grant with the new drive.readonly
+  // scope. Without this, Google silently returns a cached token that only has
+  // the old scopes, causing the Drive copy to fail with "file not found".
+  tokenClient.requestAccessToken({ prompt: 'consent' });
 }
 </script>
 

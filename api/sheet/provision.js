@@ -26,9 +26,12 @@ async function verifyAccessToken(accessToken) {
   // Check audience matches our OAuth client
   const expectedAud = process.env.GOOGLE_CLIENT_ID || '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
   if (info.aud && info.aud !== expectedAud) throw new Error('tokeninfo_aud_mismatch');
-  // Check scopes include drive.file + spreadsheets
+  // Check scopes include drive.file + drive.readonly + spreadsheets.
+  // drive.readonly is required to read the template Sheet (which the user
+  // hasn't opened via this app, so drive.file alone won't grant access).
   const scopes = String(info.scope || '').split(/\s+/);
   if (!scopes.includes('https://www.googleapis.com/auth/drive.file')) throw new Error('missing_drive_file_scope');
+  if (!scopes.includes('https://www.googleapis.com/auth/drive.readonly')) throw new Error('missing_drive_readonly_scope');
   return info;
 }
 
