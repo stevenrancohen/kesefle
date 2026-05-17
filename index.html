@@ -123,9 +123,47 @@
     50%      { background-position: 100% 50%; }
   }
   .animate-gradient { background-size: 200% 200%; animation: gradient-sweep 6s ease infinite; }
+  /* aurora gradient mesh — premium feel */
+  .aurora {
+    background-image:
+      radial-gradient(at 18% 22%, rgba(34,197,94,0.22) 0px, transparent 50%),
+      radial-gradient(at 82% 18%, rgba(99,102,241,0.20) 0px, transparent 55%),
+      radial-gradient(at 55% 90%, rgba(244,114,182,0.18) 0px, transparent 55%),
+      radial-gradient(at 12% 78%, rgba(56,189,248,0.20) 0px, transparent 55%);
+  }
+  /* noise overlay — adds film-grain texture for premium look */
+  .noise::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    opacity: 0.035; mix-blend-mode: overlay; z-index: 1;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+  }
+  /* hover-tilt for the phone mockup */
+  .tilt-3d { transition: transform 0.35s cubic-bezier(0.22,0.61,0.36,1); transform-style: preserve-3d; }
+  .tilt-3d:hover { transform: perspective(1200px) rotateX(4deg) rotateY(-6deg) translateY(-6px); }
+  /* shimmer effect for premium CTAs */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .shimmer {
+    background-image: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 2.6s linear infinite;
+  }
+  /* scroll-reveal — applied by IntersectionObserver */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.22,0.61,0.36,1), transform 0.7s cubic-bezier(0.22,0.61,0.36,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  /* marquee */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .marquee-track { animation: marquee 32s linear infinite; }
   /* respect reduced motion */
   @media (prefers-reduced-motion: reduce) {
-    .animate-blob, .animate-gradient, .bubble { animation: none !important; }
+    .animate-blob, .animate-gradient, .bubble, .shimmer, .marquee-track { animation: none !important; }
+    .reveal { opacity: 1; transform: none; }
+    .tilt-3d:hover { transform: none; }
   }
 </style>
 <script src="/lib/analytics.js" defer></script>
@@ -177,33 +215,41 @@
 </div>
 
 <!-- ============== HERO ============== -->
-<section class="relative overflow-hidden bg-mesh pt-28 pb-20 md:pt-36 md:pb-28">
-  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
+<section class="relative overflow-hidden noise pt-28 pb-20 md:pt-36 md:pb-28">
+  <div class="absolute inset-0 -z-10 aurora"></div>
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/70 via-white/40 to-white/80 dark:from-ink-900/70 dark:via-ink-900/30 dark:to-ink-900/80"></div>
   <!-- animated floating blobs -->
-  <div class="pointer-events-none absolute -top-32 -right-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-brand-300/30 to-accent-400/20 blur-3xl animate-blob"></div>
-  <div class="pointer-events-none absolute -bottom-32 -left-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-accent-400/25 to-brand-300/25 blur-3xl animate-blob" style="animation-delay:-4s"></div>
-  <div class="pointer-events-none absolute top-1/3 left-1/4 -z-10 h-72 w-72 rounded-full bg-brand-500/10 blur-3xl animate-blob" style="animation-delay:-2s"></div>
+  <div class="pointer-events-none absolute -top-32 -right-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-brand-300/40 to-accent-400/30 blur-3xl animate-blob"></div>
+  <div class="pointer-events-none absolute -bottom-32 -left-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-tr from-accent-400/30 to-brand-300/30 blur-3xl animate-blob" style="animation-delay:-4s"></div>
+  <div class="pointer-events-none absolute top-1/3 left-1/4 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob" style="animation-delay:-2s"></div>
+  <!-- subtle dotted grid pattern overlay -->
+  <div class="pointer-events-none absolute inset-0 -z-10 opacity-[0.07] dark:opacity-[0.04]" style="background-image:radial-gradient(circle at 1px 1px,#000 1px,transparent 0);background-size:24px 24px"></div>
   <div class="mx-auto grid max-w-6xl items-center gap-12 px-5 md:grid-cols-2">
     <!-- left: copy -->
-    <div>
-      <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50/80 px-3 py-1.5 text-xs font-semibold text-brand-700 backdrop-blur dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
-        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
-        כבר עוקב אחרי <span class="num">₪479,000</span> ב-<span class="num">368</span> הוצאות אמיתיות • 4 שנות פיתוח
+    <div class="reveal">
+      <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200/50 bg-white/60 px-3 py-1.5 text-xs font-semibold text-brand-700 shadow-sm backdrop-blur dark:border-brand-500/30 dark:bg-white/5 dark:text-brand-300">
+        <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span></span>
+        כבר עוקב אחרי <span class="num">₪479,000</span> ב-<span class="num">368</span> הוצאות אמיתיות • <span class="num">4</span> שנות פיתוח
       </div>
-      <h1 class="text-balance text-5xl font-black leading-[1.02] tracking-tight md:text-7xl dark:text-white">
+      <h1 class="text-balance text-5xl font-black leading-[0.98] tracking-tight md:text-7xl lg:text-[5.5rem] dark:text-white">
         הוצאה ב-וואטסאפ.
-        <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-500 bg-clip-text text-transparent animate-gradient">רשומה בשנייה.</span>
+        <span class="relative block">
+          <span class="bg-gradient-to-l from-brand-600 via-accent-500 via-50% to-brand-500 bg-clip-text text-transparent animate-gradient">רשומה בשנייה.</span>
+          <svg class="absolute -bottom-2 left-0 right-0 mx-auto w-3/4 text-brand-500/50" viewBox="0 0 300 12" fill="none" preserveAspectRatio="none"><path d="M2 10 Q 75 2, 150 6 T 298 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+        </span>
       </h1>
-      <p class="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
-        בלי אפליקציה. בלי טפסים. בלי לזכור. כותב <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון שלך, מקוטלג.
+      <p class="mt-6 max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+        בלי אפליקציה. בלי טפסים. בלי לזכור. כותב <span class="font-bold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — וזה כבר בגיליון שלך, מקוטלג, עם גרפים.
       </p>
       <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'hero' });" class="group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-brand-600 to-brand-700 px-6 py-3.5 text-base font-bold text-white shadow-glow transition-all hover:shadow-2xl hover:-translate-y-0.5">
-          קח אותי על אוטומט
-          <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'hero' });" class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-l from-brand-600 via-brand-600 to-brand-700 px-7 py-4 text-base font-bold text-white shadow-glow transition-all hover:shadow-2xl hover:-translate-y-0.5">
+          <span class="absolute inset-0 shimmer"></span>
+          <span class="relative">קח אותי על אוטומט</span>
+          <svg class="relative h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
         </a>
-        <button type="button" onclick="kesefleOpenDemo()" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white/90 px-6 py-3.5 text-base font-semibold text-ink-700 backdrop-blur transition hover:border-ink-300 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-100 dark:hover:border-ink-600 dark:hover:bg-ink-700">
-          ראה דמו ←
+        <button type="button" onclick="kesefleOpenDemo()" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-300/50 bg-white/60 px-6 py-4 text-base font-semibold text-ink-700 backdrop-blur transition hover:border-ink-400 hover:bg-white hover:shadow-soft dark:border-ink-600/50 dark:bg-white/5 dark:text-ink-100 dark:hover:border-ink-500 dark:hover:bg-white/10">
+          <svg class="h-4 w-4 text-brand-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          ראה דמו של 60 שניות
         </button>
       </div>
 
@@ -240,10 +286,17 @@
     </div>
 
     <!-- right: WhatsApp mockup -->
-    <div class="relative" dir="rtl">
+    <div class="relative reveal" dir="rtl">
       <div class="absolute -top-10 -right-10 -z-10 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl"></div>
       <div class="absolute -bottom-10 -left-10 -z-10 h-72 w-72 rounded-full bg-accent-500/20 blur-3xl"></div>
-      <div class="mx-auto w-full max-w-sm rounded-[2rem] border border-ink-200 bg-white p-3 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+      <!-- floating chips around the phone -->
+      <div class="pointer-events-none absolute -right-4 top-6 z-20 rotate-[-5deg] rounded-2xl border border-white/40 bg-white/90 px-3 py-2 text-xs font-bold text-ink-900 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-ink-800/90 dark:text-white">
+        <span class="flex items-center gap-1.5"><span class="text-base">⚡</span> <span class="num">2</span>s לרישום</span>
+      </div>
+      <div class="pointer-events-none absolute -left-4 bottom-12 z-20 rotate-[4deg] rounded-2xl border border-white/40 bg-white/90 px-3 py-2 text-xs font-bold text-ink-900 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-ink-800/90 dark:text-white">
+        <span class="flex items-center gap-1.5"><span class="text-base">🔒</span> נשאר אצלך</span>
+      </div>
+      <div class="tilt-3d mx-auto w-full max-w-sm rounded-[2rem] border border-ink-200 bg-white p-3 shadow-2xl ring-1 ring-black/5 dark:border-ink-700 dark:bg-ink-800 dark:ring-white/5">
         <!-- phone bezel -->
         <div class="rounded-[1.7rem] bg-[#e5ddd5] p-3">
           <!-- whatsapp header -->
@@ -1120,6 +1173,68 @@ function kesefleToggleDark() {
     var divider = document.querySelector('#auth-buttons .my-4');
     if (divider) divider.style.display = 'none';
   }
+})();
+
+// Scroll-reveal: fade-in + slide-up sections as they enter viewport
+(function scrollReveal() {
+  if (typeof IntersectionObserver === 'undefined') {
+    document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+  // Auto-tag major sections + cards so reveal applies even without manual class
+  var autoTargets = document.querySelectorAll(
+    'section h2, section h3, section .grid > *, .reveal'
+  );
+  autoTargets.forEach(function(el){
+    if (!el.classList.contains('reveal')) el.classList.add('reveal');
+  });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+})();
+
+// Animated number counter: counts up on first reveal
+(function animateCounters() {
+  if (typeof IntersectionObserver === 'undefined') return;
+  function parseTarget(text) {
+    var clean = String(text || '').replace(/[^\d.]/g, '');
+    var n = parseFloat(clean);
+    return isNaN(n) ? null : n;
+  }
+  function formatLike(orig, n) {
+    var hadComma = /,/.test(orig);
+    var rounded = Math.round(n);
+    if (hadComma) return rounded.toLocaleString('en-US');
+    return String(rounded);
+  }
+  var targets = document.querySelectorAll('#stat-money, #stat-orders');
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (!e.isIntersecting) return;
+      var el = e.target;
+      var to = parseTarget(el.textContent);
+      if (to == null) { io.unobserve(el); return; }
+      var orig = el.textContent;
+      var duration = 1600;
+      var start = performance.now();
+      function step(now){
+        var t = Math.min(1, (now - start) / duration);
+        var eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = formatLike(orig, to * eased);
+        if (t < 1) requestAnimationFrame(step);
+        else el.textContent = orig;
+      }
+      requestAnimationFrame(step);
+      io.unobserve(el);
+    });
+  }, { threshold: 0.4 });
+  targets.forEach(function(el){ io.observe(el); });
 })();
 </script>
 
