@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const VERSION = 'v2-2026-05-16';
+const VERSION = 'v3-2026-05-17';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
