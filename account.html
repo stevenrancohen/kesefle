@@ -510,14 +510,20 @@ async function kesefleProvisionSheet() {
             setTimeout(function() { window.location.href = '/welcome'; }, 1500);
           }
         } else {
-          status.className = 'mt-2 text-sm text-red-600';
-          status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.');
+          status.className = 'mt-2 text-sm text-red-600 break-words';
+          // Show BOTH the error label AND the underlying detail so we
+          // can diagnose 'drive copy failed' instead of guessing.
+          var detail = j.detail ? ' — ' + j.detail : '';
+          status.textContent = '✗ ' + (j.error || 'נכשל. נסה שוב.') + detail;
+          // Also log full response to console for further debugging
+          try { console.error('provision failed', j); } catch(_e){}
           btn.disabled = false;
           btn.textContent = 'נסה שוב';
         }
       } catch (e) {
         status.className = 'mt-2 text-sm text-red-600';
-        status.textContent = '✗ שגיאת רשת.';
+        status.textContent = '✗ שגיאת רשת: ' + (e && e.message || '');
+        try { console.error('provision network error', e); } catch(_e){}
         btn.disabled = false;
         btn.textContent = 'נסה שוב';
       }
