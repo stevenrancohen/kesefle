@@ -1313,9 +1313,145 @@ function _handleTimezoneCommand_(fromPhone, text) {
 // 💰 לוגיקת עיבוד הוצאה
 // ============================================================
 
+// ─────────────────────────────────────────────────────────────────────
+// Multi-tenant helpers
+//
+// The Apps Script bot was originally written as a single-tenant tool
+// against a hardcoded SHEET_ID. The Kesefle web/backend, however, lets
+// any Google user provision their OWN sheet via /api/sheet/provision,
+// and the WhatsApp number that maps them is stored in Vercel KV. We
+// don't have to throw out the rich Apps Script parser to support that
+// — we just have to route the WRITE step to the right tenant.
+//
+// _resolveTenant_ tells us whether the inbound sender is:
+//   { isOwner: true }                          — Steven (script owner), legacy path
+//   { isOwner: false, userRecord: {...} }      — Registered Kesefle tenant
+//   { isOwner: false, userRecord: null }       — Unregistered phone, needs onboarding
+//
+// _tenantWriteExpense_ does the rich parse + a POST to /api/sheet/append
+// which decrypts the user's refresh token, exchanges for an access
+// token, and appends to THEIR Google Sheet.
+// ─────────────────────────────────────────────────────────────────────
+function _resolveTenant_(fromPhone) {
+  if (!fromPhone) return null;
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  // 1. Script owner — match against the configured SHEET_OWNER_PHONE,
+  //    fall back to allowing the existing single-tenant path if the
+  //    property isn't set (back-compat: every existing user is the owner).
+  var ownerPhone = '';
+  try { ownerPhone = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || ''); } catch (_e) {}
+  ownerPhone = ownerPhone.replace(/[^0-9]/g, '');
+  if (!ownerPhone) return { isOwner: true };
+  if (clean === ownerPhone) return { isOwner: true };
+  // 2. Lookup the tenant in Kesefle KV via /api/whatsapp/link?phone=
+  var rec = _kvLookupPhone_(clean);
+  if (rec && rec.linked && rec.userSub) {
+    return { isOwner: false, userRecord: rec };
+  }
+  return { isOwner: false, userRecord: null };
+}
+
+function _kvLookupPhone_(phoneClean) {
+  try {
+    var url = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(phoneClean);
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) return null;
+    var j = JSON.parse(resp.getContentText());
+    return j && j.ok ? j : null;
+  } catch (e) {
+    Logger.log('_kvLookupPhone_ err: ' + (e && e.message));
+    return null;
+  }
+}
+
+function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
+  // Reuse the rich Apps Script parser for amount + (cat, subcat) so
+  // tenants get the same classification quality as the owner path.
+  var parsed = parseAmountAndDescription(rawText);
+  if (!parsed || !parsed.items || !parsed.items.length) {
+    return { reply: '😕 לא הצלחתי לזהות סכום. נסה: "245 סופר"' };
+  }
+  var first = parsed.items[0];
+  var matched = null;
+  try { matched = typeof matchCategory === 'function' ? matchCategory(rawText) : null; } catch (_) {}
+  var category = (matched && matched.category) || 'אחר';
+  var subcategory = (matched && matched.subcategory && matched.subcategory !== matched.category) ? matched.subcategory : '';
+
+  var botSecret = '';
+  try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!botSecret) {
+    Logger.log('_tenantWriteExpense_: KESEFLE_BOT_SECRET not set in Script Properties');
+    return { reply: '😬 הבוט עוד בקונפיגורציה. רגע.' };
+  }
+
+  var payload = {
+    phone: String(fromPhone).replace(/[^0-9]/g, ''),
+    amount: first.amount,
+    currency: 'ILS',
+    isIncome: false,
+    category: category,
+    subcategory: subcategory,
+    rawText: rawText,
+    messageId: '',
+    botSecret: botSecret,
+  };
+
+  try {
+    var url = KESEFLE_API_BASE + '/api/sheet/append';
+    var resp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code >= 200 && code < 300) {
+      var nice = '₪' + Number(first.amount).toLocaleString('he-IL') + ' · ' + category;
+      if (subcategory) nice += ' · ' + subcategory;
+      return { reply: '✅ נרשם: ' + nice };
+    }
+    Logger.log('_tenantWriteExpense_ HTTP ' + code + ' ' + body.slice(0, 300));
+    return { reply: '😬 לא הצלחתי לשמור עכשיו. ננסה שוב בעוד דקה?' };
+  } catch (e) {
+    Logger.log('_tenantWriteExpense_ throw: ' + (e && e.message));
+    return { reply: '😬 בעיה בחיבור לשרת. ננסה שוב?' };
+  }
+}
+
 function processExpense(text, fromPhone) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
+  }
+
+  // ───── MULTI-TENANT ROUTER ─────
+  // If the sender is NOT the script owner, route the write to that user's
+  // own Google Sheet via the Kesefle Vercel bridge. We still run the rich
+  // parsers below for category/subcategory, then post the parsed expense
+  // to /api/sheet/append which handles the OAuth dance and tenant write.
+  // Owners (the script's home phone) keep the legacy single-tenant path —
+  // it has features like _updateBusinessDashboard_, smart_pending,
+  // installCompanyDashboardFormulas etc. that aren't yet ported.
+  try {
+    var __tenant = _resolveTenant_(fromPhone);
+    if (__tenant && !__tenant.isOwner) {
+      return _tenantWriteExpense_(fromPhone, text, __tenant.userRecord);
+    }
+    if (__tenant && __tenant.isOwner === false && !__tenant.userRecord) {
+      // Unknown phone — neither owner nor registered tenant.
+      return { reply:
+        'היי! 👋 אני כספלה — בוט ההוצאות שלך בוואטסאפ.\n' +
+        'אני לא מזהה את המספר הזה עדיין, אז בוא נתחיל יחד.\n\n' +
+        '1️⃣ פתח: https://kesefle.com/account\n' +
+        '2️⃣ התחבר עם Google\n' +
+        '3️⃣ קשר את המספר הזה — לוקח 30 שניות\n\n' +
+        'אחרי שנקשרים, תוכל לשלוח לי הוצאות ואני אכניס אותן לגיליון שלך אוטומטית. 📊' };
+    }
+    // Fall through — sender is the owner (or resolver failed safely);
+    // continue with the existing single-tenant path.
+  } catch (__tenantErr) {
+    Logger.log('tenant router err (falling back to owner path): ' + (__tenantErr && __tenantErr.message));
   }
 
   var __hT = String(text || '').trim();
@@ -1907,11 +2043,16 @@ function parseForeignCurrencyHint(text) {
 function parseAmountAndDescription(text) {
   var t = String(text || '').trim();
   if (!t) return null;
-  var numberRe = /\d+(?:[.,]\d+)?/g;
+  // Match Israeli-formatted numbers: optional thousand groups (1,234,567)
+  // followed by an optional decimal part using period or comma. The thousand
+  // groups are distinguished from a decimal-comma by length: any comma that
+  // is followed by exactly three digits AND another digit/comma group is a
+  // thousand separator; anything else is the decimal point.
+  var numberRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
   var nums = [];
   var match;
   while ((match = numberRe.exec(t)) !== null) {
-    var n = parseFloat(match[0].replace(',', '.'));
+    var n = _parseIsraeliNumber_(match[0]);
     if (!isNaN(n) && n > 0) nums.push(n);
   }
   if (nums.length === 0) return null;
@@ -1926,7 +2067,34 @@ function parseAmountAndDescription(text) {
 }
 
 function _splitAmounts_(block) {
-  return String(block || '').split('+').map(function(p){ return parseFloat(String(p).replace(/\s+/g,'').replace(',', '.')); }).filter(function(n){ return !isNaN(n) && n > 0; });
+  return String(block || '').split('+').map(function(p){ return _parseIsraeliNumber_(String(p).replace(/\s+/g,'')); }).filter(function(n){ return !isNaN(n) && n > 0; });
+}
+
+// Israeli/EU-formatted number parser. Disambiguates "1,200" (one thousand
+// two hundred) from "12,5" (twelve point five) by looking at digit-group
+// lengths around each comma. Period is always treated as decimal.
+function _parseIsraeliNumber_(raw) {
+  if (raw == null) return NaN;
+  var s = String(raw).trim();
+  if (!s) return NaN;
+  // If there's a period, treat that as the decimal point and strip commas
+  // (which can only be thousands separators in that case).
+  if (s.indexOf('.') >= 0) {
+    return parseFloat(s.replace(/,/g, ''));
+  }
+  // No period — the comma might be either separator. We look at every comma
+  // and check the run of digits to its right: exactly 3 digits and no more
+  // commas to the right means thousands grouping; anything else is decimal.
+  var commaIdx = s.indexOf(',');
+  if (commaIdx < 0) return parseFloat(s);
+  // Count groups of 3 digits separated by commas — the canonical thousands
+  // pattern (e.g. 1,200 or 12,345,678). Decimal-comma never repeats and the
+  // tail group is rarely exactly 3 digits.
+  var groups = s.split(',');
+  var allTrailingAreThree = groups.slice(1).every(function(g){ return /^\d{3}$/.test(g); });
+  if (allTrailingAreThree) return parseFloat(s.replace(/,/g, ''));
+  // Otherwise treat comma as decimal separator (e.g. "12,5" → 12.5)
+  return parseFloat(s.replace(',', '.'));
 }
 
 var BUSINESS_CATEGORY_MAP = {
@@ -2908,6 +3076,31 @@ function _handleVoiceMessage_(fromPhone, audio) {
   return { replyText: heard + '\n\n' + procReply };
 }
 
+// Turn a free-form correction string into a {category, subcategory} pair.
+// Accepts:
+//   "ביגוד"                       → use matchCategory to find a known cat/sub
+//   "קניות / ביגוד"  / "קניות/ביגוד" → split on `/`
+//   anything unknown              → put in subcategory, leave category 'אחר'
+// Never returns category === subcategory.
+function _resolveCorrectionPair_(raw) {
+  var s = String(raw || '').trim();
+  if (!s) return { category: 'אחר', subcategory: '' };
+  if (s.indexOf('/') >= 0) {
+    var parts = s.split('/').map(function(p){ return p.trim(); }).filter(Boolean);
+    if (parts.length >= 2) return { category: parts[0], subcategory: parts.slice(1).join(' / ') };
+  }
+  try {
+    if (typeof matchCategory === 'function') {
+      var m = matchCategory(s);
+      if (m && m.category) {
+        var sub = (m.subcategory && m.subcategory !== m.category) ? m.subcategory : '';
+        return { category: m.category, subcategory: sub };
+      }
+    }
+  } catch (_e) { /* fall through */ }
+  return { category: 'אחר', subcategory: s };
+}
+
 function _handleCategoryCorrection_(fromPhone, text) {
   if (!fromPhone || !text) return null;
   var trimmed = String(text).trim();
@@ -2955,8 +3148,14 @@ function _handleCategoryCorrection_(fromPhone, text) {
     var ss = SpreadsheetApp.openById(SHEET_ID);
     var sheet = ss.getSheetByName(TRANSACTIONS_SHEET);
     if (!sheet) return { handled: true, replyText: '😬 לא מצאתי את גיליון התנועות.' };
-    sheet.getRange(pend.rowNumber, 4).setValue(sanitizeForSheet(pend.newCategory));
-    sheet.getRange(pend.rowNumber, 5).setValue(sanitizeForSheet(pend.newCategory));
+    // The new value the user typed may be a top-level category, a
+    // sub-category, or "category/subcategory" pair. Resolve it through
+    // matchCategory so we never overwrite both columns with the same
+    // string (which would corrupt SUMIFS in the dashboard) and never
+    // poison the learning cache with category == subcategory.
+    var __resolved = _resolveCorrectionPair_(pend.newCategory);
+    sheet.getRange(pend.rowNumber, 4).setValue(sanitizeForSheet(__resolved.category));
+    sheet.getRange(pend.rowNumber, 5).setValue(sanitizeForSheet(__resolved.subcategory));
 
     // Append a correction line to the row's existing original-text note.
     try {
@@ -2965,7 +3164,7 @@ function _handleCategoryCorrection_(fromPhone, text) {
         'Corrected from "' + (pend.oldCategory || '?') + '" to "' + pend.newCategory + '" at ' + __corStamp);
     } catch (__corNoteErr) { Logger.log('correction note err: ' + (__corNoteErr && __corNoteErr.message)); }
 
-    _learnedSave(pend.originalText, { category: pend.newCategory, subcategory: pend.newCategory }, 'user-correction');
+    _learnedSave(pend.originalText, { category: __resolved.category, subcategory: __resolved.subcategory }, 'user-correction');
 
     // TASK 1 + 4: audit log + anti-degradation guard
     var __needsReviewCor = false;
