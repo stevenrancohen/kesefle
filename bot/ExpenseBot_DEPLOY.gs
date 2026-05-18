@@ -5506,6 +5506,38 @@ function installKesefleBot() {
     }
   } catch (e) { report.push('❌ Savings projection trigger: ' + e.message); err++; }
 
+  // 7. Optional: auto-install dashboard SUMIFS formulas.
+  // Off by default — set Script Property AUTO_FIX_DASHBOARDS = '1' to enable.
+  // Reason: the user's dashboard may have custom formulas in some cells that
+  // we should preserve. The installer already preserves formulas, but we keep
+  // the explicit opt-in so a first-time installer never silently rewrites
+  // a sheet the user spent hours building.
+  var autoFix = props.getProperty('AUTO_FIX_DASHBOARDS');
+  if (autoFix === '1' || autoFix === 'true' || autoFix === 'yes') {
+    report.push('');
+    report.push('───────────────────────────────────────');
+    report.push('📐 INSTALLING DASHBOARD FORMULAS (AUTO_FIX_DASHBOARDS=1)');
+    report.push('───────────────────────────────────────');
+    try {
+      var cRes = installCompanyDashboardFormulas();
+      report.push('✅ Company dashboard: fixed=' + cRes.fixed +
+        ' preserved=' + cRes.skippedFormulas +
+        ' unmapped=' + cRes.unmapped);
+      ok++;
+    } catch (e) { report.push('⚠️  Company dashboard: ' + e.message); warn++; }
+    try {
+      var pRes = installPersonalDashboardFormulas();
+      report.push('✅ Personal dashboard: fixed=' + pRes.fixed +
+        ' preserved=' + pRes.skippedFormulas +
+        ' unmapped=' + pRes.unmapped);
+      ok++;
+    } catch (e) { report.push('⚠️  Personal dashboard: ' + e.message); warn++; }
+  } else {
+    report.push('');
+    report.push('💡 דשבורד נוסחאות: לא הופעלו אוטומטית. הרץ installCompanyDashboardFormulas או installPersonalDashboardFormulas מהתפריט.');
+    report.push('   (כדי להפעיל אוטומטית: Script Properties → AUTO_FIX_DASHBOARDS=1)');
+  }
+
   report.push('');
   report.push('───────────────────────────────────────');
   report.push('📊 SUMMARY');
@@ -7175,4 +7207,346 @@ function installSynonymExpansionTrigger() {
   ScriptApp.newTrigger('cronSynonymExpansion').timeBased().everyDays(1).atHour(3).create();
   Logger.log('installSynonymExpansionTrigger: installed daily trigger @ 03:00');
   return '✅ trigger installed';
+}
+
+// ============================================================
+// DASHBOARD FORMULA INSTALLERS — make every monthly cell a SUMIFS
+// ============================================================
+// Problem: when the user adds a row manually to תנועות (or any orders log),
+// dashboard cells that were hardcoded values do NOT update. This module
+// scans the company + personal dashboards and replaces HARDCODED VALUES
+// (only) with SUMIFS formulas referencing the תנועות sheet. Existing
+// formulas are LEFT ALONE (idempotency contract — running twice is safe).
+//
+// Public API:
+//   installCompanyDashboardFormulas() -> { fixed, skippedFormulas, unmapped, perTab }
+//   installPersonalDashboardFormulas() -> { fixed, skippedFormulas, unmapped, perTab }
+//
+// Both functions are listed in the Apps Script function dropdown.
+//
+// Safety contract per user feedback memory:
+//   1. NEVER overwrite a cell that already contains a formula.
+//   2. NEVER overwrite a cell with a non-numeric value (it might be a user note).
+//   3. Log every write for audit (Logger.log).
+//   4. Idempotent — second run is a no-op for cells already migrated.
+
+// Internal: Hebrew month labels as they appear in dashboard headers.
+var _DASH_HEB_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+// Internal: map of "row label appearing in column A" -> SUMIFS subcategory key
+// used to query תנועות column E. Keys are the canonical labels Steven uses
+// in מאזן חברה. Aliases collapse to the canonical sub.
+var _COMPANY_ROW_SUB_MAP = {
+  'מחזור': 'מחזור',
+  'מחזור ברוטו': 'מחזור',
+  'מחזור נטו': null,                  // derived: revenue - VAT, leave alone
+  'עלות חומרי גלם': 'עלות חומרי גלם',
+  'חומרי גלם': 'עלות חומרי גלם',
+  'עלות שיווק': 'עלות שיווק',
+  'שיווק': 'עלות שיווק',
+  'משלוחים והתקנות': 'משלוחים והתקנות',
+  'משלוחים': 'משלוחים והתקנות',
+  'הוצאות תפעוליות': 'הוצאות תפעוליות',
+  'תפעוליות': 'הוצאות תפעוליות',
+  'יועצים': 'יועצים',
+  'רווח גולמי': '__DERIVED_GROSS_PROFIT__',
+  'רווח נטו': '__DERIVED_NET_PROFIT__'
+};
+
+// Helper: trim + normalize a cell label (strips bidi marks, NBSP, RTL/LTR
+// embeds). Mirrors the cleanup _matchCategory does on user text.
+function _dashNormalizeLabel_(s) {
+  if (s == null) return '';
+  var t = String(s).trim();
+  t = t.replace(/[‎‏‪-‮ ]/g, '');
+  t = t.replace(/\s+/g, ' ');
+  return t;
+}
+
+// Helper: figure out the year for a dashboard tab.
+//   1. tab name ends with 4-digit year (e.g. "מאזן חברה 2026") -> use it
+//   2. B2 of the dashboard is a year-like number -> use it
+//   3. fallback: current year
+function _dashResolveYear_(sheet) {
+  var name = sheet.getName();
+  var m = name.match(/(20\d{2})/);
+  if (m) return parseInt(m[1], 10);
+  try {
+    var v = sheet.getRange('B2').getValue();
+    var n = parseInt(v, 10);
+    if (n >= 2000 && n <= 2099) return n;
+  } catch (e) {}
+  return new Date().getFullYear();
+}
+
+// Helper: safely write a formula into a cell only if the cell currently
+// holds a hardcoded value (not a formula). Returns 'fixed' | 'skip-formula'
+// | 'skip-nonnumeric' | 'skip-already' for audit logging.
+function _safeReplaceWithFormula_(cell, newFormula, ctxLabel) {
+  var existingFormula = '';
+  try { existingFormula = String(cell.getFormula() || ''); } catch (e) {}
+  if (existingFormula && existingFormula.charAt(0) === '=') {
+    if (existingFormula === newFormula) {
+      Logger.log('[dashFx] ' + ctxLabel + ' ' + cell.getA1Notation() + ' already correct - skip');
+      return 'skip-already';
+    }
+    Logger.log('[dashFx] ' + ctxLabel + ' ' + cell.getA1Notation() + ' has custom formula - preserve: ' + existingFormula);
+    return 'skip-formula';
+  }
+  var v = null;
+  try { v = cell.getValue(); } catch (e) {}
+  // Allow empty cells and numeric cells. Block text cells (might be user note).
+  if (v !== '' && v !== null && typeof v !== 'number') {
+    Logger.log('[dashFx] ' + ctxLabel + ' ' + cell.getA1Notation() + ' has non-numeric "' + v + '" - preserve');
+    return 'skip-nonnumeric';
+  }
+  cell.setFormula(newFormula);
+  Logger.log('[dashFx] ' + ctxLabel + ' ' + cell.getA1Notation() + ' <- ' + newFormula + ' (was ' + (v === '' || v == null ? 'empty' : v) + ')');
+  return 'fixed';
+}
+
+// Public: install SUMIFS formulas in the company balance dashboard(s).
+// Walks every monthly column for every metric row in the canonical map.
+// Returns counters + per-tab breakdown.
+function installCompanyDashboardFormulas() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var dashNames = ['מאזן חברה 2026', 'מאזן חברה'];
+  var summary = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0, perTab: {} };
+  var anyFound = false;
+
+  for (var d = 0; d < dashNames.length; d++) {
+    var sheet = ss.getSheetByName(dashNames[d]);
+    if (!sheet) continue;
+    anyFound = true;
+    var tabKey = dashNames[d];
+    var tabStat = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0, derived: 0 };
+    var year = _dashResolveYear_(sheet);
+    var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
+    if (lastRow < 2 || lastCol < 2) {
+      Logger.log('[dashFx] ' + tabKey + ' empty - skip');
+      summary.perTab[tabKey] = tabStat;
+      continue;
+    }
+
+    var values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+
+    // Phase 1: locate the header row + the month columns.
+    // The header is the row that contains the most Hebrew month names.
+    var headerRow = -1;
+    var monthCols = {}; // monthLabel -> 0-based col index
+    var bestHits = 0;
+    for (var r = 0; r < Math.min(values.length, 30); r++) {
+      var hits = 0;
+      var localCols = {};
+      for (var c = 0; c < values[r].length; c++) {
+        var label = _dashNormalizeLabel_(values[r][c]);
+        for (var mi = 0; mi < _DASH_HEB_MONTHS.length; mi++) {
+          if (label === _DASH_HEB_MONTHS[mi]) {
+            localCols[_DASH_HEB_MONTHS[mi]] = c;
+            hits++;
+            break;
+          }
+        }
+      }
+      if (hits > bestHits) {
+        bestHits = hits;
+        headerRow = r;
+        monthCols = localCols;
+      }
+    }
+    if (headerRow < 0 || bestHits < 6) {
+      Logger.log('[dashFx] ' + tabKey + ' no month-header row detected (hits=' + bestHits + ') - skip');
+      summary.perTab[tabKey] = tabStat;
+      continue;
+    }
+    Logger.log('[dashFx] ' + tabKey + ' header row=' + (headerRow + 1) + ' months=' + Object.keys(monthCols).length + ' year=' + year);
+
+    // Phase 2: locate every metric row by scanning column A below the header.
+    var metricRows = {}; // canonSub -> [rowIndex0Based, ...]
+    var derivedRows = { gross: [], net: [] }; // rows for רווח גולמי / רווח נטו
+    for (var rr = headerRow + 1; rr < values.length; rr++) {
+      var rowLabel = _dashNormalizeLabel_(values[rr][0]);
+      if (!rowLabel) continue;
+      if (!_COMPANY_ROW_SUB_MAP.hasOwnProperty(rowLabel)) continue;
+      var canon = _COMPANY_ROW_SUB_MAP[rowLabel];
+      if (canon === null) continue; // explicit "leave alone"
+      if (canon === '__DERIVED_GROSS_PROFIT__') { derivedRows.gross.push(rr); continue; }
+      if (canon === '__DERIVED_NET_PROFIT__') { derivedRows.net.push(rr); continue; }
+      if (!metricRows[canon]) metricRows[canon] = [];
+      metricRows[canon].push(rr);
+    }
+
+    if (Object.keys(metricRows).length === 0 && derivedRows.gross.length === 0 && derivedRows.net.length === 0) {
+      Logger.log('[dashFx] ' + tabKey + ' no recognized metric rows - skip');
+      tabStat.unmapped = lastRow - headerRow - 1;
+      summary.perTab[tabKey] = tabStat;
+      continue;
+    }
+
+    // Phase 3: install SUMIFS for direct metric rows.
+    for (var canonSub in metricRows) {
+      var rowsForSub = metricRows[canonSub];
+      for (var ri = 0; ri < rowsForSub.length; ri++) {
+        var rowIdx0 = rowsForSub[ri];
+        for (var monthLabel in monthCols) {
+          var colIdx0 = monthCols[monthLabel];
+          var monthIdx1 = _DASH_HEB_MONTHS.indexOf(monthLabel) + 1; // 1..12
+          var monthKey = year + '-' + (monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1);
+          var cell = sheet.getRange(rowIdx0 + 1, colIdx0 + 1);
+          // Use IFERROR to keep cell numeric even if no matches yet.
+          var f = '=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, "' + canonSub + '", תנועות!B:B, "' + monthKey + '"), 0)';
+          var res = _safeReplaceWithFormula_(cell, f, tabKey + '/' + canonSub + '/' + monthLabel);
+          if (res === 'fixed') { summary.fixed++; tabStat.fixed++; }
+          else if (res === 'skip-formula' || res === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
+          else if (res === 'skip-nonnumeric') { summary.skippedNonNumeric++; tabStat.skippedNonNumeric++; }
+        }
+      }
+    }
+
+    // Phase 4: derived rows (רווח גולמי / רווח נטו). These depend on the
+    // existence of the source metric rows we just located.
+    function _colLetter_(c) {
+      // c is 1-based column index. Convert to A1 letter (A..ZZ).
+      var s = '';
+      while (c > 0) {
+        var rem = (c - 1) % 26;
+        s = String.fromCharCode(65 + rem) + s;
+        c = Math.floor((c - 1) / 26);
+      }
+      return s;
+    }
+    function _firstRowFor_(sub) {
+      var arr = metricRows[sub];
+      return (arr && arr.length) ? (arr[0] + 1) : null; // 1-based
+    }
+
+    var rRev = _firstRowFor_('מחזור');
+    var rRaw = _firstRowFor_('עלות חומרי גלם');
+    var rMkt = _firstRowFor_('עלות שיווק');
+    var rShip = _firstRowFor_('משלוחים והתקנות');
+    var rOps = _firstRowFor_('הוצאות תפעוליות');
+
+    // רווח גולמי = מחזור - עלות חומרי גלם
+    for (var gi = 0; gi < derivedRows.gross.length; gi++) {
+      var gRow0 = derivedRows.gross[gi];
+      for (var gMonth in monthCols) {
+        var gCol1 = monthCols[gMonth] + 1;
+        var gCellLetter = _colLetter_(gCol1);
+        if (!rRev || !rRaw) {
+          summary.unmapped++; tabStat.unmapped++;
+          Logger.log('[dashFx] ' + tabKey + '/רווח גולמי/' + gMonth + ' missing source rows - skip');
+          continue;
+        }
+        var gCell = sheet.getRange(gRow0 + 1, gCol1);
+        var gF = '=' + gCellLetter + rRev + '-' + gCellLetter + rRaw;
+        var gRes = _safeReplaceWithFormula_(gCell, gF, tabKey + '/רווח גולמי/' + gMonth);
+        if (gRes === 'fixed') { summary.fixed++; tabStat.fixed++; tabStat.derived++; }
+        else if (gRes === 'skip-formula' || gRes === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
+        else if (gRes === 'skip-nonnumeric') { summary.skippedNonNumeric++; tabStat.skippedNonNumeric++; }
+      }
+    }
+
+    // רווח נטו = רווח גולמי - שיווק - משלוחים - תפעוליות
+    // (We compute it from primitives, not from a possibly stale gross row,
+    //  so the chain is robust even if gross row is missing.)
+    for (var ni = 0; ni < derivedRows.net.length; ni++) {
+      var nRow0 = derivedRows.net[ni];
+      for (var nMonth in monthCols) {
+        var nCol1 = monthCols[nMonth] + 1;
+        var nLetter = _colLetter_(nCol1);
+        if (!rRev || !rRaw) {
+          summary.unmapped++; tabStat.unmapped++;
+          continue;
+        }
+        var nParts = [nLetter + rRev, '-' + nLetter + rRaw];
+        if (rMkt) nParts.push('-' + nLetter + rMkt);
+        if (rShip) nParts.push('-' + nLetter + rShip);
+        if (rOps) nParts.push('-' + nLetter + rOps);
+        var nF = '=' + nParts.join('');
+        var nCell = sheet.getRange(nRow0 + 1, nCol1);
+        var nRes = _safeReplaceWithFormula_(nCell, nF, tabKey + '/רווח נטו/' + nMonth);
+        if (nRes === 'fixed') { summary.fixed++; tabStat.fixed++; tabStat.derived++; }
+        else if (nRes === 'skip-formula' || nRes === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
+        else if (nRes === 'skip-nonnumeric') { summary.skippedNonNumeric++; tabStat.skippedNonNumeric++; }
+      }
+    }
+
+    summary.perTab[tabKey] = tabStat;
+  }
+
+  if (!anyFound) {
+    Logger.log('[dashFx] no company dashboard tab found (looked for: ' + dashNames.join(', ') + ')');
+  }
+
+  Logger.log('[dashFx] installCompanyDashboardFormulas DONE: ' +
+    'fixed=' + summary.fixed +
+    ' skippedFormulas=' + summary.skippedFormulas +
+    ' skippedNonNumeric=' + summary.skippedNonNumeric +
+    ' unmapped=' + summary.unmapped);
+  return summary;
+}
+
+// Public: install SUMIFS in the personal balance dashboard(s). Layout is
+// simpler: column A holds the subcategory name verbatim (e.g. "אוכל לבית"),
+// and columns C..N are months Jan..Dec for the year recorded in B2.
+// This is the same layout that migrateDashboardToSUMIFS() targets; we keep
+// our own implementation so we can be strict about NOT overwriting custom
+// formulas / non-numeric cells (the legacy migrator overwrites every cell).
+function installPersonalDashboardFormulas() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var dashNames = ['מאזן שנתי', 'מאזן אישי'];
+  var summary = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0, perTab: {} };
+
+  // Section headers / rows we must NOT touch (they are aggregates or labels,
+  // not category rows). Same list migrateDashboardToSUMIFS uses, plus a few
+  // safety guards.
+  var SKIP_LABELS = {
+    'הכנסות': 1, 'הוצאות': 1, 'הוצאות קבועות': 1, 'הוצאות זמניות': 1,
+    'אוכל': 1, 'תחבורה': 1, 'תחזוקה': 1, 'תמורה': 1,
+    'שונות ואחרים': 1, 'שונות': 1, 'קטגוריה': 1,
+    'מאזן אישי': 1, 'מאזן שנתי': 1, 'מאזן חברה': 1,
+    'סה"כ': 1, 'סה"כ הכנסות': 1, 'סה"כ הוצאות': 1, 'מאזן': 1, 'תקציב': 1
+  };
+
+  for (var d = 0; d < dashNames.length; d++) {
+    var sheet = ss.getSheetByName(dashNames[d]);
+    if (!sheet) continue;
+    var tabKey = dashNames[d];
+    var tabStat = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0 };
+    var year = _dashResolveYear_(sheet);
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 4) {
+      summary.perTab[tabKey] = tabStat;
+      continue;
+    }
+    var monthCols = [3,4,5,6,7,8,9,10,11,12,13,14]; // C..N
+    var colA = sheet.getRange(1, 1, lastRow, 1).getValues();
+    for (var r = 3; r < colA.length; r++) { // skip first 3 rows (title + year + header)
+      var rowLabel = _dashNormalizeLabel_(colA[r][0]);
+      if (!rowLabel) continue;
+      if (rowLabel.indexOf('סה') === 0) continue; // any "סה"כ ..." aggregate row
+      if (SKIP_LABELS.hasOwnProperty(rowLabel)) continue;
+      var rowOneBased = r + 1;
+      for (var mi = 0; mi < monthCols.length; mi++) {
+        var col = monthCols[mi];
+        var monthIdx1 = mi + 1;
+        var monthKey = year + '-' + (monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1);
+        var cell = sheet.getRange(rowOneBased, col);
+        var f = '=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, $A' + rowOneBased + ', תנועות!B:B, "' + monthKey + '"), 0)';
+        var res = _safeReplaceWithFormula_(cell, f, tabKey + '/' + rowLabel + '/' + _DASH_HEB_MONTHS[mi]);
+        if (res === 'fixed') { summary.fixed++; tabStat.fixed++; }
+        else if (res === 'skip-formula' || res === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
+        else if (res === 'skip-nonnumeric') { summary.skippedNonNumeric++; tabStat.skippedNonNumeric++; }
+      }
+    }
+    summary.perTab[tabKey] = tabStat;
+  }
+
+  Logger.log('[dashFx] installPersonalDashboardFormulas DONE: ' +
+    'fixed=' + summary.fixed +
+    ' skippedFormulas=' + summary.skippedFormulas +
+    ' skippedNonNumeric=' + summary.skippedNonNumeric +
+    ' unmapped=' + summary.unmapped);
+  return summary;
 }
