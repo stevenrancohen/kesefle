@@ -73,12 +73,6 @@
  * ║     //=== HELPERS    — sanitize, KV, formatting, utility fns            ║
  * ║     //=== DOGET      — webhook verification handler                     ║
  * ║     //=== DOPOST     — webhook message handler + command router        ║
- * ║     //=== COMMANDS   — personal + family + status + insights commands   ║
- * ║     //=== CRONS      — weekly digest, daily motivation, etc.            ║
- * ╚══════════════════════════════════════════════════════════════════════════╝
- */
-
-//=== CONFIG
 /**
  * 🤖 בוט הוצאות וואצפ → גוגל שיט
  * ================================
@@ -510,6 +504,23 @@ function doPost(e) {
               }
             } catch (_subErr) {
               Logger.log('doPost: subscription command error: ' + (_subErr && _subErr.stack || _subErr));
+            }
+          }
+
+          // Category correction flow — "קטגוריה X" then "כן/לא". Must be
+          // checked early so כן/לא tokens don't get caught by other routers.
+          if (typeof _handleCategoryCorrection_ === "function") {
+            try {
+              var __corRes = _handleCategoryCorrection_(__from_, __text_);
+              if (__corRes && __corRes.handled) {
+                if (__corRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __corRes.replyText);
+                }
+                Logger.log('doPost: category-correction handled');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_corErr) {
+              Logger.log('doPost: category-correction error: ' + (_corErr && _corErr.stack || _corErr));
             }
           }
 
@@ -997,6 +1008,7 @@ function processExpense(text, fromPhone) {
     if (parsed.items.length === 1) {
       const it = parsed.items[0];
       const matched = matchCategorySmart(it.description);
+      try { _saveLastExpense_(fromPhone, sheet.getLastRow(), it, matched); } catch (_seErr) { Logger.log('saveLastExp: ' + _seErr.message); }
       // 💡 Optional month-to-date context for the category just logged.
       var __catCtx = '';
       try { __catCtx = _categoryMonthToDateLine_(matched.category, matched.isIncome); } catch (__ctxErr) {}
@@ -1007,7 +1019,8 @@ function processExpense(text, fromPhone) {
         (__catCtx ? '\n💡 ' + __catCtx : '') +
         __anomalyTail +
         __streakTail +
-        '\n\nכתוב "סיכום" לראות איפה אתה עומד החודש.'
+        '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.' +
+        '\nכתוב "סיכום" לראות איפה אתה עומד החודש.'
       };
     }
     return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __streakTail };
@@ -1535,6 +1548,162 @@ function _learnedSave(text, result, source) {
     _learnedCacheLoadedAt = 0; // invalidate
   } catch (e) {
     Logger.log('_learnedSave error: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// USER-DRIVEN CATEGORY CORRECTION FLOW
+//
+// User flow:
+//   1. User: "450 מוביל בית"
+//   2. Bot: "...נרשם...📂 שונות. ❓ קטגוריה לא מדויקת? שלח 'קטגוריה <השם>'"
+//   3. User: "קטגוריה שירותים"
+//   4. Bot: "🤔 לתקן את 'מוביל בית' מ-'שונות' ל-'שירותים'? ענה: כן / לא"
+//   5. User: "כן"
+//   6. Bot updates the row + saves the learning + calls Claude to extract
+//      broader keywords so future similar expenses categorize correctly.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function _saveLastExpense_(fromPhone, rowNumber, item, matched) {
+  if (!fromPhone || !rowNumber) return;
+  try {
+    CacheService.getScriptCache().put('lastExp:' + fromPhone, JSON.stringify({
+      rowNumber: rowNumber,
+      originalText: item.description,
+      amount: Math.abs(item.amount),
+      category: matched.category,
+      subcategory: matched.subcategory,
+      ts: Date.now()
+    }), 600);
+  } catch (e) { Logger.log('_saveLastExpense_: ' + e.message); }
+}
+
+function _handleCategoryCorrection_(fromPhone, text) {
+  if (!fromPhone || !text) return null;
+  var trimmed = String(text).trim();
+  var cache = CacheService.getScriptCache();
+
+  var corMatch = trimmed.match(/^קטגוריה\s+(.+)$/i) || trimmed.match(/^category\s+(.+)$/i);
+  if (corMatch) {
+    var newCategory = corMatch[1].trim();
+    if (!newCategory) return null;
+    var lastExpStr = cache.get('lastExp:' + fromPhone);
+    if (!lastExpStr) {
+      return { handled: true, replyText: '🤔 אין הוצאה אחרונה לתיקון.\nאפשר לתקן רק הוצאות מ-10 הדקות האחרונות.\nשלח את ההוצאה מחדש ואז את התיקון.' };
+    }
+    var lastExp;
+    try { lastExp = JSON.parse(lastExpStr); } catch (_) { return null; }
+    cache.put('pendingCor:' + fromPhone, JSON.stringify({
+      rowNumber: lastExp.rowNumber,
+      originalText: lastExp.originalText,
+      oldCategory: lastExp.category,
+      oldSubcategory: lastExp.subcategory,
+      newCategory: newCategory,
+      amount: lastExp.amount
+    }), 300);
+    return {
+      handled: true,
+      replyText: '🤔 לתקן את:\n"' + lastExp.originalText + '" (₪' + lastExp.amount + ')\n\nמ-📂 ' + lastExp.category + ' ל-📂 ' + newCategory + '?\n\nענה: כן / לא'
+    };
+  }
+
+  var isYes = /^(כן|yes|y|אישור|✓)$/i.test(trimmed);
+  var isNo = /^(לא|no|n|ביטול|✗)$/i.test(trimmed);
+  if (!isYes && !isNo) return null;
+
+  var pendStr = cache.get('pendingCor:' + fromPhone);
+  if (!pendStr) return null;
+  var pend;
+  try { pend = JSON.parse(pendStr); } catch (_) { return null; }
+  cache.remove('pendingCor:' + fromPhone);
+
+  if (isNo) {
+    return { handled: true, replyText: '✓ ביטלתי. ההוצאה נשארה כמו שזה.' };
+  }
+
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return { handled: true, replyText: '😬 לא מצאתי את גיליון התנועות.' };
+    sheet.getRange(pend.rowNumber, 4).setValue(sanitizeForSheet(pend.newCategory));
+    sheet.getRange(pend.rowNumber, 5).setValue(sanitizeForSheet(pend.newCategory));
+
+    _learnedSave(pend.originalText, { category: pend.newCategory, subcategory: pend.newCategory }, 'user-correction');
+
+    var llmTail = '';
+    try {
+      var extracted = _learnExpandedKeywords_(pend.originalText, pend.newCategory);
+      if (extracted && extracted.length) {
+        llmTail = '\n🧠 למדתי גם: ' + extracted.join(', ');
+      }
+    } catch (eL) { Logger.log('_learnExpandedKeywords_ failed: ' + eL.message); }
+
+    return {
+      handled: true,
+      replyText: '✅ תוקן ל-📂 ' + pend.newCategory + '\n🧠 שמרתי את "' + pend.originalText + '" לזיכרון, מהפעם הבאה אזכור.' + llmTail
+    };
+  } catch (e) {
+    Logger.log('apply correction err: ' + (e && e.stack || e));
+    return { handled: true, replyText: '😬 שגיאה בעדכון השורה: ' + e.message };
+  }
+}
+
+function _learnExpandedKeywords_(text, category) {
+  var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) return [];
+
+  var prompt = 'משתמש כתב הוצאה בעברית: "' + text + '"\n' +
+    'הוא תיקן את הקטגוריה ל-"' + category + '".\n' +
+    'הוצא 1-3 מילות מפתח קצרות (מילה אחת או צירוף קצר) מהטקסט שהן הליבה הסמנטית, ' +
+    'ושצריכות למפות בעתיד לקטגוריה הזאת.\n' +
+    'דוגמה 1: "מוביל הוצאות בית" → ["מוביל", "הובלה"]\n' +
+    'דוגמה 2: "ארנונה לעירייה" → ["ארנונה"]\n' +
+    'דוגמה 3: "חוגי ילדים מטרים" → ["חוג", "מטרים"]\n' +
+    'אל תכלול מילות קישור (של, ל, את, וכו).\n' +
+    'החזר JSON בלבד ללא הסבר: {"keywords":["..."]}';
+
+  var response;
+  try {
+    response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      contentType: 'application/json',
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      payload: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: prompt }]
+      }),
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    Logger.log('Claude learn fetch err: ' + e.message);
+    return [];
+  }
+
+  if (response.getResponseCode() !== 200) {
+    Logger.log('Claude learn API ' + response.getResponseCode() + ': ' + response.getContentText());
+    return [];
+  }
+
+  try {
+    var data = JSON.parse(response.getContentText());
+    var txt = data && data.content && data.content[0] && data.content[0].text || '';
+    var m = txt.match(/\{[\s\S]*\}/);
+    if (!m) return [];
+    var rule = JSON.parse(m[0]);
+    if (!rule.keywords || !Array.isArray(rule.keywords)) return [];
+
+    var saved = [];
+    rule.keywords.forEach(function (kw) {
+      var k = String(kw || '').toLowerCase().trim();
+      if (k.length < 2 || k.length > 30) return;
+      _learnedSave(k, { category: category, subcategory: category }, 'llm-extracted');
+      saved.push(k);
+    });
+    return saved;
+  } catch (e) {
+    Logger.log('Claude learn parse err: ' + e.message);
+    return [];
   }
 }
 
