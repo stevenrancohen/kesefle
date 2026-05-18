@@ -14,7 +14,12 @@
 //   POST ?action=feature-flag-set  body: { key, value }
 //   POST ?action=user-action       body: { action, targetUserSub }
 //
-// All require admin auth (requireAdmin).
+// Public-safe diagnostic actions (no admin auth required — return env-presence flags only):
+//   GET  ?action=bot-status        boolean flags for Meta WhatsApp + Anthropic env vars
+//   GET  ?action=errors-count      KV `errors:24h` count if available
+//   POST ?action=test-webhook      body: { phone, text } — stub: echoes what a webhook call would do
+//
+// All other actions require admin auth (requireAdmin).
 
 import { requireAdmin } from '../lib/auth.js';
 import { withRequestId, log } from '../lib/log.js';
@@ -290,11 +295,110 @@ async function userAction(req, res) {
 }
 
 // =============================================================
+// Public-safe diagnostic actions (no admin auth — return only flags/counts)
+// =============================================================
+
+// Whitelist of actions that may run without an admin Bearer token.
+// These return ONLY booleans / counts / non-sensitive metadata.
+const PUBLIC_DIAG_ACTIONS = new Set(['bot-status', 'errors-count', 'test-webhook']);
+
+function publicBotStatus(req, res) {
+  // Returns env-presence flags + the configured Meta phone ID (which is itself
+  // public info — Meta exposes it in the webhook URL).
+  return res.status(200).json({
+    ok: true,
+    bot: {
+      meta_phone_number_id: process.env.META_PHONE_NUMBER_ID || null, // public-safe identifier
+      meta_access_token_configured: !!process.env.META_ACCESS_TOKEN,
+      meta_verify_token_configured: !!process.env.META_VERIFY_TOKEN,
+      meta_app_secret_configured: !!process.env.META_APP_SECRET,
+      anthropic_api_key_configured: !!process.env.ANTHROPIC_API_KEY,
+      configured_bot_phone_e164: process.env.BOT_PHONE_E164 || null,
+      webhook_url: `${(req.headers['x-forwarded-proto'] || 'https')}://${req.headers.host || 'kesefle.vercel.app'}/api/whatsapp/webhook`,
+    },
+    checked_at: new Date().toISOString(),
+  });
+}
+
+async function publicErrorsCount(req, res) {
+  // Best-effort: read `errors:24h` KV key. Returns 0 if KV unreachable.
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) {
+    return res.status(200).json({ ok: true, errors_24h: null, source: 'kv_unconfigured' });
+  }
+  try {
+    const r = await fetch(`${url}/get/${encodeURIComponent('errors:24h')}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const j = await r.json().catch(() => ({}));
+    const raw = j?.result;
+    const count = raw == null ? 0 : (typeof raw === 'number' ? raw : parseInt(raw, 10) || 0);
+    return res.status(200).json({ ok: true, errors_24h: count, source: 'kv' });
+  } catch (e) {
+    return res.status(200).json({ ok: true, errors_24h: null, source: 'kv_error', error: e.message });
+  }
+}
+
+async function publicTestWebhook(req, res) {
+  // Stub: simulates what /api/whatsapp/webhook would receive WITHOUT actually
+  // dispatching or calling Meta. Returns the payload echo for debugging.
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+  const phone = String(body?.phone || '').replace(/[^\d+]/g, '').slice(0, 20);
+  const text = String(body?.text || '').slice(0, 500);
+  if (!phone || !text) {
+    return res.status(400).json({ ok: false, error: 'missing_fields', required: ['phone', 'text'] });
+  }
+  // Build the payload shape Meta would POST to our webhook
+  const simulated_payload = {
+    object: 'whatsapp_business_account',
+    entry: [{
+      id: 'SIMULATED_WABA_ID',
+      changes: [{
+        field: 'messages',
+        value: {
+          messaging_product: 'whatsapp',
+          metadata: {
+            display_phone_number: process.env.BOT_PHONE_E164 || 'unknown',
+            phone_number_id: process.env.META_PHONE_NUMBER_ID || 'unknown',
+          },
+          contacts: [{ profile: { name: 'Diagnostic Tester' }, wa_id: phone.replace(/^\+/, '') }],
+          messages: [{
+            from: phone.replace(/^\+/, ''),
+            id: 'wamid.SIMULATED_' + Date.now(),
+            timestamp: String(Math.floor(Date.now() / 1000)),
+            type: 'text',
+            text: { body: text },
+          }],
+        },
+      }],
+    }],
+  };
+  return res.status(200).json({
+    ok: true,
+    note: 'Stub: this payload was built but NOT dispatched. Use it as a test-only reference.',
+    simulated_payload,
+    next_step: 'curl -X POST $WEBHOOK_URL -H "Content-Type: application/json" -d \'<simulated_payload>\'',
+  });
+}
+
+async function dispatchPublicDiag(req, res) {
+  const action = String(req.query.action || '').trim();
+  if (req.method === 'GET') {
+    if (action === 'bot-status') return publicBotStatus(req, res);
+    if (action === 'errors-count') return publicErrorsCount(req, res);
+  }
+  if (req.method === 'POST' && action === 'test-webhook') return publicTestWebhook(req, res);
+  return res.status(405).json({ ok: false, error: 'method_not_allowed_for_diag', action });
+}
+
+// =============================================================
 // Main dispatcher
 // =============================================================
 async function handlerImpl(req, res) {
   const action = String(req.query.action || '').trim();
-  if (!action) return res.status(400).json({ ok: false, error: 'missing_action_param', hint: 'use ?action=users|user|jobs|metrics|analytics|audit|feature-flags|feature-flag-set|user-action|transactions' });
+  if (!action) return res.status(400).json({ ok: false, error: 'missing_action_param', hint: 'use ?action=users|user|jobs|metrics|analytics|audit|feature-flags|feature-flag-set|user-action|transactions|bot-status|errors-count|test-webhook' });
 
   if (req.method === 'GET') {
     switch (action) {
@@ -320,8 +424,25 @@ async function handlerImpl(req, res) {
   return res.status(405).json({ ok: false, error: 'method_not_allowed', allowed: ['GET', 'POST'] });
 }
 
-export default withRequestId(
+// Wrap once: the rate-limited admin handler (requires OAuth Bearer).
+const adminHandler = withRequestId(
   withRateLimit({ key: 'admin', limit: 60, windowSec: 60 })(
     requireAdmin(handlerImpl)
   )
 );
+
+// Public diagnostic dispatcher (no auth, still rate-limited).
+const publicDiagHandler = withRequestId(
+  withRateLimit({ key: 'admin_diag', limit: 30, windowSec: 60 })(
+    dispatchPublicDiag
+  )
+);
+
+// Top-level export — routes public-safe diagnostic actions before requireAdmin.
+export default async function topLevel(req, res) {
+  const action = String((req.query && req.query.action) || '').trim();
+  if (PUBLIC_DIAG_ACTIONS.has(action)) {
+    return publicDiagHandler(req, res);
+  }
+  return adminHandler(req, res);
+}

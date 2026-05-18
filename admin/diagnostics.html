@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="he" dir="rtl" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>אבחון מערכת — כסף'לה Admin</title>
+<meta name="robots" content="noindex,nofollow" />
+<meta name="theme-color" content="#0f1422" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 400:'#c084fc', 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+      },
+    },
+  };
+</script>
+<link rel="stylesheet" href="/assets/futuristic.css" />
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num, .mono { direction: ltr; unicode-bidi: isolate; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  /* gate */
+  .gate-blur { filter: blur(6px); pointer-events: none; user-select: none; }
+  /* hover lift / tilt */
+  .lift { transition: transform 0.25s cubic-bezier(0.22,0.61,0.36,1), box-shadow 0.25s, border-color 0.25s; }
+  .lift:hover { transform: translateY(-3px); box-shadow: 0 18px 50px -18px rgba(15,20,34,0.45); }
+  /* spinner */
+  @keyframes spin-ring { to { transform: rotate(360deg); } }
+  .spin-ring { animation: spin-ring 0.9s linear infinite; }
+  /* fade-in for results */
+  @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fade-up 0.45s cubic-bezier(0.22,0.61,0.36,1) both; }
+  /* pulse on running test */
+  @keyframes test-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.5 } }
+  .test-pulse { animation: test-pulse 1.2s ease-in-out infinite; }
+  /* status pill colors */
+  .pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 11px; font-weight: 700; }
+  .pill-pass    { background: rgba(34,197,94,0.18); color: #4ade85; border: 1px solid rgba(34,197,94,0.4); }
+  .pill-warn    { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+  .pill-fail    { background: rgba(239,68,68,0.18); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
+  .pill-pending { background: rgba(99,102,241,0.18); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); }
+  .pill-skip    { background: rgba(127,127,127,0.18); color: #9ca3af; border: 1px solid rgba(127,127,127,0.4); }
+  /* overall hero */
+  .hero-pass { background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.04)); border-color: rgba(34,197,94,0.45); }
+  .hero-warn { background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.04)); border-color: rgba(245,158,11,0.45); }
+  .hero-fail { background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.04)); border-color: rgba(239,68,68,0.45); }
+  .hero-pending { background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.04)); border-color: rgba(99,102,241,0.45); }
+  /* progress bar */
+  .prog-bar { height: 6px; border-radius: 999px; background: rgba(127,127,127,0.18); overflow: hidden; }
+  .prog-bar > span { display:block; height:100%; background: linear-gradient(90deg, #22c55e, #a855f7); transition: width 0.4s ease; }
+  /* details/summary */
+  details[open] summary .chevron { transform: rotate(90deg); }
+  .chevron { transition: transform 0.25s; display: inline-block; }
+  /* keep code blocks readable */
+  pre.codebox { direction: ltr; unicode-bidi: isolate; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.55; overflow-x: auto; color: #e5e7eb; }
+  @media (prefers-reduced-motion: reduce) {
+    .spin-ring, .fade-up, .test-pulse { animation: none !important; }
+  }
+</style>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased dark:bg-ink-900 dark:text-white">
+
+<!-- ============== AUTH GATE OVERLAY ============== -->
+<div id="kfl-gate" class="fixed inset-0 z-[100] flex items-center justify-center bg-ink-900/95 backdrop-blur-md">
+  <div class="relative max-w-md w-[90vw] rounded-3xl border border-ink-700/60 bg-ink-800/80 p-8 shadow-glow glass-panel scan-line">
+    <div class="absolute -inset-1 -z-10 rounded-3xl bg-gradient-to-br from-brand-500/20 to-accent-500/20 blur-2xl"></div>
+    <div class="mb-5 flex items-center gap-3">
+      <span class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-2xl font-black text-white shadow-glow">₪</span>
+      <div>
+        <div class="text-lg font-extrabold tracking-tight holo-text">כסף'לה Diagnostics</div>
+        <div class="text-xs text-ink-400">בדיקת בריאות מערכת</div>
+      </div>
+    </div>
+    <h2 class="text-2xl font-black mb-1">גישה מוגבלת</h2>
+    <p class="text-sm text-ink-300 mb-5">הזן את סיסמת הניהול כדי להריץ בדיקות אבחון.</p>
+    <form id="gate-form" class="flex flex-col gap-3">
+      <input id="gate-pw" type="password" autocomplete="off" placeholder="סיסמה" class="w-full rounded-xl border border-ink-700 bg-ink-900/70 px-4 py-3 text-base text-white placeholder:text-ink-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30" dir="ltr" />
+      <div id="gate-error" class="hidden text-xs font-semibold text-red-400">סיסמה שגויה. נסה שוב.</div>
+      <button type="submit" class="rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-glow transition hover:bg-brand-500">היכנס לאבחון</button>
+    </form>
+    <div class="mt-4 text-[11px] text-ink-500 text-center">דף זה אינו מקושר חיצונית. אם הגעת בטעות, <a href="/" class="text-brand-400 hover:underline">חזור לאתר</a>.</div>
+  </div>
+</div>
+
+<!-- ============== NAV ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
+    <a href="/admin" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>כסף'לה</span>
+      <span class="hidden sm:inline-flex items-center gap-1 rounded-full bg-accent-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-500">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Diagnostics
+      </span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/admin" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">פאנל ניהול</a>
+      <a href="/" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">בית</a>
+      <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="theme-toggle" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-200 bg-white/70 text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:bg-ink-700" aria-label="מצב כהה/בהיר" title="מצב כהה/בהיר">
+        <svg id="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg id="theme-icon-dark" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button id="admin-logout" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">התנתק</button>
+    </div>
+  </nav>
+</header>
+
+<!-- ============== APP SHELL ============== -->
+<main id="kfl-app" class="gate-blur mx-auto max-w-6xl px-5 pt-24 pb-24">
+
+  <!-- ====== HERO / OVERALL STATUS ====== -->
+  <section class="mb-8">
+    <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-400">
+      <span class="live-dot inline-block h-2 w-2 rounded-full bg-brand-500"></span>
+      DIAGNOSTICS • <span class="num" id="now-clock">00:00:00</span>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-black tracking-tight">
+      אבחון <span class="holo-text">מערכת</span>
+    </h1>
+    <p class="mt-2 text-ink-500 dark:text-ink-300">בדוק בלחיצה אחת אם הבוט פועל, אילו משתני סביבה מוגדרים, ואיפה יש בעיות.</p>
+
+    <div id="hero-card" class="hero-pending mt-6 rounded-3xl border p-6 shadow-soft fade-up">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-4">
+          <div id="hero-icon" class="grid h-14 w-14 place-items-center rounded-2xl bg-white/10 text-3xl">
+            <span class="spin-ring inline-block">⏳</span>
+          </div>
+          <div>
+            <div id="hero-title" class="text-2xl font-black tracking-tight">מריץ בדיקות…</div>
+            <div id="hero-sub" class="text-sm text-ink-300">מתחיל בקרוב</div>
+          </div>
+        </div>
+        <div class="flex flex-col items-end gap-2 sm:items-end">
+          <div class="flex items-center gap-3 text-xs text-ink-400">
+            <span>נבדק לאחרונה:</span>
+            <span class="mono" id="last-tested">—</span>
+          </div>
+          <button id="rerun-btn" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-soft transition hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 4 21 10 15 10"/></svg>
+            הרץ מחדש את כל הבדיקות
+          </button>
+        </div>
+      </div>
+      <!-- progress -->
+      <div class="mt-5">
+        <div class="mb-1 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-ink-400">
+          <span>התקדמות</span>
+          <span class="mono"><span id="prog-done">0</span> / <span id="prog-total">0</span></span>
+        </div>
+        <div class="prog-bar"><span id="prog-fill" style="width:0%"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== TEST LIST ====== -->
+  <section class="mb-10">
+    <div class="mb-4 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">בדיקות</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">כל בדיקה מציינת סטטוס + הסבר + קישור לתיקון.</p>
+      </div>
+    </div>
+    <div id="tests" class="grid grid-cols-1 gap-4"></div>
+  </section>
+
+  <!-- ====== BOT REPLY TESTER ====== -->
+  <section class="mb-10">
+    <div class="mb-4">
+      <h2 class="text-2xl font-black tracking-tight">בודק תגובות בוט</h2>
+      <p class="text-sm text-ink-500 dark:text-ink-300">בנה payload סימולציה של webhook מ-Meta. <strong>אינו שולח</strong> הודעה — רק מציג מה היה מגיע.</p>
+    </div>
+    <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+      <form id="webhook-form" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-bold text-ink-500 dark:text-ink-300">מספר טלפון (E.164)</span>
+          <input id="wh-phone" type="text" placeholder="+972501234567" dir="ltr" class="rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm font-mono text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-ink-700 dark:bg-ink-900/70 dark:text-white" />
+        </label>
+        <label class="flex flex-col gap-1 sm:col-span-2">
+          <span class="text-xs font-bold text-ink-500 dark:text-ink-300">הודעת בדיקה</span>
+          <input id="wh-text" type="text" placeholder="קפה 25" class="rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-ink-700 dark:bg-ink-900/70 dark:text-white" />
+        </label>
+        <div class="sm:col-span-2 flex flex-wrap items-center gap-2">
+          <button type="submit" id="wh-submit" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-soft transition hover:bg-brand-500 disabled:opacity-50">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            סמלץ webhook
+          </button>
+          <button type="button" id="wh-copy-curl" class="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            העתק curl
+          </button>
+          <span id="wh-hint" class="text-[11px] text-ink-400">ה-stub אינו מפעיל את הבוט בפועל — רק מציג את ה-payload.</span>
+        </div>
+      </form>
+      <pre id="wh-output" class="codebox mt-4 hidden"></pre>
+    </div>
+  </section>
+
+  <!-- ====== FOOTER: WHAT DOES EACH TEST MEAN ====== -->
+  <section class="mb-10">
+    <details class="rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800 shadow-soft">
+      <summary class="cursor-pointer text-lg font-extrabold flex items-center gap-2">
+        <span class="chevron">›</span>
+        מה אומרת כל בדיקה?
+      </summary>
+      <div class="mt-4 space-y-3 text-sm text-ink-600 dark:text-ink-200">
+        <div>
+          <div class="font-bold text-brand-500">1. בריאות Vercel — <span class="mono">/api/health</span></div>
+          <p>בודק שה-API חי, ש-KV (מסד הנתונים) מגיב, ושמשתני הסביבה החיוניים מוגדרים. אם נופל — האתר עצמו לא יעבוד.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">2. מספר הבוט (Meta WhatsApp)</div>
+          <p>בודק ש-<span class="mono">META_PHONE_NUMBER_ID</span> ו-<span class="mono">META_ACCESS_TOKEN</span> מוגדרים. אם לא — הבוט לא יכול לשלוח תגובות בחזרה.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">3. כתובת webhook ב-Meta</div>
+          <p>מציג את ה-URL שצריך להיות מוגדר ב-<a class="text-brand-400 underline" href="https://developers.facebook.com/apps/" target="_blank" rel="noopener">Meta Developer Console</a>. אימות בפועל דורש Graph API token — להריץ ידנית.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">4. Apps Script webhook</div>
+          <p>אם הבוט הישן (Google Apps Script) עדיין פעיל, יש URL שצריך לבדוק בדפדפן/curl. הבדיקה כאן רק מציגה את ה-URL.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">5. Anthropic API (Claude)</div>
+          <p>בודק שיש <span class="mono">ANTHROPIC_API_KEY</span> מוגדר. בלעדיו הבוט עובד אבל בלי AI — fallback לכללי regex.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">6. אימות Google OAuth</div>
+          <p>בדיקה ידנית: בקונסולת Google Cloud — ספירת test users מאושרים והאם האפליקציה ב-Production או Testing.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">7. בודק תגובות בוט (stub)</div>
+          <p>בונה payload בפורמט שמטא היתה שולחת, אבל אינו מפעיל את הבוט. שמש לאימות שהתשתית מקבלת payloads תקינים.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">8. DNS / SSL</div>
+          <p>בודק שאפשר להגיע ל-<span class="mono">kesefle.vercel.app</span> ושה-HTTPS תקין. אם נופל — או DNS שבור או Vercel down.</p>
+        </div>
+        <div>
+          <div class="font-bold text-brand-500">9. מונה שגיאות 24 שעות</div>
+          <p>מציג את ערך <span class="mono">errors:24h</span> ב-KV. ערך 0 או null פירושו אין שגיאות שנאספו אחרון — או שאיסוף שגיאות עוד לא מחובר.</p>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <footer class="mt-12 text-center text-xs text-ink-400">
+    <div class="mono">build: <span id="build-sha">dev</span></div>
+    <div class="mt-1">© כסף'לה • דף ניהול פנימי • לא לשיתוף ציבורי</div>
+  </footer>
+</main>
+
+<!-- ============== SCRIPTS ============== -->
+<script>
+(function(){
+  'use strict';
+
+  // ===== AUTH GATE =====
+  const GATE_KEY = 'kesefle_admin';
+  const PASSWORD = 'kesefle2026';
+  const gate = document.getElementById('kfl-gate');
+  const app = document.getElementById('kfl-app');
+  const gateForm = document.getElementById('gate-form');
+  const gatePw = document.getElementById('gate-pw');
+  const gateErr = document.getElementById('gate-error');
+
+  function openApp() {
+    gate.classList.add('hidden');
+    app.classList.remove('gate-blur');
+    setTimeout(initAll, 50);
+  }
+  function lockApp() {
+    gate.classList.remove('hidden');
+    app.classList.add('gate-blur');
+    setTimeout(() => gatePw.focus(), 100);
+  }
+  if (localStorage.getItem(GATE_KEY) === 'true') openApp();
+  else lockApp();
+
+  gateForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (gatePw.value === PASSWORD) {
+      localStorage.setItem(GATE_KEY, 'true');
+      gateErr.classList.add('hidden');
+      openApp();
+    } else {
+      gateErr.classList.remove('hidden');
+      gatePw.value = '';
+      gatePw.focus();
+    }
+  });
+  document.getElementById('admin-logout').addEventListener('click', () => {
+    localStorage.removeItem(GATE_KEY);
+    lockApp();
+  });
+
+  // ===== THEME TOGGLE =====
+  const themeBtn = document.getElementById('theme-toggle');
+  const iconL = document.getElementById('theme-icon-light');
+  const iconD = document.getElementById('theme-icon-dark');
+  function applyTheme(mode) {
+    if (mode === 'light') {
+      document.documentElement.classList.remove('dark');
+      iconL.classList.add('hidden'); iconD.classList.remove('hidden');
+    } else {
+      document.documentElement.classList.add('dark');
+      iconD.classList.add('hidden'); iconL.classList.remove('hidden');
+    }
+    localStorage.setItem('kesefle_theme', mode);
+  }
+  applyTheme(localStorage.getItem('kesefle_theme') || 'dark');
+  themeBtn.addEventListener('click', () => {
+    const cur = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+
+  // ===== CLOCK =====
+  function tickClock() {
+    const el = document.getElementById('now-clock');
+    if (!el) return;
+    const d = new Date();
+    el.textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+  }
+  setInterval(tickClock, 1000); tickClock();
+
+  // ============================================================
+  // DIAGNOSTICS RUNNER
+  // ============================================================
+
+  // Each test: { id, title, desc, run() -> { status: 'pass'|'warn'|'fail'|'skip', message, details?, fix?: { href, label } } }
+  const TESTS = [
+    {
+      id: 'vercel-health',
+      title: 'בריאות Vercel & תשתית',
+      desc: 'בודק /api/health: KV, Google OAuth, Sheets API ומשתני סביבה.',
+      run: async () => {
+        try {
+          const r = await fetch('/api/health', { cache: 'no-store' });
+          const j = await r.json();
+          if (!j.ok) {
+            const failing = [];
+            if (!j.deps?.kv?.ok) failing.push('KV');
+            if (!j.deps?.google_oauth?.ok) failing.push('Google OAuth');
+            if (!j.deps?.sheets_api?.ok) failing.push('Sheets API');
+            return {
+              status: 'fail',
+              message: 'תלות קריטית נפלה: ' + (failing.join(', ') || 'unknown'),
+              details: j,
+              fix: { href: 'https://vercel.com/dashboard', label: 'פתח Vercel Dashboard' },
+            };
+          }
+          const env = j.env_configured || {};
+          const missing = Object.entries(env).filter(([k,v]) => !v).map(([k]) => k);
+          if (missing.length > 3) {
+            return {
+              status: 'warn',
+              message: 'תלות בריאה, אבל ' + missing.length + ' משתני סביבה חסרים: ' + missing.slice(0,5).join(', ') + (missing.length>5?'…':''),
+              details: j,
+              fix: { href: 'https://vercel.com/dashboard', label: 'הגדר משתני סביבה' },
+            };
+          }
+          return {
+            status: 'pass',
+            message: 'הכול בריא. response_ms=' + j.response_ms + ', region=' + (j.region || 'unknown'),
+            details: j,
+          };
+        } catch (e) {
+          return { status: 'fail', message: 'נכשל לטעון /api/health: ' + e.message };
+        }
+      },
+    },
+    {
+      id: 'bot-phone',
+      title: 'הגדרת מספר הבוט (Meta WhatsApp)',
+      desc: 'בודק שה-Meta phone number ID + access token + verify token מוגדרים.',
+      run: async () => {
+        try {
+          const r = await fetch('/api/admin?action=bot-status', { cache: 'no-store' });
+          const j = await r.json();
+          if (!j.ok) return { status: 'fail', message: 'בקשה נכשלה: ' + (j.error || r.status), details: j };
+          const b = j.bot || {};
+          const required = ['meta_phone_number_id', 'meta_access_token_configured', 'meta_verify_token_configured'];
+          const missing = required.filter(k => !b[k]);
+          if (missing.length === 0) {
+            return {
+              status: 'pass',
+              message: 'הבוט מוגדר. phone_id=' + (b.meta_phone_number_id || '—') + (b.configured_bot_phone_e164 ? ', phone=' + b.configured_bot_phone_e164 : ''),
+              details: j,
+            };
+          }
+          return {
+            status: 'fail',
+            message: 'חסרים משתני סביבה: ' + missing.join(', '),
+            details: j,
+            fix: { href: 'https://vercel.com/dashboard', label: 'הגדר ב-Vercel' },
+          };
+        } catch (e) {
+          return { status: 'fail', message: 'בקשה נכשלה: ' + e.message };
+        }
+      },
+    },
+    {
+      id: 'webhook-url',
+      title: 'כתובת Webhook ל-Meta',
+      desc: 'מציג את ה-URL להגדרה ב-Meta Developer Console.',
+      run: async () => {
+        try {
+          const r = await fetch('/api/admin?action=bot-status', { cache: 'no-store' });
+          const j = await r.json();
+          const url = j?.bot?.webhook_url || (location.origin + '/api/whatsapp/webhook');
+          return {
+            status: 'warn',
+            message: 'כתובת ל-Meta: ' + url + ' — אימות בפועל דורש Graph API קריאה ידנית.',
+            details: { webhook_url: url, verify_token_configured: !!j?.bot?.meta_verify_token_configured },
+            fix: { href: 'https://developers.facebook.com/apps/', label: 'פתח Meta Console' },
+            extra: { copyableUrl: url },
+          };
+        } catch (e) {
+          return { status: 'fail', message: 'נכשל: ' + e.message };
+        }
+      },
+    },
+    {
+      id: 'apps-script',
+      title: 'Apps Script webhook (אם משמש)',
+      desc: 'אם הבוט הישן עוד פעיל, ה-URL מתחת. בדוק ידנית ב-curl.',
+      run: async () => {
+        // We can't auto-probe Apps Script without a known URL — show instructions.
+        return {
+          status: 'skip',
+          message: 'אין בדיקה אוטומטית. הרץ ידנית: curl -X GET "<APPS_SCRIPT_URL>?test=1"',
+          details: { hint: 'אם מוגדר APPS_SCRIPT_WEBHOOK_URL ב-Vercel, אפשר להוסיף בדיקה בעתיד.' },
+          fix: { href: 'https://script.google.com/home/my', label: 'פתח Apps Script' },
+        };
+      },
+    },
+    {
+      id: 'anthropic-key',
+      title: 'Anthropic API Key (Claude)',
+      desc: 'בודק שיש מפתח ל-Claude. בלי זה הבוט עובד בלי AI.',
+      run: async () => {
+        try {
+          const r = await fetch('/api/admin?action=bot-status', { cache: 'no-store' });
+          const j = await r.json();
+          if (j?.bot?.anthropic_api_key_configured) {
+            return { status: 'pass', message: 'מפתח Anthropic מוגדר.', details: j };
+          }
+          return {
+            status: 'warn',
+            message: 'אין מפתח Anthropic. הבוט יעבוד אבל בלי הבנה AI — fallback לכללים בלבד.',
+            details: j,
+            fix: { href: 'https://console.anthropic.com/', label: 'קבל מפתח' },
+          };
+        } catch (e) {
+          return { status: 'fail', message: 'בקשה נכשלה: ' + e.message };
+        }
+      },
+    },
+    {
+      id: 'oauth-verification',
+      title: 'אימות Google OAuth',
+      desc: 'מעבר ל-Google Cloud Console לבדוק test users + סטטוס אפליקציה.',
+      run: async () => {
+        // Can't query Google for us without credentials — instruct.
+        return {
+          status: 'skip',
+          message: 'בדיקה ידנית: ספור test users ב-Google Cloud Console (OAuth consent screen).',
+          fix: { href: 'https://console.cloud.google.com/apis/credentials/consent', label: 'פתח OAuth Consent' },
+        };
+      },
+    },
+    {
+      id: 'dns-ssl',
+      title: 'DNS & SSL של kesefle.vercel.app',
+      desc: 'בודק שהדומיין נגיש עם SSL תקין.',
+      run: async () => {
+        try {
+          // HEAD request to homepage — if loadable, DNS+SSL ok.
+          const r = await fetch('/', { method: 'HEAD', cache: 'no-store' });
+          if (r.ok) {
+            return { status: 'pass', message: 'הדומיין פעיל, SSL בתוקף (' + location.protocol + ').', details: { status: r.status } };
+          }
+          return { status: 'warn', message: 'הדומיין מגיב עם ' + r.status, details: { status: r.status } };
+        } catch (e) {
+          return { status: 'fail', message: 'אין גישה לדומיין: ' + e.message };
+        }
+      },
+    },
+    {
+      id: 'errors-24h',
+      title: 'שגיאות ב-24 שעות אחרונות',
+      desc: 'מונה את KV errors:24h. ערך נמוך = טוב.',
+      run: async () => {
+        try {
+          const r = await fetch('/api/admin?action=errors-count', { cache: 'no-store' });
+          const j = await r.json();
+          const n = j?.errors_24h;
+          if (n == null) {
+            return { status: 'skip', message: 'מונה שגיאות עוד לא מחובר (' + (j?.source || 'unknown') + ').', details: j };
+          }
+          if (n === 0) return { status: 'pass', message: 'אפס שגיאות ב-24 שעות. נקי!', details: j };
+          if (n < 10) return { status: 'warn', message: n + ' שגיאות ב-24 שעות. בדוק logs.', details: j, fix: { href: '/admin', label: 'פאנל ניהול' } };
+          return { status: 'fail', message: n + ' שגיאות ב-24 שעות — בעיה אמיתית.', details: j, fix: { href: '/admin', label: 'פאנל ניהול' } };
+        } catch (e) {
+          return { status: 'fail', message: 'בקשה נכשלה: ' + e.message };
+        }
+      },
+    },
+  ];
+
+  // ============================================================
+  // UI helpers
+  // ============================================================
+
+  const ICONS = {
+    pass:    '✅',
+    warn:    '⚠️',
+    fail:    '❌',
+    skip:    '⏭️',
+    pending: '⏳',
+  };
+  const PILL_TXT = {
+    pass: 'עובר',
+    warn: 'אזהרה',
+    fail: 'נכשל',
+    skip: 'דלוג',
+    pending: 'רץ…',
+  };
+  const PILL_CLS = {
+    pass: 'pill pill-pass',
+    warn: 'pill pill-warn',
+    fail: 'pill pill-fail',
+    skip: 'pill pill-skip',
+    pending: 'pill pill-pending',
+  };
+
+  function renderTestSkeleton() {
+    const wrap = document.getElementById('tests');
+    wrap.innerHTML = '';
+    for (const t of TESTS) {
+      const card = document.createElement('div');
+      card.id = 'test-' + t.id;
+      card.className = 'rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift fade-up';
+      card.innerHTML = `
+        <div class="flex items-start gap-4">
+          <div class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-ink-100 text-2xl dark:bg-ink-900 test-icon">${ICONS.pending}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+              <h3 class="text-base font-extrabold">${t.title}</h3>
+              <span class="${PILL_CLS.pending} test-pill test-pulse">
+                <span class="live-dot inline-block h-1.5 w-1.5 rounded-full bg-current"></span>
+                ${PILL_TXT.pending}
+              </span>
+            </div>
+            <p class="text-xs text-ink-500 dark:text-ink-300 mb-2">${t.desc}</p>
+            <div class="test-message text-sm font-medium text-ink-700 dark:text-ink-200">מחכה…</div>
+            <div class="test-extra mt-2 hidden"></div>
+            <div class="test-actions mt-3 flex flex-wrap gap-2 hidden"></div>
+          </div>
+        </div>
+      `;
+      wrap.appendChild(card);
+    }
+    document.getElementById('prog-total').textContent = String(TESTS.length);
+    document.getElementById('prog-done').textContent = '0';
+    document.getElementById('prog-fill').style.width = '0%';
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[c]));
+  }
+
+  function renderTestResult(t, res) {
+    const card = document.getElementById('test-' + t.id);
+    if (!card) return;
+    card.querySelector('.test-icon').textContent = ICONS[res.status] || '❓';
+    const pill = card.querySelector('.test-pill');
+    pill.className = PILL_CLS[res.status] + ' test-pill';
+    pill.textContent = PILL_TXT[res.status] || res.status;
+    card.querySelector('.test-message').textContent = res.message || '';
+
+    const extraEl = card.querySelector('.test-extra');
+    const actionsEl = card.querySelector('.test-actions');
+    extraEl.innerHTML = '';
+    actionsEl.innerHTML = '';
+    extraEl.classList.add('hidden');
+    actionsEl.classList.add('hidden');
+
+    // Show copyable URL if present
+    if (res.extra && res.extra.copyableUrl) {
+      extraEl.classList.remove('hidden');
+      const url = res.extra.copyableUrl;
+      extraEl.innerHTML = `
+        <div class="flex flex-wrap items-center gap-2 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2 dark:border-ink-700 dark:bg-ink-900">
+          <span class="mono text-xs break-all">${escapeHtml(url)}</span>
+          <button class="copy-btn mr-auto inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-500">העתק</button>
+        </div>
+      `;
+      extraEl.querySelector('.copy-btn').addEventListener('click', async (ev) => {
+        try {
+          await navigator.clipboard.writeText(url);
+          ev.target.textContent = 'הועתק ✓';
+          setTimeout(() => { ev.target.textContent = 'העתק'; }, 1800);
+        } catch {
+          ev.target.textContent = 'נכשל';
+        }
+      });
+    }
+
+    // Show details (collapsible)
+    if (res.details) {
+      extraEl.classList.remove('hidden');
+      const det = document.createElement('details');
+      det.className = 'mt-2 text-xs';
+      det.innerHTML = `
+        <summary class="cursor-pointer text-ink-500 hover:text-brand-500 dark:text-ink-300">פרטים טכניים</summary>
+        <pre class="codebox mt-2">${escapeHtml(JSON.stringify(res.details, null, 2))}</pre>
+      `;
+      extraEl.appendChild(det);
+    }
+
+    // Actions: fix button
+    if (res.fix && res.fix.href) {
+      actionsEl.classList.remove('hidden');
+      const a = document.createElement('a');
+      a.href = res.fix.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'inline-flex items-center gap-1.5 rounded-lg border border-brand-500/40 bg-brand-500/10 px-3 py-1.5 text-xs font-bold text-brand-500 hover:bg-brand-500/20';
+      a.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg> ${escapeHtml(res.fix.label || 'תקן')}`;
+      actionsEl.appendChild(a);
+    }
+  }
+
+  function updateHero(results) {
+    const heroCard = document.getElementById('hero-card');
+    const heroIcon = document.getElementById('hero-icon');
+    const heroTitle = document.getElementById('hero-title');
+    const heroSub = document.getElementById('hero-sub');
+
+    const counts = { pass: 0, warn: 0, fail: 0, skip: 0, pending: 0 };
+    for (const r of results) counts[r.status] = (counts[r.status] || 0) + 1;
+
+    let cls, title, sub, icon;
+    if (counts.fail > 0) {
+      cls = 'hero-fail'; icon = '❌';
+      title = counts.fail + ' בעיות קריטיות';
+      sub = `${counts.pass} עוברים • ${counts.warn} אזהרות • ${counts.fail} נכשלים • ${counts.skip} דולגים`;
+    } else if (counts.warn > 0) {
+      cls = 'hero-warn'; icon = '⚠️';
+      title = counts.warn + ' אזהרות';
+      sub = `${counts.pass} עוברים • ${counts.warn} אזהרות • ${counts.skip} דולגים`;
+    } else if (counts.pending > 0) {
+      cls = 'hero-pending'; icon = '<span class="spin-ring inline-block">⏳</span>';
+      title = 'מריץ…';
+      sub = `הושלמו ${results.length - counts.pending} מתוך ${results.length}`;
+    } else {
+      cls = 'hero-pass'; icon = '✅';
+      title = 'כל המערכות ירוקות';
+      sub = `${counts.pass} עוברים${counts.skip ? ' • ' + counts.skip + ' דולגים' : ''}`;
+    }
+
+    heroCard.classList.remove('hero-pass','hero-warn','hero-fail','hero-pending');
+    heroCard.classList.add(cls);
+    heroIcon.innerHTML = icon;
+    heroTitle.textContent = title;
+    heroSub.textContent = sub;
+  }
+
+  async function runAll() {
+    const rerunBtn = document.getElementById('rerun-btn');
+    rerunBtn.disabled = true;
+    renderTestSkeleton();
+    const results = TESTS.map(() => ({ status: 'pending' }));
+    updateHero(results);
+
+    let done = 0;
+    // Run tests in parallel for speed, but show results as they land.
+    await Promise.all(TESTS.map(async (t, i) => {
+      let res;
+      try {
+        res = await t.run();
+      } catch (e) {
+        res = { status: 'fail', message: 'תקלה לא צפויה: ' + e.message };
+      }
+      results[i] = res;
+      renderTestResult(t, res);
+      done++;
+      document.getElementById('prog-done').textContent = String(done);
+      const pct = Math.round((done / TESTS.length) * 100);
+      document.getElementById('prog-fill').style.width = pct + '%';
+      updateHero(results);
+    }));
+
+    document.getElementById('last-tested').textContent = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    rerunBtn.disabled = false;
+  }
+
+  // ============================================================
+  // BOT REPLY TESTER
+  // ============================================================
+  function buildCurl(phone, text) {
+    const url = location.origin + '/api/admin?action=test-webhook';
+    const body = JSON.stringify({ phone, text });
+    return `curl -X POST '${url}' \\\n  -H 'Content-Type: application/json' \\\n  -d '${body.replace(/'/g, "'\\''")}'`;
+  }
+
+  function initWebhookTester() {
+    const form = document.getElementById('webhook-form');
+    const submitBtn = document.getElementById('wh-submit');
+    const output = document.getElementById('wh-output');
+    const copyBtn = document.getElementById('wh-copy-curl');
+    const hint = document.getElementById('wh-hint');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById('wh-phone').value.trim();
+      const text = document.getElementById('wh-text').value.trim();
+      if (!phone || !text) { hint.textContent = 'הזן טלפון והודעה.'; hint.classList.add('text-red-400'); return; }
+      hint.classList.remove('text-red-400');
+      submitBtn.disabled = true;
+      output.classList.remove('hidden');
+      output.textContent = 'שולח…';
+      try {
+        const r = await fetch('/api/admin?action=test-webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, text }),
+        });
+        const j = await r.json();
+        output.textContent = JSON.stringify(j, null, 2);
+      } catch (err) {
+        output.textContent = 'שגיאה: ' + err.message;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const phone = document.getElementById('wh-phone').value.trim() || '+972501234567';
+      const text = document.getElementById('wh-text').value.trim() || 'קפה 25';
+      try {
+        await navigator.clipboard.writeText(buildCurl(phone, text));
+        copyBtn.classList.add('bg-brand-500/20');
+        const orig = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> הועתק';
+        setTimeout(() => { copyBtn.innerHTML = orig; copyBtn.classList.remove('bg-brand-500/20'); }, 1800);
+      } catch (e) {
+        hint.textContent = 'העתקה נכשלה';
+      }
+    });
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  function initAll() {
+    document.getElementById('rerun-btn').addEventListener('click', () => { runAll(); });
+    initWebhookTester();
+    // Pull build SHA from /api/health for the footer (best-effort).
+    fetch('/api/health', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(j => { document.getElementById('build-sha').textContent = j.version || 'dev'; })
+      .catch(() => {});
+    runAll();
+  }
+})();
+</script>
+</body>
+</html>
