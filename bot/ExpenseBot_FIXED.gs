@@ -331,6 +331,161 @@ function doGet(e) {
 }
 
 // ============================================================
+// 🔐 Webhook authenticity — verify the payload actually came from Meta.
+// ------------------------------------------------------------
+// Meta signs every WhatsApp Cloud webhook with HMAC-SHA256 over the raw body
+// using the App Secret as the key, and ships the digest in the
+// X-Hub-Signature-256 header (format: "sha256=<hex>"). We verify two things:
+//   1) The HMAC matches (only possible when Apps Script exposes the header —
+//      historically it does NOT for public web apps, so we degrade gracefully).
+//   2) The payload's WABA id matches WHATSAPP_BUSINESS_ACCOUNT_ID. This works
+//      regardless of header access and filters random spam against the /exec
+//      URL even when full HMAC verification can't run inside Apps Script.
+//
+// Configuration (all optional Script Properties):
+//   META_APP_SECRET                — the Meta App Secret. If unset, HMAC check
+//                                    is skipped with a logged warning.
+//   WHATSAPP_BUSINESS_ACCOUNT_ID   — the WABA id we expect in entry[0].id.
+//                                    If unset, this secondary check is skipped.
+//   STRICT_WEBHOOK_VERIFY          — "1" to reject when HMAC verification is
+//                                    not possible (header missing, secret
+//                                    unset). Default off for backward compat.
+//
+// Returns { valid: bool, reason: string }. Callers log the reason but never
+// echo it to the response (so probers can't infer why they failed).
+// ============================================================
+function _verifyMetaWebhook_(e, rawBody) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var appSecret = props.getProperty('META_APP_SECRET') || '';
+    var expectedWaba = props.getProperty('WHATSAPP_BUSINESS_ACCOUNT_ID') || '';
+    var strict = props.getProperty('STRICT_WEBHOOK_VERIFY') === '1';
+
+    // -- Attempt HMAC-SHA256 over the raw body --
+    // Apps Script's doPost has historically NOT exposed request headers on
+    // standard web-app deployments. We probe a few possible locations Apps
+    // Script may surface them in (e.headers, e.parameter, e.postData.headers)
+    // so this code "just works" if Google ever ships header support.
+    var sigHeader = '';
+    if (e) {
+      if (e.headers) {
+        sigHeader = e.headers['X-Hub-Signature-256']
+                 || e.headers['x-hub-signature-256']
+                 || '';
+      }
+      if (!sigHeader && e.parameter) {
+        sigHeader = e.parameter['X-Hub-Signature-256']
+                 || e.parameter['x-hub-signature-256']
+                 || '';
+      }
+      if (!sigHeader && e.postData && e.postData.headers) {
+        sigHeader = e.postData.headers['X-Hub-Signature-256']
+                 || e.postData.headers['x-hub-signature-256']
+                 || '';
+      }
+    }
+
+    var hmacRan = false;
+    if (appSecret && sigHeader && rawBody) {
+      var prefix = 'sha256=';
+      var supplied = String(sigHeader).indexOf(prefix) === 0
+                   ? String(sigHeader).substring(prefix.length).toLowerCase()
+                   : String(sigHeader).toLowerCase();
+      var bytes = Utilities.computeHmacSha256Signature(rawBody, appSecret);
+      // Convert raw bytes to lowercase hex.
+      var hex = '';
+      for (var i = 0; i < bytes.length; i++) {
+        var b = bytes[i] & 0xff;
+        var h = b.toString(16);
+        if (h.length < 2) h = '0' + h;
+        hex += h;
+      }
+      hmacRan = true;
+      // Constant-time-ish compare to avoid trivial timing leaks. Apps Script
+      // doesn't expose a true constant-time comparator, but iterating over
+      // both strings is closer than `===` short-circuiting on first byte.
+      if (hex.length !== supplied.length) {
+        return { valid: false, reason: 'hmac_length_mismatch' };
+      }
+      var diff = 0;
+      for (var k = 0; k < hex.length; k++) {
+        diff |= hex.charCodeAt(k) ^ supplied.charCodeAt(k);
+      }
+      if (diff !== 0) {
+        return { valid: false, reason: 'hmac_mismatch' };
+      }
+    } else if (strict) {
+      // Strict mode demands HMAC; refuse if we couldn't run it.
+      return { valid: false, reason: !appSecret
+        ? 'strict_mode_secret_unset'
+        : (!sigHeader ? 'strict_mode_signature_header_missing' : 'strict_mode_no_body') };
+    } else {
+      Logger.log('Webhook HMAC skipped: secret=' + (appSecret ? 'set' : 'unset')
+        + ' header=' + (sigHeader ? 'present' : 'absent'));
+    }
+
+    // -- Secondary check: WABA id must match (when configured) --
+    if (expectedWaba && rawBody) {
+      try {
+        var parsed = JSON.parse(rawBody);
+        var gotWaba = parsed && parsed.entry && parsed.entry[0] && parsed.entry[0].id;
+        if (!gotWaba) {
+          return { valid: false, reason: 'waba_id_absent' };
+        }
+        if (String(gotWaba) !== String(expectedWaba)) {
+          return { valid: false, reason: 'waba_id_mismatch' };
+        }
+      } catch (_jsonErr) {
+        return { valid: false, reason: 'body_not_json' };
+      }
+    }
+
+    return { valid: true, reason: hmacRan ? 'hmac_ok' : 'hmac_skipped' };
+  } catch (err) {
+    // Never block on our own bug — log + allow through to preserve uptime.
+    Logger.log('_verifyMetaWebhook_ err: ' + (err && err.stack || err));
+    return { valid: true, reason: 'verify_error_fail_open' };
+  }
+}
+
+// ============================================================
+// 🚦 Per-phone rate limit — silent drop when a single sender goes over
+// MAX_MSGS_PER_WINDOW messages in WINDOW_SECONDS. Uses CacheService (LRU,
+// not durable, but adequate for spam suppression). Fails open if cache I/O
+// breaks so a CacheService outage never blocks legitimate users.
+// ============================================================
+function _isRateLimited_(fromPhone) {
+  if (!fromPhone) return false;
+  var WINDOW_SECONDS = 60;
+  var MAX_MSGS_PER_WINDOW = 30;
+  try {
+    var cache = CacheService.getScriptCache();
+    var key = 'rateLimit:' + fromPhone;
+    var raw = cache.get(key);
+    var now = Date.now();
+    var state;
+    if (raw) {
+      try { state = JSON.parse(raw); } catch (_) { state = null; }
+    }
+    if (!state || !state.windowStart || (now - state.windowStart) >= WINDOW_SECONDS * 1000) {
+      state = { count: 1, windowStart: now };
+    } else {
+      state.count = (state.count || 0) + 1;
+    }
+    cache.put(key, JSON.stringify(state), WINDOW_SECONDS);
+    if (state.count > MAX_MSGS_PER_WINDOW) {
+      Logger.log('Rate limit: phone=' + fromPhone + ' count=' + state.count
+        + ' in ' + WINDOW_SECONDS + 's — dropping');
+      return true;
+    }
+    return false;
+  } catch (e) {
+    Logger.log('_isRateLimited_ err: ' + (e && e.message || e));
+    return false; // fail open
+  }
+}
+
+// ============================================================
 // [HARDENING_WRAPPER + SRC_ROUTER + BOT_COMMANDS] — unified doPost (2026-05-17 v3)
 // FAST PATH: messages starting with a digit bypass routers and go straight to
 // processExpense. Prevents SRC_ROUTER_handle / handleBotCommand_ from silently
@@ -350,6 +505,15 @@ function doPost(e) {
   try {
     Logger.log('doPost: ENTRY');
     var __raw_ = e && e.postData && e.postData.contents;
+
+    // 🔐 Authenticity gate — verify HMAC (if header is available) + WABA id.
+    // Returns 200 OK on rejection so Meta does not retry the forged delivery.
+    var __verify_ = _verifyMetaWebhook_(e, __raw_);
+    if (!__verify_.valid) {
+      Logger.log('doPost: webhook rejected — ' + __verify_.reason);
+      return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+    }
+
     var __parsed_ = __raw_ ? JSON.parse(__raw_) : null;
     var __msg_ = __parsed_ && __parsed_.entry && __parsed_.entry[0]
               && __parsed_.entry[0].changes && __parsed_.entry[0].changes[0]
@@ -362,6 +526,12 @@ function doPost(e) {
       var __text_ = (__msg_.text && __msg_.text.body) || "";
       var __interactive_ = __msg_.interactive || null;
       Logger.log('doPost: from=' + __from_ + ' text="' + __text_ + '" interactive=' + (__interactive_ ? __interactive_.type : 'no'));
+
+      // 🚦 Per-phone rate limit — silent drop on abuse (30 msgs / 60s).
+      // Applied before ALLOWED_PHONES so even allow-listed phones can't spam.
+      if (_isRateLimited_(__from_)) {
+        return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+      }
 
       // 🕒 Mark the user as active so cronDailyMotivation can skip if they
       // already chatted in the last 2 hours (don't be annoying).
