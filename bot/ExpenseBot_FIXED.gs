@@ -250,6 +250,71 @@ const CATEGORY_MAP = [
   { keywords: ['ezer mizion', 'latet', 'latet ישראל', 'mda תרומה', 'sela', 'yad sarah', 'zichron menachem', 'אגודת ניצולי השואה', 'ארגון יד שרה', 'ארגון לרווחה', 'גמ"ח', 'גמח', 'הלוואה גמ"ח', 'זכרון מנחם', 'יד אליעזר', 'יד שרה', 'להב"ה תרומות', 'מטה לישראל', 'מטריה תפילה', 'סלע', 'סלע ארגון', 'עזר מציון', 'פתחון לב', 'קופת גמ"ח', 'תרומה לחיילים', 'תרומה למלאכי השמיים'], category: 'ממשלה ומיסים', subcategory: 'שירותי דת והלכה - גמ"חים' },
   { keywords: ['aegean israel', 'aero israel', 'aeroflot israel', 'air europa israel', 'arkia פנים ארצי', 'border tax', 'brussels airlines', 'cyprus airways', 'departure tax', 'elal cargo', 'emirates', 'etihad', 'iberia israel', 'israir פנים ארצי', 'qatar airways', 'royal jordanian', 'singapore airlines', 'sun dor', 'tarom', 'אגרת עזיבה ישראל', 'אגרת שדה תעופה', 'אגרת תעופה', 'אל על פנים ארצי', 'טיסה פנים ארצית', 'טיסת פנים'], category: 'תחבורה / תחבורה ציבורית', subcategory: 'תחבורה - נסיעות לחו"ל וטיסות פנים ארץ' },
   { keywords: ['heital hashbacha', 'heter bniyah', 'moded musmach', 'tatsa"r', 'אגרת בנייה', 'אגרת בקשה', 'אגרת השפעה סביבתית', 'אגרת חיבור חשמל', 'אגרת חיבור מים לאתר', 'אגרת תוכנית מתאר', 'אגרת תוכנית עירונית', 'אישור בנייה', 'אישור גמר בנייה', 'היטל השבחה', 'היתר בנייה', 'התנגדות תוכנית', 'ועדה מחוזית', 'ועדה מקומית לתכנון ובנייה', 'חיבור חשמל לאתר בנייה', 'טופס 4', 'טופס 5', 'טופס תיק עבודה', 'מודד מוסמך', 'מודד מקצועי', 'מס השבחה', 'מס מכירה', 'תוכנית בנייה', 'תוכנית מדידה', 'תעודת גמר', 'תצ"ר'], category: 'הוצאות קבועות / בית', subcategory: 'נדל"ן - אגרות בנייה והיתרים' },
+  { keywords: ['facebook ads', 'fb ads', 'fbads', 'meta ads', 'meta business', 'meta business suite', 'meta marketing', 'meta pixel', 'pixel facebook', 'instagram ads', 'ig ads', 'igads', 'reels ads', 'instagram promote', 'אינסטה אדס', 'אינסטה ads', 'אינסטגרם פרסום', 'אינסטה ממומן', 'אינסטה קמפיין', 'מטא אדס', 'מטא ads', 'מטא פרסום', 'מטא ביזנס', 'מטא ביזנס סוויט', 'פיקסל פייסבוק', 'פיקסל מטא', 'פייסבוק אדס', 'פייסבוק ads', 'פייסבוק קמפיין', 'פייסבוק ממומן', 'פייסבוק פרסום', 'פייסביוק אדס', 'פייסבוק\'ק', 'פייסבוק business', 'פייסבוק שיווק', 'פייסבוק מנהל מודעות', 'מנהל מודעות פייסבוק', 'מודעות פייסבוק', 'בוסט פוסט', 'boost post', 'boosted post', 'reels promotion'], category: 'עסק', subcategory: 'עלות שיווק' },
+  { keywords: ['google ads', 'googleads', 'google adwords', 'adwords', 'google ad words', 'google ad', 'google promote', 'youtube ads', 'youtube promote', 'youtube ad', 'youtube ammumemen', 'youtube ממומן', 'יוטיוב אדס', 'יוטיוב ads', 'יוטיוב פרסום', 'יוטיוב קמפיין', 'יוטיוב ממומן', 'גוגל אדס', 'גוגל ads', 'גוגל אדוורדס', 'גוגל פרסום', 'גוגל ממומן', 'גוגל קמפיין', 'גוגל מודעות', 'גוגל מודעה', 'גוגל\'ל', 'google pixel ad', 'gads', 'דיספליי גוגל', 'display google', 'google display'], category: 'עסק', subcategory: 'עלות שיווק' },
+  { keywords: ['tiktok ads', 'tiktok promote', 'tiktok shop ads', 'tiktok business', 'tiktok marketing', 'טיקטוק אדס', 'טיקטוק ads', 'טיקטוק פרסום', 'טיקטוק קמפיין', 'טיקטוק ממומן', 'טיקטוק שיווק', 'tik tok ads', 'tiktok ad', 'spark ad tiktok'], category: 'עסק', subcategory: 'עלות שיווק' },
+  { keywords: ['linkedin ads', 'linkedin promote', 'linkedin marketing', 'linkedin business', 'sponsored content linkedin', 'לינקדאין אדס', 'לינקדאין ads', 'לינקדאין פרסום', 'לינקדאין קמפיין', 'לינקדאין ממומן', 'לינקדאין שיווק'], category: 'עסק', subcategory: 'עלות שיווק' },
+  { keywords: ['twitter ads', 'x ads', 'x promote', 'twitter promote', 'twitter business', 'snapchat ads', 'pinterest ads', 'pinterest promote', 'reddit ads', 'spotify ads', 'discord ads', 'טוויטר אדס', 'טוויטר פרסום', 'איקס אדס', 'אקס אדס', 'אקס פרסום', 'סנאפצ\'אט אדס', 'סנאפצ\'אט פרסום', 'פינטרסט אדס', 'פינטרסט פרסום', 'רדיט אדס', 'רדיט פרסום', 'דיסקורד אדס'], category: 'עסק', subcategory: 'עלות שיווק' },
+  { keywords: ['שיווק דיגיטלי', 'פרסום ממומן', 'קמפיין שיווק', 'קמפיין ממומן', 'קמפיין פרסום', 'פרומו', 'prom', 'promo', 'ads', 'advert', 'advertising', 'advertise', 'advertisement', 'sponsored', 'sponsored post', 'sponsor', 'ממומן', 'מקדם מכירות', 'יח"צ', 'יחצן', 'יחסי ציבור', 'pr agency', 'agency פרסום', 'משרד פרסום', 'משרד יח"צ', 'גרילה מרקטינג', 'גרילה שיווק', 'אינפלואנסר', 'influencer', 'influencer marketing', 'שיווק משפיענים', 'משפיענים', 'אפיליאט', 'affiliate', 'affiliate marketing', 'newsletter ads', 'email marketing', 'דיוור', 'דיוור שיווקי', 'mailchimp', 'klaviyo', 'sendgrid', 'constant contact', 'hubspot marketing', 'salesforce marketing', 'מיילצימפ', 'קלוויו', 'הבספוט'], category: 'עסק', subcategory: 'עלות שיווק' },
+  { keywords: ['seo', 'sem', 'ppc', 'cpc', 'cpm', 'אופטימיזציה למנועי חיפוש', 'מיקום בגוגל', 'דירוג בגוגל', 'קידום אורגני', 'קידום ממומן', 'sem rush', 'semrush', 'ahrefs', 'moz', 'ubersuggest', 'serpstat', 'screaming frog', 'similarweb', 'simple analytics', 'plausible', 'fathom analytics', 'google analytics', 'google tag manager', 'gtm', 'mixpanel', 'amplitude', 'heap analytics', 'hotjar', 'fullstory', 'crazy egg', 'optimizely', 'vwo', 'google search console', 'bing webmaster'], category: 'עסק', subcategory: 'עלות שיווק' },
+  { keywords: ['canva', 'canva pro', 'figma', 'figma pro', 'adobe creative cloud', 'adobe cc', 'photoshop', 'illustrator', 'after effects', 'premiere pro', 'lightroom', 'indesign', 'sketch', 'invision', 'webflow', 'wordpress', 'squarespace', 'wix', 'shopify', 'shopify plus', 'bigcommerce', 'magento', 'wordpress hosting', 'wp engine', 'cloudflare', 'siteground', 'bluehost', 'godaddy hosting', 'namecheap hosting', 'aws', 'amazon web services', 'gcp', 'google cloud', 'azure', 'digital ocean', 'linode', 'vultr', 'netlify', 'vercel', 'heroku', 'render', 'fly.io', 'railway', 'firebase', 'supabase', 'mongodb atlas', 'planetscale', 'neon', 'github', 'github copilot', 'gitlab', 'bitbucket', 'jira', 'confluence', 'trello', 'asana', 'monday.com', 'monday', 'clickup', 'notion business', 'slack pro', 'slack business', 'discord nitro', 'zoom pro', 'loom', 'loom pro', 'cal.com', 'calendly', 'doodle', 'typeform', 'tally', 'jotform', 'airtable pro', 'airtable business', 'zapier', 'make.com', 'integromat', 'n8n', 'pipedream', 'תוכנת עיצוב', 'תוכנת עריכה', 'תוכנה עסקית', 'שירות ענן עסקי', 'אחסון אתר', 'דומיין', 'דומיין עסקי', 'אחסון אתר עסקי', 'cms', 'cms עסקי', 'crm', 'crm עסקי', 'erp', 'erp עסקי'], category: 'עסק', subcategory: 'הוצאות תפעוליות' },
+  { keywords: ['stripe', 'paypal business', 'square', 'tranzila', 'pelecard', 'pelekard', 'icount', 'green invoice', 'greeninvoice', 'rivhit', 'priority', 'sap business one', 'quickbooks', 'xero', 'wave', 'freshbooks', 'icount חשבונית', 'יבשבונית ירוקה', 'חשבונית ירוקה', 'גרין אינווייס', 'ריבחית', 'איקאונט', 'תרנזילה', 'פלאקארד', 'פלקארד', 'פלאסקארד', 'בית עסק stripe', 'בית עסק paypal', 'בית עסק tranzila', 'סליקה', 'תוכנת הנהלת חשבונות', 'הנה"ח'], category: 'עסק', subcategory: 'הוצאות תפעוליות' },
+  { keywords: ['anglo saxon market', 'דוכן מכירה', 'דמי כניסה ירידי שיווק', 'יריד עסקי', 'יריד מסחר', 'תערוכה', 'תערוכה עסקית', 'kenes', 'expo', 'tlv expo', 'tlv international expo', 'expo tlv', 'big expo', 'congress', 'wifi בכנס', 'business conference', 'business event', 'b2b event', 'הרצאה עסקית', 'סדנה עסקית', 'workshop business', 'business workshop', 'training session', 'הכשרה עסקית'], category: 'עסק', subcategory: 'הוצאות תפעוליות' },
+  { keywords: ['accountant', 'cpa', 'bookkeeper', 'bookkeeping', 'יועץ עסקי', 'יועץ עסקים', 'יועץ שיווק', 'יועץ פיננסי עסקי', 'business consultant', 'business advisor', 'business coach', 'startup advisor', 'mentor עסקי', 'מנטור עסקי', 'מאמן עסקי', 'יועץ משפטי', 'עו"ד', 'עו״ד', 'עורך דין עסקים', 'חוזה עסקי', 'עורך דין חוזים', 'עורך דין קניין רוחני', 'עורך דין מסחרי', 'יועץ מס נוסף', 'מורשה חתימה', 'רואה חשבון נוסף', 'הנה"ח חיצונית', 'בודק שכר', 'בדיקת שכר עסקית', 'consultant fee', 'consultancy fee', 'legal fee', 'lawyer fee'], category: 'עסק', subcategory: 'יועצים' },
+  { keywords: ['shipping label', 'usps', 'fedex', 'dhl', 'dhl express', 'ups', 'tnt', 'aramex', 'doar', 'doar 24', 'doar shaliach', 'shaliach 24', 'shipping carrier', 'fulfillment', 'fulfillment service', 'shipbob', 'shipstation', 'pirate ship', 'pirateship', 'דואר 24', 'דואר ישראל עסקי', 'דואר שליחים', 'דואר שליח', 'שליח ישראל', 'שליחויות עסקיות', 'דאצ\'ה', 'דצ\'ה', 'דצה', 'משלוח עסקי', 'משלוחים עסקיים', 'התקנת מוצר', 'התקנה לקוח', 'אריזה ומשלוח', 'אריזה לעסק', 'חומרי אריזה', 'נייר אריזה', 'קרטונים', 'קרטוני אריזה', 'מדבקות משלוח', 'בועות אריזה', 'נייר בועות', 'bubble wrap', 'tape', 'אריזת מתנה'], category: 'עסק', subcategory: 'משלוחים והתקנות' },
+  { keywords: ['raw material', 'raw materials', 'wholesale', 'wholesaler', 'b2b supplier', 'supplier invoice', 'ספק חומרי גלם', 'ספק עסקי', 'ספקים עסקיים', 'מחסן ספקים', 'אתר ספקים', 'alibaba', 'alibaba.com', '1688', '1688.com', 'made in china', 'taobao', 'aliexpress עסקי', 'מנעולנים עסקי', 'נחושת', 'פלדה', 'מתכת', 'גומי', 'בד', 'בדים', 'חוטים', 'יריעות', 'יריעות גומי', 'יריעות פלסטיק', 'דבק תעשייתי', 'מוטות', 'מסמרים תעשייה', 'ברגים תעשייה', 'אנקרים', 'תפסים', 'פינות מסגרת', 'זוויות מתכת', 'פרזול', 'חומרי דפוס', 'חומרי הדפסה', 'דיו הדפסה', 'דיו פלוטר', 'יריעות הדפסה', 'נייר אומנותי', 'נייר זהב', 'נייר צילום', 'נייר מאט', 'נייר ברק', 'glossy paper', 'matte paper', 'canvas roll', 'גליל קנבס', 'גלילי קנבס', 'דבק תרסיס', 'spray adhesive'], category: 'עסק', subcategory: 'עלות חומרי גלם' },
+  { keywords: ['invoice paid', 'payment received', 'customer payment', 'client payment', 'תקבול לקוח', 'תקבול עסקי', 'הוראת קבע מלקוח', 'קבלה ללקוח', 'תשלום מלקוח עסקי', 'מקדמה לקוח', 'מקדמה עסקית', 'מקדמת עבודה', 'מקדמת לקוח', 'order online', 'order placed', 'הזמנה אונליין', 'הזמנת לקוח', 'הזמנה אתר', 'הזמנת אתר', 'הזמנה עסקית', 'מכירה אונליין', 'מכירה אתר', 'מכירת מוצר', 'מכירת שירות', 'sale online', 'sale website', 'product sale', 'service sale', 'rebate', 'מע"מ החזר', 'החזר מע"מ', 'מע״מ החזר', 'vat refund', 'tax refund'], category: 'עסק', subcategory: 'מחזור', isIncome: true },
+  { keywords: ['mac mini', 'mac studio', 'macbook pro', 'macbook air', 'imac', 'mac pro', 'monitor 27', 'monitor 4k', 'monitor 5k', 'lg ultrafine', 'dell ultrasharp', 'asus prophet', 'logitech mx', 'magic keyboard', 'magic mouse', 'magic trackpad', 'wacom', 'cintiq', 'huion', 'xp pen', 'מחשב לעבודה', 'מחשב משרדי', 'מחשב עסקי', 'מסך עבודה', 'מסך 4k', 'מסך עסקי', 'מקלדת מקצועית', 'עכבר עיצוב', 'טבלט עיצוב', 'טאבלט עיצוב', 'wacom intuos', 'wacom cintiq', 'מסך מגע גרפי', 'גרפיקת אומנים', 'ipad pro', 'ipad pro 12.9', 'apple pencil', 'apple pencil 2', 'מקרן עבודה', 'מקרן פגישות', 'מקרן עסקי', 'מצלמה מקצועית', 'מצלמת מקצוע', 'מצלמת dslr', 'מצלמת mirrorless', 'sony a7', 'canon 5d', 'lumix s5', 'sigma art', 'tamron art', 'tripod', 'gimbal', 'dji ronin', 'dji rs2', 'dji rs3', 'rode mic', 'rode microphone', 'shure sm7b', 'shure mv7', 'audio interface', 'focusrite scarlett', 'softlight', 'ring light', 'softbox', 'תאורת סטודיו'], category: 'עסק', subcategory: 'הוצאות תפעוליות' },
+  { keywords: ['workspace google', 'google workspace', 'gsuite', 'g suite', 'microsoft 365 business', 'microsoft 365 enterprise', 'office 365 business', 'דומיין עסקי', 'מייל עסקי', 'g suite business', 'workspace business', 'starter workspace', 'workspace starter', 'workspace standard', 'workspace plus'], category: 'עסק', subcategory: 'הוצאות תפעוליות' },
+  { keywords: ['שופרסל דיל', 'שופרסל אקספרס', 'שופרסל אונליין', 'שופרסל סופר', 'שופרסל איתי', 'שופרסל יחיאל', 'shufersal big', 'shufersal sheli', 'shufersal yesh', 'shufersal exists', 'מגה בעיר', 'מגה בעיר אונליין', 'מגה ברמת השרון', 'יוחננוף סופר', 'יוחננוף מאיר', 'יוחננוף און ליין', 'יוחננוף אונליין', 'יוחננוף שוקי', 'מחסני השוק חיפה', 'מחסני השוק ראשון', 'מחסני השוק רמת גן', 'מחסני השוק אזור', 'מחסני השוק רחובות', 'מחסני השוק קניון', 'מחסני להב', 'רמי לוי שוקי המזון', 'רמי לוי שיווק השקמה', 'רמי לוי קמפוס', 'רמי לוי אונליין', 'רמי לוי קמפוס און ליין', 'ויקטורי אונליין', 'ויקטורי שיווק', 'ויקטורי בעיר', 'ויקטורי אילת', 'ויקטורי באר שבע', 'כוורת שיווק', 'כוורת השרון', 'כוורת אונליין', 'חצי חינם אונליין', 'חצי חינם רעננה', 'חצי חינם שיווק', 'אושר עד אונליין', 'אושר עד בנימינה', 'אושר עד חיפה', 'סופר ביצ\' צ\'יפ', 'ביצ\'יפ', 'ביצ\'ה צ\'יפ', 'super pharm market', 'סופר פארם מרקט', 'סופר פארם קמפוס', 'super yuda online', 'יודה אונליין', 'super deal online', 'סופר דיל אונליין', 'tiv taam', 'טיב טעם אונליין', 'טיב טעם רמת השרון', 'טיב טעם תל אביב', 'טיב טעם תל-אביב', 'יינות ביתן אונליין', 'יינות ביתן רחוב', 'יינות ביתן רב חן'], category: 'אוכל', subcategory: 'אוכל לבית' },
+  { keywords: ['mcdonalds', 'mcdonald\'s', 'mc donalds', 'mcd', 'macdonald', 'מקדונלד', 'מקדונלדס תל אביב', 'מקדונלד\'ס', 'burger king', 'burger-king', 'burgerking', 'bk', 'בורגר קינג רעננה', 'בורגר קינג אזור', 'kfc israel', 'kfc תל אביב', 'kentucky', 'קנטאקי פרייד צ\'יקן', 'קנטאקי', 'pizza hut', 'pizza-hut', 'pizzahut', 'פיצה האט אונליין', 'פיצה האט תל אביב', 'dominos', 'domino\'s', 'דומינוס תל אביב', 'דומינוס אונליין', 'דומינוס פיצה', 'דומינו\'ס', 'jumbo', 'jumbo tor', 'ג\'מבו', 'ג\'מבו תור', 'jumbo grill', 'aroma cafe', 'aroma espresso bar', 'ארומה אספרסו בר', 'ארומה אונליין', 'ארומה תל אביב', 'roladin', 'רולדין תל אביב', 'רולדין אונליין', 'נמירה ירושלים', 'יורם בוקר', 'אגדה הודית', 'איתי מזרחי', 'אבו גוש', 'הומוס אבו גוש', 'אבו חסן', 'הומוס אבו חסן', 'shawarma hapinati', 'שווארמה הפינתי', 'שווארמה הגלעד', 'שווארמה רביב', 'falafel hakosem', 'הקוסם', 'פלאפל הקוסם', 'בורגרס בר', 'burgers bar', 'אסקימו לימון', 'eskimo limon', 'פינוקיו פיצה', 'פיצה פינוקיו', 'pizza pinokio', 'big apple pizza', 'גוצ\'י פיצה', 'pizza gucci', 'גודיז', 'goodies', 'goodee', 'cafe joe', 'קפה ג\'ו', 'cafe greg', 'קפה גרג', 'cafe louise', 'קפה לואיס', 'café roma', 'גרינלף', 'green leaf', 'agadir', 'אגדיר', 'shipudei tsipora', 'שיפודי ציפורה', 'דאחר', 'דאחר חיפה'], category: 'אוכל', subcategory: 'אוכל בחוץ' },
+  { keywords: ['חברת חשמל לישראל', 'חח"י', 'חחי', 'iec israel', 'electric company israel', 'גוביינא חשמל', 'חשבון חשמל', 'חשמל דו חודשי', 'חשמל חודשי', 'תאגיד חשמל', 'תשלום חשמל אונליין'], category: 'הוצאות קבועות', subcategory: 'חשמל' },
+  { keywords: ['bezeq international', 'bezeq בינלאומי', 'בזק בינלאומי', 'בזק בנט', 'bezeqnet', 'partner tv', 'cellcom tv', 'sting tv', 'sting', 'hot tv', 'hot סלולר', 'hot moblie', 'hot mobile', 'הוט סלולר', 'הוט סלולר חודשי', 'גולן טלקום אונליין', 'גולן טלקום חודשי', 'rami levi תקשורת', 'רמי לוי תקשורת', 'יס סלולר', 'פלאפון עסקי', 'partner business', 'cellcom business', 'orange', 'orange israel', 'phone bill', 'mobile bill', 'דמי שיחה', 'דמי גלישה', 'גלישה סלולרית', 'חבילת סלולר', 'סלולר חודשי', 'partner שיחות', 'cellcom שיחות'], category: 'הוצאות קבועות', subcategory: 'תקשורת' },
+  { keywords: ['mei avivim', 'mei eden', 'מי עדן', 'מים שיא', 'מקורות', 'מי גולן אונליין', 'מי שבע', 'הגיחון', 'גיחון ירושלים', 'מי כפר סבא', 'מי נטופה', 'מי רעננה', 'מי הוד השרון', 'מי טיב', 'מי נופי גליל', 'מי גליל', 'מי כרמל', 'מי בית שמש', 'מי קריות', 'מי שדות', 'מי שיתוף', 'תאגיד מים אזורי', 'water company', 'water bill', 'חשבון מים'], category: 'הוצאות קבועות', subcategory: 'מים' },
+  { keywords: ['pazgaz', 'paz gaz online', 'sonol gaz', 'amisragas online', 'דורגז ביתן', 'דורגז סופרגז', 'amisragaz', 'אמישראגז ביתן', 'amisra gaz', 'mateve gas', 'supergaz online', 'gaz delivery', 'משלוח גז', 'תאגיד גז', 'גז מרכזי', 'גז ביתי', 'תיקון גז', 'gas company', 'gas bill', 'חשבון גז'], category: 'הוצאות קבועות', subcategory: 'גז' },
+  { keywords: ['paz yaer', 'פז יאיר', 'פז יאיר אילת', 'sonol express', 'סונול אקספרס', 'סונול אקספרס תחנה', 'ten fuel', 'ten 95 plus', 'bp israel', 'bp gas', 'bp דלק', 'sinopec', 'סינופק', 'fuel star', 'star fuel', 'אלון fuel', 'אלונית fuel', 'dor alon כרטיס', 'מיפלגה דלק', 'מילוי דלק עצמי', 'תחנת דלק ראשי', 'תחנה ראשית דלק'], category: 'תחבורה', subcategory: 'דלק' },
+  { keywords: ['mas hachnasa online', 'מס הכנסה אונליין', 'mas hachnasa עצמאי', 'tax authority israel', 'רשות המסים', 'רשות המסים אונליין', 'mas hachnasa עצמאית', 'דמי גמל עצמאי', 'דמי גמל שכיר', 'tochnit hisachon', 'ביטוח לאומי עצמאי', 'ביטוח לאומי שכיר', 'ביטוח לאומי הוראת קבע', 'ארנונה הוראת קבע', 'ארנונה אונליין', 'ועד בית הוראת קבע', 'ועד בית אונליין', 'מים הוראת קבע', 'חשמל הוראת קבע', 'גז הוראת קבע', 'pango online', 'cellopark online', 'easypark online', 'spothero online', 'parkpark online', 'pango monthly', 'cellopark monthly', 'easypark monthly', 'בולתון', 'דמי חבר ועד', 'נטיו', 'נטיו ביטוח', 'נטיו רכב', 'נטיו דירה'], category: 'הוצאות קבועות', subcategory: 'מיסים ואגרות' },
+  { keywords: ['ש"ח', 'שח', 'שיח', 'ש״ח', 'שקלים', 'שקל', 'אגורות', 'גרושים', 'פרוטה', 'nis', 'shekel', 'shekalim', 'ils', '₪', 'דמי ניהול', 'דמי טיפול', 'דמי מימוש', 'דמי שירות', 'service charge', 'handling fee', 'admin fee'], category: 'הוצאות קבועות', subcategory: 'בנקאות' },
+  { keywords: ['קניתי', 'קניתיו', 'קנינו', 'נקנה', 'נקנו', 'רכשתי', 'רכשנו', 'נרכש', 'שילמתי', 'שילמתיו', 'שילמנו', 'נשלם', 'נשלמה', 'נשלמו', 'הוצאתי', 'הוצאתיו', 'הוצאנו', 'הוצאו', 'משולם', 'משולמת'], category: 'שונות ואחרים', subcategory: 'שונות' },
+  { keywords: ['ביגה', 'biga', 'big a', 'mr cebola', 'mr. cebola', 'מר סבולה', 'היכל הטעמים', 'hechal hateamim', 'אגדה הודית תל אביב', 'אגדה תל אביב', 'בני הדייג', 'bnei hadayag', 'אבו עלי קסבה', 'סגפי', 'סמיקי', 'eyn gedi restaurant', 'עין גדי מסעדה', 'ירמלי', 'מסעדת ירמלי', 'ירמלי תל אביב', 'יורם ביטון', 'george and john', 'ג\'ורג\' אנד ג\'ון', 'הסלון', 'hasalon', 'taizu', 'טאיזו', 'ouzeria', 'אוזריה', 'manta ray', 'מנטה ריי', 'אוקיאנוס', 'oceanos', 'meat bar', 'מיט בר', 'machneyuda', 'מחניודה', 'מחניודה ירושלים', 'eucalyptus jerusalem', 'אקליפטוס ירושלים', 'satya tel aviv', 'סטיה תל אביב', 'pasta basta', 'פסטה באסטה', 'shilav', 'שלאוו', 'gyros', 'גירוס', 'sabich tchernichovsky', 'סביח תחבושת', 'סביח תשרי', 'סביח תחנה'], category: 'אוכל', subcategory: 'אוכל בחוץ' },
+  { keywords: ['wolt+', 'wolt plus', 'wolt express', 'וולט פלוס', 'וולט אקספרס', 'tenbis', 'ten bis online', 'tenbis card', 'tenbis הזמנה', 'tenbis מסעדה', 'ten bis monthly', 'ten bis ב', 'cibus card', 'cibus order', 'cibus business', 'סיבוס הזמנה', 'סיבוס תשלום', 'סיבוס מסעדה'], category: 'אוכל', subcategory: 'אוכל בחוץ' },
+  { keywords: ['fresh market natanya', 'super online netanya', 'super of netanya', 'super sheli', 'super hai online', 'super haifa online', 'super zol online', 'super zol shachen online', 'super kfar online', 'super lev online', 'super meir online', 'super tel aviv online', 'super yam online', 'super yirmiyahu online', 'super yuda online', 'super ziv online', 'אגד תרבות', 'מאפיית אנג\'ל', 'מאפיית בארקאי', 'אנג\'ל לחם', 'אנג\'ל אונליין', 'אנג\'ל סופר', 'lehem angel', 'דגנית עם', 'דגנית עם בריאות', 'lechem chaviv', 'לחם חביב', 'לחמי בריאות', 'שמינית אקטיב', 'mevashlim', 'מבשלים', 'mevashelet', 'מבשלת', 'shibolet', 'שיבולת', 'shibolet זאיתים', 'shaltifa', 'שלטיפה', 'shifron', 'שיפרון'], category: 'אוכל', subcategory: 'אוכל לבית' },
+  { keywords: ['parkme', 'parkme app', 'pango premium', 'pango plus', 'easypark plus', 'cellopark plus', 'cellopark premium', 'tav chaniya online', 'תו חניה אונליין', 'תו דייר', 'תו תושב', 'ארנונה חניה', 'sticker resident', 'דמי חניה תושב', 'דוח חניה ערעור', 'ערעור דוח חניה', 'מטרופולין חניה'], category: 'תחבורה', subcategory: 'חניה' },
+  { keywords: ['gett delivery', 'gett premium', 'gett business', 'גט שליחויות', 'גט פרימיום', 'יאנגו פלוס', 'yango plus', 'yango deli', 'uber israel', 'uber israel app', 'אובר ישראל', 'taxi tlv', 'מונית מטרופולין', 'מונית רכבת', 'sherut', 'sherut taxi', 'מונית שירות', 'monit sherut', 'rav kav online', 'רב קו אונליין', 'רב קו פלוס', 'הופ אופ', 'hop on hop off'], category: 'תחבורה', subcategory: 'מונית' },
+  { keywords: ['kupat cholim klalit', 'klalit mushlam', 'klalit platinum', 'maccabi sheli', 'maccabi gold', 'maccabi platinum', 'meuhedet adif', 'meuhedet shaul', 'leumit zahav', 'leumit silver', 'shaul beis hofesh', 'מאוחדת עדיף', 'מאוחדת שאול', 'מכבי שלי', 'מכבי זהב', 'מכבי פלטינום', 'לאומית זהב', 'לאומית כסף', 'לאומית פלוס', 'כללית מושלם', 'כללית פלטינום', 'דמי שיניים אופציונלי', 'ביטוח דנטלי', 'דנטל ביטוח', 'phoenix dental', 'הפניקס דנטלי', 'מגדל דנטלי', 'הראל דנטלי', 'מנורה דנטלי', 'שיניים שלמות', 'שיני ילדים', 'שיני נוער', 'מיישר שיניים', 'invisalign', 'אינביזליין', 'יישור שיניים'], category: 'בריאות', subcategory: 'בריאות' },
+  { keywords: ['vetreinarian', 'pet vet', 'דוקטור וטרינר', 'ד"ר וטרינר', 'דוקטור וטרינר תל אביב', 'מרפאת חיות מחמד', 'pet emergency', 'pet hospital', 'בית חולים וטרינרי', 'מזון יבש כלב', 'מזון לח כלב', 'מזון יבש חתול', 'מזון לח חתול', 'royal canin', 'hills science diet', 'science diet', 'purina pro plan', 'orijen', 'acana', 'יום הולדת לכלב', 'יום הולדת לחתול', 'משלוח כלב', 'גידום ציפורניים כלב', 'גידום ציפורניים חתול', 'מאלף כלבים אונליין', 'אילוף', 'pet boarding', 'pet daycare'], category: 'שונות ואחרים', subcategory: 'חיות מחמד' },
+  { keywords: ['cinema city malcha', 'cinema city ramat gan', 'cinema city aviva', 'יס פלאנט תל אביב', 'יס פלאנט קניון איילון', 'יספלאנט ראשון', 'yes planet rishon', 'yes planet jerusalem', 'cinemathèque tel aviv', 'cinemathèque israel', 'סינמטק תל אביב', 'סינמטק ירושלים', 'סינמטק חיפה', 'הופעה של עומר אדם', 'הופעה של ריטה', 'הופעה של נטע ברזילי', 'הופעה של אביב גפן', 'הופעה של שלמה ארצי', 'הופעה של עידן רייכל', 'הופעה של דוד ברוזה', 'הופעה ברביעי', 'הופעה ב סטטוס', 'הופעה ביציבה', 'הופעה במנורה', 'מנורה מבטחים מופע', 'מנורה אריאל'], category: 'בידור', subcategory: 'יציאות' },
+  { keywords: ['חוג שחיה', 'חוג ג\'ודו', 'חוג כדורגל', 'חוג כדורסל', 'חוג ריקוד', 'חוג מחול', 'חוג בלט', 'חוג ציור', 'חוג מוזיקה', 'חוג נגינה', 'חוג מחשבים', 'חוג רובוטיקה', 'חוג שחמט', 'גן ילדים פרטי', 'גן עירוני', 'גן ויצו', 'גן ילדים ויצו', 'גן ילדים חרדי', 'גן ילדים ממלכתי', 'מעון יום', 'מעון רב תכליתי', 'משפחתון', 'משפחתון פרטי', 'משפחתון מסובסד', 'צהרון', 'צהרון בית ספר', 'צהרון גן', 'בייביסיטר', 'baby sitter', 'בייבי סיטר', 'מטפלת', 'מטפלת בית', 'מטפלת אונליין'], category: 'שונות ואחרים', subcategory: 'אישי' },
+  { keywords: ['airpods', 'airpods pro', 'airpods max', 'beats studio', 'beats solo', 'sony wh1000xm5', 'sony wh-1000xm5', 'bose qc45', 'bose qc35', 'sennheiser', 'jbl flip', 'jbl charge', 'jbl xtreme', 'bose soundbar', 'sonos beam', 'sonos arc', 'apple homepod', 'apple homepod mini', 'amazon echo', 'amazon echo dot', 'google nest mini', 'google nest hub', 'nest thermostat', 'nest doorbell', 'philips hue', 'philips hue starter', 'tp link tapo', 'aqara', 'roborock', 'rooomba', 'dyson v15', 'dyson airwrap', 'dyson hairdryer', 'dyson supersonic', 'dyson air purifier'], category: 'קניות', subcategory: 'אלקטרוניקה' },
+  { keywords: ['nike running', 'adidas running', 'on running', 'asics gel', 'asics nimbus', 'asics kayano', 'hoka', 'hoka clifton', 'hoka bondi', 'new balance', 'new balance 990', 'reebok classic', 'salomon trail', 'salomon speedcross', 'merrell hiking', 'columbia outdoor', 'north face', 'the north face', 'patagonia', 'arc\'teryx', 'arcteryx', 'mammut', 'fjallraven', 'pull and bear', 'pull&bear', 'bershka', 'stradivarius', 'zara home', 'urban outfitters', 'anthropologie', 'free people', 'cos store', 'cos clothing', 'arket', 'mango outlet', 'h&m home', 'h and m', 'gap', 'banana republic', 'old navy', 'american eagle', 'hollister', 'abercrombie', 'lululemon', 'athleta', 'gymshark'], category: 'קניות', subcategory: 'ביגוד' },
+  { keywords: ['mac cosmetics', 'mac makeup', 'sephora online', 'sephora israel', 'fenty beauty', 'rare beauty', 'glossier', 'huda beauty', 'charlotte tilbury', 'urban decay', 'too faced', 'maybelline', 'l\'oreal', 'loreal', 'revlon', 'nyx cosmetics', 'morphe', 'kylie cosmetics', 'kylie skin', 'estee lauder', 'mac lipstick', 'lancome', 'lancôme', 'clinique', 'origins', 'bobbi brown', 'shiseido', 'sk-ii', 'skin ceuticals', 'la mer', 'la roche posay', 'la roche-posay', 'vichy', 'eucerin', 'cerave', 'cetaphil', 'aveeno', 'neutrogena', 'olay', 'ordinary', 'the ordinary', 'paula\'s choice', 'paulas choice', 'drunk elephant', 'glow recipe', 'pixi beauty', 'lush cosmetics', 'mac maquillage'], category: 'קניות', subcategory: 'טיפוח' },
+  { keywords: ['gan yeladim shel', 'kindergarten', 'בית ספר יסודי', 'בית ספר תיכון', 'תיכון פרטי', 'תיכון מקיף', 'תיכון אזורי', 'תיכון אורט', 'תיכון אמית', 'תיכון רנה קסין', 'תיכון אחד העם', 'תיכון רעות', 'תיכון רמות', 'תיכון יום הולדת', 'תיכון עירוני', 'תיכון ביאליק', 'תיכון לאדה', 'תיכון רוטשילד', 'תיכון אוסטרובסקי', 'תיכון עירוני א', 'תיכון תלמה ילין', 'תיכון אלון', 'תיכון רקפת', 'תיכון רנה', 'תיכון תיכל', 'הסעות תלמידים', 'הסעות בית ספר', 'הסעת ילדים', 'school transport', 'school bus'], category: 'שונות ואחרים', subcategory: 'אישי' },
+  { keywords: ['decathlon', 'דקתלון', 'דקתלון תל אביב', 'דקתלון רעננה', 'דקתלון ראשון', 'דקתלון אונליין', 'מגזין רץ', 'sports authority israel', 'spalding israel', 'wilson tennis', 'tennis racquet', 'tennis racket', 'מחבט טניס', 'tennis ball', 'כדור טניס', 'כדור משחק', 'כדורסל ערב', 'כדור-סל ערב', 'כדור-רגל', 'goalkeeper gloves', 'gloves goalkeeper', 'נעלי כדורגל', 'נעלי ספורט', 'נעלי ריצה', 'נעלי כושר', 'נעלי הליכה', 'נעלי טיפוס', 'נעלי טרק', 'נעלי טיולים', 'sneaker', 'sneakers', 'מכנס ספורט', 'חולצת ספורט', 'חליפת ספורט', 'תיק ספורט', 'תיק חדר כושר', 'gym bag'], category: 'קניות', subcategory: 'ביגוד' },
+  { keywords: ['gather round books', 'magazine subscription', 'mango languages', 'lingq', 'rosetta stone', 'fluentu', 'busuu', 'duolingo plus', 'duolingo super', 'duolingo annual', 'duolingo family', 'מנוי duolingo', 'מנוי לימוד שפה', 'מנוי לימודי', 'מסטרקלס', 'masterclass', 'master class', 'coursera plus', 'coursera annual', 'udemy course', 'udemy plus', 'udacity', 'skillshare', 'pluralsight', 'oreilly', 'o\'reilly learning', 'oreilly online', 'oreilly subscription', 'edx subscription', 'futurelearn', 'open university', 'הוצאה לפועל לימודים'], category: 'הוצאות קבועות', subcategory: 'לימודים' },
+  { keywords: ['bnei brak gan', 'גן ילדים בני ברק', 'גן עירוני ת"א', 'גן עירוני תל אביב', 'גן עירוני ירושלים', 'גן עירוני חיפה', 'גן עירוני נתניה', 'משפחתון פרטי תל אביב', 'משפחתון בני ברק', 'מעון יום ויצו', 'מעון יום נעמת', 'מעון יום אמונה', 'מעון יום ישיר', 'naamat', 'נעמת', 'wizo daycare', 'emunah daycare', 'merkaz yom', 'מרכז יום', 'מרכז יום קשישים', 'דמי טיפול בנכים', 'דמי טיפול קשישים', 'מטפל סיעודי', 'מטפלת סיעודית', 'בית אבות פרטי', 'דיור מוגן', 'הוצאות סבא', 'הוצאות סבתא'], category: 'שונות ואחרים', subcategory: 'אישי' },
+  { keywords: ['חנוכה מתנות', 'חנוכה מתנה', 'דמי חנוכה', 'מתנות חנוכה', 'מתנה לראש השנה', 'מתנות ראש השנה', 'מתנת ראש השנה', 'מתנת חנוכה', 'מתנת פסח', 'מתנת ל"ב בעומר', 'מתנת ט"ו בשבט', 'מתנת חג', 'מתנות חג', 'תרומה לבית כנסת', 'בית כנסת תרומה', 'תרומה לישיבה', 'תרומה לכולל', 'תרומה לחב"ד', 'תרומת מעשר', 'מעשר כספים', 'tzedakah online', 'צדקה אונליין', 'gemach', 'גמ"ח כסף', 'mishloach manot', 'משלוח מנות', 'מנה לחבר', 'דמי שמחה', 'דמי אבל', 'אבל ושמחות', 'הספד', 'הספדים'], category: 'שונות ואחרים', subcategory: 'מתנות' },
+  { keywords: ['restaurant tip', 'gratuity', 'service charge restaurant', 'cover charge', 'corkage fee', 'דמי פתיחת בקבוק', 'דמי תפריט', 'דמי טיפ', 'טיפ למלצר', 'טיפ למלצרית', 'מע"מ מסעדה', 'מע״מ מסעדה'], category: 'אוכל', subcategory: 'אוכל בחוץ' },
+  { keywords: ['fixie', 'urban bike', 'mountain bike', 'mtb', 'אופניים חשמליים', 'אופניים חשמליות', 'אופניים מתקפלים', 'אופניים שטח', 'אופניים עירוניים', 'אופניים מרוץ', 'אופניים ילדים', 'אופניים פיגי', 'electric bike', 'e-bike', 'ebike', 'אופניים סוסיתא', 'אופניים smart', 'smart bike israel', 'fido d4i', 'בייסיק קטנועים', 'קטנוע חשמלי', 'kugoo', 'kugoo s1', 'kugoo m4', 'mi scooter', 'xiaomi scooter', 'xiaomi mi scooter', 'aiways scooter', 'בית קורקינטים', 'תיקון אופניים', 'תיקון קורקינט', 'גידום פדאלים'], category: 'תחבורה', subcategory: 'קורקינט' },
+  { keywords: ['kalkalim mishpati', 'דוח רואה חשבון', 'דוח רואי חשבון', 'דוח שנתי', 'דוח שנתי לרשות המסים', 'דוח מס שנתי', 'דוח 1301', 'דוח 1301 שנתי', 'דוח רווח והפסד', 'דוח כספי', 'דוח שנתי עוסק', 'שכר טרחה רואה חשבון', 'שכר טרחה עורך דין', 'דמי תיק רואה חשבון', 'דמי ניהול תיק', 'דמי שירות תיק', 'דמי שירות עורך דין', 'מס תאגיד', 'מע"מ שנתי', 'מע״מ שנתי', 'מע"מ עוסק מורשה', 'מע״מ עוסק מורשה'], category: 'עסק', subcategory: 'יועצים' },
+  { keywords: ['domino sugar israel', 'sukar', 'cocoa powder', 'דבש כפר', 'דבש ים סוף', 'דבש דבורה', 'דבורה דבש', 'דבש לבן', 'דבש שיטה', 'בריאות לב', 'תוסף בריאות', 'omega 3', 'אומגה 3', 'אומגה-3', 'ויטמין d', 'ויטמין דk', 'ויטמין c', 'ויטמין מולטי', 'multivitamin', 'multi vitamin', 'תוספי תזונה', 'centrum', 'altman vitamins', 'altman תוספי תזונה', 'altman ojhcim', 'אלטמן ויטמינים', 'fitne tea', 'תה ירוק לב בריא', 'תה ירוק רב חבילה', 'protein powder', 'protein bar', 'אבקת חלבון', 'whey protein', 'whey', 'plant protein', 'vegan protein', 'אבקת חלבון צמחית'], category: 'בריאות', subcategory: 'בריאות' },
+  { keywords: ['ima moshe yair', 'דמי טיפול הורים', 'דמי טיפול אחים', 'דמי טיפול קרובי משפחה', 'הוצאת אבא', 'הוצאת אמא', 'הוצאת סבא', 'הוצאת סבתא', 'הוצאת אח', 'הוצאת אחות', 'משלוח לאמא', 'משלוח לאבא', 'משלוח לסבא', 'משלוח לסבתא', 'תמיכה כספית להורים', 'תמיכה כספית סבא וסבתא', 'דמי ילד למשפחה', 'דמי בני נוער', 'דמי נסיעות ילדים'], category: 'שונות ואחרים', subcategory: 'אישי' },
+  { keywords: ['hertz israel', 'avis israel', 'budget israel', 'thrifty israel', 'thrifty rental', 'sixt israel', 'sixt rent a car', 'sixt rentacar', 'enterprise israel', 'eldan rentacar', 'eldan rent a car', 'eldan כירות רכב', 'אלדן השכרת רכב', 'אלדן השכרה רכב', 'אלדן רכב', 'budget השכרת רכב', 'budget רכב', 'thrifty השכרת רכב', 'sixt השכרת רכב', 'shlomo sixt', 'שלמה sixt', 'שלמה השכרת רכב', 'שלמה רכב', 'שלמה רנט א קאר', 'getaway car', 'turo car', 'turo car rental', 'דמי שכירות רכב', 'דמי השכרה רכב'], category: 'תחבורה', subcategory: 'רכב שכור' },
+  { keywords: ['kfar shlomo', 'shtoffel', 'shichunat ben gurion', 'mahane yehuda food', 'sarona market food', 'נמל יפו אוכל', 'levinski food', 'shuk levinski food', 'נמל תל אביב מסעדה', 'נמל תל אביב אוכל', 'נמל קיסריה אוכל', 'tlv port', 'נמל בית ים', 'yafo food', 'mahane yehuda restaurants', 'shuk machne yehuda restaurants', 'tachana merkazit food'], category: 'אוכל', subcategory: 'אוכל בחוץ' },
+  { keywords: ['חברתי עירוני', 'חברתי דמי השתתפות', 'דמי שותפות פרטית', 'שותפות עסקית', 'חברתי דמי חבר', 'דמי חבר מועדון', 'דמי חבר אגודה', 'דמי חבר ארגון', 'דמי חבר מערכת', 'דמי חבר קואופרטיב', 'membership fee', 'club fee', 'דמי הרשמה למועדון', 'דמי הרשמה לחוג'], category: 'הוצאות קבועות', subcategory: 'אפליקציות' },
+  { keywords: ['shooting range', 'מטווח', 'דמי מטווח', 'paintball', 'פיינטבול', 'lazer tag', 'לייזר טאג', 'kart racing', 'gokart', 'go kart', 'go-kart', 'go karting', 'גו-קארט', 'גוקארט', 'escape room', 'חדר בריחה', 'חדרי בריחה', 'climbing gym', 'climbing wall', 'קיר טיפוס', 'אולם טיפוס', 'gradient climbing', 'גרדיאנט טיפוס', 'climbing fix', 'fix climbing', 'הטיפוסים', 'נחושת', 'park yarkon', 'פארק הירקון', 'safari ramat gan', 'ספארי רמת גן', 'גן חיות הולנדי', 'גן חיות תנ"כי', 'גן חיות תנ״כי', 'גן חיות ירושלים', 'jerusalem biblical zoo'], category: 'בידור', subcategory: 'יציאות' },
+  { keywords: ['גורי כלבים', 'גורי חתולים', 'מכרז עצמות', 'חוטם מנוקה', 'משחק חתול', 'משחק כלב', 'צעצוע לחתול', 'צעצוע לכלב', 'מתקני כלב', 'מתקני חתול', 'נחושת לחתול', 'אביזרים לחיות', 'pet accessories', 'pet toys', 'cat toys', 'dog toys', 'cat litter', 'חול לחתול', 'מצע חתולים', 'מצע גרגרים', 'fancy feast', 'whiskas', 'felix', 'sheba', 'cesar dog', 'cesar', 'נוטרילון', 'בונזו לחתולים', 'בונזו לכלבים', 'מזון מארק', 'מארק מזון', 'maxx mark'], category: 'שונות ואחרים', subcategory: 'חיות מחמד' },
+  { keywords: ['אריקסון', 'ericsson', 'iphone case', 'samsung case', 'phone case', 'מגן טלפון', 'נרתיק טלפון', 'מטען טלפון', 'מטען לטלפון', 'כבל usb', 'כבל usb-c', 'כבל lightning', 'מטען מהיר', 'fast charger', 'wireless charger', 'מטען אלחוטי', 'מטען מגנטי', 'magsafe', 'מגן מסך', 'screen protector', 'אוזניות', 'אוזניות חוטיות', 'אוזניות אלחוטיות', 'אוזניות bluetooth', 'אוזניות בלוטוס', 'אוזניות גיימינג', 'gaming headset', 'rgb keyboard', 'מקלדת rgb', 'מקלדת גיימינג', 'gaming keyboard', 'gaming mouse', 'עכבר גיימינג', 'gaming chair', 'כסא גיימינג', 'gaming pc', 'מחשב גיימינג', 'gaming monitor'], category: 'קניות', subcategory: 'אלקטרוניקה' },
+  { keywords: ['avant garde', 'avant-garde', 'אוונגרד', 'הופ הופ', 'hop hop', 'מרכז ילדים', 'מרכז משפחות', 'family center', 'kids center', 'kindergarten activity', 'פעילות גן', 'יום הולדת לילד', 'יום הולדת לילדה', 'מסיבת ילדים', 'מסיבת ילדה', 'מסיבת יום הולדת', 'הפעלה יום הולדת', 'הפעלת ילדים', 'אטרקציה לילדים', 'מטוס לילד', 'קוסם יום הולדת', 'קוסם לילדים', 'magic for kids', 'kids magic show', 'מופע ילדים', 'מופע ילדה', 'מופע פעוטון', 'מופע פעוטונים'], category: 'בידור', subcategory: 'אירועים' },
+  { keywords: ['gymboree', 'gymboree israel', 'kidsworld', 'kids world', 'mothercare', 'mothercare israel', 'baby cuts', 'baby cuts israel', 'fox kids', 'fox baby', 'baby outlet', 'kids outlet', 'next kids', 'next baby', 'h&m kids', 'h and m kids', 'zara kids', 'castro kids', 'kids store online', 'חנות ילדים', 'חנות בני נוער', 'בני נוער חנות', 'בגדי ילדים', 'בגדי תינוקות', 'בגדי תינוק', 'בגדי תינוקת', 'בגדי תינוקת חדשה', 'בגדים לתינוקת', 'בגדים לילד', 'בגדים לילדה', 'מקאני', 'mekani', 'mekani נעליים', 'נעלי ילדים', 'נעלי ילדה', 'נעלי תינוק', 'נעלי בני נוער'], category: 'קניות', subcategory: 'ביגוד' },
+  { keywords: ['matnas', 'מתנ"ס', 'מתנ״ס', 'matnas online', 'matnas הרצליה', 'matnas רמת גן', 'matnas רעננה', 'matnas כפר סבא', 'matnas רחובות', 'matnas ראשון', 'matnas פתח תקווה', 'matnas חולון', 'matnas בני ברק', 'מתנ"ס ירושלים', 'מתנ"ס חיפה', 'מתנ"ס באר שבע', 'מתנ"ס נצרת עילית', 'מתנ"ס נצרת', 'מתנ"ס אילת', 'community center', 'דמי מתנ"ס', 'דמי מתנס', 'חבר מתנ"ס'], category: 'בידור', subcategory: 'יציאות' },
+  { keywords: ['kupat shabat', 'קופת שבת', 'tomche shabbos', 'תומכי שבת', 'mikve', 'מקווה', 'מקווה נשים', 'מקווה גברים', 'מקוואות', 'rabbi fee', 'דמי רב', 'דמי כשרות', 'כשרות פרטית', 'בדיקת כשרות', 'תרומה לישיבה הצעירה', 'תרומה לכולל', 'תרומה לחב"ד', 'תרומה לבית מדרש', 'תרומת מצוות', 'הלוואת חסד', 'כספי הלוואת חסד', 'חברה קדישא', 'חברה-קדישא', 'דמי חברה קדישא', 'תרומה לחברה קדישא', 'הקדש', 'הקדש דתי'], category: 'שונות ואחרים', subcategory: 'מתנות' },
+  { keywords: ['eilat hotel', 'eilat resort', 'eilat ipanema', 'isrotel', 'isrotel eilat', 'isrotel king solomon', 'isrotel agamim', 'isrotel royal beach', 'fattal hotels', 'fattal israel', 'leonardo hotel', 'leonardo plaza', 'leonardo club', 'leonardo eilat', 'leonardo netanya', 'leonardo jerusalem', 'leonardo dead sea', 'isrotel dead sea', 'isrotel ramon', 'isrotel ganim', 'isrotel mizpe', 'orient jerusalem', 'jerusalem hotel', 'king david hotel', 'king david jerusalem', 'mamilla hotel', 'mamilla jerusalem', 'waldorf astoria jerusalem', 'inbal jerusalem', 'inbal hotel', 'crowne plaza tel aviv', 'crowne plaza jerusalem', 'crowne plaza haifa', 'hilton tel aviv', 'hilton jerusalem', 'sheraton tel aviv', 'royal beach', 'royal beach hotel', 'dan hotel', 'dan tel aviv', 'dan eilat', 'dan accadia', 'dan accadia herzliya', 'dan boutique', 'dan boutique jerusalem', 'dan panorama', 'dan panorama haifa', 'dan panorama tel aviv', 'dan jerusalem'], category: 'שונות ואחרים', subcategory: 'נסיעות' },
+  { keywords: ['ima מטבח', 'אבא מטבח', 'מטבחים אבא', 'מטבחי אבא', 'מטבחי גליה', 'מטבחי כרמלי', 'מטבחי דניאל', 'מטבחי גרניט', 'מטבחי ויקטור', 'מטבחי שילב', 'מטבחי מילר', 'מטבחי דקל', 'מטבחי עץ', 'מטבחי שיש', 'מטבחי לבנה', 'מטבחי שחור', 'מטבחי לבן', 'מטבחי אקריליק', 'נגרי אבא', 'נגרי דוד', 'נגרים', 'נגרות', 'kitchen carpenter', 'carpenter', 'carpentry', 'נגרות מטבחים', 'נגרות בית', 'נגרות פנים'], category: 'הוצאות קבועות', subcategory: 'תחזוקת בית' },
+  { keywords: ['פרי וירק', 'פרי הדר', 'פירות וירקות', 'פירות יבשים', 'אגוזים', 'גרעינים', 'גרעיני חמניות', 'גרעיני דלעת', 'גרעיני פשתן', 'גרעיני צ\'יה', 'chia seeds', 'flax seeds', 'pumpkin seeds', 'sunflower seeds', 'cashew', 'cashews', 'almond', 'almonds', 'walnut', 'walnuts', 'אגוזי קשיו', 'אגוזי מלך', 'שקדים', 'בוטנים', 'פירות יבשים', 'אומגה 3 דגים', 'דגי סלמון', 'סלמון', 'salmon', 'טונה משומרת', 'טונה בקופסה', 'tuna can', 'sardines', 'סרדינים'], category: 'אוכל', subcategory: 'אוכל לבית' },
+  { keywords: ['ttb', 'gett go', 'gettgo', 'gett delivery', 'wolt market', 'wolt express market', 'cibus express', 'tenbis express', 'pikadon delivery', 'mishloach mahir', 'משלוח מהיר', 'delivery quick', 'rappi', 'lalamove', 'dolly', 'shipt', 'shoprider', 'doordash', 'instacart', 'grubhub', 'getir', 'gorillas', 'just eat', 'just eat takeaway'], category: 'אוכל', subcategory: 'אוכל בחוץ' },
+  { keywords: ['hama', 'חמא', 'חמאה', 'חמאת בוטנים', 'peanut butter', 'almond butter', 'cashew butter', 'tahini', 'tahini al hapach', 'tehina', 'תחינה', 'תחינה גולמית', 'תחינה אל הפח', 'tehina al hapach', 'achva tahini', 'achva tehina', 'בייגלה', 'בייגלה ביסלי', 'beigele', 'beygele', 'apropo', 'bamba', 'במבה', 'בייגל'], category: 'אוכל', subcategory: 'אוכל לבית' },
+  { keywords: ['eurovision', 'אירוויזיון', 'olympics', 'אולימפיאדה', 'world cup', 'מונדיאל', 'fifa world cup', 'champions league', 'ליגת אלופים', 'euro league', 'יורוליג', 'ufa', 'efa', 'super bowl', 'super-bowl', 'nba ticket', 'nba game', 'mlb ticket', 'mlb game', 'nfl ticket', 'nhl ticket', 'football ticket', 'ticketmaster', 'eventim', 'eventbrite', 'tlv tickets', 'tlv-tickets', 'lev hair', 'ראש העין כרטיסים'], category: 'בידור', subcategory: 'יציאות' },
+  { keywords: ['drone', 'drone dji', 'dji mavic', 'dji mini', 'dji air', 'dji avata', 'dji fpv', 'fpv drone', 'fpv kit', 'drone parts', 'drone battery', 'drone repair', 'drone insurance', 'ביטוח רחפן', 'תיקון רחפן', 'רחפן', 'רחפנים', 'בית רחפן', 'מטוס דגם', 'מטוסי דגם', 'rc plane', 'rc car', 'rc helicopter', 'rc drone', 'rc battery', 'lipo battery'], category: 'קניות', subcategory: 'אלקטרוניקה' },
 ];
 
 const DEFAULT_CATEGORY = { category: 'שונות ואחרים', subcategory: 'שונות', isIncome: false };
@@ -1105,6 +1170,24 @@ function processExpense(text, fromPhone) {
         }
         if (__hPicked) {
           __hProps.deleteProperty('smart_pending');
+          try {
+            var __hPSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+            if (__hPSheet) {
+              var __hPNow = new Date();
+              var __hPMonth = Utilities.formatDate(__hPNow, 'Asia/Jerusalem', 'yyyy-MM');
+              var __hPCategory = 'עסק';
+              var __hPSubcategory = __hPicked.subcategory || 'הוצאות תפעוליות';
+              var __hPDesc = __hPicked.label || __hPSubcategory;
+              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', true]);
+              try {
+                var __hPLast = __hPSheet.getLastRow();
+                if (__hPLast > 2) __hPSheet.getRange(2, 1, __hPLast - 1, 8).sort({ column: 1, ascending: true });
+              } catch (__hPSortErr) {}
+              return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון 📊\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
+            }
+          } catch (__hPWriteErr) {
+            Logger.log('smart_pending write err: ' + (__hPWriteErr && __hPWriteErr.message));
+          }
           text = 'עסק - ' + __hP.amount + ' ' + __hPicked.subcategory;
         }
       } else {
@@ -1112,37 +1195,92 @@ function processExpense(text, fromPhone) {
       }
     } catch (__hErr) {}
   }
-  var __hIsBiz = /^(עסק|biz|business)/i.test(__hT);
+  var __hIsBiz = /^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(__hT);
   if (__hIsBiz) {
     var __hAM = __hT.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)/);
     var __hA = __hAM ? parseFloat(__hAM[1]) : null;
     if (__hA && __hA > 0) {
-      var __hOpts = [
-        { label: 'שיווק', subcategory: 'שיווק' },
-        { label: 'יועצים', subcategory: 'יועצים' },
-        { label: 'אריזה ומשלוח', subcategory: 'אריזה ומשלוח' },
-        { label: 'חומרי גלם', subcategory: 'חומרי גלם' },
-        { label: 'תוכנות / SaaS', subcategory: 'תוכנות' },
-        { label: 'ציוד עסקי', subcategory: 'ציוד' },
-        { label: 'מיסים', subcategory: 'מיסים' },
-        { label: 'שונות עסק', subcategory: 'שונות' },
-        { label: 'הזמנה לקוח', subcategory: 'הזמנה' },
-        { label: 'תשלום מלקוח', subcategory: 'תשלום מלקוח' },
-        { label: 'החזר מס', subcategory: 'החזר מס' }
-      ];
-      var __payload = JSON.stringify({ amount: __hA, options: __hOpts, expiresAt: Math.floor(Date.now()/1000) + 900 });
-      __hProps.setProperty('smart_pending', __payload);
-      var __hLn = [];
-      __hLn.push('🏢 עסק — ₪' + __hA);
-      __hLn.push('');
-      __hLn.push('בחר/י קטגוריה:');
-      __hLn.push('');
-      for (var __hK = 0; __hK < __hOpts.length; __hK++) {
-        __hLn.push((__hK + 1) + '. ' + __hOpts[__hK].label);
+      var __hRest = __hT.replace(/^(עסק|biz|business)(?=$|[\s:\-,0-9])/i, '').replace(String(__hA), '').replace(/[,\-:\s]+/g, ' ').trim();
+      if (__hRest && __hRest.length >= 2) {
+        var __hBizMatched = matchCategory(__hT);
+        var __hBizDefaultSub = (__hBizMatched && __hBizMatched.subcategory === 'הוצאות תפעוליות');
+        var __hBizFoundKw = false;
+        try {
+          var __hBizT = __hT.toLowerCase();
+          for (var __hBizCat in BUSINESS_CATEGORY_MAP) {
+            var __hBizSubs = BUSINESS_CATEGORY_MAP[__hBizCat];
+            for (var __hBizSub in __hBizSubs) {
+              var __hBizKws = __hBizSubs[__hBizSub];
+              for (var __hBizKi = 0; __hBizKi < __hBizKws.length; __hBizKi++) {
+                if (__hBizT.indexOf(String(__hBizKws[__hBizKi]).toLowerCase()) >= 0) {
+                  __hBizFoundKw = true;
+                  break;
+                }
+              }
+              if (__hBizFoundKw) break;
+            }
+            if (__hBizFoundKw) break;
+          }
+        } catch (__hBizErr) {}
+        if (__hBizFoundKw && __hBizMatched && !__hBizDefaultSub) {
+          __hProps.deleteProperty('smart_pending');
+          text = __hT;
+        } else {
+          var __hOpts = [
+            { label: 'שיווק', subcategory: 'עלות שיווק' },
+            { label: 'יועצים', subcategory: 'יועצים' },
+            { label: 'אריזה ומשלוח', subcategory: 'משלוחים והתקנות' },
+            { label: 'חומרי גלם', subcategory: 'עלות חומרי גלם' },
+            { label: 'תוכנות / SaaS', subcategory: 'הוצאות תפעוליות' },
+            { label: 'ציוד עסקי', subcategory: 'הוצאות תפעוליות' },
+            { label: 'מיסים', subcategory: 'הוצאות תפעוליות' },
+            { label: 'שונות עסק', subcategory: 'הוצאות תפעוליות' },
+            { label: 'הזמנה לקוח', subcategory: 'מחזור' },
+            { label: 'תשלום מלקוח', subcategory: 'מחזור' },
+            { label: 'החזר מס', subcategory: 'מחזור' }
+          ];
+          var __payload = JSON.stringify({ amount: __hA, options: __hOpts, expiresAt: Math.floor(Date.now()/1000) + 900 });
+          __hProps.setProperty('smart_pending', __payload);
+          var __hLn = [];
+          __hLn.push('🏢 עסק — ₪' + __hA);
+          __hLn.push('');
+          __hLn.push('בחר/י קטגוריה:');
+          __hLn.push('');
+          for (var __hK = 0; __hK < __hOpts.length; __hK++) {
+            __hLn.push((__hK + 1) + '. ' + __hOpts[__hK].label);
+          }
+          __hLn.push('');
+          __hLn.push('או הקלד/י שם קטגוריה / בטל');
+          return { reply: __hLn.join('\n') };
+        }
+      } else {
+        var __hOptsBare = [
+          { label: 'שיווק', subcategory: 'עלות שיווק' },
+          { label: 'יועצים', subcategory: 'יועצים' },
+          { label: 'אריזה ומשלוח', subcategory: 'משלוחים והתקנות' },
+          { label: 'חומרי גלם', subcategory: 'עלות חומרי גלם' },
+          { label: 'תוכנות / SaaS', subcategory: 'הוצאות תפעוליות' },
+          { label: 'ציוד עסקי', subcategory: 'הוצאות תפעוליות' },
+          { label: 'מיסים', subcategory: 'הוצאות תפעוליות' },
+          { label: 'שונות עסק', subcategory: 'הוצאות תפעוליות' },
+          { label: 'הזמנה לקוח', subcategory: 'מחזור' },
+          { label: 'תשלום מלקוח', subcategory: 'מחזור' },
+          { label: 'החזר מס', subcategory: 'מחזור' }
+        ];
+        var __payloadBare = JSON.stringify({ amount: __hA, options: __hOptsBare, expiresAt: Math.floor(Date.now()/1000) + 900 });
+        __hProps.setProperty('smart_pending', __payloadBare);
+        var __hLnBare = [];
+        __hLnBare.push('🏢 עסק — ₪' + __hA);
+        __hLnBare.push('');
+        __hLnBare.push('בחר/י קטגוריה:');
+        __hLnBare.push('');
+        for (var __hKB = 0; __hKB < __hOptsBare.length; __hKB++) {
+          __hLnBare.push((__hKB + 1) + '. ' + __hOptsBare[__hKB].label);
+        }
+        __hLnBare.push('');
+        __hLnBare.push('או הקלד/י שם קטגוריה / בטל');
+        return { reply: __hLnBare.join('\n') };
       }
-      __hLn.push('');
-      __hLn.push('או הקלד/י שם קטגוריה / בטל');
-      return { reply: __hLn.join('\n') };
     }
   }
 
@@ -1235,40 +1373,67 @@ function processExpense(text, fromPhone) {
     let runningTotal = 0;
 
     // === AMBIGUITY DETECTION (single-item case only — multi-item batches skip this) ===
-    // If we have exactly one item AND the smart matcher returned the default category,
-    // it means the bot is unsure. Instead of writing "שונות / שונות", we send the user
-    // an interactive list with the top guesses and let them tap the right one.
     if (parsed.items.length === 1 && fromPhone) {
       var soleItem = parsed.items[0];
-      // Try matching first to see if it's confident
-      var earlyMatch = matchCategorySmart(soleItem.description);
-      var earlyIsDefault = earlyMatch && earlyMatch.category === DEFAULT_CATEGORY.category &&
-                           earlyMatch.subcategory === DEFAULT_CATEGORY.subcategory;
-      if (earlyIsDefault) {
-        // Bot is unsure → send the interactive list
-        try {
-          var predictions = _predictTopCategories(soleItem.description, 8);
-          var sections = _buildCategoryListSections(predictions, Math.abs(soleItem.amount), soleItem.description);
-          // Store pending state so handleInteractiveReply_ can pick it up
-          var pendingKey = 'pending:' + fromPhone;
-          PropertiesService.getScriptProperties().setProperty(pendingKey, JSON.stringify({
-            amount: Math.abs(soleItem.amount),
-            description: soleItem.description,
-            ts: Date.now()
-          }));
-          sendWhatsAppInteractiveList(
-            fromPhone,
-            'לא בטוח בקטגוריה',
-            '₪' + Math.abs(soleItem.amount) + ' • "' + soleItem.description.slice(0, 100) + '"\n\nבחר/י את הקטגוריה הנכונה:',
-            'הבחירה תילמד אוטומטית',
-            'בחר/י',
-            sections
-          );
-          Logger.log('processExpense: sent interactive list for ambiguous "' + soleItem.description + '"');
-          return { ambiguousSent: true };
-        } catch (ambErr) {
-          Logger.log('processExpense: ambiguity-list failed, falling through: ' + (ambErr && ambErr.stack || ambErr));
-          // Fall through to normal write with default category
+      var earlyCached = _learnedLookup(soleItem.description);
+      var earlyKeywordMatch = earlyCached ? null : matchCategory(soleItem.description);
+      var hasKeywordMatch = earlyKeywordMatch && !(earlyKeywordMatch.category === DEFAULT_CATEGORY.category &&
+                                                    earlyKeywordMatch.subcategory === DEFAULT_CATEGORY.subcategory);
+      var keywordOrCached = earlyCached || (hasKeywordMatch ? earlyKeywordMatch : null);
+
+      if (!keywordOrCached) {
+        var apiKeyAvail = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+        var aiRich = null;
+        if (apiKeyAvail) {
+          try { sendWhatsAppMessage(fromPhone, '🤖 מנתח את ההוצאה...'); } catch (_pmErr) {}
+          try { aiRich = _aiCategorizeRich(soleItem.description); } catch (_aiErr) { Logger.log('processExpense: AI rich error: ' + _aiErr.message); }
+        }
+
+        var CONFIDENCE_THRESHOLD = 0.7;
+        var confidentAI = aiRich && aiRich.category && aiRich.category !== 'בלתי מזוהה' &&
+                          typeof aiRich.confidence === 'number' && aiRich.confidence >= CONFIDENCE_THRESHOLD;
+
+        if (confidentAI) {
+          try { _learnedSave(soleItem.description, { category: aiRich.category, subcategory: aiRich.subcategory }, 'ai'); } catch (_lsErr) {}
+        } else {
+          try {
+            var predictions = _predictTopCategories(soleItem.description, 8);
+            if (aiRich && aiRich.category && aiRich.category !== 'בלתי מזוהה') {
+              var aiPick = { category: aiRich.category, subcategory: aiRich.subcategory, isIncome: false, confidence: aiRich.confidence };
+              var filtered = [aiPick];
+              for (var pp = 0; pp < predictions.length && filtered.length < 8; pp++) {
+                var p = predictions[pp];
+                if (p.category === aiPick.category && p.subcategory === aiPick.subcategory) continue;
+                filtered.push(p);
+              }
+              predictions = filtered;
+            }
+            var sections = _buildCategoryListSections(predictions, Math.abs(soleItem.amount), soleItem.description);
+            var pendingKey = 'pending:' + fromPhone;
+            PropertiesService.getScriptProperties().setProperty(pendingKey, JSON.stringify({
+              amount: Math.abs(soleItem.amount),
+              description: soleItem.description,
+              ts: Date.now()
+            }));
+            var bodyText = '₪' + Math.abs(soleItem.amount) + ' • "' + soleItem.description.slice(0, 100) + '"';
+            if (aiRich && aiRich.reason) {
+              bodyText += '\n\n🤖 ניחוש: ' + aiRich.category + ' / ' + aiRich.subcategory +
+                          ' (' + Math.round((aiRich.confidence || 0) * 100) + '%)';
+            }
+            bodyText += '\n\nבחר/י את הקטגוריה הנכונה:';
+            sendWhatsAppInteractiveList(
+              fromPhone,
+              aiRich ? 'צריך אישור' : 'לא בטוח בקטגוריה',
+              bodyText,
+              'הבחירה תילמד אוטומטית',
+              'בחר/י',
+              sections
+            );
+            Logger.log('processExpense: sent interactive list for ambiguous "' + soleItem.description + '" aiConf=' + (aiRich && aiRich.confidence));
+            return { ambiguousSent: true };
+          } catch (ambErr) {
+            Logger.log('processExpense: ambiguity-list failed, falling through: ' + (ambErr && ambErr.stack || ambErr));
+          }
         }
       }
     }
@@ -1442,11 +1607,13 @@ function _splitAmounts_(block) {
 
 var BUSINESS_CATEGORY_MAP = {
   "עסק": {
-    "עלות שיווק": ["פייסבוק", "facebook", "fb", "אינסטגרם", "instagram", "ig", "טיקטוק", "tiktok", "גוגל אדס", "google ads", "פרסום", "שיווק", "קמפיין"],
-    "הוצאות תפעוליות": ["פוטושופ", "photoshop", "תוכנת עריכה", "תוכנה", "תוכנות", "שכירות משרד", "אינטרנט", "חשמל עסק", "טלפון עסק", "ציוד משרדי", "תפעול", "אדובי", "adobe"],
-    "משלוחים והתקנות": ["משלוח", "משלוחים", "התקנה", "התקנות", "שילוח", "shipping", "delivery"],
-    "עלות חומרי גלם": ["זכוכית", "קנבס", "חומרי גלם", "ספק", "ספקים", "פלסטיק", "אלומיניום", "עץ", "מסגרת", "מדפסת", "דיו", "נייר", "צבע", "מברשת", "פריימר"],
-    "מחזור": ["הכנסה", "מכירה", "מכירות", "תשלום מלקוח", "מקדמה", "הזמנה"]
+    "עלות שיווק": ["פייסבוק", "facebook", "fb", "אינסטגרם", "instagram", "ig", "טיקטוק", "tiktok", "גוגל אדס", "google ads", "פרסום", "שיווק", "קמפיין", "facebook ads", "fb ads", "fbads", "meta ads", "meta business", "meta marketing", "meta pixel", "instagram ads", "ig ads", "igads", "tiktok ads", "google adwords", "adwords", "youtube ads", "linkedin ads", "twitter ads", "x ads", "snapchat ads", "pinterest ads", "reddit ads", "מטא", "מטא אדס", "מטא ads", "אינסטה אדס", "אינסטה ads", "אינסטה ממומן", "אינסטה'גרם", "פייסביוק", "פייסבוק'ק", "פייסבוק אדס", "פייסבוק ads", "פייסבוק קמפיין", "פייסבוק ממומן", "פייסבוק פרסום", "גוגל'ל", "גוגל ממומן", "גוגל מודעות", "יוטיוב פרסום", "יוטיוב אדס", "יוטיוב ממומן", "טיקטוק אדס", "טיקטוק ממומן", "טיקטוק פרסום", "לינקדאין אדס", "לינקדאין פרסום", "אקס פרסום", "סנאפצ'אט פרסום", "פינטרסט פרסום", "שיווק דיגיטלי", "פרסום ממומן", "קמפיין שיווק", "קמפיין ממומן", "פרומו", "ads", "advert", "advertising", "advertise", "advertisement", "sponsored", "ממומן", "מקדם מכירות", "יח\"צ", "יחצן", "יחסי ציבור", "משרד פרסום", "אינפלואנסר", "influencer", "משפיענים", "אפיליאט", "affiliate", "דיוור", "דיוור שיווקי", "mailchimp", "klaviyo", "hubspot", "seo", "sem", "ppc", "סמראש", "semrush", "ahrefs", "boost post", "boosted post", "promote post", "מודעות פייסבוק", "מנהל מודעות"],
+    "הוצאות תפעוליות": ["פוטושופ", "photoshop", "תוכנת עריכה", "תוכנה", "תוכנות", "שכירות משרד", "אינטרנט", "חשמל עסק", "טלפון עסק", "ציוד משרדי", "תפעול", "אדובי", "adobe", "canva", "figma", "creative cloud", "adobe cc", "illustrator", "after effects", "premiere", "lightroom", "indesign", "sketch", "invision", "webflow", "wordpress", "squarespace", "wix", "shopify", "bigcommerce", "wp engine", "cloudflare", "siteground", "aws", "google cloud", "gcp", "azure", "digital ocean", "linode", "vultr", "netlify", "vercel", "heroku", "firebase", "supabase", "github", "github copilot", "gitlab", "bitbucket", "jira", "confluence", "trello", "asana", "monday", "clickup", "notion business", "slack pro", "slack business", "zoom pro", "loom", "calendly", "typeform", "airtable", "zapier", "make.com", "n8n", "stripe", "paypal business", "square", "tranzila", "pelecard", "icount", "green invoice", "rivhit", "priority", "quickbooks", "xero", "wave", "freshbooks", "google workspace", "gsuite", "microsoft 365", "office 365 business", "mac mini", "macbook pro", "macbook air", "imac", "monitor 4k", "logitech mx", "wacom", "cintiq", "ipad pro", "apple pencil", "מצלמה מקצועית", "מחשב לעבודה", "מחשב משרדי", "מחשב עסקי", "מסך עבודה", "מסך עסקי", "תוכנת עיצוב", "תוכנה עסקית", "שירות ענן", "אחסון אתר", "דומיין", "דומיין עסקי", "cms", "crm", "erp", "סליקה", "מייל עסקי", "הנה\"ח", "תוכנת הנהלת חשבונות", "חשבונית ירוקה", "תרנזילה", "פלאקארד", "איקאונט"],
+    "משלוחים והתקנות": ["משלוח", "משלוחים", "התקנה", "התקנות", "שילוח", "shipping", "delivery", "fedex", "dhl", "ups", "usps", "tnt", "aramex", "shipping label", "fulfillment", "shipstation", "shipbob", "pirate ship", "pirateship", "doar 24", "דואר 24", "דואר ישראל", "דואר שליחים", "שליחים", "שליחויות", "דצ'ה", "דאצ'ה", "אריזה", "אריזות", "קרטון", "קרטונים", "מדבקות משלוח", "נייר אריזה", "בועות אריזה", "bubble wrap", "tape", "אריזת מתנה", "התקנת מוצר", "התקנת לקוח", "מובילים עסקיים", "הובלה עסקית"],
+    "עלות חומרי גלם": ["זכוכית", "קנבס", "חומרי גלם", "ספק", "ספקים", "פלסטיק", "אלומיניום", "עץ", "מסגרת", "מדפסת", "דיו", "נייר", "צבע", "מברשת", "פריימר", "raw material", "raw materials", "wholesale", "wholesaler", "supplier", "alibaba", "1688", "taobao", "made in china", "ספק חומרי גלם", "ספק עסקי", "ספקים עסקיים", "מחסן ספקים", "נחושת", "פלדה", "מתכת", "גומי", "בד", "בדים", "חוטים", "יריעות", "דבק תעשייתי", "מוטות", "ברגים תעשייה", "אנקרים", "פינות מסגרת", "פרזול", "חומרי דפוס", "חומרי הדפסה", "דיו הדפסה", "יריעות הדפסה", "נייר אומנותי", "canvas roll", "גליל קנבס", "spray adhesive", "דבק תרסיס", "חומרים", "חומר גלם"],
+    "מחזור": ["הכנסה", "מכירה", "מכירות", "תשלום מלקוח", "מקדמה", "הזמנה", "invoice paid", "payment received", "customer payment", "client payment", "תקבול לקוח", "תקבול עסקי", "הוראת קבע מלקוח", "קבלה ללקוח", "תשלום מלקוח עסקי", "מקדמה לקוח", "מקדמה עסקית", "order online", "order placed", "הזמנה אונליין", "הזמנת לקוח", "הזמנה אתר", "מכירה אונליין", "מכירה אתר", "מכירת מוצר", "מכירת שירות", "sale", "vat refund", "tax refund", "rebate", "מע\"מ החזר", "החזר מע\"מ", "החזר מס"],
+    "יועצים": ["יועץ", "יועצים", "יועץ מס", "רואה חשבון", "רו\"ח", "עורך דין", "עו\"ד", "accountant", "cpa", "bookkeeper", "bookkeeping", "business consultant", "business advisor", "business coach", "מנטור עסקי", "מאמן עסקי", "consultant", "consultancy", "legal fee", "lawyer fee", "שכר טרחה", "דמי תיק", "דמי ניהול תיק", "מס תאגיד", "מע\"מ עוסק", "דוח שנתי", "דוח 1301", "דוח כספי"],
+    "שונות": ["שונות עסק", "שונות עסקית", "מתנה ללקוח", "מתנת לקוח", "תרומה עסקית", "כיבוד משרד", "כיבוד עובדים", "ארוחת צוות", "team lunch", "team dinner", "team event", "team building"]
   }
 };
 
@@ -1699,20 +1866,65 @@ function _buildCategoryListSections(predictions, amount, text) {
 // ============================================================
 // 🤖 LLM Fallback — Claude Haiku via Anthropic API
 // ============================================================
-// Triggered only when local keyword matching returns DEFAULT_CATEGORY.
-// Sends ~30 input tokens to Claude Haiku 3.5; cost is <$0.0001 per call.
-// Requires ANTHROPIC_API_KEY in Script Properties (no key → silently
-// returns null so the bot still works without AI).
+function _loadRecentUserCorrections(n) {
+  n = n || 10;
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
+    if (!sh) return [];
+    var lastRow = sh.getLastRow();
+    if (lastRow < 2) return [];
+    var width = Math.max(5, sh.getLastColumn());
+    var data = sh.getRange(2, 1, lastRow - 1, width).getValues();
+    var picked = [];
+    for (var i = data.length - 1; i >= 0 && picked.length < n; i--) {
+      var src = String(data[i][3] || '').toLowerCase();
+      if (src.indexOf('user') < 0) continue;
+      var kw = String(data[i][0] || '').trim();
+      var cat = String(data[i][1] || '').trim();
+      var sub = String(data[i][2] || '').trim();
+      if (!kw || !cat || !sub) continue;
+      if (cat === 'שונות' || cat === 'שונות ואחרים') continue;
+      picked.push({ text: kw, category: cat, subcategory: sub });
+    }
+    return picked;
+  } catch (e) {
+    Logger.log('_loadRecentUserCorrections: ' + e.message);
+    return [];
+  }
+}
+
 function _aiCategorize(text) {
+  var rich = _aiCategorizeRich(text);
+  if (!rich) return null;
+  if (rich.category === 'בלתי מזוהה') return null;
+  return { category: rich.category, subcategory: rich.subcategory, confidence: rich.confidence, reason: rich.reason };
+}
+
+function _aiCategorizeRich(text) {
   try {
     var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
     if (!apiKey) return null;
 
+    var userExamples = _loadRecentUserCorrections(10);
+    var userExamplesBlock = '';
+    if (userExamples && userExamples.length) {
+      var lines = [];
+      for (var ux = 0; ux < userExamples.length; ux++) {
+        var ex = userExamples[ux];
+        lines.push('"' + String(ex.text).replace(/"/g, '\\"').slice(0, 80) + '" → {"category":"' + ex.category + '","subcategory":"' + ex.subcategory + '"}');
+      }
+      userExamplesBlock =
+        '\nUSER-CORRECTED EXAMPLES (THESE PEOPLE ARE EXPERTS — copy their categorization when similar):\n' +
+        lines.join('\n') + '\n';
+    }
+
     var systemPrompt =
       'You are a Hebrew expense categorizer for an Israeli personal-finance bot.\n' +
-      'Categorize the user\'s expense into ONE of the categories listed below. Be accurate.\n' +
-      'If the description matches an example, copy that category exactly.\n' +
-      'Always return STRICT JSON: {"category":"...","subcategory":"..."} — no markdown, no prose, no extra keys.\n\n' +
+      'Categorize the user\'s expense into ONE of the categories listed below. Be accurate and CONFIDENT.\n' +
+      'Always prefer a confident answer over שונות. ONLY return "בלתי מזוהה" if the text is truly unidentifiable (gibberish, single random letter, etc).\n' +
+      'NEVER return "שונות" or "שונות ואחרים" as the category — pick the closest real category instead.\n' +
+      'Return STRICT JSON: {"category":"...","subcategory":"...","confidence":0.0-1.0,"reason":"<5-word Hebrew explanation>"} — no markdown, no prose, no extra keys.\n\n' +
       'VALID CATEGORIES (use exact Hebrew name):\n' +
       '  • הכנסות (משכורת, עצמאי, החזרים, בונוסים, מכירות)\n' +
       '  • אוכל (אוכל לבית, אוכל בחוץ, בית קפה, אלכוהול)\n' +
@@ -1727,43 +1939,48 @@ function _aiCategorize(text) {
       '  • פיננסים (השקעות, עמלות בנקאיות, ניהול תיקים)\n' +
       '  • שירותים (הובלות, ניקיון, שיפוצים, גינון, חשמלאי, אינסטלטור)\n' +
       '  • עסק (שיווק, יועצים, חומרי גלם, תוכנות עסק, ציוד עסקי)\n' +
-      '  • שונות ואחרים (RARE — use only when no other category fits)\n\n' +
+      '  • בלתי מזוהה (use ONLY when text is gibberish — confidence must be < 0.3)\n\n' +
+      'CONFIDENCE GUIDE:\n' +
+      '  0.95-1.00 → exact match to known vendor (e.g. "shufersal", "wolt", "ארומה")\n' +
+      '  0.80-0.94 → clear category from context (e.g. "מסעדה איטלקית", "ביטוח רכב")\n' +
+      '  0.60-0.79 → reasonable guess, ambiguous slang or partial info\n' +
+      '  0.30-0.59 → weak signal, could fit multiple categories\n' +
+      '  0.00-0.29 → "בלתי מזוהה" — truly unrecognizable\n\n' +
       'RULES:\n' +
-      '1. A company/product/place name takes its parent category (Spotify=אפליקציות, Wolt=אוכל בחוץ, IKEA=רהיטים).\n' +
-      '2. Hebrew slang is normal — "סופר"=שופרסל=אוכל לבית, "קפה"=בית קפה, "מוביל"=שירותים.\n' +
-      '3. If ambiguous, pick the CLOSEST category. Never default to שונות unless truly unmatched.\n' +
-      '4. Output keys MUST be in Hebrew (the category and subcategory names).\n\n' +
+      '1. Company/product/place names take their parent category (Spotify=אפליקציות, Wolt=אוכל בחוץ, IKEA=רהיטים).\n' +
+      '2. Hebrew slang is normal: סופר=שופרסל=אוכל לבית, קפה=בית קפה, מוביל=שירותים/הובלות, פיצה=אוכל בחוץ.\n' +
+      '3. Israeli companies: shufersal=אוכל לבית, wolt=אוכל בחוץ, ארומה=בית קפה, סופר-פארם=תרופות, בזק=טלקום.\n' +
+      '4. Output keys MUST be in Hebrew (the category and subcategory names).\n' +
+      '5. NEVER use "שונות" — always pick the closest specific category.\n\n' +
       'EXAMPLES:\n' +
-      '"wolt תל אביב" → {"category":"אוכל","subcategory":"אוכל בחוץ"}\n' +
-      '"245 שופרסל" → {"category":"אוכל","subcategory":"אוכל לבית"}\n' +
-      '"42 קפה ארומה" → {"category":"אוכל","subcategory":"בית קפה"}\n' +
-      '"1800 ארנונה" → {"category":"הוצאות קבועות","subcategory":"בית"}\n' +
-      '"חברת חשמל" → {"category":"הוצאות קבועות","subcategory":"חשמל"}\n' +
-      '"netflix" → {"category":"הוצאות קבועות","subcategory":"אפליקציות"}\n' +
-      '"chatgpt plus" → {"category":"הוצאות קבועות","subcategory":"אפליקציות"}\n' +
-      '"בנזין סונול" → {"category":"תחבורה","subcategory":"דלק"}\n' +
-      '"רכבת ישראל" → {"category":"תחבורה","subcategory":"תחבורה ציבורית"}\n' +
-      '"פנגו חניה" → {"category":"תחבורה","subcategory":"חניה"}\n' +
-      '"כביש 6" → {"category":"תחבורה","subcategory":"כביש 6"}\n' +
-      '"מוביל הוצאות בית" → {"category":"שירותים","subcategory":"הובלות"}\n' +
-      '"חשמלאי דחוף" → {"category":"שירותים","subcategory":"חשמלאי"}\n' +
-      '"שיניים מאוחדת" → {"category":"בריאות","subcategory":"שיניים"}\n' +
-      '"רופא פרטי" → {"category":"בריאות","subcategory":"רופא פרטי"}\n' +
-      '"super pharm" → {"category":"בריאות","subcategory":"תרופות"}\n' +
-      '"holmes place" → {"category":"בריאות","subcategory":"כושר ומנויים"}\n' +
-      '"zara" → {"category":"קניות","subcategory":"ביגוד"}\n' +
-      '"IKEA" → {"category":"קניות","subcategory":"רהיטים"}\n' +
-      '"חשמלית KSP" → {"category":"קניות","subcategory":"חשמל ואלקטרוניקה"}\n' +
-      '"booking" → {"category":"תחבורה","subcategory":"מלונות"}\n' +
-      '"אל על" → {"category":"תחבורה","subcategory":"טיסות"}\n' +
-      '"הופעה של עומר אדם" → {"category":"בידור","subcategory":"יציאות"}\n' +
-      '"קולנוע יס פלאנט" → {"category":"בידור","subcategory":"סרטים"}\n' +
-      '"חתונה רוני" → {"category":"בידור","subcategory":"אירועים"}\n' +
-      '"גן ילדים שירה" → {"category":"ילדים","subcategory":"גני ילדים"}\n' +
-      '"משכורת" → {"category":"הכנסות","subcategory":"משכורת"}\n' +
-      '"החזר מס" → {"category":"הכנסות","subcategory":"החזר מס"}';
+      '"wolt תל אביב" → {"category":"אוכל","subcategory":"אוכל בחוץ","confidence":0.98,"reason":"וולט משלוחי אוכל"}\n' +
+      '"245 שופרסל" → {"category":"אוכל","subcategory":"אוכל לבית","confidence":0.99,"reason":"שופרסל סופרמרקט"}\n' +
+      '"42 קפה ארומה" → {"category":"אוכל","subcategory":"בית קפה","confidence":0.97,"reason":"ארומה בית קפה"}\n' +
+      '"1800 ארנונה" → {"category":"הוצאות קבועות","subcategory":"בית","confidence":0.99,"reason":"ארנונה תשלום עירייה"}\n' +
+      '"חברת חשמל" → {"category":"הוצאות קבועות","subcategory":"חשמל","confidence":0.99,"reason":"חברת חשמל"}\n' +
+      '"netflix" → {"category":"הוצאות קבועות","subcategory":"אפליקציות","confidence":0.97,"reason":"מנוי סטרימינג"}\n' +
+      '"chatgpt plus" → {"category":"הוצאות קבועות","subcategory":"אפליקציות","confidence":0.95,"reason":"מנוי תוכנה"}\n' +
+      '"בנזין סונול" → {"category":"תחבורה","subcategory":"דלק","confidence":0.99,"reason":"תדלוק רכב"}\n' +
+      '"רכבת ישראל" → {"category":"תחבורה","subcategory":"תחבורה ציבורית","confidence":0.99,"reason":"רכבת"}\n' +
+      '"פנגו חניה" → {"category":"תחבורה","subcategory":"חניה","confidence":0.98,"reason":"חניה פנגו"}\n' +
+      '"מוביל הוצאות בית" → {"category":"שירותים","subcategory":"הובלות","confidence":0.9,"reason":"שירות הובלה"}\n' +
+      '"חשמלאי דחוף" → {"category":"שירותים","subcategory":"חשמלאי","confidence":0.97,"reason":"חשמלאי בית"}\n' +
+      '"שיניים מאוחדת" → {"category":"בריאות","subcategory":"שיניים","confidence":0.95,"reason":"טיפול שיניים"}\n' +
+      '"super pharm" → {"category":"בריאות","subcategory":"תרופות","confidence":0.96,"reason":"בית מרקחת"}\n' +
+      '"holmes place" → {"category":"בריאות","subcategory":"כושר ומנויים","confidence":0.97,"reason":"מנוי חדר כושר"}\n' +
+      '"zara" → {"category":"קניות","subcategory":"ביגוד","confidence":0.97,"reason":"חנות בגדים"}\n' +
+      '"IKEA" → {"category":"קניות","subcategory":"רהיטים","confidence":0.97,"reason":"חנות רהיטים"}\n' +
+      '"booking" → {"category":"תחבורה","subcategory":"מלונות","confidence":0.95,"reason":"הזמנת מלון"}\n' +
+      '"אל על" → {"category":"תחבורה","subcategory":"טיסות","confidence":0.99,"reason":"חברת תעופה"}\n' +
+      '"קולנוע יס פלאנט" → {"category":"בידור","subcategory":"סרטים","confidence":0.98,"reason":"בית קולנוע"}\n' +
+      '"חתונה רוני" → {"category":"בידור","subcategory":"אירועים","confidence":0.88,"reason":"מתנת חתונה"}\n' +
+      '"גן ילדים שירה" → {"category":"ילדים","subcategory":"גני ילדים","confidence":0.96,"reason":"גן ילדים"}\n' +
+      '"משכורת" → {"category":"הכנסות","subcategory":"משכורת","confidence":0.99,"reason":"משכורת חודשית"}\n' +
+      '"החזר מס" → {"category":"הכנסות","subcategory":"החזר מס","confidence":0.99,"reason":"החזר ממס הכנסה"}\n' +
+      '"asdfgh" → {"category":"בלתי מזוהה","subcategory":"לא ברור","confidence":0.05,"reason":"טקסט לא מובן"}' +
+      userExamplesBlock;
 
-    var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only.';
+    var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only with confidence and reason.';
 
     var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
       method: 'post',
@@ -1774,7 +1991,7 @@ function _aiCategorize(text) {
       },
       payload: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 80,
+        max_tokens: 140,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMsg }]
       }),
@@ -1782,7 +1999,7 @@ function _aiCategorize(text) {
     });
 
     if (response.getResponseCode() !== 200) {
-      Logger.log('_aiCategorize: API error ' + response.getResponseCode() + ': ' + response.getContentText().slice(0, 200));
+      Logger.log('_aiCategorizeRich: API error ' + response.getResponseCode() + ': ' + response.getContentText().slice(0, 200));
       return null;
     }
 
@@ -1790,26 +2007,38 @@ function _aiCategorize(text) {
     var reply = (body.content && body.content[0] && body.content[0].text) || '';
     var jsonMatch = String(reply).match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      Logger.log('_aiCategorize: no JSON in reply: ' + reply.slice(0, 200));
+      Logger.log('_aiCategorizeRich: no JSON in reply: ' + reply.slice(0, 200));
       return null;
     }
     var parsed;
     try { parsed = JSON.parse(jsonMatch[0]); }
-    catch (jpErr) { Logger.log('_aiCategorize: JSON parse error: ' + jpErr.message); return null; }
+    catch (jpErr) { Logger.log('_aiCategorizeRich: JSON parse error: ' + jpErr.message); return null; }
     if (!parsed.category || !parsed.subcategory) {
-      Logger.log('_aiCategorize: missing keys in JSON: ' + JSON.stringify(parsed));
+      Logger.log('_aiCategorizeRich: missing keys: ' + JSON.stringify(parsed));
       return null;
     }
-    var parts = [String(parsed.category).trim(), String(parsed.subcategory).trim()];
+    var category = String(parsed.category).trim();
+    var subcategory = String(parsed.subcategory).trim();
+    var confidence = typeof parsed.confidence === 'number' ? parsed.confidence : parseFloat(parsed.confidence);
+    if (isNaN(confidence)) confidence = 0.5;
+    if (confidence > 1) confidence = confidence / 100;
+    if (confidence < 0) confidence = 0;
+    if (confidence > 1) confidence = 1;
+    var reason = String(parsed.reason || '').slice(0, 80);
 
-    var validCats = ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','שונות ואחרים','בריאות','עסק','שירותים','בידור','חינוך','ילדים','ממשלה ומיסים','פיננסים'];
-    if (validCats.indexOf(parts[0]) < 0) {
-      Logger.log('_aiCategorize: invalid category from AI: ' + parts[0]);
+    if (category === 'שונות' || category === 'שונות ואחרים') {
+      Logger.log('_aiCategorizeRich: model returned שונות despite instruction — treating as low-confidence בלתי מזוהה');
+      return { category: 'בלתי מזוהה', subcategory: 'לא ברור', confidence: Math.min(confidence, 0.4), reason: reason || 'מודל הציע שונות' };
+    }
+
+    var validCats = ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','בריאות','עסק','שירותים','בידור','חינוך','ילדים','ממשלה ומיסים','פיננסים','בלתי מזוהה'];
+    if (validCats.indexOf(category) < 0) {
+      Logger.log('_aiCategorizeRich: invalid category from AI: ' + category);
       return null;
     }
-    return { category: parts[0], subcategory: parts[1] };
+    return { category: category, subcategory: subcategory, confidence: confidence, reason: reason };
   } catch (e) {
-    Logger.log('_aiCategorize error: ' + e.message);
+    Logger.log('_aiCategorizeRich error: ' + e.message);
     return null;
   }
 }

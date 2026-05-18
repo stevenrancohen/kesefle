@@ -1,5 +1,5 @@
 # Kesefle — robots.txt
-# https://kesefle.vercel.app/
+# https://kesefle.com/
 
 User-agent: *
 Allow: /
@@ -8,6 +8,8 @@ Disallow: /account
 Disallow: /admin
 Disallow: /admin.html.bak.*
 Disallow: /dashboard
+Disallow: /automations
+Disallow: /seo
 Disallow: /welcome
 Disallow: /welcome.html
 Disallow: /test
@@ -22,6 +24,8 @@ Disallow: /api/
 Disallow: /admin
 Disallow: /account
 Disallow: /dashboard
+Disallow: /automations
+Disallow: /seo
 Disallow: /welcome
 
 User-agent: ClaudeBot
@@ -30,6 +34,8 @@ Disallow: /api/
 Disallow: /admin
 Disallow: /account
 Disallow: /dashboard
+Disallow: /automations
+Disallow: /seo
 Disallow: /welcome
 
 User-agent: Google-Extended
@@ -38,6 +44,8 @@ Disallow: /api/
 Disallow: /admin
 Disallow: /account
 Disallow: /dashboard
+Disallow: /automations
+Disallow: /seo
 Disallow: /welcome
 
 User-agent: anthropic-ai
@@ -46,6 +54,8 @@ Disallow: /api/
 Disallow: /admin
 Disallow: /account
 Disallow: /dashboard
+Disallow: /automations
+Disallow: /seo
 Disallow: /welcome
 
 User-agent: PerplexityBot
@@ -54,5 +64,7 @@ Disallow: /api/
 Disallow: /admin
 Disallow: /account
 Disallow: /dashboard
+Disallow: /automations
+Disallow: /seo
 
-Sitemap: https://kesefle.vercel.app/sitemap.xml
+Sitemap: https://kesefle.com/sitemap.xml
