@@ -378,6 +378,22 @@ function doPost(e) {
         Logger.log('doPost: looksLikeExpense=' + __looksLikeExpense);
 
         if (!__looksLikeExpense) {
+          // Subscription auto-detector commands (checked first so router does
+          // not need to know about them). See _handleSubscriptionCommand_ below.
+          if (typeof _handleSubscriptionCommand_ === "function") {
+            try {
+              var __subRes = _handleSubscriptionCommand_(__from_, __text_);
+              if (__subRes && __subRes.handled) {
+                if (typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __subRes.replyText);
+                }
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_subErr) {
+              Logger.log('doPost: subscription command error: ' + (_subErr && _subErr.stack || _subErr));
+            }
+          }
+
           if (typeof handleBotCommand_ === "function") {
             try {
               var __bc = handleBotCommand_(__from_, __text_);
@@ -679,6 +695,12 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'תובנות' || trimmed === 'תובנה' || trimmed === 'insights' || trimmed === 'insight') {
     return { reply: getInsightsMessage() };
   }
+  if (trimmed === 'סטטוס' || trimmed === 'מצב' || trimmed === 'status' || trimmed === 'health') {
+    if (typeof getBotStatusMessage === 'function') return { reply: getBotStatusMessage() };
+  }
+  if (trimmed === 'הד' || trimmed === 'echo' || trimmed === 'ping') {
+    return { reply: '🏓 הבוט פעיל! קיבלתי את "' + text + '" ב-' + Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'HH:mm:ss') };
+  }
 
   // Multi-tenant account linking: "קוד 482917" / "code 482917" / "link 482917"
   // Bot's `from` phone (the sender) is provided by doPost in the calling context.
@@ -781,6 +803,19 @@ function processExpense(text, fromPhone) {
       if (__celebration) __streakTail = '\n\n' + __celebration;
     } catch (__streakErr) { Logger.log('streak err: ' + (__streakErr && __streakErr.message)); }
 
+    // 🔮 Anomaly detection — runs after every successful write. Returns at most
+    // ONE soft alert line per reply. Failure is silent so anomalies never block
+    // the user's confirmation.
+    var __anomalyTail = '';
+    try {
+      if (!_anomalyAlertsDisabled_()) {
+        var __lastItem = parsed.items[parsed.items.length - 1];
+        var __lastMatched = matchCategorySmart(__lastItem.description);
+        var __anom = detectAnomalies(Math.abs(__lastItem.amount), __lastMatched.category, __lastItem.description);
+        if (__anom && __anom.message) __anomalyTail = '\n\n' + __anom.message;
+      }
+    } catch (__anomErr) { Logger.log('anomaly err: ' + (__anomErr && __anomErr.message)); }
+
     if (parsed.items.length === 1) {
       const it = parsed.items[0];
       const matched = matchCategorySmart(it.description);
@@ -792,11 +827,12 @@ function processExpense(text, fromPhone) {
         '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
         '\n📂 ' + matched.category + __subLabel +
         (__catCtx ? '\n💡 ' + __catCtx : '') +
+        __anomalyTail +
         __streakTail +
         '\n\nכתוב "סיכום" לראות איפה אתה עומד החודש.'
       };
     }
-    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __streakTail };
+    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __streakTail };
   } catch (err) {
     return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + err.message + '\nננסה שוב בעוד דקה? אם זה ממשיך — כתוב "עזרה".' };
   }
@@ -2592,4 +2628,1110 @@ function _testDailyMotivation_() {
 function _testSavingsProjection_() {
   var msg = _buildSavingsProjectionMessage_();
   Logger.log(msg || '(no projection available — not enough data)');
+}
+
+// ============================================================
+// 🔮 ANOMALY DETECTION — Mercury/Brex-style "we noticed something" alerts.
+// ============================================================
+//
+// Two surfaces:
+//   1. detectAnomalies(amount, category, description) — synchronous, called
+//      inline from processExpense after every successful write. Returns ONE
+//      anomaly object (the most surprising one) or null.
+//   2. cronMonthlyAnomalyDigest() — runs 1st of month, 11am Israel. Surfaces
+//      the 3 most interesting anomalies from the prior month + 1 positive note.
+//
+// All thresholds are configurable via Script Properties. Inline alerts can be
+// disabled entirely with ANOMALY_ALERTS_DISABLED=1 (default ON).
+//
+// Performance: a single sheet read (getDataRange) feeds all five checks. With
+// thousands of rows this runs in <1s because we only walk the array once and
+// keep all aggregates in memory.
+
+// --- Tunable thresholds (Script Properties override defaults) ----------------
+var _ANOMALY_DEFAULTS = {
+  ANOMALY_X_AVG_THRESHOLD: 3,         // amount > 3x category avg
+  ANOMALY_VENDOR_X_AVG: 2,            // amount > 2x vendor avg
+  ANOMALY_MTD_GROWTH_PCT: 50,         // category MTD vs same period last month
+  ANOMALY_NEW_VENDOR_AMOUNT: 500,     // first-ever vendor charged > X
+  ANOMALY_BURST_COUNT: 5,             // N+ expenses logged today
+  ANOMALY_MIN_HISTORY: 3,             // need >= N prior datapoints to compare
+  ANOMALY_MIN_AMOUNT: 50              // skip alerts on tiny expenses
+};
+
+function _anomalyProp_(key) {
+  try {
+    var v = PropertiesService.getScriptProperties().getProperty(key);
+    if (v !== null && v !== '' && !isNaN(Number(v))) return Number(v);
+  } catch (e) {}
+  return _ANOMALY_DEFAULTS[key];
+}
+
+function _anomalyAlertsDisabled_() {
+  try {
+    var v = PropertiesService.getScriptProperties().getProperty('ANOMALY_ALERTS_DISABLED');
+    return v === '1' || v === 'true';
+  } catch (e) { return false; }
+}
+
+// --- Helpers -----------------------------------------------------------------
+
+// Normalize a free-form description into a "vendor key" so "סופר רמי לוי 5"
+// and "רמי לוי" collapse to the same vendor. Lowercases, strips digits and
+// common noise words, takes the first 2 meaningful tokens.
+function _anomalyVendorKey_(description) {
+  if (!description) return '';
+  var s = String(description).toLowerCase();
+  s = s.replace(/[0-9₪$€£.,]/g, ' ');
+  s = s.replace(/\s+/g, ' ').trim();
+  // strip very common stopwords that don't identify a vendor
+  var stop = { 'של': 1, 'את': 1, 'ב': 1, 'ל': 1, 'ה': 1, 'in': 1, 'at': 1, 'the': 1 };
+  var toks = s.split(' ').filter(function(t) { return t.length > 1 && !stop[t]; });
+  return toks.slice(0, 2).join(' ');
+}
+
+function _anomalyIsIncomeCategory_(category) {
+  return /הכנסות|הכנסה/i.test(String(category || ''));
+}
+
+// Single pass over transaction rows. Returns a precomputed bundle used by
+// detectAnomalies and the monthly digest alike. data is the raw 2D array
+// from sheet.getDataRange().getValues() (header row included).
+function _anomalyBuildIndex_(data, asOfDate) {
+  var now = asOfDate || new Date();
+  var todayKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM-dd');
+  var currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  var prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  var prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+  var prevMonthSamePeriodEnd = new Date(
+    prevMonthStart.getFullYear(),
+    prevMonthStart.getMonth(),
+    now.getDate(),
+    23, 59, 59
+  );
+
+  var idx = {
+    now: now,
+    todayKey: todayKey,
+    currentMonthStart: currentMonthStart,
+    prevMonthStart: prevMonthStart,
+    prevMonthEnd: prevMonthEnd,
+    prevMonthSamePeriodEnd: prevMonthSamePeriodEnd,
+    // category-level aggregates (excluding today, for fair comparison)
+    catSum: {},       // historical sum per category
+    catCount: {},     // historical count per category
+    // vendor-level aggregates
+    vendorSum: {},
+    vendorCount: {},
+    vendorLastSeen: {},     // Date of last transaction for vendor (any)
+    vendorFirstSeen: {},    // Date of first transaction for vendor
+    // MTD and previous month same-period sums
+    mtdByCat: {},
+    prevMtdByCat: {},
+    // count of transactions logged today
+    todayCount: 0,
+    // for monthly digest
+    prevMonthRows: [],
+    prevPrevMonthByCat: {}   // for month-over-month savings comparison
+  };
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var rd = row[0] instanceof Date ? row[0] : new Date(row[0]);
+    if (isNaN(rd.getTime())) continue;
+    var amount = Number(row[2]) || 0;
+    var category = String(row[3] || '');
+    var description = String(row[5] || '');
+    if (_anomalyIsIncomeCategory_(category)) continue;       // skip income
+    if (amount <= 0) continue;
+
+    var vendorKey = _anomalyVendorKey_(description);
+    var rowDayKey = Utilities.formatDate(rd, 'Asia/Jerusalem', 'yyyy-MM-dd');
+    var isToday = (rowDayKey === todayKey);
+
+    // Historical category aggregates exclude today so today's write doesn't
+    // skew its own comparison.
+    if (!isToday) {
+      idx.catSum[category] = (idx.catSum[category] || 0) + amount;
+      idx.catCount[category] = (idx.catCount[category] || 0) + 1;
+      if (vendorKey) {
+        idx.vendorSum[vendorKey] = (idx.vendorSum[vendorKey] || 0) + amount;
+        idx.vendorCount[vendorKey] = (idx.vendorCount[vendorKey] || 0) + 1;
+        if (!idx.vendorFirstSeen[vendorKey] || rd < idx.vendorFirstSeen[vendorKey]) {
+          idx.vendorFirstSeen[vendorKey] = rd;
+        }
+        if (!idx.vendorLastSeen[vendorKey] || rd > idx.vendorLastSeen[vendorKey]) {
+          idx.vendorLastSeen[vendorKey] = rd;
+        }
+      }
+    } else {
+      idx.todayCount++;
+    }
+
+    // MTD bucket — current calendar month, up to and including today
+    if (rd >= currentMonthStart && rd <= now) {
+      idx.mtdByCat[category] = (idx.mtdByCat[category] || 0) + amount;
+    }
+    // Previous-month same-period bucket — month-1 from day 1 to (today's day)
+    if (rd >= prevMonthStart && rd <= prevMonthSamePeriodEnd) {
+      idx.prevMtdByCat[category] = (idx.prevMtdByCat[category] || 0) + amount;
+    }
+    // Full previous month (for the digest)
+    if (rd >= prevMonthStart && rd <= prevMonthEnd) {
+      idx.prevMonthRows.push({
+        date: rd, amount: amount, category: category,
+        description: description, vendorKey: vendorKey
+      });
+    }
+    // Month before previous month — used for savings comparison in digest
+    var prevPrevStart = new Date(prevMonthStart.getFullYear(), prevMonthStart.getMonth() - 1, 1);
+    var prevPrevEnd = new Date(prevMonthStart.getFullYear(), prevMonthStart.getMonth(), 0, 23, 59, 59);
+    if (rd >= prevPrevStart && rd <= prevPrevEnd) {
+      idx.prevPrevMonthByCat[category] = (idx.prevPrevMonthByCat[category] || 0) + amount;
+    }
+  }
+  return idx;
+}
+
+// --- Public API: detectAnomalies --------------------------------------------
+//
+// Returns the SINGLE most surprising anomaly object, or null. Shape:
+//   { type, severity, message, ratio, context: {...} }
+// severity is 1..5; we pick the highest-severity hit.
+function detectAnomalies(newAmount, newCategory, newDescription) {
+  var minAmount = _anomalyProp_('ANOMALY_MIN_AMOUNT');
+  if (!newAmount || newAmount < minAmount) return null;
+  if (_anomalyIsIncomeCategory_(newCategory)) return null;
+
+  var sheet;
+  try {
+    sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+  } catch (e) { return null; }
+  if (!sheet) return null;
+  var data;
+  try { data = sheet.getDataRange().getValues(); } catch (e) { return null; }
+  if (!data || data.length < 2) return null;
+
+  var minHistory = _anomalyProp_('ANOMALY_MIN_HISTORY');
+  var idx = _anomalyBuildIndex_(data);
+
+  var vendorKey = _anomalyVendorKey_(newDescription || '');
+  var candidates = [];
+
+  // ----- 1. Amount > Nx category average ------------------------------------
+  var xAvg = _anomalyProp_('ANOMALY_X_AVG_THRESHOLD');
+  if (idx.catCount[newCategory] >= minHistory) {
+    var catAvg = idx.catSum[newCategory] / idx.catCount[newCategory];
+    if (catAvg > 0 && newAmount >= catAvg * xAvg) {
+      var ratio = newAmount / catAvg;
+      candidates.push({
+        type: 'CATEGORY_X_AVG',
+        severity: ratio >= xAvg * 1.5 ? 5 : 4,
+        ratio: ratio,
+        message: '⚠️ זה גבוה פי ' + ratio.toFixed(1) + ' מהממוצע שלך בקטגוריה ' + newCategory,
+        context: { category: newCategory, avg: Math.round(catAvg), amount: newAmount }
+      });
+    }
+  }
+
+  // ----- 2. Amount > Nx vendor average --------------------------------------
+  var vendorXAvg = _anomalyProp_('ANOMALY_VENDOR_X_AVG');
+  if (vendorKey && idx.vendorCount[vendorKey] >= minHistory) {
+    var vAvg = idx.vendorSum[vendorKey] / idx.vendorCount[vendorKey];
+    if (vAvg > 0 && newAmount >= vAvg * vendorXAvg) {
+      var vRatio = newAmount / vAvg;
+      candidates.push({
+        type: 'VENDOR_X_AVG',
+        severity: vRatio >= vendorXAvg * 1.5 ? 5 : 3,
+        ratio: vRatio,
+        message: '👀 ₪' + newAmount.toLocaleString('he-IL') + ' אצל ' + vendorKey + ' זה פי ' + vRatio.toFixed(1) + ' מהממוצע שלך שם',
+        context: { vendor: vendorKey, avg: Math.round(vAvg), amount: newAmount }
+      });
+    }
+  }
+
+  // ----- 3. Category MTD grew >X% vs same period last month -----------------
+  var mtdGrowth = _anomalyProp_('ANOMALY_MTD_GROWTH_PCT');
+  var mtdNow = idx.mtdByCat[newCategory] || 0;
+  var mtdPrev = idx.prevMtdByCat[newCategory] || 0;
+  if (mtdPrev > 100 && mtdNow > mtdPrev * (1 + mtdGrowth / 100)) {
+    var pct = Math.round(((mtdNow - mtdPrev) / mtdPrev) * 100);
+    candidates.push({
+      type: 'MTD_GROWTH',
+      severity: pct >= 100 ? 5 : 3,
+      ratio: pct / 100,
+      message: '📈 בקטגוריה ' + newCategory + ' הוצאת ' + pct + '% יותר החודש לעומת אותה תקופה בחודש שעבר',
+      context: { category: newCategory, mtdNow: Math.round(mtdNow), mtdPrev: Math.round(mtdPrev), pct: pct }
+    });
+  }
+
+  // ----- 4. New vendor > threshold (never seen before) ----------------------
+  var newVendorAmount = _anomalyProp_('ANOMALY_NEW_VENDOR_AMOUNT');
+  if (vendorKey && !idx.vendorLastSeen[vendorKey] && newAmount >= newVendorAmount) {
+    candidates.push({
+      type: 'NEW_VENDOR',
+      severity: 4,
+      ratio: newAmount / newVendorAmount,
+      message: '🆕 פעם ראשונה אצל ' + vendorKey + ' — ₪' + newAmount.toLocaleString('he-IL') + '. נשמר.',
+      context: { vendor: vendorKey, amount: newAmount }
+    });
+  } else if (vendorKey && idx.vendorLastSeen[vendorKey] && newAmount >= newVendorAmount) {
+    // Same idea but for returning vendors after a long gap (>120 days)
+    var daysSince = Math.floor((idx.now - idx.vendorLastSeen[vendorKey]) / 86400000);
+    if (daysSince >= 120) {
+      var months = Math.round(daysSince / 30);
+      candidates.push({
+        type: 'RETURNING_VENDOR',
+        severity: 2,
+        ratio: 1,
+        message: '👋 ₪' + newAmount.toLocaleString('he-IL') + ' אצל ' + vendorKey + ' — לא היית שם ' + months + ' חודשים. חזרה לעניינים?',
+        context: { vendor: vendorKey, monthsAway: months }
+      });
+    }
+  }
+
+  // ----- 5. Burst — N+ expenses today ---------------------------------------
+  var burst = _anomalyProp_('ANOMALY_BURST_COUNT');
+  // +1 to include this just-written expense (idx is built before it was committed,
+  // so we don't double-count; however since this runs AFTER appendRow the row IS
+  // in the sheet, and we already counted it in todayCount).
+  if (idx.todayCount >= burst) {
+    candidates.push({
+      type: 'DAILY_BURST',
+      severity: idx.todayCount >= burst * 2 ? 4 : 2,
+      ratio: idx.todayCount / burst,
+      message: '🔥 ' + idx.todayCount + ' הוצאות היום! יום אקטיבי במיוחד',
+      context: { count: idx.todayCount }
+    });
+  }
+
+  if (!candidates.length) return null;
+  // Most surprising = highest severity, tiebreak by ratio.
+  candidates.sort(function(a, b) {
+    if (b.severity !== a.severity) return b.severity - a.severity;
+    return (b.ratio || 0) - (a.ratio || 0);
+  });
+  return candidates[0];
+}
+
+// --- Public API: monthly digest ---------------------------------------------
+function cronMonthlyAnomalyDigest() {
+  try {
+    var msg = _buildMonthlyAnomalyDigest_();
+    if (!msg) {
+      Logger.log('cronMonthlyAnomalyDigest: nothing to send');
+      return;
+    }
+    // Send to the linked WhatsApp user(s). Reuse the inactivity-cron pattern
+    // and pull the bound phone from Script Properties if present.
+    var to = '';
+    try { to = PropertiesService.getScriptProperties().getProperty('DIGEST_PHONE') || ''; } catch (e) {}
+    if (!to) {
+      // Fall back to logging the digest; user can wire DIGEST_PHONE later.
+      Logger.log(msg);
+      return;
+    }
+    sendWhatsAppMessage(to, msg);
+  } catch (err) {
+    Logger.log('cronMonthlyAnomalyDigest err: ' + (err && err.message));
+  }
+}
+
+function _buildMonthlyAnomalyDigest_() {
+  var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+  if (!sheet) return null;
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return null;
+
+  // Build the index as of the START of the current month — so prevMonthRows is
+  // last full calendar month relative to "now".
+  var idx = _anomalyBuildIndex_(data);
+  if (!idx.prevMonthRows.length) return null;
+
+  var monthLabel = Utilities.formatDate(idx.prevMonthStart, 'Asia/Jerusalem', 'MMMM yyyy');
+
+  // Per-row scoring: compare each prior-month row vs that category's
+  // long-term historical average (computed from rows BEFORE the prev-month).
+  // Re-use catSum/catCount but those already exclude only "today"; we need to
+  // re-aggregate while excluding the previous month for a fair baseline.
+  var baselineSum = {}, baselineCount = {};
+  var vendorBaseSum = {}, vendorBaseCount = {};
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var rd = row[0] instanceof Date ? row[0] : new Date(row[0]);
+    if (isNaN(rd.getTime())) continue;
+    if (rd >= idx.prevMonthStart && rd <= idx.prevMonthEnd) continue;
+    if (rd > idx.prevMonthEnd) continue; // ignore current month
+    var amt = Number(row[2]) || 0;
+    var cat = String(row[3] || '');
+    if (_anomalyIsIncomeCategory_(cat)) continue;
+    if (amt <= 0) continue;
+    var vk = _anomalyVendorKey_(String(row[5] || ''));
+    baselineSum[cat] = (baselineSum[cat] || 0) + amt;
+    baselineCount[cat] = (baselineCount[cat] || 0) + 1;
+    if (vk) {
+      vendorBaseSum[vk] = (vendorBaseSum[vk] || 0) + amt;
+      vendorBaseCount[vk] = (vendorBaseCount[vk] || 0) + 1;
+    }
+  }
+
+  // Score every prev-month row; collect top anomalies.
+  var scored = [];
+  // Also accumulate vendor counts within prev-month for the "4 expenses at X" pattern.
+  var prevVendorCount = {}, prevVendorSum = {};
+  idx.prevMonthRows.forEach(function(r) {
+    if (r.vendorKey) {
+      prevVendorCount[r.vendorKey] = (prevVendorCount[r.vendorKey] || 0) + 1;
+      prevVendorSum[r.vendorKey] = (prevVendorSum[r.vendorKey] || 0) + r.amount;
+    }
+    var catAvg = (baselineCount[r.category] >= 3)
+      ? baselineSum[r.category] / baselineCount[r.category] : 0;
+    if (catAvg > 0 && r.amount >= catAvg * 2) {
+      scored.push({
+        ratio: r.amount / catAvg,
+        text: 'PLACEHOLDER_CAT', // overwritten below
+        type: 'CAT', row: r, catAvg: catAvg
+      });
+    }
+    if (r.vendorKey && vendorBaseCount[r.vendorKey] >= 3) {
+      var vavg = vendorBaseSum[r.vendorKey] / vendorBaseCount[r.vendorKey];
+      if (vavg > 0 && r.amount >= vavg * 2) {
+        scored.push({
+          ratio: r.amount / vavg,
+          type: 'VENDOR', row: r, vendorAvg: vavg
+        });
+      }
+    }
+  });
+  // Add "frequent vendor in month" anomalies
+  Object.keys(prevVendorCount).forEach(function(vk) {
+    var cnt = prevVendorCount[vk];
+    var baseCnt = vendorBaseCount[vk] || 0;
+    // If vendor was visited 4+ times in this month AND that's >= 3x typical month
+    // (approximate typical-month visits by averaging baseline over months we have)
+    if (cnt >= 4) {
+      scored.push({
+        ratio: cnt,
+        type: 'FREQ_VENDOR',
+        vendorKey: vk,
+        count: cnt,
+        sum: prevVendorSum[vk]
+      });
+    }
+  });
+
+  scored.sort(function(a, b) { return (b.ratio || 0) - (a.ratio || 0); });
+  // Dedupe so we don't double-list the same (vendor, date) twice.
+  var seenKey = {};
+  var top = [];
+  for (var s = 0; s < scored.length && top.length < 3; s++) {
+    var sc = scored[s];
+    var k = sc.type + '|' + (sc.row ? (sc.row.vendorKey + sc.row.date.getTime()) : sc.vendorKey);
+    if (seenKey[k]) continue;
+    seenKey[k] = 1;
+    top.push(sc);
+  }
+
+  // Format anomaly lines
+  var lines = [];
+  lines.push('🔮 סקירה חודשית — ' + monthLabel);
+  lines.push('');
+  if (top.length) {
+    lines.push('🚨 הוצאות חריגות שזיהינו:');
+    top.forEach(function(sc, n) {
+      if (sc.type === 'CAT') {
+        lines.push((n + 1) + '. ₪' + Math.round(sc.row.amount).toLocaleString('he-IL') + ' ב' + sc.row.vendorKey + ' (פי ' + sc.ratio.toFixed(1) + ' מהממוצע שלך בקטגוריה ' + sc.row.category + ')');
+      } else if (sc.type === 'VENDOR') {
+        lines.push((n + 1) + '. ₪' + Math.round(sc.row.amount).toLocaleString('he-IL') + ' ב' + sc.row.vendorKey + ' (פי ' + sc.ratio.toFixed(1) + ' מהממוצע אצלם)');
+      } else if (sc.type === 'FREQ_VENDOR') {
+        lines.push((n + 1) + '. ' + sc.count + ' הוצאות אצל ' + sc.vendorKey + ' (סה"כ ₪' + Math.round(sc.sum).toLocaleString('he-IL') + ')');
+      }
+    });
+    lines.push('');
+  } else {
+    lines.push('✅ לא זיהינו הוצאות חריגות החודש — נקי!');
+    lines.push('');
+  }
+
+  // ----- positive note ------------------------------------------------------
+  // Biggest savings vs prior month, per category. Pick the largest absolute drop.
+  var bestSave = null;
+  var prevByCat = {};
+  idx.prevMonthRows.forEach(function(r) {
+    prevByCat[r.category] = (prevByCat[r.category] || 0) + r.amount;
+  });
+  Object.keys(prevByCat).forEach(function(cat) {
+    var nowAmt = prevByCat[cat];
+    var prevAmt = idx.prevPrevMonthByCat[cat] || 0;
+    if (prevAmt > 100 && nowAmt < prevAmt) {
+      var saved = prevAmt - nowAmt;
+      if (!bestSave || saved > bestSave.saved) {
+        bestSave = { category: cat, saved: saved, prev: prevAmt, now: nowAmt };
+      }
+    }
+  });
+  var prevPrevLabel = Utilities.formatDate(
+    new Date(idx.prevMonthStart.getFullYear(), idx.prevMonthStart.getMonth() - 1, 1),
+    'Asia/Jerusalem', 'MMMM'
+  );
+  lines.push('✨ הניצחון של החודש:');
+  if (bestSave) {
+    lines.push('חסכת ₪' + Math.round(bestSave.saved).toLocaleString('he-IL') + ' על ' + bestSave.category + ' לעומת ' + prevPrevLabel + ' 👏');
+  } else {
+    // fallback positive note — streak length
+    var streak = 0;
+    try { streak = _getStreakCount_() || 0; } catch (e) {}
+    if (streak >= 3) {
+      lines.push('הצלחת לרשום הוצאות ' + streak + ' ימים ברצף — מעקב עקבי! 👏');
+    } else {
+      lines.push('המשך לעקוב — כל רישום בונה הרגל. 👏');
+    }
+  }
+  lines.push('');
+  lines.push('(שלח "תובנות" לדשבורד המלא)');
+
+  return lines.join('\n');
+}
+
+// --- On-demand "חריגות" command --------------------------------------------
+function getAnomaliesReportMessage() {
+  var msg = _buildMonthlyAnomalyDigest_();
+  return msg || '🔮 עדיין אין מספיק נתונים לסקירת חריגות. המשך לרשום הוצאות ונחזור עם תובנות.';
+}
+
+// --- Installer --------------------------------------------------------------
+function installAnomalyTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronMonthlyAnomalyDigest') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('cronMonthlyAnomalyDigest')
+    .timeBased()
+    .onMonthDay(1)
+    .atHour(11)
+    .inTimezone('Asia/Jerusalem')
+    .create();
+  Logger.log('✅ Monthly anomaly digest trigger installed (1st of month, 11:00 Asia/Jerusalem)');
+}
+
+function uninstallAnomalyTrigger() {
+  var killed = 0;
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronMonthlyAnomalyDigest') {
+      ScriptApp.deleteTrigger(triggers[i]);
+      killed++;
+    }
+  }
+  Logger.log('🗑️ Anomaly digest triggers removed: ' + killed);
+}
+
+// --- Tests ------------------------------------------------------------------
+function _testAnomalyDetection_() {
+  // Probe with a hypothetical large supermarket purchase.
+  var res = detectAnomalies(2500, 'אוכל', 'סופר רמי לוי');
+  Logger.log('anomaly probe (2500/food/rami levy): ' + JSON.stringify(res));
+  Logger.log('---');
+  Logger.log(getAnomaliesReportMessage());
+}
+
+// ============================================================
+// 🎯 INSTALL_KESEFLE_BOT — one-click setup + diagnostics
+// ============================================================
+// Run this ONCE from the Apps Script editor after pasting the code.
+// It verifies all required Script Properties, installs all cron triggers,
+// sends a test WhatsApp message, and logs a full status report.
+//
+// To run: open the Apps Script editor → select "installKesefleBot" from
+// the function dropdown at the top → click ▶ Run → review the execution log.
+function installKesefleBot() {
+  var report = ['🔧 KESEFLE BOT SETUP REPORT', '═══════════════════════════════════════', ''];
+  var ok = 0, warn = 0, err = 0;
+  var props = PropertiesService.getScriptProperties();
+
+  // 1. Required: WHATSAPP_TOKEN
+  var token = props.getProperty('WHATSAPP_TOKEN');
+  if (!token || token.length < 20) {
+    report.push('❌ WHATSAPP_TOKEN — missing or invalid');
+    report.push('   FIX: Apps Script → ⚙️ Project Settings → Script Properties → add WHATSAPP_TOKEN');
+    report.push('   Get the token from: https://developers.facebook.com/apps → WhatsApp → API Setup → Generate token');
+    err++;
+  } else {
+    report.push('✅ WHATSAPP_TOKEN — set (' + token.length + ' chars)');
+    ok++;
+  }
+
+  // 2. Required: WHATSAPP_PHONE_NUMBER_ID
+  var pnid = props.getProperty('WHATSAPP_PHONE_NUMBER_ID');
+  if (!pnid) {
+    report.push('⚠️  WHATSAPP_PHONE_NUMBER_ID — not set, using default: ' + WHATSAPP_PHONE_NUMBER_ID);
+    report.push('   This is OK if the default matches your Meta API Setup page. Otherwise add it to Script Properties.');
+    warn++;
+  } else {
+    report.push('✅ WHATSAPP_PHONE_NUMBER_ID — ' + pnid);
+    ok++;
+  }
+
+  // 3. Required: SHEET_ID accessible
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    report.push('✅ SHEET_ID — accessible: "' + ss.getName() + '"');
+    ok++;
+    var tx = ss.getSheetByName(TRANSACTIONS_SHEET);
+    if (tx) {
+      report.push('✅ Sheet "תנועות" — exists with ' + (tx.getLastRow() - 1) + ' rows');
+      ok++;
+    } else {
+      report.push('⚠️  Sheet "תנועות" — missing. Run setupTransactionsSheet() once.');
+      warn++;
+    }
+  } catch (e) {
+    report.push('❌ SHEET_ID — cannot open: ' + e.message);
+    report.push('   FIX: verify SHEET_ID in line 21 of this script matches your Sheet URL');
+    err++;
+  }
+
+  // 4. Optional: ANTHROPIC_API_KEY (AI fallback)
+  var ai = props.getProperty('ANTHROPIC_API_KEY');
+  if (!ai) {
+    report.push('⚠️  ANTHROPIC_API_KEY — not set (AI fallback disabled, bot still works with 18,725 keywords)');
+    warn++;
+  } else {
+    report.push('✅ ANTHROPIC_API_KEY — set (AI fallback enabled)');
+    ok++;
+  }
+
+  // 5. Optional: KESEFLE_BOT_SECRET (for multi-tenant linking)
+  var ks = props.getProperty('KESEFLE_BOT_SECRET');
+  if (!ks) {
+    report.push('⚠️  KESEFLE_BOT_SECRET — not set (multi-tenant phone linking disabled)');
+    warn++;
+  } else {
+    report.push('✅ KESEFLE_BOT_SECRET — set');
+    ok++;
+  }
+
+  report.push('');
+  report.push('───────────────────────────────────────');
+  report.push('📅 INSTALLING CRON TRIGGERS');
+  report.push('───────────────────────────────────────');
+
+  // 6. Install triggers
+  try {
+    if (typeof installWeeklySummaryTrigger === 'function') {
+      installWeeklySummaryTrigger();
+      report.push('✅ Weekly summary trigger (Sundays 9am)');
+      ok++;
+    }
+  } catch (e) { report.push('❌ Weekly summary trigger: ' + e.message); err++; }
+
+  try {
+    if (typeof installInactivityTrigger === 'function') {
+      installInactivityTrigger();
+      report.push('✅ Inactivity nudge trigger (Tuesdays 9am)');
+      ok++;
+    }
+  } catch (e) { report.push('❌ Inactivity trigger: ' + e.message); err++; }
+
+  try {
+    if (typeof installDailyMotivationTrigger === 'function') {
+      installDailyMotivationTrigger();
+      report.push('✅ Daily motivation trigger (9:30am)');
+      ok++;
+    }
+  } catch (e) { report.push('❌ Daily motivation trigger: ' + e.message); err++; }
+
+  try {
+    if (typeof installWeeklySavingsProjectionTrigger === 'function') {
+      installWeeklySavingsProjectionTrigger();
+      report.push('✅ Friday savings projection trigger (Fridays 5pm)');
+      ok++;
+    }
+  } catch (e) { report.push('❌ Savings projection trigger: ' + e.message); err++; }
+
+  report.push('');
+  report.push('───────────────────────────────────────');
+  report.push('📊 SUMMARY');
+  report.push('───────────────────────────────────────');
+  report.push('✅ OK: ' + ok);
+  report.push('⚠️  WARNINGS: ' + warn);
+  report.push('❌ ERRORS: ' + err);
+  report.push('');
+
+  if (err > 0) {
+    report.push('🚨 ACTION REQUIRED: Fix the ❌ errors above before the bot can reply to messages.');
+  } else if (warn > 0) {
+    report.push('💡 Bot will work, but consider fixing the ⚠️  warnings for full functionality.');
+  } else {
+    report.push('🎉 All systems go! Bot is ready to receive messages.');
+  }
+
+  Logger.log(report.join('\n'));
+
+  // Optional: send a test WhatsApp message to ALLOWED_PHONE (if it's set somewhere)
+  // Skipped to avoid spamming during setup. To test manually, send a WhatsApp message
+  // to +17745448053 and check that you get a reply within 5 seconds.
+
+  return report.join('\n');
+}
+
+// Quick handler for "סטטוס" / "status" / "מצב" — for the user to verify the bot
+// is alive via WhatsApp. Returns a short health summary.
+function getBotStatusMessage() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var ai = !!props.getProperty('ANTHROPIC_API_KEY');
+    var pnid = props.getProperty('WHATSAPP_PHONE_NUMBER_ID') || WHATSAPP_PHONE_NUMBER_ID;
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    var rowCount = sheet ? (sheet.getLastRow() - 1) : 0;
+    return '🤖 *מצב הבוט*\n' +
+      '━━━━━━━━━━━━━━━━━━\n\n' +
+      '✅ הבוט פעיל\n' +
+      '📞 מספר: ' + BOT_PHONE_E164 + '\n' +
+      '🆔 Phone ID: ...' + pnid.slice(-8) + '\n' +
+      '📊 הוצאות בגיליון: ' + rowCount + '\n' +
+      '🧠 AI fallback: ' + (ai ? '✅ פעיל' : '⚠️ לא פעיל') + '\n' +
+      '🕐 ' + Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm');
+  } catch (e) {
+    return '⚠️ שגיאה בבדיקת מצב: ' + (e.message || e);
+  }
+}
+
+// ============================================================
+// 💳 SUBSCRIPTION AUTO-DETECTOR + DORMANT ALERTER
+// ============================================================
+// Inspired by Rocket Money's killer feature: scan the user's transactions,
+// surface recurring vendors as "subscriptions", and warn when one stops
+// charging (= "dormant", might be a cancelled service that nobody told
+// the user about, or a charge that resumed silently).
+//
+// Public API:
+//   detectSubscriptions()              -> [{vendor, avgAmount, cadence, ...}]
+//   getActiveSubscriptionsMessage()    -> Hebrew summary string
+//   cronDormantSubscriptionAlert()     -> sends WhatsApp on dormants (1st of month, 10am)
+//   installDormantSubscriptionTrigger()-> wires the cron
+//   _handleSubscriptionCommand_(from, text) -> command hook (called from doPost)
+//
+// All cron functions default OFF. Run the installer once from the editor.
+// ASCII-only comments. Hebrew text only inside string literals.
+
+// Subscription detection thresholds. Tunable.
+var SUB_MIN_OCCURRENCES = 3;        // need >=3 charges to call something a subscription
+var SUB_LOOKBACK_MONTHS = 6;         // scan the last N months of transactions
+var SUB_AMOUNT_TOLERANCE = 0.10;     // +/- 10% on amount counts as "same"
+var SUB_DORMANT_DAYS = 60;           // last charge older than this -> dormant
+var SUB_CADENCE_TOLERANCE = 0.30;    // +/- 30% on inter-charge gap is "regular"
+
+// Public: scan the תנועות sheet for recurring subscriptions.
+// Returns array of { vendor, avgAmount, cadence, occurrences, firstSeen,
+//                   lastSeen, nextExpected, isDormant }.
+// Performance: one full-sheet read, single grouping pass, then per-vendor
+// analysis. O(N) memory and O(N + V log V) time where V = distinct vendors.
+// Target: under 1s wall-clock for a few thousand rows in Apps Script.
+function detectSubscriptions() {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return [];
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 4) return []; // need at least 3 charges + header
+
+    // Single bulk read — fastest path in Apps Script.
+    var data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+
+    var now = new Date();
+    var lookbackStart = new Date(now.getTime() - SUB_LOOKBACK_MONTHS * 30 * 86400000);
+
+    // Group by normalized vendor name (column F, index 5 in row).
+    // Income rows are filtered.
+    var groups = {};   // vendorKey -> { display, charges: [{date, amount}] }
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      var rawDate = row[0];
+      var date = rawDate instanceof Date ? rawDate : new Date(rawDate);
+      if (isNaN(date.getTime())) continue;
+      if (date < lookbackStart || date > now) continue;
+
+      var amount = Number(row[2]);
+      if (!amount || amount <= 0) continue;
+
+      var category = String(row[3] || '');
+      // Skip income categories — those aren't subscriptions, they're salary
+      if (/הכנסות|הכנסה/.test(category)) continue;
+
+      var rawDesc = String(row[5] || '').trim();
+      if (!rawDesc) continue;
+
+      var key = _normalizeVendorKey_(rawDesc);
+      if (!key) continue;
+
+      if (!groups[key]) {
+        groups[key] = {
+          display: _prettifyVendor_(rawDesc),
+          charges: []
+        };
+      }
+      groups[key].charges.push({ date: date, amount: amount });
+    }
+
+    // Analyze each group for subscription-ness.
+    var subs = [];
+    var keys = Object.keys(groups);
+    for (var k = 0; k < keys.length; k++) {
+      var g = groups[keys[k]];
+      if (g.charges.length < SUB_MIN_OCCURRENCES) continue;
+
+      // Sort charges by date ascending.
+      g.charges.sort(function(a, b) { return a.date - b.date; });
+
+      // Compute amount stats — reject if charges aren't clustered.
+      var amts = g.charges.map(function(c) { return c.amount; });
+      var avgAmount = _average_(amts);
+      if (!_amountsAreClustered_(amts, avgAmount, SUB_AMOUNT_TOLERANCE)) continue;
+
+      // Compute cadence from inter-charge gaps.
+      var gaps = [];
+      for (var j = 1; j < g.charges.length; j++) {
+        gaps.push((g.charges[j].date - g.charges[j - 1].date) / 86400000);
+      }
+      var avgGap = _average_(gaps);
+      if (!_gapsAreRegular_(gaps, avgGap, SUB_CADENCE_TOLERANCE)) continue;
+
+      var cadence = _classifyCadence_(avgGap);
+      if (!cadence) continue; // gap pattern doesn't match any standard cadence
+
+      var firstSeen = g.charges[0].date;
+      var lastSeen = g.charges[g.charges.length - 1].date;
+      var nextExpected = new Date(lastSeen.getTime() + avgGap * 86400000);
+      var daysSinceLast = (now - lastSeen) / 86400000;
+
+      subs.push({
+        vendor: g.display,
+        avgAmount: Math.round(avgAmount * 100) / 100,
+        cadence: cadence,
+        cadenceDays: Math.round(avgGap),
+        occurrences: g.charges.length,
+        firstSeen: firstSeen,
+        lastSeen: lastSeen,
+        nextExpected: nextExpected,
+        isDormant: daysSinceLast > SUB_DORMANT_DAYS
+      });
+    }
+
+    // Sort by monthly cost descending (most expensive first).
+    subs.sort(function(a, b) {
+      return _monthlyCost_(b) - _monthlyCost_(a);
+    });
+
+    return subs;
+  } catch (e) {
+    Logger.log('detectSubscriptions error: ' + (e && e.stack || e));
+    return [];
+  }
+}
+
+// --- Helpers --------------------------------------------------------------
+
+// Normalize a free-text description into a canonical vendor key for grouping.
+// Strips punctuation, lowercases ASCII, collapses whitespace, removes common
+// noise tokens (transaction IDs, store-branch numbers).
+function _normalizeVendorKey_(desc) {
+  var s = String(desc).toLowerCase();
+  // strip URLs
+  s = s.replace(/https?:\/\/\S+/g, ' ');
+  // strip emails
+  s = s.replace(/\S+@\S+/g, ' ');
+  // strip digits 3+ (transaction IDs, prices appended to vendor names)
+  s = s.replace(/\d{3,}/g, ' ');
+  // replace non-letter chars with spaces (keep Hebrew + ASCII letters)
+  s = s.replace(/[^֐-׿a-z\s]/g, ' ');
+  // collapse whitespace
+  s = s.replace(/\s+/g, ' ').trim();
+  if (s.length < 2) return '';
+  return s;
+}
+
+// Pretty-print a vendor name: trim, title-case ASCII words, keep Hebrew intact.
+function _prettifyVendor_(desc) {
+  var s = String(desc).trim();
+  return s.split(/\s+/).map(function(w) {
+    if (/^[a-z]/i.test(w)) {
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }
+    return w;
+  }).join(' ');
+}
+
+function _average_(arr) {
+  if (!arr.length) return 0;
+  var sum = 0;
+  for (var i = 0; i < arr.length; i++) sum += arr[i];
+  return sum / arr.length;
+}
+
+// Are all amounts within +/-tolerance of the average?
+function _amountsAreClustered_(amts, avg, tolerance) {
+  if (avg <= 0) return false;
+  for (var i = 0; i < amts.length; i++) {
+    var deviation = Math.abs(amts[i] - avg) / avg;
+    if (deviation > tolerance) return false;
+  }
+  return true;
+}
+
+// Are inter-charge gaps roughly equal (regular cadence)?
+function _gapsAreRegular_(gaps, avg, tolerance) {
+  if (avg <= 0) return false;
+  for (var i = 0; i < gaps.length; i++) {
+    var deviation = Math.abs(gaps[i] - avg) / avg;
+    if (deviation > tolerance) return false;
+  }
+  return true;
+}
+
+// Classify an average-gap-in-days into a human cadence label, or null.
+function _classifyCadence_(avgGapDays) {
+  if (avgGapDays >= 6 && avgGapDays <= 9) return 'weekly';
+  if (avgGapDays >= 13 && avgGapDays <= 17) return 'biweekly';
+  if (avgGapDays >= 25 && avgGapDays <= 35) return 'monthly';
+  if (avgGapDays >= 80 && avgGapDays <= 100) return 'quarterly';
+  if (avgGapDays >= 170 && avgGapDays <= 200) return 'semiannual';
+  if (avgGapDays >= 350 && avgGapDays <= 380) return 'yearly';
+  return null;
+}
+
+// Project a subscription's monthly-equivalent cost (for sorting + totals).
+function _monthlyCost_(sub) {
+  switch (sub.cadence) {
+    case 'weekly':     return sub.avgAmount * 4.33;
+    case 'biweekly':   return sub.avgAmount * 2.17;
+    case 'monthly':    return sub.avgAmount;
+    case 'quarterly':  return sub.avgAmount / 3;
+    case 'semiannual': return sub.avgAmount / 6;
+    case 'yearly':     return sub.avgAmount / 12;
+    default:           return sub.avgAmount;
+  }
+}
+
+function _annualCost_(sub) {
+  return _monthlyCost_(sub) * 12;
+}
+
+// Hebrew cadence words for messages.
+function _cadenceHe_(cadence) {
+  switch (cadence) {
+    case 'weekly':     return 'שבוע';
+    case 'biweekly':   return 'שבועיים';
+    case 'monthly':    return 'חודש';
+    case 'quarterly':  return 'רבעון';
+    case 'semiannual': return 'חצי שנה';
+    case 'yearly':     return 'שנה';
+    default:           return 'חודש';
+  }
+}
+
+// Pick an emoji that hints at the vendor type (keeps the message warm).
+function _vendorEmoji_(vendor) {
+  var v = String(vendor).toLowerCase();
+  if (/netflix|hbo|disney|hulu|hot|yes vod|paramount|peacock|mubi|apple tv|youtube tv/.test(v)) return '🎬';
+  if (/spotify|apple music|tidal|deezer|youtube music|soundcloud/.test(v)) return '🎵';
+  if (/icloud|google drive|dropbox|onedrive|backblaze|wasabi/.test(v)) return '☁️';
+  if (/chatgpt|claude|openai|gemini|anthropic|midjourney|copilot/.test(v)) return '🤖';
+  if (/gym|crossfit|כושר|חדר כושר|יוגה|מכון/.test(v)) return '💪';
+  if (/wolt|tenbis|ten bis|cibus|וולט|תן ביס|סיבוס/.test(v)) return '🍔';
+  if (/times|wsj|economist|ynet|haaretz|הארץ|עיתון|news/.test(v)) return '📰';
+  if (/microsoft|office|365|adobe|notion|figma|slack|zoom/.test(v)) return '🧰';
+  if (/vpn|nord|express|surfshark|proton/.test(v)) return '🛡️';
+  return '💳';
+}
+
+// Format a date as DD/MM/YYYY in Israel time.
+function _fmtIsraelDate_(date) {
+  return Utilities.formatDate(date, 'Asia/Jerusalem', 'dd/MM/yyyy');
+}
+
+// --- Public message builders ----------------------------------------------
+
+// Returns the Hebrew "active subscriptions" summary message.
+function getActiveSubscriptionsMessage() {
+  var subs = detectSubscriptions();
+  var active = subs.filter(function(s) { return !s.isDormant; });
+
+  if (!active.length) {
+    return '💳 *המנויים הפעילים שלך*\n' +
+           '\n' +
+           'עוד לא זיהיתי מנויים קבועים אצלך.\n' +
+           'כשיהיו לפחות 3 חיובים זהים מאותו ספק — אני אתפוס אותם.';
+  }
+
+  var lines = [];
+  lines.push('💳 *המנויים הפעילים שלך*');
+  lines.push('');
+
+  var totalAnnual = 0;
+  for (var i = 0; i < active.length; i++) {
+    var s = active[i];
+    var monthly = _monthlyCost_(s);
+    var annual = monthly * 12;
+    totalAnnual += annual;
+
+    var emoji = _vendorEmoji_(s.vendor);
+    var cadenceHe = _cadenceHe_(s.cadence);
+    var monthlyStr = '₪' + Math.round(monthly).toLocaleString('he-IL');
+    var annualStr = '₪' + Math.round(annual).toLocaleString('he-IL');
+
+    lines.push(emoji + ' ' + s.vendor + '  ' + monthlyStr + '/' + cadenceHe + '  →  ' + annualStr + '/שנה');
+  }
+
+  lines.push('');
+  lines.push('📊 סה"כ: ₪' + Math.round(totalAnnual).toLocaleString('he-IL') + ' בשנה');
+  lines.push('');
+  lines.push('רוצה לבדוק אם משהו לא בשימוש? שלח "ניקיון מנויים".');
+  return lines.join('\n');
+}
+
+// Stub for the cleanup wizard — surfaces dormants and gives next steps.
+function getSubscriptionCleanupMessage() {
+  var subs = detectSubscriptions();
+  var dormant = subs.filter(function(s) { return s.isDormant; });
+  if (!dormant.length) {
+    return '🧹 *ניקיון מנויים*\n' +
+           '\n' +
+           'אין כרגע מנויים חשודים — הכל נראה תקין.\n' +
+           'אני אבדוק שוב אחת לחודש ואעדכן אותך אם משהו ישתנה.';
+  }
+
+  var lines = [];
+  lines.push('🧹 *ניקיון מנויים*');
+  lines.push('');
+  lines.push('זיהיתי ' + dormant.length + ' מנויים חשודים (לא חויבו לאחרונה):');
+  lines.push('');
+
+  for (var i = 0; i < dormant.length; i++) {
+    var s = dormant[i];
+    var annual = Math.round(_annualCost_(s));
+    var emoji = _vendorEmoji_(s.vendor);
+    lines.push(emoji + ' ' + s.vendor + ' — חיוב אחרון ' + _fmtIsraelDate_(s.lastSeen));
+    lines.push('   חיסכון פוטנציאלי: ₪' + annual.toLocaleString('he-IL') + ' בשנה');
+    lines.push('');
+  }
+
+  lines.push('💡 *מה לעשות?*');
+  lines.push('1. בדוק בכרטיס האשראי אם המנוי באמת בוטל.');
+  lines.push('2. אם כן — מצוין, אפשר להתעלם.');
+  lines.push('3. אם לא — סביר שיש חיוב שאיבד את הקבלה. שווה לבדוק.');
+  lines.push('');
+  lines.push('(אשף ביטול אוטומטי בדרך)');
+  return lines.join('\n');
+}
+
+// --- Cron: monthly dormant-subscription alert -----------------------------
+
+function cronDormantSubscriptionAlert() {
+  try {
+    var to = ALLOWED_PHONE || (PropertiesService.getScriptProperties().getProperty('WEEKLY_SUMMARY_PHONE') || '');
+    if (!to) {
+      Logger.log('cronDormantSubscriptionAlert: no recipient configured');
+      return;
+    }
+
+    var subs = detectSubscriptions();
+    var dormant = subs.filter(function(s) { return s.isDormant; });
+    if (!dormant.length) {
+      Logger.log('cronDormantSubscriptionAlert: no dormants this month');
+      return;
+    }
+
+    // Send one message per dormant — keeps each alert focused and easy
+    // to act on. Cap at 3 per cron run to avoid spam.
+    var sendCount = Math.min(dormant.length, 3);
+    for (var i = 0; i < sendCount; i++) {
+      var s = dormant[i];
+      var annual = Math.round(_annualCost_(s));
+      var msg = '🔍 *גילוי חשוב — מנוי שלא חויב לאחרונה*\n' +
+                '\n' +
+                'ל-' + s.vendor + ' לא היה חיוב מאז ' + _fmtIsraelDate_(s.lastSeen) + ' (60+ ימים).\n' +
+                'האם ביטלת את המנוי? אם לא — שווה לבדוק.\n' +
+                '\n' +
+                'זה יכול לחסוך לך ₪' + annual.toLocaleString('he-IL') + ' בשנה אם המנוי באמת בוטל ושכחו לסגור.';
+      sendWhatsAppMessage(to, msg);
+      Logger.log('cronDormantSubscriptionAlert: sent for vendor=' + s.vendor);
+    }
+  } catch (e) {
+    Logger.log('cronDormantSubscriptionAlert error: ' + (e && e.stack || e));
+  }
+}
+
+function installDormantSubscriptionTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronDormantSubscriptionAlert') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  // 1st of each month, ~10am Israel time. Apps Script onMonthDay fires once
+  // per month at the given day; atHour gives an hourly window.
+  ScriptApp.newTrigger('cronDormantSubscriptionAlert')
+    .timeBased()
+    .onMonthDay(1)
+    .atHour(10)
+    .inTimezone('Asia/Jerusalem')
+    .create();
+  Logger.log('Dormant subscription trigger installed (1st of month, 10am Asia/Jerusalem)');
+}
+
+function uninstallDormantSubscriptionTrigger() {
+  var killed = 0;
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronDormantSubscriptionAlert') {
+      ScriptApp.deleteTrigger(triggers[i]);
+      killed++;
+    }
+  }
+  Logger.log('Dormant subscription triggers removed: ' + killed);
+}
+
+// --- Command router hook (called from doPost dispatcher) ------------------
+
+function _handleSubscriptionCommand_(from, text) {
+  var raw = String(text == null ? '' : text).trim();
+  if (!raw) return { handled: false };
+  var norm = raw.replace(/^\//, '').trim();
+  var low = norm.toLowerCase();
+
+  // Active subscriptions list
+  if (norm === 'מנויים' || low === 'subscriptions' || low === 'subs') {
+    return { handled: true, replyText: getActiveSubscriptionsMessage() };
+  }
+
+  // Cleanup wizard (stub for now — surfaces dormants)
+  if (norm === 'ניקיון מנויים' || low === 'cleanup' || low === 'cleanup subscriptions' || low === 'sub cleanup') {
+    return { handled: true, replyText: getSubscriptionCleanupMessage() };
+  }
+
+  return { handled: false };
+}
+
+// --- Test helpers (run from editor) ---------------------------------------
+
+function _testDetectSubscriptions_() {
+  var t0 = new Date().getTime();
+  var subs = detectSubscriptions();
+  var ms = new Date().getTime() - t0;
+  Logger.log('detectSubscriptions: ' + subs.length + ' subs found in ' + ms + 'ms');
+  for (var i = 0; i < subs.length; i++) {
+    var s = subs[i];
+    Logger.log((i + 1) + '. ' + s.vendor + ' — ' + s.cadence + ' — avg ' + s.avgAmount +
+               ' — last=' + _fmtIsraelDate_(s.lastSeen) + ' — dormant=' + s.isDormant);
+  }
+}
+
+function _testActiveSubscriptionsMessage_() {
+  Logger.log(getActiveSubscriptionsMessage());
+}
+
+function _testCleanupMessage_() {
+  Logger.log(getSubscriptionCleanupMessage());
 }
