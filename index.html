@@ -531,161 +531,6 @@
   </div>
 </section>
 
-<!-- ============== LIVE STATS BAND (Bloomberg/news-style metrics) ============== -->
-<section class="kfl-noise relative overflow-hidden border-y border-ink-200/60 bg-ink-950 py-12 text-white dark:border-ink-700/60 md:py-16">
-  <div class="absolute inset-0 -z-10 matrix-grid opacity-50"></div>
-  <div class="pointer-events-none absolute top-1/2 left-1/4 -z-10 h-72 w-72 -translate-y-1/2 rounded-full bg-brand-500/15 blur-3xl"></div>
-  <div class="pointer-events-none absolute top-1/2 right-1/4 -z-10 h-72 w-72 -translate-y-1/2 rounded-full bg-accent-500/15 blur-3xl"></div>
-
-  <div class="mx-auto max-w-6xl px-5">
-    <div class="mb-8 text-center">
-      <div class="inline-flex items-center gap-2 rounded-full border border-brand-400/40 bg-brand-500/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-300 backdrop-blur">
-        <span class="relative flex h-2 w-2">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
-          <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span>
-        </span>
-        <span class="font-mono">LIVE METRICS</span>
-        <span class="opacity-50">•</span>
-        <span>מתעדכן כל <span class="num">5</span> שניות</span>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-      <div class="group rounded-2xl border border-brand-500/20 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">הודעות היום</span>
-          <span class="text-brand-400">↑</span>
-        </div>
-        <div class="mt-2 text-3xl font-black holo-text md:text-4xl" data-counter="1247">0</div>
-        <div class="mt-1 text-[10px] text-ink-400"><span class="num">+22</span>% מאתמול</div>
-      </div>
-
-      <div class="group rounded-2xl border border-brand-500/20 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">הצטרפו השבוע</span>
-          <span class="text-brand-400">↑</span>
-        </div>
-        <div class="mt-2 text-3xl font-black holo-text md:text-4xl" data-counter="47">0</div>
-        <div class="mt-1 text-[10px] text-ink-400">משתמשים חדשים</div>
-      </div>
-
-      <div class="group rounded-2xl border border-brand-500/20 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-400">דיוק קטלוג</span>
-          <span class="text-brand-400">●</span>
-        </div>
-        <div class="mt-2 text-3xl font-black holo-text md:text-4xl"><span data-counter="99.5">0</span>%</div>
-        <div class="mt-1 text-[10px] text-ink-400">3-tier AI engine</div>
-      </div>
-
-      <div class="group rounded-2xl border border-accent-500/30 bg-ink-900/60 p-5 backdrop-blur tilt-soft">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-accent-500">עלות חודשית</span>
-          <span class="text-accent-500">$</span>
-        </div>
-        <div class="mt-2 text-3xl font-black holo-text md:text-4xl">$<span data-counter="0.57">0</span></div>
-        <div class="mt-1 text-[10px] text-ink-400">לכל המשתמשים יחד</div>
-      </div>
-    </div>
-
-    <div class="mt-8 flex flex-wrap items-center justify-center gap-2 text-[11px] text-ink-400">
-      <span class="font-mono">DATA</span>
-      <span>·</span>
-      <span><span class="num">1,480</span> מילים</span>
-      <span>·</span>
-      <span><span class="num">77</span> קטגוריות</span>
-      <span>·</span>
-      <span><span class="num">~50</span>ms תגובה</span>
-      <span>·</span>
-      <span class="num">99.97</span><span>% uptime</span>
-      <span>·</span>
-      <span>Claude Haiku <span class="num">3.5</span></span>
-    </div>
-  </div>
-</section>
-
-<script>
-  (function(){
-    if (window.kflCountersInit) return;
-    window.kflCountersInit = true;
-    function animateCount(el){
-      var target = parseFloat(el.dataset.counter || '0');
-      var hasDecimal = target % 1 !== 0;
-      var start = performance.now();
-      var dur = 1400;
-      function step(now){
-        var t = Math.min(1, (now-start)/dur);
-        var ease = 1 - Math.pow(1-t, 3);
-        var v = target * ease;
-        el.textContent = hasDecimal ? v.toFixed(target < 10 ? 2 : 1) : Math.floor(v).toLocaleString('en-US');
-        if (t < 1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    }
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){
-        if (e.isIntersecting) { animateCount(e.target); io.unobserve(e.target); }
-      });
-    }, { threshold: 0.3 });
-    document.querySelectorAll('[data-counter]').forEach(function(el){ io.observe(el); });
-  })();
-</script>
-
-<!-- ============== VENDOR MARQUEE — Israeli brands the bot recognises ============== -->
-<section class="relative overflow-hidden border-b border-ink-200/60 bg-white py-10 dark:border-ink-700/60 dark:bg-ink-900">
-  <div class="mx-auto mb-6 max-w-6xl px-5">
-    <div class="flex items-center justify-center gap-3">
-      <span class="h-px w-12 bg-ink-300 dark:bg-ink-700"></span>
-      <p class="text-center text-[11px] font-bold uppercase tracking-[0.22em] text-ink-500 dark:text-ink-400">
-        מזהה אוטומטית · <span class="num">1,480</span> מותגים ועסקים בישראל
-      </p>
-      <span class="h-px w-12 bg-ink-300 dark:bg-ink-700"></span>
-    </div>
-  </div>
-  <div class="kfl-marquee kfl-marquee-mask">
-    <div class="kfl-marquee-track" dir="ltr" aria-hidden="true">
-      <!-- duplicated set for seamless loop -->
-      <!-- set 1 -->
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> שופרסל</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📱</span> פרטנר</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">⚡</span> חברת חשמל</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🚖</span> Gett</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🍔</span> Wolt</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛍️</span> רמי לוי</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">☕</span> ארומה</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📺</span> פלאפון</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> ויקטורי</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">💊</span> סופר פארם</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> יוחננוף</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">⛽</span> פז</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> AM:PM</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📦</span> Cofix</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📱</span> סלקום</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📺</span> HOT</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛍️</span> פוקס</span>
-      <!-- set 2 (duplicate for seamless loop) -->
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> שופרסל</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📱</span> פרטנר</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">⚡</span> חברת חשמל</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🚖</span> Gett</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🍔</span> Wolt</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛍️</span> רמי לוי</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">☕</span> ארומה</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📺</span> פלאפון</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> ויקטורי</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">💊</span> סופר פארם</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> יוחננוף</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">⛽</span> פז</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛒</span> AM:PM</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📦</span> Cofix</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📱</span> סלקום</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">📺</span> HOT</span>
-      <span class="inline-flex items-center gap-2 text-base font-bold text-ink-500 dark:text-ink-300"><span class="text-xl">🛍️</span> פוקס</span>
-    </div>
-  </div>
-</section>
-
-<!-- ============== TRUST (3rd section — moved up) ============== -->
 <section class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
   <div class="pointer-events-none absolute inset-0 -z-10 dotgrid text-ink-300/30 dark:text-white/[0.04]"></div>
   <div class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-500/5 blur-3xl"></div>
@@ -735,63 +580,56 @@
 
     <!-- Security FAQ — direct answers to the questions everyone has -->
     <div class="mx-auto mt-14 max-w-3xl">
-      <div class="overflow-hidden rounded-3xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800">
-        <div class="divide-y divide-ink-200 dark:divide-ink-700">
-          <div class="flex items-start gap-4 p-5">
-            <span class="text-2xl">🤔</span>
-            <div class="flex-1 text-right">
-              <p class="font-bold dark:text-white">האם תקראו את הצ׳אטים האחרים שלי בוואטסאפ?</p>
-              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">לא. הבוט מקבל רק הודעות ששולחים אליו ישירות — לא רואה כלום אחר.</p>
+      <div class="overflow-hidden rounded-3xl border border-ink-200 bg-white dark:border-ink-700/60 dark:bg-ink-800/40">
+        <div class="divide-y divide-ink-200/70 dark:divide-ink-700/50">
+          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
+            <div class="text-right">
+              <p class="font-semibold text-ink-900 dark:text-white">האם תקראו את הצ׳אטים האחרים שלי בוואטסאפ?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">הבוט מקבל רק הודעות שמופנות אליו ישירות. אין לנו גישה לשאר התקשורת שלך.</p>
             </div>
-            <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">בטח שלא</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">ללא גישה</span>
           </div>
-          <div class="flex items-start gap-4 p-5">
-            <span class="text-2xl">🏦</span>
-            <div class="flex-1 text-right">
-              <p class="font-bold dark:text-white">האם תתחברו לחשבון הבנק שלי?</p>
-              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">לעולם לא. אין לנו אפילו פיצ׳ר כזה.</p>
+          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
+            <div class="text-right">
+              <p class="font-semibold text-ink-900 dark:text-white">האם תתחברו לחשבון הבנק שלי?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">לא. המערכת לא מתממשקת לבנקים, לכרטיסי אשראי או לפלטפורמות פיננסיות.</p>
             </div>
-            <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">לעולם לא</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">לא נדרש</span>
           </div>
-          <div class="flex items-start gap-4 p-5">
-            <span class="text-2xl">💾</span>
-            <div class="flex-1 text-right">
-              <p class="font-bold dark:text-white">איפה הנתונים שלי נשמרים?</p>
-              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">בחשבון Google Drive הפרטי שלך, בגיליון שיש לך שליטה מלאה עליו.</p>
+          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
+            <div class="text-right">
+              <p class="font-semibold text-ink-900 dark:text-white">איפה הנתונים שלי נשמרים?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">בחשבון Google Drive הפרטי שלך, בגיליון תחת בעלות מלאה. אנחנו לא שומרים העתק.</p>
             </div>
-            <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">אצלך בלבד</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">Google Drive</span>
           </div>
-          <div class="flex items-start gap-4 p-5">
-            <span class="text-2xl">🔌</span>
-            <div class="flex-1 text-right">
-              <p class="font-bold dark:text-white">מה קורה אם אני רוצה לעזוב?</p>
-              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">מוחקים את הגיליון או מבטלים את ההרשאה — נעלמנו מחייך, הנתונים שלך נשארים אצלך.</p>
+          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
+            <div class="text-right">
+              <p class="font-semibold text-ink-900 dark:text-white">מה קורה אם אני רוצה לעזוב?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">ביטול ההרשאה או מחיקת הגיליון מנתקים אותנו לחלוטין. הנתונים נשארים בידייך.</p>
             </div>
-            <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">כל רגע</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">ביטול עצמי</span>
           </div>
-          <div class="flex items-start gap-4 p-5">
-            <span class="text-2xl">📋</span>
-            <div class="flex-1 text-right">
-              <p class="font-bold dark:text-white">האם אתם תואמים לחוק הישראלי?</p>
-              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">חוק הגנת הפרטיות תשמ"א-1981, GDPR בסיס מינימלי. תקנון מלא ב-/trust.</p>
+          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
+            <div class="text-right">
+              <p class="font-semibold text-ink-900 dark:text-white">האם המוצר תואם לרגולציה הישראלית?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">חוק הגנת הפרטיות תשמ״א-1981 וקווי GDPR. תקנון מלא במסמך האבטחה.</p>
             </div>
-            <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">חד-משמעית</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">תואם</span>
           </div>
-          <div class="flex items-start gap-4 p-5">
-            <span class="text-2xl">🔐</span>
-            <div class="flex-1 text-right">
-              <p class="font-bold dark:text-white">האם ההודעות מוצפנות?</p>
-              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">TLS 1.3 בין WhatsApp לשרת שלנו, ואז OAuth מאובטח של Google לגיליון שלך.</p>
+          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
+            <div class="text-right">
+              <p class="font-semibold text-ink-900 dark:text-white">איך מאובטחות ההודעות?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">הצפנת TLS 1.3 בין WhatsApp לשרת, ו-OAuth של Google לכתיבה לגיליון.</p>
             </div>
-            <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">End-to-End</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">TLS 1.3</span>
           </div>
-          <div class="flex items-start gap-4 p-5">
-            <span class="text-2xl">💳</span>
-            <div class="flex-1 text-right">
-              <p class="font-bold dark:text-white">האם אתם רואים את כרטיס האשראי שלי?</p>
-              <p class="mt-1 text-sm text-ink-500 dark:text-ink-300">לא. תשלומים עוברים דרך Stripe (PCI-DSS Level 1). אנחנו רואים רק "שולם / לא שולם".</p>
+          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
+            <div class="text-right">
+              <p class="font-semibold text-ink-900 dark:text-white">האם אתם רואים את פרטי האשראי שלי?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">לא. תשלומים עוברים דרך Stripe (PCI-DSS Level 1). אנחנו רואים רק סטטוס חיוב.</p>
             </div>
-            <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">בכלל לא</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">PCI-DSS</span>
           </div>
         </div>
       </div>
@@ -2278,14 +2116,6 @@ function kesefleToggleDark() { /* no-op: dark only */ }
 })();
 </script>
 
-<!-- ============== STATUS PILL — bottom-left always-on heartbeat link to /status ============== -->
-<a href="/status" class="kfl-status-pill" title="כל המערכות פעילות">
-  <span class="relative flex h-2 w-2">
-    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
-    <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span>
-  </span>
-  <span>All systems operational</span>
-</a>
 
 <script>
   // ====== MAGNETIC CTA — subtle lift toward the cursor (hero only, desktop) ======
