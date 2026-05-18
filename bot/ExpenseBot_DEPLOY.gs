@@ -159,9 +159,9 @@ const CATEGORY_MAP = [
   { keywords: ['cinema city', 'cinematheque', 'בית קולנוע', 'הופעה', 'יס פלאנט', 'יספלאנט', 'לב', 'מופע', 'סינמה', 'תיאטרון'], category: 'שונות ואחרים', subcategory: 'בילויים' },
   { keywords: ['audible', 'kindle', 'tzomet sfarim', 'סטימצקי', 'ספר', 'ספרים', 'צומת ספרים'], category: 'שונות ואחרים', subcategory: 'ספרים' },
   { keywords: ['pet shop', 'דיוטי כלב', 'וטרינר', 'חיות', 'מזון לחתול', 'מזון לכלב'], category: 'שונות ואחרים', subcategory: 'חיות מחמד' },
-  { keywords: ['עסק facebook', 'עסק פייסבוק', 'עסק פרסום', 'עסק שיווק', 'פייסבוק עסק', 'שיווק facebook', 'שיווק עסק', 'שיווק פייסבוק', 'שיווק פייסביוק'], category: 'עסק', subcategory: 'שיווק' },
+  { keywords: ['עסק facebook', 'עסק פייסבוק', 'עסק פרסום', 'עסק שיווק', 'פייסבוק עסק', 'שיווק facebook', 'שיווק עסק', 'שיווק פייסבוק', 'שיווק פייסביוק'], category: 'עסק', subcategory: 'עלות שיווק' },
   { keywords: ['עסק יועץ מס', 'עסק רואה חשבון'], category: 'עסק', subcategory: 'יועצים' },
-  { keywords: ['עסק'], category: 'עסק', subcategory: 'אחר' },
+  { keywords: ['עסק'], category: 'עסק', subcategory: 'הוצאות תפעוליות' },
   { keywords: ['avis', 'hertz', 'אביס', 'באדג\\\\', 'הרץ'], category: 'תחבורה', subcategory: 'רכב שכור' },
   { keywords: ['bank discount', 'bank leumi', 'beinleumi', 'discount', 'fibi', 'hapoalim', 'igud', 'leumi', 'massad', 'mercantile', 'mizrahi', 'otsar hahayal', 'poalim', 'tefahot', 'union bank', 'yahav', 'אוצר החייל', 'איגוד', 'בנק איגוד', 'בנק דיסקונט', 'בנק הבינלאומי', 'בנק הפועלים', 'בנק יהב', 'בנק לאומי', 'בנק מזרחי', 'בנק מסד', 'דיסקונט', 'הבינלאומי', 'הפועלים', 'יהב', 'לאומי', 'מזרחי טפחות', 'מסד', 'מרכנתיל', 'מרכנתיל דיסקונט', 'פאג'], category: 'הוצאות קבועות', subcategory: 'בנקאות' },
   { keywords: ['altshuler', 'altshuler shaham', 'analyst', 'bitcoin', 'blender', 'clal finance', 'crypto', 'etf', 'excellence', 'ibi', 'interactive brokers', 'meitav', 'meitav dash', 'more investments', 'psagot', 'yelin lapidot', 'איי.בי.איי', 'אלטשולר', 'אנליסט', 'אקסלנס', 'ביטקוין', 'בלנדר', 'השקעה', 'ילין לפידות', 'כלל פיננסים', 'מור', 'מיטב דש', 'מניה', 'מניות', 'פסגות', 'קריפטו'], category: 'שונות ואחרים', subcategory: 'השקעות' },
@@ -409,6 +409,56 @@ function sanitizeForSheet(value) {
     return "'" + value;
   }
   return value;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ORIGINAL-TEXT CELL NOTES
+// Every successful appendRow records the user's raw message (or receipt/voice
+// origin) as a cell note on column F (description) of the new row. Notes are
+// invisible until hovered/clicked — they don't trigger any user-facing message.
+// Capped at 1000 chars (Google Sheets ceiling is ~1024; we leave headroom).
+// All errors are swallowed so a note-write failure never blocks the expense.
+// ════════════════════════════════════════════════════════════════════════════
+var _KFL_NOTE_MAX = 1000;
+
+function _kfl_buildOriginalNote(prefix, rawText, extraLines) {
+  try {
+    var tz = 'Asia/Jerusalem';
+    var stamp = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm');
+    var body = (prefix || 'Original') + ': "' + String(rawText || '').trim() + '" (' + stamp + ')';
+    if (extraLines && extraLines.length) {
+      body += '\n' + extraLines.join('\n');
+    }
+    if (body.length > _KFL_NOTE_MAX) body = body.slice(0, _KFL_NOTE_MAX - 1) + '…';
+    return body;
+  } catch (_e) {
+    return String(rawText || '').slice(0, _KFL_NOTE_MAX);
+  }
+}
+
+function _kfl_setRowOriginalNote(sheet, rowNumber, note) {
+  if (!sheet || !rowNumber || !note) return;
+  try {
+    // Column 6 = F = "פירוט" (description) in the תנועות tab.
+    sheet.getRange(rowNumber, 6).setNote(note);
+    Logger.log('_kfl_setRowOriginalNote: row=' + rowNumber + ' noteLen=' + note.length);
+  } catch (e) {
+    Logger.log('_kfl_setRowOriginalNote err: ' + (e && e.message));
+  }
+}
+
+function _kfl_appendOriginalNoteLine(sheet, rowNumber, line) {
+  if (!sheet || !rowNumber || !line) return;
+  try {
+    var range = sheet.getRange(rowNumber, 6);
+    var existing = range.getNote() || '';
+    var combined = existing ? (existing + '\n' + line) : line;
+    if (combined.length > _KFL_NOTE_MAX) combined = combined.slice(0, _KFL_NOTE_MAX - 1) + '…';
+    range.setNote(combined);
+    Logger.log('_kfl_appendOriginalNoteLine: row=' + rowNumber + ' newLen=' + combined.length);
+  } catch (e) {
+    Logger.log('_kfl_appendOriginalNoteLine err: ' + (e && e.message));
+  }
 }
 
 // ============================================================
@@ -995,15 +1045,45 @@ function handleInteractiveReply_(fromPhone, interactive) {
     var category = decoded.category;
     var subcategory = decoded.subcategory;
     sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', true]);
+    // Original-text cell note — capture the raw user message that triggered
+    // this categorization (preserves provenance even after corrections).
+    try {
+      var __interactiveRow = sheet.getLastRow();
+      var __interactiveRaw = (pending && pending.rawText) || description;
+      _kfl_setRowOriginalNote(sheet, __interactiveRow, _kfl_buildOriginalNote('Original WhatsApp (interactive)', __interactiveRaw, ['Picked: ' + category + ' / ' + subcategory]));
+    } catch (_noteErr) { Logger.log('interactive note err: ' + (_noteErr && _noteErr.message)); }
     // Keep chronological sort
     try {
       var lastRow = sheet.getLastRow();
       if (lastRow > 2) sheet.getRange(2, 1, lastRow - 1, 8).sort({ column: 1, ascending: true });
     } catch (_sortErr) {}
 
+    try { _updateBusinessDashboard_(category, subcategory, monthKey, amount); }
+    catch (_dashErr) { Logger.log('handleInteractiveReply_: dashboard err: ' + (_dashErr && _dashErr.message)); }
+
     // Save to the learning cache so next time we don't ask
     try { _learnedSave(description, { category: category, subcategory: subcategory }, 'user'); }
     catch (_lsErr) { Logger.log('handleInteractiveReply_: learnedSave failed: ' + _lsErr); }
+
+    // TASK 1 + 4: audit log + anti-degradation guard.
+    var __needsReview = false;
+    try {
+      var __priorCorrections = _countCorrectionsForText_(description);
+      if (__priorCorrections >= 2) __needsReview = true;
+      _logMLAudit_({
+        user_text: description,
+        amount: amount,
+        final_category: category,
+        final_subcategory: subcategory,
+        via: 'ambiguity_picked',
+        user_correction: category + ' / ' + subcategory,
+        needs_review: __needsReview,
+        from_phone: fromPhone
+      });
+      if (__needsReview) {
+        _adminAlertOnce_('🚨 צריך בדיקה ידנית — "' + description + '" תוקן ' + (__priorCorrections + 1) + ' פעמים.', fromPhone);
+      }
+    } catch (_auditErr) { Logger.log('handleInteractiveReply_ audit: ' + _auditErr.message); }
 
     // Clear pending
     try { PropertiesService.getScriptProperties().deleteProperty(pendingKey); } catch (_dpErr) {}
@@ -1053,15 +1133,30 @@ function _doPost_orig(e) {
       }
 
       Logger.log('_doPost_orig: calling processExpense');
-      const result = processExpense(text, from);
-      Logger.log('_doPost_orig: processExpense returned reply="' + (result && result.reply) + '" ambiguousSent=' + (result && result.ambiguousSent));
+      var result = null;
+      try {
+        result = processExpense(text, from);
+      } catch (_peErr) {
+        Logger.log('_doPost_orig: processExpense THREW ' + (_peErr && _peErr.stack || _peErr));
+        result = { reply: '😬 משהו השתבש בעיבוד: ' + (_peErr && _peErr.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
+      }
+      Logger.log('_doPost_orig: processExpense returned reply="' + (result && result.reply ? String(result.reply).slice(0, 100) : '(none)') + '" ambiguousSent=' + (result && result.ambiguousSent));
       // If the bot already sent an interactive list (ambiguous case), the user
       // will respond via interactive — no text reply needed here.
       if (result && result.ambiguousSent) {
         Logger.log('_doPost_orig: ambiguous list sent inline, skipping text reply');
-      } else if (result && result.reply) {
-        sendWhatsAppMessage(from, result.reply);
-        Logger.log('_doPost_orig: sendWhatsAppMessage done');
+      } else {
+        var replyText = (result && result.reply) ? result.reply : '✓ נרשם.';
+        try {
+          var sendRes = sendWhatsAppMessage(from, replyText);
+          if (sendRes && sendRes.ok === false) {
+            Logger.log('_doPost_orig: sendWhatsAppMessage NOT OK: ' + JSON.stringify(sendRes));
+          } else {
+            Logger.log('_doPost_orig: sendWhatsAppMessage done');
+          }
+        } catch (_sendErr) {
+          Logger.log('_doPost_orig: sendWhatsAppMessage THREW ' + (_sendErr && _sendErr.stack || _sendErr));
+        }
       }
     }
   } catch (err) {
@@ -1258,6 +1353,7 @@ function processExpense(text, fromPhone) {
                 var __hPLast = __hPSheet.getLastRow();
                 if (__hPLast > 2) __hPSheet.getRange(2, 1, __hPLast - 1, 8).sort({ column: 1, ascending: true });
               } catch (__hPSortErr) {}
+              try { _updateBusinessDashboard_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount); } catch (__hPDashErr) { Logger.log('smart_pending dashboard err: ' + (__hPDashErr && __hPDashErr.message)); }
               return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון 📊\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
             }
           } catch (__hPWriteErr) {
@@ -1448,6 +1544,12 @@ function processExpense(text, fromPhone) {
     let runningTotal = 0;
 
     // === AMBIGUITY DETECTION (single-item case only — multi-item batches skip this) ===
+    // Confidence tiers (TASK 3):
+    //   >= 0.85  → write directly, no preliminary message
+    //   0.70-0.85 → write directly + soft "💡 לא הייתי בטוח 100%" hint
+    //   0.40-0.70 → interactive list with 3 options (AI top + 2 alts)
+    //   < 0.40 / בלתי מזוהה → interactive list with 5+ options
+    var __softHintTail = '';
     if (parsed.items.length === 1 && fromPhone) {
       var soleItem = parsed.items[0];
       var earlyCached = _learnedLookup(soleItem.description);
@@ -1455,6 +1557,22 @@ function processExpense(text, fromPhone) {
       var hasKeywordMatch = earlyKeywordMatch && !(earlyKeywordMatch.category === DEFAULT_CATEGORY.category &&
                                                     earlyKeywordMatch.subcategory === DEFAULT_CATEGORY.subcategory);
       var keywordOrCached = earlyCached || (hasKeywordMatch ? earlyKeywordMatch : null);
+
+      // Audit: keyword/cached path (logged here, AI path logs further down)
+      if (keywordOrCached) {
+        try {
+          _logMLAudit_({
+            user_text: soleItem.description,
+            amount: Math.abs(soleItem.amount),
+            keyword_match_category: hasKeywordMatch ? earlyKeywordMatch.category : '',
+            keyword_match_subcategory: hasKeywordMatch ? earlyKeywordMatch.subcategory : '',
+            final_category: keywordOrCached.category,
+            final_subcategory: keywordOrCached.subcategory,
+            via: earlyCached ? 'cached' : 'keyword',
+            from_phone: fromPhone
+          });
+        } catch (_auditErr) {}
+      }
 
       if (!keywordOrCached) {
         var apiKeyAvail = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
@@ -1464,24 +1582,59 @@ function processExpense(text, fromPhone) {
           try { aiRich = _aiCategorizeRich(soleItem.description); } catch (_aiErr) { Logger.log('processExpense: AI rich error: ' + _aiErr.message); }
         }
 
-        var CONFIDENCE_THRESHOLD = 0.7;
-        var confidentAI = aiRich && aiRich.category && aiRich.category !== 'בלתי מזוהה' &&
-                          typeof aiRich.confidence === 'number' && aiRich.confidence >= CONFIDENCE_THRESHOLD;
+        var aiConf = (aiRich && typeof aiRich.confidence === 'number') ? aiRich.confidence : 0;
+        var aiOK = aiRich && aiRich.category && aiRich.category !== 'בלתי מזוהה';
+        var TIER_DIRECT     = 0.85;
+        var TIER_SOFT       = 0.70;
+        var TIER_LIST_SMALL = 0.40;
 
-        if (confidentAI) {
+        if (aiOK && aiConf >= TIER_DIRECT) {
+          // Tier A: write directly, no preliminary, no soft hint.
           try { _learnedSave(soleItem.description, { category: aiRich.category, subcategory: aiRich.subcategory }, 'ai'); } catch (_lsErr) {}
-        } else {
           try {
-            var predictions = _predictTopCategories(soleItem.description, 8);
+            _logMLAudit_({
+              user_text: soleItem.description,
+              amount: Math.abs(soleItem.amount),
+              ai_category: aiRich.category,
+              ai_confidence: aiConf,
+              final_category: aiRich.category,
+              final_subcategory: aiRich.subcategory,
+              via: 'ai',
+              from_phone: fromPhone
+            });
+          } catch (_e) {}
+        } else if (aiOK && aiConf >= TIER_SOFT) {
+          // Tier B: write directly with soft hint appended to the reply.
+          try { _learnedSave(soleItem.description, { category: aiRich.category, subcategory: aiRich.subcategory }, 'ai'); } catch (_lsErr) {}
+          __softHintTail = '\n\n💡 לא הייתי בטוח 100% — אם לא נכון, שלח/י "קטגוריה X"';
+          try {
+            _logMLAudit_({
+              user_text: soleItem.description,
+              amount: Math.abs(soleItem.amount),
+              ai_category: aiRich.category,
+              ai_confidence: aiConf,
+              final_category: aiRich.category,
+              final_subcategory: aiRich.subcategory,
+              via: 'ai',
+              from_phone: fromPhone
+            });
+          } catch (_e) {}
+        } else {
+          // Tier C/D: interactive list (3 if conf>=0.4, else 5)
+          var listSize = (aiOK && aiConf >= TIER_LIST_SMALL) ? 3 : 5;
+          try {
+            var predictions = _predictTopCategories(soleItem.description, Math.max(listSize, 5));
             if (aiRich && aiRich.category && aiRich.category !== 'בלתי מזוהה') {
               var aiPick = { category: aiRich.category, subcategory: aiRich.subcategory, isIncome: false, confidence: aiRich.confidence };
               var filtered = [aiPick];
-              for (var pp = 0; pp < predictions.length && filtered.length < 8; pp++) {
+              for (var pp = 0; pp < predictions.length && filtered.length < listSize; pp++) {
                 var p = predictions[pp];
                 if (p.category === aiPick.category && p.subcategory === aiPick.subcategory) continue;
                 filtered.push(p);
               }
               predictions = filtered;
+            } else {
+              predictions = predictions.slice(0, listSize);
             }
             var sections = _buildCategoryListSections(predictions, Math.abs(soleItem.amount), soleItem.description);
             var pendingKey = 'pending:' + fromPhone;
@@ -1504,7 +1657,17 @@ function processExpense(text, fromPhone) {
               'בחר/י',
               sections
             );
-            Logger.log('processExpense: sent interactive list for ambiguous "' + soleItem.description + '" aiConf=' + (aiRich && aiRich.confidence));
+            try {
+              _logMLAudit_({
+                user_text: soleItem.description,
+                amount: Math.abs(soleItem.amount),
+                ai_category: aiRich ? aiRich.category : '',
+                ai_confidence: aiConf,
+                via: 'ambiguity_list_sent',
+                from_phone: fromPhone
+              });
+            } catch (_e) {}
+            Logger.log('processExpense: sent interactive list (' + listSize + ' opts) for "' + soleItem.description + '" aiConf=' + aiConf);
             return { ambiguousSent: true };
           } catch (ambErr) {
             Logger.log('processExpense: ambiguity-list failed, falling through: ' + (ambErr && ambErr.stack || ambErr));
@@ -1535,6 +1698,11 @@ function processExpense(text, fromPhone) {
       }
       if (fx && fx.note) {
         try { setDashboardNoteForTransaction_(matched.category, matched.subcategory, monthKey, fx.note); } catch (eN) { Logger.log('note err: ' + eN.message); }
+      }
+      try {
+        _updateBusinessDashboard_(matched.category, matched.subcategory, monthKey, finalAmount);
+      } catch (_dashErr) {
+        Logger.log('processExpense: dashboard update err: ' + (_dashErr && _dashErr.message));
       }
       try { _updateNoteForLastTransaction(); } catch(_e){}
       const emoji = matched.isIncome ? '💵' : '💸';
@@ -1589,6 +1757,7 @@ function processExpense(text, fromPhone) {
         __anomalyTail +
         __budgetTail +
         __streakTail +
+        (__softHintTail || '') +
         '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.' +
         '\nכתוב "סיכום" לראות איפה אתה עומד החודש.'
       };
@@ -1600,26 +1769,67 @@ function processExpense(text, fromPhone) {
 }
 
 // Rough fixed-rate conversion table — used when user writes "50$ amazon" without ILS amount.
-// Rates conservative for late 2025/early 2026. Bot prefers user-supplied ILS amount when present.
-var KFL_FX_RATES = {
+// Rates are 2026 estimates. Bot prefers user-supplied ILS amount when present.
+// Each rate can be overridden via Script Properties: FX_RATE_USD, FX_RATE_EUR,
+// FX_RATE_GBP, FX_RATE_CAD, FX_RATE_AUD, FX_RATE_JPY, FX_RATE_CHF.
+// installKesefleBot() surfaces the effective rates in its diagnostics report.
+var KFL_FX_DEFAULTS = {
   USD: 3.65, EUR: 3.95, GBP: 4.65,
-  '$': 3.65, '€': 3.95, '£': 4.65
+  CAD: 2.65, AUD: 2.40, JPY: 0.024, CHF: 4.10
+};
+
+function _kfl_fxRate(code) {
+  if (!code) return null;
+  var k = String(code).toUpperCase().trim();
+  try {
+    var override = PropertiesService.getScriptProperties().getProperty('FX_RATE_' + k);
+    if (override) {
+      var n = parseFloat(override);
+      if (!isNaN(n) && n > 0) {
+        Logger.log('_kfl_fxRate: override FX_RATE_' + k + '=' + n);
+        return n;
+      }
+    }
+  } catch (_e) {}
+  return KFL_FX_DEFAULTS[k] || null;
+}
+
+// KFL_FX_RATES kept for legacy callers (KFL_FX_RATES.USD, KFL_FX_RATES['$']).
+// Built once at script load from current Script Property overrides + defaults.
+var KFL_FX_RATES = {
+  USD: _kfl_fxRate('USD'), EUR: _kfl_fxRate('EUR'), GBP: _kfl_fxRate('GBP'),
+  CAD: _kfl_fxRate('CAD'), AUD: _kfl_fxRate('AUD'), JPY: _kfl_fxRate('JPY'), CHF: _kfl_fxRate('CHF'),
+  '$': _kfl_fxRate('USD'), '€': _kfl_fxRate('EUR'), '£': _kfl_fxRate('GBP'), '¥': _kfl_fxRate('JPY')
 };
 
 function _kfl_fxLookup(symbolOrCode) {
   if (!symbolOrCode) return null;
-  var k = String(symbolOrCode).toUpperCase().trim();
-  if (KFL_FX_RATES[k]) return KFL_FX_RATES[k];
-  if (/דולר/i.test(symbolOrCode)) return KFL_FX_RATES.USD;
-  if (/יורו|אירו/i.test(symbolOrCode)) return KFL_FX_RATES.EUR;
-  if (/פאונד/i.test(symbolOrCode)) return KFL_FX_RATES.GBP;
+  var raw = String(symbolOrCode).trim();
+  var k = raw.toUpperCase();
+  // Always read fresh so Script Property overrides take effect without re-deploy.
+  if (k === '$') return _kfl_fxRate('USD');
+  if (k === '€') return _kfl_fxRate('EUR');
+  if (k === '£') return _kfl_fxRate('GBP');
+  if (k === '¥') return _kfl_fxRate('JPY');
+  if (k === 'USD' || k === 'EUR' || k === 'GBP' || k === 'CAD' || k === 'AUD' || k === 'JPY' || k === 'CHF') {
+    return _kfl_fxRate(k);
+  }
+  // Hebrew currency names — most specific first to avoid "אוסטרלי" matching after "דולר אוסטרלי".
+  if (/דולר\s*קנדי|קנדי/i.test(raw)) return _kfl_fxRate('CAD');
+  if (/דולר\s*אוסטרלי|אוסטרלי/i.test(raw)) return _kfl_fxRate('AUD');
+  if (/דולר/i.test(raw)) return _kfl_fxRate('USD');
+  if (/יורו|אירו/i.test(raw)) return _kfl_fxRate('EUR');
+  if (/פאונד/i.test(raw)) return _kfl_fxRate('GBP');
+  if (/יין/i.test(raw)) return _kfl_fxRate('JPY');
+  if (/פרנק/i.test(raw)) return _kfl_fxRate('CHF');
   return null;
 }
 
 function parseForeignCurrencyHint(text) {
   if (!text) return null;
   var s = String(text);
-  var foreignRe = /(\$|€|£|usd|eur|gbp|דולר|דולרים|יורו|אירו|פאונד)/i;
+  // Broader currency detection — symbols, ISO codes, Hebrew names.
+  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק)/i;
   if (!foreignRe.test(s)) return null;
 
   // Path A — user gave both amounts (e.g. "50$ amazon 180 שח")
@@ -1629,18 +1839,19 @@ function parseForeignCurrencyHint(text) {
     var ilsAmount = Number(String(m[1]).replace(/,/g, ''));
     if (!isNaN(ilsAmount) && ilsAmount > 0) {
       var note = s.trim();
-      var fxBlockRe = /(\$|€|£|\d)[^,\n]{0,80}?(שקל|ש["״']?ח|nis|ils)/i;
+      var fxBlockRe = /(\$|€|£|¥|\d)[^,\n]{0,80}?(שקל|ש["״']?ח|nis|ils)/i;
       var blockMatch = s.match(fxBlockRe);
       if (blockMatch && blockMatch[0].length < note.length) note = blockMatch[0].trim();
-      var cleanedTextA = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|usd|eur|gbp|דולר(?:ים)?|יורו|אירו|פאונד|שקל(?:ים)?|ש["״']?ח|nis|ils)/gi, '').replace(/[\\\/]+/g, ' ').replace(/\s+/g, ' ').trim();
+      var cleanedTextA = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק|שקל(?:ים)?|ש["״']?ח|nis|ils)/gi, '').replace(/[\\\/]+/g, ' ').replace(/\s+/g, ' ').trim();
       return { ilsAmount: ilsAmount, note: note, cleanedText: cleanedTextA, autoConverted: false };
     }
   }
 
   // Path B — auto-convert from foreign currency using fixed rates.
-  // Patterns: "50$ amazon", "$50 amazon", "50 usd amazon", "50 דולר", "12 יורו spotify"
-  var foreignAmountRe = /(\d+(?:[.,]\d+)?)\s*(\$|€|£|usd|eur|gbp|דולר(?:ים)?|יורו|אירו|פאונד)/i;
-  var foreignSymRe = /(\$|€|£)\s*(\d+(?:[.,]\d+)?)/i;
+  // Patterns: "50$ amazon", "$50 amazon", "50 usd amazon", "50 דולר", "12 יורו spotify",
+  // "100 cad uber", "5000 jpy sushi", "80 chf hotel"
+  var foreignAmountRe = /(\d+(?:[.,]\d+)?)\s*(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/i;
+  var foreignSymRe = /(\$|€|£|¥)\s*(\d+(?:[.,]\d+)?)/i;
   var fm = s.match(foreignAmountRe) || s.match(foreignSymRe);
   if (!fm) return null;
   var amount, sym;
@@ -1653,8 +1864,9 @@ function parseForeignCurrencyHint(text) {
   var rate = _kfl_fxLookup(sym);
   if (!rate) return null;
   var converted = Math.round(amount * rate * 100) / 100;
-  var noteB = sym + ' ' + amount + ' → ₪' + converted;
-  var cleanedTextB = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|usd|eur|gbp|דולר(?:ים)?|יורו|אירו|פאונד)/gi, '').replace(/(\$|€|£)\s*\d+(?:[.,]\d+)?/gi, '').replace(/\s+/g, ' ').trim();
+  var noteB = sym + ' ' + amount + ' → ₪' + converted + ' (שער ' + rate + ')';
+  var cleanedTextB = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/gi, '').replace(/(\$|€|£|¥)\s*\d+(?:[.,]\d+)?/gi, '').replace(/\s+/g, ' ').trim();
+  Logger.log('parseForeignCurrencyHint: ' + amount + ' ' + sym + ' * ' + rate + ' = ₪' + converted);
   return { ilsAmount: converted, note: noteB, cleanedText: cleanedTextB, autoConverted: true, fxRate: rate, foreignAmount: amount, foreignSymbol: sym };
 }
 
@@ -1671,8 +1883,11 @@ function parseAmountAndDescription(text) {
   if (nums.length === 0) return null;
   var note = t.replace(/[\d.,+]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!note) note = 'ללא פירוט';
+  // originalText preserves the EXACT raw input so callers can save it as a
+  // cell note in the transactions sheet. processExpense overrides this with
+  // the true raw message (before FX conversion) right after calling us.
   return {
-    items: nums.map(function(n){ return { amount: n, description: note }; })
+    items: nums.map(function(n){ return { amount: n, description: note, originalText: t }; })
   };
 }
 
@@ -1801,6 +2016,18 @@ function matchCategorySmart(text) {
     Logger.log('matchCategorySmart: cache hit "' + text + '" → ' + cached.subcategory);
     return cached;
   }
+
+  // Step 1.5: Auto Synonyms tab (LLM-expanded synonyms from cronSynonymExpansion).
+  // Checked BEFORE static CATEGORY_MAP so newly-learned variations win.
+  try {
+    if (typeof _autoSynonymLookup_ === 'function') {
+      var synHit = _autoSynonymLookup_(text);
+      if (synHit) {
+        Logger.log('matchCategorySmart: auto-synonym hit "' + text + '" → ' + synHit.subcategory);
+        return synHit;
+      }
+    }
+  } catch (_synErr) { Logger.log('matchCategorySmart auto-syn err: ' + _synErr.message); }
 
   // Step 2: keyword maps (CATEGORY_MAP + BUSINESS_CATEGORY_MAP)
   var matched = matchCategory(text);
@@ -1981,7 +2208,13 @@ function _aiCategorizeRich(text) {
     var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
     if (!apiKey) return null;
 
-    var userExamples = _loadRecentUserCorrections(10);
+    // Smart few-shot: top-12 high-signal corrections, most-similar first.
+    // Falls back to the original last-10 reader if the smart picker fails.
+    var userExamples = null;
+    try { userExamples = _buildSmartFewShot_(text); } catch (_sfsErr) { Logger.log('smart few-shot err: ' + _sfsErr.message); }
+    if (!userExamples || !userExamples.length) {
+      try { userExamples = _loadRecentUserCorrections(10); } catch (_lrErr) { userExamples = []; }
+    }
     var userExamplesBlock = '';
     if (userExamples && userExamples.length) {
       var lines = [];
@@ -2672,6 +2905,26 @@ function _handleCategoryCorrection_(fromPhone, text) {
 
     _learnedSave(pend.originalText, { category: pend.newCategory, subcategory: pend.newCategory }, 'user-correction');
 
+    // TASK 1 + 4: audit log + anti-degradation guard
+    var __needsReviewCor = false;
+    try {
+      var __priorCor = _countCorrectionsForText_(pend.originalText);
+      if (__priorCor >= 2) __needsReviewCor = true;
+      _logMLAudit_({
+        user_text: pend.originalText,
+        amount: pend.amount,
+        final_category: pend.newCategory,
+        final_subcategory: pend.newCategory,
+        via: 'manual_correction',
+        user_correction: pend.newCategory,
+        needs_review: __needsReviewCor,
+        from_phone: fromPhone
+      });
+      if (__needsReviewCor) {
+        _adminAlertOnce_('🚨 צריך בדיקה ידנית — "' + pend.originalText + '" תוקן ' + (__priorCor + 1) + ' פעמים.', fromPhone);
+      }
+    } catch (_auditErr2) { Logger.log('_handleCategoryCorrection_ audit: ' + _auditErr2.message); }
+
     var llmTail = '';
     try {
       var extracted = _learnExpandedKeywords_(pend.originalText, pend.newCategory);
@@ -3113,8 +3366,12 @@ function getDictionaryLink() {
 
 function sendWhatsAppMessage(to, message) {
   if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
-    Logger.log('WhatsApp token not configured - skipping reply');
-    return;
+    Logger.log('sendWhatsAppMessage: token not configured - skipping reply');
+    return { ok: false, reason: 'no_token' };
+  }
+  if (!to || !message) {
+    Logger.log('sendWhatsAppMessage: missing to=' + to + ' messageLen=' + (message ? String(message).length : 0));
+    return { ok: false, reason: 'missing_args' };
   }
 
   const url = 'https://graph.facebook.com/v21.0/' + WHATSAPP_PHONE_NUMBER_ID + '/messages';
@@ -3122,9 +3379,10 @@ function sendWhatsAppMessage(to, message) {
     messaging_product: 'whatsapp',
     to: to,
     type: 'text',
-    text: { body: message }
+    text: { body: String(message).slice(0, 4096) }
   };
 
+  Logger.log('sendWhatsAppMessage: to=' + to + ' len=' + String(message).length);
   const response = UrlFetchApp.fetch(url, {
     method: 'post',
     headers: {
@@ -3135,7 +3393,14 @@ function sendWhatsAppMessage(to, message) {
     muteHttpExceptions: true
   });
 
-  Logger.log('WhatsApp response: ' + response.getContentText());
+  var code = response.getResponseCode();
+  var body = response.getContentText();
+  Logger.log('sendWhatsAppMessage: code=' + code + ' body=' + body.slice(0, 500));
+  if (code < 200 || code >= 300) {
+    Logger.log('sendWhatsAppMessage: META REJECTED to=' + to + ' code=' + code);
+    return { ok: false, code: code, body: body };
+  }
+  return { ok: true, code: code };
 }
 
 // ============================================================
@@ -3417,6 +3682,74 @@ function syncEverything() {
   } catch(e) { summary.push('✗ Migration: ' + e.message); }
   Logger.log(summary.join('\n'));
   return summary.join(' | ');
+}
+
+var _BIZ_DASH_SUBS = {
+  'מחזור': 'מחזור',
+  'עלות חומרי גלם': 'עלות חומרי גלם',
+  'עלות שיווק': 'עלות שיווק',
+  'שיווק': 'עלות שיווק',
+  'משלוחים והתקנות': 'משלוחים והתקנות',
+  'הוצאות תפעוליות': 'הוצאות תפעוליות',
+  'יועצים': 'הוצאות תפעוליות',
+  'אחר': 'הוצאות תפעוליות',
+  'שונות': 'הוצאות תפעוליות',
+  'שונות עסק': 'הוצאות תפעוליות'
+};
+
+function _normalizeBizSub_(subcategory) {
+  var s = String(subcategory || '').trim();
+  return _BIZ_DASH_SUBS[s] || null;
+}
+
+function _updateBusinessDashboard_(category, subcategory, monthKey, amount) {
+  if (!amount || amount <= 0) return false;
+  if (category !== 'עסק') return false;
+  var canonSub = _normalizeBizSub_(subcategory);
+  if (!canonSub) {
+    Logger.log('_updateBusinessDashboard_: no canon sub for "' + subcategory + '" - skip');
+    return false;
+  }
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var monthIdx = parseInt((monthKey || '').split('-')[1], 10);
+  var monthLabel = (!isNaN(monthIdx) && monthIdx >= 1 && monthIdx <= 12) ? hebMonths[monthIdx - 1] : null;
+  if (!monthLabel) {
+    Logger.log('_updateBusinessDashboard_: bad monthKey "' + monthKey + '"');
+    return false;
+  }
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var dashNames = ['מאזן חברה 2026', 'מאזן חברה'];
+  for (var d = 0; d < dashNames.length; d++) {
+    var ds = ss.getSheetByName(dashNames[d]);
+    if (!ds) continue;
+    var dvals = ds.getDataRange().getValues();
+    for (var r = 0; r < dvals.length; r++) {
+      if (String(dvals[r][0] || '').trim() !== canonSub) continue;
+      for (var hr = 0; hr < r; hr++) {
+        for (var hc = 0; hc < dvals[hr].length; hc++) {
+          if (String(dvals[hr][hc] || '').trim() !== monthLabel) continue;
+          var cell = ds.getRange(r + 1, hc + 1);
+          var hasFormula = false;
+          try {
+            var f = cell.getFormula();
+            if (f && String(f).indexOf('=') === 0) hasFormula = true;
+          } catch (_fErr) {}
+          if (hasFormula) {
+            Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has formula - preserved');
+            return false;
+          }
+          var existingRaw = String(cell.getValue() == null ? '' : cell.getValue());
+          var existing = parseFloat(existingRaw.replace(/[₪,\s]/g, '')) || 0;
+          var next = existing + Math.abs(amount);
+          cell.setValue(next);
+          Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' ' + existing + ' + ' + amount + ' = ' + next + ' (sub=' + canonSub + ', month=' + monthLabel + ')');
+          return true;
+        }
+      }
+    }
+  }
+  Logger.log('_updateBusinessDashboard_: row "' + canonSub + '" not found in dashboards');
+  return false;
 }
 
 function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteText) {
@@ -6364,3 +6697,383 @@ function _familyNormalizeMember_(raw) {
   return map[m] || raw;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🧠 ML AUDIT + SMART FEW-SHOT + SYNONYM EXPANSION (audit-driven learning)
+// Added 2026-05-18. Five tasks:
+//   1) _logMLAudit_         — append per-decision events to "ML Audit" tab
+//   2) _buildSmartFewShot_  — pick top-12 high-signal examples by relevance
+//   3) Confidence tiers     — 0.85 direct / 0.7 soft / 0.4 list-3 / <0.4 list-5
+//   4) Anti-degradation     — flag >=3 corrections, ping admin
+//   5) cronSynonymExpansion — daily LLM synonym expansion → "Auto Synonyms"
+// All flows are best-effort: any failure is swallowed so they NEVER block the
+// main expense write.
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _ML_AUDIT_TAB        = 'ML Audit';
+var _AUTO_SYN_TAB        = 'Auto Synonyms';
+var _ML_AUDIT_HEADERS    = ['timestamp','user_text','amount','keyword_match_category','keyword_match_subcategory','ai_category','ai_confidence','final_category','final_subcategory','via','user_correction','needs_review','from_phone'];
+var _AUTO_SYN_HEADERS    = ['synonym','canonical_text','category','subcategory','source','count','updated_at'];
+var _AUTO_SYN_CACHE      = null;
+var _AUTO_SYN_LOADED_AT  = 0;
+
+// --- 1) ML Audit ----------------------------------------------------------
+
+function _ensureMLAuditSheet_() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sh = ss.getSheetByName(_ML_AUDIT_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(_ML_AUDIT_TAB);
+    sh.appendRow(_ML_AUDIT_HEADERS);
+    try { sh.setFrozenRows(1); } catch (_) {}
+    try { sh.getRange(1, 1, 1, _ML_AUDIT_HEADERS.length).setFontWeight('bold'); } catch (_) {}
+  }
+  return sh;
+}
+
+/**
+ * Append one learning event. eventData fields (all optional except user_text):
+ *   user_text, amount, keyword_match_category, keyword_match_subcategory,
+ *   ai_category, ai_confidence, final_category, final_subcategory,
+ *   via ('keyword'|'ai'|'ambiguity_picked'|'manual_correction'|'cached'),
+ *   user_correction (filled when user corrects), needs_review (bool),
+ *   from_phone (string, may be empty)
+ */
+function _logMLAudit_(eventData) {
+  try {
+    if (!eventData || !eventData.user_text) return;
+    var sh = _ensureMLAuditSheet_();
+    var row = [
+      new Date(),
+      String(eventData.user_text || '').slice(0, 240),
+      (typeof eventData.amount === 'number') ? eventData.amount : (eventData.amount || ''),
+      eventData.keyword_match_category || '',
+      eventData.keyword_match_subcategory || '',
+      eventData.ai_category || '',
+      (typeof eventData.ai_confidence === 'number') ? Math.round(eventData.ai_confidence * 1000) / 1000 : '',
+      eventData.final_category || '',
+      eventData.final_subcategory || '',
+      eventData.via || '',
+      eventData.user_correction || '',
+      eventData.needs_review ? 'YES' : '',
+      eventData.from_phone || ''
+    ];
+    sh.appendRow(row);
+  } catch (e) {
+    Logger.log('_logMLAudit_ err: ' + (e && e.message));
+  }
+}
+
+/**
+ * Count how many times this exact user_text has been corrected (final updated
+ * by the user via 'manual_correction' or 'ambiguity_picked' AFTER an ai/keyword
+ * decision). Used by anti-degradation guard. Returns 0 on any failure.
+ */
+function _countCorrectionsForText_(userText) {
+  try {
+    if (!userText) return 0;
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_ML_AUDIT_TAB);
+    if (!sh) return 0;
+    var lastRow = sh.getLastRow();
+    if (lastRow < 2) return 0;
+    var width = Math.max(_ML_AUDIT_HEADERS.length, sh.getLastColumn());
+    var data = sh.getRange(2, 1, lastRow - 1, width).getValues();
+    var needle = String(userText).toLowerCase().trim();
+    var count = 0;
+    for (var i = 0; i < data.length; i++) {
+      var text = String(data[i][1] || '').toLowerCase().trim();
+      if (text !== needle) continue;
+      var via = String(data[i][9] || '');
+      if (via === 'manual_correction' || via === 'ambiguity_picked') count++;
+    }
+    return count;
+  } catch (e) {
+    Logger.log('_countCorrectionsForText_: ' + e.message);
+    return 0;
+  }
+}
+
+function _adminAlertOnce_(message, fromPhone) {
+  try {
+    var admin = PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || fromPhone;
+    if (!admin) return;
+    if (typeof sendWhatsAppMessage === 'function') {
+      sendWhatsAppMessage(admin, message);
+    }
+  } catch (e) {
+    Logger.log('_adminAlertOnce_ err: ' + e.message);
+  }
+}
+
+// --- 2) Smart few-shot construction --------------------------------------
+
+/**
+ * Tokenize a Hebrew/English string for overlap scoring. Strips digits, trims
+ * tokens <2 chars, lowercases.
+ */
+function _smartTokenize_(text) {
+  var t = String(text || '').toLowerCase();
+  t = t.replace(/[0-9.,₪]/g, ' ').replace(/[^֐-׿a-z\s]/g, ' ');
+  var parts = t.split(/\s+/);
+  var out = [];
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    if (p && p.length >= 2) out.push(p);
+  }
+  return out;
+}
+
+/**
+ * Returns up to 12 high-signal few-shot examples for the current text.
+ * Signal score per example = (recencyBoost + multiplicityBoost + lengthBoost
+ * + overlapBoost). After scoring, dedup by lowercased text, sort by score,
+ * take top 12, return ordered most-similar-first.
+ */
+function _buildSmartFewShot_(currentText) {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
+    if (!sh) return [];
+    var lastRow = sh.getLastRow();
+    if (lastRow < 2) return [];
+    var width = Math.max(5, sh.getLastColumn());
+    var data = sh.getRange(2, 1, lastRow - 1, width).getValues();
+
+    // 1) Walk newest→oldest, take last 20 'user*' source rows
+    var rawPicked = [];
+    var sevenDaysMs = 7 * 24 * 3600 * 1000;
+    var nowMs = Date.now();
+    for (var i = data.length - 1; i >= 0 && rawPicked.length < 20; i--) {
+      var src = String(data[i][3] || '').toLowerCase();
+      if (src.indexOf('user') < 0) continue;
+      var kw = String(data[i][0] || '').trim();
+      var cat = String(data[i][1] || '').trim();
+      var sub = String(data[i][2] || '').trim();
+      if (!kw || !cat || !sub) continue;
+      if (cat === 'שונות' || cat === 'שונות ואחרים') continue;
+      var ts = data[i][4];
+      var tsMs = (ts instanceof Date) ? ts.getTime() : (ts ? new Date(ts).getTime() : nowMs);
+      rawPicked.push({ text: kw, category: cat, subcategory: sub, tsMs: tsMs });
+    }
+
+    // 2) Dedup by lowercased text, keep newest record + count multiplicity
+    var byText = {};
+    for (var j = 0; j < rawPicked.length; j++) {
+      var r = rawPicked[j];
+      var key = r.text.toLowerCase();
+      if (!byText[key]) {
+        byText[key] = { text: r.text, category: r.category, subcategory: r.subcategory, tsMs: r.tsMs, multiplicity: 1 };
+      } else {
+        byText[key].multiplicity++;
+        // keep newest timestamp
+        if (r.tsMs > byText[key].tsMs) byText[key].tsMs = r.tsMs;
+      }
+    }
+
+    // 3) Score each by signal components
+    var currentTokens = _smartTokenize_(currentText);
+    var currentTokenSet = {};
+    for (var ct = 0; ct < currentTokens.length; ct++) currentTokenSet[currentTokens[ct]] = true;
+
+    var scored = [];
+    for (var k in byText) {
+      var ex = byText[k];
+      var ageMs = nowMs - ex.tsMs;
+      var recencyBoost = (ageMs <= sevenDaysMs) ? 2.0 : 0.5;
+      var multiplicityBoost = Math.min(3.0, ex.multiplicity);
+      var lengthBoost = Math.min(1.5, ex.text.length / 30);
+      var exTokens = _smartTokenize_(ex.text);
+      var overlap = 0;
+      for (var et = 0; et < exTokens.length; et++) if (currentTokenSet[exTokens[et]]) overlap++;
+      var overlapBoost = overlap * 1.5; // strong signal — most-similar first
+      var score = recencyBoost + multiplicityBoost + lengthBoost + overlapBoost;
+      scored.push({ ex: ex, score: score, overlap: overlap });
+    }
+
+    // 4) Sort by overlap first (so most-similar appears first when injected),
+    //    then by total score
+    scored.sort(function(a, b) {
+      if (b.overlap !== a.overlap) return b.overlap - a.overlap;
+      return b.score - a.score;
+    });
+
+    var top = scored.slice(0, 12).map(function(s) {
+      return { text: s.ex.text, category: s.ex.category, subcategory: s.ex.subcategory };
+    });
+    return top;
+  } catch (e) {
+    Logger.log('_buildSmartFewShot_: ' + e.message);
+    return [];
+  }
+}
+
+// --- 5) Auto Synonyms lookup + cron --------------------------------------
+
+function _ensureAutoSynonymsSheet_() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sh = ss.getSheetByName(_AUTO_SYN_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(_AUTO_SYN_TAB);
+    sh.appendRow(_AUTO_SYN_HEADERS);
+    try { sh.setFrozenRows(1); } catch (_) {}
+    try { sh.getRange(1, 1, 1, _AUTO_SYN_HEADERS.length).setFontWeight('bold'); } catch (_) {}
+  }
+  return sh;
+}
+
+function _autoSynonymsLoad_() {
+  var now = Date.now();
+  if (_AUTO_SYN_CACHE && (now - _AUTO_SYN_LOADED_AT < 60000)) return _AUTO_SYN_CACHE;
+  var map = {};
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_AUTO_SYN_TAB);
+    if (!sh) { _AUTO_SYN_CACHE = map; _AUTO_SYN_LOADED_AT = now; return map; }
+    var lastRow = sh.getLastRow();
+    if (lastRow < 2) { _AUTO_SYN_CACHE = map; _AUTO_SYN_LOADED_AT = now; return map; }
+    var width = Math.max(_AUTO_SYN_HEADERS.length, sh.getLastColumn());
+    var data = sh.getRange(2, 1, lastRow - 1, width).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var syn = String(data[i][0] || '').toLowerCase().trim();
+      var cat = String(data[i][2] || '').trim();
+      var sub = String(data[i][3] || '').trim();
+      if (!syn || !cat || !sub) continue;
+      map[syn] = { category: cat, subcategory: sub };
+    }
+  } catch (e) {
+    Logger.log('_autoSynonymsLoad_: ' + e.message);
+  }
+  _AUTO_SYN_CACHE = map;
+  _AUTO_SYN_LOADED_AT = now;
+  return map;
+}
+
+/**
+ * Public lookup used by matchCategorySmart BEFORE static CATEGORY_MAP.
+ * Returns {category, subcategory, fromAutoSyn:true} or null.
+ */
+function _autoSynonymLookup_(text) {
+  var t = String(text || '').toLowerCase().trim();
+  if (!t) return null;
+  var map = _autoSynonymsLoad_();
+  if (map[t]) return { category: map[t].category, subcategory: map[t].subcategory, fromAutoSyn: true };
+  var bestKw = null, bestLen = 0;
+  for (var kw in map) {
+    if (kw.length > bestLen && t.indexOf(kw) >= 0) { bestKw = kw; bestLen = kw.length; }
+  }
+  if (bestKw) return { category: map[bestKw].category, subcategory: map[bestKw].subcategory, fromAutoSyn: true };
+  return null;
+}
+
+/**
+ * Daily cron — reads top-50 most-corrected texts from ML Audit, asks Claude
+ * for 5 Hebrew synonyms/misspellings each, writes to Auto Synonyms tab. Caps
+ * 50 LLM calls/day (~$0.01–0.02). Skips synonyms already in Auto Synonyms or
+ * exactly matching the canonical text.
+ */
+function cronSynonymExpansion() {
+  try {
+    var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+    if (!apiKey) { Logger.log('cronSynonymExpansion: no API key'); return; }
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_ML_AUDIT_TAB);
+    if (!sh) { Logger.log('cronSynonymExpansion: no ML Audit tab yet'); return; }
+    var lastRow = sh.getLastRow();
+    if (lastRow < 2) { Logger.log('cronSynonymExpansion: ML Audit empty'); return; }
+    var width = Math.max(_ML_AUDIT_HEADERS.length, sh.getLastColumn());
+    var data = sh.getRange(2, 1, lastRow - 1, width).getValues();
+
+    // Aggregate: which texts were corrected most often
+    var aggregate = {};
+    for (var i = 0; i < data.length; i++) {
+      var via = String(data[i][9] || '');
+      if (via !== 'manual_correction' && via !== 'ambiguity_picked') continue;
+      var text = String(data[i][1] || '').toLowerCase().trim();
+      if (!text || text.length < 2) continue;
+      var finalCat = String(data[i][7] || '').trim();
+      var finalSub = String(data[i][8] || '').trim();
+      if (!finalCat || !finalSub) continue;
+      if (!aggregate[text]) aggregate[text] = { text: text, count: 0, category: finalCat, subcategory: finalSub };
+      aggregate[text].count++;
+      // update to the latest finalCategory mapping
+      aggregate[text].category = finalCat;
+      aggregate[text].subcategory = finalSub;
+    }
+
+    var list = [];
+    for (var k in aggregate) list.push(aggregate[k]);
+    list.sort(function(a, b) { return b.count - a.count; });
+    list = list.slice(0, 50);
+    if (!list.length) { Logger.log('cronSynonymExpansion: no corrections to expand'); return; }
+
+    var synSheet = _ensureAutoSynonymsSheet_();
+    var existing = _autoSynonymsLoad_();
+    var addedTotal = 0;
+    var llmCalls = 0;
+
+    for (var p = 0; p < list.length; p++) {
+      var item = list[p];
+      var synonyms = _llmHebrewSynonyms_(item.text, apiKey);
+      llmCalls++;
+      if (!synonyms || !synonyms.length) continue;
+      var nowDate = new Date();
+      for (var s = 0; s < synonyms.length; s++) {
+        var syn = String(synonyms[s] || '').toLowerCase().trim();
+        if (!syn || syn.length < 2 || syn.length > 60) continue;
+        if (syn === item.text) continue;
+        if (existing[syn]) continue;
+        synSheet.appendRow([syn, item.text, item.category, item.subcategory, 'llm', item.count, nowDate]);
+        existing[syn] = { category: item.category, subcategory: item.subcategory };
+        addedTotal++;
+      }
+      Utilities.sleep(250); // be polite to the API
+    }
+    _AUTO_SYN_LOADED_AT = 0; // invalidate cache
+    Logger.log('cronSynonymExpansion: llmCalls=' + llmCalls + ' added=' + addedTotal + ' top=' + list.length);
+  } catch (e) {
+    Logger.log('cronSynonymExpansion err: ' + (e && e.stack || e));
+  }
+}
+
+function _llmHebrewSynonyms_(text, apiKey) {
+  try {
+    var prompt = 'תן/י לי 5 מילים נרדפות, וריאציות איות או שגיאות הקלדה נפוצות בעברית של הביטוי: "' + text + '".\n' +
+      'החזר/י JSON בלבד ללא הסבר: {"synonyms":["...","..."]}\n' +
+      'הימנע/י ממילים גנריות מדי. ללא ניקוד. ללא הסברים.';
+    var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      payload: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: prompt }]
+      }),
+      muteHttpExceptions: true
+    });
+    if (response.getResponseCode() !== 200) return [];
+    var body = JSON.parse(response.getContentText());
+    var reply = (body.content && body.content[0] && body.content[0].text) || '';
+    var m = String(reply).match(/\{[\s\S]*\}/);
+    if (!m) return [];
+    var parsed = JSON.parse(m[0]);
+    if (!parsed.synonyms || !Array.isArray(parsed.synonyms)) return [];
+    return parsed.synonyms;
+  } catch (e) {
+    Logger.log('_llmHebrewSynonyms_: ' + e.message);
+    return [];
+  }
+}
+
+function installSynonymExpansionTrigger() {
+  // Remove existing triggers for this handler before installing a fresh one.
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronSynonymExpansion') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('cronSynonymExpansion').timeBased().everyDays(1).atHour(3).create();
+  Logger.log('installSynonymExpansionTrigger: installed daily trigger @ 03:00');
+  return '✅ trigger installed';
+}
