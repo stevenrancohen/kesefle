@@ -12,6 +12,7 @@
 
 import crypto from 'node:crypto';
 import { decryptRefreshToken } from '../../lib/crypto.js';
+import { rateLimit } from '../../lib/ratelimit.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -88,6 +89,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }
 
+  // IP-based pre-HMAC rate limit. Anyone on the internet can hit this URL,
+  // and even a request that fails signature verification still spends KV
+  // bandwidth on opt-out / idempotency lookups downstream. 120 req/min per
+  // IP is well above what Meta will ever deliver from a single edge and
+  // cuts off any unauthenticated flood at the front door.
+  const rl = await rateLimit(req, { key: 'wa_inbound_ip', limit: 120, windowSec: 60 });
+  if (!rl.ok) {
+    res.setHeader('Retry-After', String(rl.retryAfter || 60));
+    return res.status(429).json({ ok: false, error: 'rate_limit_exceeded' });
+  }
+
   // 2. Read raw body bytes (bodyParser disabled at top of file) for HMAC verification.
   let rawBody;
   try {
@@ -96,12 +108,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: 'body read failed' });
   }
 
+  // HMAC verification. Fails closed: if META_APP_SECRET is not configured,
+  // we refuse every POST. Previously, a missing secret silently bypassed
+  // signature verification entirely — that meant anyone could POST a
+  // crafted webhook payload and trigger the bot's reply/idempotency code
+  // paths against fake messages. Matches the Stripe webhook's behaviour.
   const appSecret = process.env.META_APP_SECRET;
-  if (appSecret) {
-    const sig = req.headers['x-hub-signature-256'];
-    if (!verifyMetaSignature(rawBody, sig, appSecret)) {
-      return res.status(401).json({ ok: false, error: 'invalid signature' });
-    }
+  if (!appSecret) {
+    console.error('webhook rejected — META_APP_SECRET not configured');
+    return res.status(503).json({ ok: false, error: 'webhook_secret_not_configured' });
+  }
+  const sig = req.headers['x-hub-signature-256'];
+  if (!verifyMetaSignature(rawBody, sig, appSecret)) {
+    return res.status(401).json({ ok: false, error: 'invalid signature' });
   }
 
   // 3. Parse the message

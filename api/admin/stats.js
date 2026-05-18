@@ -2,12 +2,12 @@
 // store so the /admin/monitor.html dashboard can render at-a-glance health.
 //
 // Auth: header `Authorization: Bearer <token>` where token === ADMIN_TOKEN env
-// var (falls back to "kesefle2026" if env var not set — matches existing
-// client-gate password). Anyone hitting this without the bearer gets 401.
+// var. Fails closed if the env var is not configured (503), to prevent any
+// pre-set fallback string from acting as a universal admin password.
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'kesefle2026';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 async function kvScan(pattern, maxIterations = 50) {
   let cursor = '0';
