@@ -156,6 +156,24 @@ async function handlerImpl(req, res) {
       } catch (e) {
         console.warn('user_record_merge_failed', e);
       }
+
+      try {
+        const tokRes = await fetch(`${kvUrl}/get/${encodeURIComponent('token:' + userSub)}`, {
+          headers: { 'Authorization': `Bearer ${kvToken}` },
+        });
+        const tokJson = await tokRes.json();
+        const tokRec = tokJson?.result ? JSON.parse(tokJson.result) : null;
+        if (tokRec) {
+          tokRec.sheetId = spreadsheetId;
+          await fetch(`${kvUrl}/set/${encodeURIComponent('token:' + userSub)}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(tokRec),
+          });
+        }
+      } catch (e) {
+        console.warn('token_record_merge_failed', e);
+      }
     } catch (e) {
       console.error('KV save failed', e);
     }

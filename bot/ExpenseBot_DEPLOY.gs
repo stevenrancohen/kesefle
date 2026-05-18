@@ -1,4 +1,85 @@
 /**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║   KESEFLE EXPENSE BOT — SINGLE-FILE DEPLOYMENT                           ║
+ * ║   כסף'לה — בוט הוצאות לקובץ הדבקה יחיד                                   ║
+ * ║                                                                          ║
+ * ║   Version: Phase 2 (family/business multi-user enabled)                  ║
+ * ║   Updated: 2026-05-18                                                    ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║   5-STEP DEPLOYMENT GUIDE / מדריך פריסה ב-5 שלבים                       ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ *   ENGLISH:
+ *     1. Open Apps Script editor (https://script.google.com) and find the
+ *        Kesefle / Expenses Bot project.
+ *     2. Paste this ENTIRE file into ExpenseBot.gs (replace all contents).
+ *        Save with Cmd+S.
+ *     3. Run installKesefleBot() once — it verifies every Script Property,
+ *        installs cron triggers, and prints a ✅ / ⚠️ / ❌ readiness report.
+ *        Authorize when Google asks.
+ *     4. Top-right: Deploy → New deployment → Web app → Execute as: "Me",
+ *        Who has access: "Anyone". Copy the resulting /exec URL.
+ *     5. Paste that URL into Meta WhatsApp → API Setup → Webhook → Callback
+ *        URL. Verify token is "expense_bot_verify_2026". Subscribe "messages".
+ *
+ *   עברית:
+ *     1. פתחו את עורך Apps Script (https://script.google.com) ומצאו את
+ *        פרויקט "Kesefle / Expenses Bot".
+ *     2. הדביקו את כל הקובץ הזה לתוך ExpenseBot.gs (החליפו את כל התוכן),
+ *        ושמרו עם Cmd+S.
+ *     3. הריצו את installKesefleBot() פעם אחת — הפונקציה בודקת כל הגדרה,
+ *        מתקינה את כל הטריגרים, ומדפיסה דו"ח מוכנות. אשרו הרשאות כשגוגל
+ *        מבקש.
+ *     4. למעלה משמאל: Deploy → New deployment → Web app → Execute as "Me",
+ *        Access: "Anyone". העתיקו את כתובת ה-/exec.
+ *     5. הדביקו את הכתובת ב-Meta WhatsApp → API Setup → Webhook → Callback
+ *        URL. אסימון אימות: "expense_bot_verify_2026". הירשמו ל-messages.
+ *
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║   REQUIRED SCRIPT PROPERTIES / הגדרות נדרשות                            ║
+ * ║                                                                          ║
+ * ║   Set in Apps Script: Project Settings ⚙️ → Script Properties → Add     ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ *   REQUIRED:
+ *     WHATSAPP_TOKEN                = "EAAxxxxx..." (Meta API access token)
+ *     WHATSAPP_PHONE_NUMBER_ID      = "1090404180828069"
+ *     SHEET_ID                      = "1UKrXDk...KW-Qo" (master template)
+ *
+ *   OPTIONAL (graceful degradation if missing):
+ *     ANTHROPIC_API_KEY             = "sk-ant-..." (Claude fallback for
+ *                                     ambiguous expenses; bot uses keyword
+ *                                     dictionary if absent)
+ *     KESEFLE_BOT_SECRET            = random 32-char string (multi-tenant
+ *                                     phone linking via Vercel)
+ *
+ *   REQUIRED FOR FAMILY/BUSINESS MODE (Phase 2):
+ *     FAMILY_TEMPLATE_SHEET_ID      = "REPLACE_WITH_FAMILY_TEMPLATE_ID"
+ *       → ONE-TIME SETUP (Steven):
+ *         a. Open the master template Sheet
+ *         b. File → Make a copy → name "Kesefle Family Budget Template"
+ *         c. On main expenses tab, insert column "Member" right after "Date"
+ *         d. Rename that tab to "Family Budget"
+ *         e. Share → Anyone with the link → Viewer
+ *         f. Copy Sheet ID from URL, paste as value for this property
+ *     VERCEL_KV_REST_URL            = "https://...upstash.io"
+ *     VERCEL_KV_REST_TOKEN          = "AXxxx..." (Upstash REST token)
+ *
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║   FILE STRUCTURE (search these tags to navigate):                        ║
+ * ║     //=== CONFIG     — constants + Script Property loads                ║
+ * ║     //=== HELPERS    — sanitize, KV, formatting, utility fns            ║
+ * ║     //=== DOGET      — webhook verification handler                     ║
+ * ║     //=== DOPOST     — webhook message handler + command router        ║
+ * ║     //=== COMMANDS   — personal + family + status + insights commands   ║
+ * ║     //=== CRONS      — weekly digest, daily motivation, etc.            ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ */
+
+//=== CONFIG
+/**
  * 🤖 בוט הוצאות וואצפ → גוגל שיט
  * ================================
  * מערכת מלאה לרישום הוצאות מוואצפ ישירות לתוך השיט "מאזן אישי".

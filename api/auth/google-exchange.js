@@ -25,6 +25,31 @@ import { verifyGoogleIdToken } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { encryptRefreshToken } from '../../lib/crypto.js';
+import { setSessionCookie } from '../_lib/session.js';
+
+async function kvSetTokenRecord(kvUrl, kvToken, userSub, record) {
+  await fetch(`${kvUrl}/set/${encodeURIComponent('token:' + userSub)}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(record),
+  });
+}
+
+async function kvGetSheetId(kvUrl, kvToken, userSub) {
+  try {
+    const r = await fetch(`${kvUrl}/get/${encodeURIComponent('sheet:' + userSub)}`, {
+      headers: { 'Authorization': `Bearer ${kvToken}` },
+    });
+    const j = await r.json();
+    if (j?.result) {
+      const parsed = JSON.parse(j.result);
+      return parsed.spreadsheetId || null;
+    }
+  } catch (e) {
+    log.warn('token_record.sheet_lookup_failed', { error: e.message });
+  }
+  return null;
+}
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
@@ -128,11 +153,30 @@ async function handlerImpl(req, res) {
       });
     } catch (e) {
       console.error('user_record_kv_save_failed', e);
-      // Non-fatal — user can still proceed, but won't be able to use the bot without re-consenting.
     }
   }
 
-  // Return identity + short-lived access token to the browser (NOT the refresh token).
+  if (kvUrl && kvToken && tokens.access_token) {
+    try {
+      const existingSheetId = await kvGetSheetId(kvUrl, kvToken, identity.sub);
+      const tokenRecord = {
+        refreshToken: tokens.refresh_token || null,
+        accessToken: tokens.access_token,
+        expiry: Date.now() + 3500 * 1000,
+        sheetId: existingSheetId,
+      };
+      await kvSetTokenRecord(kvUrl, kvToken, identity.sub, tokenRecord);
+    } catch (e) {
+      log.error('token_record_save_failed', { reqId: req.reqId, error: e.message });
+    }
+  }
+
+  try {
+    setSessionCookie(res, identity.sub);
+  } catch (e) {
+    log.error('session_cookie_failed', { reqId: req.reqId, error: e.message });
+  }
+
   return res.status(200).json({
     ok: true,
     user: {
@@ -144,6 +188,7 @@ async function handlerImpl(req, res) {
     accessToken: tokens.access_token,
     expiresIn: tokens.expires_in,
     hasRefreshToken: !!tokens.refresh_token,
+    redirect: '/dashboard',
   });
 }
 

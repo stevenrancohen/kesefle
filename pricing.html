@@ -282,6 +282,51 @@
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> ייצוא CSV / PDF לרו"ח</li>
         </ul>
         <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="kfl-magnetic mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון <span class="num">14</span> ימים</a>
+        <button type="button" id="kfl-crypto-pay-btn" class="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-amber-500/50 bg-transparent py-3 text-center font-bold text-amber-700 transition hover:bg-amber-500/10 disabled:opacity-60 dark:border-amber-400/50 dark:text-amber-400 dark:hover:bg-amber-400/10">
+          <svg id="kfl-crypto-pay-icon" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 10.5h-3v-3h3a1.5 1.5 0 010 3zm0 4.5h-3v-3h3a1.5 1.5 0 010 3zM12 2a10 10 0 100 20 10 10 0 000-20zm3.4 9.55c.6.5 1.1 1.2 1.1 2.45 0 1.85-1.4 3-3.5 3v1.5h-1.5V17h-1v1.5H9V17H6.5v-1.5h1v-7h-1V7H9V5.5h1.5V7h1V5.5H13V7c1.85.1 3 1.05 3 2.7 0 1.05-.55 1.6-.6 1.85z"/></svg>
+          <span id="kfl-crypto-pay-label">תשלום בקריפטו</span>
+        </button>
+        <p id="kfl-crypto-pay-error" class="mt-2 hidden text-center text-xs font-semibold text-red-600 dark:text-red-400" role="alert"></p>
+        <script>
+          (function () {
+            var btn = document.getElementById('kfl-crypto-pay-btn');
+            var label = document.getElementById('kfl-crypto-pay-label');
+            var icon = document.getElementById('kfl-crypto-pay-icon');
+            var err = document.getElementById('kfl-crypto-pay-error');
+            if (!btn) return;
+            btn.addEventListener('click', async function () {
+              err.classList.add('hidden');
+              err.textContent = '';
+              btn.disabled = true;
+              var origLabel = label.textContent;
+              label.textContent = 'יוצר תשלום…';
+              if (icon) icon.classList.add('animate-spin');
+              try {
+                var r = await fetch('/api/billing/crypto-create', {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ plan: 'premium-monthly' }),
+                });
+                if (r.status === 401) {
+                  window.location.href = '/account?plan=pro&need_login=1';
+                  return;
+                }
+                var j = await r.json().catch(function () { return {}; });
+                if (!r.ok || !j.hosted_url) {
+                  throw new Error(j.error || 'request_failed');
+                }
+                window.location.href = j.hosted_url;
+              } catch (e) {
+                err.textContent = 'לא הצלחנו ליצור תשלום קריפטו. נסו שוב או בחרו בכרטיס אשראי.';
+                err.classList.remove('hidden');
+                btn.disabled = false;
+                label.textContent = origLabel;
+                if (icon) icon.classList.remove('animate-spin');
+              }
+            });
+          })();
+        </script>
       </div>
 
       <!-- family plan -->
