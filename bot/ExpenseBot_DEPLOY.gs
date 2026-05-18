@@ -507,6 +507,24 @@ function doPost(e) {
             }
           }
 
+          // Learning dashboard: לימוד, למד: ..., מחק לימוד N, איפוס לימוד.
+          // Must be BEFORE category correction so its own כן/לא reset
+          // confirmation isn't swallowed by the correction handler.
+          if (typeof _handleLearningCommand_ === "function") {
+            try {
+              var __lrnRes = _handleLearningCommand_(__from_, __text_);
+              if (__lrnRes && __lrnRes.handled) {
+                if (__lrnRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __lrnRes.replyText);
+                }
+                Logger.log('doPost: learning command handled');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_lrnErr) {
+              Logger.log('doPost: learning command error: ' + (_lrnErr && _lrnErr.stack || _lrnErr));
+            }
+          }
+
           // Category correction flow — "קטגוריה X" then "כן/לא". Must be
           // checked early so כן/לא tokens don't get caught by other routers.
           if (typeof _handleCategoryCorrection_ === "function") {
@@ -1013,9 +1031,10 @@ function processExpense(text, fromPhone) {
       var __catCtx = '';
       try { __catCtx = _categoryMonthToDateLine_(matched.category, matched.isIncome); } catch (__ctxErr) {}
       var __subLabel = (matched.subcategory && matched.subcategory !== matched.category) ? '\n🏷️ ' + matched.subcategory : '';
+      var __globalNote = matched.fromGlobal ? '\n📚 למדתי ממשתמשים אחרים' : '';
       return { reply:
         '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
-        '\n📂 ' + matched.category + __subLabel +
+        '\n📂 ' + matched.category + __subLabel + __globalNote +
         (__catCtx ? '\n💡 ' + __catCtx : '') +
         __anomalyTail +
         __streakTail +
@@ -1378,19 +1397,15 @@ function _aiCategorize(text) {
     var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
     if (!apiKey) return null;
 
-    // Refined prompt with broader few-shot coverage (28 examples spanning every
-    // category) + explicit guidance for edge cases. Empirically reduces
-    // misclassification to "שונות / שונות" by ~40% vs the prior 6-example prompt.
-    var prompt = 'אתה מסווג הוצאות ישראליות לקטגוריות. תקבל תיאור חופשי בעברית או באנגלית — תחזיר רק שורה אחת בפורמט "קטגוריה / תת-קטגוריה".\n\n' +
-      'תיאור: "' + String(text || '').slice(0, 200) + '"\n\n' +
-      'כללי:\n' +
-      '1. החזר *רק* את הפלט "קטגוריה / תת-קטגוריה" — בלי הסבר, בלי מירכאות, בלי טקסט נוסף.\n' +
-      '2. אם אין התאמה ברורה — בחר את הקטגוריה הקרובה ביותר. השתמש ב"שונות ואחרים / שונות" רק אם באמת אין שום קצה חוט.\n' +
-      '3. שם של חברה/מוצר/מקום מקבלים את הקטגוריה של החברה (Spotify=אפליקציות, Wolt=אוכל בחוץ, איקאה=רהיטים).\n\n' +
-      'קטגוריות חוקיות:\n' +
+    var systemPrompt =
+      'You are a Hebrew expense categorizer for an Israeli personal-finance bot.\n' +
+      'Categorize the user\'s expense into ONE of the categories listed below. Be accurate.\n' +
+      'If the description matches an example, copy that category exactly.\n' +
+      'Always return STRICT JSON: {"category":"...","subcategory":"..."} — no markdown, no prose, no extra keys.\n\n' +
+      'VALID CATEGORIES (use exact Hebrew name):\n' +
       '  • הכנסות (משכורת, עצמאי, החזרים, בונוסים, מכירות)\n' +
       '  • אוכל (אוכל לבית, אוכל בחוץ, בית קפה, אלכוהול)\n' +
-      '  • תחבורה (תחבורה ציבורית, דלק, חניה, מוסך, השכרת רכב, תיירות, טיסות, מלונות)\n' +
+      '  • תחבורה (תחבורה ציבורית, דלק, חניה, מוסך, השכרת רכב, טיסות, מלונות)\n' +
       '  • הוצאות קבועות (בית, חשבונות, ביטוח, מים, חשמל, גז, ארנונה, וועד בית, אפליקציות, טלקום)\n' +
       '  • קניות (ביגוד, נעליים, חשמל ואלקטרוניקה, רהיטים, קוסמטיקה, ספרים, חיות מחמד, תכשיטים, קניות מקוונות)\n' +
       '  • בידור (סטרימינג, משחקים, יציאות, בילויים, אירועים, ספורט, הופעות, סרטים)\n' +
@@ -1399,37 +1414,45 @@ function _aiCategorize(text) {
       '  • ילדים (גני ילדים, חוגים, בגדים לילדים, צעצועים, ספרי ילדים)\n' +
       '  • ממשלה ומיסים (מס הכנסה, ביטוח לאומי, רישוי, קנסות, דמי גמל)\n' +
       '  • פיננסים (השקעות, עמלות בנקאיות, ניהול תיקים)\n' +
+      '  • שירותים (הובלות, ניקיון, שיפוצים, גינון, חשמלאי, אינסטלטור)\n' +
       '  • עסק (שיווק, יועצים, חומרי גלם, תוכנות עסק, ציוד עסקי)\n' +
-      '  • שונות ואחרים (אם אין התאמה — נדיר)\n\n' +
-      'דוגמאות (לאחר ההכרעה — דוגמה ← תוצאה):\n' +
-      '"wolt תל אביב" ← אוכל / אוכל בחוץ\n' +
-      '"245 שופרסל" ← אוכל / אוכל לבית\n' +
-      '"42 קפה ארומה" ← אוכל / בית קפה\n' +
-      '"1800 ארנונה" ← הוצאות קבועות / בית\n' +
-      '"חברת חשמל" ← הוצאות קבועות / חשמל\n' +
-      '"netflix" ← הוצאות קבועות / אפליקציות\n' +
-      '"chatgpt plus" ← הוצאות קבועות / אפליקציות\n' +
-      '"בנזין סונול" ← תחבורה / דלק\n' +
-      '"רכבת ישראל" ← תחבורה / תחבורה ציבורית\n' +
-      '"פנגו חניה" ← תחבורה / חניה\n' +
-      '"כביש 6" ← תחבורה / כביש 6\n' +
-      '"שיניים מאוחדת" ← בריאות / שיניים\n' +
-      '"רופא פרטי" ← בריאות / רופא פרטי\n' +
-      '"super pharm" ← בריאות / תרופות\n' +
-      '"holmes place" ← בריאות / כושר ומנויים\n' +
-      '"zara" ← קניות / ביגוד\n' +
-      '"קסטרו" ← קניות / ביגוד\n' +
-      '"IKEA" ← קניות / רהיטים\n' +
-      '"חשמלית KSP" ← קניות / חשמל ואלקטרוניקה\n' +
-      '"booking" ← תחבורה / מלונות\n' +
-      '"מלון דן" ← תחבורה / מלונות\n' +
-      '"אל על" ← תחבורה / טיסות\n' +
-      '"הופעה של עומר אדם" ← בידור / יציאות\n' +
-      '"קולנוע יס פלאנט" ← בידור / סרטים\n' +
-      '"חתונה רוני" ← בידור / אירועים\n' +
-      '"גן ילדים שירה" ← ילדים / גני ילדים\n' +
-      '"משכורת" ← הכנסות / משכורת\n' +
-      '"החזר מס" ← הכנסות / החזר מס';
+      '  • שונות ואחרים (RARE — use only when no other category fits)\n\n' +
+      'RULES:\n' +
+      '1. A company/product/place name takes its parent category (Spotify=אפליקציות, Wolt=אוכל בחוץ, IKEA=רהיטים).\n' +
+      '2. Hebrew slang is normal — "סופר"=שופרסל=אוכל לבית, "קפה"=בית קפה, "מוביל"=שירותים.\n' +
+      '3. If ambiguous, pick the CLOSEST category. Never default to שונות unless truly unmatched.\n' +
+      '4. Output keys MUST be in Hebrew (the category and subcategory names).\n\n' +
+      'EXAMPLES:\n' +
+      '"wolt תל אביב" → {"category":"אוכל","subcategory":"אוכל בחוץ"}\n' +
+      '"245 שופרסל" → {"category":"אוכל","subcategory":"אוכל לבית"}\n' +
+      '"42 קפה ארומה" → {"category":"אוכל","subcategory":"בית קפה"}\n' +
+      '"1800 ארנונה" → {"category":"הוצאות קבועות","subcategory":"בית"}\n' +
+      '"חברת חשמל" → {"category":"הוצאות קבועות","subcategory":"חשמל"}\n' +
+      '"netflix" → {"category":"הוצאות קבועות","subcategory":"אפליקציות"}\n' +
+      '"chatgpt plus" → {"category":"הוצאות קבועות","subcategory":"אפליקציות"}\n' +
+      '"בנזין סונול" → {"category":"תחבורה","subcategory":"דלק"}\n' +
+      '"רכבת ישראל" → {"category":"תחבורה","subcategory":"תחבורה ציבורית"}\n' +
+      '"פנגו חניה" → {"category":"תחבורה","subcategory":"חניה"}\n' +
+      '"כביש 6" → {"category":"תחבורה","subcategory":"כביש 6"}\n' +
+      '"מוביל הוצאות בית" → {"category":"שירותים","subcategory":"הובלות"}\n' +
+      '"חשמלאי דחוף" → {"category":"שירותים","subcategory":"חשמלאי"}\n' +
+      '"שיניים מאוחדת" → {"category":"בריאות","subcategory":"שיניים"}\n' +
+      '"רופא פרטי" → {"category":"בריאות","subcategory":"רופא פרטי"}\n' +
+      '"super pharm" → {"category":"בריאות","subcategory":"תרופות"}\n' +
+      '"holmes place" → {"category":"בריאות","subcategory":"כושר ומנויים"}\n' +
+      '"zara" → {"category":"קניות","subcategory":"ביגוד"}\n' +
+      '"IKEA" → {"category":"קניות","subcategory":"רהיטים"}\n' +
+      '"חשמלית KSP" → {"category":"קניות","subcategory":"חשמל ואלקטרוניקה"}\n' +
+      '"booking" → {"category":"תחבורה","subcategory":"מלונות"}\n' +
+      '"אל על" → {"category":"תחבורה","subcategory":"טיסות"}\n' +
+      '"הופעה של עומר אדם" → {"category":"בידור","subcategory":"יציאות"}\n' +
+      '"קולנוע יס פלאנט" → {"category":"בידור","subcategory":"סרטים"}\n' +
+      '"חתונה רוני" → {"category":"בידור","subcategory":"אירועים"}\n' +
+      '"גן ילדים שירה" → {"category":"ילדים","subcategory":"גני ילדים"}\n' +
+      '"משכורת" → {"category":"הכנסות","subcategory":"משכורת"}\n' +
+      '"החזר מס" → {"category":"הכנסות","subcategory":"החזר מס"}';
+
+    var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only.';
 
     var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
       method: 'post',
@@ -1439,9 +1462,10 @@ function _aiCategorize(text) {
         'anthropic-version': '2023-06-01'
       },
       payload: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022',
-        max_tokens: 30,
-        messages: [{ role: 'user', content: prompt }]
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 80,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
       }),
       muteHttpExceptions: true
     });
@@ -1453,11 +1477,21 @@ function _aiCategorize(text) {
 
     var body = JSON.parse(response.getContentText());
     var reply = (body.content && body.content[0] && body.content[0].text) || '';
-    var clean = String(reply).replace(/["״'`]/g, '').trim();
-    var parts = clean.split('/').map(function(s){ return s.trim(); }).filter(Boolean);
-    if (parts.length < 2) return null;
+    var jsonMatch = String(reply).match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      Logger.log('_aiCategorize: no JSON in reply: ' + reply.slice(0, 200));
+      return null;
+    }
+    var parsed;
+    try { parsed = JSON.parse(jsonMatch[0]); }
+    catch (jpErr) { Logger.log('_aiCategorize: JSON parse error: ' + jpErr.message); return null; }
+    if (!parsed.category || !parsed.subcategory) {
+      Logger.log('_aiCategorize: missing keys in JSON: ' + JSON.stringify(parsed));
+      return null;
+    }
+    var parts = [String(parsed.category).trim(), String(parsed.subcategory).trim()];
 
-    var validCats = ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','שונות ואחרים','בריאות','עסק'];
+    var validCats = ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','שונות ואחרים','בריאות','עסק','שירותים','בידור','חינוך','ילדים','ממשלה ומיסים','פיננסים'];
     if (validCats.indexOf(parts[0]) < 0) {
       Logger.log('_aiCategorize: invalid category from AI: ' + parts[0]);
       return null;
@@ -1519,7 +1553,73 @@ function _learnedLookup(text) {
       bestLen = kw.length;
     }
   }
-  return bestKw ? map[bestKw] : null;
+  if (bestKw) return map[bestKw];
+
+  // Fallback: cross-user global hash store (privacy-safe — only hashes shared).
+  var global = _globalLearnLookup_(t);
+  if (global && global.category) {
+    // Cache locally for future calls so we don't hit KV every time.
+    try { _learnedSave(t, global, 'global'); } catch (_e) {}
+    return { category: global.category, subcategory: global.subcategory || global.category, fromGlobal: true };
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CROSS-USER GLOBAL LEARNING (privacy-preserving)
+//
+// When any user confirms a category correction, we hash the description with
+// SHA-256 and store `global_learn:{hash}` → {category, subcategory, count}.
+// Future users sending the EXACT same description benefit immediately.
+//
+// Privacy: SHA-256 is one-way. The original text never leaves the user's bot.
+// Two users typing "מוביל הוצאות בית" produce the same hash → same lookup.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function _sha256Hex_(text) {
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(text || ''), Utilities.Charset.UTF_8);
+  var hex = '';
+  for (var i = 0; i < bytes.length; i++) {
+    var b = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
+    var h = b.toString(16);
+    hex += (h.length === 1 ? '0' : '') + h;
+  }
+  return hex;
+}
+
+function _globalLearnPublish_(text, category, subcategory) {
+  try {
+    var normalized = String(text || '').toLowerCase().trim();
+    if (!normalized || normalized.length < 2) return;
+    if (typeof kvSet !== 'function' || typeof kvGet !== 'function') return;
+    var hash = _sha256Hex_(normalized);
+    var existing = kvGet('global_learn:' + hash);
+    var record = existing && typeof existing === 'object' ? existing : { count: 0 };
+    record.category = category;
+    record.subcategory = subcategory || category;
+    record.count = (record.count || 0) + 1;
+    record.lastSeen = Date.now();
+    kvSet('global_learn:' + hash, record, 0);
+  } catch (e) {
+    Logger.log('_globalLearnPublish_: ' + e.message);
+  }
+}
+
+function _globalLearnLookup_(text) {
+  try {
+    var normalized = String(text || '').toLowerCase().trim();
+    if (!normalized || normalized.length < 2) return null;
+    if (typeof kvGet !== 'function') return null;
+    var hash = _sha256Hex_(normalized);
+    var record = kvGet('global_learn:' + hash);
+    if (record && typeof record === 'object' && record.category) {
+      return { category: record.category, subcategory: record.subcategory || record.category };
+    }
+    return null;
+  } catch (e) {
+    Logger.log('_globalLearnLookup_: ' + e.message);
+    return null;
+  }
 }
 
 function _learnedSave(text, result, source) {
@@ -1546,6 +1646,13 @@ function _learnedSave(text, result, source) {
     }
     sh.appendRow([sanitizeForSheet(t), sanitizeForSheet(result.category), sanitizeForSheet(result.subcategory), sanitizeForSheet(source || 'ai'), new Date()]);
     _learnedCacheLoadedAt = 0; // invalidate
+
+    // Propagate user-confirmed learnings to the global hash store so other
+    // users benefit. Skip AI-fallback writes (low confidence) and global
+    // re-imports (would loop).
+    if (source === 'user-correction' || source === 'user-direct' || source === 'llm-extracted') {
+      try { _globalLearnPublish_(t, result.category, result.subcategory); } catch (_gpErr) {}
+    }
   } catch (e) {
     Logger.log('_learnedSave error: ' + e.message);
   }
@@ -1704,6 +1811,143 @@ function _learnExpandedKeywords_(text, category) {
   } catch (e) {
     Logger.log('Claude learn parse err: ' + e.message);
     return [];
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LEARNING DASHBOARD + MANUAL OVERRIDE COMMANDS
+//
+//   לימוד                            — list last 10 learned terms
+//   למד: "טקסט" = קטגוריה            — direct teach (skips confirmation flow)
+//   מחק לימוד <index>                — delete entry N from the list
+//   איפוס לימוד                      — clear ALL learned data (asks for כן/לא)
+//
+// Indices come from the most recent "לימוד" listing, so the user just numbers
+// from the screen and replies "מחק לימוד 3" without thinking about row IDs.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function _handleLearningCommand_(fromPhone, text) {
+  if (!fromPhone || !text) return null;
+  var trimmed = String(text).trim();
+
+  if (/^(לימוד|learning)$/i.test(trimmed)) {
+    return { handled: true, replyText: _learningListMessage_(fromPhone) };
+  }
+
+  var teachMatch = trimmed.match(/^(?:למד|learn)\s*:\s*["״״״”'](.+?)["״”']\s*[=:]\s*(.+)$/i)
+    || trimmed.match(/^(?:למד|learn)\s+(.+?)\s*=\s*(.+)$/i);
+  if (teachMatch) {
+    var phrase = String(teachMatch[1] || '').trim();
+    var category = String(teachMatch[2] || '').trim();
+    if (!phrase || !category) {
+      return { handled: true, replyText: '🤔 שימוש: למד: "מוביל" = שירותים' };
+    }
+    try {
+      _learnedSave(phrase.toLowerCase(), { category: category, subcategory: category }, 'user-direct');
+      var tail = '';
+      try {
+        var ext = _learnExpandedKeywords_(phrase, category);
+        if (ext && ext.length) tail = '\n🧠 גם הרחבתי ל: ' + ext.join(', ');
+      } catch (_e) {}
+      return { handled: true, replyText: '✅ למדתי: "' + phrase + '" → 📂 ' + category + tail };
+    } catch (e) {
+      return { handled: true, replyText: '😬 שגיאה בלמידה: ' + e.message };
+    }
+  }
+
+  var delMatch = trimmed.match(/^(?:מחק\s+לימוד|delete\s+learning)\s+(\d+)$/i);
+  if (delMatch) {
+    var idx = parseInt(delMatch[1], 10);
+    return { handled: true, replyText: _learningDelete_(fromPhone, idx) };
+  }
+
+  if (/^(איפוס\s+לימוד|reset\s+learning)$/i.test(trimmed)) {
+    CacheService.getScriptCache().put('pendingReset:' + fromPhone, '1', 120);
+    return { handled: true, replyText: '⚠️ למחוק את כל הזיכרון של הבוט?\nכל המילים שלמד יימחקו.\nענה: כן / לא' };
+  }
+
+  // Confirmation for reset (intercepted before general כן/לא)
+  if (/^(כן|yes|y)$/i.test(trimmed)) {
+    var pendingReset = CacheService.getScriptCache().get('pendingReset:' + fromPhone);
+    if (pendingReset) {
+      CacheService.getScriptCache().remove('pendingReset:' + fromPhone);
+      return { handled: true, replyText: _learningReset_() };
+    }
+  }
+  if (/^(לא|no|n)$/i.test(trimmed)) {
+    var pendingReset2 = CacheService.getScriptCache().get('pendingReset:' + fromPhone);
+    if (pendingReset2) {
+      CacheService.getScriptCache().remove('pendingReset:' + fromPhone);
+      return { handled: true, replyText: '✓ ביטלתי. הזיכרון נשאר.' };
+    }
+  }
+
+  return null;
+}
+
+function _learningListMessage_(fromPhone) {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
+    if (!sh || sh.getLastRow() < 2) {
+      return '🧠 הבוט עוד לא למד כלום.\nשלח "למד: <טקסט> = <קטגוריה>" או תקן הוצאה עם "קטגוריה <שם>".';
+    }
+    var n = Math.min(10, sh.getLastRow() - 1);
+    var data = sh.getRange(sh.getLastRow() - n + 1, 1, n, 5).getValues();
+    var lines = ['🧠 10 הדברים האחרונים שלמדתי:\n━━━━━━━━━━━━━━━━━━'];
+    // Track the index→row mapping for "מחק לימוד N"
+    var idxMap = {};
+    for (var i = 0; i < data.length; i++) {
+      var displayIdx = data.length - i;
+      var actualRow = sh.getLastRow() - i;
+      idxMap[displayIdx] = actualRow;
+      var src = data[i][3] || '';
+      var srcEmoji = src === 'user-correction' ? '👤' : src === 'user-direct' ? '🎯' : src === 'llm-extracted' ? '🧠' : src === 'global' ? '📚' : '•';
+      lines.push(displayIdx + '. ' + srcEmoji + ' "' + data[i][0] + '" → ' + data[i][1]);
+    }
+    lines.push('━━━━━━━━━━━━━━━━━━');
+    lines.push('🗑️ למחוק? שלח "מחק לימוד N"');
+    lines.push('♻️ למחוק הכול? שלח "איפוס לימוד"');
+    CacheService.getScriptCache().put('learnIdxMap:' + fromPhone, JSON.stringify(idxMap), 600);
+    return lines.join('\n');
+  } catch (e) {
+    Logger.log('_learningListMessage_: ' + e.message);
+    return '😬 לא הצלחתי לטעון את הזיכרון.';
+  }
+}
+
+function _learningDelete_(fromPhone, idx) {
+  if (!idx || idx < 1) return '🤔 צריך מספר בין 1 ל-10. שלח "לימוד" כדי לראות את הרשימה.';
+  try {
+    var mapStr = CacheService.getScriptCache().get('learnIdxMap:' + fromPhone);
+    if (!mapStr) return '🤔 קודם שלח "לימוד" כדי לראות את הרשימה ואז "מחק לימוד N".';
+    var idxMap = JSON.parse(mapStr);
+    var rowNumber = idxMap[String(idx)];
+    if (!rowNumber) return '🤔 אין פריט ' + idx + ' ברשימה.';
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
+    if (!sh) return '😬 אין גיליון זיכרון.';
+    var deletedTerm = sh.getRange(rowNumber, 1).getValue();
+    sh.deleteRow(rowNumber);
+    _learnedCacheLoadedAt = 0;
+    return '✅ מחקתי: "' + deletedTerm + '"\n💡 שלח "לימוד" לרשימה מעודכנת.';
+  } catch (e) {
+    return '😬 שגיאה במחיקה: ' + e.message;
+  }
+}
+
+function _learningReset_() {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
+    if (!sh) return '🧠 אין מה למחוק.';
+    var count = Math.max(0, sh.getLastRow() - 1);
+    if (count === 0) return '🧠 הזיכרון כבר ריק.';
+    sh.deleteRows(2, count);
+    _learnedCacheLoadedAt = 0;
+    return '✅ ניקיתי ' + count + ' פריטים. הבוט מתחיל ללמוד מאפס.';
+  } catch (e) {
+    return '😬 שגיאה באיפוס: ' + e.message;
   }
 }
 
