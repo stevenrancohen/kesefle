@@ -2560,7 +2560,7 @@ function getEngineStatus() {
       '   ~800ms • $0.0001/קריאה\n\n' +
       '🔒 הכל נשמר ב-Drive שלך. לא אצלנו.';
   } catch (e) {
-    return '❌ לא הצלחתי לקרוא מצב מנוע: ' + e.message;
+    return '😬 לא הצלחתי לקרוא מצב מנוע: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
@@ -2571,7 +2571,7 @@ function getEngineStatus() {
 // in KV, which the webhook + every future bot message uses to route to the right sheet.
 function handleLinkCode_(code, fromPhone) {
   if (!fromPhone) {
-    return '⚠️ לא הצלחתי לזהות את המספר שלך מההודעה. נסה לשלוח שוב מאותו וואטסאפ.';
+    return '😬 לא הצלחתי לזהות את המספר שלך מההודעה\n💡 נסה לשלוח שוב מאותו וואטסאפ';
   }
   var url = KESEFLE_API_BASE + '/api/whatsapp/link?action=confirm';
   var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
@@ -2598,16 +2598,16 @@ function handleLinkCode_(code, fromPhone) {
         'כתבי "עזרה" לרשימת הפקודות המלאה.';
     }
     if (status === 404) {
-      return '⏰ הקוד פג תוקף או לא תקין.\nחזרי ל-https://kesefle.vercel.app/account וצרי קוד חדש (תקף ל-10 דק׳).';
+      return '😬 הקוד פג תוקף או לא תקין\n💡 חזרי ל-https://kesefle.vercel.app/account וצרי קוד חדש (תקף ל-10 דק׳)';
     }
     if (status === 401) {
-      return '🔒 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי). פנה לתמיכה.';
+      return '😬 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי)\n💡 פנה לתמיכה דרך https://kesefle.vercel.app';
     }
     Logger.log('handleLinkCode_: unexpected status=' + status + ' body=' + JSON.stringify(body));
-    return '⚠️ משהו השתבש. נסה שוב או צור קוד חדש ב-https://kesefle.vercel.app/account';
+    return '😬 משהו השתבש בקישור\n💡 נסה שוב או צור קוד חדש ב-https://kesefle.vercel.app/account';
   } catch (e) {
     Logger.log('handleLinkCode_ error: ' + (e && e.stack || e));
-    return '⚠️ שגיאת רשת. נסה שוב בעוד רגע.';
+    return '😬 שגיאת רשת\n💡 ננסה שוב בעוד רגע?';
   }
 }
 
@@ -3595,7 +3595,7 @@ function _handleBudgetCommand_(fromPhone, text) {
 function _budgetsListMessage_(fromPhone) {
   try {
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-    if (!sheet) return '❌ לא נמצאה לשונית "תנועות".';
+    if (!sheet) return '😬 לא נמצאה לשונית "תנועות"\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט';
     var data = sheet.getDataRange().getValues();
     if (!data || data.length < 2) return '📊 אין עדיין מספיק נתונים לתקציבים.';
 
@@ -3692,7 +3692,7 @@ function _budgetsListMessage_(fromPhone) {
     return lines.join('\n');
   } catch (err) {
     Logger.log('_budgetsListMessage_ err: ' + (err && err.stack || err));
-    return '⚠️ שגיאה בבניית רשימת התקציבים: ' + (err && err.message);
+    return '😬 משהו השתבש בבניית רשימת התקציבים: ' + (err && err.message || '') + '\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
@@ -5640,7 +5640,7 @@ function _familyCreate_(fromPhone) {
     newSheetId = copy.getId();
   } catch (e) {
     Logger.log('_familyCreate_: copy failed ' + (e && e.message));
-    return { handled: true, replyText: '❌ לא הצלחתי לשכפל את התבנית: ' + (e && e.message) };
+    return { handled: true, replyText: '😬 לא הצלחתי לשכפל את התבנית: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
   }
 
   var rec = {
@@ -5664,7 +5664,7 @@ function _familyCreate_(fromPhone) {
 function _familyJoinRequest_(fromPhone, familyId) {
   var rec = kvGet('family:' + familyId);
   if (!rec) {
-    return { handled: true, replyText: '❌ קוד משפחה לא נמצא' };
+    return { handled: true, replyText: '😬 קוד משפחה לא נמצא\n💡 ודא/י עם המנהל שהקוד נכון' };
   }
   if (rec.members && rec.members.indexOf(String(fromPhone)) >= 0) {
     return { handled: true, replyText: '✅ אתם כבר חברים במשפחה הזו.' };
@@ -5706,18 +5706,18 @@ function _familyJoinRequest_(fromPhone, familyId) {
 function _familyApprove_(adminPhone, requesterPhone) {
   var familyId = kvGet('family:of:' + adminPhone);
   if (!familyId) {
-    return { handled: true, replyText: '❌ אינך מנהל משפחה.' };
+    return { handled: true, replyText: '😬 אינך מנהל משפחה\n💡 שלח "הקמת משפחה" כדי להקים אחת' };
   }
   var rec = kvGet('family:' + familyId);
   if (!rec) {
-    return { handled: true, replyText: '❌ משפחה לא נמצאה.' };
+    return { handled: true, replyText: '😬 משפחה לא נמצאה\n💡 שלח "הקמת משפחה" כדי להקים אחת' };
   }
   if (String(rec.admin) !== String(adminPhone)) {
-    return { handled: true, replyText: '❌ רק המנהל יכול לאשר.' };
+    return { handled: true, replyText: '😬 רק המנהל יכול לאשר\n💡 בקש מהמנהל לאשר את הבקשה' };
   }
   var pending = kvGet('family:pending:' + familyId + ':' + requesterPhone);
   if (!pending) {
-    return { handled: true, replyText: '❌ אין בקשה ממתינה ממספר זה (או פג תוקף).' };
+    return { handled: true, replyText: '😬 אין בקשה ממתינה ממספר זה (או פג תוקף)\n💡 שלח/י את בקשת ההצטרפות מחדש' };
   }
   if (!rec.members) rec.members = [];
   if (rec.members.indexOf(String(requesterPhone)) < 0) rec.members.push(String(requesterPhone));
@@ -5737,7 +5737,7 @@ function _familyApprove_(adminPhone, requesterPhone) {
 function _familyDeny_(adminPhone, requesterPhone) {
   var familyId = kvGet('family:of:' + adminPhone);
   if (!familyId) {
-    return { handled: true, replyText: '❌ אינך מנהל משפחה.' };
+    return { handled: true, replyText: '😬 אינך מנהל משפחה\n💡 שלח "הקמת משפחה" כדי להקים אחת' };
   }
   kvDel('family:pending:' + familyId + ':' + requesterPhone);
   try {
@@ -5751,15 +5751,15 @@ function _familyDeny_(adminPhone, requesterPhone) {
 function _familyLogExpense_(fromPhone, member, amount, description) {
   var familyId = kvGet('family:of:' + fromPhone);
   if (!familyId) {
-    return { handled: true, replyText: '❌ אינך חבר במשפחה. שלח "הקמת משפחה" או "הצטרפות למשפחה"' };
+    return { handled: true, replyText: '😬 אינך חבר במשפחה\n💡 שלח "הקמת משפחה" או "הצטרפות למשפחה <קוד>"' };
   }
   var rec = kvGet('family:' + familyId);
   if (!rec || !rec.sheetId) {
-    return { handled: true, replyText: '❌ גיליון המשפחה לא נמצא. צרו קשר עם המנהל.' };
+    return { handled: true, replyText: '😬 גיליון המשפחה לא נמצא\n💡 צרו קשר עם המנהל' };
   }
 
   if (!amount || isNaN(amount) || amount <= 0) {
-    return { handled: true, replyText: '❌ סכום לא תקין.' };
+    return { handled: true, replyText: '😬 סכום לא תקין\n💡 תוודא שכתבת את הסכום בתחילת ההודעה' };
   }
 
   var matched = (typeof matchCategorySmart === 'function')
@@ -5771,7 +5771,7 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
     var ss = SpreadsheetApp.openById(rec.sheetId);
     var sheet = ss.getSheetByName('Family Budget');
     if (!sheet) {
-      return { handled: true, replyText: '❌ לא נמצאה לשונית "Family Budget" בגיליון המשפחה.' };
+      return { handled: true, replyText: '😬 לא נמצאה לשונית "Family Budget" בגיליון המשפחה\n💡 המנהל צריך להריץ את ההתקנה הראשונית' };
     }
     var now = new Date();
     sheet.appendRow([
@@ -5783,7 +5783,7 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
     ]);
   } catch (e) {
     Logger.log('_familyLogExpense_: append err ' + (e && e.message));
-    return { handled: true, replyText: '❌ שגיאה בכתיבה לגיליון המשפחה: ' + (e && e.message) };
+    return { handled: true, replyText: '😬 משהו השתבש בכתיבה לגיליון המשפחה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
   }
 
   return { handled: true, replyText:
@@ -5795,24 +5795,24 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
 function _familyReport_(fromPhone) {
   var familyId = kvGet('family:of:' + fromPhone);
   if (!familyId) {
-    return { handled: true, replyText: '❌ אינך חבר במשפחה' };
+    return { handled: true, replyText: '😬 אינך חבר במשפחה\n💡 שלח "הקמת משפחה" או "הצטרפות למשפחה <קוד>"' };
   }
   var rec = kvGet('family:' + familyId);
   if (!rec || !rec.sheetId) {
-    return { handled: true, replyText: '❌ גיליון המשפחה לא נמצא.' };
+    return { handled: true, replyText: '😬 גיליון המשפחה לא נמצא\n💡 צרו קשר עם המנהל' };
   }
 
   var rows;
   try {
     var sheet = SpreadsheetApp.openById(rec.sheetId).getSheetByName('Family Budget');
-    if (!sheet) return { handled: true, replyText: '❌ לא נמצאה לשונית "Family Budget".' };
+    if (!sheet) return { handled: true, replyText: '😬 לא נמצאה לשונית "Family Budget"\n💡 המנהל צריך להריץ את ההתקנה הראשונית' };
     var lastRow = sheet.getLastRow();
     if (lastRow < 2) {
       return { handled: true, replyText: '📊 דו״ח משפחתי — חודש נוכחי\nאין הוצאות החודש.' };
     }
     rows = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
   } catch (e) {
-    return { handled: true, replyText: '❌ שגיאה בקריאה: ' + (e && e.message) };
+    return { handled: true, replyText: '😬 משהו השתבש בקריאה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
   }
 
   var now = new Date();
