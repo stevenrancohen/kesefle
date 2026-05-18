@@ -168,8 +168,55 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
 <link rel="stylesheet" href="/assets/futuristic.css" />
+
+<!-- Premium scroll-reveal + typography polish -->
+<style>
+  /* Premium typography: tighter tracking on display sizes, looser body */
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { font-feature-settings: "kern" 1, "liga" 1, "calt" 1; }
+  h1, h2 { letter-spacing: -0.025em; }
+  h3, h4 { letter-spacing: -0.015em; }
+  /* Mono numerals on English: better for prices, stats, IDs */
+  .num, .font-mono { font-variant-numeric: tabular-nums; }
+
+  /* Scroll-triggered fade-in — pure CSS + IntersectionObserver toggle */
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-reveal[data-delay="1"] { transition-delay: 0.08s; }
+  .kfl-reveal[data-delay="2"] { transition-delay: 0.16s; }
+  .kfl-reveal[data-delay="3"] { transition-delay: 0.24s; }
+  .kfl-reveal[data-delay="4"] { transition-delay: 0.32s; }
+
+  /* Premium hover lift — subtle, intentional */
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(15, 20, 34, 0.32); }
+
+  /* Premium link underline animation — text reveals from left */
+  .kfl-link-underline { position: relative; }
+  .kfl-link-underline::after {
+    content: ""; position: absolute; inset-inline-end: 0; bottom: -2px; height: 1px; width: 0;
+    background-color: currentColor; transition: width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .kfl-link-underline:hover::after { width: 100%; }
+
+  /* Cinematic section divider — soft gradient line, not heavy border */
+  .kfl-divider {
+    position: relative; height: 1px; width: 100%;
+    background: linear-gradient(to right, transparent, rgba(15, 20, 34, 0.12) 20%, rgba(15, 20, 34, 0.12) 80%, transparent);
+  }
+  .dark .kfl-divider { background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.10) 20%, rgba(255, 255, 255, 0.10) 80%, transparent); }
+
+  /* Premium magnetic button — uses CSS transform with JS-driven CSS variables */
+  .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kfl-reveal, .kfl-reveal.kfl-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .kfl-lift:hover { transform: none; }
+    .kfl-link-underline::after { transition: none; }
+  }
+</style>
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <script>
   // CONFIG — values get injected at deploy time from Vercel env vars.
@@ -402,8 +449,8 @@
     <div>
       <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200/60 bg-white/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 shadow-sm backdrop-blur dark:border-brand-500/30 dark:bg-white/5 dark:text-brand-300">
         <span class="relative flex h-2 w-2">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
-          <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
+          
+          <span class="relative inline-flex h-1 w-1 rounded-full bg-brand-500/70"></span>
         </span>
         <span>הדרך הפשוטה לנהל את הכסף שלך</span>
       </div>
@@ -537,8 +584,8 @@
   <div class="mx-auto max-w-3xl px-5 text-center">
     <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/5 px-3 py-1.5 text-xs font-bold text-brand-700 backdrop-blur dark:text-brand-300">
       <span class="relative flex h-2 w-2">
-        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
-        <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
+        
+        <span class="relative inline-flex h-1 w-1 rounded-full bg-brand-500/70"></span>
       </span>
       SECURITY • Zero-Trust
     </div>
@@ -720,21 +767,19 @@
 </section>
 
 <!-- ============== FEATURES ============== -->
-<section id="features" class="kfl-noise relative overflow-hidden bg-ink-900 py-20 text-white md:py-28">
-  <!-- ambient background -->
-  <div class="absolute inset-0 -z-10 matrix-grid opacity-30"></div>
-  <div class="pointer-events-none absolute top-0 left-1/4 -z-10 h-[36rem] w-[36rem] rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
-  <div class="pointer-events-none absolute bottom-0 right-1/4 -z-10 h-[36rem] w-[36rem] rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-4s"></div>
-  <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-ink-900 to-transparent"></div>
-  <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-ink-900 to-transparent"></div>
+<section id="features" class="relative overflow-hidden bg-ink-950 py-24 text-white md:py-32">
+  <!-- subtle ambient: one soft radial, no matrix grid, no blob movement -->
+  <div class="pointer-events-none absolute top-0 left-1/2 -z-10 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-brand-500/[0.06] blur-[120px]"></div>
+  <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+  <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
   <div class="mx-auto max-w-6xl px-5">
     <!-- headline (kept — user explicitly liked this) -->
     <div class="mx-auto max-w-2xl text-center">
       <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-400/40 bg-brand-500/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-300 backdrop-blur">
         <span class="relative flex h-2 w-2">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
-          <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-400"></span>
+          
+          <span class="relative inline-flex h-1 w-1 rounded-full bg-brand-400/70"></span>
         </span>
         <span class="font-mono">3-TIER AI</span>
         <span class="opacity-50">•</span>
@@ -772,7 +817,7 @@
         <!-- LEFT — incoming WhatsApp message -->
         <div class="relative">
           <div class="absolute -top-3 right-4 z-10 inline-flex items-center gap-1 rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-brand-300">
-            <span class="live-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-400"></span>
+            <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
             INCOMING
           </div>
           <div class="rounded-3xl border border-brand-500/30 bg-gradient-to-br from-[#0a3d2a] via-ink-900 to-ink-800 p-5 backdrop-blur" dir="rtl">
@@ -795,17 +840,16 @@
 
         <!-- arrow 1 (mobile + desktop) -->
         <div class="flex items-center justify-center text-brand-400 lg:rotate-180">
-          <svg class="h-8 w-8 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          <svg class="h-8 w-8 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </div>
 
         <!-- CENTER — the engine (the showpiece) -->
         <div class="relative">
-          <div class="absolute -inset-1 -z-10 rounded-[2rem] bg-gradient-to-r from-brand-500 via-accent-500 to-brand-500 opacity-40 blur-xl animate-pulse"></div>
-          <div class="neon-card relative overflow-hidden rounded-3xl border-2 border-brand-500/60 bg-gradient-to-br from-brand-900/40 via-ink-900 to-accent-500/10 p-6 backdrop-blur">
+          <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-900/80 p-6 backdrop-blur shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
               <span class="text-[11px] font-bold uppercase tracking-wider text-brand-300">THE ENGINE</span>
               <div class="flex items-center gap-2 text-[10px] text-ink-400 font-mono">
-                <span class="live-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-400"></span>
+                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
                 <span>v36 • 1,480 keywords</span>
               </div>
             </div>
@@ -855,9 +899,9 @@
             <!-- live "thinking" indicator -->
             <div class="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-brand-500/20 bg-ink-900/60 py-2">
               <span class="flex gap-1">
-                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-400 animate-bounce" style="animation-delay:0ms"></span>
-                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-400 animate-bounce" style="animation-delay:150ms"></span>
-                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-400 animate-bounce" style="animation-delay:300ms"></span>
+                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
+                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
+                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
               </span>
               <span class="text-[11px] font-mono text-brand-300" id="kfl-thinking-text">מנתח...</span>
             </div>
@@ -866,7 +910,7 @@
 
         <!-- arrow 2 -->
         <div class="flex items-center justify-center text-accent-400 lg:rotate-180">
-          <svg class="h-8 w-8 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation-delay:600ms"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          <svg class="h-8 w-8 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation-delay:600ms"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </div>
 
         <!-- RIGHT — sheet row output -->
@@ -1174,7 +1218,7 @@
   <div class="pointer-events-none absolute -bottom-40 -left-40 -z-10 h-[32rem] w-[32rem] rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-5s"></div>
   <div class="mx-auto max-w-3xl px-5 text-center text-white">
     <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-brand-300 backdrop-blur">
-      <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-400"></span>
+      <span class="h-1 w-1 rounded-full bg-brand-400/60"></span>
       <span>חודש ראשון חינם • ביטול בקליק • ההצטרפות תוך 60 שניות</span>
     </div>
     <h2 class="text-4xl font-black tracking-tight md:text-6xl">
@@ -2147,6 +2191,69 @@ function kesefleToggleDark() { /* no-op: dark only */ }
       });
     }, { threshold: 0.4 });
     document.querySelectorAll('.kfl-icon-draw').forEach(function(el){ io.observe(el); });
+  })();
+</script>
+
+<!-- ============== PREMIUM SCROLL-REVEAL + MICRO-INTERACTIONS ============== -->
+<script>
+  (function premiumMotion(){
+    if (window.kflPremiumMotionInit) return;
+    window.kflPremiumMotionInit = true;
+
+    // Auto-tag major sections + cards for fade-in on scroll
+    var selectors = [
+      'section h1', 'section h2', 'section h3',
+      'section p:not(.kfl-reveal)',
+      '#features .grid > *',
+      '#pricing > div > .grid > *',
+      '[id="trust"] > div > div > *'
+    ];
+    var nodes = [];
+    selectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        if (!el.classList.contains('kfl-reveal')) {
+          el.classList.add('kfl-reveal');
+          nodes.push(el);
+        }
+      });
+    });
+
+    if (!('IntersectionObserver' in window)) {
+      // Fallback: just show everything
+      nodes.forEach(function(el) { el.classList.add('kfl-in'); });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('kfl-in');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.12,
+      rootMargin: '0px 0px -60px 0px'
+    });
+
+    nodes.forEach(function(el) { observer.observe(el); });
+
+    // Magnetic CTA: subtly attract toward cursor (desktop only)
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    document.querySelectorAll('.kfl-magnetic, a[href="#signup"]').forEach(function(btn) {
+      btn.classList.add('kfl-magnetic');
+      btn.addEventListener('mousemove', function(e) {
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = 'translate(' + (x * 0.08) + 'px, ' + (y * 0.08) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.transform = '';
+      });
+    });
   })();
 </script>
 
