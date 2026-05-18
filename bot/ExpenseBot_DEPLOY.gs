@@ -1349,6 +1349,12 @@ function processExpense(text, fromPhone) {
               var __hPSubcategory = __hPicked.subcategory || 'הוצאות תפעוליות';
               var __hPDesc = __hPicked.label || __hPSubcategory;
               __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', true]);
+              // Original-text cell note — preserves the business amount input + picked category.
+              try {
+                var __hPLastForNote = __hPSheet.getLastRow();
+                var __hPRawTxt = (__hP.rawText || (__hP.amount + ' ' + (__hPDesc || ''))) + ' [picked: ' + __hPicked.label + ']';
+                _kfl_setRowOriginalNote(__hPSheet, __hPLastForNote, _kfl_buildOriginalNote('Original WhatsApp (business pick)', __hPRawTxt));
+              } catch (__hPNoteErr) { Logger.log('smart_pending note err: ' + (__hPNoteErr && __hPNoteErr.message)); }
               try {
                 var __hPLast = __hPSheet.getLastRow();
                 if (__hPLast > 2) __hPSheet.getRange(2, 1, __hPLast - 1, 8).sort({ column: 1, ascending: true });
@@ -1410,7 +1416,7 @@ function processExpense(text, fromPhone) {
             { label: 'תשלום מלקוח', subcategory: 'מחזור' },
             { label: 'החזר מס', subcategory: 'מחזור' }
           ];
-          var __payload = JSON.stringify({ amount: __hA, options: __hOpts, expiresAt: Math.floor(Date.now()/1000) + 900 });
+          var __payload = JSON.stringify({ amount: __hA, options: __hOpts, rawText: text, expiresAt: Math.floor(Date.now()/1000) + 900 });
           __hProps.setProperty('smart_pending', __payload);
           var __hLn = [];
           __hLn.push('🏢 עסק — ₪' + __hA);
@@ -1438,7 +1444,7 @@ function processExpense(text, fromPhone) {
           { label: 'תשלום מלקוח', subcategory: 'מחזור' },
           { label: 'החזר מס', subcategory: 'מחזור' }
         ];
-        var __payloadBare = JSON.stringify({ amount: __hA, options: __hOptsBare, expiresAt: Math.floor(Date.now()/1000) + 900 });
+        var __payloadBare = JSON.stringify({ amount: __hA, options: __hOptsBare, rawText: text, expiresAt: Math.floor(Date.now()/1000) + 900 });
         __hProps.setProperty('smart_pending', __payloadBare);
         var __hLnBare = [];
         __hLnBare.push('🏢 עסק — ₪' + __hA);
@@ -1529,6 +1535,13 @@ function processExpense(text, fromPhone) {
   if (!parsed || !parsed.items || parsed.items.length === 0) {
     return { reply: '😬 לא זיהיתי סכום בהודעה\n💡 תוודא שכתבת את הסכום בתחילת ההודעה — למשל "85 סופר" או "352 אוכל לבית+165"' };
   }
+  // Stamp the EXACT raw user input onto every parsed item (overriding the
+  // parser's view, which may be the FX-rewritten text). This is the value we
+  // later persist as a cell note so the audit trail keeps the user's typed
+  // currency (e.g. "50$ amazon") not the converted ILS string.
+  try {
+    parsed.items.forEach(function(__pi){ __pi.originalText = text; });
+  } catch (_oeErr) { Logger.log('originalText stamp err: ' + (_oeErr && _oeErr.message)); }
 
   try {
     Logger.log('processExpense: opening sheet ' + SHEET_ID + ' tab ' + TRANSACTIONS_SHEET);
@@ -1641,6 +1654,7 @@ function processExpense(text, fromPhone) {
             PropertiesService.getScriptProperties().setProperty(pendingKey, JSON.stringify({
               amount: Math.abs(soleItem.amount),
               description: soleItem.description,
+              rawText: (soleItem.originalText || text || ''),
               ts: Date.now()
             }));
             var bodyText = '₪' + Math.abs(soleItem.amount) + ' • "' + soleItem.description.slice(0, 100) + '"';
@@ -1684,6 +1698,21 @@ function processExpense(text, fromPhone) {
       Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory);
       sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', true]);
       Logger.log('processExpense: appendRow DONE, lastRow=' + sheet.getLastRow());
+      // ── Original-text cell note (column F = פירוט). Records the raw user
+      // message + optional FX conversion line. Capture row number BEFORE the
+      // sort below so the note lands on the right row even if it shifts.
+      var __newRowForNote = sheet.getLastRow();
+      try {
+        var __noteExtras = [];
+        if (fx) {
+          if (fx.autoConverted) {
+            __noteExtras.push('FX: ' + (fx.foreignAmount || '') + (fx.foreignSymbol || '') + ' → ₪' + fx.ilsAmount + ' (rate ' + (fx.fxRate || '') + ')');
+          } else if (fx.note) {
+            __noteExtras.push('FX: ' + fx.note);
+          }
+        }
+        _kfl_setRowOriginalNote(sheet, __newRowForNote, _kfl_buildOriginalNote('Original WhatsApp', item.originalText || text || item.description, __noteExtras));
+      } catch (__noteErr) { Logger.log('processExpense note err: ' + (__noteErr && __noteErr.message)); }
       // Keep the sheet sorted ascending (oldest at top → newest at bottom).
       // Runs on every append so the order is always correct without user
       // intervention. Sort 8 columns (A–H) to keep checkbox synced with row.
@@ -1750,8 +1779,13 @@ function processExpense(text, fromPhone) {
       try { __catCtx = _categoryMonthToDateLine_(matched.category, matched.isIncome); } catch (__ctxErr) {}
       var __subLabel = (matched.subcategory && matched.subcategory !== matched.category) ? '\n🏷️ ' + matched.subcategory : '';
       var __globalNote = matched.fromGlobal ? '\n📚 למדתי ממשתמשים אחרים' : '';
+      // When FX auto-conversion happened, surface both the original and the ILS amount.
+      var __fxOriginal = '';
+      if (fx && fx.autoConverted && fx.foreignAmount && fx.foreignSymbol) {
+        __fxOriginal = ' (' + fx.foreignAmount + fx.foreignSymbol + ')';
+      }
       return { reply:
-        '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
+        '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + __fxOriginal + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
         '\n📂 ' + matched.category + __subLabel + __globalNote +
         (__catCtx ? '\n💡 ' + __catCtx : '') +
         __anomalyTail +
@@ -2691,6 +2725,17 @@ function _handleReceiptImage_(fromPhone, image) {
     'WhatsApp (receipt)',
     true
   ]);
+  // Original-text cell note — photo receipts have no typed text so we record
+  // the OCR-extracted vendor/amount/date as the provenance string.
+  try {
+    var __receiptRow = sheet.getLastRow();
+    var __receiptStamp = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'HH:mm');
+    var __receiptRaw = 'Receipt photo at ' + __receiptStamp + ' — vendor: "' + (vendor || '(unknown)') +
+                       '", amount: ₪' + amount +
+                       (dateStr ? ', date: ' + dateStr : '') +
+                       ', description: "' + description + '"';
+    _kfl_setRowOriginalNote(sheet, __receiptRow, _kfl_buildOriginalNote('Original receipt photo', __receiptRaw));
+  } catch (__noteErr) { Logger.log('_handleReceiptImage_ note err: ' + (__noteErr && __noteErr.message)); }
   // Match processExpense's post-append sort so the sheet stays ordered.
   try {
     var __lastRow = sheet.getLastRow();
@@ -2850,6 +2895,16 @@ function _handleVoiceMessage_(fromPhone, audio) {
     return { replyText: '🎙️ שמעתי "' + safeTranscribed + '" — אבל זה לא נראה כמו הוצאה\n💡 דבר משהו כמו "מאתיים שקל סופר" (סכום קודם)' };
   }
 
+  // Append a voice-source line to the row note that processExpense just wrote.
+  // We can't get the row number back from processExpense directly so we use
+  // sheet.getLastRow() — safe because the bot serializes one message at a time.
+  try {
+    var __vSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (__vSheet) {
+      _kfl_appendOriginalNoteLine(__vSheet, __vSheet.getLastRow(), 'Voice transcript: "' + transcribed + '"');
+    }
+  } catch (__vNoteErr) { Logger.log('voice note tail err: ' + (__vNoteErr && __vNoteErr.message)); }
+
   return { replyText: heard + '\n\n' + procReply };
 }
 
@@ -2902,6 +2957,13 @@ function _handleCategoryCorrection_(fromPhone, text) {
     if (!sheet) return { handled: true, replyText: '😬 לא מצאתי את גיליון התנועות.' };
     sheet.getRange(pend.rowNumber, 4).setValue(sanitizeForSheet(pend.newCategory));
     sheet.getRange(pend.rowNumber, 5).setValue(sanitizeForSheet(pend.newCategory));
+
+    // Append a correction line to the row's existing original-text note.
+    try {
+      var __corStamp = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'HH:mm');
+      _kfl_appendOriginalNoteLine(sheet, pend.rowNumber,
+        'Corrected from "' + (pend.oldCategory || '?') + '" to "' + pend.newCategory + '" at ' + __corStamp);
+    } catch (__corNoteErr) { Logger.log('correction note err: ' + (__corNoteErr && __corNoteErr.message)); }
 
     _learnedSave(pend.originalText, { category: pend.newCategory, subcategory: pend.newCategory }, 'user-correction');
 
@@ -3339,17 +3401,26 @@ function handleLinkCode_(code, fromPhone) {
 }
 
 function getCurrenciesMessage() {
+  // Read each rate fresh so Script Property overrides surface in the reply.
   return '💱 *המרות מטבע אוטומטיות*\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
-    'שערים נוכחיים (מקובעים):\n' +
-    '  • USD ($) → ₪' + KFL_FX_RATES.USD + '\n' +
-    '  • EUR (€) → ₪' + KFL_FX_RATES.EUR + '\n' +
-    '  • GBP (£) → ₪' + KFL_FX_RATES.GBP + '\n\n' +
+    'שערים נוכחיים:\n' +
+    '  • USD ($) → ₪' + _kfl_fxRate('USD') + '\n' +
+    '  • EUR (€) → ₪' + _kfl_fxRate('EUR') + '\n' +
+    '  • GBP (£) → ₪' + _kfl_fxRate('GBP') + '\n' +
+    '  • CAD → ₪' + _kfl_fxRate('CAD') + '\n' +
+    '  • AUD → ₪' + _kfl_fxRate('AUD') + '\n' +
+    '  • JPY (¥) → ₪' + _kfl_fxRate('JPY') + '\n' +
+    '  • CHF → ₪' + _kfl_fxRate('CHF') + '\n\n' +
     '*דוגמאות:*\n' +
     '  • "50$ amazon"\n' +
     '  • "12 יורו spotify"\n' +
-    '  • "£25 amazon uk"\n\n' +
-    'הבוט ירשום את הסכום ב-₪ אוטומטית ויציין במקור שזה הומר.';
+    '  • "£25 amazon uk"\n' +
+    '  • "100 cad uber"\n' +
+    '  • "5000 jpy סושי"\n' +
+    '  • "80 chf hotel"\n\n' +
+    'הבוט ירשום את הסכום ב-₪ אוטומטית ויציין במקור (גם בהערה על השורה).\n' +
+    'לשינוי שערים: Script Properties → FX_RATE_USD / FX_RATE_EUR / וכו.';
 }
 
 function getDictionaryLink() {
@@ -5378,6 +5449,25 @@ function installKesefleBot() {
     ok++;
   }
 
+  // 5b. FX rate overrides — informational. Defaults always work; overrides are
+  //     optional Script Properties (FX_RATE_USD, FX_RATE_EUR, ...).
+  report.push('');
+  report.push('───────────────────────────────────────');
+  report.push('💱 FX CONVERSION RATES (₪ per unit)');
+  report.push('───────────────────────────────────────');
+  var __fxCodes = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF'];
+  for (var __fxI = 0; __fxI < __fxCodes.length; __fxI++) {
+    var __code = __fxCodes[__fxI];
+    var __override = props.getProperty('FX_RATE_' + __code);
+    var __def = KFL_FX_DEFAULTS[__code];
+    if (__override) {
+      report.push('✅ FX_RATE_' + __code + ' — override ' + __override + ' (default ' + __def + ')');
+      ok++;
+    } else {
+      report.push('•  FX_RATE_' + __code + ' — using default ' + __def);
+    }
+  }
+
   report.push('');
   report.push('───────────────────────────────────────');
   report.push('📅 INSTALLING CRON TRIGGERS');
@@ -6588,6 +6678,15 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
       sanitizeForSheet(category),
       sanitizeForSheet(String(description || ''))
     ]);
+    // Original-text cell note — family sheet has 5 cols, description is col E (5).
+    try {
+      var __famRow = sheet.getLastRow();
+      var __famRaw = (member || '—') + ': ' + amount + ' ' + (description || '');
+      // setNote on column 5 (Description) for the family sheet.
+      var __famNote = _kfl_buildOriginalNote('Original family expense', __famRaw, ['Phone: ' + fromPhone]);
+      sheet.getRange(__famRow, 5).setNote(__famNote);
+      Logger.log('_familyLogExpense_: note set on row ' + __famRow);
+    } catch (__famNoteErr) { Logger.log('_familyLogExpense_ note err: ' + (__famNoteErr && __famNoteErr.message)); }
   } catch (e) {
     Logger.log('_familyLogExpense_: append err ' + (e && e.message));
     return { handled: true, replyText: '😬 משהו השתבש בכתיבה לגיליון המשפחה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
