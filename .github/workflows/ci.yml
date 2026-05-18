@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate code + structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax check Apps Script bot
+        run: |
+          # Apps Script files are JS — Node's --check catches syntax errors.
+          # We add a `var doPost, doGet;` shim because Apps Script's `doPost`
+          # / `doGet` are entry points expected to be defined at module scope.
+          for f in bot/ExpenseBot_FIXED.gs bot/ExpenseBot_DEPLOY.gs; do
+            if [ -f "$f" ]; then
+              echo "Checking $f..."
+              node --check "$f" || { echo "::error file=$f::Syntax error"; exit 1; }
+            fi
+          done
+
+      - name: Validate JSON
+        run: |
+          set -e
+          find . -name "*.json" -not -path "./node_modules/*" -not -path "./.next/*" -not -path "./.vercel/*" | while read f; do
+            echo "Checking $f..."
+            node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8'))" \
+              || { echo "::error file=$f::Invalid JSON"; exit 1; }
+          done
+
+      - name: Validate sitemap.xml well-formed
+        run: |
+          if [ -f sitemap.xml ]; then
+            node -e "
+              const fs = require('fs');
+              const xml = fs.readFileSync('sitemap.xml', 'utf8');
+              const opens = (xml.match(/<url>/g) || []).length;
+              const closes = (xml.match(/<\/url>/g) || []).length;
+              if (opens !== closes) { console.error('sitemap.xml has', opens, 'opens vs', closes, 'closes'); process.exit(1); }
+              if (!xml.includes('<urlset')) { console.error('sitemap.xml missing <urlset>'); process.exit(1); }
+              console.log('sitemap.xml OK with', opens, 'URLs');
+            "
+          fi
+
+      - name: Check for accidental .bak files
+        run: |
+          # .bak files should be gitignored — fail if any slip through
+          BAK=$(find . -name "*.bak*" -not -path "./node_modules/*" -not -path "./.next/*" | head -5)
+          if [ -n "$BAK" ]; then
+            echo "::error::Backup files found in repo:"
+            echo "$BAK"
+            exit 1
+          fi
+          echo "No .bak files leaked."
+
+      - name: Check for hard-coded secrets
+        run: |
+          # Quick scan for obvious leaks. Not a substitute for proper secret-scanning,
+          # but catches the easy mistakes.
+          if grep -rE "(EAA[A-Za-z0-9_-]{40,}|sk-ant-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,})" \
+            --include="*.html" --include="*.js" --include="*.gs" --include="*.md" \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.next . ; then
+            echo "::error::Found what looks like a hard-coded API token. Investigate before merging."
+            exit 1
+          fi
+          echo "No obvious secrets in committed files."
+
+  links:
+    name: Internal link sanity
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that referenced internal pages exist
+        run: |
+          # Cheap sanity: for every href="/foo" or href="/foo.html", verify
+          # the target file exists at repo root.
+          MISSING=0
+          for href in $(grep -rho 'href="/[a-z][a-z0-9_-]*"' --include="*.html" . | sed 's/href="//;s/"//' | sort -u); do
+            page="${href#/}"
+            if [ -z "$page" ]; then continue; fi
+            if [ ! -f "$page.html" ] && [ ! -f "$page/index.html" ] && [ ! -d "$page" ]; then
+              # External paths like /api/* are dynamic — skip those
+              if [[ "$page" == api/* ]] || [[ "$page" == admin/* ]] || [[ "$page" == assets/* ]]; then
+                continue
+              fi
+              # known dynamic pages we accept without a static file
+              case "$page" in
+                signup|signin|dashboard|welcome|account|trust|roadmap|seo|referral) continue ;;
+              esac
+              echo "::warning::Broken internal link: /$page"
+              MISSING=$((MISSING+1))
+            fi
+          done
+          if [ "$MISSING" -gt 0 ]; then
+            echo "$MISSING potentially broken internal links found above (warning only)."
+          fi

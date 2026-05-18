@@ -400,7 +400,7 @@ function doPost(e) {
           return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
         } catch (_ocrErr) {
           Logger.log('doPost: receipt OCR error: ' + (_ocrErr && _ocrErr.stack || _ocrErr));
-          try { sendWhatsAppMessage(__from_, '😬 הייתה בעיה בקריאת הקבלה. נסה לשלוח שוב או רשום ידנית.'); } catch (__) {}
+          try { sendWhatsAppMessage(__from_, '😬 הייתה בעיה בקריאת הקבלה\n💡 נסה לשלוח שוב או רשום ידנית'); } catch (__) {}
           return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
         }
       }
@@ -418,7 +418,7 @@ function doPost(e) {
           return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
         } catch (_voiceErr) {
           Logger.log('doPost: voice error: ' + (_voiceErr && _voiceErr.stack || _voiceErr));
-          try { sendWhatsAppMessage(__from_, '😬 בעיה בקריאת הקול. נסה לרשום בכתב.'); } catch (__) {}
+          try { sendWhatsAppMessage(__from_, '😬 בעיה בקריאת הקול\n💡 נסה לרשום בכתב במקום'); } catch (__) {}
           return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
         }
       }
@@ -1834,17 +1834,17 @@ function _saveLastExpense_(fromPhone, rowNumber, item, matched) {
 function _handleReceiptImage_(fromPhone, image) {
   var mediaId = image && image.id;
   if (!mediaId) {
-    return { replyText: '😬 לא קיבלתי את התמונה. נסה לשלוח שוב.' };
+    return { replyText: '😬 לא קיבלתי את התמונה\n💡 נסה לשלוח שוב' };
   }
 
   var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   if (!apiKey) {
     Logger.log('_handleReceiptImage_: missing ANTHROPIC_API_KEY');
-    return { replyText: '🤖 קריאת קבלות לא זמינה כרגע. רשום את ההוצאה ידנית: סכום פירוט.' };
+    return { replyText: '🤖 קריאת קבלות לא זמינה כרגע\n💡 רשום את ההוצאה ידנית — סכום פירוט (למשל "85 סופר")' };
   }
   if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
     Logger.log('_handleReceiptImage_: missing WHATSAPP_TOKEN');
-    return { replyText: '🤖 קריאת קבלות לא זמינה כרגע. רשום את ההוצאה ידנית: סכום פירוט.' };
+    return { replyText: '🤖 קריאת קבלות לא זמינה כרגע\n💡 רשום את ההוצאה ידנית — סכום פירוט (למשל "85 סופר")' };
   }
 
   // Step 1 — Meta's media endpoint returns a short-lived signed URL.
@@ -1856,13 +1856,13 @@ function _handleReceiptImage_(fromPhone, image) {
   });
   if (metaRes.getResponseCode() !== 200) {
     Logger.log('_handleReceiptImage_: media lookup failed ' + metaRes.getResponseCode() + ' ' + metaRes.getContentText().slice(0, 200));
-    return { replyText: '😬 לא הצלחתי להוריד את התמונה. נסה לשלוח שוב או רשום ידנית.' };
+    return { replyText: '😬 לא הצלחתי להוריד את התמונה\n💡 נסה לשלוח שוב או רשום ידנית' };
   }
   var metaBody;
   try { metaBody = JSON.parse(metaRes.getContentText()); }
-  catch (_p1) { return { replyText: '😬 לא הצלחתי לקרוא את התמונה. נסה לשלוח שוב.' }; }
+  catch (_p1) { return { replyText: '😬 לא הצלחתי לקרוא את התמונה\n💡 נסה לשלוח שוב' }; }
   if (!metaBody || !metaBody.url) {
-    return { replyText: '😬 לא הצלחתי להוריד את התמונה. נסה לשלוח שוב.' };
+    return { replyText: '😬 לא הצלחתי להוריד את התמונה\n💡 נסה לשלוח שוב' };
   }
   // Meta returns mime in media metadata; webhook value can disagree on some clients.
   var mimeType = String(image.mime_type || metaBody.mime_type || 'image/jpeg').split(';')[0].trim();
@@ -1878,12 +1878,12 @@ function _handleReceiptImage_(fromPhone, image) {
   });
   if (imgRes.getResponseCode() !== 200) {
     Logger.log('_handleReceiptImage_: media download failed ' + imgRes.getResponseCode());
-    return { replyText: '😬 לא הצלחתי להוריד את התמונה. נסה לשלוח שוב או רשום ידנית.' };
+    return { replyText: '😬 לא הצלחתי להוריד את התמונה\n💡 נסה לשלוח שוב או רשום ידנית' };
   }
   var bytes = imgRes.getBlob().getBytes();
   // Apps Script UrlFetch has a 6-minute hard cap; oversize images burn that budget on encode.
   if (bytes.length > 5 * 1024 * 1024) {
-    return { replyText: '📸 התמונה גדולה מדי (מעל 5MB). שלח תמונה קטנה יותר או רשום ידנית.' };
+    return { replyText: '📸 התמונה גדולה מדי (מעל 5MB)\n💡 שלח תמונה קטנה יותר או רשום ידנית' };
   }
   var base64Image = Utilities.base64Encode(bytes);
 
@@ -5325,8 +5325,8 @@ function _familyInviteReply_(fromPhone, rawTarget) {
 
   var cleaned = String(rawTarget || '').replace(/[^\d+]/g, '');
   if (!cleaned || cleaned.length < 7) {
-    return '⚠️ לא הצלחתי לקרוא את המספר.\n' +
-      'נסה: "הזמן 052-1234567"';
+    return '😬 לא הצלחתי לקרוא את המספר\n' +
+      '💡 נסה: "הזמן 052-1234567"';
   }
 
   // TODO: KV — generate invite code, store in hhinvite:<code> with TTL 600s,
