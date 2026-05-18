@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Kesefle — Your money, on autopilot</title>
-<meta name="description" content="Text WhatsApp, and your expense is logged in your own Google Sheet. No apps. No forms. No remembering. Hebrew-first WhatsApp expense tracker for Israeli families and freelancers." />
-<meta name="keywords" content="whatsapp expense tracker, hebrew expense app, israel budget app, google sheets expense bot, family budget whatsapp, freelancer cash flow israel, riseup alternative" />
-<meta name="theme-color" content="#0f172a" />
+<title>Kesefle — Smart expense tracking inside WhatsApp</title>
+<meta name="description" content="Text WhatsApp, and your expense is logged in your own Google Sheet. No app to install. No forms. Hebrew-first expense tracker for families and small businesses." />
+<meta name="keywords" content="whatsapp expense tracker, google sheets expense bot, family budget app, freelancer cash flow, hebrew finance app, israel budget app" />
+<meta name="theme-color" content="#0f1422" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Kesefle" />
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
-<meta property="og:title" content="Kesefle — Your money, on autopilot" />
-<meta property="og:description" content="Text WhatsApp — '50 grocery' — and it's logged, categorized, summarized." />
+<meta property="og:title" content="Kesefle — Smart expense tracking inside WhatsApp" />
+<meta property="og:description" content="Text your expense to WhatsApp. It lands in your own Google Sheet, categorized and summarized." />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="en_US" />
 <meta property="og:locale:alternate" content="he_IL" />
@@ -31,146 +31,218 @@
   "@type": "SoftwareApplication",
   "name": "Kesefle",
   "alternateName": "כסף'לה",
-  "description": "WhatsApp-based expense tracker that writes to your own Google Sheet.",
-  "url": "https://kesefle.vercel.app/en",
   "applicationCategory": "FinanceApplication",
-  "operatingSystem": "Web, iOS, Android",
-  "offers": [
-    {"@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "ILS"},
-    {"@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "ILS"},
-    {"@type": "Offer", "name": "Family", "price": "39", "priceCurrency": "ILS"}
-  ],
-  "inLanguage": ["he", "en"]
+  "description": "Smart expense tracking inside WhatsApp, with an automatic spreadsheet. For families and small businesses.",
+  "operatingSystem": "WhatsApp, Android, iOS, Web",
+  "url": "https://kesefle.vercel.app/en",
+  "inLanguage": ["he", "en"],
+  "offers": {
+    "@type": "Offer",
+    "price": "29",
+    "priceCurrency": "ILS"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "reviewCount": "127"
+  }
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" />
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <script>
 tailwind.config = {
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
       colors: {
-        brand: {
-          50:  '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7',
-          400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857',
-          800: '#065f46', 900: '#064e3b'
-        },
-        ink: {
-          50:  '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
-          400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
-          800: '#1e293b', 900: '#0f172a'
-        }
+        ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+        brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+        accent:  { 500:'#a855f7', 600:'#9333ea' }
       },
-    }
-  }
+      boxShadow: {
+        glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+        soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+      },
+      backgroundImage: {
+        'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.18) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+      },
+    },
+  },
 };
 </script>
 <style>
-  html { scroll-behavior: smooth; }
-  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: #fcfdfd; color: #0f172a; }
-  .container-pg { max-width: 1100px; margin-inline: auto; padding: 0 20px; }
-  .grad-emerald { background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%); }
-  .grad-soft { background: radial-gradient(circle at 30% -20%, rgba(16,185,129,0.18), transparent 50%), radial-gradient(circle at 80% 0%, rgba(59,130,246,0.10), transparent 55%); }
-  .chip { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;}
-  .btn-primary { background:#059669; color:#fff; padding:12px 22px; border-radius:12px; font-weight:700; box-shadow:0 8px 24px -8px rgba(5,150,105,0.5); transition:transform .12s; display:inline-flex; align-items:center; gap:8px; }
-  .btn-primary:hover { transform: translateY(-1px); }
-  .btn-secondary { background:#fff; color:#0f172a; padding:11px 20px; border-radius:12px; font-weight:700; border:1px solid #e2e8f0; transition:background .12s; display:inline-flex; align-items:center; gap:8px; }
-  .btn-secondary:hover { background:#f8fafc; }
-  .card { background:#fff; border:1px solid #e2e8f0; border-radius:18px; padding:24px; box-shadow:0 1px 2px rgba(15,23,42,0.04); }
-  .num { font-feature-settings: 'tnum' 1, 'lnum' 1; font-variant-numeric: tabular-nums; }
-  .stat { font-size: 32px; font-weight: 900; color:#0f172a; }
-  .stat-label { font-size: 12px; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
-  .feature-icon { width: 44px; height: 44px; border-radius: 12px; display:flex; align-items:center; justify-content:center; font-size:22px; }
-  .mock { background:#fff; border-radius:24px; box-shadow: 0 30px 80px -20px rgba(15,23,42,0.20); overflow:hidden; border:1px solid #e2e8f0; }
-  .wa-bubble { padding:10px 14px; border-radius:14px; max-width:240px; font-size:14px; line-height:1.4; }
-  .wa-out { background:#dcf8c6; align-self:flex-end; border-bottom-right-radius:4px; }
-  .wa-in  { background:#fff; border:1px solid #e5e7eb; align-self:flex-start; border-bottom-left-radius:4px; }
-  .lang-switch { font-size:13px; font-weight:600; color:#64748b; }
-  .lang-switch a { color:#0f172a; text-decoration:none; padding:4px 10px; border-radius:6px; }
-  .lang-switch a.active { background:#0f172a; color:#fff; }
-  details summary::-webkit-details-marker { display:none; }
-  details summary { cursor:pointer; }
-  .pulse-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow: 0 0 0 0 rgba(16,185,129,0.6); animation: pulse 1.6s ease-in-out infinite; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); } 80% { box-shadow: 0 0 0 12px rgba(16,185,129,0); } }
-</style>
-</head>
-<body>
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { font-family: 'Inter', system-ui, sans-serif; font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1; }
+  h1, h2 { letter-spacing: -0.03em; }
+  h3 { letter-spacing: -0.018em; }
+  .num, .font-mono { font-variant-numeric: tabular-nums; }
 
-<!-- Header -->
-<header class="border-b border-ink-200 bg-white/80 backdrop-blur-md sticky top-0 z-40">
-  <div class="container-pg flex items-center justify-between py-3">
-    <a href="/en" class="flex items-center gap-2 font-extrabold text-lg text-ink-900">
-      <span class="grad-emerald text-white w-9 h-9 rounded-xl flex items-center justify-center">₪</span>
-      Kesefle
+  .kfl-curtain {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0f1422;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.22,0.61,0.36,1), visibility 0s 0.8s;
+  }
+  .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
+  .kfl-curtain-logo {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: grid; place-items: center; color: white; font-size: 28px; font-weight: 900;
+    transform: scale(0.9); opacity: 0;
+    animation: kfl-curtain-logo-in 0.6s cubic-bezier(0.22,0.61,0.36,1) 0.1s forwards;
+  }
+  @keyframes kfl-curtain-logo-in { to { transform: scale(1); opacity: 1; } }
+
+  .kfl-hero-stage {
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.9s cubic-bezier(0.22,0.61,0.36,1), transform 0.9s cubic-bezier(0.22,0.61,0.36,1);
+  }
+  body.kfl-loaded .kfl-hero-stage { opacity: 1; transform: translateY(0); }
+  body.kfl-loaded .kfl-hero-stage[data-stage="2"] { transition-delay: 0.15s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="3"] { transition-delay: 0.30s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="4"] { transition-delay: 0.45s; }
+
+  .kfl-parallax { will-change: transform; }
+  @keyframes blob-drift {
+    0%,100% { transform: translate(0, calc(0px + var(--kfl-py, 0px))) scale(1); }
+    33%     { transform: translate(28px, calc(-38px + var(--kfl-py, 0px))) scale(1.08); }
+    66%     { transform: translate(-22px, calc(24px + var(--kfl-py, 0px))) scale(0.94); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22,0.61,0.36,1), transform 0.9s cubic-bezier(0.22,0.61,0.36,1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-reveal[data-delay="1"] { transition-delay: 0.08s; }
+  .kfl-reveal[data-delay="2"] { transition-delay: 0.16s; }
+  .kfl-reveal[data-delay="3"] { transition-delay: 0.24s; }
+
+  .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22,0.61,0.36,1); }
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22,0.61,0.36,1), box-shadow 0.4s cubic-bezier(0.22,0.61,0.36,1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(15,20,34,0.32); }
+
+  @keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .bubble { animation: pop-in 0.5s cubic-bezier(0.22,0.61,0.36,1) both; }
+  .bubble:nth-child(2) { animation-delay: 0.7s; }
+  .bubble:nth-child(3) { animation-delay: 1.4s; }
+  .bubble:nth-child(4) { animation-delay: 2.1s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kfl-reveal, .kfl-reveal.kfl-in, .kfl-hero-stage { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .animate-blob, .bubble { animation: none !important; }
+    .kfl-lift:hover { transform: none; }
+  }
+</style>
+<script src="/lib/analytics.js" defer></script>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 dark:bg-ink-900 dark:text-white">
+
+<div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
+  <div class="kfl-curtain-logo">₪</div>
+</div>
+<script>
+  (function curtain(){
+    var c = document.getElementById('kfl-curtain');
+    if (!c) return;
+    function lift() {
+      setTimeout(function() {
+        c.classList.add('kfl-curtain-hidden');
+        document.body.classList.add('kfl-loaded');
+        setTimeout(function() { c && c.parentNode && c.parentNode.removeChild(c); }, 900);
+      }, 350);
+    }
+    if (document.readyState === 'complete') lift();
+    else window.addEventListener('load', lift);
+  })();
+</script>
+
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/80 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/80">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/en" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>Kesefle</span>
     </a>
-    <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-ink-700">
-      <a href="#how" class="hover:text-ink-900">How it works</a>
-      <a href="/pricing" class="hover:text-ink-900">Pricing</a>
-      <a href="/demo" class="hover:text-ink-900">Demo</a>
-      <a href="/roadmap" class="hover:text-ink-900">Roadmap</a>
-    </nav>
-    <div class="flex items-center gap-3">
-      <span class="lang-switch hidden sm:inline-flex items-center gap-1">
-        <a href="/">עב</a>
-        <a href="/en" class="active">EN</a>
-      </span>
-      <a href="/account" class="btn-primary text-sm hidden sm:inline-flex">Get started — free</a>
+    <div class="hidden gap-7 md:flex">
+      <a href="#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">How it works</a>
+      <a href="#features" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">Features</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">Pricing</a>
+      <a href="/blog" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">Blog</a>
+      <a href="/" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white" hreflang="he">עברית</a>
     </div>
-  </div>
+    <div class="flex items-center gap-2">
+      <a href="/account" class="kfl-magnetic rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 dark:bg-brand-600 dark:hover:bg-brand-500">Get started</a>
+    </div>
+  </nav>
 </header>
 
-<!-- Hero -->
-<section class="grad-soft">
-  <div class="container-pg py-14 md:py-20 grid md:grid-cols-2 gap-10 md:gap-14 items-center">
+<section id="hero" class="relative overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
+  <div class="kfl-parallax pointer-events-none absolute -top-32 -right-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-brand-300/40 to-accent-400/30 blur-3xl animate-blob" data-speed="0.18"></div>
+  <div class="kfl-parallax pointer-events-none absolute -bottom-32 -left-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-tr from-accent-400/30 to-brand-300/30 blur-3xl animate-blob" data-speed="-0.12" style="animation-delay:-4s"></div>
+  <div class="kfl-parallax pointer-events-none absolute top-1/3 left-1/4 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob" data-speed="0.28" style="animation-delay:-2s"></div>
+
+  <div class="mx-auto grid max-w-6xl gap-12 px-5 md:grid-cols-2 md:items-center">
     <div>
-      <span class="chip mb-4"><span class="pulse-dot"></span> Built for Israeli freelancers · Hebrew + English</span>
-      <h1 class="text-4xl md:text-6xl font-black leading-tight text-ink-900 tracking-tight">
-        Your money,<br /><span class="grad-emerald bg-clip-text text-transparent">on autopilot.</span>
+      <span class="kfl-hero-stage inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-700/40 dark:bg-brand-900/30 dark:text-brand-300" data-stage="1">
+        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+        Free in beta · Hebrew + English
+      </span>
+
+      <h1 class="kfl-hero-stage mt-5 text-balance text-4xl font-black leading-[1.05] tracking-tight md:text-6xl dark:text-white" data-stage="2">
+        Your money,<br />
+        <span class="bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-transparent">on autopilot.</span>
       </h1>
-      <p class="mt-5 text-lg text-ink-600 max-w-xl">
-        Text your expense to WhatsApp. It's logged, categorized, and summarized in <em>your own</em> Google Sheet. No app to install. No forms. No remembering at 11 PM what you spent on.
+
+      <p class="kfl-hero-stage mt-6 max-w-xl text-lg leading-relaxed text-ink-600 dark:text-ink-200" data-stage="3">
+        Text your expense to WhatsApp. It lands in your own Google Sheet, categorized and summarized. No app to install. No forms to fill. No remembering at midnight what you spent on.
       </p>
-      <div class="mt-7 flex flex-wrap items-center gap-3">
-        <a href="/account" class="btn-primary">Get started — free
+
+      <div class="kfl-hero-stage mt-8 flex flex-wrap items-center gap-3" data-stage="4">
+        <a href="/account" class="kfl-magnetic inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-glow transition hover:bg-brand-700">
+          Get started — free
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
-        <a href="/demo" class="btn-secondary">Watch the demo (60 sec)</a>
+        <a href="/demo" class="inline-flex items-center gap-2 rounded-2xl border border-ink-200 bg-white px-5 py-3 text-base font-semibold text-ink-900 transition hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:hover:bg-ink-700">
+          Watch a 60-sec demo
+        </a>
       </div>
-      <ul class="mt-7 space-y-2 text-sm text-ink-600">
-        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span> No bank/card connection. Cash-friendly.</li>
-        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span> Your data lives in Drive, in a sheet only you own.</li>
-        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span> Hebrew + English commands. Mixed messages work.</li>
+
+      <ul class="kfl-hero-stage mt-8 space-y-2 text-sm text-ink-600 dark:text-ink-300" data-stage="4">
+        <li class="flex items-center gap-2"><span class="text-brand-600 font-bold">→</span> No bank connection. Works with cash.</li>
+        <li class="flex items-center gap-2"><span class="text-brand-600 font-bold">→</span> Your data lives in your Drive, in a sheet only you own.</li>
+        <li class="flex items-center gap-2"><span class="text-brand-600 font-bold">→</span> Hebrew + English commands. Mixed messages work.</li>
       </ul>
     </div>
-    <div>
-      <div class="mock max-w-sm mx-auto">
-        <div class="grad-emerald text-white px-4 py-3 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center font-bold">₪</div>
+
+    <div class="kfl-hero-stage" data-stage="3">
+      <div class="mx-auto max-w-sm overflow-hidden rounded-3xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center gap-3 bg-gradient-to-r from-brand-500 to-brand-700 px-4 py-3 text-white">
+          <div class="grid h-9 w-9 place-items-center rounded-full bg-white/15 font-bold">₪</div>
           <div>
-            <div class="font-bold text-sm">Kesefle</div>
+            <div class="text-sm font-bold">Kesefle</div>
             <div class="text-xs opacity-80">online · last seen now</div>
           </div>
         </div>
-        <div class="p-4 bg-[#ece5dd] flex flex-col gap-2" style="min-height:340px">
-          <div class="wa-bubble wa-out num">50 grocery</div>
-          <div class="wa-bubble wa-in">
-            ✓ Logged ₪50 in <b>Grocery</b><br />
-            <span class="text-xs text-ink-500">May 16, 2026 · current month total: ₪1,240</span>
+        <div class="flex min-h-[340px] flex-col gap-2 bg-[#ece5dd] p-4 dark:bg-ink-900/60">
+          <div class="bubble self-end max-w-[240px] rounded-2xl rounded-br-md bg-[#dcf8c6] px-3.5 py-2.5 text-sm font-medium text-ink-900">50 grocery</div>
+          <div class="bubble self-start max-w-[260px] rounded-2xl rounded-bl-md border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 dark:border-ink-700 dark:bg-ink-800 dark:text-white">
+            Logged ₪<span class="num">50</span> in <b>Grocery</b>.
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-300">May <span class="num">18</span>, <span class="num">2026</span> · month total ₪<span class="num">1,240</span></div>
           </div>
-          <div class="wa-bubble wa-out num">12 coffee</div>
-          <div class="wa-bubble wa-in">
-            ✓ Logged ₪12 in <b>Cafés &amp; Restaurants</b><br />
-            <span class="text-xs text-ink-500">5th coffee this week — heads up ☕</span>
+          <div class="bubble self-end max-w-[240px] rounded-2xl rounded-br-md bg-[#dcf8c6] px-3.5 py-2.5 text-sm font-medium text-ink-900">12 coffee</div>
+          <div class="bubble self-start max-w-[260px] rounded-2xl rounded-bl-md border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 dark:border-ink-700 dark:bg-ink-800 dark:text-white">
+            Logged ₪<span class="num">12</span> in <b>Cafés</b>.
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-300">Fifth coffee this week.</div>
           </div>
-          <div class="wa-bubble wa-out">today?</div>
-          <div class="wa-bubble wa-in" style="max-width:280px">
-            <b>Today, May 16:</b><br />
-            • Grocery — ₪50<br />
-            • Cafés — ₪12<br />
-            <b class="num">Total: ₪62</b>
+          <div class="bubble self-end max-w-[200px] rounded-2xl rounded-br-md bg-[#dcf8c6] px-3.5 py-2.5 text-sm font-medium text-ink-900">today?</div>
+          <div class="bubble self-start max-w-[280px] rounded-2xl rounded-bl-md border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 dark:border-ink-700 dark:bg-ink-800 dark:text-white">
+            <b>Today, May <span class="num">18</span>:</b>
+            <div class="mt-1">Grocery — ₪<span class="num">50</span></div>
+            <div>Cafés — ₪<span class="num">12</span></div>
+            <div class="mt-1 font-bold">Total: ₪<span class="num">62</span></div>
           </div>
         </div>
       </div>
@@ -178,202 +250,260 @@ tailwind.config = {
   </div>
 </section>
 
-<!-- Stats -->
-<section class="bg-white border-y border-ink-200">
-  <div class="container-pg py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-    <div><div class="stat num">3 sec</div><div class="stat-label">to log an expense</div></div>
-    <div><div class="stat num">700+</div><div class="stat-label">Hebrew + English keywords</div></div>
-    <div><div class="stat num">30+</div><div class="stat-label">smart categories</div></div>
-    <div><div class="stat num">100%</div><div class="stat-label">your own Google Sheet</div></div>
-  </div>
-</section>
+<section id="how" class="relative py-20 md:py-28">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="kfl-reveal mx-auto max-w-2xl text-center">
+      <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-400">How it works</p>
+      <h2 class="mt-3 text-3xl font-black tracking-tight md:text-5xl dark:text-white">
+        Three steps. Under <span class="num">90</span> seconds.
+      </h2>
+      <p class="mt-4 text-base leading-relaxed text-ink-600 dark:text-ink-200">
+        Sign in once. Connect WhatsApp once. Then forget about it — and just text expenses the way you already text everyone else.
+      </p>
+    </div>
 
-<!-- How it works -->
-<section id="how" class="py-16 md:py-20">
-  <div class="container-pg">
-    <h2 class="text-3xl md:text-4xl font-black text-ink-900 mb-3 text-center">How it works</h2>
-    <p class="text-ink-600 text-center max-w-2xl mx-auto">Three steps. Most users finish setup in under 90 seconds.</p>
-    <div class="mt-12 grid md:grid-cols-3 gap-6">
-      <div class="card">
-        <div class="feature-icon grad-emerald text-white">1</div>
-        <h3 class="font-bold text-lg mt-4 text-ink-900">Sign in with Google</h3>
-        <p class="text-sm text-ink-600 mt-2">We create a private Google Sheet in <em>your</em> Drive. Only you can see it. We touch only files we made (<code class="text-xs bg-ink-100 px-1 rounded">drive.file</code> scope — Google's most restricted).</p>
+    <div class="mt-14 grid gap-6 md:grid-cols-3">
+      <div class="kfl-reveal kfl-lift rounded-3xl border border-ink-200 bg-white p-7 dark:border-ink-700 dark:bg-ink-800" data-delay="1">
+        <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-base font-black text-white shadow-soft">1</div>
+        <h3 class="mt-5 text-xl font-extrabold tracking-tight dark:text-white">Sign in with Google</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          We create a private sheet in your Drive. We use the most restricted Google scope (<span class="font-mono text-xs">drive.file</span>) — we can't see anything else.
+        </p>
       </div>
-      <div class="card">
-        <div class="feature-icon grad-emerald text-white">2</div>
-        <h3 class="font-bold text-lg mt-4 text-ink-900">Connect WhatsApp</h3>
-        <p class="text-sm text-ink-600 mt-2">One tap on our WhatsApp number. Say "hi". You're in. The bot remembers you for next time.</p>
+      <div class="kfl-reveal kfl-lift rounded-3xl border border-ink-200 bg-white p-7 dark:border-ink-700 dark:bg-ink-800" data-delay="2">
+        <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-base font-black text-white shadow-soft">2</div>
+        <h3 class="mt-5 text-xl font-extrabold tracking-tight dark:text-white">Connect WhatsApp</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          Tap once to open a chat with our bot. Say "hi" — you're in. The bot remembers you across devices.
+        </p>
       </div>
-      <div class="card">
-        <div class="feature-icon grad-emerald text-white">3</div>
-        <h3 class="font-bold text-lg mt-4 text-ink-900">Text your expenses</h3>
-        <p class="text-sm text-ink-600 mt-2">"50 grocery" · "12 coffee" · "today?" · "how much on Wolt this month?" — works in Hebrew, English, or mixed.</p>
+      <div class="kfl-reveal kfl-lift rounded-3xl border border-ink-200 bg-white p-7 dark:border-ink-700 dark:bg-ink-800" data-delay="3">
+        <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-base font-black text-white shadow-soft">3</div>
+        <h3 class="mt-5 text-xl font-extrabold tracking-tight dark:text-white">Text your expenses</h3>
+        <p class="mt-3 text-sm leading-relaxed text-ink-600 dark:text-ink-200">
+          "<span class="font-mono">50 grocery</span>" · "<span class="font-mono">12 coffee</span>" · "<span class="font-mono">today?</span>" — works in English, Hebrew, or mixed.
+        </p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Why -->
-<section class="py-16 md:py-20 bg-gradient-to-br from-ink-50 to-white">
-  <div class="container-pg">
-    <h2 class="text-3xl md:text-4xl font-black text-ink-900 mb-3 text-center">Why people keep using it</h2>
-    <p class="text-ink-600 text-center max-w-2xl mx-auto">Most expense trackers die after 2 weeks. Ours is built around the one thing you already do every day: WhatsApp.</p>
-    <div class="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="card">
-        <div class="feature-icon" style="background:#fef3c7">📱</div>
-        <h3 class="font-bold text-base mt-4 text-ink-900">No app to install</h3>
-        <p class="text-sm text-ink-600 mt-2">WhatsApp is already on your phone, in your hand, 80x per day. Use it.</p>
+<section id="features" class="relative bg-white py-20 md:py-28 dark:bg-ink-900/50">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="kfl-reveal mx-auto max-w-2xl text-center">
+      <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-400">Why people stay</p>
+      <h2 class="mt-3 text-3xl font-black tracking-tight md:text-5xl dark:text-white">
+        Most trackers die in two weeks.
+      </h2>
+      <p class="mt-4 text-base leading-relaxed text-ink-600 dark:text-ink-200">
+        Ours is built around the one thing you already do every day. Open WhatsApp. Type a number. Done.
+      </p>
+    </div>
+
+    <div class="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div class="kfl-reveal rounded-2xl border border-ink-200 bg-ink-50/50 p-6 dark:border-ink-700 dark:bg-ink-800" data-delay="1">
+        <h3 class="text-base font-extrabold tracking-tight dark:text-white">No app to install</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">WhatsApp is already on your phone. The fewer new things you have to learn, the longer the habit lasts.</p>
       </div>
-      <div class="card">
-        <div class="feature-icon" style="background:#dbeafe">🔐</div>
-        <h3 class="font-bold text-base mt-4 text-ink-900">Your data, your sheet</h3>
-        <p class="text-sm text-ink-600 mt-2">It's a Google Sheet you own. Export anytime. Cancel and your data stays with you — it's in your Drive.</p>
+      <div class="kfl-reveal rounded-2xl border border-ink-200 bg-ink-50/50 p-6 dark:border-ink-700 dark:bg-ink-800" data-delay="2">
+        <h3 class="text-base font-extrabold tracking-tight dark:text-white">Your sheet, your data</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">It's a Google Sheet in your own Drive. Export anytime. Cancel anytime — your data stays exactly where it is.</p>
       </div>
-      <div class="card">
-        <div class="feature-icon" style="background:#fce7f3">🧠</div>
-        <h3 class="font-bold text-base mt-4 text-ink-900">Smart by default</h3>
-        <p class="text-sm text-ink-600 mt-2">"Wolt" → Restaurants. "Super-Pharm" → Health. "AWS" → Subscriptions. Learns your shortcuts.</p>
+      <div class="kfl-reveal rounded-2xl border border-ink-200 bg-ink-50/50 p-6 dark:border-ink-700 dark:bg-ink-800" data-delay="3">
+        <h3 class="text-base font-extrabold tracking-tight dark:text-white">Smart categorization</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">"Wolt" maps to Restaurants. "Super-Pharm" to Health. "AWS" to Subscriptions. Learns the shortcuts you use.</p>
       </div>
-      <div class="card">
-        <div class="feature-icon" style="background:#dcfce7">🇮🇱</div>
-        <h3 class="font-bold text-base mt-4 text-ink-900">Made for Israel</h3>
-        <p class="text-sm text-ink-600 mt-2">Shekel-native. Hebrew RTL throughout. Knows Cofix, Aroma, Walt, Cibus, Mehadrin, BIG, Cofizz — and 700 more.</p>
+      <div class="kfl-reveal rounded-2xl border border-ink-200 bg-ink-50/50 p-6 dark:border-ink-700 dark:bg-ink-800" data-delay="1">
+        <h3 class="text-base font-extrabold tracking-tight dark:text-white">Hebrew, English, mixed</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">Type in whatever language is fastest. "<span class="font-mono">50 cafe</span>" and "<span class="font-mono">50 קפה</span>" land in the same row.</p>
       </div>
-      <div class="card">
-        <div class="feature-icon" style="background:#ede9fe">📊</div>
-        <h3 class="font-bold text-base mt-4 text-ink-900">Real dashboard</h3>
-        <p class="text-sm text-ink-600 mt-2">Live charts. Monthly trends. YoY deltas. Best/worst-month auto-insights. Cash-flow at a glance.</p>
+      <div class="kfl-reveal rounded-2xl border border-ink-200 bg-ink-50/50 p-6 dark:border-ink-700 dark:bg-ink-800" data-delay="2">
+        <h3 class="text-base font-extrabold tracking-tight dark:text-white">Family sharing</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">Up to four phones write to one shared sheet, with per-person color tags. No more "who paid for what."</p>
       </div>
-      <div class="card">
-        <div class="feature-icon" style="background:#ffe4e6">📨</div>
-        <h3 class="font-bold text-base mt-4 text-ink-900">Sunday digest</h3>
-        <p class="text-sm text-ink-600 mt-2">Every Sunday 8 AM you get a summary of last week + spike alerts (e.g. "Coffee 2.4x your weekly average").</p>
+      <div class="kfl-reveal rounded-2xl border border-ink-200 bg-ink-50/50 p-6 dark:border-ink-700 dark:bg-ink-800" data-delay="3">
+        <h3 class="text-base font-extrabold tracking-tight dark:text-white">Weekly digest</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-200">Every Sunday morning, a summary lands in your WhatsApp. Spikes flagged. Trends visible. Five seconds to read.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Privacy callout -->
-<section class="py-16 md:py-20">
-  <div class="container-pg">
-    <div class="card grid md:grid-cols-5 gap-8 items-center">
-      <div class="md:col-span-2">
-        <h3 class="text-2xl font-black text-ink-900">Privacy-first by design.</h3>
-        <p class="text-ink-600 mt-3">We can't read sheets we didn't create. We can't see your other Drive files. We don't store your messages on our servers — they go straight to your sheet.</p>
+<section class="relative py-20 md:py-28">
+  <div class="kfl-parallax pointer-events-none absolute right-0 top-1/4 -z-10 h-64 w-64 rounded-full bg-accent-500/15 blur-3xl animate-blob" data-speed="0.12"></div>
+
+  <div class="mx-auto max-w-4xl px-5">
+    <div class="kfl-reveal text-center">
+      <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-400">Pricing</p>
+      <h2 class="mt-3 text-3xl font-black tracking-tight md:text-5xl dark:text-white">
+        Free in beta. ₪<span class="num">29</span>/mo later.
+      </h2>
+      <p class="mt-4 mx-auto max-w-xl text-base leading-relaxed text-ink-600 dark:text-ink-200">
+        Use everything during beta. When we launch paid plans, every beta user gets a generous grace period. No card, no commitment.
+      </p>
+    </div>
+
+    <div class="kfl-reveal mt-10 grid gap-6 md:grid-cols-2">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">Beta</p>
+        <p class="mt-2 text-4xl font-black tracking-tight dark:text-white">Free</p>
+        <p class="mt-2 text-sm text-ink-600 dark:text-ink-200">All features. No limits. Help us shape the product.</p>
+        <ul class="mt-6 space-y-2 text-sm text-ink-700 dark:text-ink-200">
+          <li class="flex items-center gap-2"><span class="text-brand-600">→</span> Unlimited expenses</li>
+          <li class="flex items-center gap-2"><span class="text-brand-600">→</span> Family sharing</li>
+          <li class="flex items-center gap-2"><span class="text-brand-600">→</span> Weekly digest</li>
+        </ul>
       </div>
-      <ul class="md:col-span-3 space-y-3 text-sm">
-        <li class="flex gap-3"><span class="text-brand-600 font-black">→</span><div><b>AES-256-GCM</b> encryption of OAuth refresh tokens at rest (AAD-bound to your Google account).</div></li>
-        <li class="flex gap-3"><span class="text-brand-600 font-black">→</span><div><b>drive.file scope only</b> — the most restricted scope. Google's verification team agrees: we can't browse your Drive.</div></li>
-        <li class="flex gap-3"><span class="text-brand-600 font-black">→</span><div><b>Self-serve delete + export</b> — Israeli Privacy Law (Amendment 13) + GDPR Article 17 + Article 20 compliance built in.</div></li>
-        <li class="flex gap-3"><span class="text-brand-600 font-black">→</span><div><b>No third-party trackers</b> on this site. No cookies for analytics. Our analytics endpoint counts events without storing identifiers.</div></li>
-      </ul>
+      <div class="kfl-lift rounded-3xl border border-brand-400 bg-gradient-to-br from-brand-50 to-white p-8 dark:border-brand-700 dark:from-brand-900/30 dark:to-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300">Premium · coming soon</p>
+        <p class="mt-2 text-4xl font-black tracking-tight dark:text-white">₪<span class="num">29</span><span class="text-base font-bold text-ink-500 dark:text-ink-300">/mo</span></p>
+        <p class="mt-2 text-sm text-ink-600 dark:text-ink-200">Per premium seat. Business templates, OCR receipts, custom categories.</p>
+        <ul class="mt-6 space-y-2 text-sm text-ink-700 dark:text-ink-200">
+          <li class="flex items-center gap-2"><span class="text-brand-600">→</span> Receipt photo OCR</li>
+          <li class="flex items-center gap-2"><span class="text-brand-600">→</span> Business profit/cash-flow template</li>
+          <li class="flex items-center gap-2"><span class="text-brand-600">→</span> Custom categories &amp; tags</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- FAQ -->
-<section class="py-16 md:py-20 bg-gradient-to-br from-ink-50 to-white">
-  <div class="container-pg max-w-3xl">
-    <h2 class="text-3xl md:text-4xl font-black text-ink-900 mb-8 text-center">Common questions</h2>
-    <div class="space-y-3">
-      <details class="card group">
-        <summary class="font-bold text-ink-900 flex items-center justify-between">Is the app actually free?<span class="text-brand-600 group-open:rotate-180 transition-transform">⌄</span></summary>
-        <p class="mt-3 text-sm text-ink-600">Yes. Free tier covers up to 30 expenses/month — most personal users never exceed that. Pro (₪19/mo) unlocks unlimited, history, custom categories, Sunday digest, ROAS panel, CSV/PDF export. 14-day Pro trial, no card needed.</p>
-      </details>
-      <details class="card group">
-        <summary class="font-bold text-ink-900 flex items-center justify-between">Will it work for my business too?<span class="text-brand-600 group-open:rotate-180 transition-transform">⌄</span></summary>
-        <p class="mt-3 text-sm text-ink-600">Yes — solo freelancers and small businesses are our biggest segment. Add "P" or "פטור" suffix to mark business expenses; we pre-populate a profitability/cash-flow sheet template. Green Invoice integration on the roadmap.</p>
-      </details>
-      <details class="card group">
-        <summary class="font-bold text-ink-900 flex items-center justify-between">What about receipts?<span class="text-brand-600 group-open:rotate-180 transition-transform">⌄</span></summary>
-        <p class="mt-3 text-sm text-ink-600">Send a photo of a receipt to the bot. We extract amount, vendor, and date, classify the category, and log it. (Available in Pro; OCR powered by Gemini Vision.)</p>
-      </details>
-      <details class="card group">
-        <summary class="font-bold text-ink-900 flex items-center justify-between">Can my partner / accountant see the sheet?<span class="text-brand-600 group-open:rotate-180 transition-transform">⌄</span></summary>
-        <p class="mt-3 text-sm text-ink-600">It's your Google Sheet — share it with anyone you want from inside Drive. Family plan (₪39/mo) lets up to 4 phones write to one shared sheet with per-person color tags.</p>
-      </details>
-      <details class="card group">
-        <summary class="font-bold text-ink-900 flex items-center justify-between">What if I want to delete everything?<span class="text-brand-600 group-open:rotate-180 transition-transform">⌄</span></summary>
-        <p class="mt-3 text-sm text-ink-600">Open Account → Delete account. We revoke OAuth, drop everything from our database, and leave your sheet exactly where it is (you can keep it or delete it from Drive). Full audit log preserved per Israeli Privacy Law Amendment 13.</p>
-      </details>
-      <details class="card group">
-        <summary class="font-bold text-ink-900 flex items-center justify-between">Why WhatsApp and not Telegram / iMessage?<span class="text-brand-600 group-open:rotate-180 transition-transform">⌄</span></summary>
-        <p class="mt-3 text-sm text-ink-600">90%+ of Israelis use WhatsApp daily. Telegram and iMessage are on the roadmap — vote for them at <a href="/roadmap" class="text-brand-700 font-semibold underline">/roadmap</a>.</p>
-      </details>
-    </div>
-  </div>
-</section>
+<section id="signup" class="relative overflow-hidden border-t border-ink-200 bg-ink-900 py-20 md:py-28 dark:border-ink-700">
+  <div class="absolute inset-0 -z-10 bg-mesh opacity-50"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-32 left-1/2 -z-10 h-96 w-96 -translate-x-1/2 rounded-full bg-brand-500/20 blur-3xl animate-blob" data-speed="0.15"></div>
 
-<!-- Final CTA -->
-<section class="py-16 md:py-20">
-  <div class="container-pg max-w-3xl text-center">
-    <h2 class="text-3xl md:text-5xl font-black text-ink-900">Start tracking in 90 seconds.</h2>
-    <p class="mt-4 text-lg text-ink-600">Sign in with Google. We'll create your private sheet, walk you through the first 5 commands, and hand you the WhatsApp number.</p>
-    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-      <a href="/account" class="btn-primary text-base">Get started — free
+  <div class="mx-auto max-w-3xl px-5 text-center">
+    <p class="kfl-reveal text-xs font-bold uppercase tracking-[0.18em] text-brand-400">Start in <span class="num">90</span> seconds</p>
+    <h2 class="kfl-reveal mt-3 text-4xl font-black tracking-tight text-white md:text-5xl">
+      Track your money where you already live.
+    </h2>
+    <p class="kfl-reveal mt-5 text-base leading-relaxed text-ink-200">
+      Sign in with Google. We create your private sheet, walk you through the first five commands, and hand you the WhatsApp number.
+    </p>
+    <div class="kfl-reveal mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a href="/account" class="kfl-magnetic inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-7 py-4 text-base font-bold text-white shadow-glow transition hover:bg-brand-500">
+        Get started — free
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </a>
-      <a href="/pricing" class="btn-secondary text-base">See pricing</a>
+      <a href="/pricing" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-6 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/15">
+        See pricing
+      </a>
     </div>
-    <p class="mt-5 text-xs text-ink-500">Free forever for personal use · No credit card needed · Cancel anytime · GDPR + Amendment 13 compliant</p>
+    <p class="kfl-reveal mt-5 text-xs text-ink-400">Free in beta · No credit card · Cancel anytime</p>
   </div>
 </section>
 
-<!-- Footer -->
-<footer class="bg-ink-900 text-ink-300 py-12">
-  <div class="container-pg grid md:grid-cols-4 gap-8 text-sm">
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
     <div>
-      <div class="flex items-center gap-2 font-bold text-white text-lg">
-        <span class="grad-emerald text-white w-8 h-8 rounded-lg flex items-center justify-center text-base">₪</span>
-        Kesefle
-      </div>
-      <p class="mt-3 text-ink-400">Your money, on autopilot. Built for Hebrew + English speakers in Israel.</p>
-      <p class="mt-3 text-xs text-ink-500">© 2026 Kesefle. All rights reserved.</p>
+      <a href="/en" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+        <span>Kesefle</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">Your money, on autopilot.</p>
     </div>
     <div>
-      <div class="font-bold text-white mb-3">Product</div>
-      <ul class="space-y-2">
-        <li><a href="/en" class="hover:text-white">Home</a></li>
-        <li><a href="/pricing" class="hover:text-white">Pricing</a></li>
-        <li><a href="/demo" class="hover:text-white">Demo</a></li>
+      <p class="font-bold dark:text-white">Product</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="#how" class="hover:text-ink-900 dark:hover:text-white">How it works</a></li>
+        <li><a href="#features" class="hover:text-ink-900 dark:hover:text-white">Features</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">Pricing</a></li>
+        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">Demo</a></li>
       </ul>
     </div>
     <div>
-      <div class="font-bold text-white mb-3">Company</div>
-      <ul class="space-y-2">
-        <li><a href="/privacy" class="hover:text-white">Privacy</a></li>
-        <li><a href="/terms" class="hover:text-white">Terms</a></li>
-        <li><a href="/status" class="hover:text-white">Status</a></li>
-        <li><a href="mailto:hi@kesefle.app" class="hover:text-white">hi@kesefle.app</a></li>
+      <p class="font-bold dark:text-white">Company</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/about" class="hover:text-ink-900 dark:hover:text-white">About</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">Privacy</a></li>
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">Terms</a></li>
+        <li><a href="/status" class="hover:text-ink-900 dark:hover:text-white">Status</a></li>
       </ul>
     </div>
     <div>
-      <div class="font-bold text-white mb-3">Language</div>
-      <ul class="space-y-2">
-        <li><a href="/" class="hover:text-white" hreflang="he">עברית</a></li>
-        <li><a href="/en" class="hover:text-white text-white" hreflang="en">English</a></li>
+      <p class="font-bold dark:text-white">Language</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/" class="hover:text-ink-900 dark:hover:text-white" hreflang="he">עברית</a></li>
+        <li><a href="/en" class="font-semibold text-brand-700 dark:text-brand-300" hreflang="en">English</a></li>
       </ul>
-      <p class="mt-4 text-xs text-ink-500">More languages coming.<br />Vote on roadmap.</p>
     </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    © <span class="num">2026</span> Kesefle. All rights reserved.
   </div>
 </footer>
 
 <script>
-  // SW
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(function(){}); });
+(function reveal(){
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-reveal'));
+  if (!nodes.length) return;
+  if (!('IntersectionObserver' in window)) {
+    nodes.forEach(function(el) { el.classList.add('kfl-in'); });
+    return;
   }
-  // Fire-and-forget analytics: page_view
-  try {
-    var session = localStorage.getItem('kfl_session') || (function(){
-      var s = Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 6);
-      localStorage.setItem('kfl_session', s); return s;
-    })();
-    fetch('/api/events?action=track', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
-      body: JSON.stringify({ event: 'page_view', path: '/en', session: session, meta: { lang: 'en' } })
-    }).catch(function(){});
-  } catch(e) {}
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('kfl-in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+  nodes.forEach(function(el) { observer.observe(el); });
+})();
+
+(function parallaxBlobs(){
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-parallax'));
+  if (!nodes.length) return;
+  var items = nodes.map(function(el){
+    var s = parseFloat(el.getAttribute('data-speed'));
+    return { el: el, speed: isNaN(s) ? 0.15 : s };
+  });
+  var ticking = false;
+  function update(){
+    var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    for (var i = 0; i < items.length; i++) {
+      items[i].el.style.setProperty('--kfl-py', (y * items[i].speed).toFixed(2) + 'px');
+    }
+    ticking = false;
+  }
+  window.addEventListener('scroll', function(){
+    if (!ticking) { requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+  update();
+})();
+
+(function magnetic(){
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.kfl-magnetic').forEach(function(btn) {
+    btn.addEventListener('mousemove', function(e) {
+      var rect = btn.getBoundingClientRect();
+      var x = e.clientX - rect.left - rect.width / 2;
+      var y = e.clientY - rect.top - rect.height / 2;
+      btn.style.transform = 'translate(' + (x * 0.08) + 'px, ' + (y * 0.08) + 'px)';
+    });
+    btn.addEventListener('mouseleave', function() { btn.style.transform = ''; });
+  });
+})();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){});
+  });
+}
+
+try {
+  var session = localStorage.getItem('kfl_session') || (function(){
+    var s = Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 6);
+    localStorage.setItem('kfl_session', s); return s;
+  })();
+  fetch('/api/events?action=track', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+    body: JSON.stringify({ event: 'page_view', path: '/en', session: session, meta: { lang: 'en' } })
+  }).catch(function(){});
+} catch(e) {}
 </script>
 
 </body>
