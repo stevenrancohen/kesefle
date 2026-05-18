@@ -21,13 +21,14 @@ jobs:
 
       - name: Syntax check Apps Script bot
         run: |
-          # Apps Script files are JS — Node's --check catches syntax errors.
-          # We add a `var doPost, doGet;` shim because Apps Script's `doPost`
-          # / `doGet` are entry points expected to be defined at module scope.
+          # Apps Script files are JS, but Node refuses the .gs extension
+          # in newer versions. Copy to a temp .js file before --check.
           for f in bot/ExpenseBot_FIXED.gs bot/ExpenseBot_DEPLOY.gs; do
             if [ -f "$f" ]; then
               echo "Checking $f..."
-              node --check "$f" || { echo "::error file=$f::Syntax error"; exit 1; }
+              cp "$f" "/tmp/$(basename "$f" .gs).js"
+              node --check "/tmp/$(basename "$f" .gs).js" \
+                || { echo "::error file=$f::Syntax error"; exit 1; }
             fi
           done
 
