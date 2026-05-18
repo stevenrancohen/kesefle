@@ -1920,12 +1920,12 @@ function _handleReceiptImage_(fromPhone, image) {
 
   if (claudeRes.getResponseCode() !== 200) {
     Logger.log('_handleReceiptImage_: Claude API error ' + claudeRes.getResponseCode() + ': ' + claudeRes.getContentText().slice(0, 300));
-    return { replyText: '😬 הבינה לא הצליחה לקרוא את הקבלה כרגע. נסה שוב או רשום ידנית.' };
+    return { replyText: '😬 הבינה לא הצליחה לקרוא את הקבלה כרגע\n💡 ננסה שוב בעוד דקה? או רשום ידנית' };
   }
 
   var claudeBody;
   try { claudeBody = JSON.parse(claudeRes.getContentText()); }
-  catch (_p2) { return { replyText: '😬 קריאת הקבלה נכשלה. רשום את ההוצאה ידנית.' }; }
+  catch (_p2) { return { replyText: '😬 קריאת הקבלה נכשלה\n💡 רשום את ההוצאה ידנית — סכום פירוט' }; }
   var replyText = (claudeBody.content && claudeBody.content[0] && claudeBody.content[0].text) || '';
   var jsonMatch = String(replyText).match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -2031,17 +2031,17 @@ function _handleReceiptImage_(fromPhone, image) {
 function _handleVoiceMessage_(fromPhone, audio) {
   var mediaId = audio && audio.id;
   if (!mediaId) {
-    return { replyText: '😬 לא קיבלתי את הקול. נסה לשלוח שוב.' };
+    return { replyText: '😬 לא קיבלתי את הקול\n💡 נסה לשלוח שוב' };
   }
 
   var openaiKey = PropertiesService.getScriptProperties().getProperty('OPENAI_API_KEY');
   if (!openaiKey) {
     Logger.log('_handleVoiceMessage_: missing OPENAI_API_KEY');
-    return { replyText: '🎙️ אין תמיכה בקול עדיין. רשום בכתב בבקשה.' };
+    return { replyText: '🎙️ אין תמיכה בקול עדיין\n💡 רשום בכתב — סכום פירוט (למשל "85 סופר")' };
   }
   if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
     Logger.log('_handleVoiceMessage_: missing WHATSAPP_TOKEN');
-    return { replyText: '🎙️ אין תמיכה בקול כרגע. רשום בכתב בבקשה.' };
+    return { replyText: '🎙️ אין תמיכה בקול כרגע\n💡 רשום בכתב — סכום פירוט (למשל "85 סופר")' };
   }
 
   var mediaMetaUrl = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(mediaId);
@@ -2052,13 +2052,13 @@ function _handleVoiceMessage_(fromPhone, audio) {
   });
   if (metaRes.getResponseCode() !== 200) {
     Logger.log('_handleVoiceMessage_: media lookup failed ' + metaRes.getResponseCode() + ' ' + metaRes.getContentText().slice(0, 200));
-    return { replyText: '😬 לא הצלחתי להוריד את הקול. נסה לשלוח שוב.' };
+    return { replyText: '😬 לא הצלחתי להוריד את הקול\n💡 נסה לשלוח שוב' };
   }
   var metaBody;
   try { metaBody = JSON.parse(metaRes.getContentText()); }
-  catch (_p1) { return { replyText: '😬 לא הצלחתי לקרוא את הקול. נסה לשלוח שוב.' }; }
+  catch (_p1) { return { replyText: '😬 לא הצלחתי לקרוא את הקול\n💡 נסה לשלוח שוב' }; }
   if (!metaBody || !metaBody.url) {
-    return { replyText: '😬 לא הצלחתי להוריד את הקול. נסה לשלוח שוב.' };
+    return { replyText: '😬 לא הצלחתי להוריד את הקול\n💡 נסה לשלוח שוב' };
   }
 
   var audioRes = UrlFetchApp.fetch(metaBody.url, {
@@ -2068,12 +2068,12 @@ function _handleVoiceMessage_(fromPhone, audio) {
   });
   if (audioRes.getResponseCode() !== 200) {
     Logger.log('_handleVoiceMessage_: audio download failed ' + audioRes.getResponseCode());
-    return { replyText: '😬 לא הצלחתי להוריד את הקול. נסה לשלוח שוב.' };
+    return { replyText: '😬 לא הצלחתי להוריד את הקול\n💡 נסה לשלוח שוב' };
   }
   var audioBlob = audioRes.getBlob();
   var bytes = audioBlob.getBytes();
   if (bytes.length > 5 * 1024 * 1024) {
-    return { replyText: '🎙️ ההקלטה גדולה מדי (מעל 5MB). שלח הקלטה קצרה יותר.' };
+    return { replyText: '🎙️ ההקלטה גדולה מדי (מעל 5MB)\n💡 שלח הקלטה קצרה יותר או רשום בכתב' };
   }
 
   // Whisper expects a filename with a recognised extension; WhatsApp voice notes
@@ -2102,12 +2102,12 @@ function _handleVoiceMessage_(fromPhone, audio) {
     });
   } catch (e) {
     Logger.log('_handleVoiceMessage_: whisper fetch err: ' + (e && e.message));
-    return { replyText: '😬 בעיה בתמלול הקול. נסה לרשום בכתב.' };
+    return { replyText: '😬 בעיה בתמלול הקול\n💡 נסה לרשום בכתב במקום' };
   }
 
   if (whisperRes.getResponseCode() !== 200) {
     Logger.log('_handleVoiceMessage_: whisper API ' + whisperRes.getResponseCode() + ': ' + whisperRes.getContentText().slice(0, 300));
-    return { replyText: '😬 התמלול נכשל. נסה לרשום בכתב.' };
+    return { replyText: '😬 התמלול נכשל\n💡 נסה לרשום בכתב או דבר ברור יותר' };
   }
 
   var transcribed = '';
@@ -2116,11 +2116,11 @@ function _handleVoiceMessage_(fromPhone, audio) {
     transcribed = String(body && body.text || '').trim();
   } catch (_pw) {
     Logger.log('_handleVoiceMessage_: whisper JSON parse err');
-    return { replyText: '😬 התמלול נכשל. נסה לרשום בכתב.' };
+    return { replyText: '😬 התמלול נכשל\n💡 נסה לרשום בכתב או דבר ברור יותר' };
   }
 
   if (!transcribed) {
-    return { replyText: '🎙️ לא הצלחתי להבין. נסה לדבר ברור יותר.' };
+    return { replyText: '😬 לא הצלחתי להבין את ההקלטה\n💡 נסה לדבר ברור יותר, סכום קודם — למשל "מאתיים שקל סופר"' };
   }
 
   var safeTranscribed = sanitizeForSheet(transcribed);
@@ -2140,7 +2140,7 @@ function _handleVoiceMessage_(fromPhone, audio) {
   // amount-first instead of relaying the generic help message.
   var failedParse = !procReply || /^שלח בפורמט/.test(procReply) || /לא זיהיתי סכום/.test(procReply);
   if (failedParse) {
-    return { replyText: '🎙️ שמעתי "' + safeTranscribed + '" — אבל זה לא נראה כמו הוצאה. דבר משהו כמו: "מאתיים שקל סופר"' };
+    return { replyText: '🎙️ שמעתי "' + safeTranscribed + '" — אבל זה לא נראה כמו הוצאה\n💡 דבר משהו כמו "מאתיים שקל סופר" (סכום קודם)' };
   }
 
   return { replyText: heard + '\n\n' + procReply };
@@ -2425,7 +2425,7 @@ function teachCategory(text, category, subcategory) {
 
 function getMonthlySummary(fromPhone) {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-  if (!sheet) return '❌ אין לשונית תנועות\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט.';
+  if (!sheet) return '😬 אין לשונית תנועות\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט';
 
   const data = sheet.getDataRange().getValues();
   var userTz = (typeof _getUserTz_ === 'function') ? _getUserTz_(fromPhone) : 'Asia/Jerusalem';
@@ -3123,10 +3123,10 @@ function installWeeklySummaryTrigger() {
 function getInsightsMessage() {
   try {
     var summary = _buildWeeklySummary();
-    if (!summary) return '⚠️ לא הצלחתי לחשב תובנות כרגע.';
+    if (!summary) return '😬 לא הצלחתי לחשב תובנות כרגע\n💡 ננסה שוב בעוד דקה?';
 
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-    if (!sheet) return '⚠️ אין לשונית תנועות.';
+    if (!sheet) return '😬 אין לשונית תנועות\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט';
     var data = sheet.getDataRange().getValues();
 
     // Compute month-to-date totals
@@ -3162,7 +3162,7 @@ function getInsightsMessage() {
     return lines.join('\n');
   } catch (e) {
     Logger.log('getInsightsMessage error: ' + e);
-    return '⚠️ שגיאה בחישוב תובנות.';
+    return '😬 משהו השתבש בחישוב תובנות\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
@@ -3573,12 +3573,12 @@ function _handleBudgetCommand_(fromPhone, text) {
     var cat = setM[1].trim();
     var amt = Number(setM[2]);
     if (!cat || !isFinite(amt) || amt <= 0) {
-      return { handled: true, replyText: '❌ פורמט: יעד תקציב <קטגוריה> = <סכום>\nלמשל: יעד תקציב אוכל = 1500' };
+      return { handled: true, replyText: '😬 פורמט שגוי\n💡 השתמש ב-"יעד תקציב <קטגוריה> = <סכום>" — למשל: יעד תקציב אוכל = 1500' };
     }
     var key = 'budget:' + fromPhone + ':' + cat;
     var ok = kvSet(key, amt);
     if (!ok) {
-      return { handled: true, replyText: '⚠️ לא הצלחתי לשמור את היעד. נסה שוב בעוד דקה.' };
+      return { handled: true, replyText: '😬 לא הצלחתי לשמור את היעד\n💡 ננסה שוב בעוד דקה?' };
     }
     return { handled: true, replyText: '✅ הגדרתי תקציב חודשי ל-' + cat + ': ₪' + amt.toLocaleString('he-IL') };
   }
@@ -5136,7 +5136,7 @@ function getGoalsMessage() {
     return lines.join('\n');
   } catch (e) {
     Logger.log('getGoalsMessage error: ' + e);
-    return '⚠️ שגיאה בטעינת מטרות.';
+    return '😬 משהו השתבש בטעינת מטרות\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
@@ -5222,7 +5222,7 @@ function addGoal(parsed) {
   var goals = _loadGoals_();
   // Limit: 5 active goals
   if (goals.length >= 5) {
-    return '⚠️ הגעת לתקרת 5 מטרות. מחקי מטרה קיימת לפני שתוסיפי חדשה.\nשלחי "מטרות" לרשימה.';
+    return '😬 הגעת לתקרת 5 מטרות\n💡 שלחי "מטרות" לראות את הרשימה ומחקי אחת לפני שתוסיפי חדשה';
   }
   parsed.createdAt = new Date().toISOString();
   parsed.startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
@@ -5251,7 +5251,7 @@ function deleteGoal(idOrIndex) {
       if (goals[i].id === idOrIndex) { idx = i; break; }
     }
   }
-  if (idx < 0) return '⚠️ לא מצאתי את המטרה. שלחי "מטרות" לראות את הרשימה.';
+  if (idx < 0) return '😬 לא מצאתי את המטרה\n💡 שלחי "מטרות" לראות את הרשימה';
   var removed = goals.splice(idx, 1)[0];
   _saveGoals_(goals);
   return '🗑️ נמחקה מטרה: "' + removed.title + '"';
@@ -5629,7 +5629,7 @@ function _routeExpenseByContext_(fromPhone, text) {
 function _familyCreate_(fromPhone) {
   var templateId = (typeof FAMILY_TEMPLATE_SHEET_ID !== 'undefined') ? FAMILY_TEMPLATE_SHEET_ID : '';
   if (!templateId || templateId === 'REPLACE_WITH_FAMILY_TEMPLATE_ID') {
-    return { handled: true, replyText: '❌ תבנית משפחה לא הוגדרה. צור קשר עם המנהל.' };
+    return { handled: true, replyText: '😬 תבנית משפחה לא הוגדרה\n💡 צור קשר עם המנהל דרך https://kesefle.vercel.app' };
   }
 
   var familyId = _familyGenerateId_();
@@ -5742,7 +5742,7 @@ function _familyDeny_(adminPhone, requesterPhone) {
   kvDel('family:pending:' + familyId + ':' + requesterPhone);
   try {
     if (typeof sendWhatsAppMessage === 'function') {
-      sendWhatsAppMessage(requesterPhone, '❌ הבקשה נדחתה');
+      sendWhatsAppMessage(requesterPhone, '😬 הבקשה נדחתה\n💡 פנה למנהל המשפחה לפרטים');
     }
   } catch (e) { Logger.log('_familyDeny_: notify err ' + (e && e.message)); }
   return { handled: true, replyText: '✅ נדחה' };
@@ -5786,9 +5786,11 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
     return { handled: true, replyText: '😬 משהו השתבש בכתיבה לגיליון המשפחה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
   }
 
+  var memberLabel = String(member || '—');
+  var categoryLabel = String(category || 'שונות');
   return { handled: true, replyText:
     '✅ נרשם למשפחה: ₪' + Math.abs(amount).toLocaleString('he-IL') +
-    ' (' + member + ') — ' + category
+    ' (' + memberLabel + ') — ' + categoryLabel
   };
 }
 
