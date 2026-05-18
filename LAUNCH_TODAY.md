@@ -101,7 +101,7 @@ Verify Token: `expense_bot_verify_2026` (כבר בקוד ה-Apps Script).
 
 לאחר שלבים 1+2+3 הושלמו:
 
-1. **בדפדפן אינקוגניטו**: לכי ל-https://kesefle.vercel.app/
+1. **בדפדפן אינקוגניטו**: לכי ל-https://kesefle.com/
 2. לחצי "התחל חינם"
 3. התחברי עם Google
 4. אישור scopes (Drive + Spreadsheets)
@@ -118,5 +118,5 @@ Verify Token: `expense_bot_verify_2026` (כבר בקוד ה-Apps Script).
 
 - `/Users/stevenrancohen/Documents/Claude/Projects/kesefle/bot/ExpenseBot_FIXED.gs` — קוד הבוט (924 שורות)
 - `/Users/stevenrancohen/Downloads/מאזן - תבנית נקייה.xlsx` — התבנית הסופית הנקייה
-- `https://kesefle.vercel.app/` — האתר החי
+- `https://kesefle.com/` — האתר החי
 - `https://script.google.com/d/1znNProbptLBkwqPmV-xWp6EirX7n_mJZvoJHf9si9Tw98y5-kvUgrHTo/edit` — Apps Script project

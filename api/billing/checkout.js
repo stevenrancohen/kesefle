@@ -8,8 +8,8 @@
 //   STRIPE_SECRET_KEY        — sk_live_... or sk_test_...
 //   STRIPE_PRICE_PRO         — price_... for Pro plan (₪19/mo)
 //   STRIPE_PRICE_FAMILY      — price_... for Family plan (₪39/mo)
-//   STRIPE_SUCCESS_URL       — https://kesefle.vercel.app/dashboard?upgraded=true
-//   STRIPE_CANCEL_URL        — https://kesefle.vercel.app/account#plan
+//   STRIPE_SUCCESS_URL       — https://kesefle.com/dashboard?upgraded=true
+//   STRIPE_CANCEL_URL        — https://kesefle.com/account#plan
 //
 // Note: Stripe REST API is called via fetch (no npm SDK — pure HTTPS).
 
@@ -110,8 +110,8 @@ async function handlerImpl(req, res) {
   params.set('mode', 'subscription');
   params.set('line_items[0][price]', priceId);
   params.set('line_items[0][quantity]', '1');
-  params.set('success_url', process.env.STRIPE_SUCCESS_URL || 'https://kesefle.vercel.app/dashboard?upgraded=true');
-  params.set('cancel_url', process.env.STRIPE_CANCEL_URL || 'https://kesefle.vercel.app/account#plan');
+  params.set('success_url', process.env.STRIPE_SUCCESS_URL || 'https://kesefle.com/dashboard?upgraded=true');
+  params.set('cancel_url', process.env.STRIPE_CANCEL_URL || 'https://kesefle.com/account#plan');
   params.set('subscription_data[trial_period_days]', '14');
   params.set('subscription_data[metadata][userSub]', userSub);
   params.set('subscription_data[metadata][plan]', plan);

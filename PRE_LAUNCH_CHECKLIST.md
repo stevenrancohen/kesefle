@@ -34,7 +34,7 @@ Without this, the bot can't send messages — including the weekly digest (which
 
 Plus 4 Vercel env vars (`META_VERIFY_TOKEN`, `META_APP_SECRET`, `META_PHONE_NUMBER_ID`, `META_ACCESS_TOKEN`).
 
-Full setup: https://business.facebook.com → Create App → WhatsApp Cloud API → get a phone number (₪50-100 one-time) → Webhook URL = `https://kesefle.vercel.app/api/whatsapp/webhook`.
+Full setup: https://business.facebook.com → Create App → WhatsApp Cloud API → get a phone number (₪50-100 one-time) → Webhook URL = `https://kesefle.com/api/whatsapp/webhook`.
 
 ### 3. Stripe billing (20 min) — **Block D**
 Without this, /pricing → "התחל ניסיון Pro" → 404 (no Stripe Checkout).
@@ -81,16 +81,16 @@ Coming as `/open` from the autonomous sprint — radical-transparency page showi
 
 ```bash
 # Site health
-curl -s https://kesefle.vercel.app/api/health | jq
+curl -s https://kesefle.com/api/health | jq
 
 # All public routes
-curl -s https://kesefle.vercel.app/sitemap.xml | grep -oE 'https://[^<"]+' | sort -u | xargs -I{} sh -c 'echo "$(curl -s -o /dev/null -w "%{http_code}" {})  {}"'
+curl -s https://kesefle.com/sitemap.xml | grep -oE 'https://[^<"]+' | sort -u | xargs -I{} sh -c 'echo "$(curl -s -o /dev/null -w "%{http_code}" {})  {}"'
 
 # API endpoints
-curl -X POST https://kesefle.vercel.app/api/events?action=waitlist -H 'Content-Type: application/json' -d '{"email":"test@example.com","source":"verify"}'
+curl -X POST https://kesefle.com/api/events?action=waitlist -H 'Content-Type: application/json' -d '{"email":"test@example.com","source":"verify"}'
 
 # Live test suite
-open https://kesefle.vercel.app/test
+open https://kesefle.com/test
 ```
 
 ## 🟢 What "live and sellable" means today

@@ -14,7 +14,7 @@ To make the social login buttons work in production, you need to create three OA
 3. Sidebar → **Credentials** → **Create Credentials** → **OAuth client ID**:
    - Type: **Web application**.
    - Authorized JavaScript origins:
-     - `https://kesefle.vercel.app` (or your domain).
+     - `https://kesefle.com` (or your domain).
      - `http://localhost:3000` (for local testing).
    - Authorized redirect URIs (not strictly needed for GIS — leave blank if asked).
 4. Copy the **Client ID** (`xxxxxx.apps.googleusercontent.com`).
@@ -65,12 +65,12 @@ If you proceed:
    - Enable **Sign In with Apple** → Configure:
      - Primary App ID: the one from step 2.
      - Domains: `kesefle.vercel.app`.
-     - Return URLs: `https://kesefle.vercel.app/api/auth/apple/callback`.
+     - Return URLs: `https://kesefle.com/api/auth/apple/callback`.
 4. **Keys** → **+** → enable **Sign In with Apple** → download the `.p8` key file. (You only get to download once — save it.)
 
 **Add to Vercel:**
 - `APPLE_CLIENT_ID` = (the Services ID, e.g. `com.kesefle.web.signin`)
-- `APPLE_REDIRECT_URI` = `https://kesefle.vercel.app` (or your domain)
+- `APPLE_REDIRECT_URI` = `https://kesefle.com` (or your domain)
 
 For server-side JWT generation (refresh tokens, etc.), you'll also need `APPLE_TEAM_ID`, `APPLE_KEY_ID`, and the contents of the `.p8` file as `APPLE_PRIVATE_KEY`. That's only needed for refresh-token flows — the basic Sign In on the page works without it.
 
@@ -83,7 +83,7 @@ For server-side JWT generation (refresh tokens, etc.), you'll also need `APPLE_T
    - `__GOOGLE_CLIENT_ID__` → actual value
    - `__FACEBOOK_APP_ID__` → actual value
    - `__APPLE_CLIENT_ID__` → actual value (or remove the Apple button if you skipped)
-   - `__APPLE_REDIRECT_URI__` → `https://kesefle.vercel.app`
+   - `__APPLE_REDIRECT_URI__` → `https://kesefle.com`
 3. Commit + push (or `vercel --prod`).
 
 A better long-term path: add a Vercel build hook that substitutes these from env vars during deploy. We'll do that in Phase 2 when migrating to Next.js (env vars are first-class there).

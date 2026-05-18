@@ -32,7 +32,7 @@ For all three: use **list-unsubscribe header** (RFC 8058) so Gmail/Apple Mail on
 |---|---|---|---|
 | `{{firstName}}` | All templates | User profile (Hebrew first name) | "שלום" |
 | `{{userEmail}}` | Footer of all | Account email | (required) |
-| `{{unsubscribeUrl}}` | Footer of all | One-time signed URL per user | `https://kesefle.vercel.app/unsubscribe?token=...` |
+| `{{unsubscribeUrl}}` | Footer of all | One-time signed URL per user | `https://kesefle.com/unsubscribe?token=...` |
 | `{{week_total}}` | `day_7_weekly_summary` | Sum of transactions in last 7 days | `0` |
 | `{{top_category}}` | `day_7_weekly_summary` | Most-spent category in last 7 days | "מזון" |
 | `{{transactions}}` | `day_7_weekly_summary`, `day_30_pro_completed` | Count of transactions in window | `0` |

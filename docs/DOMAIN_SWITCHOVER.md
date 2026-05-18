@@ -137,7 +137,7 @@ grep -rn "kesefle.vercel.app" \
   --exclude-dir=node_modules --exclude-dir=.git
 ```
 
-Replace `https://kesefle.vercel.app` with `https://kesefle.com` everywhere except in deploy logs / changelog entries that reference the old URL historically.
+Replace `https://kesefle.com` with `https://kesefle.com` everywhere except in deploy logs / changelog entries that reference the old URL historically.
 
 After bulk find-and-replace, commit + push. Vercel auto-deploys.
 

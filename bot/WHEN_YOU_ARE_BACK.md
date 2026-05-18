@@ -84,8 +84,8 @@ Once confirmed working, tell me and I'll:
 ## What's already deployed (you don't need to do anything for these)
 
 - ✅ Sheet dashboard fix: 2023/2024/2025 net profit recomputed, 2023 משלוחים spread monthly
-- ✅ Website at https://kesefle.vercel.app: dark mode works, real WhatsApp number, voice modal removed, og-image present, OAuth scopes documented, robots/sitemap/canonical/JSON-LD all live
-- ✅ Test suite at https://kesefle.vercel.app/test: 31 automated checks
+- ✅ Website at https://kesefle.com: dark mode works, real WhatsApp number, voice modal removed, og-image present, OAuth scopes documented, robots/sitemap/canonical/JSON-LD all live
+- ✅ Test suite at https://kesefle.com/test: 31 automated checks
 - ✅ Google OAuth test users added (you did this earlier)
 
 **Last live deploy:** commit [1bcb040](https://github.com/stevenrancohen/kesefle/commit/1bcb040).

@@ -28,7 +28,7 @@ Verification rejection is uncommon but happens. Don't panic. Here's the playbook
 ### "We can't find your privacy policy at the URL provided"
 
 **Fix:**
-- Double-check the URL works in incognito (https://kesefle.vercel.app/privacy)
+- Double-check the URL works in incognito (https://kesefle.com/privacy)
 - Make sure no auth wall in front of it
 - Re-submit with the URL after confirming
 

@@ -5,11 +5,11 @@
   <Description>חיפוש במרכז העזרה של כסף'לה — Search the Kesefle help center.</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Language>he-IL</Language>
-  <Url type="text/html" method="get" template="https://kesefle.vercel.app/help?q={searchTerms}"/>
-  <Url type="application/opensearchdescription+xml" rel="self" template="https://kesefle.vercel.app/opensearch.xml"/>
-  <Image height="32" width="32" type="image/png">https://kesefle.vercel.app/icon-192.png</Image>
-  <Image height="192" width="192" type="image/png">https://kesefle.vercel.app/icon-192.png</Image>
-  <moz:SearchForm>https://kesefle.vercel.app/help</moz:SearchForm>
+  <Url type="text/html" method="get" template="https://kesefle.com/help?q={searchTerms}"/>
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://kesefle.com/opensearch.xml"/>
+  <Image height="32" width="32" type="image/png">https://kesefle.com/icon-192.png</Image>
+  <Image height="192" width="192" type="image/png">https://kesefle.com/icon-192.png</Image>
+  <moz:SearchForm>https://kesefle.com/help</moz:SearchForm>
   <Developer>Steven Ran Cohen</Developer>
   <Contact>srcslcollection@gmail.com</Contact>
   <Tags>finance expenses hebrew israel whatsapp</Tags>

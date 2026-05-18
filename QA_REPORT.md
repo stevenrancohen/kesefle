@@ -59,7 +59,7 @@ Note: `reqId` prefix says `fra1::` — that's the edge router, not the function 
 
 ## ✅ Front-end QA (live site)
 
-Tested at `https://kesefle.vercel.app/` after clearing SW + cache:
+Tested at `https://kesefle.com/` after clearing SW + cache:
 
 | Check | Result |
 |---|---|

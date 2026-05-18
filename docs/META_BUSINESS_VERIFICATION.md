@@ -7,8 +7,8 @@
 **What you'll need before starting** (gather these now, in one place):
 - ID document — your Israeli תעודת זהות, passport, OR if you have an עוסק פטור / עוסק מורשה, the registration document
 - A utility bill, bank statement, or business license that shows your name + address (used to prove identity)
-- The privacy policy URL: `https://kesefle.vercel.app/privacy` (already live ✅)
-- The terms URL: `https://kesefle.vercel.app/terms` (already live ✅)
+- The privacy policy URL: `https://kesefle.com/privacy` (already live ✅)
+- The terms URL: `https://kesefle.com/terms` (already live ✅)
 - A 1024×1024 PNG of your logo (you have `/icon-512.png` — needs to be upscaled. I'll handle this if needed)
 
 ---
@@ -39,7 +39,7 @@ Once inside Business Manager:
    - Legal business name: **must match your ID document exactly**. If you're using your personal ID, type your full name. If you have an עוסק פטור registration, use the business name on that certificate.
    - Business address: your actual home or office address in Israel
    - Phone number: your Israeli phone (not the Numero one — your real personal phone)
-   - Website: `https://kesefle.vercel.app`
+   - Website: `https://kesefle.com`
    - Business email: srcslcollection@gmail.com
 5. **Save**
 
@@ -107,8 +107,8 @@ Once Business Verification is **approved** (you'll get the email), do this:
 1. Top of the dashboard, find the **"App Mode"** toggle (currently says "Development")
 2. Click → switch to **Live**
 3. Meta will check that you have:
-   - ✅ Privacy Policy URL set (paste `https://kesefle.vercel.app/privacy` in App Settings → Basic if not already)
-   - ✅ Terms of Service URL set (paste `https://kesefle.vercel.app/terms`)
+   - ✅ Privacy Policy URL set (paste `https://kesefle.com/privacy` in App Settings → Basic if not already)
+   - ✅ Terms of Service URL set (paste `https://kesefle.com/terms`)
    - ✅ App icon uploaded (1024×1024 PNG)
    - ✅ Business verification approved
    - ✅ Category selected (Finance)
@@ -132,7 +132,7 @@ Send `סטטוס` from a phone OTHER than your own test devices (e.g. a friend's
 | Symptom | Cause | Fix |
 |---|---|---|
 | "Business verification failed" email | Document name ≠ Business info name | Edit Business Info to match document exactly (incl. middle names) |
-| "Cannot upgrade app mode" | Privacy URL not set | Settings → Basic → add `https://kesefle.vercel.app/privacy` |
+| "Cannot upgrade app mode" | Privacy URL not set | Settings → Basic → add `https://kesefle.com/privacy` |
 | Webhook stops receiving messages after going Live | `messages` subscription cleared | Re-subscribe in Configuration |
 | "Display name rejected" | Used a generic word like "Bot" or "WhatsApp" in display name | Use the brand name `Kesefle` or `כסף'לה` |
 | Submission stuck on "Pending" >5 days | Meta queue backlog | Email `developers-support@fb.com` with case number in subject line |

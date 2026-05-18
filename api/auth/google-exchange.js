@@ -7,7 +7,7 @@
 //   1. Browser generates code_verifier + code_challenge (PKCE).
 //   2. Browser redirects to:
 //        https://accounts.google.com/o/oauth2/v2/auth
-//          ?client_id=...&redirect_uri=https://kesefle.vercel.app/account
+//          ?client_id=...&redirect_uri=https://kesefle.com/account
 //          &response_type=code
 //          &access_type=offline       <-- this gives us a refresh token
 //          &prompt=consent            <-- forces refresh token on re-grant

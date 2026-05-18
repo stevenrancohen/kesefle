@@ -142,7 +142,7 @@ WABA-id secondary check plus per-phone rate limiting.
 For full signature verification today, the recommended production pattern is
 to insert a Vercel function between Meta and Apps Script:
 
-1. Meta sends the webhook to `https://kesefle.vercel.app/api/whatsapp-webhook`.
+1. Meta sends the webhook to `https://kesefle.com/api/whatsapp-webhook`.
 2. The Vercel function verifies `X-Hub-Signature-256` with
    `META_APP_SECRET` (Node's `crypto.createHmac('sha256', secret)`).
 3. On valid signature, it forwards the body to the Apps Script `/exec` URL

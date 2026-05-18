@@ -32,7 +32,7 @@ const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHAT
 // Script Properties can override the default if needed.
 const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1090404180828069';
 const BOT_PHONE_E164 = '+17745448053';
-const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.vercel.app';
+const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -2768,13 +2768,13 @@ function handleLinkCode_(code, fromPhone) {
         'כתבי "עזרה" לרשימת הפקודות המלאה.';
     }
     if (status === 404) {
-      return '😬 הקוד פג תוקף או לא תקין\n💡 חזרי ל-https://kesefle.vercel.app/account וצרי קוד חדש (תקף ל-10 דק׳)';
+      return '😬 הקוד פג תוקף או לא תקין\n💡 חזרי ל-https://kesefle.com/account וצרי קוד חדש (תקף ל-10 דק׳)';
     }
     if (status === 401) {
-      return '😬 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי)\n💡 פנה לתמיכה דרך https://kesefle.vercel.app';
+      return '😬 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי)\n💡 פנה לתמיכה דרך https://kesefle.com';
     }
     Logger.log('handleLinkCode_: unexpected status=' + status + ' body=' + JSON.stringify(body));
-    return '😬 משהו השתבש בקישור\n💡 נסה שוב או צור קוד חדש ב-https://kesefle.vercel.app/account';
+    return '😬 משהו השתבש בקישור\n💡 נסה שוב או צור קוד חדש ב-https://kesefle.com/account';
   } catch (e) {
     Logger.log('handleLinkCode_ error: ' + (e && e.stack || e));
     return '😬 שגיאת רשת\n💡 ננסה שוב בעוד רגע?';
@@ -5446,8 +5446,8 @@ function deleteGoal(idOrIndex) {
 
 var FAMILY_API_BASE = (function () {
   try {
-    return PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.vercel.app';
-  } catch (e) { return 'https://kesefle.vercel.app'; }
+    return PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
+  } catch (e) { return 'https://kesefle.com'; }
 })();
 
 function _handleFamilyCommand_(fromPhone, text) {
@@ -5799,7 +5799,7 @@ function _routeExpenseByContext_(fromPhone, text) {
 function _familyCreate_(fromPhone) {
   var templateId = (typeof FAMILY_TEMPLATE_SHEET_ID !== 'undefined') ? FAMILY_TEMPLATE_SHEET_ID : '';
   if (!templateId || templateId === 'REPLACE_WITH_FAMILY_TEMPLATE_ID') {
-    return { handled: true, replyText: '😬 תבנית משפחה לא הוגדרה\n💡 צור קשר עם המנהל דרך https://kesefle.vercel.app' };
+    return { handled: true, replyText: '😬 תבנית משפחה לא הוגדרה\n💡 צור קשר עם המנהל דרך https://kesefle.com' };
   }
 
   var familyId = _familyGenerateId_();

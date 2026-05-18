@@ -26,7 +26,7 @@ Once you're off that network (home Wi-Fi, mobile hotspot, or whitelist npmjs.org
 | AI | **Vercel AI SDK + Claude 3.5** | Streaming, tool-calls, edge-compatible |
 | Animation | **Framer Motion** | Premium feel, easy hover/scroll effects |
 | Voice input | **Whisper API via Vercel AI SDK** | Better Hebrew than Web Speech |
-| Hosting | **Vercel** | Already set up at https://kesefle.vercel.app |
+| Hosting | **Vercel** | Already set up at https://kesefle.com |
 | Analytics | **PostHog** | Self-hostable, generous free tier, session replay |
 | Payments | **Paddle** | MoR for global ILS, חשבונית מס auto |
 | WhatsApp | **Meta Cloud API** | Free tier, direct (no Twilio markup) |

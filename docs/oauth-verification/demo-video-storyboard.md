@@ -19,7 +19,7 @@
 - Hold for 5 seconds
 
 ### Frame 2 — Landing page (5 sec)
-- Navigate to `https://kesefle.vercel.app/`
+- Navigate to `https://kesefle.com/`
 - Scroll slowly to show:
   - The hero (WhatsApp bot explanation)
   - The Trust section ("Why give a WhatsApp bot access to your money?")
@@ -52,7 +52,7 @@
 - **Then** click "Allow"
 
 ### Frame 7 — Account page loads (5 sec)
-- Browser redirects to `https://kesefle.vercel.app/account`
+- Browser redirects to `https://kesefle.com/account`
 - Page shows the 3-step onboarding:
   - ✅ Step 1: Google connected
   - ⏳ Step 2: Create your sheet
@@ -82,9 +82,9 @@
 
 ### Frame 12 — Privacy + Terms (5 sec)
 - Back to browser
-- Navigate to `https://kesefle.vercel.app/privacy` quickly
+- Navigate to `https://kesefle.com/privacy` quickly
 - Scroll to show the Drive data section
-- Navigate to `https://kesefle.vercel.app/terms`
+- Navigate to `https://kesefle.com/terms`
 - Scroll to show the data handling section
 
 ### Frame 13 — Outro (3 sec)

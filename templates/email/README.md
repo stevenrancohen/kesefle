@@ -73,7 +73,7 @@ async function sendWelcome(user) {
   const html = Handlebars.compile(tplSrc)({
     firstName: user.firstName,
     userEmail: user.email,
-    unsubscribeUrl: `https://kesefle.vercel.app/unsubscribe?token=${user.unsubToken}`,
+    unsubscribeUrl: `https://kesefle.com/unsubscribe?token=${user.unsubToken}`,
   });
   await resend.emails.send({
     from: 'Kesefle <hello@kesefle.vercel.app>',
@@ -81,7 +81,7 @@ async function sendWelcome(user) {
     subject: `${user.firstName}, שמחים שהצטרפת לכסף'לה!`,
     html,
     headers: {
-      'List-Unsubscribe': `<https://kesefle.vercel.app/unsubscribe?token=${user.unsubToken}>, <mailto:unsubscribe@kesefle.vercel.app>`,
+      'List-Unsubscribe': `<https://kesefle.com/unsubscribe?token=${user.unsubToken}>, <mailto:unsubscribe@kesefle.vercel.app>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   });

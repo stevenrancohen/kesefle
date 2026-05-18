@@ -91,7 +91,7 @@ Bilingual step-by-step. Estimated total: ~35 minutes (you can do them in any ord
 **Why:** Confirm the `missing_auth` fix works — first user-facing milestone.
 
 ### English
-1. Open https://kesefle.vercel.app/account
+1. Open https://kesefle.com/account
 2. **Hard-refresh**: `Cmd+Shift+R` to bypass cache.
 3. If you've already created a sheet before, click **"התנתק"** → start over.
 4. Click **"התחל"** → Google → consent → return to /account.
@@ -100,7 +100,7 @@ Bilingual step-by-step. Estimated total: ~35 minutes (you can do them in any ord
 7. On `/welcome` — confetti, 5 click-to-copy commands. Click the WhatsApp CTA.
 
 ### עברית
-1. פתח https://kesefle.vercel.app/account
+1. פתח https://kesefle.com/account
 2. **רענון קשה**: `Cmd+Shift+R`.
 3. אם כבר יצרת גיליון קודם, לחץ **"התנתק"** ותתחיל מחדש.
 4. לחץ **"התחל"** → Google → אשר → חזור ל-/account.
@@ -119,7 +119,7 @@ Bilingual step-by-step. Estimated total: ~35 minutes (you can do them in any ord
 4. Get/buy a phone number through Meta (₪50-100 setup; the number itself is free for new ones).
 5. Verify the number via the Meta dashboard (they send an SMS code).
 6. Set up the webhook:
-   - Callback URL: `https://kesefle.vercel.app/api/whatsapp/webhook`
+   - Callback URL: `https://kesefle.com/api/whatsapp/webhook`
    - Verify Token: choose any random string (save it).
    - Subscribe to `messages` field.
 7. From the Meta dashboard, copy these values:
@@ -151,7 +151,7 @@ Full guide: I recommend Meta's official docs at https://developers.facebook.com/
 3. Repeat for **Kesefle Family** at ₪39/month.
 4. Get webhook signing secret:
    - https://dashboard.stripe.com/webhooks → Add endpoint
-   - URL: `https://kesefle.vercel.app/api/billing/webhook`
+   - URL: `https://kesefle.com/api/billing/webhook`
    - Events: select `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_failed`, `invoice.paid`
    - Copy the **Signing secret** (`whsec_...`).
 5. Get your API key:
@@ -162,7 +162,7 @@ Full guide: I recommend Meta's official docs at https://developers.facebook.com/
    - `STRIPE_PRICE_PRO` = price_... (from step 2)
    - `STRIPE_PRICE_FAMILY` = price_... (from step 3)
 7. Redeploy.
-8. Test the flow: visit https://kesefle.vercel.app/pricing → click "התחל ניסיון Pro" → should redirect to Stripe Checkout.
+8. Test the flow: visit https://kesefle.com/pricing → click "התחל ניסיון Pro" → should redirect to Stripe Checkout.
 
 ---
 
@@ -193,4 +193,4 @@ The product is ready for real customers. The remaining blockers are:
 - Vercel region → EU (1-line config change in Vercel dashboard, Israeli law)
 - Dedicated WhatsApp business number procurement (covered in Task 4)
 
-Run https://kesefle.vercel.app/test to verify all 31 automated checks pass after each major change.
+Run https://kesefle.com/test to verify all 31 automated checks pass after each major change.

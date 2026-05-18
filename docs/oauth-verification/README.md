@@ -34,9 +34,9 @@ Go to: https://console.cloud.google.com/apis/credentials/consent?project=1919387
    - **App name:** Kesefle
    - **User support email:** srcslcollection@gmail.com
    - **App logo:** Upload a 120x120px PNG of your logo (the ₪ symbol with brand-green background — see logo.png in this folder)
-   - **Application home page:** `https://kesefle.vercel.app/`
-   - **Privacy policy:** `https://kesefle.vercel.app/privacy`
-   - **Terms of service:** `https://kesefle.vercel.app/terms`
+   - **Application home page:** `https://kesefle.com/`
+   - **Privacy policy:** `https://kesefle.com/privacy`
+   - **Terms of service:** `https://kesefle.com/terms`
    - **Authorized domains:** add `vercel.app` (so it covers kesefle.vercel.app)
    - **Developer contact info:** srcslcollection@gmail.com
 5. **Save and continue**

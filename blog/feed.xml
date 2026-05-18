@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>כסף'לה — בלוג</title>
-    <link>https://kesefle.vercel.app/blog</link>
+    <link>https://kesefle.com/blog</link>
     <description>מדריכים פרקטיים בעברית על ניהול כסף, מעקב הוצאות, תקציב משפחתי, ותזרים מזומנים לעצמאים ועסקים קטנים בישראל.</description>
     <language>he</language>
     <copyright>© 2026 כסף'לה. כל הזכויות שמורות.</copyright>
@@ -11,16 +11,16 @@
     <ttl>1440</ttl>
     <generator>Kesefle</generator>
     <image>
-      <url>https://kesefle.vercel.app/icon-512.png</url>
+      <url>https://kesefle.com/icon-512.png</url>
       <title>כסף'לה — בלוג</title>
-      <link>https://kesefle.vercel.app/blog</link>
+      <link>https://kesefle.com/blog</link>
     </image>
-    <atom:link href="https://kesefle.vercel.app/blog/feed.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://kesefle.com/blog/feed.xml" rel="self" type="application/rss+xml" />
 
     <item>
       <title>כסף'לה מול האפליקציות הקיימות — מה ההבדל?</title>
-      <link>https://kesefle.vercel.app/blog/whatsapp-budget-tools-comparison</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/whatsapp-budget-tools-comparison</guid>
+      <link>https://kesefle.com/blog/whatsapp-budget-tools-comparison</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/whatsapp-budget-tools-comparison</guid>
       <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
       <description>השוואה כנה ל-Toshen, Riseup, YNAB ועוד. גישה אחרת: וואטסאפ-נייטיב, והנתונים נשארים אצלך.</description>
       <category>השוואה</category>
@@ -28,8 +28,8 @@
 
     <item>
       <title>עצמאים: יש דרך טובה יותר לעקוב אחרי הוצאות עסקיות</title>
-      <link>https://kesefle.vercel.app/blog/atzmaim-yesh-derekh-tova-yoter</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/atzmaim-yesh-derekh-tova-yoter</guid>
+      <link>https://kesefle.com/blog/atzmaim-yesh-derekh-tova-yoter</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/atzmaim-yesh-derekh-tova-yoter</guid>
       <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
       <description>הפרדה אישי/עסקי, תיוג קבלות, וייצוא לרואה החשבון — בלי מערכת חשבונאית.</description>
       <category>לעצמאים</category>
@@ -37,8 +37,8 @@
 
     <item>
       <title>למה גיליון Google משלך עדיף על אפליקציה סגורה</title>
-      <link>https://kesefle.vercel.app/blog/hashvaaa-vs-google-sheets</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/hashvaaa-vs-google-sheets</guid>
+      <link>https://kesefle.com/blog/hashvaaa-vs-google-sheets</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/hashvaaa-vs-google-sheets</guid>
       <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
       <description>ניידות, audit trail, ומה קורה כשסטארטאפ נסגר. הטענה לבעלות מלאה על הנתונים שלך.</description>
       <category>פילוסופיה</category>
@@ -46,8 +46,8 @@
 
     <item>
       <title>למה כדאי לך לנהל תקציב משפחתי בוואטסאפ</title>
-      <link>https://kesefle.vercel.app/blog/tipul-mishpacha-bawatsap</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/tipul-mishpacha-bawatsap</guid>
+      <link>https://kesefle.com/blog/tipul-mishpacha-bawatsap</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/tipul-mishpacha-bawatsap</guid>
       <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
       <description>זוגות ומשפחות מתווכחים על הוצאות קטנות שאף אחד לא תיעד. הנה איך וואטסאפ פותר את זה.</description>
       <category>למשפחות</category>
@@ -55,8 +55,8 @@
 
     <item>
       <title>כך תחסכו אלפי שקלים בשנה בעזרת מעקב הוצאות אוטומטי</title>
-      <link>https://kesefle.vercel.app/blog/chisachon-alafim-bawatsap</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/chisachon-alafim-bawatsap</guid>
+      <link>https://kesefle.com/blog/chisachon-alafim-bawatsap</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/chisachon-alafim-bawatsap</guid>
       <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
       <description>חמישה דפוסים שגוזלים אלפי שקלים בשנה — ואיך מעקב אוטומטי בוואטסאפ חושף אותם.</description>
       <category>חיסכון</category>
@@ -64,8 +64,8 @@
 
     <item>
       <title>איך עצמאי בישראל יכול לעקוב אחרי הוצאות בלי לשגע את עצמו (מדריך 2026)</title>
-      <link>https://kesefle.vercel.app/blog/expense-tracking-freelancer</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/expense-tracking-freelancer</guid>
+      <link>https://kesefle.com/blog/expense-tracking-freelancer</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/expense-tracking-freelancer</guid>
       <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
       <description>תכנון תזרים, אקסל מסובך, אפליקציות שדורשות גישה לחשבון בנק — אחרי שנתיים זה הופך לסיוט. הנה גישה אחרת, פרקטית, שלוקחת 10 שניות ביום.</description>
       <category>לפרילנסרים</category>
@@ -73,8 +73,8 @@
 
     <item>
       <title>תקציב לעומת תזרים מזומנים — מה ההבדל באמת, ולמה זה משנה לעצמאי?</title>
-      <link>https://kesefle.vercel.app/blog/budget-vs-cashflow</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/budget-vs-cashflow</guid>
+      <link>https://kesefle.com/blog/budget-vs-cashflow</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/budget-vs-cashflow</guid>
       <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
       <description>שני מושגים שכולם מערבבים. עצמאי שמבין את ההבדל ישן בלילה.</description>
       <category>עומק טכני</category>
@@ -82,8 +82,8 @@
 
     <item>
       <title>5 כלים שמשנים את הדרך שבה עסקים ישראליים משתמשים בוואטסאפ ב-2026</title>
-      <link>https://kesefle.vercel.app/blog/whatsapp-business-tools</link>
-      <guid isPermaLink="true">https://kesefle.vercel.app/blog/whatsapp-business-tools</guid>
+      <link>https://kesefle.com/blog/whatsapp-business-tools</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/whatsapp-business-tools</guid>
       <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
       <description>מעבר ל"היי, אפשר לתאם?" — מה באמת קורה ב-2026 בעסקים קטנים שמשתמשים בוואטסאפ.</description>
       <category>לעסקים קטנים</category>

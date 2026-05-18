@@ -3,7 +3,7 @@
 > הכסף שלך, על אוטומט.
 > Hebrew WhatsApp-bot expense tracker with Google Sheets backend.
 
-**Live at https://kesefle.vercel.app · Status: production ~92% feature-complete · 6 launch blockers tracked in `docs/PRODUCTION_ROADMAP.md`**
+**Live at https://kesefle.com · Status: production ~92% feature-complete · 6 launch blockers tracked in `docs/PRODUCTION_ROADMAP.md`**
 
 ## What's running
 

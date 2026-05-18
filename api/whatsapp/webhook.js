@@ -213,14 +213,14 @@ export default async function handler(req, res) {
         'או: "60 וולט"\n' +
         'או: "8500 משכורת"\n\n' +
         'אני אנתח את ההודעה ואראה לך איך הייתי שומר אותה לגיליון שלך. בלי לחבר חשבון. ' +
-        'אחרי שתראה, כדי לשמור אמיתי — עבור ל-https://kesefle.vercel.app/account.');
+        'אחרי שתראה, כדי לשמור אמיתי — עבור ל-https://kesefle.com/account.');
       return res.status(200).json({ ok: true, demo: true });
     }
     // Primary warm welcome (≤2s reply)
     await sendReply(fromPhone,
       'היי! 👋 אני כספלה — בוט ההוצאות שלך בוואטסאפ.\n' +
       'אני לא מזהה את המספר הזה עדיין, אז בוא נתחיל יחד.\n\n' +
-      '1️⃣ פתח: https://kesefle.vercel.app/account\n' +
+      '1️⃣ פתח: https://kesefle.com/account\n' +
       '2️⃣ התחבר עם Google\n' +
       '3️⃣ קשר את המספר הזה — לוקח 30 שניות\n\n' +
       'אחרי שנקשרים, תוכל לשלוח לי דברים כמו:\n' +
