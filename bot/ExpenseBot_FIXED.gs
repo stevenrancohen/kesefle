@@ -394,6 +394,23 @@ function doPost(e) {
             }
           }
 
+          // Family / household commands: הזמן, משפחה, פרישה (and EN aliases).
+          // STUB: real KV logic lives in the Vercel layer — see docs/family-sharing.md.
+          if (typeof _handleFamilyCommand_ === "function") {
+            try {
+              var __fam = _handleFamilyCommand_(__from_, __text_);
+              if (__fam && __fam.handled) {
+                if (typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __fam.replyText);
+                }
+                Logger.log('doPost: family command handled=true');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_famErr) {
+              Logger.log('doPost: family command error: ' + (_famErr && _famErr.stack || _famErr));
+            }
+          }
+
           if (typeof handleBotCommand_ === "function") {
             try {
               var __bc = handleBotCommand_(__from_, __text_);
@@ -701,6 +718,18 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'הד' || trimmed === 'echo' || trimmed === 'ping') {
     return { reply: '🏓 הבוט פעיל! קיבלתי את "' + text + '" ב-' + Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'HH:mm:ss') };
   }
+  // Goal tracking commands
+  if (trimmed === 'מטרות' || trimmed === 'goals' || trimmed === 'יעדים') {
+    if (typeof getGoalsMessage === 'function') return { reply: getGoalsMessage() };
+  }
+  if (text.trim().match(/^מטרה\s*[:\-]/i)) {
+    if (typeof parseGoalCommand === 'function') {
+      var __goalParsed = parseGoalCommand(text);
+      if (__goalParsed && typeof addGoal === 'function') return { reply: addGoal(__goalParsed) };
+    }
+  }
+  var __delGoalM = text.trim().match(/^מחק\s+מטרה\s+(.+)$/i);
+  if (__delGoalM && typeof deleteGoal === 'function') return { reply: deleteGoal(__delGoalM[1].trim()) };
 
   // Multi-tenant account linking: "קוד 482917" / "code 482917" / "link 482917"
   // Bot's `from` phone (the sender) is provided by doPost in the calling context.
@@ -3735,3 +3764,166 @@ function _testActiveSubscriptionsMessage_() {
 function _testCleanupMessage_() {
   Logger.log(getSubscriptionCleanupMessage());
 }
+
+// ============================================================
+// 🎯 GOAL TRACKING — let users set savings/spending goals + nudge them
+// ============================================================
+// Examples:
+//   "מטרה: חיסכון 5000 לחופשה עד אוגוסט"  → set savings goal
+//   "מטרה: עד 800 שח על אוכל בחוץ בחודש"  → set spending cap
+//   "מטרות"                              → list active goals + progress
+//   "מחק מטרה X"                          → remove goal
+//
+// Goals are stored as JSON in Script Properties (key: goals:active).
+// Each goal: { id, type:'save'|'cap', target, category?, deadline?, createdAt, current }
+function getGoalsMessage() {
+  try {
+    var goals = _loadGoals_();
+    if (!goals.length) {
+      return '🎯 *המטרות שלך*\n' +
+        '━━━━━━━━━━━━━━━━━━\n\n' +
+        'עדיין אין לך מטרות פעילות.\n\n' +
+        '💡 *דוגמאות להגדרת מטרה:*\n' +
+        '  • "מטרה: חיסכון 5000 לחופשה עד אוגוסט"\n' +
+        '  • "מטרה: עד 800 שח על אוכל בחוץ בחודש"\n' +
+        '  • "מטרה: לא להוציא על קפה השבוע"';
+    }
+    var lines = ['🎯 *המטרות שלך*', '━━━━━━━━━━━━━━━━━━', ''];
+    for (var i = 0; i < goals.length; i++) {
+      var g = goals[i];
+      var pct = g.target > 0 ? Math.round((g.current / g.target) * 100) : 0;
+      var bar = _progressBar_(pct);
+      var emoji = g.type === 'save' ? '💰' : '🎯';
+      var label = g.type === 'save' ? 'חיסכון' : 'מקסימום';
+      lines.push(emoji + ' *' + g.title + '*');
+      lines.push('   ' + label + ': ₪' + g.target.toLocaleString());
+      lines.push('   ' + bar + ' ' + pct + '%');
+      lines.push('   ₪' + g.current.toLocaleString() + ' / ₪' + g.target.toLocaleString());
+      if (g.deadline) lines.push('   📅 עד: ' + g.deadline);
+      lines.push('');
+    }
+    lines.push('💡 כתבי "מחק מטרה X" כדי להסיר');
+    return lines.join('\n');
+  } catch (e) {
+    Logger.log('getGoalsMessage error: ' + e);
+    return '⚠️ שגיאה בטעינת מטרות.';
+  }
+}
+
+function _progressBar_(pct) {
+  var filled = Math.min(10, Math.floor(pct / 10));
+  var empty = 10 - filled;
+  return '▰'.repeat(filled) + '▱'.repeat(empty);
+}
+
+function _loadGoals_() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('goals:active');
+    if (!raw) return [];
+    var goals = JSON.parse(raw);
+    // Recompute current values from sheet
+    return goals.map(_refreshGoalProgress_);
+  } catch (e) {
+    return [];
+  }
+}
+
+function _saveGoals_(goals) {
+  PropertiesService.getScriptProperties().setProperty('goals:active', JSON.stringify(goals));
+}
+
+function _refreshGoalProgress_(goal) {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return goal;
+    var data = sheet.getDataRange().getValues();
+    var current = 0;
+    var startDate = goal.startDate ? new Date(goal.startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    for (var i = 1; i < data.length; i++) {
+      var d = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
+      if (isNaN(d.getTime()) || d < startDate) continue;
+      var cat = String(data[i][3] || '');
+      var sub = String(data[i][4] || '');
+      if (goal.category && !cat.includes(goal.category) && !sub.includes(goal.category)) continue;
+      if (goal.type === 'save' && /הכנסות|הכנסה/i.test(cat)) {
+        current += Number(data[i][2]) || 0;
+      } else if (goal.type === 'cap' && !/הכנסות|הכנסה/i.test(cat)) {
+        current += Number(data[i][2]) || 0;
+      }
+    }
+    goal.current = current;
+    return goal;
+  } catch (e) {
+    return goal;
+  }
+}
+
+// Parser: "מטרה: חיסכון 5000 לחופשה עד אוגוסט" or "מטרה: עד 800 שח על אוכל"
+function parseGoalCommand(text) {
+  var t = String(text || '').trim();
+  // Match "מטרה: <anything>"
+  var m = t.match(/^מטרה\s*[:\-]?\s*(.+)$/i);
+  if (!m) return null;
+  var body = m[1].trim();
+  // Extract amount
+  var amountM = body.match(/(\d+(?:[.,]\d+)?)\s*(?:שח|₪|ש"ח)?/);
+  if (!amountM) return null;
+  var amount = parseFloat(amountM[1].replace(',', ''));
+  // Detect type
+  var isCapMode = /^עד\s|מקסימום|לא יותר/i.test(body);
+  var isSaveMode = /חיסכון|לחסוך/i.test(body) || !isCapMode;
+  // Extract category (optional)
+  var catM = body.match(/(?:על|בקטגוריה|ל)\s+([֐-׿a-zA-Z]+(?:\s+[֐-׿a-zA-Z]+){0,2})/);
+  var category = catM ? catM[1].trim() : null;
+  // Extract deadline (optional)
+  var deadlineM = body.match(/עד\s+([֐-׿a-zA-Z\d\s\/\-\.]+?)(?:\s|$)/);
+  var deadline = deadlineM ? deadlineM[1].trim() : null;
+  return {
+    type: isCapMode ? 'cap' : 'save',
+    target: amount,
+    category: category,
+    deadline: deadline,
+    title: body.slice(0, 60),
+    id: Date.now().toString(36)
+  };
+}
+
+function addGoal(parsed) {
+  var goals = _loadGoals_();
+  // Limit: 5 active goals
+  if (goals.length >= 5) {
+    return '⚠️ הגעת לתקרת 5 מטרות. מחקי מטרה קיימת לפני שתוסיפי חדשה.\nשלחי "מטרות" לרשימה.';
+  }
+  parsed.createdAt = new Date().toISOString();
+  parsed.startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  parsed.current = 0;
+  goals.push(parsed);
+  _saveGoals_(goals);
+  var emoji = parsed.type === 'save' ? '💰' : '🎯';
+  return emoji + ' *מטרה נוספה בהצלחה!*\n\n' +
+    parsed.title + '\n' +
+    'יעד: ₪' + parsed.target.toLocaleString() + '\n' +
+    (parsed.category ? 'קטגוריה: ' + parsed.category + '\n' : '') +
+    (parsed.deadline ? 'תאריך יעד: ' + parsed.deadline + '\n' : '') +
+    '\nאעדכן אותך בהתקדמות. שלחי "מטרות" לראות הכל.';
+}
+
+function deleteGoal(idOrIndex) {
+  var goals = _loadGoals_();
+  var idx = -1;
+  // Try by index (1-based for user-friendliness)
+  var asNum = parseInt(idOrIndex, 10);
+  if (!isNaN(asNum) && asNum >= 1 && asNum <= goals.length) {
+    idx = asNum - 1;
+  } else {
+    // Try by ID
+    for (var i = 0; i < goals.length; i++) {
+      if (goals[i].id === idOrIndex) { idx = i; break; }
+    }
+  }
+  if (idx < 0) return '⚠️ לא מצאתי את המטרה. שלחי "מטרות" לראות את הרשימה.';
+  var removed = goals.splice(idx, 1)[0];
+  _saveGoals_(goals);
+  return '🗑️ נמחקה מטרה: "' + removed.title + '"';
+}
+
