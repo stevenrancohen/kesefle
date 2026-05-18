@@ -463,6 +463,23 @@ function doPost(e) {
         }
       }
 
+      // === RECEIPT OCR — user sent a photo instead of text ===
+      // Must run BEFORE text dispatchers because image messages have no __text_
+      // but we still want to acknowledge them on the same locked execution.
+      if (__msg_.image && __msg_.image.id) {
+        try {
+          var ocrRes = _handleReceiptImage_(__from_, __msg_.image);
+          if (ocrRes && ocrRes.replyText && typeof sendWhatsAppMessage === "function") {
+            sendWhatsAppMessage(__from_, ocrRes.replyText);
+          }
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        } catch (_ocrErr) {
+          Logger.log('doPost: receipt OCR error: ' + (_ocrErr && _ocrErr.stack || _ocrErr));
+          try { sendWhatsAppMessage(__from_, '😬 הייתה בעיה בקריאת הקבלה. נסה לשלוח שוב או רשום ידנית.'); } catch (__) {}
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        }
+      }
+
       if (__text_) {
         // === CONTEXT-BASED ROUTING for explicit prefix or KV context ===
         // The user can flip a persistent "context" between personal/family via
@@ -1683,6 +1700,202 @@ function _saveLastExpense_(fromPhone, rowNumber, item, matched) {
       ts: Date.now()
     }), 600);
   } catch (e) { Logger.log('_saveLastExpense_: ' + e.message); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 📸 RECEIPT OCR — claude-haiku-4-5 reads a photo of an Israeli receipt and
+// returns vendor/amount/date/description as JSON. Same write/reply flow as a
+// text expense so the correction handler (`קטגוריה X`) keeps working.
+// ═══════════════════════════════════════════════════════════════════════════
+function _handleReceiptImage_(fromPhone, image) {
+  var mediaId = image && image.id;
+  if (!mediaId) {
+    return { replyText: '😬 לא קיבלתי את התמונה. נסה לשלוח שוב.' };
+  }
+
+  var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) {
+    Logger.log('_handleReceiptImage_: missing ANTHROPIC_API_KEY');
+    return { replyText: '🤖 קריאת קבלות לא זמינה כרגע. רשום את ההוצאה ידנית: סכום פירוט.' };
+  }
+  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
+    Logger.log('_handleReceiptImage_: missing WHATSAPP_TOKEN');
+    return { replyText: '🤖 קריאת קבלות לא זמינה כרגע. רשום את ההוצאה ידנית: סכום פירוט.' };
+  }
+
+  // Step 1 — Meta's media endpoint returns a short-lived signed URL.
+  var mediaMetaUrl = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(mediaId);
+  var metaRes = UrlFetchApp.fetch(mediaMetaUrl, {
+    method: 'get',
+    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN },
+    muteHttpExceptions: true
+  });
+  if (metaRes.getResponseCode() !== 200) {
+    Logger.log('_handleReceiptImage_: media lookup failed ' + metaRes.getResponseCode() + ' ' + metaRes.getContentText().slice(0, 200));
+    return { replyText: '😬 לא הצלחתי להוריד את התמונה. נסה לשלוח שוב או רשום ידנית.' };
+  }
+  var metaBody;
+  try { metaBody = JSON.parse(metaRes.getContentText()); }
+  catch (_p1) { return { replyText: '😬 לא הצלחתי לקרוא את התמונה. נסה לשלוח שוב.' }; }
+  if (!metaBody || !metaBody.url) {
+    return { replyText: '😬 לא הצלחתי להוריד את התמונה. נסה לשלוח שוב.' };
+  }
+  // Meta returns mime in media metadata; webhook value can disagree on some clients.
+  var mimeType = String(image.mime_type || metaBody.mime_type || 'image/jpeg').split(';')[0].trim();
+  if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/webp' && mimeType !== 'image/gif') {
+    mimeType = 'image/jpeg';
+  }
+
+  // Step 2 — Download bytes from the signed URL (same bearer token required).
+  var imgRes = UrlFetchApp.fetch(metaBody.url, {
+    method: 'get',
+    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN },
+    muteHttpExceptions: true
+  });
+  if (imgRes.getResponseCode() !== 200) {
+    Logger.log('_handleReceiptImage_: media download failed ' + imgRes.getResponseCode());
+    return { replyText: '😬 לא הצלחתי להוריד את התמונה. נסה לשלוח שוב או רשום ידנית.' };
+  }
+  var bytes = imgRes.getBlob().getBytes();
+  // Apps Script UrlFetch has a 6-minute hard cap; oversize images burn that budget on encode.
+  if (bytes.length > 5 * 1024 * 1024) {
+    return { replyText: '📸 התמונה גדולה מדי (מעל 5MB). שלח תמונה קטנה יותר או רשום ידנית.' };
+  }
+  var base64Image = Utilities.base64Encode(bytes);
+
+  // Step 3 — Claude vision OCR. Keep prompt tight; haiku does best with explicit JSON contract.
+  var ocrPrompt =
+    'You are reading an Israeli receipt or invoice. Extract:\n' +
+    '- vendor: the store/business name (e.g. "שופרסל", "סופר-פארם", "Wolt")\n' +
+    '- amount: the FINAL TOTAL paid (the largest "סה״כ" or "סך הכל" line, NOT subtotals)\n' +
+    '- date: in YYYY-MM-DD format, or empty if not legible\n' +
+    '- description: a 2-4 word Hebrew summary of what was bought (e.g. "קניות שבועיות", "ארוחת ערב")\n\n' +
+    'Return STRICT JSON: {"vendor":"...","amount":0,"date":"YYYY-MM-DD","description":"..."}\n' +
+    'If the image is not a receipt, return {"error":"not_a_receipt"}.';
+
+  var claudeRes = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    payload: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64Image } },
+          { type: 'text', text: ocrPrompt }
+        ]
+      }]
+    }),
+    muteHttpExceptions: true
+  });
+
+  if (claudeRes.getResponseCode() !== 200) {
+    Logger.log('_handleReceiptImage_: Claude API error ' + claudeRes.getResponseCode() + ': ' + claudeRes.getContentText().slice(0, 300));
+    return { replyText: '😬 הבינה לא הצליחה לקרוא את הקבלה כרגע. נסה שוב או רשום ידנית.' };
+  }
+
+  var claudeBody;
+  try { claudeBody = JSON.parse(claudeRes.getContentText()); }
+  catch (_p2) { return { replyText: '😬 קריאת הקבלה נכשלה. רשום את ההוצאה ידנית.' }; }
+  var replyText = (claudeBody.content && claudeBody.content[0] && claudeBody.content[0].text) || '';
+  var jsonMatch = String(replyText).match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    Logger.log('_handleReceiptImage_: no JSON in Claude reply: ' + replyText.slice(0, 200));
+    return { replyText: '🤔 לא הצלחתי לזהות את פרטי הקבלה. רשום ידנית: סכום פירוט.' };
+  }
+  var parsed;
+  try { parsed = JSON.parse(jsonMatch[0]); }
+  catch (_p3) {
+    Logger.log('_handleReceiptImage_: JSON parse error: ' + replyText.slice(0, 200));
+    return { replyText: '🤔 לא הצלחתי לזהות את פרטי הקבלה. רשום ידנית: סכום פירוט.' };
+  }
+  if (parsed.error === 'not_a_receipt') {
+    return { replyText: '🤔 לא נראה לי שזו קבלה. תוכל לרשום ידנית? סכום פירוט.' };
+  }
+  var amount = Number(parsed.amount);
+  if (!isFinite(amount) || amount <= 0) {
+    return { replyText: '🤔 לא הצלחתי לזהות סכום. שלח שוב או רשום ידנית.' };
+  }
+  var vendor = String(parsed.vendor || '').trim();
+  var description = String(parsed.description || '').trim();
+  // Fall back to vendor if description came back empty — both go into the
+  // category matcher and only description hits the sheet's "פירוט" column.
+  if (!description) description = vendor || 'קבלה';
+
+  // Step 4 — Reuse the same category matcher as text expenses.
+  var matched = (typeof matchCategorySmart === 'function')
+    ? matchCategorySmart((vendor ? vendor + ' ' : '') + description)
+    : { category: 'שונות ואחרים', subcategory: 'שונות' };
+  if (typeof _coerceCategoryBySubcategory === 'function') {
+    try { _coerceCategoryBySubcategory(matched); } catch (__) {}
+  }
+
+  // Step 5 — Write to תנועות exactly like processExpense does.
+  var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+  if (!sheet) {
+    Logger.log('_handleReceiptImage_: transactions sheet missing');
+    return { replyText: '❌ לא נמצאה לשונית "תנועות". הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט.' };
+  }
+  // Prefer the receipt's printed date over "now" so monthly totals attribute correctly.
+  var rowDate = new Date();
+  var dateStr = String(parsed.date || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    var dt = new Date(dateStr + 'T12:00:00');
+    if (!isNaN(dt.getTime())) rowDate = dt;
+  }
+  var monthKey = Utilities.formatDate(rowDate, 'Asia/Jerusalem', 'yyyy-MM');
+  var rowDescription = vendor ? (vendor + ' — ' + description) : description;
+  sheet.appendRow([
+    rowDate,
+    monthKey,
+    amount,
+    sanitizeForSheet(matched.category),
+    sanitizeForSheet(matched.subcategory),
+    sanitizeForSheet(rowDescription),
+    'WhatsApp (receipt)',
+    true
+  ]);
+  // Match processExpense's post-append sort so the sheet stays ordered.
+  try {
+    var __lastRow = sheet.getLastRow();
+    if (__lastRow > 2) {
+      sheet.getRange(2, 1, __lastRow - 1, 8).sort({ column: 1, ascending: true });
+    }
+  } catch (__sortErr) {
+    Logger.log('_handleReceiptImage_: sort err: ' + (__sortErr && __sortErr.message));
+  }
+
+  // Step 6 — Save for the correction flow (`קטגוריה X`).
+  try {
+    _saveLastExpense_(fromPhone, sheet.getLastRow(),
+      { description: rowDescription, amount: amount },
+      matched);
+  } catch (_seErr) {
+    Logger.log('_handleReceiptImage_: saveLastExp err: ' + _seErr.message);
+  }
+
+  var subLabel = (matched.subcategory && matched.subcategory !== matched.category)
+    ? ' → ' + matched.subcategory
+    : '';
+  var dateLine = /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+    ? '\n📅 ' + dateStr
+    : '';
+  var vendorLine = vendor ? '\n🏪 ' + vendor : '';
+  return {
+    replyText:
+      '📸 קבלה נקראה!\n' +
+      '━━━━━━━━━━━━━━━━' +
+      vendorLine +
+      '\n💰 ₪' + amount.toLocaleString('he-IL') +
+      dateLine +
+      '\n📂 ' + matched.category + subLabel +
+      '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.'
+  };
 }
 
 function _handleCategoryCorrection_(fromPhone, text) {
