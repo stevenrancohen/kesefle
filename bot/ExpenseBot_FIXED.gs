@@ -405,6 +405,24 @@ function doPost(e) {
         }
       }
 
+      // === VOICE MESSAGE — Meta sends `audio` (OGG/Opus) for voice notes.
+      // Whisper transcribes Hebrew well; transcribed text is then run through
+      // the existing processExpense flow so corrections via "קטגוריה X" keep
+      // working on the resulting sheet row.
+      if (__msg_.audio && __msg_.audio.id) {
+        try {
+          var voiceRes = _handleVoiceMessage_(__from_, __msg_.audio);
+          if (voiceRes && voiceRes.replyText && typeof sendWhatsAppMessage === "function") {
+            sendWhatsAppMessage(__from_, voiceRes.replyText);
+          }
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        } catch (_voiceErr) {
+          Logger.log('doPost: voice error: ' + (_voiceErr && _voiceErr.stack || _voiceErr));
+          try { sendWhatsAppMessage(__from_, '😬 בעיה בקריאת הקול. נסה לרשום בכתב.'); } catch (__) {}
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        }
+      }
+
       if (__text_) {
         // === CONTEXT-BASED ROUTING for explicit prefix or KV context ===
         // The user can flip a persistent "context" between personal/family via
@@ -433,6 +451,20 @@ function doPost(e) {
         Logger.log('doPost: looksLikeExpense=' + __looksLikeExpense);
 
         if (!__looksLikeExpense) {
+          if (typeof _handleTimezoneCommand_ === "function") {
+            try {
+              var __tzRes = _handleTimezoneCommand_(__from_, __text_);
+              if (__tzRes && __tzRes.handled) {
+                if (typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __tzRes.replyText);
+                }
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_tzErr) {
+              Logger.log('doPost: timezone command error: ' + (_tzErr && _tzErr.stack || _tzErr));
+            }
+          }
+
           // Subscription auto-detector commands (checked first so router does
           // not need to know about them). See _handleSubscriptionCommand_ below.
           if (typeof _handleSubscriptionCommand_ === "function") {
@@ -446,6 +478,23 @@ function doPost(e) {
               }
             } catch (_subErr) {
               Logger.log('doPost: subscription command error: ' + (_subErr && _subErr.stack || _subErr));
+            }
+          }
+
+          // Budget commands: תקציבים / budgets list + "יעד תקציב X = Y" override.
+          // See _handleBudgetCommand_ below.
+          if (typeof _handleBudgetCommand_ === "function") {
+            try {
+              var __bgtRes = _handleBudgetCommand_(__from_, __text_);
+              if (__bgtRes && __bgtRes.handled) {
+                if (__bgtRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __bgtRes.replyText);
+                }
+                Logger.log('doPost: budget command handled');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_bgtErr) {
+              Logger.log('doPost: budget command error: ' + (_bgtErr && _bgtErr.stack || _bgtErr));
             }
           }
 
@@ -720,6 +769,142 @@ function jsonResponse(obj) {
 }
 
 // ============================================================
+// 🌍 אזור זמן לפי משתמש
+// ============================================================
+
+var DEFAULT_TZ = 'Asia/Jerusalem';
+
+var COUNTRY_TZ_MAP = {
+  '972': 'Asia/Jerusalem',
+  '1':   'America/New_York',
+  '44':  'Europe/London',
+  '33':  'Europe/Paris',
+  '49':  'Europe/Berlin',
+  '39':  'Europe/Rome',
+  '34':  'Europe/Madrid',
+  '31':  'Europe/Amsterdam',
+  '32':  'Europe/Brussels',
+  '41':  'Europe/Zurich',
+  '43':  'Europe/Vienna',
+  '46':  'Europe/Stockholm',
+  '47':  'Europe/Oslo',
+  '45':  'Europe/Copenhagen',
+  '358': 'Europe/Helsinki',
+  '353': 'Europe/Dublin',
+  '351': 'Europe/Lisbon',
+  '30':  'Europe/Athens',
+  '7':   'Europe/Moscow',
+  '380': 'Europe/Kiev',
+  '48':  'Europe/Warsaw',
+  '420': 'Europe/Prague',
+  '36':  'Europe/Budapest',
+  '40':  'Europe/Bucharest',
+  '90':  'Europe/Istanbul',
+  '61':  'Australia/Sydney',
+  '64':  'Pacific/Auckland',
+  '81':  'Asia/Tokyo',
+  '82':  'Asia/Seoul',
+  '86':  'Asia/Shanghai',
+  '852': 'Asia/Hong_Kong',
+  '65':  'Asia/Singapore',
+  '91':  'Asia/Kolkata',
+  '971': 'Asia/Dubai',
+  '966': 'Asia/Riyadh',
+  '20':  'Africa/Cairo',
+  '27':  'Africa/Johannesburg',
+  '55':  'America/Sao_Paulo',
+  '54':  'America/Argentina/Buenos_Aires',
+  '52':  'America/Mexico_City',
+  '56':  'America/Santiago',
+  '57':  'America/Bogota'
+};
+
+function _tzFromPhone_(phone) {
+  if (!phone) return DEFAULT_TZ;
+  var clean = String(phone).replace(/[^0-9]/g, '');
+  if (!clean) return DEFAULT_TZ;
+  var codes = ['972', '971', '966', '852', '358', '353', '351', '380', '420'];
+  for (var i = 0; i < codes.length; i++) {
+    if (clean.indexOf(codes[i]) === 0 && COUNTRY_TZ_MAP[codes[i]]) {
+      return COUNTRY_TZ_MAP[codes[i]];
+    }
+  }
+  var lens = [3, 2, 1];
+  for (var j = 0; j < lens.length; j++) {
+    var prefix = clean.slice(0, lens[j]);
+    if (COUNTRY_TZ_MAP[prefix]) return COUNTRY_TZ_MAP[prefix];
+  }
+  return DEFAULT_TZ;
+}
+
+function _getUserTz_(fromPhone) {
+  if (!fromPhone) return DEFAULT_TZ;
+  try {
+    if (typeof kvGet === 'function') {
+      var stored = kvGet('tz:' + fromPhone);
+      if (stored && typeof stored === 'string') return stored;
+    }
+  } catch (_e) {}
+  var detected = _tzFromPhone_(fromPhone);
+  try {
+    if (typeof kvSet === 'function') kvSet('tz:' + fromPhone, detected, 0);
+  } catch (_e2) {}
+  return detected;
+}
+
+function _setUserTz_(fromPhone, tz) {
+  if (!fromPhone || !tz) return false;
+  try {
+    if (typeof kvSet === 'function') return kvSet('tz:' + fromPhone, tz, 0);
+  } catch (_e) {}
+  return false;
+}
+
+function _isValidTz_(tz) {
+  if (!tz || typeof tz !== 'string') return false;
+  try {
+    Utilities.formatDate(new Date(), tz, 'yyyy');
+    return true;
+  } catch (_e) { return false; }
+}
+
+function _handleTimezoneCommand_(fromPhone, text) {
+  var raw = String(text == null ? '' : text).trim();
+  if (!raw) return { handled: false };
+  var norm = raw.replace(/^\//, '').trim();
+  var m = norm.match(/^(?:אזור\s*זמן|timezone|tz)(?:\s+(.+))?$/i);
+  if (!m) return { handled: false };
+  var arg = (m[1] || '').trim();
+  if (!arg) {
+    var cur = _getUserTz_(fromPhone);
+    return { handled: true, replyText:
+      '🌍 *אזור הזמן שלך*\n' +
+      '━━━━━━━━━━━━━━━━━━\n\n' +
+      cur + '\n\n' +
+      '💡 לשינוי: "אזור זמן America/Los_Angeles"\n' +
+      'רשימה: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones'
+    };
+  }
+  if (!_isValidTz_(arg)) {
+    return { handled: true, replyText:
+      '😬 אזור זמן לא תקין: ' + arg + '\n' +
+      '💡 השתמש בפורמט IANA, למשל "America/Los_Angeles" או "Europe/London"'
+    };
+  }
+  var ok = _setUserTz_(fromPhone, arg);
+  if (!ok) {
+    return { handled: true, replyText:
+      '😬 לא הצלחתי לשמור את אזור הזמן\n' +
+      '💡 ננסה שוב בעוד דקה?'
+    };
+  }
+  return { handled: true, replyText:
+    '✅ אזור הזמן עודכן ל-' + arg + '\n' +
+    'מעכשיו תאריכים בתגובות יוצגו לפי השעון הזה.'
+  };
+}
+
+// ============================================================
 // 💰 לוגיקת עיבוד הוצאה
 // ============================================================
 
@@ -796,23 +981,23 @@ function processExpense(text, fromPhone) {
     return { reply: getHelpMessage() };
   }
   if (trimmed === 'סיכום' || trimmed === 'summary') {
-    return { reply: getMonthlySummary() };
+    return { reply: getMonthlySummary(fromPhone) };
   }
   if (trimmed === 'סנכרן' || trimmed === 'sync') {
     try { var s = syncEverything(); return { reply: '✅ סונכרן: ' + s }; }
-    catch (e) { return { reply: '❌ שגיאה בסנכרון: ' + e.message }; }
+    catch (e) { return { reply: '😬 משהו השתבש בסנכרון: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' }; }
   }
   if (trimmed === 'מיגרציה' || trimmed === 'migrate') {
     try { var n = migrateSubcategoriesAndCategories(); return { reply: '✅ הועברו ' + n + ' שורות לקטגוריות חדשות.' }; }
-    catch (e) { return { reply: '❌ שגיאה: ' + e.message }; }
+    catch (e) { return { reply: '😬 משהו השתבש במיגרציה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' }; }
   }
   if (trimmed === 'מרווחים' || trimmed === 'margins') {
     try { addRowMargins(); return { reply: '✅ הוספתי מרווחים בלוח האישי. רענני את השיט כדי לראות.' }; }
-    catch (e) { return { reply: '❌ שגיאה בהוספת מרווחים: ' + e.message }; }
+    catch (e) { return { reply: '😬 משהו השתבש בהוספת מרווחים: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' }; }
   }
   if (trimmed === 'בנה מחדש' || trimmed === 'rebuild') {
     try { buildHistorySheet(); return { reply: '✅ נבנה מחדש (כולל מרווחים).' }; }
-    catch (e) { return { reply: '❌ שגיאה בבנייה מחדש: ' + e.message }; }
+    catch (e) { return { reply: '😬 משהו השתבש בבנייה מחדש: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' }; }
   }
   if (trimmed === 'מחק אחרון' || trimmed === 'undo') {
     return { reply: deleteLastTransaction() };
@@ -833,10 +1018,11 @@ function processExpense(text, fromPhone) {
     return { reply: getInsightsMessage() };
   }
   if (trimmed === 'סטטוס' || trimmed === 'מצב' || trimmed === 'status' || trimmed === 'health') {
-    if (typeof getBotStatusMessage === 'function') return { reply: getBotStatusMessage() };
+    if (typeof getBotStatusMessage === 'function') return { reply: getBotStatusMessage(fromPhone) };
   }
   if (trimmed === 'הד' || trimmed === 'echo' || trimmed === 'ping') {
-    return { reply: '🏓 הבוט פעיל! קיבלתי את "' + text + '" ב-' + Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'HH:mm:ss') };
+    var __tzEcho = _getUserTz_(fromPhone);
+    return { reply: '🏓 הבוט פעיל! קיבלתי את "' + text + '" ב-' + Utilities.formatDate(new Date(), __tzEcho, 'HH:mm:ss') };
   }
   // Goal tracking commands
   if (trimmed === 'מטרות' || trimmed === 'goals' || trimmed === 'יעדים') {
@@ -965,6 +1151,18 @@ function processExpense(text, fromPhone) {
       }
     } catch (__anomErr) { Logger.log('anomaly err: ' + (__anomErr && __anomErr.message)); }
 
+    // 💰 Budget alert — runs after every expense, returns at most ONE alert
+    // line for the most-recent category. Throttled per (phone, category, tier)
+    // for 6h via CacheService. Failure is silent.
+    var __budgetTail = '';
+    try {
+      var __budgetLastItem = parsed.items[parsed.items.length - 1];
+      var __budgetLastMatched = matchCategorySmart(__budgetLastItem.description);
+      if (!__budgetLastMatched.isIncome) {
+        __budgetTail = _budgetAlertTail_(__budgetLastMatched.category, fromPhone) || '';
+      }
+    } catch (__bgtErr) { Logger.log('budget tail err: ' + (__bgtErr && __bgtErr.message)); }
+
     if (parsed.items.length === 1) {
       const it = parsed.items[0];
       const matched = matchCategorySmart(it.description);
@@ -979,12 +1177,13 @@ function processExpense(text, fromPhone) {
         '\n📂 ' + matched.category + __subLabel + __globalNote +
         (__catCtx ? '\n💡 ' + __catCtx : '') +
         __anomalyTail +
+        __budgetTail +
         __streakTail +
         '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.' +
         '\nכתוב "סיכום" לראות איפה אתה עומד החודש.'
       };
     }
-    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __streakTail };
+    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail };
   } catch (err) {
     return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + err.message + '\nננסה שוב בעוד דקה? אם זה ממשיך — כתוב "עזרה".' };
   }
@@ -1823,6 +2022,130 @@ function _handleReceiptImage_(fromPhone, image) {
   };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 🎙️ VOICE MESSAGE — Whisper transcribes a Hebrew voice note to text, then
+// the transcript is fed into processExpense so the resulting row supports the
+// same `קטגוריה X` correction flow as a typed expense. Anthropic models do
+// not accept audio input in Apps Script, so we use OpenAI Whisper.
+// ═══════════════════════════════════════════════════════════════════════════
+function _handleVoiceMessage_(fromPhone, audio) {
+  var mediaId = audio && audio.id;
+  if (!mediaId) {
+    return { replyText: '😬 לא קיבלתי את הקול. נסה לשלוח שוב.' };
+  }
+
+  var openaiKey = PropertiesService.getScriptProperties().getProperty('OPENAI_API_KEY');
+  if (!openaiKey) {
+    Logger.log('_handleVoiceMessage_: missing OPENAI_API_KEY');
+    return { replyText: '🎙️ אין תמיכה בקול עדיין. רשום בכתב בבקשה.' };
+  }
+  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
+    Logger.log('_handleVoiceMessage_: missing WHATSAPP_TOKEN');
+    return { replyText: '🎙️ אין תמיכה בקול כרגע. רשום בכתב בבקשה.' };
+  }
+
+  var mediaMetaUrl = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(mediaId);
+  var metaRes = UrlFetchApp.fetch(mediaMetaUrl, {
+    method: 'get',
+    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN },
+    muteHttpExceptions: true
+  });
+  if (metaRes.getResponseCode() !== 200) {
+    Logger.log('_handleVoiceMessage_: media lookup failed ' + metaRes.getResponseCode() + ' ' + metaRes.getContentText().slice(0, 200));
+    return { replyText: '😬 לא הצלחתי להוריד את הקול. נסה לשלוח שוב.' };
+  }
+  var metaBody;
+  try { metaBody = JSON.parse(metaRes.getContentText()); }
+  catch (_p1) { return { replyText: '😬 לא הצלחתי לקרוא את הקול. נסה לשלוח שוב.' }; }
+  if (!metaBody || !metaBody.url) {
+    return { replyText: '😬 לא הצלחתי להוריד את הקול. נסה לשלוח שוב.' };
+  }
+
+  var audioRes = UrlFetchApp.fetch(metaBody.url, {
+    method: 'get',
+    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN },
+    muteHttpExceptions: true
+  });
+  if (audioRes.getResponseCode() !== 200) {
+    Logger.log('_handleVoiceMessage_: audio download failed ' + audioRes.getResponseCode());
+    return { replyText: '😬 לא הצלחתי להוריד את הקול. נסה לשלוח שוב.' };
+  }
+  var audioBlob = audioRes.getBlob();
+  var bytes = audioBlob.getBytes();
+  if (bytes.length > 5 * 1024 * 1024) {
+    return { replyText: '🎙️ ההקלטה גדולה מדי (מעל 5MB). שלח הקלטה קצרה יותר.' };
+  }
+
+  // Whisper expects a filename with a recognised extension; WhatsApp voice notes
+  // arrive as audio/ogg (Opus). Force the extension so the multipart MIME line
+  // matches what Whisper accepts.
+  var mimeType = String(audio.mime_type || metaBody.mime_type || 'audio/ogg').split(';')[0].trim();
+  var ext = 'ogg';
+  if (mimeType.indexOf('mp3') >= 0 || mimeType.indexOf('mpeg') >= 0) ext = 'mp3';
+  else if (mimeType.indexOf('mp4') >= 0 || mimeType.indexOf('m4a') >= 0) ext = 'm4a';
+  else if (mimeType.indexOf('wav') >= 0) ext = 'wav';
+  else if (mimeType.indexOf('webm') >= 0) ext = 'webm';
+  audioBlob = audioBlob.setName('voice.' + ext).setContentType(mimeType);
+
+  var whisperRes;
+  try {
+    whisperRes = UrlFetchApp.fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'post',
+      headers: { 'Authorization': 'Bearer ' + openaiKey },
+      payload: {
+        file: audioBlob,
+        model: 'whisper-1',
+        language: 'he',
+        response_format: 'json'
+      },
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    Logger.log('_handleVoiceMessage_: whisper fetch err: ' + (e && e.message));
+    return { replyText: '😬 בעיה בתמלול הקול. נסה לרשום בכתב.' };
+  }
+
+  if (whisperRes.getResponseCode() !== 200) {
+    Logger.log('_handleVoiceMessage_: whisper API ' + whisperRes.getResponseCode() + ': ' + whisperRes.getContentText().slice(0, 300));
+    return { replyText: '😬 התמלול נכשל. נסה לרשום בכתב.' };
+  }
+
+  var transcribed = '';
+  try {
+    var body = JSON.parse(whisperRes.getContentText());
+    transcribed = String(body && body.text || '').trim();
+  } catch (_pw) {
+    Logger.log('_handleVoiceMessage_: whisper JSON parse err');
+    return { replyText: '😬 התמלול נכשל. נסה לרשום בכתב.' };
+  }
+
+  if (!transcribed) {
+    return { replyText: '🎙️ לא הצלחתי להבין. נסה לדבר ברור יותר.' };
+  }
+
+  var safeTranscribed = sanitizeForSheet(transcribed);
+  var heard = '🎙️ שמעתי: "' + safeTranscribed + '"';
+
+  var procRes;
+  try {
+    procRes = processExpense(transcribed, fromPhone);
+  } catch (e) {
+    Logger.log('_handleVoiceMessage_: processExpense err: ' + (e && e.stack || e));
+    return { replyText: heard + '\n\n😬 שגיאה ברישום: ' + (e && e.message || '') };
+  }
+
+  var procReply = (procRes && procRes.reply) || '';
+  // "שלח בפורמט" / "❌ לא זיהיתי סכום" both mean processExpense couldn't
+  // pull an amount from the transcript — guide the user to dictate
+  // amount-first instead of relaying the generic help message.
+  var failedParse = !procReply || /^שלח בפורמט/.test(procReply) || /לא זיהיתי סכום/.test(procReply);
+  if (failedParse) {
+    return { replyText: '🎙️ שמעתי "' + safeTranscribed + '" — אבל זה לא נראה כמו הוצאה. דבר משהו כמו: "מאתיים שקל סופר"' };
+  }
+
+  return { replyText: heard + '\n\n' + procReply };
+}
+
 function _handleCategoryCorrection_(fromPhone, text) {
   if (!fromPhone || !text) return null;
   var trimmed = String(text).trim();
@@ -2100,12 +2423,13 @@ function teachCategory(text, category, subcategory) {
 // 📊 פקודות עזר
 // ============================================================
 
-function getMonthlySummary() {
+function getMonthlySummary(fromPhone) {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-  if (!sheet) return '❌ אין לשונית תנועות';
+  if (!sheet) return '❌ אין לשונית תנועות\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט.';
 
   const data = sheet.getDataRange().getValues();
-  const monthKey = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM');
+  var userTz = (typeof _getUserTz_ === 'function') ? _getUserTz_(fromPhone) : 'Asia/Jerusalem';
+  const monthKey = Utilities.formatDate(new Date(), userTz, 'yyyy-MM');
 
   const totals = {};
   let totalIncome = 0;
@@ -2117,7 +2441,7 @@ function getMonthlySummary() {
     // formatting in the sheet. Normalize to "yyyy-MM" before comparing.
     var rowMonth = row[1];
     if (rowMonth instanceof Date) {
-      rowMonth = Utilities.formatDate(rowMonth, 'Asia/Jerusalem', 'yyyy-MM');
+      rowMonth = Utilities.formatDate(rowMonth, userTz, 'yyyy-MM');
     } else if (rowMonth) {
       rowMonth = String(rowMonth).slice(0, 7); // handle "2026-05-01" etc.
     }
@@ -2205,6 +2529,7 @@ function getHelpMessage() {
     '  • "סנכרן" — ריענון דשבורד\n' +
     '  • "מילון" — קישור ללשונית הלמידה\n' +
     '  • "מנוע" — מצב המנוע (AI/cache/keywords)\n' +
+    '  • "אזור זמן" — הצג/שנה אזור זמן\n' +
     '  • "עזרה" — הודעה זו\n\n' +
     '🧠 *המנוע:*\n' +
     'המנוע מקטלג ב-3 שכבות — cache, 1,480 מילים, ו-Claude AI לגיבוי.\n' +
@@ -3065,6 +3390,307 @@ function _categoryMonthToDateLine_(category, isIncome) {
     if (sum < 50) return ''; // too early in month to be insightful
     return 'החודש הוצאת ₪' + sum.toLocaleString('he-IL') + ' על ' + category + '.';
   } catch (e) { return ''; }
+}
+
+// ============================================================
+// 💰 PROACTIVE BUDGET ALERTS — appended as a tail to expense replies
+// ============================================================
+// Watches each category's pace vs last month's spend (or user-set budget).
+// Three tiers, escalating in severity. Only the highest-severity matching
+// tier fires per write. Throttled to once per 6h per (phone, category, tier)
+// via CacheService so the user is never spammed with the same warning.
+//
+// Tier 1 (⚠️ gentle):  ahead-of-pace warning when we're trending 20%+ over
+//                       what we'd need to match last month linearly
+// Tier 2 (🚨 firm):    already 80%+ of last month's total before 2/3 of the
+//                       month has elapsed
+// Tier 3 (🔥 over):    blew past last month's total
+
+// Compute month-to-date and last-month totals for a category.
+// Returns { thisMonth, lastMonth, daysElapsed, daysInMonth, daysLeft, lastMonthSamePeriod }
+// or null on failure / no useful data.
+function _budgetStatsForCategory_(category) {
+  if (!category) return null;
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return null;
+    var data = sheet.getDataRange().getValues();
+    if (!data || data.length < 2) return null;
+
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = now.getMonth(); // 0-11
+    var monthStart = new Date(year, month, 1);
+    var prevMonthStart = new Date(year, month - 1, 1);
+    var prevMonthEnd = new Date(year, month, 0, 23, 59, 59); // last day prev month
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    // Day-of-month counts day 1 as "1 day elapsed".
+    var daysElapsed = Math.min(now.getDate(), daysInMonth);
+    var daysLeft = Math.max(daysInMonth - daysElapsed, 0);
+    // For "same period last month" — same day count, capped to prev-month length.
+    var prevMonthDays = new Date(year, month, 0).getDate();
+    var sameDayPrev = Math.min(daysElapsed, prevMonthDays);
+    var prevSamePeriodEnd = new Date(prevMonthStart.getFullYear(), prevMonthStart.getMonth(), sameDayPrev, 23, 59, 59);
+
+    var thisMonthSpent = 0;
+    var lastMonthSpent = 0;
+    var lastMonthSamePeriod = 0;
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var rawDate = row[0];
+      if (!rawDate) continue;
+      var d = rawDate instanceof Date ? rawDate : new Date(rawDate);
+      if (isNaN(d.getTime())) continue;
+      if (String(row[3] || '') !== category) continue;
+      var amount = Number(row[2]) || 0;
+      if (amount <= 0) continue;
+
+      if (d >= monthStart && d <= now) {
+        thisMonthSpent += amount;
+      } else if (d >= prevMonthStart && d <= prevMonthEnd) {
+        lastMonthSpent += amount;
+        if (d <= prevSamePeriodEnd) lastMonthSamePeriod += amount;
+      }
+    }
+
+    return {
+      thisMonth: thisMonthSpent,
+      lastMonth: lastMonthSpent,
+      lastMonthSamePeriod: lastMonthSamePeriod,
+      daysElapsed: daysElapsed,
+      daysInMonth: daysInMonth,
+      daysLeft: daysLeft
+    };
+  } catch (e) {
+    Logger.log('_budgetStatsForCategory_ err: ' + (e && e.message));
+    return null;
+  }
+}
+
+// Fetch the user-set monthly budget for a category, or null. Stored in
+// Vercel KV under "budget:{phone}:{category}".
+function _getUserBudget_(fromPhone, category) {
+  if (!fromPhone || !category) return null;
+  try {
+    var key = 'budget:' + fromPhone + ':' + category;
+    var raw = kvGet(key);
+    if (raw == null) return null;
+    var num = Number(raw);
+    if (!isFinite(num) || num <= 0) return null;
+    return num;
+  } catch (e) {
+    Logger.log('_getUserBudget_ err: ' + (e && e.message));
+    return null;
+  }
+}
+
+// Throttle check + set. Returns true if this alert should fire (key was not
+// already in CacheService); false if we should stay silent. TTL = 6h.
+function _budgetAlertThrottle_(fromPhone, category, tier) {
+  try {
+    var cache = CacheService.getScriptCache();
+    var key = 'bdgAlert:' + (fromPhone || 'anon') + ':' + category + ':' + tier;
+    if (cache.get(key)) return false;
+    cache.put(key, '1', 6 * 60 * 60); // 6h
+    return true;
+  } catch (e) {
+    // If cache fails, fall through and allow the alert — better noisy than silent.
+    Logger.log('_budgetAlertThrottle_ err: ' + (e && e.message));
+    return true;
+  }
+}
+
+// Returns a string (tail to append to reply, with leading newline) or ''.
+// Silent for income categories and when there's no useful baseline.
+function _budgetAlertTail_(category, fromPhone) {
+  if (!category) return '';
+  if (_anomalyIsIncomeCategory_(category)) return '';
+  var stats = _budgetStatsForCategory_(category);
+  if (!stats) return '';
+
+  // Baseline preference: user-set budget > last-month-total.
+  var userBudget = _getUserBudget_(fromPhone, category);
+  var baseline = userBudget || stats.lastMonth;
+  if (!baseline || baseline <= 0) return '';
+  // Need enough data to be meaningful (avoid noise on a brand-new category).
+  if (stats.thisMonth < 10) return '';
+
+  var thisMonth = stats.thisMonth;
+  var daysElapsed = stats.daysElapsed;
+  var daysInMonth = stats.daysInMonth;
+  var daysLeft = stats.daysLeft;
+  var paceRatio = thisMonth / baseline; // fraction of baseline used so far
+
+  var fmt = function(n) { return Math.round(n).toLocaleString('he-IL'); };
+
+  // Tier 3 — already exceeded
+  if (thisMonth > baseline) {
+    if (!_budgetAlertThrottle_(fromPhone, category, 3)) return '';
+    return '\n🔥 חצינו את הוצאת ' + category + ' של חודש שעבר (₪' +
+           fmt(thisMonth) + ' מ-₪' + fmt(baseline) + ').';
+  }
+
+  // Tier 2 — already 80%+ of baseline before 2/3 of the month elapsed
+  if (thisMonth > baseline * 0.8 && daysElapsed < daysInMonth * 0.66) {
+    if (!_budgetAlertThrottle_(fromPhone, category, 2)) return '';
+    var pct = Math.round(paceRatio * 100);
+    return '\n🚨 כבר ' + pct + '% מההוצאה של ' + category +
+           ' בחודש שעבר, ועדיין ' + daysLeft + ' ימים בחודש.';
+  }
+
+  // Tier 1 — ahead of linear pace by 20%+
+  var expectedFraction = daysElapsed / daysInMonth;
+  if (expectedFraction > 0 && paceRatio > expectedFraction * 1.2) {
+    if (!_budgetAlertThrottle_(fromPhone, category, 1)) return '';
+    return '\n⚠️ קצב גבוה ב-' + category + ': ₪' + fmt(thisMonth) +
+           ' מ-₪' + fmt(baseline) + ' בחודש שעבר.';
+  }
+
+  return '';
+}
+
+// ----------------------------------------------------------------------
+// Command handler: "תקציבים" / "budgets" / "יעד תקציב {category} = {amount}"
+// ----------------------------------------------------------------------
+// Lists every category's MTD vs last-month-same-period comparison, sorted by
+// absolute overage, capped at top 10. Tiers map to the same alert thresholds.
+//
+// "יעד תקציב X = Y" / "budget X = Y" sets a user-supplied baseline that
+// overrides the last-month-total used by the alert logic.
+function _handleBudgetCommand_(fromPhone, text) {
+  var raw = String(text == null ? '' : text).trim();
+  if (!raw) return { handled: false };
+  var norm = raw.replace(/^\//, '').trim();
+  var low = norm.toLowerCase();
+
+  // Set/override budget for a category.
+  var setM = norm.match(/^(?:יעד\s+תקציב|budget)\s+([^=]+?)\s*=\s*(\d+(?:\.\d+)?)\s*$/i);
+  if (setM) {
+    var cat = setM[1].trim();
+    var amt = Number(setM[2]);
+    if (!cat || !isFinite(amt) || amt <= 0) {
+      return { handled: true, replyText: '❌ פורמט: יעד תקציב <קטגוריה> = <סכום>\nלמשל: יעד תקציב אוכל = 1500' };
+    }
+    var key = 'budget:' + fromPhone + ':' + cat;
+    var ok = kvSet(key, amt);
+    if (!ok) {
+      return { handled: true, replyText: '⚠️ לא הצלחתי לשמור את היעד. נסה שוב בעוד דקה.' };
+    }
+    return { handled: true, replyText: '✅ הגדרתי תקציב חודשי ל-' + cat + ': ₪' + amt.toLocaleString('he-IL') };
+  }
+
+  // List budgets for all categories.
+  if (norm === 'תקציבים' || low === 'budgets' || low === 'budget') {
+    return { handled: true, replyText: _budgetsListMessage_(fromPhone) };
+  }
+
+  return { handled: false };
+}
+
+// Build the "תקציבים" report.
+function _budgetsListMessage_(fromPhone) {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return '❌ לא נמצאה לשונית "תנועות".';
+    var data = sheet.getDataRange().getValues();
+    if (!data || data.length < 2) return '📊 אין עדיין מספיק נתונים לתקציבים.';
+
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = now.getMonth();
+    var monthStart = new Date(year, month, 1);
+    var prevMonthStart = new Date(year, month - 1, 1);
+    var prevMonthEnd = new Date(year, month, 0, 23, 59, 59);
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var daysElapsed = Math.min(now.getDate(), daysInMonth);
+
+    var thisByCat = {};
+    var lastByCat = {};
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var rawDate = row[0];
+      if (!rawDate) continue;
+      var d = rawDate instanceof Date ? rawDate : new Date(rawDate);
+      if (isNaN(d.getTime())) continue;
+      var cat = String(row[3] || '').trim();
+      if (!cat) continue;
+      if (_anomalyIsIncomeCategory_(cat)) continue;
+      var amount = Number(row[2]) || 0;
+      if (amount <= 0) continue;
+
+      if (d >= monthStart && d <= now) {
+        thisByCat[cat] = (thisByCat[cat] || 0) + amount;
+      } else if (d >= prevMonthStart && d <= prevMonthEnd) {
+        lastByCat[cat] = (lastByCat[cat] || 0) + amount;
+      }
+    }
+
+    var entries = [];
+    Object.keys(thisByCat).forEach(function(cat) {
+      var thisM = thisByCat[cat] || 0;
+      var lastM = lastByCat[cat] || 0;
+      var userBudget = _getUserBudget_(fromPhone, cat);
+      var baseline = userBudget || lastM;
+      var overage = baseline > 0 ? (thisM - baseline) : 0;
+      entries.push({
+        category: cat,
+        thisMonth: thisM,
+        lastMonth: lastM,
+        baseline: baseline,
+        overage: overage,
+        userBudget: userBudget
+      });
+    });
+    if (entries.length === 0) return '📊 אין הוצאות החודש עדיין.';
+
+    // Sort: categories with baseline come first, ranked by |overage| desc;
+    // categories without a baseline drop to bottom, ranked by thisMonth desc.
+    entries.sort(function(a, b) {
+      if (a.baseline <= 0 && b.baseline <= 0) return b.thisMonth - a.thisMonth;
+      if (a.baseline <= 0) return 1;
+      if (b.baseline <= 0) return -1;
+      return Math.abs(b.overage) - Math.abs(a.overage);
+    });
+    var top = entries.slice(0, 10);
+
+    var fmt = function(n) { return Math.round(n).toLocaleString('he-IL'); };
+    var lines = [];
+    lines.push('📊 תקציבים — חודש נוכחי');
+    lines.push('━━━━━━━━━━━━━━━━━━');
+    for (var k = 0; k < top.length; k++) {
+      var e = top[k];
+      var icon = '✓';
+      var note = '';
+      if (e.baseline > 0) {
+        var paceRatio = e.thisMonth / e.baseline;
+        var expectedFraction = daysElapsed / daysInMonth;
+        var baselineLabel = e.userBudget ? 'יעד' : 'חודש קודם';
+        if (e.thisMonth > e.baseline) {
+          icon = '🔥';
+          note = '(מ-₪' + fmt(e.baseline) + ' ' + baselineLabel + ')';
+        } else if (e.thisMonth > e.baseline * 0.8 && daysElapsed < daysInMonth * 0.66) {
+          icon = '🚨';
+          note = '(' + Math.round(paceRatio * 100) + '% מ-₪' + fmt(e.baseline) + ' ' + baselineLabel + ')';
+        } else if (expectedFraction > 0 && paceRatio > expectedFraction * 1.2) {
+          icon = '⚠️';
+          note = '(קצב גבוה — בסיס ₪' + fmt(e.baseline) + ')';
+        } else {
+          icon = '✓';
+          note = '(קצב תקין — בסיס ₪' + fmt(e.baseline) + ')';
+        }
+      } else {
+        note = '(אין בסיס להשוואה)';
+      }
+      lines.push(icon + ' ' + e.category + ': ₪' + fmt(e.thisMonth) + ' ' + note);
+    }
+    lines.push('━━━━━━━━━━━━━━━━━━');
+    lines.push('💡 להגדרת יעד: "יעד תקציב <קטגוריה> = <סכום>"');
+    return lines.join('\n');
+  } catch (err) {
+    Logger.log('_budgetsListMessage_ err: ' + (err && err.stack || err));
+    return '⚠️ שגיאה בבניית רשימת התקציבים: ' + (err && err.message);
+  }
 }
 
 // ============================================================
@@ -4008,13 +4634,14 @@ function installKesefleBot() {
 
 // Quick handler for "סטטוס" / "status" / "מצב" — for the user to verify the bot
 // is alive via WhatsApp. Returns a short health summary.
-function getBotStatusMessage() {
+function getBotStatusMessage(fromPhone) {
   try {
     var props = PropertiesService.getScriptProperties();
     var ai = !!props.getProperty('ANTHROPIC_API_KEY');
     var pnid = props.getProperty('WHATSAPP_PHONE_NUMBER_ID') || WHATSAPP_PHONE_NUMBER_ID;
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
     var rowCount = sheet ? (sheet.getLastRow() - 1) : 0;
+    var userTz = (typeof _getUserTz_ === 'function') ? _getUserTz_(fromPhone) : 'Asia/Jerusalem';
     return '🤖 *מצב הבוט*\n' +
       '━━━━━━━━━━━━━━━━━━\n\n' +
       '✅ הבוט פעיל\n' +
@@ -4022,9 +4649,9 @@ function getBotStatusMessage() {
       '🆔 Phone ID: ...' + pnid.slice(-8) + '\n' +
       '📊 הוצאות בגיליון: ' + rowCount + '\n' +
       '🧠 AI fallback: ' + (ai ? '✅ פעיל' : '⚠️ לא פעיל') + '\n' +
-      '🕐 ' + Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm');
+      '🕐 ' + Utilities.formatDate(new Date(), userTz, 'dd/MM/yyyy HH:mm');
   } catch (e) {
-    return '⚠️ שגיאה בבדיקת מצב: ' + (e.message || e);
+    return '😬 שגיאה בבדיקת מצב: ' + (e && e.message || e) + '\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
