@@ -254,6 +254,23 @@ const CATEGORY_MAP = [
 
 const DEFAULT_CATEGORY = { category: 'שונות ואחרים', subcategory: 'שונות', isIncome: false };
 
+/**
+ * sanitizeForSheet — prevents formula injection when user-typed strings land in a cell.
+ * Sheets/Excel evaluate any cell whose value begins with =, +, -, @, or a tab as a formula,
+ * so a malicious description like "=HYPERLINK(...)" could exfiltrate data on open. Prepending
+ * a single quote forces the cell to be treated as plain text. Non-strings pass through unchanged
+ * because numbers, dates, and booleans never enter formula parsing.
+ */
+function sanitizeForSheet(value) {
+  if (typeof value !== 'string') return value;
+  if (value.length === 0) return value;
+  var first = value.charAt(0);
+  if (first === '=' || first === '+' || first === '-' || first === '@' || first === '\t') {
+    return "'" + value;
+  }
+  return value;
+}
+
 // ============================================================
 // 🌐 WEBHOOK HANDLERS
 // ============================================================
@@ -515,7 +532,7 @@ function handleInteractiveReply_(fromPhone, interactive) {
     var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
     var category = decoded.category;
     var subcategory = decoded.subcategory;
-    sheet.appendRow([now, monthKey, amount, category, subcategory, description, 'WhatsApp (interactive)', true]);
+    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', true]);
     // Keep chronological sort
     try {
       var lastRow = sheet.getLastRow();
@@ -803,7 +820,7 @@ function processExpense(text, fromPhone) {
       runningTotal += finalAmount;
       _coerceCategoryBySubcategory(matched);
       Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory);
-      sheet.appendRow([now, monthKey, finalAmount, matched.category, matched.subcategory, item.description, 'WhatsApp', true]);
+      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', true]);
       Logger.log('processExpense: appendRow DONE, lastRow=' + sheet.getLastRow());
       // Keep the sheet sorted ascending (oldest at top → newest at bottom).
       // Runs on every append so the order is always correct without user
@@ -1374,15 +1391,15 @@ function _learnedSave(text, result, source) {
     var data = sh.getDataRange().getValues();
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][0] || '').toLowerCase().trim() === t) {
-        sh.getRange(i + 1, 2).setValue(result.category);
-        sh.getRange(i + 1, 3).setValue(result.subcategory);
-        sh.getRange(i + 1, 4).setValue(source || 'ai');
+        sh.getRange(i + 1, 2).setValue(sanitizeForSheet(result.category));
+        sh.getRange(i + 1, 3).setValue(sanitizeForSheet(result.subcategory));
+        sh.getRange(i + 1, 4).setValue(sanitizeForSheet(source || 'ai'));
         sh.getRange(i + 1, 5).setValue(new Date());
         _learnedCacheLoadedAt = 0; // invalidate cache
         return;
       }
     }
-    sh.appendRow([t, result.category, result.subcategory, source || 'ai', new Date()]);
+    sh.appendRow([sanitizeForSheet(t), sanitizeForSheet(result.category), sanitizeForSheet(result.subcategory), sanitizeForSheet(source || 'ai'), new Date()]);
     _learnedCacheLoadedAt = 0; // invalidate
   } catch (e) {
     Logger.log('_learnedSave error: ' + e.message);
@@ -1846,7 +1863,7 @@ function migrateDashboardToSUMIFS() {
       const val = cell.getValue();
       if (!formula && typeof val === 'number' && val > 0) {
         const dt = new Date(year, monthNum - 1, 15, 12, 0, 0);
-        transactions.appendRow([dt, monthKey, val, currentSection, name, 'מיגרציה אוטומטית מהדשבורד', 'Legacy']);
+        transactions.appendRow([dt, monthKey, val, sanitizeForSheet(currentSection), sanitizeForSheet(name), 'מיגרציה אוטומטית מהדשבורד', 'Legacy']);
         legacy++;
       }
       cell.setFormula('=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, $A' + cellRow + ', תנועות!B:B, "' + monthKey + '"), 0)');
@@ -1880,8 +1897,8 @@ function migrateSubcategoriesAndCategories() {
       newCat = 'אוכל'; newSubcat = 'אוכל לבית';
     }
     if (newCat !== cat || newSubcat !== subcat) {
-      sheet.getRange(i+1, 4).setValue(newCat);
-      sheet.getRange(i+1, 5).setValue(newSubcat);
+      sheet.getRange(i+1, 4).setValue(sanitizeForSheet(newCat));
+      sheet.getRange(i+1, 5).setValue(sanitizeForSheet(newSubcat));
       renamed++;
     }
   }

@@ -138,11 +138,91 @@
   }
   .dark .timeline-dot-future { background: #1e2638; border-color: #5d6b8f; }
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+<style>
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { font-feature-settings: "kern" 1, "liga" 1, "calt" 1; }
+  h1, h2 { letter-spacing: -0.025em; }
+  h3, h4 { letter-spacing: -0.015em; }
+  .num, .font-mono { font-variant-numeric: tabular-nums; }
+
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-reveal[data-delay="1"] { transition-delay: 0.08s; }
+  .kfl-reveal[data-delay="2"] { transition-delay: 0.16s; }
+  .kfl-reveal[data-delay="3"] { transition-delay: 0.24s; }
+  .kfl-reveal[data-delay="4"] { transition-delay: 0.32s; }
+
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(15, 20, 34, 0.32); }
+
+  .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+  .kfl-curtain {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0f1422;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s 0.8s;
+  }
+  .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
+  .kfl-curtain-logo {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: grid; place-items: center;
+    color: white; font-size: 28px; font-weight: 900;
+    transform: scale(0.9); opacity: 0;
+    animation: kfl-curtain-logo-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s forwards;
+  }
+  @keyframes kfl-curtain-logo-in { to { transform: scale(1); opacity: 1; } }
+
+  .kfl-hero-stage {
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  body.kfl-loaded .kfl-hero-stage { opacity: 1; transform: translateY(0); }
+  body.kfl-loaded .kfl-hero-stage[data-stage="2"] { transition-delay: 0.15s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="3"] { transition-delay: 0.30s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="4"] { transition-delay: 0.45s; }
+
+  .kfl-parallax { will-change: transform; }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, calc(0px + var(--kfl-py, 0px))) scale(1); }
+    33%      { transform: translate(28px, calc(-38px + var(--kfl-py, 0px))) scale(1.08); }
+    66%      { transform: translate(-22px, calc(24px + var(--kfl-py, 0px))) scale(0.94); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kfl-reveal, .kfl-reveal.kfl-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .kfl-lift:hover { transform: none; }
+    .animate-blob { animation: none !important; }
+  }
+</style>
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
 <script src="/lib/analytics.js" defer></script>
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
+  <div class="kfl-curtain-logo">₪</div>
+</div>
+<script>
+  (function curtain(){
+    var c = document.getElementById('kfl-curtain');
+    if (!c) return;
+    function lift() {
+      setTimeout(function() {
+        c.classList.add('kfl-curtain-hidden');
+        document.body.classList.add('kfl-loaded');
+        setTimeout(function() { c && c.parentNode && c.parentNode.removeChild(c); }, 900);
+      }, 350);
+    }
+    if (document.readyState === 'complete') lift();
+    else window.addEventListener('load', lift);
+  })();
+</script>
 
 <!-- ============== NAV ============== -->
 <header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
@@ -179,25 +259,25 @@
 <section class="relative overflow-hidden bg-mesh pt-28 pb-12 md:pt-36 md:pb-20">
   <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
   <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-40"></div>
-  <div class="pointer-events-none absolute -top-20 left-1/3 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
-  <div class="pointer-events-none absolute -top-20 right-1/3 -z-10 h-80 w-80 rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-3s"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-20 left-1/3 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob" data-speed="0.18"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-20 right-1/3 -z-10 h-80 w-80 rounded-full bg-accent-500/15 blur-3xl animate-blob" data-speed="-0.12" style="animation-delay:-3s"></div>
+  <div class="kfl-parallax pointer-events-none absolute bottom-0 left-1/4 -z-10 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl animate-blob" data-speed="0.28" style="animation-delay:-1.5s"></div>
   <div class="mx-auto max-w-3xl px-5 text-center">
-    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
+    <div class="kfl-hero-stage mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300" data-stage="1">
       <span class="relative flex h-2 w-2">
-        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
         <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
       </span>
       <span class="font-mono">FOUNDER</span>
       <span class="opacity-50">•</span>
       <span>סטארטאפ ישראלי · קוד פתוח</span>
     </div>
-    <h1 class="text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl">
+    <h1 class="kfl-hero-stage text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl" data-stage="1">
       הסיפור מאחורי <span class="holo-text">כסף'לה</span>
     </h1>
-    <p class="mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-ink-600 dark:text-ink-200 md:text-xl">
+    <p class="kfl-hero-stage mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-ink-600 dark:text-ink-200 md:text-xl" data-stage="2">
       בנינו מעקב הוצאות שמתאים לאיך שישראלים באמת חיים — בוואטסאפ, בעברית, על הגיליון שלהם, בלי לבקש מהם להפוך לרואי-חשבון.
     </p>
-    <div class="mt-8 flex flex-wrap items-center justify-center gap-2 text-sm text-ink-500 dark:text-ink-300">
+    <div class="kfl-hero-stage mt-8 flex flex-wrap items-center justify-center gap-2 text-sm text-ink-500 dark:text-ink-300" data-stage="3">
       <a href="#founder" class="rounded-full border border-ink-200 px-4 py-1.5 hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:hover:border-brand-400 dark:hover:text-brand-300">הסיפור האישי</a>
       <a href="#values" class="rounded-full border border-ink-200 px-4 py-1.5 hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:hover:border-brand-400 dark:hover:text-brand-300">ערכים</a>
       <a href="#timeline" class="rounded-full border border-ink-200 px-4 py-1.5 hover:border-brand-400 hover:text-brand-700 dark:border-ink-700 dark:hover:border-brand-400 dark:hover:text-brand-300">ציר זמן</a>
@@ -295,7 +375,7 @@
       </a>
 
       <!-- Value 3 -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
         <div class="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
         </div>
@@ -306,7 +386,7 @@
       </div>
 
       <!-- Value 4 -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
         <div class="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
         </div>
@@ -586,7 +666,7 @@
     </div>
 
     <div class="grid gap-5 md:grid-cols-2">
-      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
         <div class="flex items-start gap-4">
           <div class="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-3xl font-black text-white">S</div>
           <div>
@@ -599,7 +679,7 @@
         </div>
       </div>
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-900">
         <div class="flex items-start gap-4">
           <div class="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 text-3xl text-white">
             <svg class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -674,7 +754,7 @@
       קראת את הסיפור. עכשיו תגלה אם הוא עובד אצלך. <span class="num">14</span> ימי ניסיון Pro בחינם, בלי כרטיס.
     </p>
     <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-      <a href="/account?plan=pro" class="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-8 py-4 text-base font-black text-white shadow-glow transition hover:bg-brand-400 sm:w-auto">
+      <a href="/account?plan=pro" class="kfl-magnetic group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-8 py-4 text-base font-black text-white shadow-glow transition hover:bg-brand-400 sm:w-auto">
         התחל ניסיון Pro חינם
         <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
       </a>
@@ -753,5 +833,88 @@ function kesefleToggleDark() {
 </script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
+
+<script>
+  (function premiumMotion(){
+    if (window.kflPremiumMotionInit) return;
+    window.kflPremiumMotionInit = true;
+
+    var selectors = [
+      'section h1', 'section h2', 'section h3',
+      'section p:not(.kfl-reveal)',
+      '#values .grid > *',
+      '#timeline .relative.mb-10'
+    ];
+    var nodes = [];
+    selectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        if (!el.classList.contains('kfl-reveal') && !el.classList.contains('kfl-hero-stage')) {
+          el.classList.add('kfl-reveal');
+          nodes.push(el);
+        }
+      });
+    });
+
+    if (!('IntersectionObserver' in window)) {
+      nodes.forEach(function(el) { el.classList.add('kfl-in'); });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('kfl-in');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+    nodes.forEach(function(el) { observer.observe(el); });
+
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    document.querySelectorAll('.kfl-magnetic, a[href="#signup"]').forEach(function(btn) {
+      btn.classList.add('kfl-magnetic');
+      btn.addEventListener('mousemove', function(e) {
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = 'translate(' + (x * 0.08) + 'px, ' + (y * 0.08) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function() { btn.style.transform = ''; });
+    });
+  })();
+</script>
+
+<script>
+  (function parallaxBlobs(){
+    if (window.kflParallaxInit) return;
+    window.kflParallaxInit = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-parallax'));
+    if (!nodes.length) return;
+
+    var items = nodes.map(function(el){
+      var s = parseFloat(el.getAttribute('data-speed'));
+      return { el: el, speed: isNaN(s) ? 0.15 : s };
+    });
+
+    var ticking = false;
+    function update(){
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        it.el.style.setProperty('--kfl-py', (y * it.speed).toFixed(2) + 'px');
+      }
+      ticking = false;
+    }
+    window.addEventListener('scroll', function(){
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  })();
+</script>
 </body>
 </html>

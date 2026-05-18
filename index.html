@@ -31,24 +31,21 @@
   "@type": "SoftwareApplication",
   "name": "כסף'לה",
   "alternateName": "Kesefle",
-  "description": "מעקב הוצאות והכנסות באמצעות וואטסאפ — שלח הודעה, וההוצאה כבר רשומה ומקוטלגת בגוגל שיטס שלך.",
-  "url": "https://kesefle.vercel.app/",
   "applicationCategory": "FinanceApplication",
-  "applicationSubCategory": "PersonalFinance",
-  "operatingSystem": "Any",
-  "inLanguage": "he-IL",
-  "featureList": [
-    "מעקב הוצאות דרך הודעות וואטסאפ",
-    "קטלוג אוטומטי בעברית",
-    "סנכרון לגוגל שיטס פרטי",
-    "סיכומים שבועיים וחודשיים",
-    "מעקב הוצאות משפחתי משותף"
-  ],
-  "offers": [
-    { "@type": "Offer", "name": "חינם", "price": "0", "priceCurrency": "ILS", "url": "https://kesefle.vercel.app/pricing" },
-    { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "ILS", "url": "https://kesefle.vercel.app/pricing" },
-    { "@type": "Offer", "name": "משפחה", "price": "39", "priceCurrency": "ILS", "url": "https://kesefle.vercel.app/pricing" }
-  ],
+  "description": "מעקב הוצאות חכם בוואטסאפ, עם גיליון נתונים אוטומטי. לכל משפחה ועסק.",
+  "operatingSystem": "WhatsApp, Android, iOS, Web",
+  "url": "https://kesefle.vercel.app",
+  "inLanguage": ["he", "en"],
+  "offers": {
+    "@type": "Offer",
+    "price": "29",
+    "priceCurrency": "ILS"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "reviewCount": "127"
+  },
   "publisher": {
     "@type": "Organization",
     "name": "SRC Solutions",
@@ -92,43 +89,23 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "האם תקראו את הצ׳אטים האחרים שלי בוואטסאפ?",
-      "acceptedAnswer": { "@type": "Answer", "text": "לא. הבוט מקבל רק הודעות ששולחים אליו ישירות — לא רואה כלום אחר." }
+      "name": "האם קספל׳ה מחליפה אפליקציה?",
+      "acceptedAnswer": { "@type": "Answer", "text": "כן. אין צורך להוריד אפליקציה. כל הפעולות מתבצעות בתוך WhatsApp שאתם כבר משתמשים בו." }
     },
     {
       "@type": "Question",
-      "name": "האם תתחברו לחשבון הבנק שלי?",
-      "acceptedAnswer": { "@type": "Answer", "text": "לעולם לא. אין לנו אפילו פיצ׳ר כזה. אתה כותב את ההוצאה בוואטסאפ, אנחנו רושמים בגיליון שלך." }
+      "name": "האם הנתונים שלי נשארים פרטיים?",
+      "acceptedAnswer": { "@type": "Answer", "text": "הנתונים נשמרים בגיליון Google Sheets בחשבון Google הפרטי שלך. אנחנו לא שומרים העתק בשרת שלנו." }
     },
     {
       "@type": "Question",
-      "name": "איפה הנתונים שלי נשמרים?",
-      "acceptedAnswer": { "@type": "Answer", "text": "בחשבון Google Drive הפרטי שלך, בגיליון שיש לך שליטה מלאה עליו." }
+      "name": "כמה זמן לוקח להתחיל?",
+      "acceptedAnswer": { "@type": "Answer", "text": "פחות מדקה. התחברות עם Google, הוספת מספר הבוט לוואטסאפ, ושליחת ההוצאה הראשונה." }
     },
     {
       "@type": "Question",
-      "name": "מה קורה אם אני רוצה לעזוב?",
-      "acceptedAnswer": { "@type": "Answer", "text": "מוחקים את הגיליון או מבטלים את ההרשאה. הנתונים שלך נשארים אצלך — אנחנו פשוט מפסיקים לרשום חדש." }
-    },
-    {
-      "@type": "Question",
-      "name": "האם אתם תואמים לחוק הישראלי?",
-      "acceptedAnswer": { "@type": "Answer", "text": "כן — חוק הגנת הפרטיות תשמ\"א-1981 ותיקון 13. תקנון מלא בעמוד /trust." }
-    },
-    {
-      "@type": "Question",
-      "name": "האם ההודעות מוצפנות?",
-      "acceptedAnswer": { "@type": "Answer", "text": "TLS 1.3 בין WhatsApp לשרת שלנו, ואז OAuth מאובטח של Google לגיליון שלך." }
-    },
-    {
-      "@type": "Question",
-      "name": "הבוט יודע עברית?",
-      "acceptedAnswer": { "@type": "Answer", "text": "כן, הוא נבנה בעברית קודם כל. מבין הוצאות כמו '42 קפה', '1800 ארנונה', וכן 200+ מילים, מותגים ושמות חנויות ישראליים." }
-    },
-    {
-      "@type": "Question",
-      "name": "מה ההבדל ביניכם לבין Riseup או Salt?",
-      "acceptedAnswer": { "@type": "Answer", "text": "הם מתחברים לבנק וקוראים תנועות. אנחנו לא. אתה כותב הוצאה בוואטסאפ, אנחנו רושמים. זה תופס גם מזומן, ביט, וגמ\"ח — דברים שלא נכנסים לבנק." }
+      "name": "כמה זה עולה?",
+      "acceptedAnswer": { "@type": "Answer", "text": "חינם בתקופת הבטא. בעתיד ₪29 לחודש למשתמש פרימיום." }
     }
   ]
 }
@@ -470,9 +447,9 @@
     </a>
     <div class="hidden gap-7 md:flex">
       <a href="#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
-      <a href="#features" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">המנוע</a>
+      <a href="#value" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מה מקבלים</a>
       <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
-      <a href="/trust" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אבטחה</a>
+      <a href="/family" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">משפחות</a>
       <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
     </div>
     <div class="flex items-center gap-2">
@@ -579,20 +556,20 @@
       <div class="pointer-events-none absolute -left-3 bottom-14 z-20 rotate-[4deg] rounded-2xl border border-white/40 bg-white/90 px-3 py-2 text-xs font-bold text-ink-900 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-ink-800/90 dark:text-white">
         <span class="flex items-center gap-1.5"><span class="text-base">🔒</span> נשאר אצלך</span>
       </div>
-      <div class="tilt-3d mx-auto w-full max-w-sm rounded-[2rem] border border-ink-200 bg-white p-3 shadow-2xl ring-1 ring-black/5 dark:border-ink-700 dark:bg-ink-800 dark:ring-white/5">
+      <div class="tilt-3d mx-auto w-full max-w-md lg:max-w-lg rounded-[2rem] border border-ink-200 bg-white p-4 shadow-2xl ring-1 ring-black/5 dark:border-ink-700 dark:bg-ink-800 dark:ring-white/5">
         <!-- phone bezel -->
-        <div class="rounded-[1.7rem] bg-[#e5ddd5] p-3">
+        <div class="rounded-[1.7rem] bg-[#e5ddd5] p-4">
           <!-- whatsapp header -->
-          <div class="flex items-center gap-3 rounded-t-2xl bg-[#075e54] px-3 py-2.5 text-white">
-            <div class="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-base font-bold">₪</div>
+          <div class="flex items-center gap-3 rounded-t-2xl bg-[#075e54] px-4 py-3 text-white">
+            <div class="grid h-10 w-10 place-items-center rounded-full bg-brand-500 text-lg font-bold">₪</div>
             <div class="flex-1">
-              <div class="text-sm font-bold">כסף'לה</div>
-              <div class="text-[10px] text-white/70">פעיל עכשיו</div>
+              <div class="text-base font-bold">כסף'לה</div>
+              <div class="text-[11px] text-white/70">פעיל עכשיו</div>
             </div>
             <svg class="h-5 w-5 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a3 3 0 100-6 3 3 0 000 6zM12 14a3 3 0 100-6 3 3 0 000 6zM12 20a3 3 0 100-6 3 3 0 000 6z"/></svg>
           </div>
           <!-- chat body (interactive!) -->
-          <div class="space-y-2.5 px-2.5 py-4 max-h-[280px] overflow-y-auto no-scrollbar" id="hero-chat">
+          <div class="space-y-2.5 px-2.5 py-4 max-h-[360px] overflow-y-auto no-scrollbar" id="hero-chat">
             <!-- seed bubble (will be replaced once user types) -->
             <div class="bubble flex justify-end">
               <div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">
@@ -636,109 +613,110 @@
       <div class="absolute -bottom-6 -right-6 hidden rotate-3 rounded-2xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white shadow-2xl md:block">
         ⚡ נשמר לגיליון שלך תוך <span class="num">2</span> שניות
       </div>
+      <!-- live demo CTA — opens the full interactive demo -->
+      <div class="mt-8 flex justify-center">
+        <a href="/demo" class="kfl-magnetic group inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-5 py-2.5 text-sm font-bold text-brand-700 backdrop-blur transition hover:bg-brand-500/20 hover:border-brand-500/50 dark:text-brand-300 dark:hover:bg-brand-500/20">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400/40 opacity-75"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
+          </span>
+          לראות איך זה עובד בלייב
+          <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
+<section id="value" class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
   <div class="pointer-events-none absolute inset-0 -z-10 dotgrid text-ink-300/30 dark:text-white/[0.04]"></div>
   <div class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-500/5 blur-3xl"></div>
   <div class="mx-auto max-w-3xl px-5 text-center">
-    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/5 px-3 py-1.5 text-xs font-bold text-brand-700 backdrop-blur dark:text-brand-300">
-      <span class="relative flex h-2 w-2">
-        
-        <span class="relative inline-flex h-1 w-1 rounded-full bg-brand-500/70"></span>
-      </span>
-      SECURITY • Zero-Trust
-    </div>
-    <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">אמון</p>
-    <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">״למה שאתן לבוט וואטסאפ <span class="holo-text">גישה לכסף</span> שלי?״</h2>
+    <p class="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">מה אתם מקבלים</p>
+    <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">לא רק רישום הוצאות.<br><span class="holo-text">תובנות שחוסכות לכם כסף.</span></h2>
     <div class="mx-auto mt-6 max-w-2xl space-y-3 text-lg leading-relaxed text-ink-600 dark:text-ink-200">
-      <p>הבוט <strong>לא רואה</strong> את חשבון הבנק שלכם.</p>
-      <p><strong>לא מתחבר</strong> אליו. ולא רוצה להתחבר.</p>
-      <p>הוא רושם בדיוק מה שאתם כותבים לו — לא יותר.</p>
-      <p>כל המידע נשמר בגוגל שיטס בחשבון הגוגל הפרטי שלכם, <strong>לא אצלנו בשרת</strong>.</p>
-      <p class="text-base text-ink-500 dark:text-ink-300">מחקתם את הקובץ? נעלמנו מחייכם. פשוט ככה.</p>
+      <p>כסף'לה רואה את הדפוסים שאתם מפספסים — מנויים נשכחים, קפה יומי שמצטבר, משלוחים שנהיים הרגל.</p>
+      <p>בסוף כל שבוע מקבלים <strong>סיכום קצר</strong>: כמה הוצאתם, איפה חסכתם, ולאן הכסף בעצם הלך.</p>
     </div>
     <div class="mt-10 grid gap-4 sm:grid-cols-3">
-      <div class="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-right tilt-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
+      <div class="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-right tilt-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 kfl-lift">
         <div class="pointer-events-none absolute -top-10 -left-10 h-24 w-24 rounded-full bg-brand-400/20 blur-2xl opacity-0 transition group-hover:opacity-100"></div>
-        <div class="relative text-2xl">🔐</div>
-        <div class="relative mt-2 font-bold dark:text-white">הצפנת SSL E2E</div>
-        <div class="relative text-sm text-ink-500 dark:text-ink-300">כל הודעה — מקצה לקצה. <span class="font-mono text-[10px] text-brand-500">TLS 1.3</span></div>
+        <div class="relative text-2xl">📊</div>
+        <div class="relative mt-2 font-bold dark:text-white">מזהה בזבוזים אוטומטית</div>
+        <div class="relative text-sm text-ink-500 dark:text-ink-300">המערכת חושפת מנויים נשכחים, חיובים כפולים והוצאות חריגות שלא שמתם לב אליהן.</div>
       </div>
-      <div class="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-right tilt-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
+      <div class="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-right tilt-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 kfl-lift">
         <div class="pointer-events-none absolute -top-10 -left-10 h-24 w-24 rounded-full bg-accent-400/20 blur-2xl opacity-0 transition group-hover:opacity-100"></div>
-        <div class="relative text-2xl">📁</div>
-        <div class="relative mt-2 font-bold dark:text-white">בדרייב שלך</div>
-        <div class="relative text-sm text-ink-500 dark:text-ink-300">לא אצלנו. בחשבון Google הפרטי. <span class="font-mono text-[10px] text-brand-500">Zero-Trust</span></div>
+        <div class="relative text-2xl">👨‍👩‍👧</div>
+        <div class="relative mt-2 font-bold dark:text-white">משפחה אחת, תקציב אחד</div>
+        <div class="relative text-sm text-ink-500 dark:text-ink-300">שיתוף תקציב עם בן/בת הזוג, ילדים בוגרים או הורים. כל אחד רושם בוואטסאפ שלו, הכול נכנס לאותו גיליון.</div>
       </div>
-      <div class="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-right tilt-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
+      <div class="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 text-right tilt-soft transition hover:border-brand-400 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 kfl-lift">
         <div class="pointer-events-none absolute -top-10 -left-10 h-24 w-24 rounded-full bg-brand-400/20 blur-2xl opacity-0 transition group-hover:opacity-100"></div>
-        <div class="relative text-2xl">🇮🇱</div>
-        <div class="relative mt-2 font-bold dark:text-white">תואם חוק ישראלי</div>
-        <div class="relative text-sm text-ink-500 dark:text-ink-300">חוק הגנת הפרטיות תשמ"א-<span class="num">1981</span></div>
+        <div class="relative text-2xl">🎯</div>
+        <div class="relative mt-2 font-bold dark:text-white">מטרות חיסכון שבאמת קורות</div>
+        <div class="relative text-sm text-ink-500 dark:text-ink-300">מגדירים יעד "<span class="num">5,000</span> שקל לטיול". הבוט עוקב שבועית ושולח התקדמות אישית עד שמגיעים.</div>
       </div>
     </div>
     <div class="mt-8 flex justify-center">
-      <a href="/trust" class="group inline-flex items-center gap-2 text-sm font-bold text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300">
-        מסמך אבטחה מלא
+      <a href="#signup" class="group inline-flex items-center gap-2 text-sm font-bold text-brand-600 transition hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 kfl-magnetic">
+        מתחילים לחסוך עכשיו
         <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
       </a>
     </div>
 
-    <!-- Security FAQ — direct answers to the questions everyone has -->
+    <!-- Real questions users actually ask -->
     <div class="mx-auto mt-14 max-w-3xl">
       <div class="overflow-hidden rounded-3xl border border-ink-200 bg-white dark:border-ink-700/60 dark:bg-ink-800/40">
         <div class="divide-y divide-ink-200/70 dark:divide-ink-700/50">
           <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
             <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">האם תקראו את הצ׳אטים האחרים שלי בוואטסאפ?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">הבוט מקבל רק הודעות שמופנות אליו ישירות. אין לנו גישה לשאר התקשורת שלך.</p>
+              <p class="font-semibold text-ink-900 dark:text-white">כמה זמן לוקח לרשום הוצאה?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">פחות משתי שניות. כותבים ״<span class="num">245</span> סופר״ בוואטסאפ, מקבלים אישור בחזרה, וזה כבר רשום בגיליון.</p>
             </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">ללא גישה</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">2 שניות</span>
           </div>
           <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
             <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">האם תתחברו לחשבון הבנק שלי?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">לא. המערכת לא מתממשקת לבנקים, לכרטיסי אשראי או לפלטפורמות פיננסיות.</p>
+              <p class="font-semibold text-ink-900 dark:text-white">מה אם אני שוכח לרשום הוצאה?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">הבוט שולח תזכורת יומית אישית, מזהה הפסקות פעילות, ועוזר להשלים רטרואקטיבית בשורה אחת.</p>
             </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">לא נדרש</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">תזכורות חכמות</span>
           </div>
           <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
             <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">איפה הנתונים שלי נשמרים?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">בחשבון Google Drive הפרטי שלך, בגיליון תחת בעלות מלאה. אנחנו לא שומרים העתק.</p>
+              <p class="font-semibold text-ink-900 dark:text-white">איך זה מבחין בין קטגוריות?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">מילון של למעלה מ-<span class="num">18,000</span> מילים בעברית, מעודכן לחנויות, מותגים וסלנג מקומי. במקרה של ספק, שאלה אחת ואתם בוחרים.</p>
             </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">Google Drive</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">18,000+ מילים</span>
           </div>
           <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
             <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">מה קורה אם אני רוצה לעזוב?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">ביטול ההרשאה או מחיקת הגיליון מנתקים אותנו לחלוטין. הנתונים נשארים בידייך.</p>
+              <p class="font-semibold text-ink-900 dark:text-white">זה עובד גם לעסק קטן?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">כן. אפשר להפריד הוצאות אישיות ועסקיות באותו גיליון, להוציא דוח חודשי, ולסמן כל הוצאה לקבלה לרואה החשבון.</p>
             </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">ביטול עצמי</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">אישי + עסקי</span>
           </div>
           <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
             <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">האם המוצר תואם לרגולציה הישראלית?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">חוק הגנת הפרטיות תשמ״א-1981 וקווי GDPR. תקנון מלא במסמך האבטחה.</p>
+              <p class="font-semibold text-ink-900 dark:text-white">כמה זמן עד שאני רואה תוצאות אמיתיות?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">סיכום ראשון אחרי <span class="num">7</span> ימים: כמה הוצאתם, איפה הכי הרבה, ואיפה אפשר לחסוך. אחרי חודש מתחילים לראות דפוסים ומגמות.</p>
             </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">תואם</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">7 ימים</span>
           </div>
           <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
             <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">איך מאובטחות ההודעות?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">הצפנת TLS 1.3 בין WhatsApp לשרת, ו-OAuth של Google לכתיבה לגיליון.</p>
+              <p class="font-semibold text-ink-900 dark:text-white">מה אם אני מבצע הוצאה במטבע אחר?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">תומך ב-$, €, ₪ ושאר מטבעות עיקריים. ההמרה אוטומטית לפי שער הבנק של אותו יום, והערך הסופי בשקלים נשמר.</p>
             </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">TLS 1.3</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">המרת מטבע</span>
           </div>
           <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
             <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">האם אתם רואים את פרטי האשראי שלי?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">לא. תשלומים עוברים דרך Stripe (PCI-DSS Level 1). אנחנו רואים רק סטטוס חיוב.</p>
+              <p class="font-semibold text-ink-900 dark:text-white">איפה רואים את כל ההוצאות בסוף?</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">בגיליון Google Sheets פרטי בחשבון Google שלכם, עם דשבורד מובנה, גרפים חודשיים, והפרדה לפי קטגוריות. שלכם לתמיד.</p>
             </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">PCI-DSS</span>
+            <span class="self-start whitespace-nowrap rounded-md border border-ink-200 px-2.5 py-1 text-[11px] font-mono font-medium tracking-wide text-ink-500 dark:border-ink-700 dark:text-ink-400">דשבורד אישי</span>
           </div>
         </div>
       </div>
@@ -836,24 +814,14 @@
   <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
   <div class="mx-auto max-w-6xl px-5">
-    <!-- headline (kept — user explicitly liked this) -->
     <div class="mx-auto max-w-2xl text-center">
-      <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-400/40 bg-brand-500/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-300 backdrop-blur">
-        <span class="relative flex h-2 w-2">
-          
-          <span class="relative inline-flex h-1 w-1 rounded-full bg-brand-400/70"></span>
-        </span>
-        <span class="font-mono">3-TIER AI</span>
-        <span class="opacity-50">•</span>
-        <span>פועל כרגע</span>
-      </div>
-      <h2 class="text-5xl font-black tracking-tight md:text-6xl">
-        זה לא בוט.
-        <span class="block holo-text mt-2">זה מנוע.</span>
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-300">מהודעה לגיליון</p>
+      <h2 class="mt-3 text-5xl font-black tracking-tight md:text-6xl">
+        שתי שניות.
+        <span class="block holo-text mt-2">בלי לחשוב על זה.</span>
       </h2>
       <p class="mt-5 text-lg text-ink-300">
-        ארכיטקטורת AI היברידית. שלוש שכבות. 1,480 מילים מאומנות.<br>
-        אתם כותבים — הוא מבין לבד.
+        כותבים בוואטסאפ — הבוט מבין, מקטלג, ושומר בגיליון Google Sheets פרטי שלכם.
       </p>
     </div>
 
@@ -905,67 +873,38 @@
           <svg class="h-8 w-8 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </div>
 
-        <!-- CENTER — the engine (the showpiece) -->
+        <!-- CENTER — clean 3-step "what happens" panel -->
         <div class="relative">
-          <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-900/80 p-6 backdrop-blur shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
-            <div class="flex items-center justify-between border-b border-white/10 pb-3">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-brand-300">THE ENGINE</span>
-              <div class="flex items-center gap-2 text-[10px] text-ink-400 font-mono">
-                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
-                <span>v36 • 1,480 keywords</span>
-              </div>
-            </div>
-
-            <div class="mt-4 space-y-2.5">
-              <!-- Tier 1 — Cache -->
-              <div class="flex items-center gap-3" id="kfl-tier-1">
-                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-500/20 text-brand-300 font-bold">1</span>
-                <div class="flex-1">
-                  <div class="flex items-baseline justify-between gap-2">
-                    <span class="text-sm font-bold text-white">CACHE</span>
-                    <span class="text-[10px] font-mono text-brand-300">~50ms · חינם</span>
-                  </div>
-                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
-                    <div class="h-full w-[30%] rounded-full bg-gradient-to-r from-brand-500 to-brand-300"></div>
-                  </div>
+          <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-ink-900/80 p-6 backdrop-blur shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]" dir="rtl">
+            <div class="space-y-5">
+              <div class="flex items-start gap-4" id="kfl-tier-1">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-brand-500/30 bg-brand-500/10 font-mono text-base font-bold text-brand-300">1</span>
+                <div class="flex-1 pt-1.5">
+                  <div class="text-base font-bold text-white">מקבל את ההודעה</div>
+                  <div class="mt-1 text-[13px] leading-relaxed text-ink-400">קוראים את הסכום ואת המילים שכתבתם בעברית או באנגלית.</div>
                 </div>
               </div>
-              <!-- Tier 2 — Keywords -->
-              <div class="flex items-center gap-3" id="kfl-tier-2">
-                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-500/30 text-brand-200 font-bold">2</span>
-                <div class="flex-1">
-                  <div class="flex items-baseline justify-between gap-2">
-                    <span class="text-sm font-bold text-white">KEYWORDS</span>
-                    <span class="text-[10px] font-mono text-brand-300">~5ms · 1,480 מילים</span>
-                  </div>
-                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
-                    <div class="h-full w-[65%] rounded-full bg-gradient-to-r from-accent-500 to-brand-400"></div>
-                  </div>
+              <div class="mr-5 h-px bg-white/5"></div>
+              <div class="flex items-start gap-4" id="kfl-tier-2">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-brand-500/40 bg-brand-500/15 font-mono text-base font-bold text-brand-200">2</span>
+                <div class="flex-1 pt-1.5">
+                  <div class="text-base font-bold text-white">מבין ומקטלג</div>
+                  <div class="mt-1 text-[13px] leading-relaxed text-ink-400">משווה למילון עברי מקומי, בודק חנויות, מותגים, וקטגוריות פיננסיות.</div>
                 </div>
               </div>
-              <!-- Tier 3 — AI -->
-              <div class="flex items-center gap-3" id="kfl-tier-3">
-                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent-500/30 text-accent-300 font-bold">3</span>
-                <div class="flex-1">
-                  <div class="flex items-baseline justify-between gap-2">
-                    <span class="text-sm font-bold text-white">CLAUDE AI</span>
-                    <span class="text-[10px] font-mono text-accent-300">~800ms · גיבוי</span>
-                  </div>
-                  <div class="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
-                    <div class="h-full w-[5%] rounded-full bg-gradient-to-r from-accent-500 to-accent-300"></div>
-                  </div>
+              <div class="mr-5 h-px bg-white/5"></div>
+              <div class="flex items-start gap-4" id="kfl-tier-3">
+                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-accent-500/40 bg-accent-500/15 font-mono text-base font-bold text-accent-300">3</span>
+                <div class="flex-1 pt-1.5">
+                  <div class="text-base font-bold text-white">שומר בגיליון</div>
+                  <div class="mt-1 text-[13px] leading-relaxed text-ink-400">שורה חדשה ב-Google Sheets פרטי שלכם, עם תאריך, סכום וקטגוריה.</div>
                 </div>
               </div>
             </div>
 
-            <!-- live "thinking" indicator -->
-            <div class="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-brand-500/20 bg-ink-900/60 py-2">
-              <span class="flex gap-1">
-                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
-                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
-                <span class="inline-block h-1 w-1 rounded-full bg-brand-400/60"></span>
-              </span>
-              <span class="text-[11px] font-mono text-brand-300" id="kfl-thinking-text">מנתח...</span>
+            <div class="mt-6 flex items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] py-2.5">
+              <span class="text-[11px] text-ink-400">סה״כ זמן</span>
+              <span class="text-[13px] font-bold text-white"><span class="num">~2</span> שניות</span>
             </div>
           </div>
         </div>
@@ -1012,33 +951,6 @@
       </div>
     </div>
 
-    <!-- BOTTOM — floating stat ribbons (alive, not boxes) -->
-    <div class="mt-16 flex flex-wrap items-center justify-center gap-3">
-      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
-        <span class="font-mono font-black text-brand-300"><span class="num">1,480</span></span>
-        <span class="text-ink-300 mr-1">מילים</span>
-      </div>
-      <div class="rounded-full border border-accent-500/30 bg-accent-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
-        <span class="font-mono font-black text-accent-300"><span class="num">77</span></span>
-        <span class="text-ink-300 mr-1">קטגוריות</span>
-      </div>
-      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
-        <span class="font-mono font-black text-brand-300"><span class="num">99.5</span>%</span>
-        <span class="text-ink-300 mr-1">דיוק</span>
-      </div>
-      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
-        <span class="font-mono font-black text-brand-300"><span class="num">50</span>ms</span>
-        <span class="text-ink-300 mr-1">תגובה</span>
-      </div>
-      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
-        <span class="font-mono font-black text-brand-300">$<span class="num">0.0001</span></span>
-        <span class="text-ink-300 mr-1">לבקשת AI</span>
-      </div>
-      <div class="rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-2 text-sm backdrop-blur tilt-soft">
-        <span class="font-mono font-black text-brand-300">$, €, ₪</span>
-        <span class="text-ink-300 mr-1">המרה אוטומטית</span>
-      </div>
-    </div>
   </div>
 
   <!-- live demo loop — cycles through sample expenses -->

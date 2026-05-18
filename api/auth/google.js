@@ -2,6 +2,7 @@
 // Env: GOOGLE_CLIENT_ID (required audience), KV_REST_API_URL, KV_REST_API_TOKEN.
 
 import crypto from 'node:crypto';
+import { rateLimit } from '../_lib/rateLimit.js';
 
 function b64urlToBuf(s) {
   s = s.replace(/-/g, '+').replace(/_/g, '/');
@@ -53,6 +54,7 @@ async function verifyGoogleIdToken(idToken, expectedAudience) {
 }
 
 export default async function handler(req, res) {
+  if (await rateLimit(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }

@@ -75,11 +75,91 @@
   input[type="range"].kf-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 9999px; background: #fff; border: 3px solid #16a34a; box-shadow: 0 4px 12px -2px rgba(22,163,74,0.5); cursor: pointer; }
   .dark input[type="range"].kf-slider::-webkit-slider-runnable-track { background: linear-gradient(to left, #22c55e var(--kf-fill, 50%), #2f3b54 var(--kf-fill, 50%)); }
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+<style>
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { font-feature-settings: "kern" 1, "liga" 1, "calt" 1; }
+  h1, h2 { letter-spacing: -0.025em; }
+  h3, h4 { letter-spacing: -0.015em; }
+  .num, .font-mono { font-variant-numeric: tabular-nums; }
+
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-reveal[data-delay="1"] { transition-delay: 0.08s; }
+  .kfl-reveal[data-delay="2"] { transition-delay: 0.16s; }
+  .kfl-reveal[data-delay="3"] { transition-delay: 0.24s; }
+  .kfl-reveal[data-delay="4"] { transition-delay: 0.32s; }
+
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(15, 20, 34, 0.32); }
+
+  .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+  .kfl-curtain {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0f1422;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s 0.8s;
+  }
+  .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
+  .kfl-curtain-logo {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: grid; place-items: center;
+    color: white; font-size: 28px; font-weight: 900;
+    transform: scale(0.9); opacity: 0;
+    animation: kfl-curtain-logo-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s forwards;
+  }
+  @keyframes kfl-curtain-logo-in { to { transform: scale(1); opacity: 1; } }
+
+  .kfl-hero-stage {
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  body.kfl-loaded .kfl-hero-stage { opacity: 1; transform: translateY(0); }
+  body.kfl-loaded .kfl-hero-stage[data-stage="2"] { transition-delay: 0.15s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="3"] { transition-delay: 0.30s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="4"] { transition-delay: 0.45s; }
+
+  .kfl-parallax { will-change: transform; }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, calc(0px + var(--kfl-py, 0px))) scale(1); }
+    33%      { transform: translate(28px, calc(-38px + var(--kfl-py, 0px))) scale(1.08); }
+    66%      { transform: translate(-22px, calc(24px + var(--kfl-py, 0px))) scale(0.94); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kfl-reveal, .kfl-reveal.kfl-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .kfl-lift:hover { transform: none; }
+    .animate-blob { animation: none !important; }
+  }
+</style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#22c55e">
   <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
+  <div class="kfl-curtain-logo">₪</div>
+</div>
+<script>
+  (function curtain(){
+    var c = document.getElementById('kfl-curtain');
+    if (!c) return;
+    function lift() {
+      setTimeout(function() {
+        c.classList.add('kfl-curtain-hidden');
+        document.body.classList.add('kfl-loaded');
+        setTimeout(function() { c && c.parentNode && c.parentNode.removeChild(c); }, 900);
+      }, 350);
+    }
+    if (document.readyState === 'complete') lift();
+    else window.addEventListener('load', lift);
+  })();
+</script>
 
 <!-- ============== NAV ============== -->
 <header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
@@ -116,26 +196,26 @@
 <section class="relative overflow-hidden bg-mesh pt-28 pb-12 md:pt-36 md:pb-16">
   <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white via-ink-50 to-white dark:from-ink-900 dark:via-ink-800 dark:to-ink-900"></div>
   <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-50"></div>
-  <div class="pointer-events-none absolute -top-32 -left-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
-  <div class="pointer-events-none absolute -bottom-32 -right-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-3s"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-32 -left-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-brand-500/15 blur-3xl animate-blob" data-speed="0.18"></div>
+  <div class="kfl-parallax pointer-events-none absolute -bottom-32 -right-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-accent-500/15 blur-3xl animate-blob" data-speed="-0.12" style="animation-delay:-3s"></div>
+  <div class="kfl-parallax pointer-events-none absolute top-1/3 right-1/4 -z-10 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl animate-blob" data-speed="0.28" style="animation-delay:-1.5s"></div>
   <div class="mx-auto max-w-3xl px-5 text-center">
-    <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
+    <div class="kfl-hero-stage mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300" data-stage="1">
       <span class="relative flex h-2 w-2">
-        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
         <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
       </span>
       <span class="font-mono">PRICING</span>
       <span class="opacity-50">•</span>
       <span>שקלים. כולל מע"מ. חשבונית אוטומטית.</span>
     </div>
-    <h1 class="text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl">
+    <h1 class="kfl-hero-stage text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl" data-stage="1">
       תוכנית לכל עסק.
       <span class="block holo-text">בלי הפתעות בחיוב.</span>
     </h1>
-    <p class="mt-5 mx-auto max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+    <p class="kfl-hero-stage mt-5 mx-auto max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200" data-stage="2">
       התחל בחינם, שדרג רק כשתצטרך. <span class="num">14</span> יום ניסיון על Pro ומשפחה. ביטול בלחיצה.
     </p>
-    <div class="mt-7 flex items-center justify-center gap-5 text-sm text-ink-500 dark:text-ink-300">
+    <div class="kfl-hero-stage mt-7 flex items-center justify-center gap-5 text-sm text-ink-500 dark:text-ink-300" data-stage="3">
       <div class="flex items-center gap-2">
         <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
         <span>אין כרטיס אשראי לחינם</span>
@@ -158,7 +238,7 @@
     <div class="grid gap-6 md:grid-cols-3">
 
       <!-- free plan -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">חינם</h3>
           <span class="rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold text-ink-600 dark:bg-ink-700 dark:text-ink-200">להתחיל</span>
@@ -180,7 +260,7 @@
       </div>
 
       <!-- pro plan (highlighted) -->
-      <div class="neon-card relative rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-50 via-white to-brand-50 p-8 shadow-glow tilt-soft dark:from-brand-500/10 dark:via-ink-800 dark:to-brand-500/10">
+      <div class="kfl-lift neon-card relative rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-50 via-white to-brand-50 p-8 shadow-glow tilt-soft dark:from-brand-500/10 dark:via-ink-800 dark:to-brand-500/10">
         <div class="absolute -top-3.5 right-6 rounded-full bg-gradient-to-l from-brand-600 to-accent-600 px-3 py-1 text-xs font-bold text-white">⚡ הכי פופולרי</div>
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">Pro</h3>
@@ -201,11 +281,11 @@
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> דשבורד ROAS לקמפיינים</li>
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> ייצוא CSV / PDF לרו"ח</li>
         </ul>
-        <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון <span class="num">14</span> ימים</a>
+        <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="kfl-magnetic mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון <span class="num">14</span> ימים</a>
       </div>
 
       <!-- family plan -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">משפחה</h3>
           <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">עד <span class="num">4</span> בני בית</span>
@@ -226,7 +306,7 @@
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> דשבורד הורים מרוכז</li>
         </ul>
         <a href="/family" class="mt-4 block text-center text-xs font-semibold text-accent-600 underline-offset-2 hover:underline dark:text-accent-500">למידע מפורט על תוכנית משפחה ←</a>
-        <a href="/account?plan=family" onclick="kesefleSelectPlan('family')" class="mt-3 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-500">התחל ניסיון <span class="num">14</span> ימים</a>
+        <a href="/account?plan=family" onclick="kesefleSelectPlan('family')" class="kfl-magnetic mt-3 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-500">התחל ניסיון <span class="num">14</span> ימים</a>
       </div>
     </div>
     <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">30</span> יום החזר כספי מלא. בלי שאלות.</p>
@@ -836,5 +916,88 @@ function kesefleToggleDark() {
 </script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
+
+<script>
+  (function premiumMotion(){
+    if (window.kflPremiumMotionInit) return;
+    window.kflPremiumMotionInit = true;
+
+    var selectors = [
+      'section h1', 'section h2', 'section h3',
+      'section p:not(.kfl-reveal)',
+      '#tiers .grid > *',
+      '#compare table tr'
+    ];
+    var nodes = [];
+    selectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        if (!el.classList.contains('kfl-reveal') && !el.classList.contains('kfl-hero-stage')) {
+          el.classList.add('kfl-reveal');
+          nodes.push(el);
+        }
+      });
+    });
+
+    if (!('IntersectionObserver' in window)) {
+      nodes.forEach(function(el) { el.classList.add('kfl-in'); });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('kfl-in');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+    nodes.forEach(function(el) { observer.observe(el); });
+
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    document.querySelectorAll('.kfl-magnetic, a[href="#signup"]').forEach(function(btn) {
+      btn.classList.add('kfl-magnetic');
+      btn.addEventListener('mousemove', function(e) {
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = 'translate(' + (x * 0.08) + 'px, ' + (y * 0.08) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function() { btn.style.transform = ''; });
+    });
+  })();
+</script>
+
+<script>
+  (function parallaxBlobs(){
+    if (window.kflParallaxInit) return;
+    window.kflParallaxInit = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-parallax'));
+    if (!nodes.length) return;
+
+    var items = nodes.map(function(el){
+      var s = parseFloat(el.getAttribute('data-speed'));
+      return { el: el, speed: isNaN(s) ? 0.15 : s };
+    });
+
+    var ticking = false;
+    function update(){
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        it.el.style.setProperty('--kfl-py', (y * it.speed).toFixed(2) + 'px');
+      }
+      ticking = false;
+    }
+    window.addEventListener('scroll', function(){
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  })();
+</script>
 </body>
 </html>

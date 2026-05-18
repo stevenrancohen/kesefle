@@ -73,8 +73,88 @@
   /* focus ring */
   *:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; border-radius: 8px; }
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+<style>
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { font-feature-settings: "kern" 1, "liga" 1, "calt" 1; }
+  h1, h2 { letter-spacing: -0.025em; }
+  h3, h4 { letter-spacing: -0.015em; }
+  .num, .font-mono { font-variant-numeric: tabular-nums; }
+
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-reveal[data-delay="1"] { transition-delay: 0.08s; }
+  .kfl-reveal[data-delay="2"] { transition-delay: 0.16s; }
+  .kfl-reveal[data-delay="3"] { transition-delay: 0.24s; }
+  .kfl-reveal[data-delay="4"] { transition-delay: 0.32s; }
+
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(15, 20, 34, 0.32); }
+
+  .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+  .kfl-curtain {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0f1422;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s 0.8s;
+  }
+  .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
+  .kfl-curtain-logo {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: grid; place-items: center;
+    color: white; font-size: 28px; font-weight: 900;
+    transform: scale(0.9); opacity: 0;
+    animation: kfl-curtain-logo-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s forwards;
+  }
+  @keyframes kfl-curtain-logo-in { to { transform: scale(1); opacity: 1; } }
+
+  .kfl-hero-stage {
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  body.kfl-loaded .kfl-hero-stage { opacity: 1; transform: translateY(0); }
+  body.kfl-loaded .kfl-hero-stage[data-stage="2"] { transition-delay: 0.15s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="3"] { transition-delay: 0.30s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="4"] { transition-delay: 0.45s; }
+
+  .kfl-parallax { will-change: transform; }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, calc(0px + var(--kfl-py, 0px))) scale(1); }
+    33%      { transform: translate(28px, calc(-38px + var(--kfl-py, 0px))) scale(1.08); }
+    66%      { transform: translate(-22px, calc(24px + var(--kfl-py, 0px))) scale(0.94); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kfl-reveal, .kfl-reveal.kfl-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .kfl-lift:hover { transform: none; }
+    .animate-blob { animation: none !important; }
+  }
+</style>
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased dark:bg-ink-900 dark:text-white">
+
+<div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
+  <div class="kfl-curtain-logo">₪</div>
+</div>
+<script>
+  (function curtain(){
+    var c = document.getElementById('kfl-curtain');
+    if (!c) return;
+    function lift() {
+      setTimeout(function() {
+        c.classList.add('kfl-curtain-hidden');
+        document.body.classList.add('kfl-loaded');
+        setTimeout(function() { c && c.parentNode && c.parentNode.removeChild(c); }, 900);
+      }, 350);
+    }
+    if (document.readyState === 'complete') lift();
+    else window.addEventListener('load', lift);
+  })();
+</script>
 
 <!-- ============== HEADER ============== -->
 <header class="sticky top-0 z-40 border-b border-ink-200/60 bg-white/85 backdrop-blur-lg dark:border-ink-700/60 dark:bg-ink-900/85">
@@ -107,25 +187,25 @@
 <!-- ============== HERO + SEARCH ============== -->
 <section class="relative overflow-hidden border-b border-ink-200/60 bg-gradient-to-b from-brand-50 via-white to-white px-4 py-12 dark:border-ink-700/60 dark:from-brand-500/10 dark:via-ink-900 dark:to-ink-900 sm:px-6 md:py-16">
   <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-40"></div>
-  <div class="pointer-events-none absolute -top-32 -left-20 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
-  <div class="pointer-events-none absolute -top-32 -right-20 -z-10 h-80 w-80 rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-3s"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-32 -left-20 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob" data-speed="0.18"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-32 -right-20 -z-10 h-80 w-80 rounded-full bg-accent-500/15 blur-3xl animate-blob" data-speed="-0.12" style="animation-delay:-3s"></div>
+  <div class="kfl-parallax pointer-events-none absolute top-1/2 left-1/3 -z-10 h-64 w-64 rounded-full bg-brand-500/10 blur-3xl animate-blob" data-speed="0.28" style="animation-delay:-1.5s"></div>
   <div class="mx-auto max-w-3xl text-center">
-    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-ink-800 dark:text-brand-300">
+    <div class="kfl-hero-stage mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-ink-800 dark:text-brand-300" data-stage="1">
       <span class="relative flex h-2 w-2">
-        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
         <span class="live-dot relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
       </span>
       <span class="font-mono">HELP</span>
       <span class="opacity-50">•</span>
       <span>תשובות בעברית · <span class="num">24/7</span></span>
     </div>
-    <h1 class="text-balance text-3xl font-black leading-tight tracking-tight md:text-5xl">
+    <h1 class="kfl-hero-stage text-balance text-3xl font-black leading-tight tracking-tight md:text-5xl" data-stage="1">
       איך אפשר <span class="holo-text">לעזור?</span>
     </h1>
-    <p class="mt-3 text-base text-ink-600 dark:text-ink-300 md:text-lg">
+    <p class="kfl-hero-stage mt-3 text-base text-ink-600 dark:text-ink-300 md:text-lg" data-stage="2">
       מחפש איך להתחיל? נתקעת? יש לנו את התשובה.
     </p>
-    <div class="relative mx-auto mt-7 max-w-2xl">
+    <div class="kfl-hero-stage relative mx-auto mt-7 max-w-2xl" data-stage="3">
       <svg class="pointer-events-none absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 text-ink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
       <input id="search" type="search" autocomplete="off" inputmode="search"
         placeholder="חיפוש: למשל &quot;תשלומים&quot; או &quot;לא מגיע סיכום&quot;"
@@ -1375,7 +1455,7 @@ function renderHome() {
   html += '</div></div>';
   html += '<div class="grid gap-4 sm:grid-cols-2">';
   CATEGORIES.forEach(function(cat) {
-    html += '<a href="#' + cat.id + '" onclick="kesefleNav()" class="article-card group flex flex-col gap-3 rounded-2xl border border-ink-200 bg-white p-5 shadow-soft hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+    html += '<a href="#' + cat.id + '" onclick="kesefleNav()" class="article-card kfl-lift group flex flex-col gap-3 rounded-2xl border border-ink-200 bg-white p-5 shadow-soft hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
     html += '<div class="flex items-center justify-between"><div class="text-3xl">' + cat.emoji + '</div>';
     html += '<span class="rounded-full bg-ink-100 px-2.5 py-1 text-xs font-bold text-ink-600 dark:bg-ink-900 dark:text-ink-300"><span class="num">' + cat.articles.length + '</span> מאמרים</span></div>';
     html += '<h3 class="text-lg font-black">' + escapeHtml(cat.title) + '</h3>';
@@ -1405,7 +1485,7 @@ function renderHome() {
     findArticle('sd-export'),
   ].filter(Boolean);
   popular.forEach(function(a) {
-    html += '<a href="#' + a.id + '" onclick="kesefleNav()" class="article-card group rounded-xl border border-ink-200 bg-white p-4 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+    html += '<a href="#' + a.id + '" onclick="kesefleNav()" class="article-card kfl-lift group rounded-xl border border-ink-200 bg-white p-4 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
     html += '<div class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-300">' + a.categoryEmoji + ' ' + escapeHtml(a.categoryTitle) + '</div>';
     html += '<h4 class="mt-1 text-sm font-bold leading-snug">' + escapeHtml(a.title) + '</h4>';
     html += '<p class="mt-1 text-xs text-ink-500 line-clamp-2 dark:text-ink-400">' + escapeHtml(a.summary.replace(/<[^>]+>/g,'')) + '</p>';
@@ -1426,7 +1506,7 @@ function renderCategory(cat) {
   html += '<p class="text-sm text-ink-500 dark:text-ink-400">' + escapeHtml(cat.desc) + '</p></div></div></div>';
   html += '<div class="grid gap-3 md:grid-cols-2">';
   cat.articles.forEach(function(a, i) {
-    html += '<a href="#' + a.id + '" onclick="kesefleNav()" class="article-card group rounded-2xl border border-ink-200 bg-white p-5 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+    html += '<a href="#' + a.id + '" onclick="kesefleNav()" class="article-card kfl-lift group rounded-2xl border border-ink-200 bg-white p-5 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
     html += '<div class="mb-2 flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-lg bg-ink-100 text-xs font-black text-ink-700 dark:bg-ink-900 dark:text-ink-200">' + (i+1) + '</span>';
     html += '<span class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-300">' + Math.max(2, Math.round(a.body.length/800)) + ' דק׳ קריאה</span></div>';
     html += '<h3 class="text-base font-bold leading-snug">' + escapeHtml(a.title) + '</h3>';
@@ -1597,7 +1677,7 @@ function renderSearch(q) {
       var snippet = bodyText.substring(Math.max(0, idx-60), idx+180);
       if (idx > 60) snippet = '…' + snippet;
       if (idx + 180 < bodyText.length) snippet = snippet + '…';
-      html += '<a href="#' + a.id + '" onclick="kesefleClearSearchAndNav()" class="article-card block rounded-2xl border border-ink-200 bg-white p-5 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
+      html += '<a href="#' + a.id + '" onclick="kesefleClearSearchAndNav()" class="article-card kfl-lift block rounded-2xl border border-ink-200 bg-white p-5 hover:border-brand-400 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-400">';
       html += '<div class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-300">' + a.categoryEmoji + ' ' + escapeHtml(a.categoryTitle) + '</div>';
       html += '<h3 class="mt-1 text-lg font-bold leading-snug">' + highlight(a.title, q) + '</h3>';
       html += '<p class="mt-1 text-sm text-ink-500 dark:text-ink-400">' + highlight(a.summary.replace(/<[^>]+>/g,''), q) + '</p>';
@@ -1704,6 +1784,94 @@ document.addEventListener('keydown', function(e) {
 // ============ INIT ============
 renderSidebar();
 kesefleRoute();
+</script>
+
+<script>
+  (function premiumMotion(){
+    if (window.kflPremiumMotionInit) return;
+    window.kflPremiumMotionInit = true;
+
+    function tag() {
+      var selectors = [
+        'section h1', 'section h2', 'section h3',
+        '#view-home > div',
+        '#view-category > div',
+        '.article-card'
+      ];
+      var nodes = [];
+      selectors.forEach(function(sel) {
+        document.querySelectorAll(sel).forEach(function(el) {
+          if (!el.classList.contains('kfl-reveal') && !el.classList.contains('kfl-hero-stage') && !el.classList.contains('kfl-in')) {
+            el.classList.add('kfl-reveal');
+            nodes.push(el);
+          }
+        });
+      });
+
+      if (!('IntersectionObserver' in window)) {
+        nodes.forEach(function(el) { el.classList.add('kfl-in'); });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('kfl-in');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+      nodes.forEach(function(el) { observer.observe(el); });
+    }
+    tag();
+    // re-tag after dynamic content changes
+    window.addEventListener('hashchange', function(){ setTimeout(tag, 100); });
+
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    document.querySelectorAll('.kfl-magnetic, a[href="#signup"]').forEach(function(btn) {
+      btn.classList.add('kfl-magnetic');
+      btn.addEventListener('mousemove', function(e) {
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = 'translate(' + (x * 0.08) + 'px, ' + (y * 0.08) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function() { btn.style.transform = ''; });
+    });
+  })();
+</script>
+
+<script>
+  (function parallaxBlobs(){
+    if (window.kflParallaxInit) return;
+    window.kflParallaxInit = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-parallax'));
+    if (!nodes.length) return;
+
+    var items = nodes.map(function(el){
+      var s = parseFloat(el.getAttribute('data-speed'));
+      return { el: el, speed: isNaN(s) ? 0.15 : s };
+    });
+
+    var ticking = false;
+    function update(){
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        it.el.style.setProperty('--kfl-py', (y * it.speed).toFixed(2) + 'px');
+      }
+      ticking = false;
+    }
+    window.addEventListener('scroll', function(){
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  })();
 </script>
 </body>
 </html>

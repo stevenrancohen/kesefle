@@ -12,6 +12,7 @@
 
 import { withRequestId, log } from '../lib/log.js';
 import { rateLimit } from '../lib/ratelimit.js';
+import { rateLimit as ipRateLimit } from './_lib/rateLimit.js';
 
 // ---------- KV helpers (REST, no npm) ----------
 function kvConfig() {
@@ -269,6 +270,7 @@ async function handlerImpl(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     return res.status(204).end();
   }
+  if (await ipRateLimit(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
