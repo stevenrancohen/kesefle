@@ -211,6 +211,46 @@
   /* Premium magnetic button — uses CSS transform with JS-driven CSS variables */
   .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
 
+  /* ===== CINEMATIC PAGE-LOAD INTRO ===== */
+  /* Black curtain that lifts away after page is loaded */
+  .kfl-curtain {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0f1422;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s 0.8s;
+  }
+  .kfl-curtain.kfl-curtain-hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .kfl-curtain-logo {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: grid; place-items: center;
+    color: white; font-size: 28px; font-weight: 900;
+    transform: scale(0.9);
+    opacity: 0;
+    animation: kfl-curtain-logo-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s forwards;
+  }
+  @keyframes kfl-curtain-logo-in {
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* Hero staged reveal — left copy fades in, then right mockup */
+  .kfl-hero-stage {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  body.kfl-loaded .kfl-hero-stage { opacity: 1; transform: translateY(0); }
+  body.kfl-loaded .kfl-hero-stage[data-stage="2"] { transition-delay: 0.15s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="3"] { transition-delay: 0.30s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="4"] { transition-delay: 0.45s; }
+
+  /* Parallax hint — blob layers translate based on scroll Y */
+  .kfl-parallax { will-change: transform; }
+
   @media (prefers-reduced-motion: reduce) {
     .kfl-reveal, .kfl-reveal.kfl-in { opacity: 1 !important; transform: none !important; transition: none !important; }
     .kfl-lift:hover { transform: none; }
@@ -279,11 +319,11 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   /* animated floating blobs (hero background) */
   @keyframes blob-drift {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33%      { transform: translate(28px, -38px) scale(1.08); }
-    66%      { transform: translate(-22px, 24px) scale(0.94); }
+    0%, 100% { transform: translate(0, calc(0px + var(--kfl-py, 0px))) scale(1); }
+    33%      { transform: translate(28px, calc(-38px + var(--kfl-py, 0px))) scale(1.08); }
+    66%      { transform: translate(-22px, calc(24px + var(--kfl-py, 0px))) scale(0.94); }
   }
-  .animate-blob { animation: blob-drift 14s ease-in-out infinite; }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
   /* gradient sweep across the hero heading accent */
   @keyframes gradient-sweep {
     0%, 100% { background-position: 0% 50%; }
@@ -397,6 +437,28 @@
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
 
+<!-- Cinematic page-load curtain — lifts after first paint -->
+<div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
+  <div class="kfl-curtain-logo">₪</div>
+</div>
+<script>
+  // Lift the curtain 350ms after DOMContentLoaded — gives the page time to render first paint
+  (function curtain(){
+    var c = document.getElementById('kfl-curtain');
+    if (!c) return;
+    function lift() {
+      setTimeout(function() {
+        c.classList.add('kfl-curtain-hidden');
+        document.body.classList.add('kfl-loaded');
+        setTimeout(function() { c && c.parentNode && c.parentNode.removeChild(c); }, 900);
+      }, 350);
+    }
+    if (document.readyState === 'complete') lift();
+    else window.addEventListener('load', lift);
+  })();
+</script>
+
+
 <!-- ============== NAV ============== -->
 <header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
   <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
@@ -441,12 +503,12 @@
   <!-- subtle dot-grid texture -->
   <div class="pointer-events-none absolute inset-0 -z-10 text-ink-900/[0.06] dotgrid dark:text-white/[0.04]"></div>
   <!-- animated floating blobs (bigger + more dramatic) -->
-  <div class="pointer-events-none absolute -top-32 -right-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-brand-300/40 to-accent-400/30 blur-3xl animate-blob"></div>
-  <div class="pointer-events-none absolute -bottom-32 -left-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-tr from-accent-400/30 to-brand-300/30 blur-3xl animate-blob" style="animation-delay:-4s"></div>
-  <div class="pointer-events-none absolute top-1/3 left-1/4 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob" style="animation-delay:-2s"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-32 -right-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-brand-300/40 to-accent-400/30 blur-3xl animate-blob" data-speed="0.18"></div>
+  <div class="kfl-parallax pointer-events-none absolute -bottom-32 -left-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-gradient-to-tr from-accent-400/30 to-brand-300/30 blur-3xl animate-blob" data-speed="-0.12" style="animation-delay:-4s"></div>
+  <div class="kfl-parallax pointer-events-none absolute top-1/3 left-1/4 -z-10 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl animate-blob" data-speed="0.28" style="animation-delay:-2s"></div>
   <div class="mx-auto grid max-w-6xl items-center gap-12 px-5 md:grid-cols-2">
     <!-- left: copy -->
-    <div>
+    <div class="kfl-hero-stage" data-stage="1">
       <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200/60 bg-white/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 shadow-sm backdrop-blur dark:border-brand-500/30 dark:bg-white/5 dark:text-brand-300">
         <span class="relative flex h-2 w-2">
           
@@ -507,7 +569,7 @@
     </div>
 
     <!-- right: WhatsApp mockup -->
-    <div class="relative" dir="rtl">
+    <div class="relative kfl-hero-stage" data-stage="2" dir="rtl">
       <div class="absolute -top-10 -right-10 -z-10 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl"></div>
       <div class="absolute -bottom-10 -left-10 -z-10 h-72 w-72 rounded-full bg-accent-500/20 blur-3xl"></div>
       <!-- floating chips around the phone -->
@@ -694,7 +756,7 @@
     </div>
     <div class="mt-14 grid items-stretch gap-6 md:grid-cols-3">
       <!-- step 1 -->
-      <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 transition hover:border-brand-300 hover:shadow-soft dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
+      <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 kfl-lift dark:border-ink-700 dark:bg-ink-800 dark:hover:border-ink-600">
         <div class="flex items-center gap-3">
           <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-lg font-black text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">1</div>
           <h3 class="text-xl font-bold dark:text-white">התחבר עם Google</h3>
@@ -702,7 +764,7 @@
         <p class="mt-3 text-ink-600 leading-relaxed dark:text-ink-200">לחיצה אחת. אנחנו יוצרים לך גיליון פרטי חדש בגוגל דרייב שלך — לא אצלנו, אצלך.</p>
       </div>
       <!-- step 2 -->
-      <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 transition hover:border-brand-300 hover:shadow-soft dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500">
+      <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 kfl-lift dark:border-ink-700 dark:bg-ink-800 dark:hover:border-ink-600">
         <div class="flex items-center gap-3">
           <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-lg font-black text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">2</div>
           <h3 class="text-xl font-bold dark:text-white">פתחו את הוואטסאפ</h3>
@@ -1141,7 +1203,7 @@
     </div>
     <div class="mt-8 grid gap-6 md:grid-cols-3">
       <!-- free plan -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+      <div class="rounded-3xl border border-ink-200 bg-white p-8 kfl-lift dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">חינם</h3>
           <span class="rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold text-ink-600 dark:bg-ink-700 dark:text-ink-200">להתחיל</span>
@@ -1183,7 +1245,7 @@
         <a href="#signup" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון של חודש</a>
       </div>
       <!-- family plan -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-8 dark:border-ink-700 dark:bg-ink-800">
+      <div class="rounded-3xl border border-ink-200 bg-white p-8 kfl-lift dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">משפחה</h3>
           <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">לזוגות ולמשפחות</span>
@@ -2254,6 +2316,37 @@ function kesefleToggleDark() { /* no-op: dark only */ }
         btn.style.transform = '';
       });
     });
+  })();
+</script>
+
+<!-- ============== PREMIUM PARALLAX — hero blobs drift on scroll ============== -->
+<script>
+  (function parallaxBlobs(){
+    if (window.kflParallaxInit) return;
+    window.kflParallaxInit = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-parallax'));
+    if (!nodes.length) return;
+
+    var items = nodes.map(function(el){
+      var s = parseFloat(el.getAttribute('data-speed'));
+      return { el: el, speed: isNaN(s) ? 0.15 : s };
+    });
+
+    var ticking = false;
+    function update(){
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        it.el.style.setProperty('--kfl-py', (y * it.speed).toFixed(2) + 'px');
+      }
+      ticking = false;
+    }
+    window.addEventListener('scroll', function(){
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
   })();
 </script>
 

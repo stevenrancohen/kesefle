@@ -3927,3 +3927,181 @@ function deleteGoal(idOrIndex) {
   return '🗑️ נמחקה מטרה: "' + removed.title + '"';
 }
 
+// ============================================================
+// 👨‍👩‍👧 Family / household commands (STUBS — wire to KV later).
+// ============================================================
+// Status: scaffolding only. The Vercel KV layer for households is not built
+// yet — these handlers return informative placeholders so the user gets a
+// useful reply, and so Steven can preview the conversational copy without a
+// backend. See docs/family-sharing.md for the data model these stubs target.
+//
+// Commands handled:
+//   הזמן 052-1234567 / invite 052-1234567   -> create + send invite link
+//   הזמן / invite                            -> reply with a generic link
+//   משפחה / family                           -> list current members + roles
+//   פרישה / leave                            -> leave the household
+//
+// Real implementation TODOs are tagged inline. Each "TODO: KV" marks a spot
+// where the Vercel /api/family/* routes need to be hooked up.
+
+var FAMILY_API_BASE = (function () {
+  try {
+    return PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.vercel.app';
+  } catch (e) { return 'https://kesefle.vercel.app'; }
+})();
+
+function _handleFamilyCommand_(fromPhone, text) {
+  var raw = String(text == null ? '' : text).trim();
+  if (!raw) return { handled: false };
+
+  // Strip leading slash so "/invite" works too.
+  var norm = raw.replace(/^\//, '').trim();
+  var low = norm.toLowerCase();
+
+  // --- "הזמן <phone>" / "invite <phone>" ---------------------------------
+  // Hebrew, English, with or without dashes. Accept anything that looks like
+  // an Israeli mobile (05X-XXX-XXXX) or any 7+ digit number.
+  var inviteMatch =
+       norm.match(/^הזמן\s+(.+)$/i)
+    || norm.match(/^invite\s+(.+)$/i);
+  if (inviteMatch) {
+    return { handled: true, replyText: _familyInviteReply_(fromPhone, inviteMatch[1]) };
+  }
+  if (low === 'הזמן' || low === 'invite' || low === 'הזמינה' || low === 'הזמיני') {
+    return { handled: true, replyText: _familyInviteGenericReply_(fromPhone) };
+  }
+
+  // --- "משפחה" / "family" / "members" ------------------------------------
+  if (low === 'משפחה' || low === 'family' || low === 'members' || low === 'בני בית' || low === 'בני הבית') {
+    return { handled: true, replyText: _familyListReply_(fromPhone) };
+  }
+
+  // --- "פרישה" / "leave" --------------------------------------------------
+  if (low === 'פרישה' || low === 'leave' || low === 'עזיבה' || low === 'אני עוזב' || low === 'אני עוזבת') {
+    return { handled: true, replyText: _familyLeaveReply_(fromPhone) };
+  }
+
+  return { handled: false };
+}
+
+// ------------------------------------------------------------------
+// "הזמן 052-1234567" — admin invites a specific phone to the household.
+// ------------------------------------------------------------------
+function _familyInviteReply_(fromPhone, rawTarget) {
+  // TODO: KV — resolve fromPhone -> userId -> household, verify role in {admin, spouse}.
+  // If sender is not an admin, return a "אין הרשאה" message instead.
+  // var hh = resolveHouseholdForPhone_(fromPhone);
+  // if (!hh || !_familyIsAdmin_(hh, fromPhone)) return _familyNotAdminMsg_();
+
+  var cleaned = String(rawTarget || '').replace(/[^\d+]/g, '');
+  if (!cleaned || cleaned.length < 7) {
+    return '⚠️ לא הצלחתי לקרוא את המספר.\n' +
+      'נסה: "הזמן 052-1234567"';
+  }
+
+  // TODO: KV — generate invite code, store in hhinvite:<code> with TTL 600s,
+  // hit POST /api/family/invite { householdId, invitedPhone, intendedRole }.
+  var fakeCode = _familyMakeFakeCode_();
+  var inviteUrl = FAMILY_API_BASE + '/account?invite=' + fakeCode;
+
+  return '👨‍👩‍👧 *הזמנה למשפחה*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    'הזמנתי את ' + _familyFormatPhone_(cleaned) + '.\n\n' +
+    '📩 שלח/י להם את הקישור הזה:\n' +
+    inviteUrl + '\n\n' +
+    '⏰ הקישור תקף ל-10 דקות.\n' +
+    'ברגע שילחצו ויסרקו QR — הם בפנים.\n\n' +
+    '💡 לרשימת בני הבית הנוכחיים: כתוב/י "משפחה".\n\n' +
+    '_(הערה: backend הזמנות בפיתוח — הקישור הזה הוא דמו עד שה-KV ייבנה)_';
+}
+
+// ------------------------------------------------------------------
+// "הזמן" alone — generic invite link, admin shares manually.
+// ------------------------------------------------------------------
+function _familyInviteGenericReply_(fromPhone) {
+  // TODO: KV — same as above, but with invitedPhone=null, role=member.
+  var fakeCode = _familyMakeFakeCode_();
+  var inviteUrl = FAMILY_API_BASE + '/account?invite=' + fakeCode;
+  return '🔗 *קישור הזמנה גנרי*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    inviteUrl + '\n\n' +
+    'שלח/י את הקישור הזה למי שתרצי להוסיף.\n' +
+    '⏰ תקף ל-10 דקות. אפשר ליצור עוד בכל רגע.\n\n' +
+    '💡 *רוצה להזמין מספר ספציפי?*\n' +
+    'כתוב/י: "הזמן 052-1234567"\n\n' +
+    '_(הערה: backend הזמנות בפיתוח — דמו עד שה-KV ייבנה)_';
+}
+
+// ------------------------------------------------------------------
+// "משפחה" — list current members + roles + permissions.
+// ------------------------------------------------------------------
+function _familyListReply_(fromPhone) {
+  // TODO: KV — resolveHouseholdForPhone_(fromPhone) -> household.memberIds
+  // For each member: hhmember:<userId> + display name + permissions snapshot.
+  // var hh = resolveHouseholdForPhone_(fromPhone);
+  // if (!hh) return _familyNotInHouseholdMsg_();
+
+  return '👨‍👩‍👧 *בני הבית שלך*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    '_(תצוגה לדוגמה — backend המשפחה בפיתוח)_\n\n' +
+    '👑 *את/ה* — מנהל/ת\n' +
+    '   ✓ רישום הוצאות\n' +
+    '   ✓ רואה הכל\n' +
+    '   ✓ מאשר/ת הוצאות גדולות\n\n' +
+    '💚 *—* — בן/בת זוג\n' +
+    '   _(הוסף/י עם "הזמן 052-XXX")_\n\n' +
+    '💡 *פקודות:*\n' +
+    '  • "הזמן 052-1234567" — הזמן בן בית\n' +
+    '  • "פרישה" — עזוב את המשפחה (לא למנהל)\n' +
+    '  • "עזרה" — כל הפקודות';
+}
+
+// ------------------------------------------------------------------
+// "פרישה" — leave household. Admin cannot.
+// ------------------------------------------------------------------
+function _familyLeaveReply_(fromPhone) {
+  // TODO: KV — resolveHouseholdForPhone_(fromPhone), check role.
+  // If admin: refuse, suggest transfer or subscription cancel.
+  // If member: remove hhmember:<userId>, notify admin via WhatsApp DM.
+  // var hh = resolveHouseholdForPhone_(fromPhone);
+  // if (!hh) return _familyNotInHouseholdMsg_();
+  // if (hh.member.role === 'admin') return _familyAdminCantLeaveMsg_();
+
+  return '👋 *עזיבת המשפחה*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    'בטוח/ה שאת/ה רוצה לעזוב?\n\n' +
+    '• ההוצאות ההיסטוריות שלך נשארות בגיליון של המשפחה.\n' +
+    '• מהרגע הזה הוצאות חדשות ילכו לגיליון אישי שלך (אם יש).\n' +
+    '• מנהל/ת המשפחה יקבל/תקבל הודעה.\n\n' +
+    'לאישור — כתוב/י: "פרישה אישור"\n' +
+    'לביטול — פשוט תתעלם/י מההודעה הזו.\n\n' +
+    '_(הערה: backend המשפחה בפיתוח. כרגע הפקודה היא רק תצוגה מקדימה.)_\n\n' +
+    '⚠️ *מנהל/ת לא יכול/ה לעזוב.* בטל/י מנוי דרך /account אם זה רלוונטי.';
+}
+
+// ------------------------------------------------------------------
+// Helpers — kept private so they don't pollute the global namespace.
+// ------------------------------------------------------------------
+
+// Format a raw phone string for display ("0521234567" -> "052-123-4567").
+function _familyFormatPhone_(raw) {
+  var d = String(raw || '').replace(/\D/g, '');
+  if (d.length === 10 && d.charAt(0) === '0') {
+    return d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6);
+  }
+  if (d.length === 12 && d.slice(0, 3) === '972') {
+    return '0' + d.slice(3, 5) + '-' + d.slice(5, 8) + '-' + d.slice(8);
+  }
+  return String(raw);
+}
+
+// Stand-in until the Vercel side issues real codes. 6 chars, base32-ish.
+function _familyMakeFakeCode_() {
+  var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I confusion
+  var s = '';
+  for (var i = 0; i < 6; i++) {
+    s += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return s;
+}
+
