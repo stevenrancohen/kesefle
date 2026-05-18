@@ -657,7 +657,7 @@ function handleInteractiveReply_(fromPhone, interactive) {
   var decoded = _decodeCategoryOptionId(picked);
   if (!decoded) {
     Logger.log('handleInteractiveReply_: could not decode id="' + picked + '"');
-    return { replyText: '⚠️ לא הצלחתי להבין את הבחירה. נסה שוב.' };
+    return { replyText: '😬 לא הצלחתי להבין את הבחירה\n💡 שלח שוב את ההוצאה ובחר/י קטגוריה' };
   }
 
   // Look up pending state — should match the most recent ambiguous message from this phone.
@@ -673,13 +673,13 @@ function handleInteractiveReply_(fromPhone, interactive) {
   var description = (pending && pending.description) || decoded.textKey.replace(/_/g, ' ');
 
   if (!amount || amount <= 0) {
-    return { replyText: '⚠️ פג תוקף הבחירה (5 דק׳ עברו). שלח שוב את ההוצאה כדי לקטלג.' };
+    return { replyText: '😬 פג תוקף הבחירה (5 דק׳ עברו)\n💡 שלח שוב את ההוצאה כדי לקטלג' };
   }
 
   // Write the row to the sheet with the chosen category
   try {
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-    if (!sheet) return { replyText: '❌ לא נמצאה לשונית "תנועות".' };
+    if (!sheet) return { replyText: '😬 לא נמצאה לשונית "תנועות"\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט' };
     var now = new Date();
     var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
     var category = decoded.category;
@@ -708,7 +708,7 @@ function handleInteractiveReply_(fromPhone, interactive) {
     };
   } catch (e) {
     Logger.log('handleInteractiveReply_: write error: ' + (e && e.stack || e));
-    return { replyText: '⚠️ הייתה שגיאה בכתיבה לגיליון: ' + (e.message || e) };
+    return { replyText: '😬 משהו השתבש בכתיבה לגיליון: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
   }
 }
 
@@ -1048,7 +1048,7 @@ function processExpense(text, fromPhone) {
   const fx = parseForeignCurrencyHint(text);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : text);
   if (!parsed || !parsed.items || parsed.items.length === 0) {
-    return { reply: '❌ לא זיהיתי סכום בהודעה.\nשלח: סכום פירוט\nלמשל: 85 סופר\nאו: 352 אוכל לבית+165' };
+    return { reply: '😬 לא זיהיתי סכום בהודעה\n💡 תוודא שכתבת את הסכום בתחילת ההודעה — למשל "85 סופר" או "352 אוכל לבית+165"' };
   }
 
   try {
@@ -1056,7 +1056,7 @@ function processExpense(text, fromPhone) {
     const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
     if (!sheet) {
       Logger.log('processExpense: sheet not found!');
-      return { reply: '❌ לא נמצאה לשונית "תנועות". הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט.' };
+      return { reply: '😬 לא נמצאה לשונית "תנועות"\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט' };
     }
     Logger.log('processExpense: sheet found, items=' + parsed.items.length);
     const now = new Date();
@@ -1185,7 +1185,7 @@ function processExpense(text, fromPhone) {
     }
     return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail };
   } catch (err) {
-    return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + err.message + '\nננסה שוב בעוד דקה? אם זה ממשיך — כתוב "עזרה".' };
+    return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + (err && err.message || '') + '\n💡 ננסה שוב בעוד דקה? אם זה ממשיך — שלח "עזרה".' };
   }
 }
 
@@ -1963,7 +1963,7 @@ function _handleReceiptImage_(fromPhone, image) {
   var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
   if (!sheet) {
     Logger.log('_handleReceiptImage_: transactions sheet missing');
-    return { replyText: '❌ לא נמצאה לשונית "תנועות". הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט.' };
+    return { replyText: '😬 לא נמצאה לשונית "תנועות"\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט' };
   }
   // Prefer the receipt's printed date over "now" so monthly totals attribute correctly.
   var rowDate = new Date();
@@ -2131,7 +2131,7 @@ function _handleVoiceMessage_(fromPhone, audio) {
     procRes = processExpense(transcribed, fromPhone);
   } catch (e) {
     Logger.log('_handleVoiceMessage_: processExpense err: ' + (e && e.stack || e));
-    return { replyText: heard + '\n\n😬 שגיאה ברישום: ' + (e && e.message || '') };
+    return { replyText: heard + '\n\n😬 משהו השתבש ברישום: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
   }
 
   var procReply = (procRes && procRes.reply) || '';
@@ -2212,7 +2212,7 @@ function _handleCategoryCorrection_(fromPhone, text) {
     };
   } catch (e) {
     Logger.log('apply correction err: ' + (e && e.stack || e));
-    return { handled: true, replyText: '😬 שגיאה בעדכון השורה: ' + e.message };
+    return { handled: true, replyText: '😬 משהו השתבש בעדכון השורה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
   }
 }
 
@@ -2312,7 +2312,7 @@ function _handleLearningCommand_(fromPhone, text) {
       } catch (_e) {}
       return { handled: true, replyText: '✅ למדתי: "' + phrase + '" → 📂 ' + category + tail };
     } catch (e) {
-      return { handled: true, replyText: '😬 שגיאה בלמידה: ' + e.message };
+      return { handled: true, replyText: '😬 משהו השתבש בלמידה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
     }
   }
 
@@ -2373,27 +2373,27 @@ function _learningListMessage_(fromPhone) {
     return lines.join('\n');
   } catch (e) {
     Logger.log('_learningListMessage_: ' + e.message);
-    return '😬 לא הצלחתי לטעון את הזיכרון.';
+    return '😬 לא הצלחתי לטעון את הזיכרון\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
 function _learningDelete_(fromPhone, idx) {
-  if (!idx || idx < 1) return '🤔 צריך מספר בין 1 ל-10. שלח "לימוד" כדי לראות את הרשימה.';
+  if (!idx || idx < 1) return '🤔 צריך מספר בין 1 ל-10\n💡 שלח "לימוד" כדי לראות את הרשימה';
   try {
     var mapStr = CacheService.getScriptCache().get('learnIdxMap:' + fromPhone);
-    if (!mapStr) return '🤔 קודם שלח "לימוד" כדי לראות את הרשימה ואז "מחק לימוד N".';
+    if (!mapStr) return '🤔 קודם שלח "לימוד" כדי לראות את הרשימה\n💡 ואז "מחק לימוד N"';
     var idxMap = JSON.parse(mapStr);
     var rowNumber = idxMap[String(idx)];
-    if (!rowNumber) return '🤔 אין פריט ' + idx + ' ברשימה.';
+    if (!rowNumber) return '🤔 אין פריט ' + idx + ' ברשימה\n💡 שלח "לימוד" לראות את הרשימה המעודכנת';
     var ss = SpreadsheetApp.openById(SHEET_ID);
     var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
-    if (!sh) return '😬 אין גיליון זיכרון.';
+    if (!sh) return '😬 אין גיליון זיכרון\n💡 שלח/י "לימוד" כדי שנייצר אחד';
     var deletedTerm = sh.getRange(rowNumber, 1).getValue();
     sh.deleteRow(rowNumber);
     _learnedCacheLoadedAt = 0;
     return '✅ מחקתי: "' + deletedTerm + '"\n💡 שלח "לימוד" לרשימה מעודכנת.';
   } catch (e) {
-    return '😬 שגיאה במחיקה: ' + e.message;
+    return '😬 משהו השתבש במחיקה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
@@ -2408,7 +2408,7 @@ function _learningReset_() {
     _learnedCacheLoadedAt = 0;
     return '✅ ניקיתי ' + count + ' פריטים. הבוט מתחיל ללמוד מאפס.';
   } catch (e) {
-    return '😬 שגיאה באיפוס: ' + e.message;
+    return '😬 משהו השתבש באיפוס: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?';
   }
 }
 
@@ -2468,15 +2468,18 @@ function getMonthlySummary(fromPhone) {
 
 function deleteLastTransaction() {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-  if (!sheet) return '❌ אין לשונית תנועות';
+  if (!sheet) return '😬 אין לשונית תנועות\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט';
 
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return '❌ אין מה למחוק';
+  if (lastRow < 2) return '🤔 אין מה למחוק — הלשונית ריקה\n💡 שלח/י הוצאה ראשונה למשל "85 סופר"';
 
   const data = sheet.getRange(lastRow, 1, 1, 7).getValues()[0];
   sheet.deleteRow(lastRow);
 
-  return '🗑️ נמחק:\nסכום: ₪' + data[2] + '\nתת-קטגוריה: ' + data[4] + '\nפירוט: ' + data[5];
+  var amt = (data[2] === '' || data[2] == null) ? '—' : data[2];
+  var sub = (data[4] === '' || data[4] == null) ? '—' : data[4];
+  var dsc = (data[5] === '' || data[5] == null) ? '—' : data[5];
+  return '🗑️ נמחק:\nסכום: ₪' + amt + '\nתת-קטגוריה: ' + sub + '\nפירוט: ' + dsc;
 }
 
 // Auto-duplicate detection — flags if the same amount+description was added
