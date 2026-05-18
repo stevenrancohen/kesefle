@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="he" dir="rtl" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>צור קשר — כסף'לה</title>
+<meta name="description" content="שאלות, רעיונות, באגים, אהבה? נשמח לשמוע. כתבו לנו ב-info@kesefle.com או שלחו הודעה דרך WhatsApp." />
+<meta name="theme-color" content="#0f1422" />
+<meta property="og:title" content="צור קשר — כסף'לה" />
+<meta property="og:description" content="כל דרך אליי. מייל, וואטסאפ, או הטופס." />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta property="og:url" content="https://kesefle.vercel.app/contact" />
+<meta property="og:type" content="website" />
+<link rel="canonical" href="https://kesefle.vercel.app/contact" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" />
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], mono: ['Inter', 'ui-monospace', 'monospace'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 400:'#c084fc', 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: { glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)' },
+      },
+    },
+  };
+</script>
+<style>
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  h1, h2 { letter-spacing: -0.025em; }
+  .num, .font-mono { font-variant-numeric: tabular-nums; font-family: 'Inter', monospace; }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -28px) scale(1.06); }
+    66%      { transform: translate(-16px, 18px) scale(0.96); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(34, 197, 94, 0.4); }
+  .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-blob { animation: none; }
+    .kfl-reveal { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+</head>
+<body class="bg-ink-900 text-white antialiased">
+
+<!-- ambient blobs -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div class="animate-blob absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-brand-500/12 blur-3xl"></div>
+  <div class="animate-blob absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-accent-500/10 blur-3xl" style="animation-delay:-5s"></div>
+</div>
+
+<!-- nav -->
+<header class="border-b border-ink-700/50 bg-ink-900/70 backdrop-blur-lg sticky top-0 z-30">
+  <nav class="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden gap-6 md:flex text-sm">
+      <a href="/" class="text-ink-300 hover:text-white">בית</a>
+      <a href="/help" class="text-ink-300 hover:text-white">עזרה</a>
+      <a href="/contact" class="font-semibold text-brand-300">צור קשר</a>
+    </div>
+  </nav>
+</header>
+
+<main class="mx-auto max-w-3xl px-5 py-12 md:py-16">
+
+  <!-- hero -->
+  <div class="text-center kfl-reveal kfl-in">
+    <p class="text-sm font-bold uppercase tracking-wider text-brand-400">צור קשר</p>
+    <h1 class="mt-3 text-4xl md:text-5xl font-black tracking-tight">בכל דבר, בכל זמן.<br><span class="bg-gradient-to-l from-brand-400 to-brand-200 bg-clip-text text-transparent">אנחנו ממש שם.</span></h1>
+    <p class="mt-5 text-lg text-ink-300 max-w-xl mx-auto">שאלה? באג? רעיון? סתם בא לכם להגיד שלום? כל הדרכים פתוחות. בחרו את הנוחה לכם ביותר.</p>
+  </div>
+
+  <!-- contact options -->
+  <section class="mt-12 grid gap-4 md:grid-cols-3">
+
+    <!-- WhatsApp (recommended) -->
+    <a href="https://wa.me/17745448053?text=%D7%A9%D7%9C%D7%95%D7%9D%21" target="_blank" rel="noopener" class="kfl-lift kfl-magnetic block rounded-3xl border-2 border-brand-500/30 bg-gradient-to-br from-brand-500/10 to-ink-800/40 p-6 text-center backdrop-blur">
+      <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#25d366]">
+        <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24z"/></svg>
+      </div>
+      <div class="mt-4 text-base font-bold">WhatsApp</div>
+      <div class="mt-1 text-xs font-mono text-brand-300">+1 (774) 544-8053</div>
+      <div class="mt-2 text-xs text-ink-400">הדרך הכי מהירה. תשובה בדרך כלל תוך שעה.</div>
+    </a>
+
+    <!-- Email -->
+    <a href="mailto:info@kesefle.com" class="kfl-lift kfl-magnetic block rounded-3xl border border-ink-700/60 bg-ink-800/40 p-6 text-center backdrop-blur">
+      <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700">
+        <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </div>
+      <div class="mt-4 text-base font-bold">מייל</div>
+      <div class="mt-1 text-xs font-mono text-brand-300 break-all">info@kesefle.com</div>
+      <div class="mt-2 text-xs text-ink-400">לנושאים רציניים, באגים מפורטים, או שותפויות.</div>
+    </a>
+
+    <!-- Social (placeholder) -->
+    <div class="kfl-lift block rounded-3xl border border-ink-700/60 bg-ink-800/40 p-6 text-center backdrop-blur">
+      <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600">
+        <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.374-12 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm6.205 6.937c.014.158.014.317.014.475 0 4.852-3.694 10.443-10.448 10.443a10.4 10.4 0 01-5.625-1.643c.288.034.566.045.866.045 1.722 0 3.305-.583 4.567-1.576a3.681 3.681 0 01-3.435-2.55c.225.034.453.057.692.057.328 0 .657-.045.962-.124-1.711-.346-3.001-1.85-3.001-3.674v-.045a3.69 3.69 0 001.665.464 3.667 3.667 0 01-1.633-3.054c0-.68.18-1.305.497-1.847a10.451 10.451 0 007.587 3.845 4.143 4.143 0 01-.09-.842 3.667 3.667 0 013.668-3.668c1.057 0 2.012.441 2.682 1.157a7.207 7.207 0 002.328-.881 3.65 3.65 0 01-1.61 2.012 7.286 7.286 0 002.114-.554 7.846 7.846 0 01-1.835 1.893z"/></svg>
+      </div>
+      <div class="mt-4 text-base font-bold">רשתות</div>
+      <div class="mt-1 text-xs font-mono text-ink-400">בקרוב</div>
+      <div class="mt-2 text-xs text-ink-400">עוד לא פתחנו ערוצים — נעדכן.</div>
+    </div>
+  </section>
+
+  <!-- detailed info -->
+  <section class="mt-12 rounded-3xl border border-ink-700/60 bg-ink-800/30 p-6 md:p-8 backdrop-blur">
+    <h2 class="text-2xl font-bold">מה הכי מתאים לכל מצב?</h2>
+    <div class="mt-6 space-y-4 text-sm leading-relaxed text-ink-300">
+      <div>
+        <div class="font-bold text-white">🐛 גיליתם באג?</div>
+        <p class="mt-1">שלחו לנו בוואטסאפ או במייל עם <strong>צילום מסך</strong> + <strong>מה ניסיתם</strong> + <strong>מה קרה לעומת מה ציפיתם</strong>. נתקן בדרך כלל באותו יום.</p>
+      </div>
+      <div>
+        <div class="font-bold text-white">💡 רעיון לפיצ׳ר?</div>
+        <p class="mt-1">מייל. נהיה שמחים לשמוע. אנחנו קוראים כל הצעה. לא תמיד מיישמים, אבל תמיד עונים.</p>
+      </div>
+      <div>
+        <div class="font-bold text-white">💸 שאלה על תשלום או חיוב?</div>
+        <p class="mt-1">מייל — נושאי תשלום צריכים תיעוד כתוב. נחזור תוך 1-2 ימי עבודה.</p>
+      </div>
+      <div>
+        <div class="font-bold text-white">🤝 שיתופי פעולה / קידום מכירות / רואה חשבון?</div>
+        <p class="mt-1">מייל ל-info@kesefle.com. כתבו "שיתוף פעולה" בנושא ונקרא ראשונים.</p>
+      </div>
+      <div>
+        <div class="font-bold text-white">📰 עיתונאים / בלוגרים</div>
+        <p class="mt-1">יש <a href="/press" class="font-semibold text-brand-300 hover:text-brand-200">ערכת עיתונאים</a> מוכנה. או כתבו ישירות במייל.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- response time -->
+  <section class="mt-12 text-center">
+    <p class="text-sm text-ink-400">⏱️ <strong class="text-white">זמני תגובה ממוצעים:</strong> WhatsApp — תוך <span class="num">1-2</span> שעות בשעות פעילות (08:00-23:00 IL). מייל — תוך <span class="num">24</span> שעות. הוא יום שישי/שבת? תאזרו סבלנות.</p>
+  </section>
+
+  <!-- final cta -->
+  <section class="mt-12 rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-500/10 to-ink-800/40 p-8 text-center backdrop-blur">
+    <h2 class="text-2xl font-black">עוד לא נרשמתם?</h2>
+    <p class="mt-3 text-base text-ink-300">בכלל אין צורך לכתוב לנו כדי להתחיל — הבוט מחכה לכם בוואטסאפ.</p>
+    <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+      <a href="/start" class="kfl-magnetic inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-7 py-3.5 text-base font-bold text-white shadow-glow transition hover:bg-brand-700">
+        מתחילים בקליק
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+      </a>
+      <a href="/" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-700 px-7 py-3.5 text-base font-semibold text-ink-200 backdrop-blur transition hover:border-ink-500 hover:bg-ink-800/40">
+        לאתר הראשי
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<!-- minimal footer -->
+<footer class="mt-12 border-t border-ink-700/50 py-8 text-center text-xs text-ink-500">
+  <p>© <span class="num">2026</span> כסף'לה · <a href="/privacy" class="hover:text-brand-300">פרטיות</a> · <a href="/terms" class="hover:text-brand-300">תנאי שימוש</a></p>
+</footer>
+
+<script>
+  (function(){
+    if (!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting) { e.target.classList.add('kfl-in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+    document.querySelectorAll('section').forEach(function(s){ s.classList.add('kfl-reveal'); io.observe(s); });
+  })();
+  (function(){
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll('.kfl-magnetic').forEach(function(btn){
+      btn.addEventListener('mousemove', function(e){
+        var r = btn.getBoundingClientRect();
+        var x = e.clientX - r.left - r.width/2;
+        var y = e.clientY - r.top - r.height/2;
+        btn.style.transform = 'translate(' + (x*0.08) + 'px, ' + (y*0.08) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function(){ btn.style.transform = ''; });
+    });
+  })();
+</script>
+</body>
+</html>

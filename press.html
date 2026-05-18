@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="he" dir="rtl" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>ערכת עיתונאים — כסף'לה</title>
+<meta name="description" content="ערכת עיתונאים של כסף'לה — לוגואים, צבעי מותג, עובדות יסוד וצור קשר לסיקור תקשורתי. המוצר הישראלי שמנהל הוצאות דרך וואטסאפ." />
+<meta name="keywords" content="כסף'לה ערכת עיתונאים, kesefle press kit, לוגו כסף'לה, צור קשר תקשורת, בוט וואטסאפ הוצאות" />
+<meta name="theme-color" content="#0f172a" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<meta property="og:title" content="ערכת עיתונאים — כסף'לה" />
+<meta property="og:description" content="לוגואים, צבעי מותג, ועובדות יסוד על כסף'לה — בוט מעקב הוצאות בוואטסאפ לישראלים." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:image" content="https://kesefle.vercel.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="og:url" content="https://kesefle.vercel.app/press" />
+<meta property="og:site_name" content="כסף'לה" />
+<link rel="canonical" href="https://kesefle.vercel.app/press" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="/assets/futuristic.css" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+        backgroundImage: {
+          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { font-family: 'Heebo', system-ui, sans-serif; font-feature-settings: "kern" 1, "liga" 1, "calt" 1; }
+  h1, h2 { letter-spacing: -0.025em; }
+  h3, h4 { letter-spacing: -0.015em; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; font-variant-numeric: tabular-nums; }
+
+  .aurora {
+    background-image:
+      radial-gradient(at 18% 22%, rgba(34,197,94,0.22) 0px, transparent 50%),
+      radial-gradient(at 82% 18%, rgba(99,102,241,0.20) 0px, transparent 55%),
+      radial-gradient(at 55% 90%, rgba(244,114,182,0.18) 0px, transparent 55%),
+      radial-gradient(at 12% 78%, rgba(56,189,248,0.20) 0px, transparent 55%);
+  }
+  .dotgrid { background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0); background-size: 24px 24px; }
+
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, calc(0px + var(--kfl-py, 0px))) scale(1); }
+    33%      { transform: translate(28px, calc(-38px + var(--kfl-py, 0px))) scale(1.08); }
+    66%      { transform: translate(-22px, calc(24px + var(--kfl-py, 0px))) scale(0.94); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(15, 20, 34, 0.32); }
+  .kfl-magnetic { transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-parallax { will-change: transform; }
+
+  .kfl-curtain { position: fixed; inset: 0; z-index: 9999; background: #0f1422; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s 0.8s; }
+  .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
+  .kfl-curtain-logo { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #22c55e, #16a34a); display: grid; place-items: center; color: white; font-size: 28px; font-weight: 900; transform: scale(0.9); opacity: 0; animation: kfl-curtain-logo-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s forwards; }
+  @keyframes kfl-curtain-logo-in { to { transform: scale(1); opacity: 1; } }
+
+  .kfl-hero-stage { opacity: 0; transform: translateY(16px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  body.kfl-loaded .kfl-hero-stage { opacity: 1; transform: translateY(0); }
+  body.kfl-loaded .kfl-hero-stage[data-stage="2"] { transition-delay: 0.15s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="3"] { transition-delay: 0.30s; }
+  body.kfl-loaded .kfl-hero-stage[data-stage="4"] { transition-delay: 0.45s; }
+
+  .swatch { aspect-ratio: 1.4 / 1; border-radius: 1rem; display: flex; flex-direction: column; justify-content: flex-end; padding: 1rem; color: white; font-weight: 700; }
+  .swatch code { font-family: 'Inter', system-ui, sans-serif; font-size: 0.75rem; opacity: 0.9; display: block; margin-top: 0.25rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kfl-reveal, .kfl-reveal.kfl-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .kfl-lift:hover { transform: none; }
+    .animate-blob { animation: none !important; }
+  }
+</style>
+<script src="/lib/analytics.js" defer></script>
+</head>
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+
+<div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
+  <div class="kfl-curtain-logo">₪</div>
+</div>
+<script>
+  (function curtain(){
+    var c = document.getElementById('kfl-curtain');
+    if (!c) return;
+    function lift() {
+      setTimeout(function() {
+        c.classList.add('kfl-curtain-hidden');
+        document.body.classList.add('kfl-loaded');
+        setTimeout(function() { c && c.parentNode && c.parentNode.removeChild(c); }, 900);
+      }, 350);
+    }
+    if (document.readyState === 'complete') lift();
+    else window.addEventListener('load', lift);
+  })();
+</script>
+
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span>כסף'לה</span>
+    </a>
+    <div class="hidden gap-7 md:flex">
+      <a href="/#how" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">איך זה עובד</a>
+      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
+      <a href="/blog" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">בלוג</a>
+      <a href="/about" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אודות</a>
+      <a href="/press" class="text-sm font-bold text-brand-600 dark:text-brand-400">ערכת עיתונאים</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/#signup" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">התחל חינם</a>
+    </div>
+  </nav>
+</header>
+
+<section id="kfl-hero" class="relative overflow-hidden pt-28 pb-20 md:pt-36 md:pb-28">
+  <div class="absolute inset-0 -z-10 aurora"></div>
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/70 via-white/40 to-white/80 dark:from-ink-900/70 dark:via-ink-900/30 dark:to-ink-900/80"></div>
+  <div class="pointer-events-none absolute inset-0 -z-10 text-ink-900/[0.06] dotgrid dark:text-white/[0.04]"></div>
+  <div class="kfl-parallax pointer-events-none absolute -top-32 -right-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-brand-300/40 to-accent-400/30 blur-3xl animate-blob" data-speed="0.18"></div>
+  <div class="kfl-parallax pointer-events-none absolute -bottom-32 -left-32 -z-10 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-accent-400/30 to-brand-300/30 blur-3xl animate-blob" data-speed="-0.12" style="animation-delay:-4s"></div>
+
+  <div class="mx-auto max-w-4xl px-5 text-center">
+    <div class="kfl-hero-stage" data-stage="1">
+      <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200/60 bg-white/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 shadow-sm backdrop-blur dark:border-brand-500/30 dark:bg-white/5 dark:text-brand-300">
+        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
+        Press Kit
+      </div>
+    </div>
+    <div class="kfl-hero-stage" data-stage="2">
+      <h1 class="text-balance text-5xl font-black leading-[1.05] tracking-tight md:text-7xl dark:text-white">
+        ערכת
+        <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">עיתונאים</span>
+      </h1>
+    </div>
+    <div class="kfl-hero-stage" data-stage="3">
+      <p class="mt-6 mx-auto max-w-2xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
+        כסף'לה הוא בוט וואטסאפ בעברית שמנהל הוצאות, תקציב ותזרים מזומנים — בלי אפליקציה, בלי גישה לבנק, ובלי לשמור על נתונים אצלנו. הכל נכתב ישירות לגיליון Google פרטי של המשתמש.
+      </p>
+    </div>
+    <div class="kfl-hero-stage" data-stage="4">
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href="#contact" class="kfl-magnetic rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-bold text-white shadow-glow transition hover:bg-brand-700">צור קשר לסיקור</a>
+        <a href="#logos" class="rounded-2xl border-2 border-ink-300 px-6 py-3.5 text-sm font-bold text-ink-900 transition hover:border-ink-900 dark:border-ink-600 dark:text-white dark:hover:border-white">הורד לוגואים</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-16 md:py-20">
+  <div class="mx-auto max-w-6xl px-5">
+    <p class="mb-6 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">עובדות יסוד</p>
+    <h2 class="text-3xl font-black md:text-5xl dark:text-white">העיקר במבט מהיר</h2>
+    <p class="mt-4 max-w-2xl text-base leading-relaxed text-ink-600 dark:text-ink-200">
+      כל מה שעיתונאי או שותף עסקי צריך כדי לכתוב על כסף'לה — בלי לנחש.
+    </p>
+
+    <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">שם החברה</p>
+        <p class="mt-2 text-2xl font-black dark:text-white">כסף'לה</p>
+        <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">Kesefle</p>
+      </div>
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">הוקמה</p>
+        <p class="mt-2 text-2xl font-black dark:text-white"><span class="num">2026</span></p>
+        <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">פרויקט עצמאי</p>
+      </div>
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">מקום</p>
+        <p class="mt-2 text-2xl font-black dark:text-white">ישראל</p>
+        <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">מוצר מקומי, עברית-ראשונה</p>
+      </div>
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">מייסד</p>
+        <p class="mt-2 text-2xl font-black dark:text-white">Steven Ran Cohen</p>
+        <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">סטיבן רן כהן</p>
+      </div>
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">פלטפורמה</p>
+        <p class="mt-2 text-2xl font-black dark:text-white">WhatsApp + Google Sheets</p>
+        <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">בלי אפליקציה להורדה</p>
+      </div>
+      <div class="kfl-lift rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">אתר</p>
+        <p class="mt-2 text-2xl font-black dark:text-white">kesefle.vercel.app</p>
+        <p class="mt-1 text-sm text-ink-600 dark:text-ink-200">חינם להתחלה</p>
+      </div>
+    </div>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-2">
+      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">תיאור קצר</p>
+        <p class="mt-3 text-base leading-relaxed text-ink-700 dark:text-ink-100">
+          כסף'לה הוא בוט וואטסאפ עברית שמנהל לך הוצאות, תקציב ותזרים — והנתונים נשארים בגיליון Google הפרטי שלך.
+        </p>
+      </div>
+      <div class="rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">תיאור ארוך</p>
+        <p class="mt-3 text-base leading-relaxed text-ink-700 dark:text-ink-100">
+          כסף'לה היא מערכת ישראלית לניהול הוצאות אישיות ועסקיות שעובדת לגמרי בתוך וואטסאפ. המשתמש שולח הודעה כמו <span class="font-semibold">״245 סופר״</span>, והבוט מקטלג את ההוצאה ורושם אותה אוטומטית לגיליון Google פרטי בדרייב של המשתמש — לא בשרת שלנו. המוצר מיועד למשפחות, עצמאים, ועסקים קטנים בישראל שרוצים שליטה מלאה בנתונים, בעברית, בלי להוריד עוד אפליקציה.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="logos" class="border-t border-ink-200 bg-white py-16 md:py-20 dark:border-ink-700 dark:bg-ink-900/50">
+  <div class="mx-auto max-w-6xl px-5">
+    <p class="mb-6 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">לוגואים</p>
+    <h2 class="text-3xl font-black md:text-5xl dark:text-white">קבצי מותג להורדה</h2>
+    <p class="mt-4 max-w-2xl text-base leading-relaxed text-ink-600 dark:text-ink-200">
+      מותר להשתמש בלוגו הרשמי לסיקור תקשורתי. נא לא לעוות, לא להוסיף אפקטים, ולא לשנות צבעים.
+    </p>
+
+    <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div class="kfl-lift overflow-hidden rounded-3xl border border-ink-200 bg-ink-50 dark:border-ink-700 dark:bg-ink-800">
+        <div class="grid h-44 place-items-center bg-white">
+          <div class="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white text-4xl font-black shadow-glow">₪</div>
+        </div>
+        <div class="p-5">
+          <p class="font-bold dark:text-white">לוגו לרקע בהיר</p>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">PNG · 512×512</p>
+          <a href="/icon-512.png" download class="mt-3 inline-flex items-center gap-1 text-sm font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400">הורד ↓</a>
+        </div>
+      </div>
+
+      <div class="kfl-lift overflow-hidden rounded-3xl border border-ink-200 bg-ink-50 dark:border-ink-700 dark:bg-ink-800">
+        <div class="grid h-44 place-items-center bg-ink-900">
+          <div class="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white text-4xl font-black shadow-glow">₪</div>
+        </div>
+        <div class="p-5">
+          <p class="font-bold dark:text-white">לוגו לרקע כהה</p>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">PNG · 512×512 · אותו קובץ</p>
+          <a href="/icon-512.png" download class="mt-3 inline-flex items-center gap-1 text-sm font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400">הורד ↓</a>
+        </div>
+      </div>
+
+      <div class="kfl-lift overflow-hidden rounded-3xl border border-ink-200 bg-ink-50 dark:border-ink-700 dark:bg-ink-800">
+        <div class="grid h-44 place-items-center bg-white p-4">
+          <img src="/og-image.png" alt="Open Graph banner" class="max-h-full max-w-full rounded-xl object-contain" />
+        </div>
+        <div class="p-5">
+          <p class="font-bold dark:text-white">תמונת Open Graph</p>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">PNG · 1200×630</p>
+          <a href="/og-image.png" download class="mt-3 inline-flex items-center gap-1 text-sm font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400">הורד ↓</a>
+        </div>
+      </div>
+
+      <div class="kfl-lift overflow-hidden rounded-3xl border border-ink-200 bg-ink-50 dark:border-ink-700 dark:bg-ink-800">
+        <div class="grid h-44 place-items-center bg-white">
+          <div class="grid h-16 w-16 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white text-2xl font-black shadow-soft">₪</div>
+        </div>
+        <div class="p-5">
+          <p class="font-bold dark:text-white">אייקון אפליקציה</p>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">PNG · 192×192</p>
+          <a href="/icon-192.png" download class="mt-3 inline-flex items-center gap-1 text-sm font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400">הורד ↓</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-16 md:py-20">
+  <div class="mx-auto max-w-6xl px-5">
+    <p class="mb-6 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">צבעי מותג</p>
+    <h2 class="text-3xl font-black md:text-5xl dark:text-white">פלטת צבעים</h2>
+    <p class="mt-4 max-w-2xl text-base leading-relaxed text-ink-600 dark:text-ink-200">
+      הצבעים הראשיים של המותג. אפשר להעתיק את ערכי ה-HEX ישירות.
+    </p>
+
+    <div class="mt-10 grid gap-5 md:grid-cols-3">
+      <div class="swatch shadow-soft" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
+        <p class="text-lg">ירוק ראשי</p>
+        <code>#22c55e</code>
+      </div>
+      <div class="swatch shadow-soft" style="background: linear-gradient(135deg, #0f1422 0%, #1e2638 100%);">
+        <p class="text-lg">דיו כהה</p>
+        <code>#0f1422</code>
+      </div>
+      <div class="swatch shadow-soft" style="background: linear-gradient(135deg, #a855f7 0%, #6d28d9 100%);">
+        <p class="text-lg">סגול אקסנט</p>
+        <code>#a855f7</code>
+      </div>
+    </div>
+
+    <div class="mt-8 rounded-3xl border border-ink-200 bg-white p-7 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <p class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-300">טיפוגרפיה</p>
+      <p class="mt-3 text-base leading-relaxed text-ink-700 dark:text-ink-100">
+        <span class="font-bold dark:text-white">עברית:</span> Heebo (300–900) · <span class="font-bold dark:text-white">לטינית:</span> Inter (300–900)
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="border-t border-ink-200 bg-white py-16 md:py-20 dark:border-ink-700 dark:bg-ink-900/50">
+  <div class="mx-auto max-w-6xl px-5">
+    <p class="mb-6 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">מצוטטים</p>
+    <h2 class="text-3xl font-black md:text-5xl dark:text-white">כיסוי תקשורתי</h2>
+    <div class="mt-10 rounded-3xl border-2 border-dashed border-ink-200 bg-ink-50 p-10 text-center dark:border-ink-700 dark:bg-ink-800/50">
+      <p class="text-base text-ink-600 dark:text-ink-200">
+        עדיין אין לנו כיסוי תקשורתי לצטט.
+      </p>
+      <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">
+        אם אתם רוצים להיות הראשונים שכותבים על כסף'לה — נשמח לדבר.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="relative overflow-hidden border-t border-ink-200 bg-ink-900 py-20 dark:border-ink-700">
+  <div class="absolute inset-0 -z-10 bg-mesh opacity-40"></div>
+  <div class="mx-auto max-w-3xl px-5 text-center">
+    <p class="text-xs font-bold uppercase tracking-wider text-brand-400">צור קשר</p>
+    <h2 class="mt-3 text-3xl font-black text-white md:text-5xl">לסיקור הצטרפו אלינו</h2>
+    <p class="mt-5 mx-auto max-w-2xl text-base leading-relaxed text-ink-200">
+      רוצים לכתוב על כסף'לה? לתאם ראיון עם המייסד? לבקש לוגואים נוספים או מידע נוסף? — כתבו לנו.
+    </p>
+
+    <div class="mt-10 grid gap-4 md:grid-cols-2">
+      <a href="mailto:press@kesefle.com" class="kfl-lift block rounded-2xl border border-white/20 bg-white/5 p-6 text-right backdrop-blur transition hover:border-brand-400 hover:bg-white/10">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-300">תקשורת</p>
+        <p class="mt-2 text-lg font-bold text-white">press@kesefle.com</p>
+        <p class="mt-1 text-sm text-ink-300">ייעודי לעיתונאים</p>
+      </a>
+      <a href="mailto:srcslcollection@gmail.com" class="kfl-lift block rounded-2xl border border-white/20 bg-white/5 p-6 text-right backdrop-blur transition hover:border-brand-400 hover:bg-white/10">
+        <p class="text-xs font-bold uppercase tracking-wider text-brand-300">ישירות למייסד</p>
+        <p class="mt-2 text-lg font-bold text-white">srcslcollection@gmail.com</p>
+        <p class="mt-1 text-sm text-ink-300">Steven Ran Cohen</p>
+      </a>
+    </div>
+
+    <div class="mt-10">
+      <a href="mailto:press@kesefle.com?subject=סיקור%20תקשורתי%20-%20כסף'לה" class="kfl-magnetic inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-sm font-bold text-white shadow-glow transition hover:bg-brand-700">
+        שלח אימייל
+        <span aria-hidden="true">←</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+        <span>כסף'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">מוצר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/#how" class="hover:text-ink-900 dark:hover:text-white">איך זה עובד</a></li>
+        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/blog" class="hover:text-ink-900 dark:hover:text-white">בלוג</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">חברה</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/about" class="hover:text-ink-900 dark:hover:text-white">אודות</a></li>
+        <li><a href="/team" class="hover:text-ink-900 dark:hover:text-white">צוות</a></li>
+        <li><a href="/press" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">ערכת עיתונאים</a></li>
+        <li><a href="/trust" class="hover:text-ink-900 dark:hover:text-white">אבטחה ופרטיות</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">צור קשר</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="mailto:press@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">press@kesefle.com</a></li>
+        <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל ישיר</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    © <span class="num">2026</span> כסף'לה. כל הזכויות שמורות.
+  </div>
+</footer>
+
+<script>
+  (function premiumMotion(){
+    var nodes = document.querySelectorAll('section h2, section h3, section p, .kfl-lift');
+    nodes.forEach(function(el){ if (!el.classList.contains('kfl-reveal')) el.classList.add('kfl-reveal'); });
+
+    if (!('IntersectionObserver' in window)) {
+      nodes.forEach(function(el) { el.classList.add('kfl-in'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('kfl-in');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+    nodes.forEach(function(el) { observer.observe(el); });
+
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll('.kfl-magnetic').forEach(function(btn) {
+      btn.addEventListener('mousemove', function(e) {
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = 'translate(' + (x * 0.08) + 'px, ' + (y * 0.08) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function() { btn.style.transform = ''; });
+    });
+  })();
+
+  (function parallaxBlobs(){
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-parallax'));
+    if (!nodes.length) return;
+    var items = nodes.map(function(el){
+      var s = parseFloat(el.getAttribute('data-speed'));
+      return { el: el, speed: isNaN(s) ? 0.15 : s };
+    });
+    var ticking = false;
+    function update(){
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      for (var i = 0; i < items.length; i++) {
+        items[i].el.style.setProperty('--kfl-py', (y * items[i].speed).toFixed(2) + 'px');
+      }
+      ticking = false;
+    }
+    window.addEventListener('scroll', function(){
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  })();
+</script>
+
+</body>
+</html>

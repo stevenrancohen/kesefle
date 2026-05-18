@@ -97,6 +97,12 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://kesefle.vercel.app/contact</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://kesefle.vercel.app/blog</loc>
     <lastmod>2026-05-18</lastmod>
     <changefreq>weekly</changefreq>
