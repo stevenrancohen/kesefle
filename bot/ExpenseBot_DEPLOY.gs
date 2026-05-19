@@ -1996,6 +1996,115 @@ function cronGroupRecurring() {
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Bill reminders — per-user date-scheduled WhatsApp pings
+// ─────────────────────────────────────────────────────────────────────
+function _remindersAPI_(action, payload) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) return { ok: false, error: 'bot_secret_not_set' };
+  payload = payload || {};
+  payload.action = action;
+  payload.botSecret = secret;
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/reminders', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code < 200 || code >= 300) {
+      Logger.log('_remindersAPI_ ' + action + ' HTTP ' + code + ': ' + body.slice(0, 200));
+      try { return JSON.parse(body); } catch (_e) { return { ok: false, error: 'http_' + code }; }
+    }
+    return JSON.parse(body);
+  } catch (e) {
+    return { ok: false, error: 'fetch_threw', detail: e && e.message };
+  }
+}
+
+function _addReminder_(fromPhone, when, description, amount) {
+  var r = _remindersAPI_('add', { phone: fromPhone, when: when, description: description, amount: amount });
+  if (!r || !r.ok) {
+    if (r && r.error === 'invalid_date') {
+      return '😬 לא הבנתי את התאריך. נסה: "תזכורת 15/6 ארנונה" או "תזכורת מחר חשמל 450".';
+    }
+    return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  }
+  var amountTxt = amount ? ' (₪' + Number(amount).toLocaleString('he-IL') + ')' : '';
+  return '🔔 תזכורת נוספה: ' + r.entry.when + ' — ' + description + amountTxt + '\nID: ' + r.entry.id.slice(0, 8);
+}
+
+function _listReminders_(fromPhone) {
+  var r = _remindersAPI_('list', { phone: fromPhone });
+  if (!r || !r.ok) return '😬 שגיאה.';
+  if (!r.reminders.length) return '📭 אין תזכורות פעילות.\n\nהוסף: "תזכורת 15/6 חשמל 450"';
+  var lines = ['🔔 *תזכורות קרובות*', '━━━━━━━━━━━━━━━━━━', ''];
+  r.reminders.forEach(function(rem) {
+    var amt = rem.amount ? ' · ₪' + Number(rem.amount).toLocaleString('he-IL') : '';
+    var when = rem.when.split('-').reverse().slice(0, 2).join('/');
+    lines.push('  • ' + when + ' · ' + rem.description + amt + '  `' + rem.id.slice(0, 8) + '`');
+  });
+  lines.push('');
+  lines.push('למחיקה: "מחק תזכורת <ID>"');
+  return lines.join('\n');
+}
+
+function _removeReminder_(fromPhone, idPrefix) {
+  // Resolve ID prefix to the full ID by listing first.
+  var listing = _remindersAPI_('list', { phone: fromPhone });
+  if (!listing || !listing.ok) return '😬 שגיאה.';
+  var match = listing.reminders.find(function(r){ return r.id.indexOf(idPrefix) === 0; });
+  if (!match) return '😬 לא מצאתי תזכורת עם ID "' + idPrefix + '". שלח "תזכורות" לרשימה.';
+  var r = _remindersAPI_('remove', { phone: fromPhone, id: match.id });
+  if (!r || !r.ok) return '😬 מחיקה נכשלה.';
+  return '🗑 תזכורת נמחקה: ' + match.description;
+}
+
+function _getReferralLink_(fromPhone) {
+  return '🎁 *הזמן חברים, קבל חודש Pro חינם*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    'כל חבר שמצטרף דרכך:\n' +
+    '  • הוא מקבל חודש Pro חינם\n' +
+    '  • אתה מקבל חודש Pro חינם\n\n' +
+    'הקוד והקישור שלך נמצאים בלוח הבקרה:\n' +
+    'https://kesefle.com/dashboard#referral\n\n' +
+    'שתף עם החברים שלך:\n' +
+    '"היי, נסה את כסף\'לה — בוט הוצאות בעברית בוואטסאפ:\n' +
+    'https://kesefle.com"';
+}
+
+// Daily cron — scans cross-user reminders due today and fires WhatsApp
+// pings. Single-tenant for now (runs as the bot owner) — the Vercel
+// /api/reminders?action=due endpoint scans ALL users' reminders and
+// returns the firing list, then this function iterates and pings each.
+function cronBillReminders() {
+  var resp = _remindersAPI_('due', { onDate: new Date().toISOString().slice(0, 10) });
+  if (!resp || !resp.ok || !resp.due || !resp.due.length) return;
+  resp.due.forEach(function(r) {
+    if (typeof sendWhatsAppMessage !== 'function') return;
+    try {
+      var amt = r.amount ? '\n💰 ' + Number(r.amount).toLocaleString('he-IL') + ' ₪' : '';
+      sendWhatsAppMessage('+' + r.phone,
+        '🔔 *תזכורת*\n' +
+        r.description + amt + '\n\n' +
+        'אם שילמת — שלח "[הסכום] ' + r.description + '" כדי לרשום.');
+    } catch (_e) {}
+  });
+}
+
+function installBillRemindersTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronBillReminders') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronBillReminders').timeBased().atHour(9).everyDays(1).create();
+  Logger.log('✅ cronBillReminders installed: daily @ 09:00');
+}
+
 // Install the daily recurring-group-expense trigger. Run this once.
 function installGroupRecurringTrigger() {
   var triggers = ScriptApp.getProjectTriggers();
@@ -2544,6 +2653,22 @@ function processExpense(text, fromPhone) {
   }
   if (trimmed === 'מטבעות' || trimmed === 'currencies' || trimmed === 'fx') {
     return { reply: getCurrenciesMessage() };
+  }
+  // Bill reminders. "תזכורת 15/6 חשמל 450" / "תזכורות" / "מחק תזכורת ID"
+  if (trimmed === 'תזכורות' || trimmed === 'reminders') {
+    if (typeof _listReminders_ === 'function') return { reply: _listReminders_(fromPhone) };
+  }
+  var __remAdd = text.trim().match(/^(?:תזכורת|reminder)\s+(\S+)\s+(.+?)(?:\s+(\d+(?:[.,]\d+)?))?$/i);
+  if (__remAdd && typeof _addReminder_ === 'function') {
+    return { reply: _addReminder_(fromPhone, __remAdd[1], __remAdd[2].trim(), __remAdd[3] ? parseFloat(__remAdd[3].replace(',', '.')) : null) };
+  }
+  var __remRm = text.trim().match(/^(?:מחק\s+תזכורת|delete\s+reminder)\s+(\S+)$/i);
+  if (__remRm && typeof _removeReminder_ === 'function') {
+    return { reply: _removeReminder_(fromPhone, __remRm[1]) };
+  }
+  // Referral
+  if (trimmed === 'הזמן' || trimmed === 'הפניה' || trimmed === 'referral' || trimmed === 'invite') {
+    if (typeof _getReferralLink_ === 'function') return { reply: _getReferralLink_(fromPhone) };
   }
   if (trimmed === 'תובנות' || trimmed === 'תובנה' || trimmed === 'insights' || trimmed === 'insight') {
     return { reply: getInsightsMessage() };
@@ -4529,6 +4654,9 @@ function getHelpMessage() {
     '📊 *פקודות מהירות:*\n' +
     '  • "סיכום" — סיכום החודש\n' +
     '  • "הזמנות" — סיכום הזמנות החודש (לקוחות, מחזור, רווח)\n' +
+    '  • "תזכורת 15/6 חשמל 450" — תזכורת לתשלום\n' +
+    '  • "תזכורות" — רשימת התזכורות הקרובות\n' +
+    '  • "הזמן" — קישור להזמנת חברים (חודש Pro חינם)\n' +
     '  • "מחק אחרון" — בטל את ההוצאה האחרונה\n' +
     '  • "מחק הזמנה" — בטל את ההזמנה האחרונה\n' +
     '  • "סנכרן" — ריענון דשבורד\n' +
