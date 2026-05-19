@@ -74,3 +74,45 @@ function diagnoseNoReply() {
     Logger.log('DIAG: send THREW ' + (e && e.stack || e));
   }
 }
+
+// ============================================================
+// Register a real WhatsApp business phone number (like Numero / Kesefle)
+// for Cloud API messaging. One-time setup — sets a 6-digit two-step PIN
+// and switches the phone from "provisioned" to "live" so /messages calls
+// no longer return error #133010 "Account not registered".
+//
+// Test numbers (e.g. +1 555 640 8123) skip this — Meta auto-registers them.
+//
+// Pick your PIN via Script Property CLOUD_API_PIN (any 6 digits you'll
+// remember if you ever need to migrate the number). Defaults to '482917'.
+// ============================================================
+function registerForCloudAPI() {
+  var props = PropertiesService.getScriptProperties();
+  var token = props.getProperty('WHATSAPP_TOKEN') || '';
+  var pnid  = props.getProperty('WHATSAPP_PHONE_NUMBER_ID') || '';
+  var pin   = props.getProperty('CLOUD_API_PIN') || '482917';
+
+  if (!token || !pnid) {
+    Logger.log('REGISTER: ABORT — missing WHATSAPP_TOKEN or WHATSAPP_PHONE_NUMBER_ID');
+    return;
+  }
+  if (!/^\d{6}$/.test(pin)) {
+    Logger.log('REGISTER: ABORT — CLOUD_API_PIN must be exactly 6 digits');
+    return;
+  }
+
+  Logger.log('REGISTER: pnid=' + pnid + ' pin=' + pin);
+  var url = 'https://graph.facebook.com/v21.0/' + pnid + '/register';
+  try {
+    var resp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      headers: { 'Authorization': 'Bearer ' + token },
+      payload: { messaging_product: 'whatsapp', pin: pin },
+      muteHttpExceptions: true,
+    });
+    Logger.log('REGISTER: code=' + resp.getResponseCode());
+    Logger.log('REGISTER: body=' + resp.getContentText());
+  } catch (e) {
+    Logger.log('REGISTER: THREW ' + (e && e.stack || e));
+  }
+}
