@@ -1856,8 +1856,15 @@ function processExpense(text, fromPhone) {
     return { reply: handleLinkCode_(codeMatch[1], (typeof __from_ !== 'undefined' ? __from_ : null) || (this && this.__from_) || '') };
   }
 
-  const fx = parseForeignCurrencyHint(text);
-  const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : text);
+  // Extract an optional leading date token ("אתמול", "12/4", "1.5",
+  // etc.) so users can backfill past expenses. Falls through harmlessly
+  // when the message starts with an amount.
+  var __dateInfo = null;
+  try { __dateInfo = _extractLeadingDate_(text); } catch (_dErr) {}
+  var __workingText = __dateInfo ? __dateInfo.remaining : text;
+
+  const fx = parseForeignCurrencyHint(__workingText);
+  const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : __workingText);
   if (!parsed || !parsed.items || parsed.items.length === 0) {
     return { reply: '😬 לא זיהיתי סכום בהודעה\n💡 תוודא שכתבת את הסכום בתחילת ההודעה — למשל "85 סופר" או "352 אוכל לבית+165"' };
   }
@@ -1877,7 +1884,9 @@ function processExpense(text, fromPhone) {
       return { reply: '😬 לא נמצאה לשונית "תנועות"\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט' };
     }
     Logger.log('processExpense: sheet found, items=' + parsed.items.length);
-    const now = new Date();
+    // Honour an explicit leading-date token if the user supplied one
+    // (parsed earlier as __dateInfo); otherwise stamp with current time.
+    const now = (__dateInfo && __dateInfo.date) ? __dateInfo.date : new Date();
     const monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
     const writtenLines = [];
     let runningTotal = 0;
@@ -2258,6 +2267,85 @@ function parseAmountAndDescription(text) {
 
 function _splitAmounts_(block) {
   return String(block || '').split('+').map(function(p){ return _parseIsraeliNumber_(String(p).replace(/\s+/g,'')); }).filter(function(n){ return !isNaN(n) && n > 0; });
+}
+
+// Strip a leading date token from a user message and return the date it
+// represents plus the remaining text. Lets users say "אתמול 50 קפה" and
+// have the row dated yesterday instead of today. Returns null if the
+// message doesn't start with a recognised date token, so callers fall
+// back to new Date() for the timestamp.
+//
+// Supported forms (must be at the very start of the trimmed input):
+//   אתמול / yesterday          → today - 1
+//   שלשום                       → today - 2
+//   מחר / tomorrow              → today + 1
+//   D/M, DD/MM, D.M, DD.MM      → that day this year (last year if future)
+//   D/M/YY, DD/MM/YYYY          → exact date
+//
+// We deliberately do NOT match bare "DD-MM" because hyphen-separated
+// digit pairs commonly appear inside size specs (e.g. "120-80") and
+// amount ranges. Period and slash are unambiguous.
+function _extractLeadingDate_(text) {
+  if (!text) return null;
+  var s = String(text).trim();
+  if (!s) return null;
+
+  function withTime(dateOnly) {
+    // Preserve the current wall-clock time so "אתמול 50 קפה" at 16:42
+    // produces a row dated yesterday@16:42, not yesterday@00:00. Keeps
+    // sort order stable when the user logs several past-dated expenses
+    // in a row.
+    var n = new Date();
+    dateOnly.setHours(n.getHours(), n.getMinutes(), n.getSeconds(), 0);
+    return dateOnly;
+  }
+
+  // Word tokens first (cheapest match). JS \b is a transition between a
+  // word char (a-z, 0-9, _) and a non-word char — Hebrew letters are NOT
+  // word chars, so \b right after "אתמול" never matches. Use an explicit
+  // whitespace/end lookahead instead.
+  var wordRe = /^(אתמול|שלשום|מחר|yesterday|tomorrow)(?=\s|$)\s*/i;
+  var wm = s.match(wordRe);
+  if (wm) {
+    var offset = 0;
+    var w = wm[1].toLowerCase();
+    if (w === 'אתמול' || w === 'yesterday') offset = -1;
+    else if (w === 'שלשום') offset = -2;
+    else if (w === 'מחר' || w === 'tomorrow') offset = 1;
+    var d = new Date();
+    d.setDate(d.getDate() + offset);
+    return { date: withTime(d), remaining: s.slice(wm[0].length).trim() };
+  }
+
+  // Numeric forms: D/M, DD/MM, D.M, DD.MM, with optional /YY or /YYYY tail.
+  // Must be followed by a space or end-of-string so we don't swallow the
+  // first number of a real expense like "12.50 קפה".
+  var numRe = /^(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?=\s|$)/;
+  var nm = s.match(numRe);
+  if (nm) {
+    var day = parseInt(nm[1], 10);
+    var mon = parseInt(nm[2], 10);
+    if (day < 1 || day > 31 || mon < 1 || mon > 12) return null;
+    var now = new Date();
+    var year;
+    if (nm[3]) {
+      year = parseInt(nm[3], 10);
+      if (year < 100) year += 2000;
+    } else {
+      year = now.getFullYear();
+      // If the resulting date is more than 7 days in the future, assume
+      // the user meant last year (e.g. typing "31.12 hot chocolate" on
+      // 2 Jan picks Dec last year, not Dec this year).
+      var probe = new Date(year, mon - 1, day);
+      if (probe.getTime() - now.getTime() > 7 * 86400 * 1000) year--;
+    }
+    var dt = new Date(year, mon - 1, day);
+    // Sanity check: did the date actually exist? (e.g. 31/02)
+    if (dt.getMonth() !== mon - 1 || dt.getDate() !== day) return null;
+    return { date: withTime(dt), remaining: s.slice(nm[0].length).trim() };
+  }
+
+  return null;
 }
 
 // Israeli/EU-formatted number parser. Disambiguates "1,200" (one thousand
