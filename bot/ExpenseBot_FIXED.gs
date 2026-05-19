@@ -1415,6 +1415,101 @@ function _writeOrderRow_(parsed) {
   }
 }
 
+// Aggregate the הזמנות tab for the current calendar month and return a
+// human-readable Hebrew summary. Designed for the "הזמנות" / "orders"
+// WhatsApp command — fits inside a single message and gives the owner
+// a quick "how am I doing this month" snapshot without opening Sheets.
+function getOrdersSummary() {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(ORDERS_TAB_NAME);
+    if (!sheet) {
+      return '😬 לא מצאתי את לשונית "' + ORDERS_TAB_NAME + '". ננסה שוב בעוד דקה?';
+    }
+    var last = sheet.getLastRow();
+    if (last < 2) {
+      return '📦 *הזמנות החודש*\n━━━━━━━━━━━━━━━━━━\n\nאין הזמנות עדיין החודש.\nשלח לי הזמנה כדי להתחיל — לדוגמה:\n"עסק 880 לקוח ליה גודל 50-70 קנבס עלות מוצר 240 משלוח 45"';
+    }
+    var thisMonth = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM');
+    // Columns A-L: timestamp, month, customer, size, material, prod, sale, ship, profit, source, raw, status
+    var rng = sheet.getRange(2, 1, last - 1, 12).getValues();
+    var count = 0, revenue = 0, productionCost = 0, shipping = 0, profit = 0;
+    var lastFive = [];
+    for (var i = rng.length - 1; i >= 0; i--) {
+      var r = rng[i];
+      var rowMonth = String(r[1] || '');
+      if (rowMonth !== thisMonth) continue;
+      count++;
+      revenue        += Number(r[6]) || 0;
+      productionCost += Number(r[5]) || 0;
+      shipping       += Number(r[7]) || 0;
+      profit         += Number(r[8]) || 0;
+      if (lastFive.length < 5) {
+        var when = r[0] instanceof Date
+          ? Utilities.formatDate(r[0], 'Asia/Jerusalem', 'dd/MM')
+          : String(r[0]).slice(0, 5);
+        var who = String(r[2] || '?');
+        var sale = Number(r[6]) || 0;
+        lastFive.push('  • ' + when + ' · ' + who + ' · ₪' + sale.toLocaleString('he-IL'));
+      }
+    }
+    var out = [];
+    out.push('📦 *הזמנות החודש (' + thisMonth + ')*');
+    out.push('━━━━━━━━━━━━━━━━━━');
+    out.push('');
+    out.push('סה"כ הזמנות: ' + count);
+    out.push('💰 מחזור: ₪' + revenue.toLocaleString('he-IL'));
+    out.push('🏭 עלות מוצר: ₪' + productionCost.toLocaleString('he-IL'));
+    out.push('🚚 משלוח: ₪' + shipping.toLocaleString('he-IL'));
+    out.push('📈 רווח: ₪' + profit.toLocaleString('he-IL'));
+    if (revenue > 0) {
+      out.push('   (' + Math.round((profit / revenue) * 100) + '% רווחיות)');
+    }
+    if (lastFive.length) {
+      out.push('');
+      out.push('🕒 *אחרונות:*');
+      lastFive.forEach(function(l){ out.push(l); });
+    }
+    return out.join('\n');
+  } catch (e) {
+    Logger.log('getOrdersSummary err: ' + (e && e.stack || e));
+    return '😬 לא הצלחתי לקרוא את הזמנות החודש: ' + (e && e.message || '');
+  }
+}
+
+// Remove the most recent row from the הזמנות tab and reverse its impact
+// on the מאזן חברה dashboard. Used by the "מחק הזמנה" / "undo order"
+// command. We compare against the בעלות-of-this-script user, which for
+// the Apps Script bot is the owner — tenants don't have orders-tab
+// access yet so this is owner-only behaviour for now.
+function deleteLastOrder() {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(ORDERS_TAB_NAME);
+    if (!sheet) return '😬 לא מצאתי את לשונית "' + ORDERS_TAB_NAME + '".';
+    var last = sheet.getLastRow();
+    if (last < 2) return '📭 אין הזמנות למחיקה.';
+    var row = sheet.getRange(last, 1, 1, 12).getValues()[0];
+    var when = row[0] instanceof Date
+      ? Utilities.formatDate(row[0], 'Asia/Jerusalem', 'dd/MM HH:mm')
+      : String(row[0]);
+    var customer = String(row[2] || '?');
+    var sale = Number(row[6]) || 0;
+    var month = String(row[1] || '');
+    sheet.deleteRow(last);
+    // Reverse the dashboard impact if we can.
+    try {
+      if (typeof _updateBusinessDashboard_ === 'function' && sale > 0 && month) {
+        _updateBusinessDashboard_('עסק', 'מחזור', month, -sale);
+      }
+    } catch (_dErr) { Logger.log('deleteLastOrder dashboard reverse err: ' + (_dErr && _dErr.message)); }
+    return '🗑 הזמנה נמחקה:\n  ' + when + ' · ' + customer + ' · ₪' + sale.toLocaleString('he-IL');
+  } catch (e) {
+    Logger.log('deleteLastOrder err: ' + (e && e.stack || e));
+    return '😬 משהו השתבש במחיקה: ' + (e && e.message || '');
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Multi-tenant helpers
 //
@@ -1735,6 +1830,13 @@ function processExpense(text, fromPhone) {
   }
   if (trimmed === 'סיכום' || trimmed === 'summary') {
     return { reply: getMonthlySummary(fromPhone) };
+  }
+  if (trimmed === 'הזמנות' || trimmed === 'orders' ||
+      trimmed === 'הזמנות החודש' || trimmed === 'סיכום הזמנות') {
+    return { reply: getOrdersSummary() };
+  }
+  if (trimmed === 'מחק הזמנה' || trimmed === 'מחק הזמנה אחרונה' || trimmed === 'undo order') {
+    return { reply: deleteLastOrder() };
   }
   if (trimmed === 'סנכרן' || trimmed === 'sync') {
     try { var s = syncEverything(); return { reply: '✅ סונכרן: ' + s }; }
@@ -3744,7 +3846,9 @@ function getHelpMessage() {
     '  • "5000 ב-10 תשלומים מחשב"\n\n' +
     '📊 *פקודות מהירות:*\n' +
     '  • "סיכום" — סיכום החודש\n' +
-    '  • "מחק אחרון" — בטל את האחרון\n' +
+    '  • "הזמנות" — סיכום הזמנות החודש (לקוחות, מחזור, רווח)\n' +
+    '  • "מחק אחרון" — בטל את ההוצאה האחרונה\n' +
+    '  • "מחק הזמנה" — בטל את ההזמנה האחרונה\n' +
     '  • "סנכרן" — ריענון דשבורד\n' +
     '  • "מילון" — קישור ללשונית הלמידה\n' +
     '  • "מנוע" — מצב המנוע (AI/cache/keywords)\n' +
