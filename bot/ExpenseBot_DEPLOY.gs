@@ -1348,15 +1348,32 @@ function parseBusinessOrder_(text) {
     return m ? m[1].trim() : null;
   }
 
-  // Numeric fields — each label has 2-3 Hebrew + English aliases so the
-  // user can write fluidly. Whichever matches first wins.
-  var productionCost = _num(/(?:עלות\s+ייצור|ייצור|עלות\s+חומר|production)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  // Numeric fields — each label has multiple Hebrew + English aliases so
+  // the user can write fluidly. "עלות מוצר" (product cost) and "עלות
+  // פריט" (item cost) are treated as production cost, matching how
+  // Steven uses them in practice. Whichever label matches first wins.
+  var productionCost = _num(/(?:עלות\s+ייצור|עלות\s+יצור|עלות\s+מוצר|עלות\s+פריט|עלות\s+חומר|ייצור|יצור|production)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   var salePrice      = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירה|מחיר|sale)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
-  var shipping       = _num(/(?:משלוח|שילוח|דמי\s+משלוח|shipping)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  var shipping       = _num(/(?:דמי\s+משלוח|משלוח|שילוח|shipping)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
 
-  // Customer name: "שם לקוח X" / "לקוח X" / "ל לקוח X" — grabs the next
-  // 1–3 Hebrew words up to the next labelled field or digit run.
-  var customer = _word(/(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s*([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|משלוח|שילוח|\d{2,})|$)/i);
+  // Customer name: try the explicit label first ("שם לקוח X" / "לקוח X").
+  var customer = _word(/(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s*([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,})|$)/i);
+  // Fallback: if no explicit label, grab the leading Hebrew text right
+  // after the "עסק" prefix up to the first labelled field or number.
+  // Lets the user write "עסק ליה מרמת גן גודל ..." without forcing the
+  // "לקוח" keyword. Capped at 40 chars to avoid grabbing the whole
+  // message when no labelled field appears later.
+  if (!customer) {
+    var leadM = s.match(/^([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,}))/);
+    if (leadM) {
+      var lead = leadM[1].trim();
+      // Skip bare prefixes like "biz:" or "business" that the strip-
+      // regex above already consumed, plus single-token noise.
+      if (lead.length >= 2 && lead.length <= 40 && !/^(?:biz|business)\b/i.test(lead)) {
+        customer = lead;
+      }
+    }
+  }
 
   // Size: accepts "120-80", "120x80", "120×80", optional "ס\"מ" / "cm".
   var sizeRaw = _word(/(?:גודל(?:\s+תמונה)?|size)\s*[:=]?\s*([0-9]+\s*[-xX×]\s*[0-9]+(?:\s*(?:cm|ס["׳']?ם))?)/i);
