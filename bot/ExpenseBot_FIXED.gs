@@ -1276,8 +1276,10 @@ function parseBusinessOrder_(text) {
   // Numeric fields — each label has multiple Hebrew + English aliases so
   // the user can write fluidly. "עלות מוצר" (product cost) and "עלות
   // פריט" (item cost) are treated as production cost, matching how
-  // Steven uses them in practice. Whichever label matches first wins.
-  var productionCost = _num(/(?:עלות\s+ייצור|עלות\s+יצור|עלות\s+מוצר|עלות\s+פריט|עלות\s+חומר|ייצור|יצור|production)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  // Steven uses them in practice. Order matters: specific multi-word
+  // labels must come BEFORE the bare "עלות" fallback so we never
+  // mistake "עלות מכירה 880" for productionCost=880.
+  var productionCost = _num(/(?:עלות\s+ייצור|עלות\s+יצור|עלות\s+מוצר|עלות\s+פריט|עלות\s+חומר|ייצור|יצור|production|עלות)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   var salePrice      = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירה|מחיר|sale)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   var shipping       = _num(/(?:דמי\s+משלוח|משלוח|שילוח|shipping)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
 
