@@ -131,7 +131,29 @@ async function handlerImpl(req, res) {
     if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
     const rec = await kvGet(`phone:${phone}`);
     if (!rec) return res.status(200).json({ ok: true, linked: false });
-    return res.status(200).json({ ok: true, linked: true, userSub: rec.userSub, sheetId: rec.spreadsheetId });
+    // Surface the plan so the bot's _hasActivePremium_ check can gate
+    // AI categorisation + OCR + group caps without an extra round trip.
+    // We pull from the canonical user record (the phone-record can lag
+    // behind plan changes by one Stripe webhook).
+    let plan = rec.plan || 'free';
+    let subscriptionStatus = rec.subscriptionStatus || null;
+    if (rec.userSub) {
+      try {
+        const userRec = await kvGet(`user:${rec.userSub}`);
+        if (userRec) {
+          plan = userRec.plan || plan;
+          subscriptionStatus = userRec.subscriptionStatus || subscriptionStatus;
+        }
+      } catch (_e) {}
+    }
+    return res.status(200).json({
+      ok: true,
+      linked: true,
+      userSub: rec.userSub,
+      sheetId: rec.spreadsheetId,
+      plan,
+      subscriptionStatus,
+    });
   }
 
   if (req.method !== 'POST') {

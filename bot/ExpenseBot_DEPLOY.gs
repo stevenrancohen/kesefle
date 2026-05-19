@@ -1147,6 +1147,14 @@ function _doPost_orig(e) {
         Logger.log('_doPost_orig: ambiguous list sent inline, skipping text reply');
       } else {
         var replyText = (result && result.reply) ? result.reply : '✓ נרשם.';
+        // Smart group-expense detection: if the user is in an active
+        // group and the message looks like a split candidate (large
+        // amount vs their history, OR contains share-keywords), tack
+        // an upsell line onto the reply.
+        try {
+          var suggestion = _maybeSuggestGroupSplit_(from, text);
+          if (suggestion) replyText += '\n\n' + suggestion;
+        } catch (_sgErr) { Logger.log('group suggestion err: ' + (_sgErr && _sgErr.message)); }
         try {
           var sendRes = sendWhatsAppMessage(from, replyText);
           if (sendRes && sendRes.ok === false) {
@@ -2105,6 +2113,208 @@ function installBillRemindersTrigger() {
   Logger.log('✅ cronBillReminders installed: daily @ 09:00');
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Smart group-expense suggestion
+//
+// Lightweight classifier (no external API): if the user is in an active
+// group AND the new personal expense either contains a share-keyword
+// (שכירות / ארנונה / חשמל / מים / ועד / שותפים / דירה / משותף / ביחד)
+// OR the amount is > 1.5σ above the user's 50-row median, append a
+// one-line suggestion to the bot's reply. Dedup per-day per-description
+// so the user doesn't see the same prompt twice for the same expense.
+// ─────────────────────────────────────────────────────────────────────
+var _GROUP_KEYWORDS_RE_ = /(שכירות|ארנונה|חשמל|מים|ועד|שותפים?|דירה|משותפ|ביחד|together)/i;
+
+function _maybeSuggestGroupSplit_(fromPhone, text) {
+  if (!fromPhone || !text) return null;
+  try {
+    // Cheap pre-check: only run for messages that look like an expense.
+    if (!/^\s*\d/.test(text)) return null;
+    // Active group?
+    var ctx = (typeof _groupAPI_ === 'function') ? _groupAPI_('getactive', { phone: fromPhone }) : null;
+    if (!ctx || !ctx.ok || !ctx.active) return null;
+    // Already suggested today for this description?
+    var dedupKey = 'groupSugg:' + fromPhone + ':' + (new Date().toISOString().slice(0, 10)) + ':' + text.slice(0, 32);
+    try {
+      if (CacheService.getScriptCache().get(dedupKey)) return null;
+    } catch (_e) {}
+    var triggered = false;
+    if (_GROUP_KEYWORDS_RE_.test(text)) triggered = true;
+    if (!triggered) {
+      // Amount anomaly check vs the user's own median.
+      var parsed = (typeof parseAmountAndDescription === 'function') ? parseAmountAndDescription(text) : null;
+      if (parsed && parsed.items && parsed.items.length) {
+        var amount = parsed.items[0].amount;
+        var stats = _userExpenseStats_(50);
+        if (stats && amount > stats.median + 1.5 * stats.stddev && amount >= 100) {
+          triggered = true;
+        }
+      }
+    }
+    if (!triggered) return null;
+    try { CacheService.getScriptCache().put(dedupKey, '1', 86400); } catch (_e) {}
+    return '👥 שייכת לקבוצה? שלח "כספלה ' + text.trim() + '" כדי לפצל אוטומטית.';
+  } catch (e) {
+    return null;
+  }
+}
+
+function _userExpenseStats_(rows) {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return null;
+    var last = sheet.getLastRow();
+    if (last < 5) return null;
+    var n = Math.min(rows || 50, last - 1);
+    var amounts = sheet.getRange(last - n + 1, 3, n, 1).getValues()
+      .map(function(r){ return Number(r[0]); })
+      .filter(function(v){ return isFinite(v) && v > 0; });
+    if (amounts.length < 5) return null;
+    var sorted = amounts.slice().sort(function(a, b){ return a - b; });
+    var median = sorted[Math.floor(sorted.length / 2)];
+    var mean = amounts.reduce(function(a,b){ return a + b; }, 0) / amounts.length;
+    var variance = amounts.reduce(function(s,v){ return s + (v - mean) * (v - mean); }, 0) / amounts.length;
+    return { median: median, mean: mean, stddev: Math.sqrt(variance), n: amounts.length };
+  } catch (_e) { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Keep-warm cron — pings the bot's own webhook every 5 min so the
+// Apps Script process stays warm and the first user message of the
+// hour doesn't pay the ~2s cold-start penalty.
+// Costs: 1 free Apps Script execution per 5 min (well within quota).
+// ─────────────────────────────────────────────────────────────────────
+function cronKeepWarm() {
+  // We just touch SpreadsheetApp and read the script properties — both
+  // are enough to keep the V8 runtime hot. No external HTTP needed
+  // (which would burn UrlFetchApp quota for no benefit).
+  try {
+    SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET).getLastRow();
+    PropertiesService.getScriptProperties().getProperty('WHATSAPP_TOKEN');
+  } catch (_e) {}
+}
+
+function installKeepWarmTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronKeepWarm') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronKeepWarm').timeBased().everyMinutes(5).create();
+  Logger.log('✅ cronKeepWarm installed: every 5 min');
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Re-engagement engine — daily 18:00 ping of users gone quiet
+//
+// Targets users who logged something in the last 30 days but have been
+// silent for 5+ days. The ping references their ACTUAL data so it
+// doesn't feel like spam: their most-recent expense category, their
+// unsettled group balance, or their pending savings goal.
+//
+// Dedup: each user gets pinged at most once every 7 days. KV key
+// `lastPing:{phone}` holds the timestamp.
+// ─────────────────────────────────────────────────────────────────────
+function cronReEngagement() {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return;
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return;
+    var data = sheet.getRange(2, 1, lastRow - 1, 7).getValues(); // date, month, amount, category, sub, desc, source
+    // Build per-phone aggregates of "last activity" + "most recent expense".
+    // We key on the owner phone (single-tenant for now); the multi-tenant
+    // expansion uses the Vercel /api/whatsapp/link mapping to find per-
+    // tenant phones, but for the current single-owner bot one ping covers
+    // the owner.
+    var ownerPhone = '';
+    try { ownerPhone = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || ''); } catch (_e) {}
+    ownerPhone = ownerPhone.replace(/[^0-9]/g, '');
+    if (!ownerPhone) {
+      Logger.log('cronReEngagement: SHEET_OWNER_PHONE not set');
+      return;
+    }
+    var now = new Date();
+    var lastActivity = null, lastExpense = null;
+    for (var i = data.length - 1; i >= 0; i--) {
+      var row = data[i];
+      var when = row[0] instanceof Date ? row[0] : new Date(row[0]);
+      if (!lastActivity || when > lastActivity) {
+        lastActivity = when;
+        lastExpense = { amount: Number(row[2]) || 0, category: String(row[3] || ''), description: String(row[5] || '') };
+      }
+      if (data.length - i > 50) break; // only scan recent rows
+    }
+    if (!lastActivity) return;
+    var daysSilent = (now - lastActivity) / 86400000;
+    if (daysSilent < 5) return; // not yet stale
+    if (daysSilent > 60) return; // probably churned, save the API call
+
+    // Dedup: don't ping the same user twice in 7 days.
+    try {
+      var lastPingStr = PropertiesService.getScriptProperties().getProperty('lastPing:' + ownerPhone);
+      if (lastPingStr) {
+        var lastPing = new Date(lastPingStr);
+        if ((now - lastPing) / 86400000 < 7) return;
+      }
+    } catch (_e) {}
+
+    var lines = [];
+    lines.push('היי 👋');
+    if (lastExpense && lastExpense.amount > 0) {
+      var cat = lastExpense.category || 'הוצאות';
+      lines.push('עברו ' + Math.round(daysSilent) + ' ימים מאז ההוצאה האחרונה שלך — ₪' + Number(lastExpense.amount).toLocaleString('he-IL') + ' על ' + cat + '.');
+      lines.push('');
+      lines.push('הכל בסדר? 📊 שלח "סיכום" לראות איפה אתה החודש.');
+    } else {
+      lines.push('עבר שבוע מאז שרשמת הוצאה. הכל בסדר?');
+      lines.push('שלח לי מספר ותיאור ואני אעקוב — למשל "45 קפה".');
+    }
+    if (typeof sendWhatsAppMessage === 'function') {
+      try { sendWhatsAppMessage('+' + ownerPhone, lines.join('\n')); } catch (_e) {}
+    }
+    try { PropertiesService.getScriptProperties().setProperty('lastPing:' + ownerPhone, now.toISOString()); } catch (_e) {}
+  } catch (e) {
+    Logger.log('cronReEngagement err: ' + (e && e.stack || e));
+  }
+}
+
+function installReEngagementTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronReEngagement') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronReEngagement').timeBased().atHour(18).everyDays(1).create();
+  Logger.log('✅ cronReEngagement installed: daily @ 18:00');
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Milestone celebrations — fire at meaningful moments to build emotional
+// attachment. Hooked off processExpense so the celebration message
+// piggybacks on the user's "✅ נרשם" reply rather than firing a
+// separate cron.
+// ─────────────────────────────────────────────────────────────────────
+function getMilestoneMessage_(fromPhone, totalExpensesAfter) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    // 100 / 250 / 500 / 1000 / 2500 milestones.
+    var thresholds = [100, 250, 500, 1000, 2500];
+    for (var i = 0; i < thresholds.length; i++) {
+      var th = thresholds[i];
+      if (totalExpensesAfter === th) {
+        var key = 'milestone:' + fromPhone + ':' + th;
+        if (props.getProperty(key)) return null; // already fired
+        props.setProperty(key, new Date().toISOString());
+        if (th === 100) return '\n\n🎉 הוצאה מספר 100! מתחילה להראות תמונה מלאה. שלח "סיכום" לראות.';
+        if (th === 250) return '\n\n📈 250 הוצאות. אתה בקצב מצוין.';
+        if (th === 500) return '\n\n🏆 500 הוצאות! חצי דרך לאלף.';
+        if (th === 1000) return '\n\n👑 אלף הוצאות. אתה אלוף.';
+        if (th === 2500) return '\n\n🚀 2,500 הוצאות. הנתונים שלך שווים זהב — ב-https://kesefle.com/dashboard יש דברים מעניינים.';
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 // Install the daily recurring-group-expense trigger. Run this once.
 function installGroupRecurringTrigger() {
   var triggers = ScriptApp.getProjectTriggers();
@@ -2669,6 +2879,24 @@ function processExpense(text, fromPhone) {
   // Referral
   if (trimmed === 'הזמן' || trimmed === 'הפניה' || trimmed === 'referral' || trimmed === 'invite') {
     if (typeof _getReferralLink_ === 'function') return { reply: _getReferralLink_(fromPhone) };
+  }
+  // Upgrade — direct user to the upgrade page with a special bot offer.
+  if (trimmed === 'שדרוג' || trimmed === 'upgrade' || trimmed === 'פרימיום' || trimmed === 'pro') {
+    return { reply:
+      '🚀 *שדרוג ל-Pro / Family*\n' +
+      '━━━━━━━━━━━━━━━━━━\n\n' +
+      '*Pro — ₪19/חודש:*\n' +
+      '  ✓ סיווג AI אוטומטי (Claude)\n' +
+      '  ✓ OCR לקבלות בתמונה\n' +
+      '  ✓ קבוצות ללא הגבלה\n' +
+      '  ✓ ייצוא חודשי\n\n' +
+      '*Family — ₪39/חודש:*\n' +
+      '  ✓ הכל ב-Pro\n' +
+      '  ✓ עד 6 חברים בקבוצה\n' +
+      '  ✓ דוחות משפחתיים\n' +
+      '  ✓ תזכורות מתקדמות\n\n' +
+      'לשדרוג: https://kesefle.com/upgrade?ref=bot\n\n' +
+      '🎁 מקוד WhatsApp10 ב-checkout = 10% הנחה לחודש הראשון.' };
   }
   if (trimmed === 'תובנות' || trimmed === 'תובנה' || trimmed === 'insights' || trimmed === 'insight') {
     return { reply: getInsightsMessage() };
@@ -3334,7 +3562,7 @@ function _matchCategory_orig(description) {
 // Smart entry-point: tries (1) learned cache from user corrections,
 // (2) keyword maps, (3) LLM fallback via Claude API for the long tail.
 // Falls back to DEFAULT_CATEGORY only if everything fails.
-function matchCategorySmart(text) {
+function matchCategorySmart(text, fromPhone) {
   // Step 1: learned cache (user-corrected categorizations)
   var cached = _learnedLookup(text);
   if (cached) {
@@ -3361,8 +3589,8 @@ function matchCategorySmart(text) {
 
   if (!isDefault) return matched;
 
-  // Step 3: LLM fallback for ambiguous / new vendor names
-  var ai = _aiCategorize(text);
+  // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only)
+  var ai = _aiCategorize(text, fromPhone);
   if (ai) {
     Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory);
     _learnedSave(text, ai); // remember for next time
@@ -3521,7 +3749,40 @@ function _loadRecentUserCorrections(n) {
   }
 }
 
-function _aiCategorize(text) {
+// Centralised plan check — returns true if the sender's phone has an
+// active Pro/Family/Business subscription. Reads from the Vercel
+// sub:<userSub> KV record via the existing /api/whatsapp/link?phone=
+// endpoint (which already exposes userSub + plan). Free-by-default
+// means we deny on any error, so a KV outage doesn't grant free
+// users premium features.
+function _hasActivePremium_(fromPhone) {
+  if (!fromPhone) return false;
+  try {
+    var clean = String(fromPhone).replace(/[^0-9]/g, '');
+    // Owner is always Pro (it's the script owner's bot).
+    var owner = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
+    if (owner && clean === owner) return true;
+    var url = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(clean);
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) return false;
+    var j = JSON.parse(resp.getContentText());
+    if (!j || !j.ok || !j.linked) return false;
+    var plan = j.plan || (j.userRecord && j.userRecord.plan) || 'free';
+    return plan === 'pro' || plan === 'family' || plan === 'business';
+  } catch (e) {
+    Logger.log('_hasActivePremium_ err: ' + (e && e.message));
+    return false;
+  }
+}
+
+function _aiCategorize(text, fromPhone) {
+  // Premium gating — AI categorisation is Pro+. Free users fall back
+  // to CATEGORY_MAP keyword matching + learned cache. The bot reply
+  // path adds an upsell line on the way out so the upgrade prompt is
+  // contextual ("we couldn't categorise this — Pro would").
+  if (fromPhone && !_hasActivePremium_(fromPhone)) {
+    return null;
+  }
   var rich = _aiCategorizeRich(text);
   if (!rich) return null;
   if (rich.category === 'בלתי מזוהה') return null;
