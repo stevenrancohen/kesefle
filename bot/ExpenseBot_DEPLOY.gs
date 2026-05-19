@@ -1588,6 +1588,341 @@ function deleteLastOrder() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Group expense commands ("כספלה ...") — Splitwise-style ledger
+//
+// WhatsApp Cloud API doesn't deliver group-chat webhooks, so we
+// implement "groups" as virtual ledgers anyone can join with a 6-char
+// invite code. Each member texts the bot 1:1 with "כספלה <command>"
+// and the bot routes everything by the member's active group pointer
+// (stored in KV via the Vercel /api/group endpoint).
+//
+// Supported sub-commands (all in Hebrew, English aliases where useful):
+//   כספלה צור <name>           Create a new group, return invite code
+//   כספלה הצטרף <code>          Join an existing group by code
+//   כספלה מצב                  Show current active group + member list
+//   כספלה החלף <code>           Switch active group
+//   כספלה עזוב                 Leave (clear active group pointer)
+//   כספלה <amount> <desc>      Record an expense, split equally among members
+//   כספלה יתרות                Show net balance per member + suggested transfers
+//   כספלה סידור                Same as יתרות, focused on transfers only
+//   כספלה הוצאות               Show the 5 most recent expenses
+//   כספלה הוסף <name> <phone>  Add a member manually
+//   כספלה הסר <phone>          Remove a member
+//   כספלה מחק                  Undo the last expense (payer/creator only)
+//   כספלה עזרה                 This help
+// ─────────────────────────────────────────────────────────────────────
+function _handleGroupCommand_(fromPhone, text) {
+  if (!text) return { handled: false };
+  // Strip the trigger word + optional separator.
+  var body = String(text).replace(/^\s*כספלה\s*[:\-]?\s*/i, '').trim();
+
+  // No body → show help.
+  if (!body || /^(עזרה|help|\?)$/i.test(body)) {
+    return { handled: true, replyText: _groupHelp_() };
+  }
+
+  // Sub-command parsing. We try the keyword commands first; anything
+  // starting with a digit is treated as a "record an expense" message.
+
+  // Create a new group: "צור [name]" / "create [name]" / "התחל [name]"
+  var mCreate = body.match(/^(?:צור|create|התחל|start|הקם)\s*(.*)$/i);
+  if (mCreate) return _groupCreate_(fromPhone, mCreate[1].trim());
+
+  // Join: "הצטרף <code>" / "join <code>" / "קוד <code>" — accept any
+  // form where the rest looks like a 6-char code.
+  var mJoin = body.match(/^(?:הצטרף|join|קוד\s+קבוצה|קוד)\s+([A-Z0-9]{6})\b/i);
+  if (mJoin) return _groupJoin_(fromPhone, mJoin[1].toUpperCase());
+
+  // Switch active group: "החלף <code>" / "switch <code>"
+  var mSwitch = body.match(/^(?:החלף|switch|מצב\s+קבוצה|הפעל)\s+([A-Z0-9]{6})\b/i);
+  if (mSwitch) return _groupSetActive_(fromPhone, mSwitch[1].toUpperCase());
+
+  // Leave the current group.
+  if (/^(?:עזוב|leave|יציאה)$/i.test(body)) return _groupLeave_(fromPhone);
+
+  // Status: "מצב" / "info" / "פרטים"
+  if (/^(?:מצב|info|פרטים|status)$/i.test(body)) return _groupInfo_(fromPhone);
+
+  // Balances + settlements
+  if (/^(?:יתרות|balances?|חוב)$/i.test(body)) return _groupBalances_(fromPhone, 'full');
+  if (/^(?:סידור|settle|העברות)$/i.test(body)) return _groupBalances_(fromPhone, 'settle');
+
+  // Recent expenses
+  if (/^(?:הוצאות|expenses|אחרונות|recent)$/i.test(body)) return _groupRecent_(fromPhone);
+
+  // Add / remove members
+  var mAdd = body.match(/^(?:הוסף|add)\s+(.+)$/i);
+  if (mAdd) return _groupAddMember_(fromPhone, mAdd[1]);
+  var mRm = body.match(/^(?:הסר|remove|delete)\s+(.+)$/i);
+  if (mRm) return _groupRemoveMember_(fromPhone, mRm[1]);
+
+  // Undo
+  if (/^(?:מחק|undo|בטל)$/i.test(body)) return _groupUndo_(fromPhone);
+
+  // Otherwise: treat as expense entry — must start with an amount.
+  if (/^\d/.test(body)) return _groupRecordExpense_(fromPhone, body);
+
+  return { handled: true, replyText: '😬 לא הבנתי. שלח "כספלה עזרה" לרשימת הפקודות.' };
+}
+
+function _groupHelp_() {
+  return '🤝 *כספלה — הוצאות קבוצתיות*\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    '*התחלה:*\n' +
+    '  • "כספלה צור משפחה כהן" — צור קבוצה חדשה\n' +
+    '  • "כספלה הצטרף ABC123" — הצטרף לקבוצה עם קוד\n' +
+    '  • "כספלה מצב" — הקבוצה הפעילה שלך\n\n' +
+    '*רישום הוצאות (פיצול שווה אוטומטי):*\n' +
+    '  • "כספלה 245 סופר"\n' +
+    '  • "כספלה 1200 ארנונה"\n\n' +
+    '*ניהול:*\n' +
+    '  • "כספלה יתרות" — מי חייב למי ובכמה\n' +
+    '  • "כספלה סידור" — העברות לסידור חובות\n' +
+    '  • "כספלה הוצאות" — 5 ההוצאות האחרונות\n' +
+    '  • "כספלה הוסף יוסי 972526003090" — הוסף חבר\n' +
+    '  • "כספלה הסר 972526003090" — הסר חבר\n' +
+    '  • "כספלה מחק" — בטל את ההוצאה האחרונה\n\n' +
+    '*החלפה:*\n' +
+    '  • "כספלה החלף ABC123" — עבור לקבוצה אחרת\n' +
+    '  • "כספלה עזוב" — צא מהקבוצה הנוכחית\n\n' +
+    'הקבוצה משותפת לכל החברים — כולם רואים את אותן ההוצאות והיתרות.';
+}
+
+// ============ HTTP helper for /api/group ============
+function _groupAPI_(action, payload) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) {
+    Logger.log('_groupAPI_: KESEFLE_BOT_SECRET not set in Script Properties');
+    return { ok: false, error: 'bot_secret_not_set' };
+  }
+  payload = payload || {};
+  payload.action = action;
+  payload.botSecret = secret;
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/group', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code < 200 || code >= 300) {
+      Logger.log('_groupAPI_ ' + action + ' HTTP ' + code + ': ' + body.slice(0, 300));
+      try { return JSON.parse(body); } catch (_je) { return { ok: false, error: 'http_' + code }; }
+    }
+    return JSON.parse(body);
+  } catch (e) {
+    Logger.log('_groupAPI_ ' + action + ' threw: ' + (e && e.message));
+    return { ok: false, error: 'fetch_threw', detail: e && e.message };
+  }
+}
+
+// ============ command implementations ============
+
+function _groupCreate_(fromPhone, name) {
+  var groupName = name && name.length > 0 ? name : 'הקבוצה שלי';
+  var senderName = _groupSenderName_(fromPhone);
+  var r = _groupAPI_('create', { creatorPhone: fromPhone, creatorName: senderName, groupName: groupName });
+  if (!r || !r.ok) {
+    return { handled: true, replyText: '😬 לא הצלחתי ליצור קבוצה: ' + (r && r.error || 'שגיאה') };
+  }
+  return { handled: true, replyText:
+    '✅ נוצרה קבוצה: *' + groupName + '*\n' +
+    '🔑 קוד הזמנה: *' + r.code + '*\n\n' +
+    'שתף את הקוד עם חברי הקבוצה כדי שיצטרפו:\n' +
+    '"כספלה הצטרף ' + r.code + '"\n\n' +
+    'או הזמן אותם ב-https://kesefle.com/group?code=' + r.code + '\n\n' +
+    'עכשיו אתה יכול לרשום הוצאה: "כספלה 245 סופר"' };
+}
+
+function _groupJoin_(fromPhone, code) {
+  var senderName = _groupSenderName_(fromPhone);
+  var r = _groupAPI_('join', { phone: fromPhone, name: senderName, code: code });
+  if (!r || !r.ok) {
+    if (r && r.error === 'group_not_found') {
+      return { handled: true, replyText: '😬 לא מצאתי קבוצה עם קוד "' + code + '". בדוק את הקוד ונסה שוב.' };
+    }
+    return { handled: true, replyText: '😬 לא הצלחתי להצטרף: ' + (r && r.error || 'שגיאה') };
+  }
+  var memberCount = r.group && r.group.members ? r.group.members.length : '?';
+  return { handled: true, replyText:
+    '✅ הצטרפת ל-*' + (r.group && r.group.name || 'הקבוצה') + '* (' + memberCount + ' חברים).\n\n' +
+    'מעכשיו "כספלה <סכום> <פירוט>" יירשם בקבוצה הזאת.\n' +
+    'נסה: "כספלה 50 קפה"' };
+}
+
+function _groupSetActive_(fromPhone, code) {
+  var r = _groupAPI_('setactive', { phone: fromPhone, code: code });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 לא הצלחתי להחליף: ' + (r && r.error || 'שגיאה') };
+  return { handled: true, replyText: '✅ עברת לקבוצה ' + code + '.' };
+}
+
+function _groupLeave_(fromPhone) {
+  var r = _groupAPI_('leave', { phone: fromPhone });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
+  return { handled: true, replyText: '👋 עזבת את הקבוצה. שלח "כספלה הצטרף <קוד>" כדי להצטרף לאחרת.' };
+}
+
+function _groupInfo_(fromPhone) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) {
+    return { handled: true, replyText: 'אתה לא בקבוצה כרגע. שלח "כספלה צור <שם>" או "כספלה הצטרף <קוד>".' };
+  }
+  var g = a.group;
+  var lines = [];
+  lines.push('📋 *' + g.name + '* — קוד ' + g.code);
+  lines.push('━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('חברים (' + g.members.length + '):');
+  g.members.forEach(function(m){ lines.push('  • ' + m.name); });
+  lines.push('');
+  lines.push('הוצאות נרשמו: ' + ((g.expenses || []).length));
+  return { handled: true, replyText: lines.join('\n') };
+}
+
+function _groupRecordExpense_(fromPhone, body) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) {
+    return { handled: true, replyText: 'אתה לא בקבוצה כרגע. שלח "כספלה צור <שם>" או "כספלה הצטרף <קוד>".' };
+  }
+  // Parse amount + description from the body. Reuse the bot's existing
+  // Israeli-format number parser so "1,200" works correctly.
+  var parsed = (typeof parseAmountAndDescription === 'function') ? parseAmountAndDescription(body) : null;
+  if (!parsed || !parsed.items || !parsed.items.length) {
+    return { handled: true, replyText: '😬 לא זיהיתי סכום. דוגמה: "כספלה 245 סופר"' };
+  }
+  var first = parsed.items[0];
+  var matched = null;
+  try { matched = typeof matchCategory === 'function' ? matchCategory(body) : null; } catch (_) {}
+  var category = (matched && matched.category) || '';
+  var subcategory = (matched && matched.subcategory && matched.subcategory !== matched.category) ? matched.subcategory : '';
+
+  var senderName = _groupSenderName_(fromPhone);
+  var r = _groupAPI_('addexpense', {
+    code: a.active,
+    payerPhone: fromPhone,
+    payerName: senderName,
+    amount: first.amount,
+    description: first.description,
+    category: category,
+    subcategory: subcategory,
+    splitMode: 'equal',
+  });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 כתיבת ההוצאה נכשלה: ' + (r && r.error || 'unknown') };
+  var perShare = (first.amount / r.memberCount).toFixed(2);
+  return { handled: true, replyText:
+    '✅ נרשם: ₪' + first.amount.toLocaleString('he-IL') + ' · ' + (first.description || category || 'הוצאה') + '\n' +
+    '👤 שולם ע"י: ' + senderName + '\n' +
+    '👥 פיצול שווה בין ' + r.memberCount + ' חברים (₪' + perShare + ' כל אחד)' };
+}
+
+function _groupBalances_(fromPhone, mode) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) {
+    return { handled: true, replyText: 'אתה לא בקבוצה. שלח "כספלה צור" או "כספלה הצטרף <קוד>".' };
+  }
+  var b = _groupAPI_('balances', { code: a.active });
+  if (!b || !b.ok) return { handled: true, replyText: '😬 שגיאה בקריאת היתרות.' };
+  if (!b.totalExpenses) return { handled: true, replyText: 'אין הוצאות עדיין בקבוצה. שלח "כספלה 245 סופר" כדי להתחיל.' };
+
+  var lines = [];
+  if (mode !== 'settle') {
+    lines.push('📊 *יתרות (' + a.active + ')*');
+    lines.push('━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    b.balances.forEach(function(m){
+      var arrow = m.net > 0 ? '🟢' : (m.net < 0 ? '🔴' : '⚪');
+      var verb = m.net > 0 ? 'מקבל' : (m.net < 0 ? 'חייב' : 'מאוזן');
+      var amt = Math.abs(m.net).toLocaleString('he-IL');
+      lines.push('  ' + arrow + ' ' + m.name + ': ' + verb + ' ₪' + amt);
+    });
+    lines.push('');
+  }
+  if (b.settlements && b.settlements.length) {
+    lines.push('💸 *העברות מומלצות:*');
+    b.settlements.forEach(function(t){
+      lines.push('  ' + t.fromName + ' → ' + t.toName + '  ₪' + t.amount.toLocaleString('he-IL'));
+    });
+  } else {
+    lines.push('✅ הקבוצה מאוזנת — אין צורך בהעברות.');
+  }
+  return { handled: true, replyText: lines.join('\n') };
+}
+
+function _groupRecent_(fromPhone) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) {
+    return { handled: true, replyText: 'אתה לא בקבוצה. שלח "כספלה צור" או "כספלה הצטרף <קוד>".' };
+  }
+  var r = _groupAPI_('recent', { code: a.active, limit: 10 });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה בקריאת ההוצאות.' };
+  if (!r.expenses || !r.expenses.length) return { handled: true, replyText: 'אין הוצאות עדיין.' };
+  var lines = ['🕒 *הוצאות אחרונות:*', ''];
+  r.expenses.forEach(function(e){
+    var when = e.timestamp ? e.timestamp.slice(5, 10).replace('-', '/') : '?';
+    lines.push('  ' + when + ' · ' + e.payerName + ' · ₪' + e.amount.toLocaleString('he-IL') + ' · ' + (e.description || e.category || ''));
+  });
+  return { handled: true, replyText: lines.join('\n') };
+}
+
+function _groupAddMember_(fromPhone, rest) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) {
+    return { handled: true, replyText: 'אתה לא בקבוצה. שלח "כספלה צור".' };
+  }
+  // Accept "name 972XXX" or just "972XXX". Phone must be present.
+  var m = rest.match(/(\+?\d[\d\-\s]{6,15})/);
+  if (!m) return { handled: true, replyText: '😬 צריך מספר טלפון. דוגמה: "כספלה הוסף יוסי 972526003090"' };
+  var phone = m[1].replace(/\D+/g, '');
+  var name = rest.replace(m[0], '').trim() || phone;
+  var r = _groupAPI_('addmember', { code: a.active, phone: phone, name: name });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 הוספה נכשלה: ' + (r && r.error || 'unknown') };
+  return { handled: true, replyText: '✅ הוסף ' + name + ' (' + r.members + ' חברים בסה"כ).' };
+}
+
+function _groupRemoveMember_(fromPhone, rest) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) {
+    return { handled: true, replyText: 'אתה לא בקבוצה.' };
+  }
+  var m = rest.match(/(\+?\d[\d\-\s]{6,15})/);
+  if (!m) return { handled: true, replyText: '😬 ציין מספר טלפון של החבר להסרה.' };
+  var phone = m[1].replace(/\D+/g, '');
+  var r = _groupAPI_('removemember', { code: a.active, phone: phone });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 הסרה נכשלה.' };
+  return { handled: true, replyText: '🗑 הוסר מהקבוצה (' + r.members + ' חברים נותרו).' };
+}
+
+function _groupUndo_(fromPhone) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה.' };
+  var r = _groupAPI_('undo', { code: a.active, requesterPhone: fromPhone });
+  if (!r || !r.ok) {
+    if (r && r.error === 'only_payer_or_creator_can_undo') {
+      return { handled: true, replyText: '😬 רק מי ששילם או מי שיצר את הקבוצה יכול לבטל את ההוצאה האחרונה.' };
+    }
+    return { handled: true, replyText: '😬 ביטול נכשל.' };
+  }
+  if (!r.removed) return { handled: true, replyText: 'אין הוצאות לביטול.' };
+  var e = r.removed;
+  return { handled: true, replyText: '🗑 בוטלה: ₪' + Number(e.amount).toLocaleString('he-IL') + ' · ' + (e.description || '') };
+}
+
+// Read the user's WhatsApp profile name from the most-recent message
+// metadata if Apps Script saved one (it doesn't by default — falls back
+// to phone). Future: thread the `profile.name` from doPost into here.
+function _groupSenderName_(fromPhone) {
+  try {
+    var saved = PropertiesService.getScriptProperties().getProperty('profileName:' + fromPhone);
+    if (saved) return saved;
+  } catch (_e) {}
+  return String(fromPhone);
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Multi-tenant helpers
 //
 // The Apps Script bot was originally written as a single-tenant tool
@@ -1697,6 +2032,22 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
 function processExpense(text, fromPhone) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
+  }
+
+  // ───── GROUP COMMAND ROUTER ─────
+  // Any message starting with "כספלה" enters Splitwise-style group mode:
+  // create / join / record split expenses / settle. Runs BEFORE the
+  // multi-tenant router so group messages never accidentally write to
+  // a user's personal sheet.
+  try {
+    if (/^\s*כספלה(?=\s|$)/i.test(text) && typeof _handleGroupCommand_ === 'function') {
+      var __groupRes = _handleGroupCommand_(fromPhone, text);
+      if (__groupRes && __groupRes.handled) {
+        return { reply: __groupRes.replyText || '' };
+      }
+    }
+  } catch (__grpErr) {
+    Logger.log('group router err: ' + (__grpErr && __grpErr.message));
   }
 
   // ───── MULTI-TENANT ROUTER ─────
@@ -3921,6 +4272,12 @@ function getHelpMessage() {
     '  • הבוט יחשב רווח אוטומטית ויעדכן את מאזן חברה\n\n' +
     '💳 *פיצול לתשלומים:*\n' +
     '  • "5000 ב-10 תשלומים מחשב"\n\n' +
+    '🤝 *הוצאות קבוצתיות (חדש):*\n' +
+    '  • "כספלה צור משפחה כהן" — צור קבוצה\n' +
+    '  • "כספלה הצטרף ABC123" — הצטרף בקוד\n' +
+    '  • "כספלה 245 סופר" — רישום עם פיצול שווה\n' +
+    '  • "כספלה יתרות" — מי חייב למי\n' +
+    '  • "כספלה עזרה" — תפריט קבוצות מלא\n\n' +
     '📊 *פקודות מהירות:*\n' +
     '  • "סיכום" — סיכום החודש\n' +
     '  • "הזמנות" — סיכום הזמנות החודש (לקוחות, מחזור, רווח)\n' +
