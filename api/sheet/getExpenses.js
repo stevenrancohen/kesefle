@@ -1,4 +1,5 @@
 import { requireUser } from '../_lib/session.js';
+import { getGoogleClientId } from '../../lib/auth.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -23,7 +24,7 @@ async function kvSet(key, value) {
 }
 
 async function refreshAccessToken(refreshToken) {
-  const clientId = process.env.GOOGLE_CLIENT_ID || '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
+  const clientId = getGoogleClientId();
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientSecret) throw new Error('GOOGLE_CLIENT_SECRET missing');
   const params = new URLSearchParams({

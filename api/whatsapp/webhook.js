@@ -13,6 +13,7 @@
 import crypto from 'node:crypto';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { rateLimit } from '../../lib/ratelimit.js';
+import { getGoogleClientId } from '../../lib/auth.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -440,7 +441,7 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
 // Exchanges a Google OAuth refresh token for a fresh access token.
 // Returns the access token string. Throws on failure.
 async function exchangeRefreshForAccess(refreshToken /*, forceRefresh */) {
-  const clientId = process.env.GOOGLE_CLIENT_ID || '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
+  const clientId = getGoogleClientId();
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientSecret) {
     throw new Error('GOOGLE_CLIENT_SECRET env var missing');

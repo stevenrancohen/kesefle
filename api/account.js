@@ -17,6 +17,7 @@ import { requireAuth } from '../lib/auth.js';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken } from '../lib/crypto.js';
+import { getGoogleClientId } from '../lib/auth.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -50,7 +51,7 @@ async function revokeGoogleToken(refreshToken) {
 }
 
 async function exchangeRefreshForAccess(refreshToken) {
-  const clientId = process.env.GOOGLE_CLIENT_ID || '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
+  const clientId = getGoogleClientId();
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientSecret) throw new Error('GOOGLE_CLIENT_SECRET env var missing');
   const params = new URLSearchParams({

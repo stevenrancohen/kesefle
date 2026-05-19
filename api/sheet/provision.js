@@ -10,6 +10,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { getGoogleClientId } from '../../lib/auth.js';
 
 // Server-side verification of a Google OAuth access token.
 // Returns { sub, email, scope, ... } if valid, throws if not.
@@ -24,7 +25,7 @@ async function verifyAccessToken(accessToken) {
   if (info.error) throw new Error('tokeninfo_error_' + info.error);
   if (!info.sub) throw new Error('tokeninfo_missing_sub');
   // Check audience matches our OAuth client
-  const expectedAud = process.env.GOOGLE_CLIENT_ID || '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
+  const expectedAud = getGoogleClientId();
   if (info.aud && info.aud !== expectedAud) throw new Error('tokeninfo_aud_mismatch');
   // Check scopes include drive.file + drive.readonly + spreadsheets.
   // drive.readonly is required to read the template Sheet (which the user

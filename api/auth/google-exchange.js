@@ -26,6 +26,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { encryptRefreshToken } from '../../lib/crypto.js';
 import { setSessionCookie } from '../_lib/session.js';
+import { getGoogleClientId } from '../../lib/auth.js';
 
 async function kvSetTokenRecord(kvUrl, kvToken, userSub, record) {
   await fetch(`${kvUrl}/set/${encodeURIComponent('token:' + userSub)}`, {
@@ -67,7 +68,7 @@ async function handlerImpl(req, res) {
   if (!codeVerifier) return res.status(400).json({ ok: false, error: 'missing codeVerifier' });
   if (!redirectUri) return res.status(400).json({ ok: false, error: 'missing redirectUri' });
 
-  const clientId = process.env.GOOGLE_CLIENT_ID || '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com';
+  const clientId = getGoogleClientId();
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientSecret) {
     return res.status(500).json({ ok: false, error: 'server misconfigured: GOOGLE_CLIENT_SECRET missing' });
