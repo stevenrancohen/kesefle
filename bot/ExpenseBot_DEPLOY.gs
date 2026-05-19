@@ -1314,6 +1314,166 @@ function _handleTimezoneCommand_(fromPhone, text) {
 // ============================================================
 
 // ─────────────────────────────────────────────────────────────────────
+// Rich business-order parser
+//
+// Handles messages like:
+//   "עסק 880 שם לקוח אביזכר גודל תמונה 120-80 קנבס עלות ייצור 240 עלות מכירה 880 משלוח 45"
+//   "עסק 1200 לקוח שרון 50x70 בד עלות 400 משלוח 30"
+//   "עסק 880 אביזכר 120-80 קנבס ייצור 240 מכירה 880 משלוח 45"
+//
+// Extracts the labeled fields (customer, size, material, production cost,
+// sale price, shipping) so we can write a structured row into the הזמנות
+// tab and compute profit, rather than dumping the whole string into the
+// flat תנועות sheet. Returns null if the message doesn't look like a
+// rich order (so the caller falls back to the existing one-line flow).
+// ─────────────────────────────────────────────────────────────────────
+var _ORDER_MATERIALS_ = ['קנבס','בד','נייר','אקריליק','עץ','זכוכית','מתכת','PVC','קרטון','משי','עור','פוליאסטר'];
+
+function parseBusinessOrder_(text) {
+  if (!text) return null;
+  var s = String(text).trim();
+  // Must start with the עסק / biz prefix; otherwise treat as personal.
+  if (!/^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s)) return null;
+  s = s.replace(/^(עסק|biz|business)\s*[:\-]?\s*/i, '');
+
+  function _num(re) {
+    var m = s.match(re);
+    if (!m) return null;
+    var raw = m[1].replace(/,/g, '');
+    var n = parseFloat(raw);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+  function _word(re) {
+    var m = s.match(re);
+    return m ? m[1].trim() : null;
+  }
+
+  // Numeric fields — each label has 2-3 Hebrew + English aliases so the
+  // user can write fluidly. Whichever matches first wins.
+  var productionCost = _num(/(?:עלות\s+ייצור|ייצור|עלות\s+חומר|production)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  var salePrice      = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירה|מחיר|sale)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  var shipping       = _num(/(?:משלוח|שילוח|דמי\s+משלוח|shipping)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+
+  // Customer name: "שם לקוח X" / "לקוח X" / "ל לקוח X" — grabs the next
+  // 1–3 Hebrew words up to the next labelled field or digit run.
+  var customer = _word(/(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s*([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|משלוח|שילוח|\d{2,})|$)/i);
+
+  // Size: accepts "120-80", "120x80", "120×80", optional "ס\"מ" / "cm".
+  var sizeRaw = _word(/(?:גודל(?:\s+תמונה)?|size)\s*[:=]?\s*([0-9]+\s*[-xX×]\s*[0-9]+(?:\s*(?:cm|ס["׳']?ם))?)/i);
+  if (!sizeRaw) {
+    // Fall back: any bare "NxN" / "N-N" pattern (e.g. user wrote
+    // "אביזכר 120-80 קנבס" without the "גודל" label).
+    var sizeMatch = s.match(/(?:^|\s)([0-9]{2,4}\s*[-xX×]\s*[0-9]{2,4})(?=\s|$)/);
+    if (sizeMatch) sizeRaw = sizeMatch[1];
+  }
+  var size = sizeRaw ? sizeRaw.replace(/\s+/g, '').replace(/[xX×]/, '×') : null;
+
+  // Material: look for any of the known material tokens. First hit wins.
+  var material = null;
+  for (var i = 0; i < _ORDER_MATERIALS_.length; i++) {
+    var mat = _ORDER_MATERIALS_[i];
+    if (new RegExp('(?:^|\\s)' + mat + '(?:\\s|$)', 'i').test(s)) { material = mat; break; }
+  }
+
+  // Headline amount — first standalone number that ISN'T already eaten
+  // by one of the labelled fields. Used as a fallback for salePrice and
+  // for the תנועות "amount" column.
+  var headline = null;
+  var allNums = s.match(/\d+(?:[.,]\d+)?/g) || [];
+  for (var j = 0; j < allNums.length; j++) {
+    var n = parseFloat(allNums[j].replace(',', ''));
+    if (!isFinite(n) || n <= 0) continue;
+    // Skip if this number is the only digit in a size like "120-80"
+    if (/-\s*\d/.test(allNums[j]) || /×|x/i.test(allNums[j])) continue;
+    headline = n;
+    break;
+  }
+  if (salePrice == null && headline != null) salePrice = headline;
+
+  // Only treat as a "rich order" when we got at least 2 distinct fields
+  // beyond a bare amount. Otherwise the caller falls back to the existing
+  // dropdown flow (which serves "עסק 24 שיווק" style messages).
+  var fieldsFound = 0;
+  if (customer)       fieldsFound++;
+  if (size)           fieldsFound++;
+  if (material)       fieldsFound++;
+  if (productionCost) fieldsFound++;
+  if (shipping)       fieldsFound++;
+  if (salePrice && headline !== salePrice) fieldsFound++;
+  if (fieldsFound < 2) return null;
+
+  var profit = null;
+  if (salePrice != null) {
+    profit = salePrice - (productionCost || 0) - (shipping || 0);
+  }
+
+  return {
+    customer:       customer || '',
+    size:           size || '',
+    material:       material || '',
+    productionCost: productionCost,
+    salePrice:      salePrice,
+    shipping:       shipping,
+    profit:         profit,
+    rawText:        text,
+    amount:         salePrice || headline || 0,
+  };
+}
+
+// Append a parsed order to the הזמנות tab on the company sheet. Columns
+// (A-L) match the existing year-tab order log we already maintain:
+//   A: timestamp
+//   B: month (yyyy-MM)
+//   C: customer
+//   D: size
+//   E: material
+//   F: production cost
+//   G: sale price
+//   H: shipping
+//   I: profit
+//   J: source ('WhatsApp')
+//   K: raw text
+//   L: status ('paid' assumed; user can edit)
+function _writeOrderRow_(parsed) {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(ORDERS_TAB_NAME);
+    if (!sheet) {
+      Logger.log('_writeOrderRow_: orders tab "' + ORDERS_TAB_NAME + '" not found');
+      return { ok: false, error: 'orders_tab_not_found' };
+    }
+    var now = new Date();
+    var month = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    var row = [
+      now,
+      month,
+      sanitizeForSheet(parsed.customer),
+      sanitizeForSheet(parsed.size),
+      sanitizeForSheet(parsed.material),
+      parsed.productionCost || 0,
+      parsed.salePrice || 0,
+      parsed.shipping || 0,
+      parsed.profit != null ? parsed.profit : '',
+      'WhatsApp',
+      sanitizeForSheet(parsed.rawText),
+      'paid',
+    ];
+    sheet.appendRow(row);
+    // Also push the gross revenue into the מאזן חברה dashboard so the
+    // monthly מחזור ברוטו cell reflects the new order immediately.
+    try {
+      if (typeof _updateBusinessDashboard_ === 'function' && parsed.salePrice) {
+        _updateBusinessDashboard_('עסק', 'מחזור', month, parsed.salePrice);
+      }
+    } catch (_dashErr) { Logger.log('_writeOrderRow_ dashboard err: ' + (_dashErr && _dashErr.message)); }
+    return { ok: true, rowNumber: sheet.getLastRow() };
+  } catch (e) {
+    Logger.log('_writeOrderRow_ THREW: ' + (e && e.stack || e));
+    return { ok: false, error: 'append_threw', detail: e && e.message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Multi-tenant helpers
 //
 // The Apps Script bot was originally written as a single-tenant tool
@@ -1510,6 +1670,36 @@ function processExpense(text, fromPhone) {
   }
   var __hIsBiz = /^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(__hT);
   if (__hIsBiz) {
+    // First try the rich-order parser. If the message contains at least
+    // 2 labelled fields (customer, size, material, costs, shipping…) we
+    // write a structured row to the orders tab and bypass the dropdown
+    // flow entirely. Simpler "עסק 24 שיווק" messages return null here
+    // and continue to the existing categoriser below.
+    try {
+      var __order = parseBusinessOrder_(__hT);
+      if (__order) {
+        __hProps.deleteProperty('smart_pending');
+        var __orderRes = _writeOrderRow_(__order);
+        if (__orderRes.ok) {
+          var __ln = [];
+          __ln.push('✅ הזמנה נרשמה');
+          if (__order.customer) __ln.push('👤 ' + __order.customer);
+          if (__order.size || __order.material) {
+            __ln.push('🖼 ' + [__order.size, __order.material].filter(Boolean).join(' · '));
+          }
+          if (__order.salePrice)      __ln.push('💰 מחזור: ₪' + Number(__order.salePrice).toLocaleString('he-IL'));
+          if (__order.productionCost) __ln.push('🏭 עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
+          if (__order.shipping)       __ln.push('🚚 משלוח: ₪' + Number(__order.shipping).toLocaleString('he-IL'));
+          if (__order.profit != null) __ln.push('📈 רווח: ₪' + Number(__order.profit).toLocaleString('he-IL'));
+          return { reply: __ln.join('\n') };
+        }
+        Logger.log('order parse OK but write failed: ' + (__orderRes && __orderRes.error));
+        // Fall through to legacy path if the orders-tab write blew up.
+      }
+    } catch (__orderErr) {
+      Logger.log('parseBusinessOrder_ THREW: ' + (__orderErr && __orderErr.message));
+    }
+
     var __hAM = __hT.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)/);
     var __hA = __hAM ? parseFloat(__hAM[1]) : null;
     if (__hA && __hA > 0) {
