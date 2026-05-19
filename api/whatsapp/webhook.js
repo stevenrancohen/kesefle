@@ -14,6 +14,7 @@ import crypto from 'node:crypto';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { rateLimit } from '../../lib/ratelimit.js';
 import { getGoogleClientId } from '../../lib/auth.js';
+import { withRequestId, log } from '../../lib/log.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -52,7 +53,7 @@ async function sendReply(toPhone, text) {
   const phoneId = process.env.META_PHONE_NUMBER_ID;
   const token = process.env.META_ACCESS_TOKEN;
   if (!phoneId || !token) {
-    console.warn('cannot send reply — META env vars missing');
+    log.warn('wa.send_reply.env_missing', {});
     return;
   }
   try {
@@ -70,11 +71,11 @@ async function sendReply(toPhone, text) {
       }),
     });
   } catch (e) {
-    console.error('reply send failed', e);
+    log.error('wa.send_reply.failed', { error: e.message });
   }
 }
 
-export default async function handler(req, res) {
+async function handlerImpl(req, res) {
   // 1. Verification handshake (GET) — Meta calls this when you set up the webhook.
   if (req.method === 'GET') {
     const mode = req.query['hub.mode'];
@@ -116,7 +117,7 @@ export default async function handler(req, res) {
   // paths against fake messages. Matches the Stripe webhook's behaviour.
   const appSecret = process.env.META_APP_SECRET;
   if (!appSecret) {
-    console.error('webhook rejected — META_APP_SECRET not configured');
+    log.error('wa.webhook.app_secret_missing', { reqId: req.reqId });
     return res.status(503).json({ ok: false, error: 'webhook_secret_not_configured' });
   }
   const sig = req.headers['x-hub-signature-256'];
@@ -303,7 +304,7 @@ export default async function handler(req, res) {
     await sendReply(fromPhone, `✅ נרשם: ₪${parsed.amount} · ${parsed.category}`);
   } else {
     await sendReply(fromPhone, '⚠️ הוצאתי את ההודעה אבל לא הצלחתי לכתוב לגיליון. בודק…');
-    console.error('sheet write failed', writeResult);
+    log.error('wa.sheet_write.failed', { reqId: req.reqId, phone: fromPhone, error: writeResult.error, detail: writeResult.detail });
   }
 
   return res.status(200).json({ ok: true });
@@ -463,3 +464,6 @@ async function exchangeRefreshForAccess(refreshToken /*, forceRefresh */) {
   }
   return j.access_token;
 }
+
+
+export default withRequestId(handlerImpl);
