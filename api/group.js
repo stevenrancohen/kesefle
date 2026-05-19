@@ -29,9 +29,73 @@
 
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
+import { decryptRefreshToken } from '../lib/crypto.js';
+import { exchangeRefreshForAccess, appendRowToUserSheet, sanitizeCell, copyTemplateToUserDrive, appendRowToTab, GROUP_LEDGER_TAB } from '../lib/sheet-writer.js';
+
+// Look up a user record by phone (resolved via the existing phone:E164
+// → user mapping that the OAuth signup + WhatsApp link flow populates).
+// Returns null if no user owns this phone.
+async function findUserByPhone(phone) {
+  const phoneRec = await kvGet('phone:' + phone);
+  if (!phoneRec || !phoneRec.userSub) return null;
+  const userRec = await kvGet('user:' + phoneRec.userSub);
+  if (!userRec) return null;
+  // Merge in sheet info if the caller hasn't already.
+  if (!userRec.spreadsheetId && phoneRec.spreadsheetId) {
+    userRec.spreadsheetId = phoneRec.spreadsheetId;
+  }
+  if (!userRec.userSub) userRec.userSub = phoneRec.userSub;
+  return userRec;
+}
+
+// Best-effort write a group expense into the creator's Google Sheet.
+// Non-fatal: if the creator hasn't signed up via OAuth (no refresh
+// token) or the sheet write fails, the KV ledger is still authoritative
+// and the bot keeps working.
+async function writeGroupExpenseToSheet(group, expense, loggerName) {
+  if (!group || !group.sheetId || !group.createdBy) return { ok: false, error: 'no_sheet' };
+  const creator = await findUserByPhone(group.createdBy);
+  if (!creator) return { ok: false, error: 'creator_not_oauth' };
+  const refresh = creator.refreshTokenEnvelope ? null : creator.refreshToken;
+  const envelope = creator.refreshTokenEnvelope;
+  if (!refresh && !envelope) return { ok: false, error: 'no_refresh' };
+
+  const shares = expense.shares || {};
+  const participants = Object.keys(shares).join(', ');
+  const sharesCsv = Object.entries(shares).map(([p, s]) => `${p}:${s}`).join(', ');
+  // Columns: A timestamp | B amount | C category | D description |
+  //           E paid-by name | F participants | G split type |
+  //           H individual shares (CSV) | I logged-by name |
+  //           J payer-phone | K group-code
+  const row = [
+    expense.timestamp || new Date().toISOString(),
+    Number(expense.amount) || 0,
+    sanitizeCell(expense.category || ''),
+    sanitizeCell(expense.description || ''),
+    sanitizeCell(loggerName || expense.payerPhone),
+    sanitizeCell(participants),
+    sanitizeCell(expense.splitMode || 'equal'),
+    sanitizeCell(sharesCsv),
+    sanitizeCell(loggerName || ''),
+    sanitizeCell(expense.payerPhone || ''),
+    sanitizeCell(group.code || ''),
+  ];
+  return appendRowToTab({
+    refreshTokenEnvelope: envelope,
+    refreshToken: refresh,
+    userSub: creator.userSub,
+    spreadsheetId: group.sheetId,
+    tabName: GROUP_LEDGER_TAB,
+    row,
+  });
+}
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+// Optional but recommended: the master template the bot copies on
+// "כספלה צור". If unset, we skip sheet creation and the group lives
+// in KV only (still functional, just no per-sheet audit trail).
+const GROUP_SHEET_TEMPLATE_ID = process.env.GROUP_SHEET_TEMPLATE_ID;
 
 async function kvGet(key) {
   if (!KV_URL || !KV_TOKEN) return null;
@@ -172,9 +236,40 @@ async function handlerImpl(req, res) {
         createdAt: new Date().toISOString(),
         members: [{ phone: creatorPhone, name: creatorName, joinedAt: new Date().toISOString() }],
         expenses: [],
+        sheetId: null,
+        sheetUrl: null,
       };
+      // Best-effort provision a shared Google Sheet in the creator's
+      // Drive — the principle of "user owns their data". Falls back
+      // gracefully if the creator hasn't OAuth'd or the template ID
+      // isn't configured; KV is still the source of truth for fast
+      // reads, the sheet is the audit trail.
+      if (GROUP_SHEET_TEMPLATE_ID) {
+        try {
+          const creator = await findUserByPhone(creatorPhone);
+          if (creator && (creator.refreshToken || creator.refreshTokenEnvelope)) {
+            const result = await copyTemplateToUserDrive({
+              refreshTokenEnvelope: creator.refreshTokenEnvelope,
+              refreshToken: creator.refreshToken,
+              userSub: creator.userSub,
+              templateId: GROUP_SHEET_TEMPLATE_ID,
+              name: `כסף'לה — ${groupName} (${code})`,
+            });
+            group.sheetId = result.spreadsheetId;
+            group.sheetUrl = result.spreadsheetUrl;
+            log.info('group.sheet_created', { reqId: req.reqId, code, sheetId: result.spreadsheetId });
+          } else {
+            log.info('group.sheet_skipped_no_oauth', { reqId: req.reqId, code });
+          }
+        } catch (e) {
+          // Don't fail the group creation just because the sheet copy
+          // hit a quota or API hiccup — the KV ledger still works.
+          log.warn('group.sheet_create_failed', { reqId: req.reqId, code, error: e.message });
+        }
+      }
       await kvSet('group:' + code, group);
       await kvSet('memberGroup:' + creatorPhone, { code, since: new Date().toISOString() });
+      await addToPhoneGroups(creatorPhone, code);
       return res.status(200).json({ ok: true, code, group });
     }
 
@@ -192,6 +287,7 @@ async function handlerImpl(req, res) {
         await kvSet('group:' + code, group);
       }
       await kvSet('memberGroup:' + phone, { code, since: new Date().toISOString() });
+      await addToPhoneGroups(phone, code);
       return res.status(200).json({ ok: true, code, group, joined: !exists });
     }
 
@@ -298,11 +394,23 @@ async function handlerImpl(req, res) {
       };
       group.expenses = group.expenses || [];
       group.expenses.push(expense);
-      // Keep the in-memory ledger bounded so KV writes stay fast — at
-      // 500 rows the bot already needs the spreadsheet anyway.
       if (group.expenses.length > 1000) group.expenses = group.expenses.slice(-1000);
       await kvSet('group:' + code, group);
-      return res.status(200).json({ ok: true, expense, memberCount: group.members.length });
+      // Mirror to the creator's Google Sheet for data-ownership. KV
+      // remains authoritative for fast reads; the sheet is the audit
+      // log members can verify against. Best-effort — never blocks the
+      // bot reply, just logs on failure.
+      let sheetWriteOk = false;
+      try {
+        const w = await writeGroupExpenseToSheet(group, expense, String(body.payerName || ''));
+        sheetWriteOk = !!(w && w.ok);
+        if (!sheetWriteOk) {
+          log.warn('group.sheet_mirror_failed', { reqId: req.reqId, code, error: w?.error });
+        }
+      } catch (e) {
+        log.warn('group.sheet_mirror_threw', { reqId: req.reqId, code, error: e.message });
+      }
+      return res.status(200).json({ ok: true, expense, memberCount: group.members.length, sheetWriteOk });
     }
 
     case 'balances': {
@@ -388,8 +496,120 @@ async function handlerImpl(req, res) {
       return res.status(200).json({ ok: true, members: group.members.length });
     }
 
+    case 'resync': {
+      // Force a sheet provision for a group that was created before its
+      // creator OAuth'd, or whose template wasn't configured at the time.
+      const code = String(body.code || '').trim().toUpperCase();
+      const group = await kvGet('group:' + code);
+      if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      if (group.sheetId) {
+        return res.status(200).json({ ok: true, sheetUrl: group.sheetUrl, already: true });
+      }
+      if (!GROUP_SHEET_TEMPLATE_ID) return res.status(503).json({ ok: false, error: 'template_not_configured' });
+      const creator = await findUserByPhone(group.createdBy);
+      if (!creator || (!creator.refreshToken && !creator.refreshTokenEnvelope)) {
+        return res.status(412).json({ ok: false, error: 'creator_not_oauth' });
+      }
+      try {
+        const r = await copyTemplateToUserDrive({
+          refreshTokenEnvelope: creator.refreshTokenEnvelope,
+          refreshToken: creator.refreshToken,
+          userSub: creator.userSub,
+          templateId: GROUP_SHEET_TEMPLATE_ID,
+          name: `כסף'לה — ${group.name} (${group.code})`,
+        });
+        group.sheetId = r.spreadsheetId;
+        group.sheetUrl = r.spreadsheetUrl;
+        // Backfill: replay every expense into the brand-new sheet so the
+        // sheet matches the KV ledger exactly. Sequential to keep order.
+        let mirrored = 0;
+        for (const exp of (group.expenses || [])) {
+          const w = await writeGroupExpenseToSheet(group, exp, '');
+          if (w && w.ok) mirrored++;
+        }
+        await kvSet('group:' + code, group);
+        return res.status(200).json({ ok: true, sheetUrl: group.sheetUrl, mirrored });
+      } catch (e) {
+        log.error('group.resync_failed', { reqId: req.reqId, code, error: e.message });
+        return res.status(502).json({ ok: false, error: 'resync_failed', detail: e.message });
+      }
+    }
+
+    case 'mygroups': {
+      // List all groups a user is a member of. Used by "כספלה הקשר"
+      // to show "you're in group X (active) and groups Y, Z."
+      const phone = normalizeE164(body.phone);
+      if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
+      // Linear scan over all `group:*` keys is fine at our scale. If
+      // groups grow into the thousands, add a `phoneGroups:<phone>` index.
+      const idxKey = 'phoneGroups:' + phone;
+      const idx = await kvGet(idxKey);
+      const codes = Array.isArray(idx) ? idx : [];
+      const groups = [];
+      for (const c of codes) {
+        const g = await kvGet('group:' + c);
+        if (g) groups.push({ code: g.code, name: g.name, memberCount: g.members.length, expenseCount: (g.expenses || []).length });
+      }
+      const active = await kvGet('memberGroup:' + phone);
+      return res.status(200).json({ ok: true, active: active?.code || null, groups });
+    }
+
+    case 'addrecurring': {
+      // Recurring expense templates (rent, utilities). Stored on the
+      // group record; a cron in Apps Script triggers them.
+      const code = String(body.code || '').trim().toUpperCase();
+      const payerPhone = normalizeE164(body.payerPhone);
+      const amount = Number(body.amount);
+      const intervalRaw = String(body.interval || 'monthly').toLowerCase();
+      const allowed = { monthly: 30, weekly: 7, biweekly: 14, daily: 1 };
+      const intervalDays = allowed[intervalRaw];
+      if (!code || !payerPhone || !isFinite(amount) || amount <= 0 || !intervalDays) {
+        return res.status(400).json({ ok: false, error: 'invalid_args' });
+      }
+      const group = await kvGet('group:' + code);
+      if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      group.recurring = group.recurring || [];
+      group.recurring.push({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        payerPhone,
+        amount: Math.round(amount * 100) / 100,
+        description: String(body.description || '').slice(0, 200),
+        intervalDays,
+        intervalLabel: intervalRaw,
+        createdAt: new Date().toISOString(),
+        lastFiredAt: null,
+        active: true,
+      });
+      await kvSet('group:' + code, group);
+      return res.status(200).json({ ok: true, recurring: group.recurring });
+    }
+
+    case 'listrecurring': {
+      const code = String(body.code || '').trim().toUpperCase();
+      const group = await kvGet('group:' + code);
+      if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      return res.status(200).json({ ok: true, recurring: group.recurring || [] });
+    }
+
     default:
       return res.status(400).json({ ok: false, error: 'unknown_action', got: action });
+  }
+}
+
+// When a user joins a group we ALSO keep a phoneGroups:<phone> index of
+// every group they're in. The mygroups action above relies on it. Done
+// here as a separate helper so the existing join/create paths can call
+// it without growing too much.
+async function addToPhoneGroups(phone, code) {
+  try {
+    const existing = await kvGet('phoneGroups:' + phone);
+    const list = Array.isArray(existing) ? existing : [];
+    if (!list.includes(code)) {
+      list.push(code);
+      await kvSet('phoneGroups:' + phone, list);
+    }
+  } catch (e) {
+    log.warn('phoneGroups.write_failed', { phone, code, error: e.message });
   }
 }
 

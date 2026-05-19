@@ -1568,6 +1568,28 @@ function _handleGroupCommand_(fromPhone, text) {
   // Status: "מצב" / "info" / "פרטים"
   if (/^(?:מצב|info|פרטים|status)$/i.test(body)) return _groupInfo_(fromPhone);
 
+  // Context: show "active group" + all groups the user belongs to.
+  if (/^(?:הקשר|context|רשימה|הקבוצות שלי|my groups)$/i.test(body)) return _groupContext_(fromPhone);
+
+  // Personal mode: clear the active-group pointer so plain expenses
+  // (without a "כספלה" prefix) go to the personal sheet again.
+  if (/^(?:אישי|personal|מצב אישי)$/i.test(body)) return _groupLeave_(fromPhone, /*personal*/ true);
+
+  // Quick switch to a specific group by code.
+  var mSwitchTo = body.match(/^(?:עבור\s+ל|switch\s+to|הפעל\s+קבוצה)\s+([A-Z0-9]{6})\b/i);
+  if (mSwitchTo) return _groupSetActive_(fromPhone, mSwitchTo[1].toUpperCase());
+
+  // Force a sheet provision / resync for the active group.
+  if (/^(?:סנכרן|resync|רענן)$/i.test(body)) return _groupResync_(fromPhone);
+
+  // Group report (alias for balances, kept for family-mode parity).
+  if (/^(?:דו(?:["׳']*?)ח|דוח|report)$/i.test(body)) return _groupBalances_(fromPhone, 'full');
+
+  // Recurring expense management.
+  var mRecur = body.match(/^(?:קבוע|recurring|חוזר)\s+(.+)$/i);
+  if (mRecur) return _groupAddRecurring_(fromPhone, mRecur[1]);
+  if (/^(?:קבועים|recurring list|רשימת חוזרים)$/i.test(body)) return _groupListRecurring_(fromPhone);
+
   // Balances + settlements
   if (/^(?:יתרות|balances?|חוב)$/i.test(body)) return _groupBalances_(fromPhone, 'full');
   if (/^(?:סידור|settle|העברות)$/i.test(body)) return _groupBalances_(fromPhone, 'settle');
@@ -1596,21 +1618,31 @@ function _groupHelp_() {
     '*התחלה:*\n' +
     '  • "כספלה צור משפחה כהן" — צור קבוצה חדשה\n' +
     '  • "כספלה הצטרף ABC123" — הצטרף לקבוצה עם קוד\n' +
-    '  • "כספלה מצב" — הקבוצה הפעילה שלך\n\n' +
+    '  • "כספלה מצב" — פרטי הקבוצה הפעילה\n' +
+    '  • "כספלה הקשר" — כל הקבוצות שאני חבר בהן\n\n' +
     '*רישום הוצאות (פיצול שווה אוטומטי):*\n' +
     '  • "כספלה 245 סופר"\n' +
     '  • "כספלה 1200 ארנונה"\n\n' +
+    '*קבועים (חוזרים):*\n' +
+    '  • "כספלה קבוע 3000 שכירות חודשי"\n' +
+    '  • "כספלה קבועים" — רשימת הקבועים\n\n' +
     '*ניהול:*\n' +
     '  • "כספלה יתרות" — מי חייב למי ובכמה\n' +
     '  • "כספלה סידור" — העברות לסידור חובות\n' +
-    '  • "כספלה הוצאות" — 5 ההוצאות האחרונות\n' +
-    '  • "כספלה הוסף יוסי 972526003090" — הוסף חבר\n' +
-    '  • "כספלה הסר 972526003090" — הסר חבר\n' +
-    '  • "כספלה מחק" — בטל את ההוצאה האחרונה\n\n' +
-    '*החלפה:*\n' +
+    '  • "כספלה הוצאות" — 10 ההוצאות האחרונות\n' +
+    '  • "כספלה דו״ח" — דו״ח מלא\n' +
+    '  • "כספלה הוסף יוסי 972526003090"\n' +
+    '  • "כספלה הסר 972526003090"\n' +
+    '  • "כספלה מחק" — בטל את ההוצאה האחרונה\n' +
+    '  • "כספלה סנכרן" — צור/רענן את הגיליון המשותף\n\n' +
+    '*החלפת קבוצה:*\n' +
     '  • "כספלה החלף ABC123" — עבור לקבוצה אחרת\n' +
+    '  • "כספלה אישי" — חזור למצב אישי\n' +
     '  • "כספלה עזוב" — צא מהקבוצה הנוכחית\n\n' +
-    'הקבוצה משותפת לכל החברים — כולם רואים את אותן ההוצאות והיתרות.';
+    '📌 *אליאסים תואמים:*\n' +
+    '"הקמת משפחה" = "כספלה צור משפחה"\n' +
+    '"הצטרפות למשפחה <קוד>" = "כספלה הצטרף <קוד>"\n' +
+    '"דו״ח משפחתי" = "כספלה יתרות"';
 }
 
 // ============ HTTP helper for /api/group ============
@@ -1685,10 +1717,83 @@ function _groupSetActive_(fromPhone, code) {
   return { handled: true, replyText: '✅ עברת לקבוצה ' + code + '.' };
 }
 
-function _groupLeave_(fromPhone) {
+function _groupLeave_(fromPhone, personalMode) {
   var r = _groupAPI_('leave', { phone: fromPhone });
   if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
-  return { handled: true, replyText: '👋 עזבת את הקבוצה. שלח "כספלה הצטרף <קוד>" כדי להצטרף לאחרת.' };
+  if (personalMode) {
+    return { handled: true, replyText: '🏠 חזרת למצב אישי. הוצאות בלי "כספלה" יירשמו בגיליון האישי שלך.' };
+  }
+  return { handled: true, replyText: '👋 עזבת את הקבוצה הפעילה. שלח "כספלה הצטרף <קוד>" או "כספלה החלף <קוד>" כדי להצטרף לאחרת.' };
+}
+
+function _groupContext_(fromPhone) {
+  var r = _groupAPI_('mygroups', { phone: fromPhone });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 לא הצלחתי לבדוק.' };
+  if (!r.groups || !r.groups.length) {
+    return { handled: true, replyText: '🏠 *מצב אישי* — אתה לא חבר באף קבוצה.\n\nשלח "כספלה צור <שם>" כדי ליצור אחת.' };
+  }
+  var lines = ['📋 *הקבוצות שלי*', '━━━━━━━━━━━━━━━━━━', ''];
+  r.groups.forEach(function(g){
+    var marker = (r.active === g.code) ? '🟢 פעילה' : '⚪';
+    lines.push('  ' + marker + ' *' + g.name + '* · ' + g.code + ' · ' + g.memberCount + ' חברים · ' + g.expenseCount + ' הוצאות');
+  });
+  lines.push('');
+  lines.push('להחלפה: "כספלה החלף <קוד>"');
+  lines.push('למצב אישי: "כספלה אישי"');
+  return { handled: true, replyText: lines.join('\n') };
+}
+
+function _groupResync_(fromPhone) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה.' };
+  var r = _groupAPI_('resync', { code: a.active });
+  if (!r || !r.ok) {
+    if (r && r.error === 'creator_not_oauth') {
+      return { handled: true, replyText: '😬 יוצר הקבוצה עוד לא חיבר את חשבון Google. הוא צריך להירשם ב-https://kesefle.com/account קודם.' };
+    }
+    return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
+  }
+  if (r.already) {
+    return { handled: true, replyText: '✓ הקבוצה כבר מסונכרנת.\n📄 הגיליון: ' + r.sheetUrl };
+  }
+  return { handled: true, replyText: '✅ נוצר גיליון משותף ב-Google Drive של יוצר הקבוצה.\n📄 ' + r.sheetUrl + '\n\n' + (r.mirrored || 0) + ' הוצאות סונכרנו לגיליון.' };
+}
+
+function _groupAddRecurring_(fromPhone, rest) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה. שלח "כספלה הצטרף <קוד>" קודם.' };
+  // Parse "<amount> <description> [interval]"
+  var m = rest.match(/^([0-9]+(?:[.,][0-9]+)?)\s+(.+?)(?:\s+(חודשי|שבועי|דו-שבועי|יומי|monthly|weekly|biweekly|daily))?$/i);
+  if (!m) return { handled: true, replyText: '😬 פורמט: "כספלה קבוע 3000 שכירות חודשי"' };
+  var amount = parseFloat(m[1].replace(',', '.'));
+  var description = m[2].trim();
+  var ilabel = (m[3] || 'חודשי').toLowerCase();
+  var interval = 'monthly';
+  if (/שבועי|weekly/i.test(ilabel)) interval = 'weekly';
+  if (/דו-שבועי|biweekly/i.test(ilabel)) interval = 'biweekly';
+  if (/יומי|daily/i.test(ilabel)) interval = 'daily';
+  var r = _groupAPI_('addrecurring', {
+    code: a.active, payerPhone: fromPhone, amount: amount, description: description, interval: interval,
+  });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
+  return { handled: true, replyText:
+    '🔁 קבוע נוסף:\n' +
+    '  ₪' + amount.toLocaleString('he-IL') + ' · ' + description + '\n' +
+    '  כל ' + ilabel + '\n\n' +
+    'הבוט יזכיר לך אוטומטית. שלח "כספלה קבועים" לרשימה המלאה.' };
+}
+
+function _groupListRecurring_(fromPhone) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה.' };
+  var r = _groupAPI_('listrecurring', { code: a.active });
+  if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה.' };
+  if (!r.recurring || !r.recurring.length) return { handled: true, replyText: '📭 אין קבועים בקבוצה. הוסף עם "כספלה קבוע 3000 שכירות חודשי".' };
+  var lines = ['🔁 *הוצאות קבועות בקבוצה*', '━━━━━━━━━━━━━━━━━━', ''];
+  r.recurring.forEach(function(rec){
+    lines.push('  • ₪' + Number(rec.amount).toLocaleString('he-IL') + ' · ' + rec.description + ' · ' + rec.intervalLabel);
+  });
+  return { handled: true, replyText: lines.join('\n') };
 }
 
 function _groupInfo_(fromPhone) {
@@ -1960,13 +2065,21 @@ function processExpense(text, fromPhone) {
   }
 
   // ───── GROUP COMMAND ROUTER ─────
-  // Any message starting with "כספלה" enters Splitwise-style group mode:
-  // create / join / record split expenses / settle. Runs BEFORE the
-  // multi-tenant router so group messages never accidentally write to
-  // a user's personal sheet.
+  // Any message starting with "כספלה" enters Splitwise-style group mode.
+  // Also accept the legacy family aliases ("הקמת משפחה", "הצטרפות
+  // למשפחה", "דו"ח משפחתי") so existing users keep working — we just
+  // rewrite the text into the כספלה equivalent and route through the
+  // same handler.
   try {
-    if (/^\s*כספלה(?=\s|$)/i.test(text) && typeof _handleGroupCommand_ === 'function') {
-      var __groupRes = _handleGroupCommand_(fromPhone, text);
+    var __aliased = text;
+    var __famCreate = text.match(/^\s*(?:הקמת\s+משפחה|הקמ\s+משפחה|create\s+family)\s*(.*)$/i);
+    if (__famCreate) __aliased = 'כספלה צור ' + (__famCreate[1].trim() || 'משפחה');
+    var __famJoin = text.match(/^\s*(?:הצטרפות\s+למשפחה|join\s+family)\s+([A-Z0-9]{6})\b/i);
+    if (__famJoin) __aliased = 'כספלה הצטרף ' + __famJoin[1];
+    var __famReport = text.match(/^\s*(?:דו(?:["׳']*?)ח\s+משפחת(?:י|ה)|family\s+report)\s*$/i);
+    if (__famReport) __aliased = 'כספלה יתרות';
+    if (/^\s*כספלה(?=\s|$)/i.test(__aliased) && typeof _handleGroupCommand_ === 'function') {
+      var __groupRes = _handleGroupCommand_(fromPhone, __aliased);
       if (__groupRes && __groupRes.handled) {
         return { reply: __groupRes.replyText || '' };
       }
