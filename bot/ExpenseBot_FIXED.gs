@@ -1063,6 +1063,7 @@ function _doPost_orig(e) {
         result = processExpense(text, from);
       } catch (_peErr) {
         Logger.log('_doPost_orig: processExpense THREW ' + (_peErr && _peErr.stack || _peErr));
+        try { if (typeof _logBotError_ === 'function') _logBotError_('processExpense', _peErr); } catch (__) {}
         result = { reply: '😬 משהו השתבש בעיבוד: ' + (_peErr && _peErr.message || '') + '\n💡 ננסה שוב בעוד דקה?' };
       }
       Logger.log('_doPost_orig: processExpense returned reply="' + (result && result.reply ? String(result.reply).slice(0, 100) : '(none)') + '" ambiguousSent=' + (result && result.ambiguousSent));
@@ -2101,6 +2102,74 @@ function _userExpenseStats_(rows) {
     var variance = amounts.reduce(function(s,v){ return s + (v - mean) * (v - mean); }, 0) / amounts.length;
     return { median: median, mean: mean, stddev: Math.sqrt(variance), n: amounts.length };
   } catch (_e) { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Admin alerts — if the bot's Executions log shows >5 errors in the
+// last 10 minutes, email the script owner. Runs every 10 min.
+// Uses Apps Script's free MailApp (~100 emails/day quota; the daily
+// rate-limiter below caps us at 6 alerts/hour so we stay well below).
+// ─────────────────────────────────────────────────────────────────────
+function cronAdminAlerts() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var lastAlertStr = props.getProperty('admin_alert_last_sent');
+    if (lastAlertStr) {
+      var elapsed = (Date.now() - new Date(lastAlertStr).getTime()) / 60000;
+      if (elapsed < 30) return; // hard cooldown — no more than 2/hour
+    }
+    // Apps Script doesn't expose Executions log via API, but we can
+    // observe error counters we write ourselves. The bot's _doPost_orig
+    // already logs catches via Logger.log — we mirror them to a script
+    // property bucket so this cron can read them.
+    var bucketStr = props.getProperty('errorBucket') || '[]';
+    var bucket;
+    try { bucket = JSON.parse(bucketStr); } catch (_) { bucket = []; }
+    var tenMinAgo = Date.now() - 10 * 60 * 1000;
+    var recent = bucket.filter(function(t) { return t > tenMinAgo; });
+    // Persist trimmed bucket (keep only the last 10 min).
+    props.setProperty('errorBucket', JSON.stringify(recent));
+    if (recent.length < 5) return;
+    // Send the alert.
+    var addr = '';
+    try { addr = Session.getActiveUser().getEmail(); } catch (_e) {}
+    if (!addr) return;
+    MailApp.sendEmail({
+      to: addr,
+      subject: '[Kesefle Bot] ' + recent.length + ' errors in 10 min',
+      body: 'The Kesefle bot logged ' + recent.length + ' errors in the last 10 minutes.\n\n' +
+            'Most recent timestamps:\n  ' + recent.slice(-5).map(function(t){ return new Date(t).toISOString(); }).join('\n  ') + '\n\n' +
+            'Open the Apps Script Executions log to triage: https://script.google.com\n\n' +
+            'Cooldown: this alert will not repeat for 30 minutes.',
+    });
+    props.setProperty('admin_alert_last_sent', new Date().toISOString());
+  } catch (e) {
+    Logger.log('cronAdminAlerts err: ' + (e && e.stack || e));
+  }
+}
+
+// Helper to log a bot error into the rolling 10-min bucket the alert
+// cron reads. Callers should invoke this from their catch blocks.
+function _logBotError_(label, err) {
+  try {
+    Logger.log('BOT_ERROR ' + label + ': ' + (err && (err.stack || err.message) || err));
+    var props = PropertiesService.getScriptProperties();
+    var bucketStr = props.getProperty('errorBucket') || '[]';
+    var bucket;
+    try { bucket = JSON.parse(bucketStr); } catch (_) { bucket = []; }
+    bucket.push(Date.now());
+    if (bucket.length > 100) bucket = bucket.slice(-100);
+    props.setProperty('errorBucket', JSON.stringify(bucket));
+  } catch (_e) {}
+}
+
+function installAdminAlertsTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronAdminAlerts') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronAdminAlerts').timeBased().everyMinutes(10).create();
+  Logger.log('✅ cronAdminAlerts installed: every 10 min');
 }
 
 // ─────────────────────────────────────────────────────────────────────
