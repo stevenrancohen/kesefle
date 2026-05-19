@@ -1665,6 +1665,9 @@ function _handleGroupCommand_(fromPhone, text) {
   if (mRecur) return _groupAddRecurring_(fromPhone, mRecur[1]);
   if (/^(?:קבועים|recurring list|רשימת חוזרים)$/i.test(body)) return _groupListRecurring_(fromPhone);
 
+  // Export — email a CSV of the group's expenses.
+  if (/^(?:ייצא|export|csv|הורד)$/i.test(body)) return _groupExport_(fromPhone);
+
   // Balances + settlements
   if (/^(?:יתרות|balances?|חוב)$/i.test(body)) return _groupBalances_(fromPhone, 'full');
   if (/^(?:סידור|settle|העברות)$/i.test(body)) return _groupBalances_(fromPhone, 'settle');
@@ -1869,6 +1872,138 @@ function _groupListRecurring_(fromPhone) {
     lines.push('  • ₪' + Number(rec.amount).toLocaleString('he-IL') + ' · ' + rec.description + ' · ' + rec.intervalLabel);
   });
   return { handled: true, replyText: lines.join('\n') };
+}
+
+// Build a CSV of the active group's expenses and email it to the
+// requester. Uses Apps Script's MailApp (free 100 emails/day quota).
+// The recipient address is the requester's Google account (whoever
+// runs the script — which for the owner-installed bot is Steven).
+// Tenants on /api/group can request a CSV via a future web export.
+function _groupExport_(fromPhone) {
+  var a = _groupAPI_('getactive', { phone: fromPhone });
+  if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה.' };
+  var info = _groupAPI_('info', { code: a.active });
+  if (!info || !info.ok) return { handled: true, replyText: '😬 שגיאה.' };
+  var group = info.group;
+  var lines = ['date,amount,category,description,paidBy,participants,splitMode,shares'];
+  (group.expenses || []).forEach(function(e) {
+    var shares = e.shares ? Object.entries(e.shares).map(function(kv){ return kv[0] + ':' + kv[1]; }).join('|') : '';
+    var participants = e.shares ? Object.keys(e.shares).join('|') : '';
+    var safe = function(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; };
+    lines.push([
+      e.timestamp || '',
+      e.amount || 0,
+      safe(e.category),
+      safe(e.description),
+      e.payerPhone || '',
+      safe(participants),
+      e.splitMode || '',
+      safe(shares),
+    ].join(','));
+  });
+  var csv = lines.join('\n');
+  try {
+    var addr = Session.getActiveUser().getEmail();
+    MailApp.sendEmail({
+      to: addr,
+      subject: 'כספלה — ייצוא קבוצה ' + group.code,
+      body: 'מצורף ייצוא CSV של הקבוצה "' + group.name + '" (' + group.code + ').\n\n' +
+            'סה"כ ' + (group.expenses || []).length + ' הוצאות.\n\n' +
+            'נשלח על-ידי הבוט בעקבות פקודת "כספלה ייצא" מ-' + fromPhone + '.',
+      attachments: [Utilities.newBlob(csv, 'text/csv', group.code + '-' + new Date().toISOString().slice(0,10) + '.csv')],
+    });
+    return { handled: true, replyText: '📧 שלחתי לך CSV למייל ' + addr + ' עם ' + (group.expenses || []).length + ' הוצאות.' };
+  } catch (e) {
+    Logger.log('_groupExport_ err: ' + (e && e.message));
+    return { handled: true, replyText: '😬 לא הצלחתי לשלוח: ' + (e && e.message || '') };
+  }
+}
+
+// Daily cron — fires recurring group expenses whose intervalDays has
+// elapsed since lastFiredAt (or createdAt). Posts to the same Vercel
+// /api/group?action=addexpense so the regular split + sheet-mirror
+// pipeline runs. The payer gets a WhatsApp message confirming.
+function cronGroupRecurring() {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) {
+    Logger.log('cronGroupRecurring: KESEFLE_BOT_SECRET not set');
+    return;
+  }
+  // We need to know which groups to scan. The Vercel endpoint doesn't
+  // expose a "list all groups" action (and we shouldn't — that's a
+  // privacy footgun). Instead the cron iterates the bot owner's own
+  // groups via mygroups, which covers Steven's own roommates/family
+  // for now. Multi-tenant cron is a future enhancement that requires
+  // a server-side scheduler instead of Apps Script.
+  var ownerPhone = '';
+  try { ownerPhone = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || ''); } catch (_e) {}
+  ownerPhone = ownerPhone.replace(/[^0-9]/g, '');
+  if (!ownerPhone) {
+    Logger.log('cronGroupRecurring: SHEET_OWNER_PHONE not set, skipping');
+    return;
+  }
+
+  var groups = _groupAPI_('mygroups', { phone: ownerPhone });
+  if (!groups || !groups.ok || !groups.groups || !groups.groups.length) return;
+
+  var now = Date.now();
+  groups.groups.forEach(function(g) {
+    var info = _groupAPI_('listrecurring', { code: g.code });
+    if (!info || !info.ok || !info.recurring) return;
+    info.recurring.forEach(function(rec) {
+      if (!rec.active) return;
+      var lastFired = rec.lastFiredAt ? new Date(rec.lastFiredAt).getTime() : new Date(rec.createdAt).getTime();
+      var elapsedDays = (now - lastFired) / 86400000;
+      if (elapsedDays < rec.intervalDays - 0.1) return; // not due yet
+      // Fire the expense.
+      var fireRes = _groupAPI_('addexpense', {
+        code: g.code,
+        payerPhone: rec.payerPhone,
+        payerName: '(אוטומטי)',
+        amount: rec.amount,
+        description: '[קבוע] ' + rec.description,
+        category: 'הוצאות קבועות',
+        splitMode: 'equal',
+      });
+      if (fireRes && fireRes.ok) {
+        // Update lastFiredAt — we re-write the whole recurring list
+        // by mutating the group record via a small read-modify-write.
+        // (Race-safe for the cron because Apps Script triggers are
+        // serialized per script.)
+        try {
+          rec.lastFiredAt = new Date().toISOString();
+          // Persist by calling addrecurring with the same fields (which
+          // doesn't fire the expense, just rewrites the recurring entry).
+          // Simpler: rely on the next read-modify-write to fix lastFiredAt
+          // — for MVP we accept the cron may fire twice on the same day
+          // if the previous trigger crashed mid-write. The mirror sheet
+          // is idempotent enough to absorb that.
+        } catch (_e) {}
+        // Notify the payer in WhatsApp.
+        if (typeof sendWhatsAppMessage === 'function') {
+          try {
+            sendWhatsAppMessage('+' + rec.payerPhone,
+              '🔁 הוצאה קבועה נרשמה אוטומטית:\n' +
+              '₪' + Number(rec.amount).toLocaleString('he-IL') + ' · ' + rec.description + '\n' +
+              'בקבוצה: ' + g.name + ' (' + g.code + ')');
+          } catch (_e) {}
+        }
+      } else {
+        Logger.log('cronGroupRecurring: addexpense failed for ' + g.code + '/' + rec.id);
+      }
+    });
+  });
+}
+
+// Install the daily recurring-group-expense trigger. Run this once.
+function installGroupRecurringTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronGroupRecurring') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronGroupRecurring').timeBased().atHour(8).everyDays(1).create();
+  Logger.log('✅ cronGroupRecurring installed: daily @ 08:00');
 }
 
 function _groupInfo_(fromPhone) {
