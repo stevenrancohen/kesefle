@@ -103,6 +103,18 @@ async function deleteAccount(req, res) {
   const code = await kvGet('referral:code:' + userSub);
   if (code) keysToDelete.push('referral:reverse:' + code);
 
+  // Phone-mapping cleanup. Without this, the deleted user's phone stays
+  // mapped in KV pointing at a now-missing user record, so the bot would
+  // open a stale-state conversation ("✅ נרשם" reply with no sheet to
+  // write to) the next time they message in. We look up the reverse
+  // mapping `userPhone:<sub>` to find the E164 phone, then drop both
+  // directions.
+  const userPhoneRec = await kvGet('userPhone:' + userSub);
+  if (userPhoneRec && userPhoneRec.phone) {
+    keysToDelete.push('phone:' + userPhoneRec.phone);
+    keysToDelete.push('userPhone:' + userSub);
+  }
+
   for (const k of keysToDelete) {
     if (await kvDel(k)) deleted.push(k);
   }
