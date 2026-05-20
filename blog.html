@@ -732,5 +732,7 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+<script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
 </body>
 </html>
