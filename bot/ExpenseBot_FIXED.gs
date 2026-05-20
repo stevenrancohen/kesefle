@@ -315,6 +315,29 @@ const CATEGORY_MAP = [
   { keywords: ['hama', 'חמא', 'חמאה', 'חמאת בוטנים', 'peanut butter', 'almond butter', 'cashew butter', 'tahini', 'tahini al hapach', 'tehina', 'תחינה', 'תחינה גולמית', 'תחינה אל הפח', 'tehina al hapach', 'achva tahini', 'achva tehina', 'בייגלה', 'בייגלה ביסלי', 'beigele', 'beygele', 'apropo', 'bamba', 'במבה', 'בייגל'], category: 'אוכל', subcategory: 'אוכל לבית' },
   { keywords: ['eurovision', 'אירוויזיון', 'olympics', 'אולימפיאדה', 'world cup', 'מונדיאל', 'fifa world cup', 'champions league', 'ליגת אלופים', 'euro league', 'יורוליג', 'ufa', 'efa', 'super bowl', 'super-bowl', 'nba ticket', 'nba game', 'mlb ticket', 'mlb game', 'nfl ticket', 'nhl ticket', 'football ticket', 'ticketmaster', 'eventim', 'eventbrite', 'tlv tickets', 'tlv-tickets', 'lev hair', 'ראש העין כרטיסים'], category: 'בידור', subcategory: 'יציאות' },
   { keywords: ['drone', 'drone dji', 'dji mavic', 'dji mini', 'dji air', 'dji avata', 'dji fpv', 'fpv drone', 'fpv kit', 'drone parts', 'drone battery', 'drone repair', 'drone insurance', 'ביטוח רחפן', 'תיקון רחפן', 'רחפן', 'רחפנים', 'בית רחפן', 'מטוס דגם', 'מטוסי דגם', 'rc plane', 'rc car', 'rc helicopter', 'rc drone', 'rc battery', 'lipo battery'], category: 'קניות', subcategory: 'אלקטרוניקה' },
+
+  // ===== Everyday Hebrew expense vocabulary (batch: common phrases, slang & long-tail, no brand names) =====
+  { keywords: ['קניות בסופר', 'קניות לבית', 'קניות שבועיות', 'מצרכים', 'עגבניות', 'מלפפונים', 'בצל ירוק', 'תפוחי אדמה', 'בטטה', 'קישואים', 'חצילים', 'כרובית', 'ברוקולי', 'תפוזים', 'בננות', 'תפוחי עץ', 'אבטיח', 'מלון', 'ענבים', 'תותים', 'אבוקדו', 'בשר טחון', 'חזה עוף', 'שניצלים', 'כנפי עוף', 'בשר בקר', 'קבב', 'נקניקיות', 'סלמון', 'פילה דג', 'אמנון', 'ביצים', 'חלב טרי', 'גבינה צהובה', 'גבינה לבנה', 'קוטג', 'יוגורט', 'שמנת חמוצה', 'חמאה', 'לחמניות', 'פיתות', 'אורז', 'פתיתים', 'קוסקוס', 'קמח', 'שמן זית', 'קטשופ', 'מיונז', 'חומוס קנוי', 'טחינה גולמית', 'דגני בוקר', 'עוגיות', 'גלידה', 'שתייה קלה', 'מים מינרליים', 'מיץ תפוזים', 'קפה נמס', 'קפה טחון'], category: 'אוכל', subcategory: 'אוכל לבית' },
+  { keywords: ['ארוחת צהריים', 'ארוחת ערב', 'ארוחת בוקר', 'ארוחה במסעדה', 'פלאפל', 'שווארמה', 'סביח', 'המבורגר', 'ציפס', 'פיצה משפחתית', 'נודלס', 'פסטה במסעדה', 'סטייק', 'מסעדה איטלקית', 'מסעדה אסייתית', 'אוכל תאילנדי', 'אוכל הודי', 'טאקו', 'בורקס', 'כריך', 'טוסט אישי', 'בייגל', 'קינוח', 'עוגה בקפה', 'קפה הפוך', 'אספרסו', 'קפוצינו', 'אמריקנו', 'שוקו חם', 'תה צמחים', 'מאפה', 'קרואסון', 'דונאט'], category: 'אוכל', subcategory: 'אוכל בחוץ' },
+  { keywords: ['תדלוק', 'דלק 95', 'דלק 98', 'בנזין', 'סולר', 'תחנת דלק', 'מילוי דלק', 'כביש אגרה', 'אגרת כביש', 'נסיעה ברכבת', 'כרטיס רכבת', 'נסיעה באוטובוס', 'כרטיס אוטובוס', 'רכבת קלה', 'טעינת רב קו', 'כרטיסיית נסיעות', 'נסיעת מונית', 'הזמנת מונית', 'השכרת אופניים', 'השכרת קורקינט', 'קורקינט חשמלי', 'אופניים חשמליים', 'טיסת פנים'], category: 'תחבורה', subcategory: 'תחבורה' },
+  { keywords: ['דמי חניה', 'חניה בתשלום', 'תשלום חניה', 'חניון יומי', 'דוח חניה', 'קנס חניה', 'חניה כחול לבן', 'מנוי חניה', 'אגרת חניה'], category: 'תחבורה', subcategory: 'חניה' },
+  { keywords: ['חשבון חשמל', 'חשבון מים', 'חשבון גז', 'חשבון טלפון', 'חשבון אינטרנט', 'חבילת אינטרנט', 'חבילת סלולר', 'חבילת גלישה', 'חבילת טלוויזיה', 'מנוי טלוויזיה', 'דמי ניהול', 'ועד בית', 'דמי ועד', 'שכר דירה', 'דמי שכירות', 'ארנונה חודשית', 'חשבון סלולרי', 'גלישה ניידת'], category: 'הוצאות קבועות', subcategory: 'חשבונות' },
+  { keywords: ['ביטוח דירה', 'ביטוח רכב', 'ביטוח חובה', 'ביטוח מקיף', 'ביטוח צד שלישי', 'ביטוח בריאות', 'ביטוח חיים', 'ביטוח משכנתא', 'ביטוח נסיעות', 'ביטוח שיניים', 'פרמיית ביטוח', 'דמי ביטוח'], category: 'הוצאות קבועות', subcategory: 'ביטוח' },
+  { keywords: ['ביקור רופא', 'רופא פרטי', 'השתתפות עצמית', 'קופת חולים', 'בדיקות דם', 'בדיקה רפואית', 'חיסון', 'ייעוץ רפואי', 'בדיקת עיניים', 'אופטומטריסט', 'משקפי ראייה', 'עדשות מגע', 'פיזיותרפיה', 'טיפול פסיכולוגי', 'דיאטנית', 'תזונאית'], category: 'בריאות', subcategory: 'בריאות' },
+  { keywords: ['תרופות', 'מרשם', 'בית מרקחת', 'כדורים', 'אנטיביוטיקה', 'משכך כאבים', 'אקמול', 'נורופן', 'ויטמינים', 'תוספי תזונה', 'מד חום', 'פלסטרים', 'קרם הגנה', 'משחה רפואית'], category: 'בריאות', subcategory: 'תרופות' },
+  { keywords: ['רופא שיניים', 'טיפול שיניים', 'סתימה', 'עקירת שן', 'יישור שיניים', 'אורתודונט', 'ניקוי אבנית', 'כתר שן', 'שתל שן', 'הלבנת שיניים'], category: 'בריאות', subcategory: 'שיניים' },
+  { keywords: ['בגדים', 'חולצת טי', 'מכנסיים', 'גינס', 'שמלה', 'חצאית', 'מעיל', 'סוודר', 'קפוצון', 'גופייה', 'גרביים', 'הלבשה תחתונה', 'תחתונים', 'חזייה', 'בגד ים', 'פיגמה', 'נעלי ספורט', 'סנדלים', 'מגפיים', 'כפכפים', 'נעלי עקב', 'תיק יד', 'ארנק', 'חגורה', 'כובע', 'צעיף', 'משקפי שמש'], category: 'קניות / ביגוד', subcategory: 'ביגוד' },
+  { keywords: ['תספורת', 'מספרה', 'צבע שיער', 'החלקת שיער', 'מניקור', 'פדיקור', 'לק גל', 'בניית ציפורניים', 'טיפול פנים', 'קוסמטיקאית', 'הסרת שיער', 'הסרת שיער בלייזר', 'עיסוי', 'עיסוי רפואי', 'עיצוב גבות', 'בושם', 'פרפיום', 'קרם פנים', 'שפתון', 'מסקרה'], category: 'טיפוח', subcategory: 'טיפוח' },
+  { keywords: ['גן ילדים', 'צהרון', 'מטפלת', 'שמרטף', 'בייביסיטר', 'חוג ילדים', 'שיעור פרטי', 'מורה פרטי', 'קייטנה', 'שכר לימוד', 'תשלום לבית ספר', 'ספרי לימוד', 'ציוד לבית ספר', 'ילקוט', 'קלמר', 'חיתולים', 'מגבונים', 'מטרנה', 'סימילק', 'אוכל לתינוק', 'עגלת תינוק', 'סלקל', 'מוצץ', 'בקבוק לתינוק'], category: 'חינוך', subcategory: 'חינוך' },
+  { keywords: ['כרטיס לסרט', 'סרט בקולנוע', 'הצגה בתיאטרון', 'כרטיס להופעה', 'קונצרט', 'מופע', 'פסטיבל', 'מוזיאון', 'לונה פארק', 'פארק מים', 'כניסה לבריכה', 'באולינג', 'חדר בריחה', 'משחקייה', 'כרטיסים להופעה', 'פאב'], category: 'בידור', subcategory: 'יציאות' },
+  { keywords: ['חדר כושר', 'מנוי לחדר כושר', 'אימון אישי', 'מאמן כושר', 'שיעור יוגה', 'פילאטיס', 'קרוספיט', 'חוג ספורט', 'מנוי שחייה', 'סטודיו לכושר'], category: 'כושר ומנויים', subcategory: 'כושר' },
+  { keywords: ['כרטיס טיסה', 'טיסה לחול', 'בית מלון', 'לינה במלון', 'צימר', 'וילה לחופשה', 'חבילת נופש', 'השכרת רכב בחול', 'ביטוח נסיעות', 'דיוטי פרי', 'מזוודה', 'אגרת יציאה', 'חידוש דרכון'], category: 'נסיעות', subcategory: 'נסיעות' },
+  { keywords: ['אוכל לכלב', 'אוכל לחתול', 'מזון לכלבים', 'מזון לחתולים', 'וטרינר', 'חיסון לכלב', 'חול לחתול', 'מספרה לכלבים', 'פנסיון לכלבים', 'צעצוע לכלב', 'רצועה לכלב', 'אקווריום'], category: 'חיות מחמד', subcategory: 'חיות מחמד' },
+  { keywords: ['חומרי ניקוי', 'אקונומיקה', 'נוזל כלים', 'אבקת כביסה', 'מרכך כביסה', 'נייר טואלט', 'מגבונים לחים', 'שקיות אשפה', 'משחת שיניים', 'אינסטלטור', 'חשמלאי', 'מנעולן', 'גנן', 'שיפוצים', 'צבע לקיר', 'ברגים', 'כלי עבודה לבית'], category: 'תחזוקת בית', subcategory: 'תחזוקת בית' },
+  { keywords: ['ספה', 'מיטה', 'מזרן', 'שולחן אוכל', 'כיסא', 'ארון בגדים', 'מדף', 'כוננית', 'שידה', 'מנורה', 'נברשת', 'וילון', 'שטיח', 'כלי מטבח', 'סירים', 'מחבת', 'צלחות', 'כוסות', 'סכום', 'מגבות', 'מצעים', 'כריות', 'שמיכה', 'מקרר', 'מכונת כביסה', 'מדיח כלים', 'תנור', 'מיקרוגל', 'מזגן', 'מאוורר', 'שואב אבק', 'קומקום', 'טוסטר', 'בלנדר'], category: 'קניות / רהיטים', subcategory: 'רהיטים' },
+  { keywords: ['מתנת יום הולדת', 'זר פרחים', 'מתנה לחתונה', 'שי לחג', 'שוקולד מתנה', 'מתנה לאירוע', 'כרטיס ברכה', 'בלונים', 'עוגת יום הולדת'], category: 'מתנות', subcategory: 'מתנות' },
+  { keywords: ['עמלת בנק', 'עמלות בנק', 'דמי ניהול חשבון', 'עמלת כרטיס', 'עמלת משיכה', 'החזר הלוואה', 'תשלום הלוואה', 'החזר אשראי', 'דמי כרטיס אשראי', 'העברה בבנק'], category: 'בנקאות', subcategory: 'בנקאות' },
+  { keywords: ['אגרת רישוי', 'טסט שנתי', 'טסט לרכב', 'חידוש רישיון', 'ביטוח לאומי', 'מס הכנסה', 'תשלום מעמ', 'מקדמות מס', 'דוח תנועה', 'אגרת טלוויזיה', 'אגרה ממשלתית', 'נוטריון', 'אגרת בית משפט', 'דמי רישום'], category: 'ממשלה ומיסים', subcategory: 'מיסים ואגרות' },
 ];
 
 const DEFAULT_CATEGORY = { category: 'שונות ואחרים', subcategory: 'שונות', isIncome: false };
@@ -575,22 +598,19 @@ function _verifyMetaWebhook_(e, rawBody) {
 // ─────────────────────────────────────────────────────────────────────
 function _getExamplesMessage_(fromPhone) {
   var base =
-    'פשוט תכתוב לי כמו שאתה מדבר 😎\n' +
+    'עוד דוגמאות — תכתוב חופשי, אני כבר מסדר 🤓\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
-    '• *150 סופר* ← יסווג כ"אוכל"\n' +
-    '• *ארנונה 400* ← יסווג כ"בית"\n' +
-    '• *200 דלק* ← יסווג כ"רכב"\n' +
-    '• *80 מתנה לאמא* ← יסווג כ"משפחה"\n' +
-    '• *1,200 שכר דירה* ← יסווג כ"בית"\n' +
-    '• *45 קפה ארומה* ← יסווג כ"בתי קפה"\n\n' +
-    'כל מילה שתחשוב עליה — אני כבר מכיר.\n\n' +
-    '💡 עוד דברים שאני יודע לעשות:\n' +
-    '• *אתמול 60 מכולת* — תאריך אחר\n' +
-    '• *$50 שרת* — מטבע זר (מומר לשקלים)\n' +
-    '• 🧾 *צילום קבלה* — שלח לי תמונה\n' +
-    '• *הערה: שילמתי במזומן* — הוסף הערה להוצאה האחרונה\n' +
-    '• *סיכום* — סיכום החודש\n' +
-    '• *עזרה* — כל הפקודות';
+    '• *320 ביטוח רכב*\n' +
+    '• *90 בית מרקחת*\n' +
+    '• *250 חשבון חשמל*\n' +
+    '• *1,500 גן ילדים*\n' +
+    '• *180 מספרה*\n' +
+    '• *35 חניון*\n' +
+    '• *750 מסעדה עם המשפחה*\n' +
+    '• *2,400 טיסה לחו"ל*\n\n' +
+    'את כל אלה אני יודע לקטלג לבד ✅\n' +
+    'אפשר גם הפוך — *"סופר 150"* בדיוק כמו *"150 סופר"*.\n\n' +
+    'שלח *סיכום* למצב החודש, או *עזרה* לכל הפקודות.';
   // Persona tailoring (best-effort).
   try {
     if (typeof _getSettings_ === 'function') {
@@ -889,14 +909,26 @@ function _maybeSendWelcome_(fromPhone) {
   var sheetUrl = _userSheetUrl_(fromPhone);
   var msg =
     '👋 *ברוכים הבאים לכסף\'לה!*\n' +
-    'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. כל הוצאה נשמרת אוטומטית בגיליון Google הפרטי שלך, ואתה תמיד רואה לאן הכסף הולך.\n\n' +
-    '📝 *איך עובדים איתי?* פשוט כתוב כמו שמדברים:\n' +
-    '• "150 סופר"\n' +
-    '• "ארנונה 400"\n' +
-    'ואני אסווג ואשמור הכל לבד.\n\n' +
+    'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. כל הוצאה נשמרת אוטומטית בגיליון Google הפרטי שלך.\n\n' +
+    'פשוט תכתוב לי כמו שאתה מדבר 😎\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    '• *150 סופר* ← יסווג כ"אוכל"\n' +
+    '• *ארנונה 400* ← יסווג כ"בית"\n' +
+    '• *200 דלק* ← יסווג כ"רכב"\n' +
+    '• *80 מתנה לאמא* ← יסווג כ"משפחה"\n' +
+    '• *1,200 שכר דירה* ← יסווג כ"בית"\n' +
+    '• *45 קפה ארומה* ← יסווג כ"בתי קפה"\n\n' +
+    'כל מילה שתחשוב עליה — אני כבר מכיר.\n\n' +
+    '💡 עוד דברים שאני יודע לעשות:\n' +
+    '• *אתמול 60 מכולת* — תאריך אחר\n' +
+    '• *$50 שרת* — מטבע זר (מומר לשקלים)\n' +
+    '• 🧾 *צילום קבלה* — שלח לי תמונה\n' +
+    '• *הערה: שילמתי במזומן* — הוסף הערה להוצאה האחרונה\n' +
+    '• *סיכום* — סיכום החודש\n' +
+    '• *עזרה* — כל הפקודות\n\n' +
     '📌 *טיפ:* לחיצה ארוכה על ההודעה הזו ← "הצמד" (Pin), כדי שתהיה תמיד בהישג יד.\n\n' +
     (sheetUrl ? ('📊 הגיליון שלך:\n' + sheetUrl + '\n\n') : '') +
-    'רוצה עוד דוגמאות? שלח "דוגמאות". מוכן? פשוט נסה עכשיו 🚀';
+    '🎁 *הביאו חבר → חודש Pro חינם לשניכם:*\nhttps://kesefle.com/referral';
   try {
     if (typeof sendWhatsAppMessage === 'function') sendWhatsAppMessage(fromPhone, msg);
   } catch (_e) { Logger.log('welcome send err: ' + (_e && _e.message)); }
@@ -2782,6 +2814,331 @@ function installGroupRecurringTrigger() {
   Logger.log('✅ cronGroupRecurring installed: daily @ 08:00');
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Personal recurring expenses ("הוצאות קבועות") — templates stored in the
+// Vercel KV via /api/recurring. The bot parses the Hebrew command, posts
+// to the API, and a daily cron asks the API to log anything that is due.
+// Mirrors the _remindersAPI_ helper pattern (single POST helper + the bot
+// secret header), and reuses KESEFLE_API_BASE like _tenantWriteExpense_.
+// ─────────────────────────────────────────────────────────────────────
+function _recurringAPI_(action, payload) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) return { ok: false, error: 'bot_secret_not_set' };
+  payload = payload || {};
+  payload.action = action;
+  payload.botSecret = secret;
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/recurring', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code < 200 || code >= 300) {
+      Logger.log('_recurringAPI_ ' + action + ' HTTP ' + code + ': ' + body.slice(0, 200));
+      try { return JSON.parse(body); } catch (_e) { return { ok: false, error: 'http_' + code }; }
+    }
+    return JSON.parse(body);
+  } catch (e) {
+    return { ok: false, error: 'fetch_threw', detail: e && e.message };
+  }
+}
+
+// Hebrew day-of-week names → getDay() index (0=Sunday … 6=Saturday).
+var _RECUR_DOW_ = {
+  'ראשון': 0, 'שני': 1, 'שלישי': 2, 'רביעי': 3,
+  'חמישי': 4, 'שישי': 5, 'שבת': 6,
+};
+
+// Parse a recurring-expense command body (the leading command word like
+// "קבוע" is ALREADY stripped by the caller). Returns
+// { amount, description, freq, category, startDate } or null when no
+// amount is present. `text` example: "2500 שכירות כל 1 לחודש".
+function _parseRecurringCommand_(text) {
+  if (!text) return null;
+  var work = String(text).trim();
+  if (!work) return null;
+
+  // NOTE: JS \b word boundaries do NOT work around Hebrew letters (\w is
+  // ASCII-only), so all Hebrew-adjacent anchors use whitespace/edge groups.
+
+  // 1. Optional "קטגוריה X" — pull it out first so it never pollutes the
+  //    description or the freq clause. Capture a single word as category.
+  var category = null;
+  work = work.replace(/(^|\s)קטגוריה\s+(\S+)/i, function(_m, _pre, cat) { category = cat; return ' '; });
+
+  // 2. Optional "החל מ-DD/MM/YYYY" or "החל מ-DD/MM" anywhere → startDate.
+  var startDate = null;
+  work = work.replace(/(^|\s)החל\s*מ[-\s]*(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?/i,
+    function(_m, _pre, dd, mm, yy) {
+      var day = ('0' + parseInt(dd, 10)).slice(-2);
+      var mon = ('0' + parseInt(mm, 10)).slice(-2);
+      var year;
+      if (yy) {
+        year = parseInt(yy, 10);
+        if (year < 100) year += 2000;
+      } else {
+        year = new Date().getFullYear();
+      }
+      startDate = year + '-' + mon + '-' + day;
+      return ' ';
+    });
+
+  work = work.replace(/\s+/g, ' ').trim();
+
+  // 3. amount = the first number in the remaining text.
+  var amountM = work.match(/(\d+(?:[.,]\d+)?)/);
+  if (!amountM) return null;
+  var amount = parseFloat(amountM[1].replace(',', '.'));
+  if (!isFinite(amount) || amount <= 0) return null;
+
+  // 4. Split off the "כל ..." recurrence clause (if any). Everything between
+  //    the amount and "כל" is the description. We anchor on a whitespace/edge
+  //    boundary (not \b) because "כל" is Hebrew. The match captures the
+  //    leading separator, so the clause itself starts after that group.
+  var afterAmount = work.slice(amountM.index + amountM[1].length).trim();
+  var freq = null;
+  var description = afterAmount;
+  var kolM = afterAmount.match(/(^|\s)(כל(?:\s|$))/);
+  if (kolM) {
+    var clauseStart = kolM.index + kolM[1].length;
+    description = afterAmount.slice(0, clauseStart).trim();
+    var clause = afterAmount.slice(clauseStart).trim();
+    freq = _parseRecurFreqClause_(clause);
+  }
+
+  // Default: monthly on today's day-of-month when no "כל" clause is given.
+  if (!freq) {
+    freq = { type: 'monthly', day: new Date().getDate() };
+  }
+
+  description = description.replace(/\s+/g, ' ').trim();
+
+  return {
+    amount: amount,
+    description: description,
+    freq: freq,
+    category: category,
+    startDate: startDate,
+  };
+}
+
+// Parse the "כל ..." recurrence clause into a freq object. Returns null on
+// no match (caller then applies the monthly-today default).
+function _parseRecurFreqClause_(clause) {
+  if (!clause) return null;
+  var c = String(clause).trim();
+  var m;
+
+  // "כל <D> לחודשיים" → every 2 months on day D.
+  m = c.match(/^כל\s+(\d{1,2})\s+לחודשיים/);
+  if (m) return { type: 'months', n: 2, day: parseInt(m[1], 10) };
+
+  // "כל <D> לחודש" → monthly on day D.
+  m = c.match(/^כל\s+(\d{1,2})\s+לחודש(?=\s|$)/);
+  if (m) return { type: 'monthly', day: parseInt(m[1], 10) };
+
+  // "כל <D> ל-<N> חודשים" → every N months on day D.
+  m = c.match(/^כל\s+(\d{1,2})\s+ל[-\s]*(\d{1,2})\s+חודשים/);
+  if (m) return { type: 'months', n: parseInt(m[2], 10), day: parseInt(m[1], 10) };
+
+  // "כל <N> חודשים" (day optional, default 1).
+  m = c.match(/^כל\s+(\d{1,2})\s+חודשים/);
+  if (m) return { type: 'months', n: parseInt(m[1], 10), day: 1 };
+
+  // "כל חודשיים" (no day) → every 2 months on day 1.
+  if (/^כל\s+חודשיים/.test(c)) return { type: 'months', n: 2, day: 1 };
+
+  // "כל חודש" (no day) → monthly on day 1.
+  if (/^כל\s+חודש(?=\s|$)/.test(c)) return { type: 'monthly', day: 1 };
+
+  // "כל יום <DOW>" / "כל <DOW>" → weekly with that day-of-week.
+  m = c.match(/^כל\s+(?:יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)(?=\s|$)/);
+  if (m) return { type: 'weekly', dow: _RECUR_DOW_[m[1]] };
+
+  // "כל שבוע" → weekly on today's day-of-week.
+  if (/^כל\s+שבוע(?=\s|$)/.test(c)) return { type: 'weekly', dow: new Date().getDay() };
+
+  // "כל <N> ימים" → every N days.
+  m = c.match(/^כל\s+(\d{1,3})\s+ימים/);
+  if (m) return { type: 'days', n: parseInt(m[1], 10) };
+
+  // "כל יום" / "כל יומיים" → every 1 / 2 days.
+  if (/^כל\s+יומיים(?=\s|$)/.test(c)) return { type: 'days', n: 2 };
+  if (/^כל\s+יום(?=\s|$)/.test(c)) return { type: 'days', n: 1 };
+
+  return null;
+}
+
+// Render a freq object as a short Hebrew phrase for list output.
+function _recurFreqHuman_(freq) {
+  if (!freq || !freq.type) return '';
+  if (freq.type === 'monthly') return 'כל ' + freq.day + ' לחודש';
+  if (freq.type === 'months') {
+    if (freq.n === 2) return 'כל ' + (freq.day || 1) + ' לחודשיים';
+    return 'כל ' + (freq.day || 1) + ' ל-' + freq.n + ' חודשים';
+  }
+  if (freq.type === 'weekly') {
+    var names = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    return 'כל יום ' + (names[freq.dow] || '?');
+  }
+  if (freq.type === 'days') {
+    if (freq.n === 1) return 'כל יום';
+    if (freq.n === 2) return 'כל יומיים';
+    return 'כל ' + freq.n + ' ימים';
+  }
+  return '';
+}
+
+function _money_(n) {
+  return '₪' + Number(n || 0).toLocaleString('he-IL');
+}
+
+// ─── Recurring command handlers ───
+// "קבוע 2500 שכירות כל 1 לחודש" → add a template.
+function _recurringAdd_(fromPhone, body) {
+  var parsed = _parseRecurringCommand_(body);
+  if (!parsed || !parsed.amount) {
+    return '😕 לא הבנתי. נסה: "קבוע 2500 שכירות כל 1 לחודש".';
+  }
+  var payload = {
+    phone: String(fromPhone).replace(/[^0-9]/g, ''),
+    amount: parsed.amount,
+    description: parsed.description || 'הוצאה קבועה',
+    freq: parsed.freq,
+  };
+  if (parsed.category) payload.category = parsed.category;
+  if (parsed.startDate) payload.startDate = parsed.startDate;
+  var r = _recurringAPI_('add', payload);
+  if (!r || !r.ok) return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  return '🔁 נרשמה הוצאה קבועה: ' + _money_(parsed.amount) + ' ' + payload.description +
+    ' — הרישום הבא: ' + (r.nextDue || '?') + '.\n' +
+    'רוצה לרשום למפרע מתחילת החודש? שלח: *סנכרן הוצאות קבועות*';
+}
+
+// "רשימת קבועות" / "קבועות" → list all templates.
+function _recurringList_(fromPhone) {
+  var r = _recurringAPI_('list', { phone: String(fromPhone).replace(/[^0-9]/g, '') });
+  if (!r || !r.ok) return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  if (!r.templates || !r.templates.length) {
+    return 'אין לך הוצאות קבועות עדיין. הוסף עם: קבוע 2500 שכירות כל 1 לחודש';
+  }
+  var lines = ['🔁 *הוצאות קבועות*', '━━━━━━━━━━━━━━━━━━', ''];
+  r.templates.forEach(function(t) {
+    var line = '• ' + _money_(t.amount) + ' ' + (t.description || '') +
+      ' — ' + _recurFreqHuman_(t.freq) +
+      ' — הבא: ' + (t.nextDue || '?');
+    if (t.status === 'paused') line += ' (מושהה)';
+    lines.push(line);
+  });
+  return lines.join('\n');
+}
+
+// "מחק קבוע <ref>" → remove by id or a word from the description.
+function _recurringRemove_(fromPhone, ref) {
+  ref = String(ref || '').trim();
+  if (!ref) return '😕 ציין מה למחוק: "מחק קבוע שכירות".';
+  var r = _recurringAPI_('remove', { phone: String(fromPhone).replace(/[^0-9]/g, ''), ref: ref });
+  if (!r || !r.ok) return 'לא נמצא';
+  return '🗑 נמחקה הוצאה קבועה: ' + (r.removed || ref);
+}
+
+// "עדכן קבוע <ref> ..." → ref = first word, rest parsed for new fields.
+function _recurringUpdate_(fromPhone, rest) {
+  rest = String(rest || '').trim();
+  var spaceIdx = rest.indexOf(' ');
+  var ref = spaceIdx >= 0 ? rest.slice(0, spaceIdx) : rest;
+  var changes = spaceIdx >= 0 ? rest.slice(spaceIdx + 1).trim() : '';
+  if (!ref) return '😕 ציין מה לעדכן: "עדכן קבוע שכירות 2700".';
+  var payload = { phone: String(fromPhone).replace(/[^0-9]/g, ''), ref: ref };
+  var parsed = _parseRecurringCommand_(changes);
+  if (parsed) {
+    if (parsed.amount) payload.amount = parsed.amount;
+    if (parsed.category) payload.category = parsed.category;
+    if (parsed.freq && /\bכל\b/.test(changes)) payload.freq = parsed.freq;
+    var desc = (parsed.description || '').trim();
+    if (desc) payload.description = desc;
+  }
+  if (payload.amount == null && payload.freq == null &&
+      payload.category == null && payload.description == null) {
+    return '😕 לא הבנתי מה לעדכן. נסה: "עדכן קבוע שכירות 2700".';
+  }
+  var r = _recurringAPI_('update', payload);
+  if (!r || !r.ok) return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  var t = r.template || {};
+  return '✏️ עודכן: ' + _money_(t.amount) + ' ' + (t.description || '') +
+    (t.freq ? ' — ' + _recurFreqHuman_(t.freq) : '') + '.';
+}
+
+// "החלף מצב קבוע <ref>" / "השהה קבוע <ref>" / "הפעל קבוע <ref>" → toggle.
+function _recurringToggle_(fromPhone, ref, status) {
+  ref = String(ref || '').trim();
+  if (!ref) return '😕 ציין איזו הוצאה קבועה.';
+  var payload = { phone: String(fromPhone).replace(/[^0-9]/g, ''), ref: ref };
+  if (status) payload.status = status;
+  var r = _recurringAPI_('toggle', payload);
+  if (!r || !r.ok) return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  var stateTxt = r.status === 'paused' ? 'הושהתה ⏸' : 'הופעלה ▶️';
+  return 'ההוצאה הקבועה "' + (r.description || ref) + '" ' + stateTxt + '.';
+}
+
+// "סנכרן הוצאות קבועות" → log everything due since the template start.
+function _recurringSync_(fromPhone) {
+  var r = _recurringAPI_('sync', { phone: String(fromPhone).replace(/[^0-9]/g, '') });
+  if (!r || !r.ok) return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  if (!r.count) return 'אין מה לסנכרן.';
+  return '✅ נרשמו ' + r.count + ' הוצאות קבועות למפרע (סה"כ ' + _money_(r.totalAmount) + ').';
+}
+
+// Daily cron — asks the Vercel API to scan ALL users' templates and log
+// anything due today. Authorized by the cron secret (not the bot secret),
+// mirroring cronBillReminders. Install via installRecurringExpensesTrigger().
+function cronRecurringExpenses() {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) {
+    Logger.log('cronRecurringExpenses: KESEFLE_BOT_SECRET not set');
+    return;
+  }
+  var cronSecret = '';
+  try { cronSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_CRON_SECRET') || ''); } catch (_e) {}
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/recurring', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'x-kesefle-bot-secret': secret,
+        'x-kesefle-cron-secret': cronSecret,
+      },
+      payload: JSON.stringify({ action: 'cron', botSecret: secret, cronSecret: cronSecret }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code < 200 || code >= 300) {
+      Logger.log('cronRecurringExpenses HTTP ' + code + ': ' + body.slice(0, 200));
+      return;
+    }
+    Logger.log('cronRecurringExpenses OK: ' + body.slice(0, 200));
+  } catch (e) {
+    Logger.log('cronRecurringExpenses threw: ' + (e && e.message));
+  }
+}
+
+// Install the daily recurring-expense cron (~08:00 Israel). Run once.
+function installRecurringExpensesTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronRecurringExpenses') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronRecurringExpenses').timeBased().atHour(8).everyDays(1).create();
+  Logger.log('✅ cronRecurringExpenses installed: daily @ 08:00');
+}
+
 function _groupInfo_(fromPhone) {
   var a = _groupAPI_('getactive', { phone: fromPhone });
   if (!a || !a.ok || !a.active) {
@@ -3338,6 +3695,43 @@ function processExpense(text, fromPhone) {
   var __remRm = text.trim().match(/^(?:מחק\s+תזכורת|delete\s+reminder)\s+(\S+)$/i);
   if (__remRm && typeof _removeReminder_ === 'function') {
     return { reply: _removeReminder_(fromPhone, __remRm[1]) };
+  }
+  // ───── PERSONAL RECURRING EXPENSES ("הוצאות קבועות") ─────
+  // MUST run before the expense parser below, otherwise "קבוע 2500 שכירות"
+  // would be logged as a plain ₪2500 expense. Order within this block:
+  // exact-match list/sync first, then the delete/update/toggle prefixes,
+  // then the broad "קבוע "/"הוצאה קבועה " add prefix LAST.
+  if (trimmed === 'רשימת קבועות' || trimmed === 'קבועות' ||
+      trimmed === 'list recurring' || trimmed === 'recurring') {
+    if (typeof _recurringList_ === 'function') return { reply: _recurringList_(fromPhone) };
+  }
+  if (trimmed === 'סנכרן הוצאות קבועות' || trimmed === 'סנכרן קבועות' ||
+      trimmed === 'sync recurring') {
+    if (typeof _recurringSync_ === 'function') return { reply: _recurringSync_(fromPhone) };
+  }
+  var __recDel = text.trim().match(/^(?:מחק\s+קבוע|delete\s+recurring)\s+(.+)$/i);
+  if (__recDel && typeof _recurringRemove_ === 'function') {
+    return { reply: _recurringRemove_(fromPhone, __recDel[1].trim()) };
+  }
+  var __recUpd = text.trim().match(/^(?:עדכן\s+קבוע|update\s+recurring)\s+(.+)$/i);
+  if (__recUpd && typeof _recurringUpdate_ === 'function') {
+    return { reply: _recurringUpdate_(fromPhone, __recUpd[1].trim()) };
+  }
+  var __recPause = text.trim().match(/^(?:השהה\s+קבוע|pause\s+recurring)\s+(.+)$/i);
+  if (__recPause && typeof _recurringToggle_ === 'function') {
+    return { reply: _recurringToggle_(fromPhone, __recPause[1].trim(), 'paused') };
+  }
+  var __recResume = text.trim().match(/^(?:הפעל\s+קבוע|resume\s+recurring)\s+(.+)$/i);
+  if (__recResume && typeof _recurringToggle_ === 'function') {
+    return { reply: _recurringToggle_(fromPhone, __recResume[1].trim(), 'active') };
+  }
+  var __recFlip = text.trim().match(/^(?:החלף\s+מצב\s+קבוע|toggle\s+recurring)\s+(.+)$/i);
+  if (__recFlip && typeof _recurringToggle_ === 'function') {
+    return { reply: _recurringToggle_(fromPhone, __recFlip[1].trim()) };
+  }
+  var __recAdd = text.trim().match(/^(?:הוצאה\s+קבועה|קבוע|recurring\s+add|add\s+recurring)\s+(.+)$/i);
+  if (__recAdd && typeof _recurringAdd_ === 'function') {
+    return { reply: _recurringAdd_(fromPhone, __recAdd[1].trim()) };
   }
   // Examples — onboarding helper. "דוגמאות" shows how to write expenses.
   if (trimmed === 'דוגמאות' || trimmed === 'דוגמא' || trimmed === 'examples' || trimmed === 'example') {
@@ -7702,6 +8096,14 @@ function installKesefleBot() {
       ok++;
     }
   } catch (e) { report.push('❌ Savings projection trigger: ' + e.message); err++; }
+
+  try {
+    if (typeof installRecurringExpensesTrigger === 'function') {
+      installRecurringExpensesTrigger();
+      report.push('✅ Recurring expenses trigger (daily 8am)');
+      ok++;
+    }
+  } catch (e) { report.push('❌ Recurring expenses trigger: ' + e.message); err++; }
 
   // 7. Optional: auto-install dashboard SUMIFS formulas.
   // Off by default — set Script Property AUTO_FIX_DASHBOARDS = '1' to enable.
