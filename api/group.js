@@ -636,6 +636,26 @@ async function handlerImpl(req, res) {
       return res.status(200).json({ ok: true, recurring: group.recurring || [] });
     }
 
+    case 'markrecurringfired': {
+      // Persist lastFiredAt after the cron fires a recurring expense.
+      // Without this, the bot's cron re-fired the same recurring item
+      // every single day (the lastFiredAt write was a local-only no-op).
+      // Cron-secret gated since it's a cron-only mutation.
+      const cronSecret = process.env.KESEFLE_CRON_SECRET;
+      if (!cronSecret) return res.status(503).json({ ok: false, error: 'cron_secret_not_configured' });
+      const gotCron = req.headers['x-kesefle-cron-secret'] || body?.cronSecret;
+      if (gotCron !== cronSecret) return res.status(401).json({ ok: false, error: 'cron_unauthorized' });
+      const code = String(body.code || '').trim().toUpperCase();
+      const recurringId = String(body.recurringId || '');
+      const group = await kvGet('group:' + code);
+      if (!group || !group.recurring) return res.status(404).json({ ok: false, error: 'group_or_recurring_not_found' });
+      const rec = group.recurring.find(r => r.id === recurringId);
+      if (!rec) return res.status(404).json({ ok: false, error: 'recurring_not_found' });
+      rec.lastFiredAt = new Date().toISOString();
+      await kvSet('group:' + code, group);
+      return res.status(200).json({ ok: true, lastFiredAt: rec.lastFiredAt });
+    }
+
     default:
       return res.status(400).json({ ok: false, error: 'unknown_action', got: action });
   }

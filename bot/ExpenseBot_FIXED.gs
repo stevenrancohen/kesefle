@@ -607,14 +607,25 @@ function _isRateLimited_(fromPhone) {
 // eating expense messages like "54 סופר".
 // ============================================================
 function doPost(e) {
+  // SCALABILITY: the script lock exists only to serialize concurrent
+  // writes to the OWNER's single shared sheet. Tenants write to their
+  // OWN sheets via the Vercel bridge and never contend. The old code
+  // did waitLock(15000) and returned "busy" on failure — under load,
+  // the 2nd simultaneous message waited 15s then got DROPPED (Meta
+  // returns 200 late, never retries). That collapses at scale.
+  //
+  // New behaviour: try for 5s, but if the lock is contended, process
+  // ANYWAY rather than drop. The residual risk is a rare owner-sheet
+  // row race (one person sending two messages within ~200ms) — far
+  // cheaper than losing a user's expense. _gotLock gates the release.
   var _lock = LockService.getScriptLock();
   var _gotLock = false;
   try {
-    _lock.waitLock(15000);
-    _gotLock = true;
+    _gotLock = _lock.tryLock(5000);
+    if (!_gotLock) Logger.log('doPost: lock contended after 5s — processing without it');
   } catch (_lockErr) {
-    Logger.log('doPost: lock failed');
-    return ContentService.createTextOutput('busy').setMimeType(ContentService.MimeType.TEXT);
+    Logger.log('doPost: lock error — processing without it: ' + (_lockErr && _lockErr.message));
+    _gotLock = false;
   }
 
   try {
@@ -1907,19 +1918,15 @@ function cronGroupRecurring() {
         splitMode: 'equal',
       });
       if (fireRes && fireRes.ok) {
-        // Update lastFiredAt — we re-write the whole recurring list
-        // by mutating the group record via a small read-modify-write.
-        // (Race-safe for the cron because Apps Script triggers are
-        // serialized per script.)
+        // Persist lastFiredAt SERVER-SIDE so the recurring item doesn't
+        // re-fire tomorrow. The old local "rec.lastFiredAt = ..." was a
+        // no-op (the mutation never reached KV), so every recurring
+        // expense fired daily instead of on its interval. The cron
+        // secret authorizes this cron-only write.
         try {
-          rec.lastFiredAt = new Date().toISOString();
-          // Persist by calling addrecurring with the same fields (which
-          // doesn't fire the expense, just rewrites the recurring entry).
-          // Simpler: rely on the next read-modify-write to fix lastFiredAt
-          // — for MVP we accept the cron may fire twice on the same day
-          // if the previous trigger crashed mid-write. The mirror sheet
-          // is idempotent enough to absorb that.
-        } catch (_e) {}
+          var __cronSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_CRON_SECRET') || '');
+          _groupAPI_('markrecurringfired', { code: g.code, recurringId: rec.id, cronSecret: __cronSecret });
+        } catch (_mfErr) { Logger.log('markrecurringfired err: ' + (_mfErr && _mfErr.message)); }
         // Notify the payer in WhatsApp.
         if (typeof sendWhatsAppMessage === 'function') {
           try {
