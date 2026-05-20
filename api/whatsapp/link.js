@@ -196,6 +196,21 @@ async function handlerImpl(req, res) {
 
     const userSub = pending.userSub;
 
+    // SECURITY: bind the code to the phone the account-holder entered at
+    // REQUEST time. The 6-digit code is the only secret tying a phone to an
+    // account, so a leaked/shoulder-surfed code must not let a DIFFERENT
+    // phone link itself to the victim's account. Backward-compatible: codes
+    // issued before this field existed carry no pending.phone and are allowed.
+    if (pending.phone) {
+      const boundPhone = normalizeE164(pending.phone);
+      if (boundPhone && boundPhone !== phone) {
+        log.warn('link.confirm.phone_mismatch', {
+          reqId: req.reqId, expectedPhone: boundPhone, gotPhone: phone, userSub,
+        });
+        return res.status(409).json({ ok: false, error: 'code_bound_to_different_phone' });
+      }
+    }
+
     // Reject if this phone is already linked to a different user. Without
     // this check, a confirmed code could overwrite another user's mapping
     // and silently re-route their bot messages to the attacker's sheet.
