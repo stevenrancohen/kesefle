@@ -262,20 +262,47 @@ async function handleNps(req, res, body) {
   return res.status(200).json({ ok: true, bucket });
 }
 
+// Strict CORS — only our own origins may call this from a browser.
+// Reflects the request origin only if it's on the allowlist; otherwise
+// sends no ACAO header (the browser then blocks the cross-origin read).
+const _ALLOWED_ORIGINS_ = [
+  'https://kesefle.com',
+  'https://www.kesefle.com',
+  'https://kesefle.vercel.app',
+  'http://localhost:5274',
+  'http://localhost:3000',
+];
+function applyCors(req, res) {
+  const origin = req.headers?.origin || '';
+  if (_ALLOWED_ORIGINS_.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
 // ---------- Router ----------
 async function handlerImpl(req, res) {
+  applyCors(req, res);
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     return res.status(204).end();
   }
   if (await ipRateLimit(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
+  // Reject oversized payloads before parsing — a waitlist/track/nps
+  // event is a few hundred bytes; anything over 8KB is abuse.
+  const contentLength = Number(req.headers?.['content-length'] || 0);
+  if (contentLength > 8192) {
+    return res.status(413).json({ ok: false, error: 'payload_too_large' });
+  }
   let body = req.body;
-  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+  if (typeof body === 'string') {
+    if (body.length > 8192) return res.status(413).json({ ok: false, error: 'payload_too_large' });
+    try { body = JSON.parse(body); } catch { return res.status(400).json({ ok: false, error: 'invalid_json' }); }
+  }
   if (!body || typeof body !== 'object') body = {};
 
   const action = String(req.query?.action || body.action || 'waitlist').toLowerCase();
