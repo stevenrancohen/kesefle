@@ -4070,6 +4070,74 @@ function _loadRecentUserCorrections(n) {
 // endpoint (which already exposes userSub + plan). Free-by-default
 // means we deny on any error, so a KV outage doesn't grant free
 // users premium features.
+// ─────────────────────────────────────────────────────────────────────
+// Health monitor — the REAL version of a "24/7 QA agent". A time-based
+// trigger pings the Vercel health endpoint every 15 min. If any
+// dependency is down (KV, Sheets, Meta, Anthropic, Stripe) or the probe
+// itself fails, it emails the owner — at most once per 30 min per
+// distinct failure signature, so a sustained outage doesn't spam the
+// inbox. This runs continuously on Google's infra without anyone present.
+// ─────────────────────────────────────────────────────────────────────
+function cronHealthCheck() {
+  var problems = [];
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/health/detailed', {
+      muteHttpExceptions: true,
+      headers: { 'User-Agent': 'kesefle-healthcron/1.0' },
+    });
+    var code = resp.getResponseCode();
+    if (code < 200 || code >= 300) {
+      problems.push('health endpoint HTTP ' + code);
+    } else {
+      var j = {};
+      try { j = JSON.parse(resp.getContentText()); } catch (_pe) { problems.push('health body not JSON'); }
+      var deps = (j && j.dependencies) || (j && j.checks) || {};
+      Object.keys(deps).forEach(function(k) {
+        var d = deps[k];
+        if (d && d.ok === false && d.reason !== 'no_key_configured' && d.reason !== 'skipped') {
+          problems.push(k + ' down (' + (d.reason || d.status || '?') + ')');
+        }
+      });
+    }
+  } catch (e) {
+    problems.push('health probe threw: ' + (e && e.message));
+  }
+  if (!problems.length) return; // all good — stay quiet
+
+  // Cooldown: hash the problem set; skip if we alerted on the same set
+  // in the last 30 min.
+  try {
+    var sig = problems.sort().join('|');
+    var cache = CacheService.getScriptCache();
+    var key = 'healthalert:' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, sig)).slice(0, 16);
+    if (cache.get(key)) return; // already alerted recently
+    cache.put(key, '1', 1800);
+  } catch (_ce) {}
+
+  try {
+    var addr = Session.getActiveUser().getEmail();
+    if (addr) {
+      MailApp.sendEmail({
+        to: addr,
+        subject: '🚨 כסף\'לה — בעיה בבריאות המערכת',
+        body: 'בדיקת הבריאות זיהתה בעיות:\n\n  • ' + problems.join('\n  • ') +
+          '\n\nזמן: ' + new Date().toISOString() +
+          '\nendpoint: ' + KESEFLE_API_BASE + '/api/health/detailed' +
+          '\n\n(התראה זו נשלחת לכל היותר פעם ב-30 דקות לאותה תקלה.)',
+      });
+    }
+  } catch (_me) { Logger.log('cronHealthCheck mail err: ' + (_me && _me.message)); }
+}
+
+function installHealthCheckTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronHealthCheck') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronHealthCheck').timeBased().everyMinutes(15).create();
+  Logger.log('✅ cronHealthCheck installed: every 15 min');
+}
+
 function _hasActivePremium_(fromPhone) {
   if (!fromPhone) return false;
   try {
