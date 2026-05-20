@@ -644,6 +644,166 @@ function _verifyMetaWebhook_(e, rawBody) {
 // not durable, but adequate for spam suppression). Fails open if cache I/O
 // breaks so a CacheService outage never blocks legitimate users.
 // ============================================================
+// ─────────────────────────────────────────────────────────────────────
+// Correction — edit the LAST logged expense's amount / description /
+// date. Operates on the bottom data row of the תנועות tab. Columns:
+// A date | B month | C amount | D category | E sub | F description.
+// ─────────────────────────────────────────────────────────────────────
+function _correctLastExpense_(field, value) {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return '😬 לא מצאתי את לשונית התנועות.';
+    var last = sheet.getLastRow();
+    if (last < 2) return '📭 אין הוצאה לתיקון.';
+    var f = String(field).toLowerCase();
+    if (/סכום|amount/.test(f)) {
+      var amt = _parseIsraeliNumber_(value);
+      if (!isFinite(amt) || amt <= 0) return '😬 סכום לא תקין. נסה "תיקון סכום 250".';
+      sheet.getRange(last, 3).setValue(amt);
+      return '✅ הסכום של ההוצאה האחרונה עודכן ל-₪' + amt.toLocaleString('he-IL') + '.';
+    }
+    if (/פירוט|תיאור|description/.test(f)) {
+      sheet.getRange(last, 6).setValue(sanitizeForSheet(value.slice(0, 200)));
+      return '✅ הפירוט של ההוצאה האחרונה עודכן ל-"' + value.slice(0, 60) + '".';
+    }
+    if (/תאריך|date/.test(f)) {
+      var di = (typeof _extractLeadingDate_ === 'function') ? _extractLeadingDate_(value + ' x') : null;
+      if (!di || !di.date) return '😬 תאריך לא תקין. נסה "תיקון תאריך 12/4".';
+      var d = di.date;
+      sheet.getRange(last, 1).setValue(d);
+      sheet.getRange(last, 2).setValue(Utilities.formatDate(d, 'Asia/Jerusalem', 'yyyy-MM'));
+      return '✅ התאריך של ההוצאה האחרונה עודכן ל-' + Utilities.formatDate(d, 'Asia/Jerusalem', 'dd/MM/yyyy') + '.';
+    }
+    return '😬 אפשר לתקן: סכום / פירוט / תאריך. דוגמה: "תיקון סכום 250".';
+  } catch (e) {
+    Logger.log('_correctLastExpense_ err: ' + (e && e.message));
+    return '😬 שגיאה בתיקון: ' + (e && e.message || '');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Search — "חפש <term>" scans the תנועות tab for matching rows and
+// returns the most recent matches + a running total. Owner sheet only
+// for now (tenants would query via a future Vercel endpoint).
+// ─────────────────────────────────────────────────────────────────────
+function _searchExpenses_(term) {
+  if (!term || term.length < 2) return '😬 חיפוש קצר מדי. נסה "חפש קפה".';
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return '😬 לא מצאתי את לשונית התנועות.';
+    var last = sheet.getLastRow();
+    if (last < 2) return '📭 אין הוצאות לחיפוש.';
+    var rng = sheet.getRange(2, 1, last - 1, 7).getValues(); // date, month, amount, cat, sub, desc, source
+    var needle = String(term).toLowerCase();
+    var matches = [];
+    var total = 0;
+    for (var i = rng.length - 1; i >= 0; i--) {
+      var r = rng[i];
+      var hay = (String(r[3]) + ' ' + String(r[4]) + ' ' + String(r[5])).toLowerCase();
+      if (hay.indexOf(needle) < 0) continue;
+      var amt = Number(r[2]) || 0;
+      total += amt;
+      if (matches.length < 10) {
+        var when = r[0] instanceof Date ? Utilities.formatDate(r[0], 'Asia/Jerusalem', 'dd/MM') : String(r[0]).slice(0, 5);
+        matches.push('  • ' + when + ' · ₪' + amt.toLocaleString('he-IL') + ' · ' + (r[5] || r[4] || r[3]));
+      }
+    }
+    if (!matches.length) return '🔍 לא נמצאו תוצאות ל-"' + term + '".';
+    var out = ['🔍 *תוצאות חיפוש: "' + term + '"*', '━━━━━━━━━━━━━━━━━━', ''];
+    out = out.concat(matches);
+    out.push('');
+    out.push('💰 סה"כ: ₪' + total.toLocaleString('he-IL') + ' (' + matches.length + (matches.length === 10 ? '+' : '') + ' תוצאות)');
+    return out.join('\n');
+  } catch (e) {
+    Logger.log('_searchExpenses_ err: ' + (e && e.message));
+    return '😬 שגיאה בחיפוש: ' + (e && e.message || '');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Settings — per-user preferences in a Script Property settings:<phone>.
+// "הגדרות" with no args shows the current settings + how to change them;
+// "הגדרות שפה אנגלית" / "הגדרות אזור זמן ..." etc. set a value.
+// ─────────────────────────────────────────────────────────────────────
+function _settingsKey_(phone) { return 'settings:' + String(phone).replace(/[^0-9]/g, ''); }
+function _getSettings_(phone) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(_settingsKey_(phone));
+    return raw ? JSON.parse(raw) : {};
+  } catch (_e) { return {}; }
+}
+function _handleSettings_(phone, arg) {
+  var s = _getSettings_(phone);
+  if (!arg) {
+    return '⚙️ *ההגדרות שלך*\n' +
+      '━━━━━━━━━━━━━━━━━━\n\n' +
+      '🌐 שפה: ' + (s.lang === 'en' ? 'English' : 'עברית') + '\n' +
+      '📂 קטגוריית ברירת מחדל: ' + (s.defaultCategory || 'שונות') + '\n' +
+      '📅 יום דיגסט: ' + (s.digestDay || 'ראשון') + '\n' +
+      '🕐 אזור זמן: ' + (s.tz || 'Asia/Jerusalem') + '\n\n' +
+      'לשינוי:\n' +
+      '  • "הגדרות שפה אנגלית" / "הגדרות שפה עברית"\n' +
+      '  • "הגדרות קטגוריה <שם>"\n' +
+      '  • "הגדרות יום <ראשון/שני/...>"';
+  }
+  var m;
+  if ((m = arg.match(/^(?:שפה|language)\s+(אנגלית|english|עברית|hebrew)/i))) {
+    s.lang = /אנגלית|english/i.test(m[1]) ? 'en' : 'he';
+  } else if ((m = arg.match(/^(?:קטגוריה|category)\s+(.+)$/i))) {
+    s.defaultCategory = m[1].trim().slice(0, 40);
+  } else if ((m = arg.match(/^(?:יום|day)\s+(.+)$/i))) {
+    s.digestDay = m[1].trim().slice(0, 20);
+  } else if ((m = arg.match(/^(?:אזור\s+זמן|timezone|tz)\s+(.+)$/i))) {
+    s.tz = m[1].trim().slice(0, 40);
+  } else {
+    return '😬 לא הבנתי. שלח "הגדרות" לרשימת האפשרויות.';
+  }
+  try { PropertiesService.getScriptProperties().setProperty(_settingsKey_(phone), JSON.stringify(s)); }
+  catch (_e) { return '😬 שמירה נכשלה.'; }
+  return '✅ עודכן. שלח "הגדרות" כדי לראות את ההגדרות הנוכחיות.';
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Account deletion — GDPR/PPL. Two-step: first call shows a warning and
+// asks for confirmation; "מחק חשבון כן" performs it. Calls the Vercel
+// /api/account delete path (which revokes the OAuth token + drops KV),
+// and clears local Script-Property state for this phone.
+// ─────────────────────────────────────────────────────────────────────
+function _handleAccountDeletion_(phone, confirmed) {
+  if (!confirmed) {
+    return '⚠️ *מחיקת חשבון*\n' +
+      '━━━━━━━━━━━━━━━━━━\n\n' +
+      'זה ימחק:\n' +
+      '  • את הקישור בין המספר שלך לגיליון\n' +
+      '  • את אסימוני ההזדהות שלך\n' +
+      '  • את ההגדרות והתזכורות שלך\n\n' +
+      'הגיליון עצמו נשאר ב-Google Drive שלך — אנחנו לא נוגעים בו.\n\n' +
+      'בטוח? שלח *"מחק חשבון כן"* כדי לאשר.';
+  }
+  // Confirmed — clear local state + ask Vercel to purge KV/OAuth.
+  var clean = String(phone).replace(/[^0-9]/g, '');
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.deleteProperty(_settingsKey_(phone));
+    props.deleteProperty('lastPing:' + clean);
+  } catch (_e) {}
+  try {
+    var secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '');
+    if (secret) {
+      UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/account?action=delete-by-phone', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': secret },
+        payload: JSON.stringify({ botSecret: secret, phone: clean }),
+        muteHttpExceptions: true,
+      });
+    }
+  } catch (_e) {}
+  return '✅ החשבון נמחק. הקישור והאסימונים הוסרו.\n' +
+    'הגיליון נשאר אצלך ב-Drive. תודה שניסית את כסף\'לה 💚\n\n' +
+    'אם תרצה לחזור — היכנס שוב ל-https://kesefle.com/account.';
+}
+
 // Abuse blacklist — a Script Property holding a comma-separated list of
 // blocked phone numbers (digits only). Cached 5 min to avoid a property
 // read on every message. Manage via "blacklist" Script Property.
@@ -3068,6 +3228,32 @@ function processExpense(text, fromPhone) {
   var __remRm = text.trim().match(/^(?:מחק\s+תזכורת|delete\s+reminder)\s+(\S+)$/i);
   if (__remRm && typeof _removeReminder_ === 'function') {
     return { reply: _removeReminder_(fromPhone, __remRm[1]) };
+  }
+  // Search — "חפש קפה" returns matching expenses + total
+  var __searchM = text.trim().match(/^(?:חפש|search)\s+(.+)$/i);
+  if (__searchM && typeof _searchExpenses_ === 'function') {
+    return { reply: _searchExpenses_(__searchM[1].trim()) };
+  }
+  // Correction — "תיקון סכום 250" / "תיקון פירוט קפה ארומה" / "תיקון תאריך 12/4"
+  // edits the LAST logged expense's amount / description / date.
+  var __corrM = text.trim().match(/^(?:תיקון|תקן|fix|correct)\s+(סכום|פירוט|תיאור|תאריך|amount|description|date)\s+(.+)$/i);
+  if (__corrM && typeof _correctLastExpense_ === 'function') {
+    return { reply: _correctLastExpense_(__corrM[1], __corrM[2].trim()) };
+  }
+  // Settings — "הגדרות" shows/edits preferences
+  if (trimmed === 'הגדרות' || trimmed === 'settings' || trimmed === 'preferences') {
+    if (typeof _handleSettings_ === 'function') return { reply: _handleSettings_(fromPhone, '') };
+  }
+  var __setM = text.trim().match(/^(?:הגדרות|settings)\s+(.+)$/i);
+  if (__setM && typeof _handleSettings_ === 'function') {
+    return { reply: _handleSettings_(fromPhone, __setM[1].trim()) };
+  }
+  // Account deletion flow — "מחק חשבון" → confirm → "מחק חשבון כן"
+  if (/^מחק\s+חשבון$/i.test(trimmed) || trimmed === 'delete account') {
+    if (typeof _handleAccountDeletion_ === 'function') return { reply: _handleAccountDeletion_(fromPhone, false) };
+  }
+  if (/^מחק\s+חשבון\s+כן$/i.test(trimmed) || trimmed === 'delete account yes') {
+    if (typeof _handleAccountDeletion_ === 'function') return { reply: _handleAccountDeletion_(fromPhone, true) };
   }
   // Referral
   if (trimmed === 'הזמן' || trimmed === 'הפניה' || trimmed === 'referral' || trimmed === 'invite') {

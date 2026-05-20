@@ -277,11 +277,60 @@ async function handlerImpl(req, res) {
   }
 }
 
+// Bot-callable deletion by phone (no Google token — the bot only knows
+// the phone). Gated by the bot secret. Resolves phone → userSub via KV,
+// then runs the same revoke + purge as the authed delete. This is how
+// the WhatsApp "מחק חשבון כן" flow deletes an account without the user
+// being in a browser session.
+async function deleteByPhone(req, res) {
+  const expected = process.env.KESEFLE_BOT_SECRET;
+  if (!expected) return res.status(503).json({ ok: false, error: 'bot_secret_not_configured' });
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+  const got = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
+  if (got !== expected) return res.status(401).json({ ok: false, error: 'unauthorized' });
+
+  const phone = String(body?.phone || '').replace(/[^0-9]/g, '');
+  if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
+
+  const phoneRec = await kvGet('phone:' + phone);
+  if (!phoneRec || !phoneRec.userSub) {
+    // Nothing linked — still drop any phone-keyed state and report ok.
+    await kvDel('phone:' + phone);
+    return res.status(200).json({ ok: true, deleted: ['phone:' + phone], note: 'no_linked_user' });
+  }
+  const userSub = phoneRec.userSub;
+  const userRec = await kvGet('user:' + userSub);
+  if (userRec) {
+    const refresh = userRec.refreshTokenEnvelope
+      ? (() => { try { return decryptRefreshToken(userRec.refreshTokenEnvelope, userSub); } catch { return null; } })()
+      : userRec.refreshToken;
+    if (refresh) await revokeGoogleToken(refresh);
+  }
+  const deleted = [];
+  for (const k of ['user:' + userSub, 'sheet:' + userSub, 'phone:' + phone, 'userPhone:' + userSub, 'memberGroup:' + phone, 'reminders:' + phone]) {
+    if (await kvDel(k)) deleted.push(k);
+  }
+  log.info('account.delete_by_phone', { reqId: req.reqId, phone: phone.replace(/\d(?=\d{4})/g, '*') });
+  return res.status(200).json({ ok: true, deleted });
+}
+
 // Both delete (3/hr) and export (2/hr) are sensitive but distinct.
 // We use a single bucket here keyed by `account_op` with the conservative cap of 5/hour
 // — covers both flows together since real users do these very rarely.
+//
+// The bot-secret delete-by-phone path is checked FIRST, bypassing
+// requireAuth (the bot has no Google token), then the authed browser
+// flows run as before.
 export default withRequestId(
   withRateLimit({ key: 'account_op', limit: 5, windowSec: 3600 })(
-    requireAuth(handlerImpl)
+    async function accountRouter(req, res) {
+      const action = String(req.query?.action || '').toLowerCase();
+      if (action === 'delete-by-phone') {
+        if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+        return deleteByPhone(req, res);
+      }
+      return requireAuth(handlerImpl)(req, res);
+    }
   )
 );
