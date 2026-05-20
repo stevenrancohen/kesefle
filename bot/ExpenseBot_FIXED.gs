@@ -790,6 +790,56 @@ function _handleAccountDeletion_(phone, confirmed) {
     'אם תרצה לחזור — היכנס שוב ל-https://kesefle.com/account.';
 }
 
+// New-lead alert. The first time a given phone ever messages the bot,
+// notify the owner — email (MailApp) + a WhatsApp ping to the alert
+// number — with the customer's phone. Deduped permanently per phone via
+// a leadNotified:<phone> Script Property, so it fires exactly once per
+// new customer. The alert WhatsApp number is configurable via the
+// LEAD_ALERT_PHONE Script Property (defaults to +972547760643). That
+// number must be in the bot number's recipient allowlist for the
+// WhatsApp ping to deliver (the email always works).
+function _notifyOwnerNewLead_(fromPhone) {
+  if (!fromPhone) return;
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return;
+  var props = PropertiesService.getScriptProperties();
+  // Don't alert on the owner's own messages.
+  var owner = String(props.getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
+  if (owner && clean === owner) return;
+  var flagKey = 'leadNotified:' + clean;
+  if (props.getProperty(flagKey)) return; // already alerted for this customer
+  props.setProperty(flagKey, new Date().toISOString());
+
+  var when = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm');
+  var displayPhone = '+' + clean;
+
+  // 1) Email the owner.
+  try {
+    var addr = Session.getActiveUser().getEmail();
+    if (addr) {
+      MailApp.sendEmail({
+        to: addr,
+        subject: '🆕 כסף\'לה — לקוח חדש התחבר לבוט',
+        body: 'לקוח חדש שלח הודעה ראשונה לבוט:\n\n' +
+          '📞 מספר: ' + displayPhone + '\n' +
+          '🕐 זמן: ' + when + '\n\n' +
+          '(התראה זו נשלחת פעם אחת בלבד לכל מספר חדש.)',
+      });
+    }
+  } catch (_me) { Logger.log('new-lead email err: ' + (_me && _me.message)); }
+
+  // 2) WhatsApp ping to the alert number.
+  try {
+    var alertPhone = String(props.getProperty('LEAD_ALERT_PHONE') || '+972547760643');
+    if (typeof sendWhatsAppMessage === 'function') {
+      sendWhatsAppMessage(alertPhone,
+        '🆕 *לקוח חדש התחבר לבוט*\n' +
+        '📞 ' + displayPhone + '\n' +
+        '🕐 ' + when);
+    }
+  } catch (_we) { Logger.log('new-lead whatsapp err: ' + (_we && _we.message)); }
+}
+
 // Abuse blacklist — a Script Property holding a comma-separated list of
 // blocked phone numbers (digits only). Cached 5 min to avoid a property
 // read on every message. Manage via "blacklist" Script Property.
@@ -983,6 +1033,13 @@ function doPost(e) {
       // 🕒 Mark the user as active so cronDailyMotivation can skip if they
       // already chatted in the last 2 hours (don't be annoying).
       try { PropertiesService.getScriptProperties().setProperty('lastUserMessageAt', new Date().toISOString()); } catch (_lumErr) {}
+
+      // 🆕 NEW-LEAD ALERT — the first time ANY phone messages the bot,
+      // notify the owner once (email + WhatsApp to the alert number) with
+      // the customer's phone. Deduped permanently per phone via a Script
+      // Property so it fires once per customer, not per message. Placed
+      // after the spam/rate-limit guards so junk doesn't trigger alerts.
+      try { _notifyOwnerNewLead_(__from_); } catch (_nlErr) { Logger.log('new-lead alert err: ' + (_nlErr && _nlErr.message)); }
 
       if (typeof ALLOWED_PHONES !== 'undefined' && ALLOWED_PHONES.length > 0) {
         var __clean_ = String(__from_).replace(/[^0-9]/g, '');
@@ -3380,7 +3437,14 @@ function processExpense(text, fromPhone) {
         }
 
         var aiConf = (aiRich && typeof aiRich.confidence === 'number') ? aiRich.confidence : 0;
-        var aiOK = aiRich && aiRich.category && aiRich.category !== 'בלתי מזוהה';
+        // "Clear" means: a real category that ISN'T the misc/default
+        // bucket. If the AI lands on שונות / שונות ואחרים / בלתי מזוהה,
+        // we treat it as unclear and force the user to pick — so nothing
+        // gets quietly dumped into "שונות".
+        var aiOK = aiRich && aiRich.category &&
+                   aiRich.category !== 'בלתי מזוהה' &&
+                   aiRich.category !== 'שונות' &&
+                   aiRich.category !== 'שונות ואחרים';
         var TIER_DIRECT     = 0.85;
         var TIER_SOFT       = 0.70;
         var TIER_LIST_SMALL = 0.40;
@@ -3400,25 +3464,15 @@ function processExpense(text, fromPhone) {
               from_phone: fromPhone
             });
           } catch (_e) {}
-        } else if (aiOK && aiConf >= TIER_SOFT) {
-          // Tier B: write directly with soft hint appended to the reply.
-          try { _learnedSave(soleItem.description, { category: aiRich.category, subcategory: aiRich.subcategory }, 'ai'); } catch (_lsErr) {}
-          __softHintTail = '\n\n💡 לא הייתי בטוח 100% — אם לא נכון, שלח/י "קטגוריה X"';
-          try {
-            _logMLAudit_({
-              user_text: soleItem.description,
-              amount: Math.abs(soleItem.amount),
-              ai_category: aiRich.category,
-              ai_confidence: aiConf,
-              final_category: aiRich.category,
-              final_subcategory: aiRich.subcategory,
-              via: 'ai',
-              from_phone: fromPhone
-            });
-          } catch (_e) {}
         } else {
-          // Tier C/D: interactive list (3 if conf>=0.4, else 5)
-          var listSize = (aiOK && aiConf >= TIER_LIST_SMALL) ? 3 : 5;
+          // BELOW the direct-write bar (anything under 0.85) → HOLD the
+          // expense and force the user to pick the category + subcategory
+          // from a list. Product decision (per Steven): an unclear
+          // expense/income is NEVER filed silently — the user guides the
+          // bot. This merged in the old 0.70–0.85 "soft hint auto-write"
+          // tier: those now ask too, rather than guessing.
+          // Tier C/D: interactive list (4 options if conf>=0.4, else 6).
+          var listSize = (aiOK && aiConf >= TIER_LIST_SMALL) ? 4 : 6;
           try {
             var predictions = _predictTopCategories(soleItem.description, Math.max(listSize, 5));
             if (aiRich && aiRich.category && aiRich.category !== 'בלתי מזוהה') {
