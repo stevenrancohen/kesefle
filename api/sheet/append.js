@@ -78,6 +78,27 @@ async function handlerImpl(req, res) {
     return res.status(404).json({ ok: false, error: 'no_user_for_phone' });
   }
 
+  // ── HARD ASSERTION — tenant isolation ──────────────────────────────
+  // The record resolved from phone:{phone} must carry a userSub AND a
+  // spreadsheetId, and that sheet must match the canonical sheet registered
+  // for the user (sheet:{userSub}). If a phone record were ever corrupted to
+  // point at someone else's sheet, abort BEFORE writing rather than leak.
+  // (The OAuth token is also minted from this same userSub, so Google
+  //  itself rejects writes to a sheet the user doesn't own — this is the
+  //  belt to that suspenders.)
+  if (!userRecord.userSub || !userRecord.spreadsheetId) {
+    log.error('append.incomplete_user_record', { reqId: req.reqId, phone });
+    return res.status(409).json({ ok: false, error: 'incomplete_user_record' });
+  }
+  const sheetRec = await kvGet(`sheet:${userRecord.userSub}`);
+  if (sheetRec?.spreadsheetId && sheetRec.spreadsheetId !== userRecord.spreadsheetId) {
+    log.error('append.sheet_ownership_mismatch', {
+      reqId: req.reqId, phone, userSub: userRecord.userSub,
+      phoneRecordSheet: userRecord.spreadsheetId, canonicalSheet: sheetRec.spreadsheetId,
+    });
+    return res.status(409).json({ ok: false, error: 'sheet_ownership_mismatch' });
+  }
+
   const amount = Number(body?.amount);
   if (!isFinite(amount) || amount <= 0) {
     return res.status(400).json({ ok: false, error: 'invalid_amount' });
@@ -100,6 +121,31 @@ async function handlerImpl(req, res) {
   }
 
   log.info('append.ok', { reqId: req.reqId, phone, rowIndex: result.rowIndex });
+
+  // Traceability: log phone → userSub → sheetId for every successful write,
+  // keyed by timestamp (30-day TTL). Lets us audit routing after the fact.
+  // Fire-and-forget — never block or fail a write on logging.
+  try {
+    const kvUrl = process.env.KV_REST_API_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN;
+    if (kvUrl && kvToken) {
+      const logKey = `write_log:${Date.now()}:${phone}`;
+      const logVal = JSON.stringify({
+        phone,
+        userSub: userRecord.userSub,
+        sheetId: userRecord.spreadsheetId,
+        rowIndex: result.rowIndex || null,
+        amount,
+        at: new Date().toISOString(),
+      });
+      await fetch(`${kvUrl}/set/${encodeURIComponent(logKey)}?EX=2592000`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${kvToken}` },
+        body: logVal,
+      }).catch(() => {});
+    }
+  } catch (_) { /* logging must never break a write */ }
+
   return res.status(200).json({
     ok: true,
     rowIndex: result.rowIndex,

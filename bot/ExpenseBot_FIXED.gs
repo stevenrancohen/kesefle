@@ -20,6 +20,15 @@
 
 const SHEET_ID = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
 const COMPANY_SHEET_ID = SHEET_ID;
+// ── SECURITY — owner of the hardcoded SHEET_ID above ──────────────────
+// The legacy single-tenant code in this file writes DIRECTLY to SHEET_ID
+// (the script owner's personal sheet). That path must run for the owner
+// ONLY. OWNER_PHONE (E.164 digits) is the owner's WhatsApp number and the
+// safe fallback when the SHEET_OWNER_PHONE Script Property is unset.
+// WITHOUT this, an unset property made _resolveTenant_ treat EVERY sender
+// as the owner — leaking other people's expenses into this sheet. The
+// SHEET_OWNER_PHONE Script Property, if present, overrides this constant.
+const OWNER_PHONE = '972547760643';
 const ORDERS_TAB_NAME = 'הזמנות';
 const TRANSACTIONS_SHEET = 'תנועות';
 const DASHBOARD_SHEET = 'מאזן שנתי';
@@ -1485,6 +1494,38 @@ function handleInteractiveReply_(fromPhone, interactive) {
 
   if (!amount || amount <= 0) {
     return { replyText: '😬 פג תוקף הבחירה (5 דק׳ עברו)\n💡 שלח שוב את ההוצאה כדי לקטלג' };
+  }
+
+  // SECURITY: only the owner writes to the hardcoded SHEET_ID. A non-owner
+  // who disambiguated a category must have their row written to THEIR OWN
+  // sheet via the tenant bridge — never this one. (This handler previously
+  // appended every sender's pick straight into the owner's sheet, and also
+  // polluted the owner's learning/audit tabs with foreign data.)
+  if (!_isOwnerPhone_(fromPhone)) {
+    var __tt = _resolveTenant_(fromPhone);
+    try { PropertiesService.getScriptProperties().deleteProperty(pendingKey); } catch (_dp) {}
+    if (__tt && !__tt.isOwner && __tt.userRecord) {
+      var __ar = _tenantAppendStructured_(fromPhone, {
+        amount: amount,
+        category: decoded.category,
+        subcategory: decoded.subcategory,
+        rawText: (pending && pending.rawText) || description,
+        isIncome: false,
+      });
+      if (__ar.ok) {
+        return { replyText: '✅ נרשם בגיליון שלך!\n💰 ₪' + amount + '\n📁 ' + decoded.category + (decoded.subcategory ? ' / ' + decoded.subcategory : '') + '\n📝 ' + description };
+      }
+      Logger.log('handleInteractiveReply_ tenant append failed: ' + __ar.code + ' ' + String(__ar.body).slice(0, 200));
+      return { replyText: '😬 לא הצלחתי לשמור עכשיו. שלח שוב את ההוצאה בעוד רגע.' };
+    }
+    // Neither owner nor a linked tenant — onboard, do NOT write anywhere.
+    return { replyText:
+      'היי! 👋 אני עוד לא מזהה את המספר הזה.\n' +
+      'התחבר ב-https://kesefle.com/account וקשר את המספר — לוקח 30 שניות.' };
+  }
+  // Owner-only beyond this point. Final guard before the SHEET_ID write.
+  if (!_assertOwnerLegacyWrite_(fromPhone, 'interactive')) {
+    return { replyText: '😬 משהו לא תקין בזיהוי המספר. נסה שוב.' };
   }
 
   // Write the row to the sheet with the chosen category
@@ -3625,17 +3666,49 @@ function _groupSenderName_(fromPhone) {
 // which decrypts the user's refresh token, exchanges for an access
 // token, and appends to THEIR Google Sheet.
 // ─────────────────────────────────────────────────────────────────────
+// The configured owner phone (digits only). SHEET_OWNER_PHONE Script
+// Property wins; otherwise the hardcoded OWNER_PHONE constant (which is
+// tied to the hardcoded SHEET_ID). NEVER returns empty — an empty owner
+// was the root of the cross-tenant leak.
+function _ownerPhoneDigits_() {
+  var p = '';
+  try { p = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || ''); } catch (_e) {}
+  p = p.replace(/[^0-9]/g, '');
+  return p || OWNER_PHONE;
+}
+
+// Single source of truth: is this inbound sender the script owner?
+// An empty/unknown sender is NEVER the owner.
+function _isOwnerPhone_(fromPhone) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return false;
+  return clean === _ownerPhoneDigits_();
+}
+
+// Defense-in-depth. Call IMMEDIATELY before any legacy write to SHEET_ID
+// that was triggered by an inbound message. Returns true only if the
+// sender is the owner (or there is NO sender — a trusted internal/cron/
+// debug context with no tenant to mis-route to). On a real non-owner
+// sender it logs + alerts the owner + returns false, so the caller aborts.
+// This guarantees no cross-tenant write even if upstream routing regresses.
+function _assertOwnerLegacyWrite_(fromPhone, ctx) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return true;                       // internal/cron/debug — no inbound sender
+  if (clean === _ownerPhoneDigits_()) return true;
+  try { Logger.log('🚨 BLOCKED non-owner legacy write [' + (ctx || '?') + '] from ' + clean + ' → SHEET_ID'); } catch (_l) {}
+  try { _adminAlertOnce_('🚨 חסמתי כתיבה של מספר לא מוכר (' + clean + ') לגיליון שלך [' + (ctx || '') + ']. בדוק את קישור המספרים.', clean); } catch (_a) {}
+  return false;
+}
+
 function _resolveTenant_(fromPhone) {
   if (!fromPhone) return null;
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
-  // 1. Script owner — match against the configured SHEET_OWNER_PHONE,
-  //    fall back to allowing the existing single-tenant path if the
-  //    property isn't set (back-compat: every existing user is the owner).
-  var ownerPhone = '';
-  try { ownerPhone = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || ''); } catch (_e) {}
-  ownerPhone = ownerPhone.replace(/[^0-9]/g, '');
-  if (!ownerPhone) return { isOwner: true };
-  if (clean === ownerPhone) return { isOwner: true };
+  // 1. Script owner — ONLY the configured/known owner phone takes the
+  //    legacy single-tenant path that writes to the hardcoded SHEET_ID.
+  //    (Previously, an unset SHEET_OWNER_PHONE returned {isOwner:true} for
+  //    EVERYONE — that was the cross-tenant data leak. Now fixed: unknown
+  //    senders fall through to the KV tenant lookup / onboarding below.)
+  if (_isOwnerPhone_(clean)) return { isOwner: true };
   // 2. Lookup the tenant in Kesefle KV via /api/whatsapp/link?phone=
   var rec = _kvLookupPhone_(clean);
   if (rec && rec.linked && rec.userSub) {
@@ -3713,6 +3786,44 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   }
 }
 
+// Post an ALREADY-PARSED expense (amount + category chosen) to a tenant's
+// own sheet via the Vercel bridge. Used when we already know the structured
+// fields (e.g. after an interactive category pick) and must NOT re-parse.
+// Returns { ok, code, body }.
+function _tenantAppendStructured_(fromPhone, fields) {
+  var botSecret = '';
+  try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!botSecret) {
+    Logger.log('_tenantAppendStructured_: KESEFLE_BOT_SECRET not set');
+    return { ok: false, code: 0, body: 'no_secret' };
+  }
+  var payload = {
+    phone: String(fromPhone).replace(/[^0-9]/g, ''),
+    amount: fields.amount,
+    currency: fields.currency || 'ILS',
+    isIncome: !!fields.isIncome,
+    category: fields.category || 'אחר',
+    subcategory: fields.subcategory || '',
+    rawText: fields.rawText || '',
+    messageId: fields.messageId || '',
+    botSecret: botSecret,
+  };
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/append', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    return { ok: code >= 200 && code < 300, code: code, body: resp.getContentText() };
+  } catch (e) {
+    Logger.log('_tenantAppendStructured_ throw: ' + (e && e.message));
+    return { ok: false, code: 0, body: String(e && e.message) };
+  }
+}
+
 function processExpense(text, fromPhone) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
@@ -3769,6 +3880,18 @@ function processExpense(text, fromPhone) {
     // continue with the existing single-tenant path.
   } catch (__tenantErr) {
     Logger.log('tenant router err (falling back to owner path): ' + (__tenantErr && __tenantErr.message));
+  }
+
+  // SECURITY belt-and-suspenders: every line below writes to the hardcoded
+  // owner SHEET_ID. If a real non-owner sender somehow reached here (e.g. a
+  // future routing regression, or _kvLookupPhone_ failing open), abort
+  // before any write rather than leak into the owner's sheet.
+  if (fromPhone && !_isOwnerPhone_(fromPhone)) {
+    Logger.log('🚨 processExpense legacy path reached by non-owner ' + String(fromPhone).replace(/[^0-9]/g, '') + ' — aborting write.');
+    try { _adminAlertOnce_('🚨 נחסמה כתיבה של מספר לא מוכר לגיליון שלך (processExpense). בדוק קישור מספרים.', String(fromPhone).replace(/[^0-9]/g, '')); } catch (_e) {}
+    return { reply:
+      'היי! 👋 אני כספלה — אבל אני עוד לא מזהה את המספר הזה.\n' +
+      'התחבר ב-https://kesefle.com/account וקשר את המספר — לוקח 30 שניות, ואז ההוצאות יישמרו בגיליון שלך.' };
   }
 
   var __hT = String(text || '').trim();
@@ -9857,7 +9980,10 @@ function _countCorrectionsForText_(userText) {
 
 function _adminAlertOnce_(message, fromPhone) {
   try {
-    var admin = PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || fromPhone;
+    // Always alert the OWNER. Fall back to the OWNER_PHONE constant — NEVER
+    // to the inbound sender (fromPhone) — so a security alert can't be
+    // delivered to a stranger when SHEET_OWNER_PHONE happens to be unset.
+    var admin = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '') || OWNER_PHONE;
     if (!admin) return;
     if (typeof sendWhatsAppMessage === 'function') {
       sendWhatsAppMessage(admin, message);
