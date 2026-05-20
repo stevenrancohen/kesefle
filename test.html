@@ -214,9 +214,9 @@ async function testFaqCta(id) {
   try {
     var h = await fetchMain();
     var bad = h.indexOf('wa.me/972500000000') >= 0;
-    var good = h.indexOf('wa.me/17745448053') >= 0;
+    var good = h.indexOf('wa.me/15556408123') >= 0;
     if (bad) setStatus(id, false, 'עדיין מפנה למספר מזויף');
-    else if (good) setStatus(id, true, 'מפנה למספר אמיתי 17745448053');
+    else if (good) setStatus(id, true, 'מפנה למספר אמיתי 15556408123');
     else setStatus(id, false, 'wa.me לא נמצא');
   } catch (e) { setStatus(id, false, e.message); }
 }
@@ -293,7 +293,7 @@ async function testOnboardingWa(id) {
     if (!r.ok) { setStatus(id, false, '/account לא נטען'); return; }
     var h = await r.text();
     var badHref = h.indexOf('id="btn-whatsapp"') >= 0 && h.indexOf('href="#"') >= 0 && h.match(/<a[^>]*id="btn-whatsapp"[^>]*href="#"/);
-    var hasReal = h.indexOf('wa.me/17745448053') >= 0;
+    var hasReal = h.indexOf('wa.me/15556408123') >= 0;
     setStatus(id, hasReal && !badHref, hasReal ? 'מקושר למספר אמיתי' : 'חסר קישור אמיתי');
   } catch (e) { setStatus(id, false, e.message); }
 }
@@ -311,7 +311,7 @@ async function testPermsNoMic(id) {
 async function testRealWaCount(id) {
   try {
     var h = await fetchMain();
-    var matches = h.match(/17745448053/g) || [];
+    var matches = h.match(/15556408123/g) || [];
     setStatus(id, matches.length >= 1, matches.length + ' מופעים של המספר האמיתי');
   } catch (e) { setStatus(id, false, e.message); }
 }
