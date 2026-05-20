@@ -5681,6 +5681,32 @@ function _handleReceiptImage_(fromPhone, image) {
     try { _coerceCategoryBySubcategory(matched); } catch (__) {}
   }
 
+  // SECURITY: only the owner writes a receipt to the hardcoded SHEET_ID.
+  // A non-owner's receipt must be written to THEIR OWN sheet via the tenant
+  // bridge — never this one. (This path used to append every sender's
+  // receipt straight into the owner's sheet.)
+  if (!_isOwnerPhone_(fromPhone)) {
+    var __rt = _resolveTenant_(fromPhone);
+    if (__rt && !__rt.isOwner && __rt.userRecord) {
+      var __rr = _tenantAppendStructured_(fromPhone, {
+        amount: amount,
+        category: matched.category,
+        subcategory: matched.subcategory,
+        rawText: (vendor ? vendor + ' — ' : '') + description,
+        isIncome: false,
+      });
+      if (__rr.ok) {
+        return { replyText: '✅ נרשם בגיליון שלך מהקבלה!\n💰 ₪' + amount + '\n📁 ' + matched.category + (matched.subcategory ? ' / ' + matched.subcategory : '') + '\n📝 ' + (vendor || description) };
+      }
+      Logger.log('_handleReceiptImage_ tenant append failed: ' + __rr.code + ' ' + String(__rr.body).slice(0, 200));
+      return { replyText: '😬 לא הצלחתי לשמור את הקבלה כרגע. נסה שוב בעוד רגע.' };
+    }
+    return { replyText: 'היי! 👋 אני עוד לא מזהה את המספר הזה.\nהתחבר ב-https://kesefle.com/account וקשר את המספר — ואז גם קבלות יישמרו אצלך אוטומטית.' };
+  }
+  if (!_assertOwnerLegacyWrite_(fromPhone, 'receipt')) {
+    return { replyText: '😬 משהו לא תקין בזיהוי המספר. נסה שוב.' };
+  }
+
   // Step 5 — Write to תנועות exactly like processExpense does.
   var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
   if (!sheet) {
