@@ -708,6 +708,42 @@
   </div>
 </section>
 
+<!-- ============== LIVE STATS STRIP (animated count-up) ============== -->
+<section class="border-y border-ink-200/60 bg-white/40 py-8 backdrop-blur dark:border-ink-700/50 dark:bg-ink-900/40">
+  <div class="mx-auto grid max-w-5xl grid-cols-2 gap-6 px-5 md:grid-cols-4">
+    <div class="kfl-reveal text-center">
+      <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="18725">0</span></div>
+      <div class="mt-1 text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">מילים שהבוט מכיר</div>
+    </div>
+    <div class="kfl-reveal text-center" data-delay="1">
+      <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="389">0</span></div>
+      <div class="mt-1 text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">קטגוריות חכמות</div>
+    </div>
+    <div class="kfl-reveal text-center" data-delay="2">
+      <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="3">0</span></div>
+      <div class="mt-1 text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">שניות לרישום</div>
+    </div>
+    <div class="kfl-reveal text-center" data-delay="3">
+      <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="99">0</span>%</div>
+      <div class="mt-1 text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">דיוק קטלוג</div>
+    </div>
+  </div>
+</section>
+<script>
+(function(){
+  function animateCount(el){
+    var to = parseInt(el.getAttribute('data-to'),10) || 0, dur = 1300, start = null;
+    function step(ts){ if(!start) start = ts; var p = Math.min((ts-start)/dur,1); var e = 1 - Math.pow(1-p,3); el.textContent = Math.round(to*e).toLocaleString('he-IL'); if(p<1) requestAnimationFrame(step); else el.textContent = to.toLocaleString('he-IL'); }
+    requestAnimationFrame(step);
+  }
+  var counts = document.querySelectorAll('.kfl-count');
+  if(!counts.length) return;
+  if(!('IntersectionObserver' in window)){ counts.forEach(function(el){ el.textContent = (parseInt(el.getAttribute('data-to'),10)||0).toLocaleString('he-IL'); }); return; }
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ animateCount(e.target); io.unobserve(e.target); } }); }, { threshold: 0.4 });
+  counts.forEach(function(el){ io.observe(el); });
+})();
+</script>
+
 <section id="value" class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
   <div class="pointer-events-none absolute inset-0 -z-10 dotgrid text-ink-300/30 dark:text-white/[0.04]"></div>
   <div class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-500/5 blur-3xl"></div>
