@@ -2097,7 +2097,12 @@ function _getReferralLink_(fromPhone) {
 // /api/reminders?action=due endpoint scans ALL users' reminders and
 // returns the firing list, then this function iterates and pings each.
 function cronBillReminders() {
-  var resp = _remindersAPI_('due', { onDate: new Date().toISOString().slice(0, 10) });
+  // The cross-user "due" scan requires a separate cron secret (the bot
+  // secret alone isn't enough — see api/reminders.js). Read it from
+  // Script Properties; if unset, the call will 503 and we skip quietly.
+  var cronSecret = '';
+  try { cronSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_CRON_SECRET') || ''); } catch (_e) {}
+  var resp = _remindersAPI_('due', { onDate: new Date().toISOString().slice(0, 10), cronSecret: cronSecret });
   if (!resp || !resp.ok || !resp.due || !resp.due.length) return;
   resp.due.forEach(function(r) {
     if (typeof sendWhatsAppMessage !== 'function') return;
