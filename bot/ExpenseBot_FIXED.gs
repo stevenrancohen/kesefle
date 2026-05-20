@@ -1280,7 +1280,7 @@ function doPost(e) {
 
           // Subscription auto-detector commands (checked first so router does
           // not need to know about them). See _handleSubscriptionCommand_ below.
-          if (typeof _handleSubscriptionCommand_ === "function") {
+          if (typeof _handleSubscriptionCommand_ === "function" && _isOwnerPhone_(__from_)) {
             try {
               var __subRes = _handleSubscriptionCommand_(__from_, __text_);
               if (__subRes && __subRes.handled) {
@@ -1296,7 +1296,7 @@ function doPost(e) {
 
           // Budget commands: תקציבים / budgets list + "יעד תקציב X = Y" override.
           // See _handleBudgetCommand_ below.
-          if (typeof _handleBudgetCommand_ === "function") {
+          if (typeof _handleBudgetCommand_ === "function" && _isOwnerPhone_(__from_)) {
             try {
               var __bgtRes = _handleBudgetCommand_(__from_, __text_);
               if (__bgtRes && __bgtRes.handled) {
@@ -1314,7 +1314,7 @@ function doPost(e) {
           // Learning dashboard: לימוד, למד: ..., מחק לימוד N, איפוס לימוד.
           // Must be BEFORE category correction so its own כן/לא reset
           // confirmation isn't swallowed by the correction handler.
-          if (typeof _handleLearningCommand_ === "function") {
+          if (typeof _handleLearningCommand_ === "function" && _isOwnerPhone_(__from_)) {
             try {
               var __lrnRes = _handleLearningCommand_(__from_, __text_);
               if (__lrnRes && __lrnRes.handled) {
@@ -1331,7 +1331,7 @@ function doPost(e) {
 
           // Category correction flow — "קטגוריה X" then "כן/לא". Must be
           // checked early so כן/לא tokens don't get caught by other routers.
-          if (typeof _handleCategoryCorrection_ === "function") {
+          if (typeof _handleCategoryCorrection_ === "function" && _isOwnerPhone_(__from_)) {
             try {
               var __corRes = _handleCategoryCorrection_(__from_, __text_);
               if (__corRes && __corRes.handled) {
@@ -1381,7 +1381,7 @@ function doPost(e) {
             }
           }
 
-          if (typeof handleBotCommand_ === "function") {
+          if (typeof handleBotCommand_ === "function" && _isOwnerPhone_(__from_)) {
             try {
               var __bc = handleBotCommand_(__from_, __text_);
               Logger.log('doPost: handleBotCommand handled=' + (__bc && __bc.handled));
@@ -1398,7 +1398,7 @@ function doPost(e) {
             }
           }
 
-          if (typeof SRC_ROUTER_handle === "function") {
+          if (typeof SRC_ROUTER_handle === "function" && _isOwnerPhone_(__from_)) {
             try {
               var __routed_ = SRC_ROUTER_handle(__from_, __text_);
               Logger.log('doPost: SRC_ROUTER handled=' + (__routed_ && __routed_.handled));
@@ -5905,10 +5905,15 @@ function _handleVoiceMessage_(fromPhone, audio) {
   // Append a voice-source line to the row note that processExpense just wrote.
   // We can't get the row number back from processExpense directly so we use
   // sheet.getLastRow() — safe because the bot serializes one message at a time.
+  // SECURITY: only annotate the OWNER's sheet. A non-owner's voice expense
+  // was already written to THEIR own sheet via the tenant bridge inside
+  // processExpense above — we must never touch SHEET_ID for them.
   try {
-    var __vSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-    if (__vSheet) {
-      _kfl_appendOriginalNoteLine(__vSheet, __vSheet.getLastRow(), 'Voice transcript: "' + transcribed + '"');
+    if (_isOwnerPhone_(fromPhone)) {
+      var __vSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+      if (__vSheet) {
+        _kfl_appendOriginalNoteLine(__vSheet, __vSheet.getLastRow(), 'Voice transcript: "' + transcribed + '"');
+      }
     }
   } catch (__vNoteErr) { Logger.log('voice note tail err: ' + (__vNoteErr && __vNoteErr.message)); }
 

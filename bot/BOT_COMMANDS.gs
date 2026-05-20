@@ -58,6 +58,22 @@ var _BC_CACHE = null;
 // Entry point — call this BEFORE _SRC_classify_v2_ in SRC_ROUTER_handle.
 // ---------------------------------------------------------------------------
 function handleBotCommand_(from, text) {
+  // SECURITY (defense-in-depth): every command here operates on the OWNER's
+  // hardcoded BC_SHEET_ID (reads totals, deletes rows, edits categories), so
+  // it must run for the OWNER ONLY. The doPost dispatch already gates this,
+  // but guard here too in case this router is invoked from elsewhere. Fail
+  // CLOSED — if we can't confirm ownership, do nothing (handled:false), which
+  // lets the caller fall through to the per-tenant expense path.
+  try {
+    if (typeof _isOwnerPhone_ === 'function') {
+      if (!_isOwnerPhone_(from)) return { handled: false };
+    } else {
+      var __bcOwner = (typeof OWNER_PHONE === 'string' && OWNER_PHONE) ? OWNER_PHONE.replace(/[^0-9]/g, '') : '972547760643';
+      try { var __p = PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE'); if (__p) __bcOwner = String(__p).replace(/[^0-9]/g, ''); } catch (_e) {}
+      if (String(from == null ? '' : from).replace(/[^0-9]/g, '') !== __bcOwner) return { handled: false };
+    }
+  } catch (_g) { return { handled: false }; }
+
   var raw = String(text == null ? '' : text).trim();
   if (!raw) return { handled: false };
 

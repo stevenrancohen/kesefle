@@ -75,5 +75,25 @@ check('assert(testA)  blocked', globalThis._assertOwnerLegacyWrite_(TESTA, 'test
 check('assert(null)   allowed (internal)', globalThis._assertOwnerLegacyWrite_(null, 'cron'), true);
 check('blocked write raised an admin alert', globalThis.alerts.length >= 1, true);
 
+console.log('\n── Scenario 4: doPost owner-only command routers are gated (static source) ──');
+// Every command router that touches the owner SHEET_ID must be dispatched
+// only when _isOwnerPhone_(__from_) is true. Tenant-safe routers (timezone,
+// family) must stay open. These static checks lock the gates against silent
+// regression in future edits.
+var fs2 = require('fs');
+var botSrc = fs2.readFileSync(__dirname + '/ExpenseBot_FIXED.gs', 'utf8');
+[
+  '_handleSubscriptionCommand_', '_handleBudgetCommand_', '_handleLearningCommand_',
+  '_handleCategoryCorrection_', 'handleBotCommand_', 'SRC_ROUTER_handle',
+].forEach(function(fn) {
+  var re = new RegExp('if \\(typeof ' + fn + ' === "function" && _isOwnerPhone_\\(__from_\\)\\)');
+  check('router gated: ' + fn, re.test(botSrc), true);
+});
+// voice note-tail must be owner-gated
+check('voice note-tail gated', /if \(_isOwnerPhone_\(fromPhone\)\) \{\s*\n\s*var __vSheet/.test(botSrc), true);
+// BOT_COMMANDS.gs must self-guard
+var bcSrc = fs2.readFileSync(__dirname + '/BOT_COMMANDS.gs', 'utf8');
+check('BOT_COMMANDS handleBotCommand_ self-guards owner', /_isOwnerPhone_\(from\)/.test(bcSrc), true);
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
