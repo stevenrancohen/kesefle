@@ -749,12 +749,11 @@
     if (window.kflPremiumMotionInit) return;
     window.kflPremiumMotionInit = true;
     var selectors = ['section h1', 'section h2', 'section h3', 'section p:not(.kfl-reveal)', '#how-to-join .grid > *', '#how-it-works .grid > *'];
-    var nodes = [];
     selectors.forEach(function(sel) {
-      document.querySelectorAll(sel).forEach(function(el) {
-        if (!el.classList.contains('kfl-reveal')) { el.classList.add('kfl-reveal'); nodes.push(el); }
-      });
+      document.querySelectorAll(sel).forEach(function(el) { el.classList.add('kfl-reveal'); });
     });
+    // Observe ALL reveal nodes — auto-tagged AND hand-authored class="kfl-reveal".
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-reveal'));
     if (!('IntersectionObserver' in window)) { nodes.forEach(function(el) { el.classList.add('kfl-in'); }); return; }
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
