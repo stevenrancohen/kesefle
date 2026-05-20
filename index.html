@@ -225,10 +225,15 @@
   /* Parallax hint — blob layers translate based on scroll Y */
   .kfl-parallax { will-change: transform; }
 
+  /* Timeline spine — a bright glow that flows along the connector line */
+  @keyframes kfl-flow { 0% { transform: translateX(380%); } 100% { transform: translateX(-120%); } }
+  .kfl-flow { animation: kfl-flow 4.5s linear infinite; will-change: transform; }
+
   @media (prefers-reduced-motion: reduce) {
     .kfl-reveal, .kfl-reveal.kfl-in { opacity: 1 !important; transform: none !important; transition: none !important; }
     .kfl-lift:hover { transform: none; }
     .kfl-link-underline::after { transition: none; }
+    .kfl-flow { animation: none; }
   }
 </style>
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
@@ -564,8 +569,8 @@
     <div class="kfl-hero-stage" data-stage="1">
       <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200/60 bg-white/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 shadow-sm backdrop-blur dark:border-brand-500/30 dark:bg-white/5 dark:text-brand-300">
         <span class="relative flex h-2 w-2">
-          
-          <span class="relative inline-flex h-1 w-1 rounded-full bg-brand-500/70"></span>
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400/60 opacity-75"></span>
+          <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
         </span>
         <span>הדרך הפשוטה לנהל את הכסף שלך</span>
       </div>
@@ -841,72 +846,87 @@
   </div>
 </section>
 
-<!-- ============== HOW IT WORKS ============== -->
-<section id="how" class="py-20 md:py-28">
+<!-- ============== HOW IT WORKS — cinematic timeline ============== -->
+<section id="how" class="relative overflow-hidden py-20 md:py-28">
+  <!-- ambient glow -->
+  <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+    <div class="absolute left-1/2 top-28 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-400/10 blur-3xl dark:bg-brand-500/10"></div>
+  </div>
   <div class="mx-auto max-w-6xl px-5">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-sm font-bold uppercase tracking-wider text-brand-600">איך זה עובד</p>
       <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl">מהרישום הראשון, <span class="holo-text">בדקה אחת.</span></h2>
       <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">בלי אפליקציה להוריד. בלי הגדרות לזכור. שלוש לחיצות וזה כבר עובד.</p>
     </div>
-    <div class="mt-14 grid items-stretch gap-6 md:grid-cols-3">
-      <!-- step 1 -->
-      <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 kfl-lift dark:border-ink-700 dark:bg-ink-800 dark:hover:border-ink-600">
-        <div class="flex items-center gap-3">
-          <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-lg font-black text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">1</div>
+
+    <!-- timeline -->
+    <div class="relative mt-16 md:mt-20">
+      <!-- desktop spine: a connector line through the node centers, with a glow that flows along it -->
+      <div class="pointer-events-none absolute inset-x-0 top-7 hidden md:block" aria-hidden="true">
+        <div class="mx-auto h-0.5 w-2/3 overflow-hidden rounded-full bg-gradient-to-l from-transparent via-brand-300/70 to-transparent dark:via-brand-500/40">
+          <div class="kfl-flow h-full w-1/4 bg-gradient-to-l from-transparent via-brand-500 to-transparent"></div>
+        </div>
+      </div>
+
+      <div class="grid gap-12 md:grid-cols-3 md:gap-8">
+        <!-- step 1 -->
+        <div class="kfl-reveal relative flex flex-col items-center text-center">
+          <div class="relative z-10 mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-white text-xl font-black text-brand-700 shadow-glow ring-1 ring-brand-200/70 dark:bg-ink-800 dark:text-brand-300 dark:ring-brand-500/30">
+            <span class="num">1</span>
+          </div>
           <h3 class="text-xl font-bold dark:text-white">התחבר עם Google</h3>
+          <p class="mt-2 max-w-xs text-ink-600 leading-relaxed dark:text-ink-200">לחיצה אחת. אנחנו יוצרים לך גיליון פרטי חדש בגוגל דרייב שלך — לא אצלנו, אצלך.</p>
         </div>
-        <p class="mt-3 text-ink-600 leading-relaxed dark:text-ink-200">לחיצה אחת. אנחנו יוצרים לך גיליון פרטי חדש בגוגל דרייב שלך — לא אצלנו, אצלך.</p>
-      </div>
-      <!-- step 2 -->
-      <div class="group relative rounded-3xl border border-ink-200 bg-white p-7 kfl-lift dark:border-ink-700 dark:bg-ink-800 dark:hover:border-ink-600">
-        <div class="flex items-center gap-3">
-          <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-100 text-lg font-black text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">2</div>
+        <!-- step 2 -->
+        <div class="kfl-reveal relative flex flex-col items-center text-center" data-delay="1">
+          <div class="relative z-10 mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-white text-xl font-black text-brand-700 shadow-glow ring-1 ring-brand-200/70 dark:bg-ink-800 dark:text-brand-300 dark:ring-brand-500/30">
+            <span class="num">2</span>
+          </div>
           <h3 class="text-xl font-bold dark:text-white">פתחו את הוואטסאפ</h3>
+          <p class="mt-2 max-w-xs text-ink-600 leading-relaxed dark:text-ink-200">פתחו שיחה עם הבוט, שלחו ״שלום״ — וקיבלתם אישור. זהו. אתם מחוברים.</p>
         </div>
-        <p class="mt-3 text-ink-600 leading-relaxed dark:text-ink-200">פתחו שיחה עם הבוט, שלחו ״שלום״ — וקיבלתם אישור. זהו. אתם מחוברים.</p>
-      </div>
-      <!-- step 3 — interactive mini transcript -->
-      <div class="group relative overflow-hidden rounded-3xl border-2 border-brand-300 bg-gradient-to-br from-brand-50 via-white to-accent-50 p-7 transition hover:shadow-glow dark:border-brand-500/40 dark:from-brand-500/10 dark:via-ink-800 dark:to-accent-500/10">
-        <div class="absolute -top-10 -left-10 h-32 w-32 rounded-full bg-brand-400/20 blur-2xl"></div>
-        <div class="relative flex items-center gap-3">
-          <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-600 text-lg font-black text-white shadow-glow">3</div>
+        <!-- step 3 — the "live" step, with a pulsing node + mini transcript -->
+        <div class="kfl-reveal relative flex flex-col items-center text-center" data-delay="2">
+          <div class="relative z-10 mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-brand-600 text-xl font-black text-white shadow-glow ring-4 ring-brand-500/20">
+            <span class="absolute inset-0 -z-10 rounded-2xl bg-brand-500 opacity-30 animate-ping"></span>
+            <span class="num">3</span>
+          </div>
           <h3 class="text-xl font-bold dark:text-white">כתבו הוצאה. הכל.</h3>
-        </div>
-        <p class="relative mt-3 text-sm text-ink-600 dark:text-ink-200">הבוט מקטלג אוטומטית. בלי תפריטים, בלי טפסים.</p>
-        <!-- mini whatsapp transcript -->
-        <div class="relative mt-4 space-y-2" dir="rtl">
-          <div class="bubble flex justify-end">
-            <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
-              <span class="num">42</span> קפה
-              <span class="ms-1 text-[9px] text-ink-500">09:14 ✓✓</span>
+          <p class="mt-2 max-w-xs text-ink-600 leading-relaxed dark:text-ink-200">הבוט מקטלג אוטומטית. בלי תפריטים, בלי טפסים.</p>
+          <!-- mini whatsapp transcript -->
+          <div class="mt-5 w-full max-w-[17rem] space-y-2 rounded-2xl border border-brand-200/60 bg-gradient-to-br from-brand-50 to-accent-50/60 p-3 shadow-soft dark:border-brand-500/30 dark:from-brand-500/10 dark:to-accent-500/5" dir="rtl">
+            <div class="bubble flex justify-end">
+              <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+                <span class="num">42</span> קפה
+                <span class="ms-1 text-[9px] text-ink-500">09:14 ✓✓</span>
+              </div>
             </div>
-          </div>
-          <div class="bubble flex justify-start">
-            <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
-              ✅ ☕ בית קפה • <span class="num">₪42</span>
+            <div class="bubble flex justify-start">
+              <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+                ✅ ☕ בית קפה • <span class="num">₪42</span>
+              </div>
             </div>
-          </div>
-          <div class="bubble flex justify-end">
-            <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
-              <span class="num">1800</span> ארנונה
-              <span class="ms-1 text-[9px] text-ink-500">10:02 ✓✓</span>
+            <div class="bubble flex justify-end">
+              <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+                <span class="num">1800</span> ארנונה
+                <span class="ms-1 text-[9px] text-ink-500">10:02 ✓✓</span>
+              </div>
             </div>
-          </div>
-          <div class="bubble flex justify-start">
-            <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
-              ✅ 🏠 בית • <span class="num">₪1,800</span>
+            <div class="bubble flex justify-start">
+              <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+                ✅ 🏠 בית • <span class="num">₪1,800</span>
+              </div>
             </div>
-          </div>
-          <div class="bubble flex justify-end">
-            <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
-              <span class="num">8500</span> משכורת
-              <span class="ms-1 text-[9px] text-ink-500">28/05 ✓✓</span>
+            <div class="bubble flex justify-end">
+              <div class="rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+                <span class="num">8500</span> משכורת
+                <span class="ms-1 text-[9px] text-ink-500">28/05 ✓✓</span>
+              </div>
             </div>
-          </div>
-          <div class="bubble flex justify-start">
-            <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
-              ✅ 💵 משכורת • <span class="num">₪8,500</span>
+            <div class="bubble flex justify-start">
+              <div class="rounded-2xl rounded-tr-md bg-white px-3 py-1.5 text-[13px] text-ink-900 shadow-sm">
+                ✅ 💵 משכורת • <span class="num">₪8,500</span>
+              </div>
             </div>
           </div>
         </div>
