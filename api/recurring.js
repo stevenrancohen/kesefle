@@ -33,11 +33,13 @@ import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 import { appendRowToUserSheet, buildExpenseRow } from '../lib/sheet-writer.js';
 import { sendWhatsApp } from '../lib/billing.js';
+import { computeEntitlement } from '../lib/subscription.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 const CATCHUP_DAYS = 3;          // daily cron also catches the last 3 days
 const MAX_TEMPLATES = 50;
+const FREE_TEMPLATE_LIMIT = 5; // free tier cap; premium (paid/trial/referral) = unlimited
 const LOGGED_TTL_SEC = 45 * 86400;
 
 // ── KV helpers ────────────────────────────────────────────────────────────────
@@ -87,6 +89,22 @@ async function kvScan(pattern, max = 500) {
     if (cursor === '0') break;
   }
   return keys;
+}
+
+async function kvDel(key) {
+  if (!KV_URL || !KV_TOKEN) return false;
+  const r = await fetch(`${KV_URL}/del/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${KV_TOKEN}` } });
+  return r.ok;
+}
+
+// Premium check by phone: phone → userSub → user record → computeEntitlement.
+async function isPremiumByPhone(phone) {
+  try {
+    const phoneRec = await kvGet('phone:' + phone);
+    if (!phoneRec || !phoneRec.userSub) return false;
+    const userRec = await kvGet('user:' + phoneRec.userSub);
+    return computeEntitlement(userRec || {}).premium;
+  } catch { return false; }
 }
 
 function normalizeE164(input) {
@@ -186,12 +204,20 @@ async function addTemplate(body, res) {
   const today = todayIsrael();
   const list = (await kvGet('recurring:' + phone)) || [];
   if (list.length >= MAX_TEMPLATES) return res.status(409).json({ ok: false, error: 'too_many_templates', max: MAX_TEMPLATES });
+  // Free tier is capped at 5 templates; premium is unlimited.
+  if (list.length >= FREE_TEMPLATE_LIMIT && !(await isPremiumByPhone(phone))) {
+    return res.status(402).json({
+      ok: false, error: 'free_limit_reached', limit: FREE_TEMPLATE_LIMIT,
+      message: 'במסלול החינמי אפשר עד 5 הוצאות קבועות. שדרג ל-Pro להוצאות קבועות ללא הגבלה: kesefle.com/upgrade',
+    });
+  }
   const tpl = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
     amount, description,
     category: body.category || 'הוצאות קבועות',
     subcategory: body.subcategory || 'קבוע',
     freq,
+    autoLog: body.autoLog === false ? false : true,
     startDate: (body.startDate && /^\d{4}-\d{2}-\d{2}$/.test(body.startDate)) ? body.startDate : today,
     status: 'active',
     createdAt: new Date().toISOString(),
@@ -286,7 +312,7 @@ async function cronRun(body, res, reqId) {
   const today = todayIsrael();
   const from = addDaysStr(today, -CATCHUP_DAYS);
   const keys = await kvScan('recurring:*');
-  let users = 0, logged = 0, errors = 0;
+  let users = 0, logged = 0, reminders = 0, errors = 0;
   for (const key of keys) {
     const phone = key.replace(/^recurring:/, '');
     const list = await kvGet(key);
@@ -299,6 +325,18 @@ async function cronRun(body, res, reqId) {
     for (const tpl of active) {
       for (let ds = from; ds <= today; ds = addDaysStr(ds, 1)) {
         if (!matchesFreq(tpl, ds)) continue;
+        if (tpl.autoLog === false) {
+          // Reminder mode: don't auto-log; nudge once for TODAY's occurrence and
+          // stash it as the pending item so a "אשר" reply records it (action=confirm).
+          if (ds !== today) continue;
+          const remKey = `recurring_reminded:${phone}:${tpl.id}:${ds}`;
+          if (await kvExists(remKey)) continue;
+          await kvSetTTL(`recurring_pending:${phone}`, JSON.stringify({ templateId: tpl.id, dateStr: ds, amount: Number(tpl.amount), description: tpl.description }), 3 * 86400);
+          await kvSetTTL(remKey, '1', LOGGED_TTL_SEC);
+          await sendWhatsApp(phone, `⏰ תזכורת: היום ה-${Number(ds.slice(8))} בחודש — להוסיף ${tpl.description} (₪${Number(tpl.amount).toLocaleString('he-IL')})? שלח *אשר* כדי לרשום.`).catch(() => {});
+          reminders++;
+          continue;
+        }
         const r = await logOccurrence(phone, userRecord, tpl, ds);
         if (r.ok) {
           logged++;
@@ -308,8 +346,26 @@ async function cronRun(body, res, reqId) {
       }
     }
   }
-  log.info('recurring.cron', { reqId, users, logged, errors });
-  return res.status(200).json({ ok: true, date: today, users, logged, errors });
+  log.info('recurring.cron', { reqId, users, logged, reminders, errors });
+  return res.status(200).json({ ok: true, date: today, users, logged, reminders, errors });
+}
+
+// Confirm a pending reminder (autoLog=false): logs the stashed due item when the
+// user replies "אשר". Returns { ok, logged:{amount,description}|null }.
+async function confirmDue(body, res) {
+  const phone = normalizeE164(body.phone);
+  if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
+  const pending = await kvGet('recurring_pending:' + phone);
+  if (!pending || !pending.templateId) return res.status(200).json({ ok: true, logged: null });
+  const userRecord = await kvGet('phone:' + phone);
+  if (!userRecord) return res.status(404).json({ ok: false, error: 'no_user_for_phone' });
+  const list = (await kvGet('recurring:' + phone)) || [];
+  const tpl = list.find(t => t.id === pending.templateId);
+  if (!tpl) { await kvDel('recurring_pending:' + phone); return res.status(200).json({ ok: true, logged: null }); }
+  const r = await logOccurrence(phone, userRecord, tpl, pending.dateStr || todayIsrael());
+  await kvDel('recurring_pending:' + phone);
+  if (r.ok) return res.status(200).json({ ok: true, logged: { amount: r.amount, description: r.description } });
+  return res.status(200).json({ ok: true, logged: null, note: r.error || 'already_logged' });
 }
 
 // ── Router ──────────────────────────────────────────────────────────────────────
@@ -343,6 +399,7 @@ async function handlerImpl(req, res) {
     case 'toggle': return toggleTemplate(body, res);
     case 'update': return updateTemplate(body, res);
     case 'sync':   return syncPhone(body, res);
+    case 'confirm': return confirmDue(body, res);
     default:       return res.status(400).json({ ok: false, error: 'unknown_action', got: action });
   }
 }
