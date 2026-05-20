@@ -932,6 +932,17 @@ function _maybeSendWelcome_(fromPhone) {
   try {
     if (typeof sendWhatsAppMessage === 'function') sendWhatsAppMessage(fromPhone, msg);
   } catch (_e) { Logger.log('welcome send err: ' + (_e && _e.message)); }
+
+  // Kick off the personalization questionnaire once, right after the welcome.
+  // Guarded by its own Script Property so re-welcomes (if the welcomed guard
+  // is ever cleared) never re-trigger Q1 on a user mid-flow.
+  try {
+    var surveyedKey = 'surveyed:' + clean;
+    if (!props.getProperty(surveyedKey) && typeof _surveyStart_ === 'function') {
+      props.setProperty(surveyedKey, new Date().toISOString());
+      _surveyStart_(fromPhone);
+    }
+  } catch (_sErr) { Logger.log('welcome survey kickoff err: ' + (_sErr && _sErr.message)); }
 }
 
 // Abuse blacklist — a Script Property holding a comma-separated list of
@@ -1197,6 +1208,26 @@ function doPost(e) {
       }
 
       if (__text_) {
+        // === PERSONALIZATION QUESTIONNAIRE ("survey") ===
+        // Must run FIRST: the freeform recurring step captures digit-leading
+        // text (e.g. an amount + description list) that would otherwise hit
+        // the expense fast-path below. Also handles the survey / advanced-
+        // settings / confirm commands. handled=false -> normal routing.
+        if (typeof _surveyHandleText_ === "function") {
+          try {
+            var __survRes = _surveyHandleText_(__from_, __text_);
+            if (__survRes && __survRes.handled) {
+              if (__survRes.replyText && typeof sendWhatsAppMessage === "function") {
+                sendWhatsAppMessage(__from_, __survRes.replyText);
+              }
+              Logger.log('doPost: survey text handled');
+              return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+            }
+          } catch (_survErr) {
+            Logger.log('doPost: survey text error: ' + (_survErr && _survErr.stack || _survErr));
+          }
+        }
+
         // === CONTEXT-BASED ROUTING for explicit prefix or KV context ===
         // The user can flip a persistent "context" between personal/family via
         // "מצב משפחתי" / "מצב אישי" (handled in _handleFamilyMultiCommand_).
@@ -1425,6 +1456,13 @@ function handleInteractiveReply_(fromPhone, interactive) {
   if (famDn && typeof _familyDeny_ === 'function') {
     var r2 = _familyDeny_(fromPhone, famDn[1]);
     return { replyText: (r2 && r2.replyText) || '✅' };
+  }
+
+  // Personalization questionnaire taps (q1_*/q2_*/q3_*). The handler sends
+  // any follow-up question itself; it returns { replyText } only when a TEXT
+  // reply is the next step (Q2 "yes" → ask for recurring items), else null.
+  if (/^q[123]_/.test(String(picked)) && typeof _surveyHandleInteractive_ === 'function') {
+    return _surveyHandleInteractive_(fromPhone, picked);
   }
 
   var decoded = _decodeCategoryOptionId(picked);
@@ -3094,6 +3132,273 @@ function _recurringSync_(fromPhone) {
   return '✅ נרשמו ' + r.count + ' הוצאות קבועות למפרע (סה"כ ' + _money_(r.totalAmount) + ').';
 }
 
+// =====================================================================
+// Personalization questionnaire (Hebrew "she'elon hat'amah ishit") — a
+// 3-step flow driven by WhatsApp interactive replies + one free-text step.
+//
+// The user profile (trackingType / hasRecurring / autoLogPref) is stored
+// server-side via /api/profile (see _profileAPI_ below — same shape and
+// secret header as _recurringAPI_). Because each interactive reply arrives
+// as a SEPARATE webhook event, we persist the current step in CacheService
+// under survey_state:<phone>. Interactive row ids are namespaced
+// (q1_*/q2_*/q3_*) so the webhook can route them; see
+// _surveyHandleInteractive_ wired from handleInteractiveReply_.
+// =====================================================================
+
+// POST helper for the profile endpoint. Identical shape to _recurringAPI_:
+// header x-kesefle-bot-secret = KESEFLE_BOT_SECRET, body { action, ... }.
+// Actions: set { phone, fields:{trackingType,hasRecurring,autoLogPref} }
+//          get { phone } → both return { ok, profile }.
+function _profileAPI_(action, payload) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) return { ok: false, error: 'bot_secret_not_set' };
+  payload = payload || {};
+  payload.action = action;
+  payload.botSecret = secret;
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/profile', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code < 200 || code >= 300) {
+      Logger.log('_profileAPI_ ' + action + ' HTTP ' + code + ': ' + body.slice(0, 200));
+      try { return JSON.parse(body); } catch (_e) { return { ok: false, error: 'http_' + code }; }
+    }
+    return JSON.parse(body);
+  } catch (e) {
+    return { ok: false, error: 'fetch_threw', detail: e && e.message };
+  }
+}
+
+// --- Survey state helpers (CacheService, 1h TTL — long enough for a user
+// to finish, short enough to self-clean if abandoned). ---
+var _SURVEY_TTL_SEC_ = 3600;
+function _surveyStateKey_(fromPhone) {
+  return 'survey_state:' + String(fromPhone).replace(/[^0-9]/g, '');
+}
+function _surveyGetState_(fromPhone) {
+  try { return CacheService.getScriptCache().get(_surveyStateKey_(fromPhone)); }
+  catch (_e) { return null; }
+}
+function _surveySetState_(fromPhone, state) {
+  try { CacheService.getScriptCache().put(_surveyStateKey_(fromPhone), String(state), _SURVEY_TTL_SEC_); }
+  catch (_e) {}
+}
+function _surveyClearState_(fromPhone) {
+  try { CacheService.getScriptCache().remove(_surveyStateKey_(fromPhone)); }
+  catch (_e) {}
+}
+// Remember the user's autoLog preference (chosen in Q3) so that recurring
+// items added during the freeform step inherit it. Stored alongside state.
+function _surveyAutoLogKey_(fromPhone) {
+  return 'survey_autolog:' + String(fromPhone).replace(/[^0-9]/g, '');
+}
+function _surveyGetAutoLogPref_(fromPhone) {
+  try { return CacheService.getScriptCache().get(_surveyAutoLogKey_(fromPhone)); }
+  catch (_e) { return null; }
+}
+function _surveySetAutoLogPref_(fromPhone, pref) {
+  try { CacheService.getScriptCache().put(_surveyAutoLogKey_(fromPhone), String(pref), _SURVEY_TTL_SEC_); }
+  catch (_e) {}
+}
+
+// --- Interactive List sender for the questionnaire. Wraps the existing,
+// proven low-level sender (sendWhatsAppInteractiveList) which already uses
+// the right token / phoneId / Graph URL. Each row id is namespaced so the
+// webhook can route the reply, e.g. q1_personal. `rows` =
+// [{ id:'q1_personal', title:'...', description:'...' }, ...].
+function _surveySendList_(fromPhone, bodyText, buttonText, rows, headerText) {
+  var sections = [{ title: 'אפשרויות', rows: (rows || []).map(function(r) {
+    return {
+      id: String(r.id),
+      title: String(r.title).slice(0, 24),
+      description: r.description ? String(r.description).slice(0, 72) : '',
+    };
+  }) }];
+  return sendWhatsAppInteractiveList(
+    fromPhone,
+    headerText || 'שאלון התאמה אישית',
+    bodyText,
+    'אפשר לשנות בכל עת עם *שאלון*',
+    buttonText || 'בחר/י',
+    sections
+  );
+}
+
+// --- The three questions (each sends one interactive message). ---
+function _surveySendQ1_(fromPhone) {
+  _surveySetState_(fromPhone, 'q1');
+  _surveySendList_(
+    fromPhone,
+    'מהו סוג המעקב העיקרי שלך?',
+    'בחר/י סוג',
+    [
+      { id: 'q1_personal', title: 'אישי בלבד', description: 'מעקב על ההוצאות שלך' },
+      { id: 'q1_family', title: 'משפחתי', description: 'הוצאות משק הבית' },
+      { id: 'q1_group', title: 'שותפים/קבוצה', description: 'חלוקת הוצאות בקבוצה' },
+      { id: 'q1_business', title: 'עסק קטן/עוסק פטור', description: 'הכנסות והוצאות עסקיות' },
+    ]
+  );
+}
+function _surveySendQ2_(fromPhone) {
+  _surveySetState_(fromPhone, 'q2');
+  // Yes/No → quick-reply buttons (cleaner than a list for 2 options).
+  sendWhatsAppQuickButtons(fromPhone, 'האם יש לך הוצאות קבועות בכל חודש?', [
+    { id: 'q2_yes', title: 'כן' },
+    { id: 'q2_no', title: 'לא' },
+  ]);
+}
+function _surveySendQ3_(fromPhone) {
+  _surveySetState_(fromPhone, 'q3');
+  sendWhatsAppQuickButtons(fromPhone, 'האם הבוט ירשום אוטומטית, או רק יתזכר?', [
+    { id: 'q3_auto', title: 'רישום אוטומטי' },
+    { id: 'q3_remind', title: 'תזכורת בלבד' },
+  ]);
+}
+
+// Public entry: start the questionnaire at Q1.
+function _surveyStart_(fromPhone) {
+  _surveySendQ1_(fromPhone);
+}
+
+// Map a q1_* id to the trackingType value persisted server-side.
+var _SURVEY_TRACKING_ = {
+  q1_personal: 'personal', q1_family: 'family',
+  q1_group: 'group', q1_business: 'business',
+};
+var _SURVEY_TRACKING_HUMAN_ = {
+  personal: 'אישי בלבד', family: 'משפחתי',
+  group: 'שותפים/קבוצה', business: 'עסק קטן/עוסק פטור',
+};
+
+// Build + send the closing profile summary, then clear state.
+function _surveyFinish_(fromPhone) {
+  var pref = _surveyGetAutoLogPref_(fromPhone);
+  var prof = null;
+  try {
+    var g = _profileAPI_('get', { phone: String(fromPhone).replace(/[^0-9]/g, '') });
+    if (g && g.ok) prof = g.profile;
+  } catch (_e) {}
+  prof = prof || {};
+  var trackingHuman = _SURVEY_TRACKING_HUMAN_[prof.trackingType] || '—';
+  var recurringHuman = (prof.hasRecurring === true) ? 'כן' : (prof.hasRecurring === false ? 'לא' : '—');
+  var autoLog = prof.autoLogPref || pref;
+  var autoLogHuman = (autoLog === 'auto') ? 'רישום אוטומטי מלא' : (autoLog === 'remind' ? 'תזכורת בלבד' : '—');
+  var msg =
+    '✅ *סיימנו! זה הפרופיל שלך:*\n' +
+    '━━━━━━━━━━━━━━━━━━\n' +
+    '• סוג מעקב: ' + trackingHuman + '\n' +
+    '• הוצאות קבועות: ' + recurringHuman + '\n' +
+    '• אופן הרישום: ' + autoLogHuman + '\n\n' +
+    'אפשר לשנות בכל עת עם הפקודה *שאלון*';
+  try { sendWhatsAppMessage(fromPhone, msg); } catch (_e) {}
+  _surveyClearState_(fromPhone);
+  try { CacheService.getScriptCache().remove(_surveyAutoLogKey_(fromPhone)); } catch (_e) {}
+}
+
+// Route an interactive reply id (q1_*/q2_*/q3_*) through the flow. Returns
+// { replyText } when a TEXT follow-up is needed, or null when the step
+// already sent its own interactive/text message (so the caller sends
+// nothing more). Called from handleInteractiveReply_.
+function _surveyHandleInteractive_(fromPhone, picked) {
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  // --- Q1: tracking type ---
+  if (_SURVEY_TRACKING_.hasOwnProperty(picked)) {
+    var tt = _SURVEY_TRACKING_[picked];
+    _profileAPI_('set', { phone: clean, fields: { trackingType: tt } });
+    _surveySendQ2_(fromPhone);
+    return null;
+  }
+  // --- Q2: has recurring? ---
+  if (picked === 'q2_no') {
+    _profileAPI_('set', { phone: clean, fields: { hasRecurring: false } });
+    _surveySendQ3_(fromPhone);
+    return null;
+  }
+  if (picked === 'q2_yes') {
+    _profileAPI_('set', { phone: clean, fields: { hasRecurring: true } });
+    _surveySetState_(fromPhone, 'await_recurring_freeform');
+    return { replyText: 'אילו הוצאות קבועות יש לך? (לדוגמה: 2500 שכירות, 400 ארנונה, 99 נטפליקס)' };
+  }
+  // --- Q3: auto-log preference ---
+  if (picked === 'q3_auto' || picked === 'q3_remind') {
+    var pref = (picked === 'q3_auto') ? 'auto' : 'remind';
+    _profileAPI_('set', { phone: clean, fields: { autoLogPref: pref } });
+    _surveySetAutoLogPref_(fromPhone, pref);
+    _surveyFinish_(fromPhone);
+    return null;
+  }
+  return null;
+}
+
+// Handle the free-text recurring step + the survey/confirm commands. Runs
+// from doPost BEFORE the expense parser (so digit-leading freeform text
+// like an "amount + description" list isn't logged as a single expense).
+// Returns { handled, replyText } — handled=false means "not a survey msg,
+// continue normal routing".
+function _surveyHandleText_(fromPhone, text) {
+  var t = String(text || '').trim();
+  if (!t) return { handled: false };
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+
+  // Commands that (re)start the questionnaire.
+  if (t === 'שאלון' || t === 'הגדרות מתקדמות') {
+    _surveyStart_(fromPhone);
+    return { handled: true };
+  }
+
+  // Confirm command (exact) — confirms a pending recurring reminder that the
+  // cron sent when autoLog=false. Endpoint returns { ok, logged|null }.
+  if (t === 'אשר') {
+    var r = _recurringAPI_('confirm', { phone: clean });
+    if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
+    if (!r.logged) return { handled: true, replyText: 'אין מה לאשר כרגע.' };
+    return { handled: true, replyText: '✅ נרשם: ' + _money_(r.logged.amount) + ' ' + (r.logged.description || '') };
+  }
+
+  // Free-text recurring capture (only while the survey is in that step).
+  if (_surveyGetState_(fromPhone) === 'await_recurring_freeform') {
+    var prefRaw = _surveyGetAutoLogPref_(fromPhone);
+    // autoLog defaults to true unless Q3 already set 'remind'.
+    var autoLog = (prefRaw === 'remind') ? false : true;
+    var items = t.split(',');
+    var added = 0;
+    var skipped = 0;
+    for (var i = 0; i < items.length; i++) {
+      var piece = items[i].trim();
+      if (!piece) continue;
+      var parsed = _parseRecurringCommand_(piece);
+      if (!parsed || !parsed.amount) { skipped++; continue; }
+      var payload = {
+        phone: clean,
+        amount: parsed.amount,
+        description: parsed.description || 'הוצאה קבועה',
+        freq: parsed.freq,
+        autoLog: autoLog,
+      };
+      if (parsed.category) payload.category = parsed.category;
+      if (parsed.startDate) payload.startDate = parsed.startDate;
+      var ar = _recurringAPI_('add', payload);
+      if (ar && ar.ok) added++; else skipped++;
+    }
+    var summary = added > 0
+      ? ('🔁 נרשמו ' + added + ' הוצאות קבועות.' + (skipped ? ' (' + skipped + ' לא זוהו)' : ''))
+      : ('😕 לא הצלחתי לזהות הוצאות קבועות מההודעה.' + (skipped ? '' : ''));
+    try { sendWhatsAppMessage(fromPhone, summary); } catch (_e) {}
+    // Continue to Q3 regardless (state advances inside _surveySendQ3_).
+    _surveySendQ3_(fromPhone);
+    return { handled: true };
+  }
+
+  return { handled: false };
+}
+
 // Daily cron — asks the Vercel API to scan ALL users' templates and log
 // anything due today. Authorized by the cron secret (not the bot secret),
 // mirroring cronBillReminders. Install via installRecurringExpensesTrigger().
@@ -3696,6 +4001,24 @@ function processExpense(text, fromPhone) {
   if (__remRm && typeof _removeReminder_ === 'function') {
     return { reply: _removeReminder_(fromPhone, __remRm[1]) };
   }
+  // ───── PERSONALIZATION QUESTIONNAIRE (survey) ─────
+  // Backstop for paths that reach processExpense directly (e.g. voice
+  // transcription) — the primary hook is in doPost, before the expense
+  // fast-path. The survey / advanced-settings commands start Q1 (sent as a
+  // side-effect via interactive List); the confirm command logs a pending.
+  if (trimmed === 'שאלון' || trimmed === 'הגדרות מתקדמות') {
+    if (typeof _surveyStart_ === 'function') {
+      _surveyStart_(fromPhone);
+      return { reply: '' };
+    }
+  }
+  if (trimmed === 'אשר') {
+    if (typeof _surveyHandleText_ === 'function') {
+      var __survConfirm = _surveyHandleText_(fromPhone, 'אשר');
+      return { reply: (__survConfirm && __survConfirm.replyText) || '' };
+    }
+  }
+
   // ───── PERSONAL RECURRING EXPENSES ("הוצאות קבועות") ─────
   // MUST run before the expense parser below, otherwise "קבוע 2500 שכירות"
   // would be logged as a plain ₪2500 expense. Order within this block:
