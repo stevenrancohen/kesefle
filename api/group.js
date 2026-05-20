@@ -27,6 +27,7 @@
 //   action=addMember   { code, phone, name }
 //   action=removeMember{ code, phone }
 
+import crypto from 'node:crypto';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken } from '../lib/crypto.js';
@@ -126,14 +127,29 @@ async function kvDel(key) {
   return r.ok;
 }
 
-// 6-character invite codes (~36^6 = 2.1B possibilities → no collisions in practice).
+// 8-character invite codes drawn from a CSPRNG. 31-char alphabet ^ 8 =
+// ~8.5e11 — and crypto.randomInt means codes aren't predictable from
+// Math.random's internal state. Reject-sampling avoids modulo bias.
+const _CODE_ALPHABET_ = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 31 chars, no 0/O/1/I
 function generateCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // omit confusing chars
   let s = '';
-  for (let i = 0; i < 6; i++) {
-    s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  for (let i = 0; i < 8; i++) {
+    s += _CODE_ALPHABET_[crypto.randomInt(_CODE_ALPHABET_.length)];
   }
   return s;
+}
+
+// Membership gate. Reads + writes on a group must prove the requester
+// phone is a member (or the creator). The bot always knows the sender's
+// phone, so it passes requesterPhone on every call. Returns the group
+// if authorized, or null (caller responds 403). This is what turns a
+// bot-secret leak from "impersonation" into "can't dump arbitrary
+// groups" — the secret alone is no longer enough, you also need to be
+// in the group you're asking about.
+function isMemberOrCreator(group, requesterPhone) {
+  if (!group || !requesterPhone) return false;
+  if (group.createdBy === requesterPhone) return true;
+  return (group.members || []).some(m => m.phone === requesterPhone);
 }
 
 function normalizeE164(input) {
@@ -277,7 +293,7 @@ async function handlerImpl(req, res) {
       const phone = normalizeE164(body.phone);
       if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
       const code = String(body.code || '').trim().toUpperCase();
-      if (!/^[A-Z0-9]{6}$/.test(code)) return res.status(400).json({ ok: false, error: 'invalid_code' });
+      if (!/^[A-Z0-9]{6,8}$/.test(code)) return res.status(400).json({ ok: false, error: 'invalid_code' });
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
       const name = String(body.name || phone).slice(0, 60);
@@ -302,7 +318,7 @@ async function handlerImpl(req, res) {
       const phone = normalizeE164(body.phone);
       if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
       const code = String(body.code || '').trim().toUpperCase();
-      if (!/^[A-Z0-9]{6}$/.test(code)) return res.status(400).json({ ok: false, error: 'invalid_code' });
+      if (!/^[A-Z0-9]{6,8}$/.test(code)) return res.status(400).json({ ok: false, error: 'invalid_code' });
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
       if (!group.members.find(m => m.phone === phone)) {
@@ -323,9 +339,17 @@ async function handlerImpl(req, res) {
 
     case 'info': {
       const code = String(body.code || '').trim().toUpperCase();
-      if (!/^[A-Z0-9]{6}$/.test(code)) return res.status(400).json({ ok: false, error: 'invalid_code' });
+      if (!/^[A-Z0-9]{6,8}$/.test(code)) return res.status(400).json({ ok: false, error: 'invalid_code' });
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      // MEMBERSHIP GATE — only members/creator may read the full record
+      // (which contains every member's phone number). Without this, any
+      // code-holder could enumerate codes and harvest PII.
+      const requesterPhone = normalizeE164(body.requesterPhone);
+      if (!requesterPhone || !isMemberOrCreator(group, requesterPhone)) {
+        log.warn('group.info.not_member', { reqId: req.reqId, code });
+        return res.status(403).json({ ok: false, error: 'not_a_member' });
+      }
       return res.status(200).json({ ok: true, group });
     }
 
@@ -338,14 +362,16 @@ async function handlerImpl(req, res) {
       }
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
-      // Auto-register the payer if they aren't a member yet (e.g. they
-      // texted the bot before joining via code — common Splitwise flow).
-      if (!group.members.find(m => m.phone === payerPhone)) {
-        group.members.push({
-          phone: payerPhone,
-          name: String(body.payerName || payerPhone).slice(0, 60),
-          joinedAt: new Date().toISOString(),
-        });
+      // MEMBERSHIP GATE — the requester (the person who sent the bot
+      // command, == payer in the normal flow) must already be a member.
+      // Removed the old "auto-add the payer" behaviour: it let any
+      // code-holder inject expenses into a stranger's ledger AND write
+      // attacker-controlled rows into the creator's Google Sheet. To log
+      // an expense you must join first via "כספלה הצטרף <code>".
+      const reqPhone = normalizeE164(body.requesterPhone) || payerPhone;
+      if (!isMemberOrCreator(group, reqPhone)) {
+        log.warn('group.addexpense.not_member', { reqId: req.reqId, code });
+        return res.status(403).json({ ok: false, error: 'not_a_member' });
       }
       // Split mode: 'equal' (default — divide among all members),
       // 'custom' (caller supplied a shares map), or 'percent' (caller
@@ -417,6 +443,10 @@ async function handlerImpl(req, res) {
       const code = String(body.code || '').trim().toUpperCase();
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      const balReqPhone = normalizeE164(body.requesterPhone);
+      if (!balReqPhone || !isMemberOrCreator(group, balReqPhone)) {
+        return res.status(403).json({ ok: false, error: 'not_a_member' });
+      }
       const balances = computeBalances(group);
       const settlements = computeSettlements(balances);
       const lines = settlements.map(t => ({
@@ -440,6 +470,10 @@ async function handlerImpl(req, res) {
       const limit = Math.min(50, Math.max(1, Number(body.limit) || 5));
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      const recReqPhone = normalizeE164(body.requesterPhone);
+      if (!recReqPhone || !isMemberOrCreator(group, recReqPhone)) {
+        return res.status(403).json({ ok: false, error: 'not_a_member' });
+      }
       const recent = (group.expenses || []).slice(-limit).reverse().map(e => ({
         timestamp: e.timestamp,
         amount: e.amount,
@@ -473,6 +507,12 @@ async function handlerImpl(req, res) {
       if (!code || !phone) return res.status(400).json({ ok: false, error: 'invalid_args' });
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      // Only an existing member/creator may add others — otherwise any
+      // code-holder could stuff arbitrary phones into the group.
+      const addReqPhone = normalizeE164(body.requesterPhone);
+      if (!addReqPhone || !isMemberOrCreator(group, addReqPhone)) {
+        return res.status(403).json({ ok: false, error: 'not_a_member' });
+      }
       if (!group.members.find(m => m.phone === phone)) {
         group.members.push({
           phone,
@@ -490,6 +530,11 @@ async function handlerImpl(req, res) {
       if (!code || !phone) return res.status(400).json({ ok: false, error: 'invalid_args' });
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      // Only the creator can remove others; anyone can remove themselves.
+      const rmReqPhone = normalizeE164(body.requesterPhone);
+      if (!rmReqPhone || (group.createdBy !== rmReqPhone && rmReqPhone !== phone)) {
+        return res.status(403).json({ ok: false, error: 'only_creator_or_self' });
+      }
       group.members = group.members.filter(m => m.phone !== phone);
       await kvSet('group:' + code, group);
       await kvDel('memberGroup:' + phone);

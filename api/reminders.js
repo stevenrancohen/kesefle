@@ -162,8 +162,21 @@ async function handlerImpl(req, res) {
     }
 
     case 'due': {
-      // Cron-only scan. Returns all reminders firing today across all
-      // users, so the bot can iterate and send WhatsApp pings.
+      // Cron-only cross-user scan — returns every user's reminders + phone
+      // for the date. Because that's a bulk-PII endpoint, it requires a
+      // SEPARATE secret (KESEFLE_CRON_SECRET) on top of the bot secret, so
+      // a bot-secret leak alone can't dump the reminder corpus. Fails
+      // closed if the cron secret isn't configured.
+      const cronSecret = process.env.KESEFLE_CRON_SECRET;
+      if (!cronSecret) {
+        log.error('reminders.due.cron_secret_unset', { reqId: req.reqId });
+        return res.status(503).json({ ok: false, error: 'cron_secret_not_configured' });
+      }
+      const gotCron = req.headers['x-kesefle-cron-secret'] || body?.cronSecret;
+      if (gotCron !== cronSecret) {
+        log.warn('reminders.due.unauthorized', { reqId: req.reqId });
+        return res.status(401).json({ ok: false, error: 'cron_unauthorized' });
+      }
       const onDate = body.onDate || new Date().toISOString().slice(0, 10);
       const keys = await kvScan('reminders:*');
       const due = [];

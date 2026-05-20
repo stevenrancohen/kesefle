@@ -1633,17 +1633,22 @@ function _handleGroupCommand_(fromPhone, text) {
   // Sub-command parsing. We try the keyword commands first; anything
   // starting with a digit is treated as a "record an expense" message.
 
-  // Create a new group: "צור [name]" / "create [name]" / "התחל [name]"
-  var mCreate = body.match(/^(?:צור|create|התחל|start|הקם)\s*(.*)$/i);
-  if (mCreate) return _groupCreate_(fromPhone, mCreate[1].trim());
+  // Create a new group: "צור [name]" / "create [name]" / "התחל [name]".
+  // REQUIRE a word boundary after the keyword (whitespace or end), not
+  // \s* — otherwise "כספלה צורה יפה" (a sentence about a shape) would
+  // match "צור" as a prefix and create a group named "ה יפה". The
+  // mandatory \s+ (or $) means the keyword must be a standalone word.
+  var mCreate = body.match(/^(?:צור|create|התחל|start|הקם)(?:\s+(.*))?$/i);
+  if (mCreate) return _groupCreate_(fromPhone, (mCreate[1] || '').trim());
 
-  // Join: "הצטרף <code>" / "join <code>" / "קוד <code>" — accept any
-  // form where the rest looks like a 6-char code.
-  var mJoin = body.match(/^(?:הצטרף|join|קוד\s+קבוצה|קוד)\s+([A-Z0-9]{6})\b/i);
+  // Join: "הצטרף <code>" / "join <code>" / "קוד <code>" — code is 6-8
+  // chars (8 for new CSPRNG codes, 6 for legacy). The mandatory \s+
+  // already prevents prefix-matching here.
+  var mJoin = body.match(/^(?:הצטרף|join|קוד\s+קבוצה|קוד)\s+([A-Z0-9]{6,8})\b/i);
   if (mJoin) return _groupJoin_(fromPhone, mJoin[1].toUpperCase());
 
   // Switch active group: "החלף <code>" / "switch <code>"
-  var mSwitch = body.match(/^(?:החלף|switch|מצב\s+קבוצה|הפעל)\s+([A-Z0-9]{6})\b/i);
+  var mSwitch = body.match(/^(?:החלף|switch|מצב\s+קבוצה|הפעל)\s+([A-Z0-9]{6,8})\b/i);
   if (mSwitch) return _groupSetActive_(fromPhone, mSwitch[1].toUpperCase());
 
   // Leave the current group.
@@ -1660,7 +1665,7 @@ function _handleGroupCommand_(fromPhone, text) {
   if (/^(?:אישי|personal|מצב אישי)$/i.test(body)) return _groupLeave_(fromPhone, /*personal*/ true);
 
   // Quick switch to a specific group by code.
-  var mSwitchTo = body.match(/^(?:עבור\s+ל|switch\s+to|הפעל\s+קבוצה)\s+([A-Z0-9]{6})\b/i);
+  var mSwitchTo = body.match(/^(?:עבור\s+ל|switch\s+to|הפעל\s+קבוצה)\s+([A-Z0-9]{6,8})\b/i);
   if (mSwitchTo) return _groupSetActive_(fromPhone, mSwitchTo[1].toUpperCase());
 
   // Force a sheet provision / resync for the active group.
@@ -1891,7 +1896,7 @@ function _groupListRecurring_(fromPhone) {
 function _groupExport_(fromPhone) {
   var a = _groupAPI_('getactive', { phone: fromPhone });
   if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה.' };
-  var info = _groupAPI_('info', { code: a.active });
+  var info = _groupAPI_('info', { code: a.active, requesterPhone: fromPhone });
   if (!info || !info.ok) return { handled: true, replyText: '😬 שגיאה.' };
   var group = info.group;
   var lines = ['date,amount,category,description,paidBy,participants,splitMode,shares'];
@@ -1969,6 +1974,7 @@ function cronGroupRecurring() {
       var fireRes = _groupAPI_('addexpense', {
         code: g.code,
         payerPhone: rec.payerPhone,
+        requesterPhone: rec.payerPhone,
         payerName: '(אוטומטי)',
         amount: rec.amount,
         description: '[קבוע] ' + rec.description,
@@ -2432,6 +2438,7 @@ function _groupRecordExpense_(fromPhone, body) {
   var r = _groupAPI_('addexpense', {
     code: a.active,
     payerPhone: fromPhone,
+    requesterPhone: fromPhone,
     payerName: senderName,
     amount: first.amount,
     description: first.description,
@@ -2439,8 +2446,13 @@ function _groupRecordExpense_(fromPhone, body) {
     subcategory: subcategory,
     splitMode: 'equal',
   });
-  if (!r || !r.ok) return { handled: true, replyText: '😬 כתיבת ההוצאה נכשלה: ' + (r && r.error || 'unknown') };
-  var perShare = (first.amount / r.memberCount).toFixed(2);
+  if (!r || !r.ok) {
+    if (r && r.error === 'not_a_member') {
+      return { handled: true, replyText: '😬 אתה לא חבר בקבוצה הזאת. שלח "כספלה הצטרף <קוד>" קודם.' };
+    }
+    return { handled: true, replyText: '😬 כתיבת ההוצאה נכשלה: ' + (r && r.error || 'unknown') };
+  }
+  var perShare = (first.amount / (r.memberCount || 1)).toFixed(2);
   return { handled: true, replyText:
     '✅ נרשם: ₪' + first.amount.toLocaleString('he-IL') + ' · ' + (first.description || category || 'הוצאה') + '\n' +
     '👤 שולם ע"י: ' + senderName + '\n' +
@@ -2452,7 +2464,7 @@ function _groupBalances_(fromPhone, mode) {
   if (!a || !a.ok || !a.active) {
     return { handled: true, replyText: 'אתה לא בקבוצה. שלח "כספלה צור" או "כספלה הצטרף <קוד>".' };
   }
-  var b = _groupAPI_('balances', { code: a.active });
+  var b = _groupAPI_('balances', { code: a.active, requesterPhone: fromPhone });
   if (!b || !b.ok) return { handled: true, replyText: '😬 שגיאה בקריאת היתרות.' };
   if (!b.totalExpenses) return { handled: true, replyText: 'אין הוצאות עדיין בקבוצה. שלח "כספלה 245 סופר" כדי להתחיל.' };
 
@@ -2485,7 +2497,7 @@ function _groupRecent_(fromPhone) {
   if (!a || !a.ok || !a.active) {
     return { handled: true, replyText: 'אתה לא בקבוצה. שלח "כספלה צור" או "כספלה הצטרף <קוד>".' };
   }
-  var r = _groupAPI_('recent', { code: a.active, limit: 10 });
+  var r = _groupAPI_('recent', { code: a.active, limit: 10, requesterPhone: fromPhone });
   if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה בקריאת ההוצאות.' };
   if (!r.expenses || !r.expenses.length) return { handled: true, replyText: 'אין הוצאות עדיין.' };
   var lines = ['🕒 *הוצאות אחרונות:*', ''];
@@ -2506,7 +2518,7 @@ function _groupAddMember_(fromPhone, rest) {
   if (!m) return { handled: true, replyText: '😬 צריך מספר טלפון. דוגמה: "כספלה הוסף יוסי 972526003090"' };
   var phone = m[1].replace(/\D+/g, '');
   var name = rest.replace(m[0], '').trim() || phone;
-  var r = _groupAPI_('addmember', { code: a.active, phone: phone, name: name });
+  var r = _groupAPI_('addmember', { code: a.active, phone: phone, name: name, requesterPhone: fromPhone });
   if (!r || !r.ok) return { handled: true, replyText: '😬 הוספה נכשלה: ' + (r && r.error || 'unknown') };
   return { handled: true, replyText: '✅ הוסף ' + name + ' (' + r.members + ' חברים בסה"כ).' };
 }
@@ -2519,7 +2531,7 @@ function _groupRemoveMember_(fromPhone, rest) {
   var m = rest.match(/(\+?\d[\d\-\s]{6,15})/);
   if (!m) return { handled: true, replyText: '😬 ציין מספר טלפון של החבר להסרה.' };
   var phone = m[1].replace(/\D+/g, '');
-  var r = _groupAPI_('removemember', { code: a.active, phone: phone });
+  var r = _groupAPI_('removemember', { code: a.active, phone: phone, requesterPhone: fromPhone });
   if (!r || !r.ok) return { handled: true, replyText: '😬 הסרה נכשלה.' };
   return { handled: true, replyText: '🗑 הוסר מהקבוצה (' + r.members + ' חברים נותרו).' };
 }
@@ -2672,7 +2684,7 @@ function processExpense(text, fromPhone) {
     var __aliased = text;
     var __famCreate = text.match(/^\s*(?:הקמת\s+משפחה|הקמ\s+משפחה|create\s+family)\s*(.*)$/i);
     if (__famCreate) __aliased = 'כספלה צור ' + (__famCreate[1].trim() || 'משפחה');
-    var __famJoin = text.match(/^\s*(?:הצטרפות\s+למשפחה|join\s+family)\s+([A-Z0-9]{6})\b/i);
+    var __famJoin = text.match(/^\s*(?:הצטרפות\s+למשפחה|join\s+family)\s+([A-Z0-9]{6,8})\b/i);
     if (__famJoin) __aliased = 'כספלה הצטרף ' + __famJoin[1];
     var __famReport = text.match(/^\s*(?:דו(?:["׳']*?)ח\s+משפחת(?:י|ה)|family\s+report)\s*$/i);
     if (__famReport) __aliased = 'כספלה יתרות';
@@ -3460,18 +3472,29 @@ function _extractLeadingDate_(text) {
   }
 
   // Numeric forms: D/M, DD/MM, D.M, DD.MM, with optional /YY or /YYYY tail.
-  // Must be followed by a space or end-of-string so we don't swallow the
-  // first number of a real expense like "12.50 קפה".
-  var numRe = /^(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?=\s|$)/;
+  // Must be followed by a space or end-of-string.
+  var numRe = /^(\d{1,2})([\/.])(\d{1,2})(?:[\/.](\d{2,4}))?(?=\s|$)/;
   var nm = s.match(numRe);
   if (nm) {
     var day = parseInt(nm[1], 10);
-    var mon = parseInt(nm[2], 10);
+    var sep = nm[2];
+    var mon = parseInt(nm[3], 10);
+    var yearGroup = nm[4];
     if (day < 1 || day > 31 || mon < 1 || mon > 12) return null;
+    // CRITICAL disambiguation: "3.5 לחם" is almost always ₪3.50 for
+    // bread, NOT "May 3, bread". The dot separator is ambiguous between
+    // a decimal amount and a date. Only treat a DOT form as a date when
+    // there's a year tail (3.5.26) OR the remaining text still starts
+    // with a number (the actual amount, e.g. "3.5 80 לחם"). The slash
+    // form (3/5) is unambiguous — people don't write ₪ amounts with "/".
+    if (sep === '.' && !yearGroup) {
+      var afterDot = s.slice(nm[0].length).trim();
+      if (!/^\d/.test(afterDot)) return null; // it's a decimal amount, not a date
+    }
     var now = new Date();
     var year;
-    if (nm[3]) {
-      year = parseInt(nm[3], 10);
+    if (yearGroup) {
+      year = parseInt(yearGroup, 10);
       if (year < 100) year += 2000;
     } else {
       year = now.getFullYear();
@@ -3831,13 +3854,25 @@ function _hasActivePremium_(fromPhone) {
     // Owner is always Pro (it's the script owner's bot).
     var owner = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
     if (owner && clean === owner) return true;
+    // Cache the plan lookup for 10 min so we don't make a synchronous
+    // HTTP round-trip to Vercel on EVERY uncategorised expense (the audit
+    // flagged this as a per-message latency + quota drain — and it was
+    // being fetched twice per message because _resolveTenant_ already
+    // hits the same endpoint). 'P'/'F' = premium, 'N' = not.
+    var cache = CacheService.getScriptCache();
+    var cacheKey = 'premium:' + clean;
+    var cached = cache.get(cacheKey);
+    if (cached === 'P') return true;
+    if (cached === 'N') return false;
     var url = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(clean);
     var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-    if (resp.getResponseCode() !== 200) return false;
+    if (resp.getResponseCode() !== 200) { cache.put(cacheKey, 'N', 120); return false; }
     var j = JSON.parse(resp.getContentText());
-    if (!j || !j.ok || !j.linked) return false;
+    if (!j || !j.ok || !j.linked) { cache.put(cacheKey, 'N', 600); return false; }
     var plan = j.plan || (j.userRecord && j.userRecord.plan) || 'free';
-    return plan === 'pro' || plan === 'family' || plan === 'business';
+    var isPremium = (plan === 'pro' || plan === 'family' || plan === 'business');
+    cache.put(cacheKey, isPremium ? 'P' : 'N', 600);
+    return isPremium;
   } catch (e) {
     Logger.log('_hasActivePremium_ err: ' + (e && e.message));
     return false;
@@ -8140,8 +8175,8 @@ function _handleFamilyMultiCommand_(fromPhone, text) {
     return _familyCreate_(fromPhone);
   }
 
-  var joinM = norm.match(/^הצטרפות\s+למשפחה\s+([A-Z0-9]{6})$/i)
-           || norm.match(/^join\s+family\s+([A-Z0-9]{6})$/i);
+  var joinM = norm.match(/^הצטרפות\s+למשפחה\s+([A-Z0-9]{6,8})$/i)
+           || norm.match(/^join\s+family\s+([A-Z0-9]{6,8})$/i);
   if (joinM) {
     return _familyJoinRequest_(fromPhone, joinM[1].toUpperCase());
   }
