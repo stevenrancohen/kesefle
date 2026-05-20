@@ -2100,10 +2100,24 @@ function kesefleToggleDark() { /* no-op: dark only */ }
 <script>
 (function() {
   'use strict';
-  // Service Worker registration
+  // Service Worker registration + auto-update.
+  // When a new SW version activates (it calls skipWaiting/clients.claim),
+  // controllerchange fires and we reload ONCE so the user always sees the
+  // freshest deploy instead of a stale cached shell. Guarded so the very
+  // first install (no prior controller) doesn't trigger a reload.
   if ('serviceWorker' in navigator) {
+    var __hadController = !!navigator.serviceWorker.controller;
+    var __reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (__reloading || !__hadController) return;
+      __reloading = true;
+      window.location.reload();
+    });
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
+        // Proactively check for an update on every load.
+        try { reg.update(); } catch (e) {}
+      }).catch(function() {});
     });
   }
 
