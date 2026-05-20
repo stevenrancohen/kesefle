@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>כסף'לה — יומן שינויים (Changelog)</title>
+    <link>https://kesefle.com/changelog</link>
+    <description>כל גרסה חדשה, שיפור ותיקון ב-כסף'לה — הבוט שמנהל לך את ההוצאות בוואטסאפ.</description>
+    <language>he</language>
+    <atom:link href="https://kesefle.com/changelog.rss" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 16 May 2026 18:00:00 +0300</lastBuildDate>
+
+    <item>
+      <title>v1.4 — פאנל אדמין, הצפנה ב-Rest ועמודי דמו ומחיר</title>
+      <link>https://kesefle.com/changelog</link>
+      <guid isPermaLink="false">kesefle-changelog-v1.4</guid>
+      <pubDate>Sat, 16 May 2026 18:00:00 +0300</pubDate>
+      <description><![CDATA[הגרסה הכי גדולה ששחררנו עד היום — 14 שינויים מרכזיים בסבב אבטחה ומוצר.]]></description>
+    </item>
+
+    <item>
+      <title>v1.3 — 700 מילות מפתח חדשות, dropdown מעוצב ו-Quick Wins לדשבורד</title>
+      <link>https://kesefle.com/changelog</link>
+      <guid isPermaLink="false">kesefle-changelog-v1.3</guid>
+      <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
+      <description><![CDATA[הרחבת מנוע הזיהוי בעברית, עיצוב מחדש של בחירת קטגוריה, ושיפורי דשבורד.]]></description>
+    </item>
+
+    <item>
+      <title>v1.2 — פאזה 2: דשבורד חשבון, הקצאת Drive ו-WhatsApp webhook</title>
+      <link>https://kesefle.com/changelog</link>
+      <guid isPermaLink="false">kesefle-changelog-v1.2</guid>
+      <pubDate>Fri, 15 May 2026 20:00:00 +0300</pubDate>
+      <description><![CDATA[תשתית רב-דיירים: כל משתמש מקבל גיליון פרטי משלו ב-Google Drive, מקושר לוואטסאפ.]]></description>
+    </item>
+
+    <item>
+      <title>v1.1 — חיווט OAuth אמיתי + הקצאת Drive ראשונה</title>
+      <link>https://kesefle.com/changelog</link>
+      <guid isPermaLink="false">kesefle-changelog-v1.1</guid>
+      <pubDate>Fri, 15 May 2026 13:00:00 +0300</pubDate>
+      <description><![CDATA[התחברות עם Google והעתקת תבנית הגיליון לדרייב של המשתמש.]]></description>
+    </item>
+
+    <item>
+      <title>v1.0 — השקה ראשונה: עמוד הנחיתה של כסף'לה SaaS</title>
+      <link>https://kesefle.com/changelog</link>
+      <guid isPermaLink="false">kesefle-changelog-v1.0</guid>
+      <pubDate>Fri, 15 May 2026 10:00:00 +0300</pubDate>
+      <description><![CDATA[הגרסה הראשונה לציבור.]]></description>
+    </item>
+  </channel>
+</rss>

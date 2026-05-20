@@ -927,7 +927,7 @@ function kesefleToggleDark() {
     });
 
     if (!('IntersectionObserver' in window)) {
-      nodes.forEach(function(el) { el.classList.add('kfl-in'); });
+      document.querySelectorAll('.kfl-reveal').forEach(function(el) { el.classList.add('kfl-in'); });
       return;
     }
 
@@ -940,7 +940,7 @@ function kesefleToggleDark() {
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 
-    nodes.forEach(function(el) { observer.observe(el); });
+    document.querySelectorAll('.kfl-reveal').forEach(function(el) { observer.observe(el); });
 
     if (!window.matchMedia('(pointer: fine)').matches) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
