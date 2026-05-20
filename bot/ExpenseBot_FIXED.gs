@@ -570,6 +570,67 @@ function _verifyMetaWebhook_(e, rawBody) {
 // breaks so a CacheService outage never blocks legitimate users.
 // ============================================================
 // ─────────────────────────────────────────────────────────────────────
+// Examples — onboarding helper. Returns the "write like you talk" list.
+// Tailored slightly by persona if one was stored via the settings flow.
+// ─────────────────────────────────────────────────────────────────────
+function _getExamplesMessage_(fromPhone) {
+  var base =
+    'פשוט תכתוב לי כמו שאתה מדבר 😎\n' +
+    '━━━━━━━━━━━━━━━━━━\n\n' +
+    '• *150 סופר* ← יסווג כ"אוכל"\n' +
+    '• *ארנונה 400* ← יסווג כ"בית"\n' +
+    '• *200 דלק* ← יסווג כ"רכב"\n' +
+    '• *80 מתנה לאמא* ← יסווג כ"משפחה"\n' +
+    '• *1,200 שכר דירה* ← יסווג כ"בית"\n' +
+    '• *45 קפה ארומה* ← יסווג כ"בתי קפה"\n\n' +
+    'כל מילה שתחשוב עליה — אני כבר מכיר.\n\n' +
+    '💡 עוד דברים שאני יודע לעשות:\n' +
+    '• *אתמול 60 מכולת* — תאריך אחר\n' +
+    '• *$50 שרת* — מטבע זר (מומר לשקלים)\n' +
+    '• 🧾 *צילום קבלה* — שלח לי תמונה\n' +
+    '• *הערה: שילמתי במזומן* — הוסף הערה להוצאה האחרונה\n' +
+    '• *סיכום* — סיכום החודש\n' +
+    '• *עזרה* — כל הפקודות';
+  // Persona tailoring (best-effort).
+  try {
+    if (typeof _getSettings_ === 'function') {
+      var s = _getSettings_(fromPhone);
+      if (s && s.persona === 'business') {
+        base += '\n\n🏢 *לעסק:* "עסק 880 לקוח ליה גודל 50-70 קנבס עלות מוצר 240 משלוח 45"';
+      }
+    }
+  } catch (_e) {}
+  return base;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Note — append free text to the LAST expense's cell note (column G's
+// cell comment). The original message is already preserved there; this
+// adds the user's remark on a new line, timestamped.
+// ─────────────────────────────────────────────────────────────────────
+function _addNoteToLast_(noteText) {
+  if (!noteText || noteText.length < 1) return '😬 הערה ריקה. נסה "הערה: שילמתי במזומן".';
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return '😬 לא מצאתי את לשונית התנועות.';
+    var last = sheet.getLastRow();
+    if (last < 2) return '📭 אין הוצאה להוסיף לה הערה.';
+    var stamp = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'dd/MM HH:mm');
+    if (typeof _kfl_appendOriginalNoteLine === 'function') {
+      _kfl_appendOriginalNoteLine(sheet, last, '📝 ' + noteText.slice(0, 200) + ' (' + stamp + ')');
+    } else {
+      // Fallback: write into a Note column if the sheet has one, else the cell note.
+      var note = sheet.getRange(last, 6).getNote() || '';
+      sheet.getRange(last, 6).setNote((note ? note + '\n' : '') + '📝 ' + noteText.slice(0, 200) + ' (' + stamp + ')');
+    }
+    return '✅ ההערה נוספה להוצאה האחרונה:\n"' + noteText.slice(0, 80) + '"';
+  } catch (e) {
+    Logger.log('_addNoteToLast_ err: ' + (e && e.message));
+    return '😬 לא הצלחתי להוסיף הערה: ' + (e && e.message || '');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Correction — edit the LAST logged expense's amount / description /
 // date. Operates on the bottom data row of the תנועות tab. Columns:
 // A date | B month | C amount | D category | E sub | F description.
@@ -3154,6 +3215,15 @@ function processExpense(text, fromPhone) {
   if (__remRm && typeof _removeReminder_ === 'function') {
     return { reply: _removeReminder_(fromPhone, __remRm[1]) };
   }
+  // Examples — onboarding helper. "דוגמאות" shows how to write expenses.
+  if (trimmed === 'דוגמאות' || trimmed === 'דוגמא' || trimmed === 'examples' || trimmed === 'example') {
+    if (typeof _getExamplesMessage_ === 'function') return { reply: _getExamplesMessage_(fromPhone) };
+  }
+  // Note — "הערה: שילמתי במזומן" attaches a note to the LAST expense.
+  var __noteM = text.match(/^\s*הערה\s*[:：]\s*(.+)$/i) || text.match(/^\s*note\s*[:：]\s*(.+)$/i);
+  if (__noteM && typeof _addNoteToLast_ === 'function') {
+    return { reply: _addNoteToLast_(__noteM[1].trim()) };
+  }
   // Search — "חפש קפה" returns matching expenses + total
   var __searchM = text.trim().match(/^(?:חפש|search)\s+(.+)$/i);
   if (__searchM && typeof _searchExpenses_ === 'function') {
@@ -3243,7 +3313,9 @@ function processExpense(text, fromPhone) {
   const fx = parseForeignCurrencyHint(__workingText);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : __workingText);
   if (!parsed || !parsed.items || parsed.items.length === 0) {
-    return { reply: '😬 לא זיהיתי סכום בהודעה\n💡 תוודא שכתבת את הסכום בתחילת ההודעה — למשל "85 סופר" או "352 אוכל לבית+165"' };
+    return { reply: '🤔 לא הבנתי. התכוונת לרשום הוצאה?\n' +
+      'אפשר לכתוב כמו שמדברים — למשל "150 סופר" או "ארנונה 500".\n' +
+      'שלח *דוגמאות* לעוד רעיונות 💡' };
   }
   // Stamp the EXACT raw user input onto every parsed item (overriding the
   // parser's view, which may be the FX-rewritten text). This is the value we
@@ -5310,6 +5382,8 @@ function getHelpMessage() {
     '📊 *פקודות מהירות:*\n' +
     '  • "סיכום" — סיכום החודש\n' +
     '  • "הזמנות" — סיכום הזמנות החודש (לקוחות, מחזור, רווח)\n' +
+    '  • "דוגמאות" — איך לכתוב הוצאות (למתחילים)\n' +
+    '  • "הערה: שילמתי במזומן" — הוסף הערה להוצאה האחרונה\n' +
     '  • "חפש קפה" — חיפוש בהיסטוריית ההוצאות\n' +
     '  • "תיקון סכום 250" — תקן את ההוצאה האחרונה (סכום/פירוט/תאריך)\n' +
     '  • "הגדרות" — שפה, קטגוריית ברירת מחדל, אזור זמן\n' +
