@@ -2322,15 +2322,18 @@ function kesefleToggleDark() { /* no-op: dark only */ }
       '#pricing > div > .grid > *',
       '[id="trust"] > div > div > *'
     ];
-    var nodes = [];
     selectors.forEach(function(sel) {
       document.querySelectorAll(sel).forEach(function(el) {
-        if (!el.classList.contains('kfl-reveal')) {
-          el.classList.add('kfl-reveal');
-          nodes.push(el);
-        }
+        el.classList.add('kfl-reveal');
       });
     });
+
+    // Observe EVERY reveal element — both the ones auto-tagged above AND any
+    // hand-authored with class="kfl-reveal" directly in the HTML (FAQ cards,
+    // timeline steps, the stats strip). The previous version only observed
+    // the auto-tagged set, so hand-authored .kfl-reveal nodes were never
+    // observed and stayed stuck at opacity:0 (invisible).
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.kfl-reveal'));
 
     if (!('IntersectionObserver' in window)) {
       // Fallback: just show everything
@@ -2351,6 +2354,18 @@ function kesefleToggleDark() { /* no-op: dark only */ }
     });
 
     nodes.forEach(function(el) { observer.observe(el); });
+
+    // Safety net for quirky in-app browsers (e.g. WhatsApp/Instagram): if a
+    // reveal element is already within the viewport shortly after load but
+    // its observer callback never fired, force it visible. Below-fold
+    // elements are left alone so they still animate in on scroll.
+    setTimeout(function() {
+      var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+      document.querySelectorAll('.kfl-reveal:not(.kfl-in)').forEach(function(el) {
+        var r = el.getBoundingClientRect();
+        if (r.top < vh && r.bottom > 0) el.classList.add('kfl-in');
+      });
+    }, 1200);
 
     // Magnetic CTA: subtly attract toward cursor (desktop only)
     if (!window.matchMedia('(pointer: fine)').matches) return;
