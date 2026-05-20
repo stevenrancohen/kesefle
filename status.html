@@ -502,8 +502,8 @@
       const s = statusBySvc[svc.id] || 'unknown';
       const b = statusBadge(s);
       const liveBadge = svc.live
-        ? '<span class="text-[10px] uppercase tracking-wider text-brand-600 dark:text-brand-500 font-semibold">בדיקה חיה</span>'
-        : '<span class="text-[10px] uppercase tracking-wider text-ink-400 dark:text-ink-500 font-semibold">תצורה</span>';
+        ? '<span class="text-[10px] text-brand-600 dark:text-brand-500 font-semibold">בדיקה חיה</span>'
+        : '<span class="text-[10px] text-ink-400 dark:text-ink-500 font-semibold">תצורה</span>';
       const reason = reasons[svc.id]
         ? `<div class="incident-blurb text-xs text-ink-500 dark:text-ink-300 border-t border-ink-100 dark:border-ink-700 pt-2">${reason_escape(reasons[svc.id])}</div>`
         : `<div class="incident-blurb text-xs text-ink-400 dark:text-ink-500 border-t border-ink-100 dark:border-ink-700 pt-2">אין דיווחים פעילים.</div>`;
