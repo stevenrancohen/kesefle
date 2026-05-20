@@ -781,58 +781,59 @@
       </a>
     </div>
 
-    <!-- Real questions users actually ask -->
-    <div class="mx-auto mt-14 max-w-3xl">
-      <div class="overflow-hidden rounded-3xl border border-ink-200 bg-white dark:border-ink-700/60 dark:bg-ink-800/40">
-        <div class="divide-y divide-ink-200/70 dark:divide-ink-700/50">
-          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
-            <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">כמה זמן לוקח לרשום הוצאה?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">פחות משתי שניות. כותבים ״<span class="num">245</span> סופר״ בוואטסאפ, מקבלים אישור בחזרה, וזה כבר רשום בגיליון.</p>
-            </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-brand-500/40 bg-brand-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold tracking-wide text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/15 dark:text-brand-300">2 שניות</span>
+    <!-- Real questions — cinematic, hi-tech glowing cards (timeline-style) -->
+    <div class="relative mx-auto mt-16 max-w-4xl">
+      <div class="pointer-events-none absolute -inset-x-6 -inset-y-8 -z-10 overflow-hidden">
+        <div class="absolute right-1/4 top-0 h-64 w-64 rounded-full bg-brand-500/20 blur-3xl"></div>
+        <div class="absolute bottom-0 left-1/4 h-64 w-64 rounded-full bg-accent-500/15 blur-3xl"></div>
+      </div>
+      <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-ink-800 to-ink-900 p-6 shadow-2xl md:p-10">
+        <div class="mb-8 text-center">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-300">שאלות שכולם שואלים</p>
+          <h3 class="mt-2 text-2xl font-black text-white md:text-3xl">כל מה שרציתם לדעת — <span class="bg-gradient-to-l from-brand-300 to-accent-400 bg-clip-text text-transparent">בלי עיגול פינות.</span></h3>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="kfl-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(34,197,94,0.45)]">
+            <span class="absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-brand-400/70 to-transparent opacity-0 transition group-hover:opacity-100"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-brand-500/25 to-accent-500/20 px-2.5 py-1 text-[11px] font-bold text-brand-200 ring-1 ring-inset ring-brand-400/30">⚡ <span class="num">2</span> שניות</span>
+            <p class="mt-3 font-bold text-white">כמה זמן לוקח לרשום הוצאה?</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-300">פחות משתי שניות. כותבים ״<span class="num">245</span> סופר״ בוואטסאפ, מקבלים אישור בחזרה, וזה כבר רשום בגיליון.</p>
           </div>
-          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
-            <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">מה אם אני שוכח לרשום הוצאה?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">הבוט שולח תזכורת יומית אישית, מזהה הפסקות פעילות, ועוזר להשלים רטרואקטיבית בשורה אחת.</p>
-            </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-brand-500/40 bg-brand-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold tracking-wide text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/15 dark:text-brand-300">תזכורות חכמות</span>
+          <div class="kfl-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(34,197,94,0.45)]" data-delay="1">
+            <span class="absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-brand-400/70 to-transparent opacity-0 transition group-hover:opacity-100"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-brand-500/25 to-accent-500/20 px-2.5 py-1 text-[11px] font-bold text-brand-200 ring-1 ring-inset ring-brand-400/30">🔔 תזכורות חכמות</span>
+            <p class="mt-3 font-bold text-white">מה אם אני שוכח לרשום הוצאה?</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-300">הבוט שולח תזכורת יומית אישית, מזהה הפסקות פעילות, ועוזר להשלים רטרואקטיבית בשורה אחת.</p>
           </div>
-          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
-            <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">איך זה מבחין בין קטגוריות?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">מילון של למעלה מ-<span class="num">18,000</span> מילים בעברית, מעודכן לחנויות, מותגים וסלנג מקומי. במקרה של ספק, שאלה אחת ואתם בוחרים.</p>
-            </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-brand-500/40 bg-brand-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold tracking-wide text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/15 dark:text-brand-300">18,000+ מילים</span>
+          <div class="kfl-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(34,197,94,0.45)]" data-delay="2">
+            <span class="absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-brand-400/70 to-transparent opacity-0 transition group-hover:opacity-100"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-brand-500/25 to-accent-500/20 px-2.5 py-1 text-[11px] font-bold text-brand-200 ring-1 ring-inset ring-brand-400/30">🧠 <span class="num">18,000</span>+ מילים</span>
+            <p class="mt-3 font-bold text-white">איך זה מבחין בין קטגוריות?</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-300">מילון של למעלה מ-<span class="num">18,000</span> מילים בעברית, מעודכן לחנויות, מותגים וסלנג מקומי. במקרה של ספק, שאלה אחת ואתם בוחרים.</p>
           </div>
-          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
-            <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">זה עובד גם לעסק קטן?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">כן. אפשר להפריד הוצאות אישיות ועסקיות באותו גיליון, להוציא דוח חודשי, ולסמן כל הוצאה לקבלה לרואה החשבון.</p>
-            </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-brand-500/40 bg-brand-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold tracking-wide text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/15 dark:text-brand-300">אישי + עסקי</span>
+          <div class="kfl-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(34,197,94,0.45)]" data-delay="3">
+            <span class="absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-brand-400/70 to-transparent opacity-0 transition group-hover:opacity-100"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-brand-500/25 to-accent-500/20 px-2.5 py-1 text-[11px] font-bold text-brand-200 ring-1 ring-inset ring-brand-400/30">🏢 אישי + עסקי</span>
+            <p class="mt-3 font-bold text-white">זה עובד גם לעסק קטן?</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-300">כן. אפשר להפריד הוצאות אישיות ועסקיות באותו גיליון, להוציא דוח חודשי, ולסמן כל הוצאה לקבלה לרואה החשבון.</p>
           </div>
-          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
-            <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">כמה זמן עד שאני רואה תוצאות אמיתיות?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">סיכום ראשון אחרי <span class="num">7</span> ימים: כמה הוצאתם, איפה הכי הרבה, ואיפה אפשר לחסוך. אחרי חודש מתחילים לראות דפוסים ומגמות.</p>
-            </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-brand-500/40 bg-brand-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold tracking-wide text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/15 dark:text-brand-300">7 ימים</span>
+          <div class="kfl-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(34,197,94,0.45)]" data-delay="1">
+            <span class="absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-brand-400/70 to-transparent opacity-0 transition group-hover:opacity-100"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-brand-500/25 to-accent-500/20 px-2.5 py-1 text-[11px] font-bold text-brand-200 ring-1 ring-inset ring-brand-400/30">📈 <span class="num">7</span> ימים</span>
+            <p class="mt-3 font-bold text-white">כמה זמן עד שאני רואה תוצאות אמיתיות?</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-300">סיכום ראשון אחרי <span class="num">7</span> ימים: כמה הוצאתם, איפה הכי הרבה, ואיפה אפשר לחסוך. אחרי חודש מתחילים לראות דפוסים ומגמות.</p>
           </div>
-          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
-            <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">מה אם אני מבצע הוצאה במטבע אחר?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">תומך ב-$, €, ₪ ושאר מטבעות עיקריים. ההמרה אוטומטית לפי שער הבנק של אותו יום, והערך הסופי בשקלים נשמר.</p>
-            </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-brand-500/40 bg-brand-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold tracking-wide text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/15 dark:text-brand-300">המרת מטבע</span>
+          <div class="kfl-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(34,197,94,0.45)]" data-delay="2">
+            <span class="absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-brand-400/70 to-transparent opacity-0 transition group-hover:opacity-100"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-brand-500/25 to-accent-500/20 px-2.5 py-1 text-[11px] font-bold text-brand-200 ring-1 ring-inset ring-brand-400/30">💱 המרת מטבע</span>
+            <p class="mt-3 font-bold text-white">מה אם אני מבצע הוצאה במטבע אחר?</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-300">תומך ב-$, €, ₪ ושאר מטבעות עיקריים. ההמרה אוטומטית לפי שער הבנק של אותו יום, והערך הסופי בשקלים נשמר.</p>
           </div>
-          <div class="grid grid-cols-[1fr_auto] gap-6 p-6 md:p-7">
-            <div class="text-right">
-              <p class="font-semibold text-ink-900 dark:text-white">איפה רואים את כל ההוצאות בסוף?</p>
-              <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">בגיליון Google Sheets פרטי בחשבון Google שלכם, עם דשבורד מובנה, גרפים חודשיים, והפרדה לפי קטגוריות. שלכם לתמיד.</p>
-            </div>
-            <span class="self-start whitespace-nowrap rounded-md border border-brand-500/40 bg-brand-500/10 px-2.5 py-1 text-[11px] font-mono font-semibold tracking-wide text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/15 dark:text-brand-300">דשבורד אישי</span>
+          <div class="kfl-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(34,197,94,0.45)] sm:col-span-2" data-delay="3">
+            <span class="absolute inset-x-0 -top-px h-px bg-gradient-to-l from-transparent via-brand-400/70 to-transparent opacity-0 transition group-hover:opacity-100"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-brand-500/25 to-accent-500/20 px-2.5 py-1 text-[11px] font-bold text-brand-200 ring-1 ring-inset ring-brand-400/30">📊 דשבורד אישי</span>
+            <p class="mt-3 font-bold text-white">איפה רואים את כל ההוצאות בסוף?</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-300">בגיליון Google Sheets פרטי בחשבון Google שלכם, עם דשבורד מובנה, גרפים חודשיים, והפרדה לפי קטגוריות. שלכם לתמיד.</p>
           </div>
         </div>
       </div>
