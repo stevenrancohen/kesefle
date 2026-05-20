@@ -115,38 +115,70 @@ export default async function handler(req, res) {
     }
   }
 
+  // Read from row 1 (INCLUDING the header) so we can map columns by name
+  // instead of guessing positions. The owner's תנועות tab and the
+  // Vercel-provisioned template have DIFFERENT column orders (e.g.
+  // amount is col C in one, col B in the other), so a positional guess
+  // silently read the wrong column. Header-driven mapping fixes that.
   const year = new Date().getFullYear();
-  const primaryRange = `'${year}'!A2:M`;
+  const primaryRange = `'${year}'!A1:N`;
   let result = await fetchSheetRange(record.sheetId, primaryRange, accessToken);
   if (!result.ok) {
-    result = await fetchSheetRange(record.sheetId, 'A2:M', accessToken);
+    result = await fetchSheetRange(record.sheetId, "'תנועות'!A1:N", accessToken);
   }
   if (!result.ok) {
-    result = await fetchSheetRange(record.sheetId, "'תנועות'!A2:M", accessToken);
+    result = await fetchSheetRange(record.sheetId, 'A1:N', accessToken);
   }
   if (!result.ok) {
     return res.status(502).json({ error: 'sheets_read_failed', status: result.status });
   }
 
+  const allRows = result.values || [];
+  if (allRows.length === 0) {
+    return res.status(200).json({ rows: [], count: 0, totalThisMonth: 0 });
+  }
+
+  // Resolve column indices from the header row. Matches Hebrew + English
+  // aliases; falls back to sensible positional defaults if a header
+  // can't be found (covers sheets created before headers existed).
+  const header = allRows[0].map((h) => String(h || '').trim().toLowerCase());
+  function colIndex(aliases, fallback) {
+    for (let i = 0; i < header.length; i++) {
+      if (aliases.some((a) => header[i].includes(a))) return i;
+    }
+    return fallback;
+  }
+  const idx = {
+    date: colIndex(['תאריך', 'date', 'timestamp', 'זמן'], 0),
+    amount: colIndex(['סכום', 'amount', 'sum', 'price'], 1),
+    category: colIndex(['קטגוריה', 'category', 'קטגורי'], 4),
+    description: colIndex(['פירוט', 'תיאור', 'description', 'desc', 'raw', 'note'], 5),
+    member: colIndex(['חבר', 'member', 'מי', 'paid by', 'logged'], 7),
+  };
+
+  // If row 1 doesn't look like a header (its "date" cell parses as a real
+  // date), treat it as data too — some legacy sheets have no header row.
+  const firstIsHeader = !parseDateCell(allRows[0][idx.date]);
+  const dataRows = firstIsHeader ? allRows.slice(1) : allRows;
+
   const rows = [];
   let totalThisMonth = 0;
 
-  for (const raw of result.values) {
+  for (const raw of dataRows) {
     if (!raw || raw.length === 0) continue;
-    const date = parseDateCell(raw[0]);
+    const date = parseDateCell(raw[idx.date]);
     if (!date) continue;
-    const amount = parseFloat(String(raw[1] || '').replace(/[^\d.\-]/g, '')) || 0;
-    const category = (raw[4] || raw[2] || '').toString();
-    const description = (raw[5] || raw[3] || '').toString();
-    const member = (raw[7] || raw[6] || '').toString();
-    const row = {
+    const amount = parseFloat(String(raw[idx.amount] || '').replace(/[^\d.\-]/g, '')) || 0;
+    const category = (raw[idx.category] || '').toString();
+    const description = (raw[idx.description] || '').toString();
+    const member = (raw[idx.member] || '').toString();
+    rows.push({
       date: date.toISOString().slice(0, 10),
       amount,
       category,
       description,
       member,
-    };
-    rows.push(row);
+    });
     if (isInCurrentMonth(date) && amount > 0) {
       totalThisMonth += amount;
     }
