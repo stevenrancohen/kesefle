@@ -644,6 +644,61 @@ function _verifyMetaWebhook_(e, rawBody) {
 // not durable, but adequate for spam suppression). Fails open if cache I/O
 // breaks so a CacheService outage never blocks legitimate users.
 // ============================================================
+// Abuse blacklist — a Script Property holding a comma-separated list of
+// blocked phone numbers (digits only). Cached 5 min to avoid a property
+// read on every message. Manage via "blacklist" Script Property.
+function _isBlacklisted_(fromPhone) {
+  if (!fromPhone) return false;
+  try {
+    var clean = String(fromPhone).replace(/[^0-9]/g, '');
+    var cache = CacheService.getScriptCache();
+    var raw = cache.get('blacklist');
+    if (raw === null) {
+      raw = String(PropertiesService.getScriptProperties().getProperty('BLACKLIST_PHONES') || '');
+      cache.put('blacklist', raw, 300);
+    }
+    if (!raw) return false;
+    return raw.split(',').map(function(s){ return s.replace(/[^0-9]/g, ''); }).indexOf(clean) >= 0;
+  } catch (_e) { return false; }
+}
+
+// Spam-pattern detector. Blocks messages that contain a URL to anything
+// other than a known payment/finance provider, plus obvious injection
+// attempts (script tags, sheet-formula triggers). Returns true = spam.
+var _SPAM_URL_RE_ = /(https?:\/\/|www\.)[^\s]+/i;
+var _SPAM_ALLOWED_HOSTS_ = /\b(kesefle\.com|wa\.me|whatsapp\.com|paybox|bit\.ly\/kesefle|tranzila|cardcom|payme|grow|meshulam|isracard|max\.co\.il|cal-online)\b/i;
+var _SPAM_INJECT_RE_ = /(<script|javascript:|onerror=|onload=|=\s*importxml|=\s*importdata|\beval\()/i;
+function _looksSpammy_(text) {
+  if (!text) return false;
+  var t = String(text);
+  if (_SPAM_INJECT_RE_.test(t)) return true;
+  if (_SPAM_URL_RE_.test(t) && !_SPAM_ALLOWED_HOSTS_.test(t)) return true;
+  return false;
+}
+
+// Append a suspicious-activity record to a dedicated KV abuse log via the
+// Vercel bridge (so it's reviewable centrally, not buried in Apps Script
+// Logger). Best-effort, never throws into the caller.
+function _logAbuse_(fromPhone, reason, sample) {
+  try {
+    Logger.log('ABUSE ' + reason + ' from=' + String(fromPhone).replace(/\d(?=\d{4})/g, '*') + ' sample="' + String(sample || '').slice(0, 60) + '"');
+    var secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '');
+    if (!secret) return;
+    UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/abuse-log', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify({
+        botSecret: secret,
+        phone: String(fromPhone).replace(/[^0-9]/g, ''),
+        reason: reason,
+        sample: String(sample || '').slice(0, 120),
+      }),
+      muteHttpExceptions: true,
+    });
+  } catch (_e) {}
+}
+
 function _isRateLimited_(fromPhone) {
   if (!fromPhone) return false;
   var WINDOW_SECONDS = 60;
@@ -726,11 +781,56 @@ function doPost(e) {
       var __from_ = __msg_.from;
       var __text_ = (__msg_.text && __msg_.text.body) || "";
       var __interactive_ = __msg_.interactive || null;
+      var __msgId_ = __msg_.id || '';
       Logger.log('doPost: from=' + __from_ + ' text="' + __text_ + '" interactive=' + (__interactive_ ? __interactive_.type : 'no'));
+
+      // 🔁 IDEMPOTENCY — Meta retries webhook delivery when our response is
+      // slow (>~20s) or on transient errors, sending the SAME message id
+      // again. Without this guard the bot writes the expense twice. We
+      // mark each wamid in CacheService for 10 min; a repeat is dropped.
+      if (__msgId_) {
+        try {
+          var __dupCache = CacheService.getScriptCache();
+          var __seenKey = 'seenmsg:' + __msgId_;
+          if (__dupCache.get(__seenKey)) {
+            Logger.log('doPost: duplicate message ' + __msgId_ + ' — ignoring (idempotency)');
+            return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+          }
+          __dupCache.put(__seenKey, '1', 600);
+        } catch (_dupErr) { /* cache outage is non-fatal — process anyway */ }
+      }
+
+      // 🚫 Abuse blacklist — silently ignore flagged numbers.
+      try {
+        if (typeof _isBlacklisted_ === 'function' && _isBlacklisted_(__from_)) {
+          Logger.log('doPost: blacklisted ' + __from_ + ' — ignoring');
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        }
+      } catch (_blErr) {}
+
+      // 🛑 Spam-pattern detection — block messages with non-payment URLs
+      // or obvious injection attempts. Logs to the abuse log for review.
+      try {
+        if (__text_ && typeof _looksSpammy_ === 'function' && _looksSpammy_(__text_)) {
+          _logAbuse_(__from_, 'spam_pattern', __text_);
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        }
+      } catch (_spErr) {}
 
       // 🚦 Per-phone rate limit — silent drop on abuse (30 msgs / 60s).
       // Applied before ALLOWED_PHONES so even allow-listed phones can't spam.
       if (_isRateLimited_(__from_)) {
+        // Send the friendly throttle notice exactly once per window.
+        try {
+          var __rlCache = CacheService.getScriptCache();
+          var __rlKey = 'rlnotice:' + String(__from_).replace(/[^0-9]/g, '');
+          if (!__rlCache.get(__rlKey)) {
+            __rlCache.put(__rlKey, '1', 60);
+            if (typeof sendWhatsAppMessage === 'function') {
+              sendWhatsAppMessage(__from_, '⏳ יותר מדי הודעות, נסה שוב בעוד דקה.');
+            }
+          }
+        } catch (_rlErr) {}
         return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
       }
 
