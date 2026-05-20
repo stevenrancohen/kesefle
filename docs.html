@@ -269,8 +269,8 @@
         <option value="#ep-sheet-provision">  /api/sheet/provision</option>
         <option value="#ep-sheet-summary">  /api/sheet/summary</option>
         <option value="#ep-whatsapp">  /api/whatsapp/webhook</option>
-        <option value="#ep-checkout">  /api/billing/checkout</option>
-        <option value="#ep-billing-webhook">  /api/billing/webhook</option>
+        <option value="#ep-checkout">  /api/billing (paypal · crypto · manual)</option>
+        <option value="#ep-billing-webhook">  /api/billing webhooks</option>
         <option value="#ep-account">  /api/account</option>
         <option value="#ep-referral">  /api/referral</option>
         <option value="#ep-admin">  /api/admin</option>
@@ -308,8 +308,8 @@
         <a class="toc-link" href="#ep-sheet-provision">sheet/provision</a>
         <a class="toc-link" href="#ep-sheet-summary">sheet/summary</a>
         <a class="toc-link" href="#ep-whatsapp">whatsapp/webhook</a>
-        <a class="toc-link" href="#ep-checkout">billing/checkout</a>
-        <a class="toc-link" href="#ep-billing-webhook">billing/webhook</a>
+        <a class="toc-link" href="#ep-checkout">billing/payment</a>
+        <a class="toc-link" href="#ep-billing-webhook">billing/webhooks</a>
         <a class="toc-link" href="#ep-account">account</a>
         <a class="toc-link" href="#ep-referral">referral</a>
         <a class="toc-link" href="#ep-admin">admin</a>
@@ -338,11 +338,11 @@
       </div>
       <p class="mt-4 text-ink-600 dark:text-ink-300">Conventions:</p>
       <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-600 dark:text-ink-300">
-        <li>All requests and responses are JSON unless noted (WhatsApp and Stripe webhooks read raw bytes).</li>
+        <li>All requests and responses are JSON unless noted (WhatsApp and payment webhooks read raw bytes).</li>
         <li>Successful responses include <code>"ok": true</code>. Failures use <code>"ok": false</code> with an <code>error</code> code.</li>
         <li>Authenticated endpoints expect <code>Authorization: Bearer &lt;Google ID token&gt;</code>.</li>
         <li>Many endpoints are routed by a <code>?action=</code> query parameter to keep us under Vercel Hobby's 12-function limit.</li>
-        <li>Webhooks (WhatsApp, Stripe) validate HMAC signatures over the raw request body.</li>
+        <li>Webhooks (WhatsApp, Coinbase) validate HMAC signatures over the raw request body; PayPal webhooks are verified via PayPal's signature-verification API.</li>
       </ul>
     </section>
 
@@ -428,7 +428,7 @@
           <tr><td><code>/api/auth/google-exchange</code></td><td>10</td><td>1 hour</td></tr>
           <tr><td><code>/api/sheet/provision</code></td><td>5</td><td>1 hour</td></tr>
           <tr><td><code>/api/sheet/summary</code></td><td>30</td><td>60 seconds</td></tr>
-          <tr><td><code>/api/billing/checkout</code></td><td>10</td><td>1 hour</td></tr>
+          <tr><td><code>/api/billing/paypal · /crypto-create · /manual</code></td><td>30 · 10 · 10</td><td>1 hour</td></tr>
           <tr><td><code>/api/account?action=*</code></td><td>5 combined</td><td>1 hour</td></tr>
           <tr><td><code>/api/referral?action=*</code></td><td>30 combined</td><td>1 hour</td></tr>
           <tr><td><code>/api/admin?action=*</code></td><td>60</td><td>60 seconds</td></tr>
@@ -440,7 +440,7 @@
     <section id="hmac" class="mb-12">
       <h2 class="text-2xl font-black">HMAC webhook signatures</h2>
       <p class="mt-2 text-ink-600 dark:text-ink-300">
-        Two endpoints accept signed inbound webhooks: <a class="underline" href="#ep-whatsapp">/api/whatsapp/webhook</a> (Meta) and <a class="underline" href="#ep-billing-webhook">/api/billing/webhook</a> (Stripe). Both disable the default JSON body parser so we can read the raw request bytes — re-serializing JSON before verification will fail because key ordering and whitespace differ. Both use constant-time comparison via Node's <code>crypto.timingSafeEqual</code>.
+        Two endpoints accept HMAC-signed inbound webhooks: <a class="underline" href="#ep-whatsapp">/api/whatsapp/webhook</a> (Meta) and <a class="underline" href="#ep-billing-webhook">/api/billing/crypto-webhook</a> (Coinbase Commerce). Both disable the default JSON body parser so we can read the raw request bytes — re-serializing JSON before verification will fail because key ordering and whitespace differ. Both use constant-time comparison via Node's <code>crypto.timingSafeEqual</code>. PayPal subscription webhooks (<code>/api/billing/paypal?action=webhook</code>) are verified differently — via PayPal's <code>verify-webhook-signature</code> API.
       </p>
 
       <h3 class="mt-6 text-lg font-bold">WhatsApp (Meta) — <code>X-Hub-Signature-256</code></h3>
@@ -486,54 +486,37 @@
         </div>
       </div>
 
-      <h3 class="mt-8 text-lg font-bold">Stripe — <code>Stripe-Signature</code></h3>
+      <h3 class="mt-8 text-lg font-bold">Coinbase Commerce — <code>X-CC-Webhook-Signature</code></h3>
       <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
-        Header format: <code>t=1700000000,v1=&lt;hex&gt;,v0=…</code>. We reject events where <code>|now − t| &gt; 300s</code> to limit replay attacks. The signed payload is <code>`${t}.${rawBody}`</code>. Secret: <code>STRIPE_WEBHOOK_SECRET</code>.
+        Header is a hex HMAC-SHA256 of the <em>raw request body</em> (no timestamp envelope). Secret: <code>COINBASE_WEBHOOK_SECRET</code>. (PayPal subscription webhooks use a different scheme — verified server-side via PayPal's <code>verify-webhook-signature</code> API.)
       </p>
 
       <div class="mt-4 flex gap-1 border-b border-ink-200 dark:border-ink-700">
-        <button class="tab-btn active" data-tab="stripe-node">Node.js</button>
-        <button class="tab-btn" data-tab="stripe-py">Python</button>
+        <button class="tab-btn active" data-tab="coinbase-node">Node.js</button>
+        <button class="tab-btn" data-tab="coinbase-py">Python</button>
       </div>
-      <div class="tab-pane" data-pane="stripe-node">
+      <div class="tab-pane" data-pane="coinbase-node">
         <div class="code-wrap mt-2">
           <pre class="code-block"><code><span class="tok-kw">import</span> crypto <span class="tok-kw">from</span> <span class="tok-str">'node:crypto'</span><span class="tok-punct">;</span>
 
-<span class="tok-kw">function</span> verifyStripe(rawBody, sigHeader, secret, toleranceSec = <span class="tok-num">300</span>) <span class="tok-punct">{</span>
-  <span class="tok-kw">const</span> parts = Object.fromEntries(
-    sigHeader.split(<span class="tok-str">','</span>).map(p =&gt; p.split(<span class="tok-str">'='</span>).map(s =&gt; s.trim()))
-  )<span class="tok-punct">;</span>
-  <span class="tok-kw">const</span> t = parseInt(parts.t, <span class="tok-num">10</span>)<span class="tok-punct">;</span>
-  <span class="tok-kw">const</span> v1 = parts.v1<span class="tok-punct">;</span>
-  <span class="tok-kw">if</span> (!t || !v1) <span class="tok-kw">return</span> <span class="tok-bool">false</span><span class="tok-punct">;</span>
-  <span class="tok-kw">if</span> (Math.abs(Math.floor(Date.now() / <span class="tok-num">1000</span>) - t) &gt; toleranceSec) <span class="tok-kw">return</span> <span class="tok-bool">false</span><span class="tok-punct">;</span>
-  <span class="tok-kw">const</span> signedPayload = <span class="tok-str">`${t}.${rawBody.toString(</span><span class="tok-str">'utf8'</span><span class="tok-str">)}`</span><span class="tok-punct">;</span>
+<span class="tok-kw">function</span> verifyCoinbase(rawBody, sigHeader, secret) <span class="tok-punct">{</span>
   <span class="tok-kw">const</span> expected = crypto.createHmac(<span class="tok-str">'sha256'</span>, secret)
-    .update(signedPayload).digest(<span class="tok-str">'hex'</span>)<span class="tok-punct">;</span>
+    .update(rawBody).digest(<span class="tok-str">'hex'</span>)<span class="tok-punct">;</span>
   <span class="tok-kw">return</span> crypto.timingSafeEqual(
     Buffer.from(expected, <span class="tok-str">'hex'</span>),
-    Buffer.from(v1, <span class="tok-str">'hex'</span>),
+    Buffer.from(sigHeader, <span class="tok-str">'hex'</span>),
   )<span class="tok-punct">;</span>
 <span class="tok-punct">}</span></code></pre>
           <button class="copy-btn" data-copy-target="prev">copy</button>
         </div>
       </div>
-      <div class="tab-pane hidden" data-pane="stripe-py">
+      <div class="tab-pane hidden" data-pane="coinbase-py">
         <div class="code-wrap mt-2">
-          <pre class="code-block"><code><span class="tok-kw">import</span> hmac, hashlib, time
+          <pre class="code-block"><code><span class="tok-kw">import</span> hmac, hashlib
 
-<span class="tok-kw">def</span> verify_stripe(raw_body: <span class="tok-kw">bytes</span>, sig_header: <span class="tok-kw">str</span>, secret: <span class="tok-kw">str</span>,
-                   tolerance_sec: <span class="tok-kw">int</span> = <span class="tok-num">300</span>) -> <span class="tok-kw">bool</span>:
-    parts = <span class="tok-punct">{</span>k: v <span class="tok-kw">for</span> k, v <span class="tok-kw">in</span> (p.split(<span class="tok-str">"="</span>, <span class="tok-num">1</span>) <span class="tok-kw">for</span> p <span class="tok-kw">in</span> sig_header.split(<span class="tok-str">","</span>))<span class="tok-punct">}</span>
-    t = <span class="tok-kw">int</span>(parts.get(<span class="tok-str">"t"</span>, <span class="tok-str">"0"</span>))
-    v1 = parts.get(<span class="tok-str">"v1"</span>)
-    <span class="tok-kw">if</span> <span class="tok-kw">not</span> (t <span class="tok-kw">and</span> v1):
-        <span class="tok-kw">return</span> <span class="tok-bool">False</span>
-    <span class="tok-kw">if</span> <span class="tok-kw">abs</span>(<span class="tok-kw">int</span>(time.time()) - t) &gt; tolerance_sec:
-        <span class="tok-kw">return</span> <span class="tok-bool">False</span>
-    signed_payload = <span class="tok-str">f"</span><span class="tok-punct">{</span>t<span class="tok-punct">}</span><span class="tok-str">."</span>.encode() + raw_body
-    expected = hmac.new(secret.encode(), signed_payload, hashlib.sha256).hexdigest()
-    <span class="tok-kw">return</span> hmac.compare_digest(expected, v1)</code></pre>
+<span class="tok-kw">def</span> verify_coinbase(raw_body: <span class="tok-kw">bytes</span>, sig_header: <span class="tok-kw">str</span>, secret: <span class="tok-kw">str</span>) -> <span class="tok-kw">bool</span>:
+    expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    <span class="tok-kw">return</span> hmac.compare_digest(expected, sig_header)</code></pre>
           <button class="copy-btn" data-copy-target="prev">copy</button>
         </div>
       </div>
@@ -547,7 +530,7 @@
       </p>
       <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-ink-600 dark:text-ink-300">
         <li><b>WhatsApp:</b> the inbound <code>message.id</code> from Meta is checked against <code>seen:wa:&lt;id&gt;</code> with a 24-hour TTL. Duplicates return <code>200 { ok: true, ignored: "duplicate" }</code> without writing to the sheet.</li>
-        <li><b>Stripe:</b> the <code>event.id</code> is checked against <code>stripe_event:&lt;id&gt;</code>. Duplicates return <code>200 { ok: true, duplicate: &lt;id&gt; }</code>.</li>
+        <li><b>Payments:</b> Coinbase events are checked against <code>crypto_event:&lt;id&gt;</code> and PayPal events against <code>paypal_event:&lt;id&gt;</code>. Duplicates return <code>200 { ok: true, duplicate: &lt;id&gt; }</code>.</li>
         <li><b>Sheet rows:</b> each appended row carries the <code>message_id</code> in column I, so the sheet itself is the system of record for "we already processed this".</li>
         <li><b>Provision:</b> <a class="underline" href="#ep-sheet-provision">/api/sheet/provision</a> is idempotent — calling it twice for the same user returns the existing <code>spreadsheetId</code> with <code>reused: true</code>.</li>
         <li><b>Referral generate:</b> calling <code>?action=generate</code> twice returns the same code with <code>reused: true</code> unless <code>?force=1</code> is supplied.</li>
@@ -933,80 +916,74 @@
       </p>
     </article>
 
-    <!-- ============ BILLING CHECKOUT ============ -->
-    <article id="ep-checkout" class="endpoint" data-keywords="billing checkout stripe subscribe pro family">
+    <!-- ============ BILLING: CREATE PAYMENT ============ -->
+    <article id="ep-checkout" class="endpoint" data-keywords="billing payment paypal crypto bit bank checkout subscribe pro family upgrade">
       <header>
         <span class="method method-POST">POST</span>
-        <code class="ep-url">/api/billing/checkout</code>
+        <code class="ep-url">/api/billing/paypal · /crypto-create · /manual</code>
         <span class="pill pill-auth">auth required</span>
       </header>
-      <h3 class="mt-3 text-xl font-bold"><a href="#ep-checkout">Create a Stripe Checkout Session</a></h3>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-checkout">Start a payment (PayPal, crypto, Bit, bank)</a></h3>
       <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
-        Creates a Stripe subscription Checkout Session with a 14-day trial. The <code>userSub</code> in <code>subscription_data.metadata</code> is taken from the verified ID token, not the request body — so a webhook event can never flip another user's plan.
+        Three create endpoints, one per channel. In all cases the <code>userSub</code> comes from the verified ID token — never the request body. Plans: <code>pro</code> (₪19/mo) · <code>family</code> (₪39/mo). Optional <code>period</code>: <code>month</code> (default) or <code>year</code>.
       </p>
-      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">Rate limit: 10 / hour.</p>
 
-      <h4 class="mt-4 font-bold">Request</h4>
+      <h4 class="mt-4 font-bold">PayPal — recurring subscription</h4>
       <div class="code-wrap mt-2">
-        <pre class="code-block"><code><span class="tok-punct">{</span>
-  <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span>           <span class="tok-com">// or "family"</span>
-<span class="tok-punct">}</span></code></pre>
+        <pre class="code-block"><code><span class="tok-com">// POST /api/billing/paypal?action=subscribe</span>
+<span class="tok-punct">{</span> <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span> <span class="tok-punct">}</span>
+<span class="tok-com">// → 200 { ok: true, url: "https://www.paypal.com/…", subscriptionId: "I-…" }</span></code></pre>
         <button class="copy-btn" data-copy-target="prev">copy</button>
       </div>
 
-      <h4 class="mt-4 font-bold">Response</h4>
+      <h4 class="mt-4 font-bold">Crypto — Coinbase Commerce (prepaid)</h4>
       <div class="code-wrap mt-2">
-        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
-<span class="tok-punct">{</span>
-  <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-  <span class="tok-key">"url"</span><span class="tok-punct">:</span> <span class="tok-str">"https://checkout.stripe.com/c/pay/cs_test_…"</span><span class="tok-punct">,</span>
-  <span class="tok-key">"sessionId"</span><span class="tok-punct">:</span> <span class="tok-str">"cs_test_…"</span><span class="tok-punct">,</span>
-  <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span>
-<span class="tok-punct">}</span>
-
-<span class="tok-com">// 400 — invalid plan (returns { allowed: ["pro","family"] })</span>
-<span class="tok-com">// 500 — billing_not_configured | plan_price_not_configured</span>
-<span class="tok-com">// 4xx/5xx — stripe_customer_create_failed | stripe_session_create_failed</span>
-<span class="tok-com">// 502 — stripe_unreachable</span></code></pre>
+        <pre class="code-block"><code><span class="tok-com">// POST /api/billing/crypto-create</span>
+<span class="tok-punct">{</span> <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span><span class="tok-punct">,</span> <span class="tok-key">"period"</span><span class="tok-punct">:</span> <span class="tok-str">"month"</span> <span class="tok-punct">}</span>
+<span class="tok-com">// → 200 { ok: true, url: "https://commerce.coinbase.com/charges/…" }</span></code></pre>
         <button class="copy-btn" data-copy-target="prev">copy</button>
       </div>
+
+      <h4 class="mt-4 font-bold">Bit / bank — manual confirm (prepaid)</h4>
+      <div class="code-wrap mt-2">
+        <pre class="code-block"><code><span class="tok-com">// POST /api/billing/manual?action=request</span>
+<span class="tok-punct">{</span> <span class="tok-key">"plan"</span><span class="tok-punct">:</span> <span class="tok-str">"pro"</span><span class="tok-punct">,</span> <span class="tok-key">"period"</span><span class="tok-punct">:</span> <span class="tok-str">"month"</span><span class="tok-punct">,</span> <span class="tok-key">"method"</span><span class="tok-punct">:</span> <span class="tok-str">"bit"</span> <span class="tok-punct">}</span>
+<span class="tok-com">// → 200 { ok: true, code: "KFL-7K3Q9F", amountILS: 19, instructions: "…" }</span>
+<span class="tok-com">// Owner is alerted on WhatsApp; premium activates once they confirm.</span></code></pre>
+        <button class="copy-btn" data-copy-target="prev">copy</button>
+      </div>
+      <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">Rate limits: PayPal 30/h · crypto 10/h · manual 10/h.</p>
     </article>
 
-    <!-- ============ BILLING WEBHOOK ============ -->
-    <article id="ep-billing-webhook" class="endpoint" data-keywords="billing webhook stripe subscription invoice payment hmac">
+    <!-- ============ BILLING: WEBHOOKS + ACTIVATION ============ -->
+    <article id="ep-billing-webhook" class="endpoint" data-keywords="billing webhook paypal coinbase crypto subscription payment hmac activate confirm">
       <header>
         <span class="method method-POST">POST</span>
-        <code class="ep-url">/api/billing/webhook</code>
-        <span class="pill pill-hmac">HMAC (Stripe)</span>
+        <code class="ep-url">/api/billing/crypto-webhook · /paypal?action=webhook</code>
+        <span class="pill pill-hmac">signed</span>
       </header>
-      <h3 class="mt-3 text-xl font-bold"><a href="#ep-billing-webhook">Stripe webhook</a></h3>
+      <h3 class="mt-3 text-xl font-bold"><a href="#ep-billing-webhook">Payment webhooks &amp; activation</a></h3>
       <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
-        Stripe posts subscription lifecycle events here. We verify <code>Stripe-Signature</code> with a 300-second tolerance window, deduplicate by <code>event.id</code> (<code>stripe_event:&lt;id&gt;</code> in KV), and update the user record in KV.
+        All channels converge on one activation path (<code>lib/billing.activatePremium</code>), which writes the canonical user record with a single <code>accessUntil</code> clock. Coinbase webhooks are HMAC-verified; PayPal webhooks are verified via PayPal's API. Both deduplicate by event id.
       </p>
 
-      <h4 class="mt-4 font-bold">Handled event types</h4>
+      <h4 class="mt-4 font-bold">Handled events</h4>
       <table class="params mt-2">
-        <thead><tr><th>Event</th><th>Effect</th></tr></thead>
+        <thead><tr><th>Source · event</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td><code>checkout.session.completed</code></td><td>Sets <code>plan</code>, <code>stripeCustomerId</code>, <code>stripeSubscriptionId</code>, <code>subscriptionStatus = trialing</code>, <code>subscribedAt</code></td></tr>
-          <tr><td><code>customer.subscription.created</code></td><td>Updates plan + status + period end</td></tr>
-          <tr><td><code>customer.subscription.updated</code></td><td>Updates plan + status + period end</td></tr>
-          <tr><td><code>customer.subscription.deleted</code></td><td>Sets <code>plan = free</code>, <code>subscriptionStatus = canceled</code></td></tr>
-          <tr><td><code>invoice.payment_failed</code></td><td>Logged; future: WhatsApp dunning</td></tr>
+          <tr><td><code>Coinbase charge:confirmed | resolved</code></td><td>Activate prepaid period (extends <code>accessUntil</code>)</td></tr>
+          <tr><td><code>PayPal BILLING.SUBSCRIPTION.ACTIVATED</code></td><td>Activate recurring; <code>accessUntil</code> = next_billing_time + grace</td></tr>
+          <tr><td><code>PayPal PAYMENT.SALE.COMPLETED</code></td><td>Renewal — refresh <code>accessUntil</code></td></tr>
+          <tr><td><code>PayPal …CANCELLED | EXPIRED | SUSPENDED</code></td><td>Stop renewing; access rides out the paid period</td></tr>
         </tbody>
       </table>
 
-      <h4 class="mt-4 font-bold">Response</h4>
+      <h4 class="mt-4 font-bold">Manual confirm (admin)</h4>
       <div class="code-wrap mt-2">
-        <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
-<span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"processed"</span><span class="tok-punct">:</span> <span class="tok-str">"checkout.session.completed"</span> <span class="tok-punct">}</span>
-
-<span class="tok-com">// 200 OK (replay)</span>
-<span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"duplicate"</span><span class="tok-punct">:</span> <span class="tok-str">"evt_…"</span> <span class="tok-punct">}</span>
-
-<span class="tok-com">// 401 — signature_invalid (with reason: malformed_signature | timestamp_outside_tolerance | signature_mismatch)</span>
-<span class="tok-com">// 400 — invalid_json | body_read_failed</span>
-<span class="tok-com">// 500 — webhook_secret_not_configured</span></code></pre>
+        <pre class="code-block"><code><span class="tok-com">// POST /api/billing/manual?action=confirm   (admin only — ADMIN_EMAILS)</span>
+<span class="tok-punct">{</span> <span class="tok-key">"code"</span><span class="tok-punct">:</span> <span class="tok-str">"KFL-7K3Q9F"</span> <span class="tok-punct">}</span>
+<span class="tok-com">// → 200 { ok: true, status: "confirmed", plan: "pro", accessUntil: "…" }</span>
+<span class="tok-com">// GET ?action=list → open pending · POST ?action=reject → drop one</span></code></pre>
         <button class="copy-btn" data-copy-target="prev">copy</button>
       </div>
     </article>
@@ -1204,8 +1181,10 @@
     <span class="tok-key">"kv"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
     <span class="tok-key">"meta_verify_token"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
     <span class="tok-key">"meta_app_secret"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"stripe_secret_key"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"stripe_webhook_secret"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span>
+    <span class="tok-key">"paypal_client_id"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"coinbase_commerce_api_key"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"bit_payee_phone"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"bank_transfer_details"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span>
   <span class="tok-punct">}</span>
 <span class="tok-punct">}</span>
 

@@ -1,7 +1,12 @@
 // /api/billing/crypto-webhook
-// Coinbase Commerce webhook receiver. Verifies signature and activates premium on charge:confirmed|resolved.
+// Coinbase Commerce webhook. Verifies the HMAC signature, then activates premium
+// via the shared lib/billing.activatePremium path (writes the canonical user
+// record so the bot + website both see it).
+//
+// Env: COINBASE_WEBHOOK_SECRET
 
 import crypto from 'node:crypto';
+import { activatePremium, periodMonths, billingKvGet, billingKvSet } from '../../lib/billing.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -12,66 +17,6 @@ async function readRawBody(req) {
     req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
-}
-
-async function kvGet(key) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return null;
-  const r = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!j?.result) return null;
-  try { return JSON.parse(j.result); } catch { return j.result; }
-}
-
-async function kvSet(key, value) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return false;
-  const r = await fetch(`${url}/set/${encodeURIComponent(key)}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(value),
-  });
-  return r.ok;
-}
-
-export async function activatePremium(userId, chargeId) {
-  const now = Date.now();
-  const sub = {
-    plan: 'premium',
-    expiresAt: now + 30 * 24 * 60 * 60 * 1000,
-    paymentMethod: 'crypto',
-    chargeId,
-    activatedAt: now,
-  };
-  await kvSet(`sub:${userId}`, sub);
-
-  const phoneRec = await kvGet(`phone:of:${userId}`);
-  const phone = typeof phoneRec === 'string' ? phoneRec : phoneRec?.phone;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const metaToken = process.env.META_ACCESS_TOKEN;
-  if (phone && phoneId && metaToken) {
-    try {
-      await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${metaToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: phone,
-          text: { body: '✅ מנוי הפרימיום שלך הופעל! תוקף: 30 ימים מהיום. תהנה.' },
-        }),
-      });
-    } catch (e) {
-      console.error('whatsapp_notify_failed', e.message);
-    }
-  }
-  return sub;
 }
 
 export default async function handler(req, res) {
@@ -88,34 +33,51 @@ export default async function handler(req, res) {
   try { rawBody = await readRawBody(req); }
   catch (e) { return res.status(400).json({ error: 'body_read_failed' }); }
 
-  const sigHeader = req.headers['x-cc-webhook-signature'] || req.headers['X-CC-Webhook-Signature'];
-  if (!sigHeader) {
-    return res.status(401).json({ error: 'signature_missing' });
-  }
+  const sigHeader = req.headers['x-cc-webhook-signature'];
+  if (!sigHeader) return res.status(401).json({ error: 'signature_missing' });
 
   const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
   let valid = false;
   try {
     valid = crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(String(sigHeader), 'hex'));
-  } catch (e) { valid = false; }
-  if (!valid) {
-    return res.status(401).json({ error: 'signature_invalid' });
-  }
+  } catch { valid = false; }
+  if (!valid) return res.status(401).json({ error: 'signature_invalid' });
 
   let event;
   try { event = JSON.parse(rawBody.toString('utf8')); }
-  catch (e) { return res.status(200).json({ ok: true, ignored: 'invalid_json' }); }
+  catch { return res.status(200).json({ ok: true, ignored: 'invalid_json' }); }
 
   const type = event?.event?.type || event?.type;
+  const data = event?.event?.data || event?.data;
+  const eventId = event?.event?.id || event?.id || data?.id;
+
   if (type === 'charge:confirmed' || type === 'charge:resolved') {
-    const data = event?.event?.data || event?.data;
-    const userId = data?.metadata?.userId;
+    // Idempotency — Coinbase retries; never double-extend a paid period.
+    const seenKey = `crypto_event:${eventId}`;
+    if (await billingKvGet(seenKey)) {
+      return res.status(200).json({ ok: true, duplicate: eventId });
+    }
+
+    const meta = data?.metadata || {};
+    const userSub = meta.userSub || meta.userId; // accept legacy key
+    const plan = meta.plan || 'pro';
+    const period = meta.period || 'month';
     const chargeId = data?.id;
-    if (userId) {
+
+    if (userSub) {
       try {
-        await activatePremium(userId, chargeId);
+        await activatePremium(userSub, {
+          plan,
+          method: 'crypto',
+          months: periodMonths(period),
+          externalId: chargeId,
+          recurring: false,
+        });
+        await billingKvSet(seenKey, { type, ts: new Date().toISOString() });
       } catch (e) {
-        console.error('activate_premium_failed', e.message);
+        console.error('crypto_activate_failed', e.message);
+        // Return 500 so Coinbase retries rather than dropping a real payment.
+        return res.status(500).json({ error: 'activation_failed' });
       }
     }
   }

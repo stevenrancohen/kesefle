@@ -27,6 +27,7 @@ import { withRateLimit } from '../../lib/ratelimit.js';
 import { encryptRefreshToken } from '../../lib/crypto.js';
 import { setSessionCookie } from '../_lib/session.js';
 import { getGoogleClientId } from '../../lib/auth.js';
+import { newUserTrialFields } from '../../lib/subscription.js';
 
 async function kvSetTokenRecord(kvUrl, kvToken, userSub, record) {
   await fetch(`${kvUrl}/set/${encodeURIComponent('token:' + userSub)}`, {
@@ -48,6 +49,24 @@ async function kvGetSheetId(kvUrl, kvToken, userSub) {
     }
   } catch (e) {
     log.warn('token_record.sheet_lookup_failed', { error: e.message });
+  }
+  return null;
+}
+
+// Fetch the existing canonical user record so we can MERGE into it rather than
+// clobber it. Critical because the OAuth flow uses prompt=consent, so Google
+// hands us a refresh_token on every login — and the old code rebuilt the record
+// from scratch each time, wiping plan / stripeCustomerId / subscriptionStatus /
+// trial fields for any returning (especially paying) user.
+async function kvGetUser(kvUrl, kvToken, userSub) {
+  try {
+    const r = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, {
+      headers: { 'Authorization': `Bearer ${kvToken}` },
+    });
+    const j = await r.json();
+    if (j?.result) return JSON.parse(j.result);
+  } catch (e) {
+    log.warn('user_record.lookup_failed', { error: e.message });
   }
   return null;
 }
@@ -137,7 +156,13 @@ async function handlerImpl(req, res) {
         // Fail closed if encryption is misconfigured — refusing to store plaintext.
         return res.status(500).json({ ok: false, error: 'token_encryption_unavailable' });
       }
+      // MERGE into the existing record (don't clobber). Preserves plan,
+      // stripeCustomerId, subscriptionStatus, referral data, etc. on re-login.
+      const existing = await kvGetUser(kvUrl, kvToken, identity.sub);
+      const isNewUser = !existing;
+      const nowIso = new Date().toISOString();
       const record = {
+        ...(existing || {}),
         userSub: identity.sub,
         email: identity.email,
         name: identity.name,
@@ -145,8 +170,15 @@ async function handlerImpl(req, res) {
         // NOTE: refreshToken (plaintext) is NEVER stored anymore. Only the encrypted envelope.
         refreshTokenEnvelope,
         scopes: tokens.scope,
-        connectedAt: new Date().toISOString(),
+        connectedAt: existing?.connectedAt || nowIso,
+        lastLoginAt: nowIso,
       };
+      // Start a 14-day Pro trial exactly once, at first signup. Guarded on
+      // trialEndsAt absence so we never reset a trial or override a paid plan.
+      if (isNewUser && !record.trialEndsAt && !record.stripeSubscriptionId) {
+        Object.assign(record, newUserTrialFields(Date.now()));
+        log.info('user.trial_started', { reqId: req.reqId, userSub: identity.sub });
+      }
       await fetch(`${kvUrl}/set/${encodeURIComponent('user:' + identity.sub)}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },

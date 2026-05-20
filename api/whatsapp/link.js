@@ -20,6 +20,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { computeEntitlement } from '../../lib/subscription.js';
 
 // Sends a one-shot WhatsApp welcome to a freshly-linked user. Fire-and-forget
 // from the confirm path — if Meta is down or the token has rotated, the link
@@ -131,19 +132,17 @@ async function handlerImpl(req, res) {
     if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
     const rec = await kvGet(`phone:${phone}`);
     if (!rec) return res.status(200).json({ ok: true, linked: false });
-    // Surface the plan so the bot's _hasActivePremium_ check can gate
-    // AI categorisation + OCR + group caps without an extra round trip.
-    // We pull from the canonical user record (the phone-record can lag
-    // behind plan changes by one Stripe webhook).
-    let plan = rec.plan || 'free';
-    let subscriptionStatus = rec.subscriptionStatus || null;
+    // Surface the EFFECTIVE plan so the bot's _hasActivePremium_ check can gate
+    // AI categorisation + OCR + group caps without an extra round trip. We pull
+    // from the canonical user record (the phone-record can lag behind plan
+    // changes by one Stripe webhook) and run it through computeEntitlement so an
+    // active 14-day trial reports as 'pro' — the deployed bot only checks
+    // plan ∈ {pro,family,business}, so this makes trials work with no bot redeploy.
+    let entitlement = computeEntitlement(rec);
     if (rec.userSub) {
       try {
         const userRec = await kvGet(`user:${rec.userSub}`);
-        if (userRec) {
-          plan = userRec.plan || plan;
-          subscriptionStatus = userRec.subscriptionStatus || subscriptionStatus;
-        }
+        if (userRec) entitlement = computeEntitlement(userRec);
       } catch (_e) {}
     }
     return res.status(200).json({
@@ -151,8 +150,13 @@ async function handlerImpl(req, res) {
       linked: true,
       userSub: rec.userSub,
       sheetId: rec.spreadsheetId,
-      plan,
-      subscriptionStatus,
+      // `plan` is the EFFECTIVE plan (trial → 'pro'); `rawPlan` is the literal
+      // stored plan for billing/diagnostics.
+      plan: entitlement.effectivePlan,
+      rawPlan: entitlement.rawPlan,
+      premium: entitlement.premium,
+      subscriptionStatus: entitlement.status,
+      trialDaysLeft: entitlement.trial.daysLeft,
     });
   }
 

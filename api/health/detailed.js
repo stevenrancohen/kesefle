@@ -64,12 +64,20 @@ async function probeAnthropic() {
   }
 }
 
-async function probeStripe() {
-  if (!process.env.STRIPE_SECRET_KEY) return { ok: 'skipped', reason: 'no_key_configured' };
+async function probePaypal() {
+  if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
+    return { ok: 'skipped', reason: 'no_key_configured' };
+  }
   const start = Date.now();
   try {
-    const r = await fetch('https://api.stripe.com/v1/', {
-      headers: { Authorization: 'Bearer ' + process.env.STRIPE_SECRET_KEY },
+    const base = (process.env.PAYPAL_ENV || 'live').toLowerCase() === 'sandbox'
+      ? 'https://api-m.sandbox.paypal.com'
+      : 'https://api-m.paypal.com';
+    const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64');
+    const r = await fetch(`${base}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=client_credentials',
     });
     return { ok: r.ok, status: r.status, latencyMs: Date.now() - start };
   } catch (e) {
@@ -96,11 +104,11 @@ async function handlerImpl(req, res) {
     probeSheets(),
     probeMeta(),
     probeAnthropic(),
-    probeStripe(),
+    probePaypal(),
     probeCoinbase(),
   ]);
-  const [kv, sheets, meta, anthropic, stripe, coinbase] = results;
-  // Overall = "ok" only if every CRITICAL dep is up. Anthropic/Stripe
+  const [kv, sheets, meta, anthropic, paypal, coinbase] = results;
+  // Overall = "ok" only if every CRITICAL dep is up. Anthropic/payments
   // are not critical for the personal-tracker happy path; Meta + KV
   // + Sheets are.
   const critical = [kv, sheets, meta];
@@ -115,7 +123,7 @@ async function handlerImpl(req, res) {
       sheets,
       meta,
       anthropic,
-      stripe,
+      paypal,
       coinbase,
     },
   });

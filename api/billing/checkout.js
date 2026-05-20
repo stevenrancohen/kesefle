@@ -1,3 +1,8 @@
+// ⚠️ DEPRECATED / UNUSED — Kesefle migrated off Stripe (2026-05) to PayPal,
+// crypto (Coinbase Commerce), and manual Bit/bank transfer. Nothing in the app
+// calls this endpoint anymore; it is kept as dead code for reference only.
+// Active billing: lib/billing.js + api/billing/{paypal,crypto-create,crypto-webhook,manual}.js.
+//
 // /api/billing/checkout
 // Creates a Stripe Checkout Session for the user to subscribe to Pro or Family plan.
 //
@@ -115,6 +120,12 @@ async function handlerImpl(req, res) {
   params.set('subscription_data[trial_period_days]', '14');
   params.set('subscription_data[metadata][userSub]', userSub);
   params.set('subscription_data[metadata][plan]', plan);
+  // ALSO stamp metadata on the Checkout Session itself. `subscription_data` is
+  // an INPUT-only field — it never appears on the session object Stripe sends
+  // back in `checkout.session.completed`, so without these two lines that
+  // webhook branch could never resolve userSub and would silently no-op.
+  params.set('metadata[userSub]', userSub);
+  params.set('metadata[plan]', plan);
   params.set('allow_promotion_codes', 'true');
   params.set('billing_address_collection', 'auto');
   params.set('locale', 'he');

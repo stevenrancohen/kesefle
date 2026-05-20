@@ -77,6 +77,8 @@
   <!-- Hero -->
   <section class="relative text-center">
     <div class="pointer-events-none absolute -top-20 left-1/2 -z-10 h-80 w-80 -translate-x-1/2 rounded-full bg-brand-500/15 blur-3xl animate-blob"></div>
+    <div class="pointer-events-none absolute -top-10 right-[16%] -z-10 h-56 w-56 rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-3s"></div>
+    <div class="pointer-events-none absolute top-24 left-[16%] -z-10 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl animate-blob" style="animation-delay:-1.5s"></div>
     <div class="text-6xl">🎉</div>
     <div class="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:border-brand-500/40 dark:bg-ink-800 dark:text-brand-300">
       <span class="relative flex h-2 w-2">
@@ -160,14 +162,14 @@
         <span class="hidden sm:inline-flex shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">דמו</span>
       </div>
       <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
-        אם תוציא <b class="num">₪40</b> על קפה כל יום, זה <b class="num">₪14,600</b> בשנה. ברגע שתרשום כמה הוצאות, נחליף את הדמו בנתונים האמיתיים שלך.
+        אם תוציא <b class="num">₪16</b> על קפה כל יום, זה <b class="num">₪5,840</b> בשנה. ברגע שתרשום כמה הוצאות, נחליף את הדמו בנתונים האמיתיים שלך.
       </p>
       <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div class="rounded-2xl bg-brand-50 p-4 dark:bg-brand-500/10">
           <div class="text-2xl">☕</div>
           <div class="mt-2 text-[11px] font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">קפה יומי</div>
-          <div class="num mt-1 text-lg font-black">₪14,600 / שנה</div>
-          <div class="mt-1 text-[11px] text-ink-600 dark:text-ink-300">חסוך ₪40 ביום — וקיבלת טיסה לחו"ל.</div>
+          <div class="num mt-1 text-lg font-black">₪5,840 / שנה</div>
+          <div class="mt-1 text-[11px] text-ink-600 dark:text-ink-300">₪16 ביום על קפה — וזו חופשה בחו"ל בשנה.</div>
         </div>
         <div class="rounded-2xl bg-amber-50 p-4 dark:bg-amber-500/10">
           <div class="text-2xl">🍔</div>
@@ -475,6 +477,19 @@ window.addEventListener('appinstalled', function() {
     // Insert before the inner gradient panel
     section.insertBefore(hint, section.firstChild);
   });
+})();
+
+// Personalize the welcome with the user's first name (if signed in) — makes the
+// post-signup moment feel made-for-them, not generic.
+(function personalizeWelcome(){
+  try {
+    var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}');
+    var first = String(u.name || u.given_name || '').trim().split(/\s+/)[0];
+    if (!first) return;
+    var safe = first.replace(/[<>&"]/g, '');
+    var h1 = document.querySelector('main h1');
+    if (h1) h1.innerHTML = 'ברוך הבא, <span class="holo-text">' + safe + '</span>! 👋';
+  } catch (e) {}
 })();
 </script>
 

@@ -226,7 +226,7 @@
     { id: 'bot',     name: 'בוט WhatsApp', hint: 'Meta Cloud API webhook', live: false },
     { id: 'sheets',  name: 'גוגל גליונות', hint: 'Sheets API',             live: true  },
     { id: 'kv',      name: 'מסד נתונים',   hint: 'Vercel KV',              live: true  },
-    { id: 'stripe',  name: 'תשלומים',     hint: 'Stripe',                  live: false },
+    { id: 'payments', name: 'תשלומים',    hint: 'PayPal · קריפטו · ביט',   live: false },
     { id: 'oauth',   name: 'כניסה',       hint: 'Google OAuth',            live: true  }
   ];
 
@@ -393,14 +393,15 @@
       }
     } else { out.bot = 'unknown'; }
 
-    // 6) stripe — env-based
+    // 6) payments — env-based (PayPal / Coinbase auto + Bit/bank manual)
     if (health) {
       const env = health.env_configured || {};
-      const ok = env.stripe_secret_key && env.stripe_webhook_secret;
-      if (ok) out.stripe = 'op';
-      else if (env.stripe_secret_key || env.stripe_webhook_secret) { out.stripe = 'deg'; reasons.stripe = 'תצורת Stripe חלקית'; }
-      else { out.stripe = 'deg'; reasons.stripe = 'תצורת Stripe לא הוגדרה'; }
-    } else { out.stripe = 'unknown'; }
+      const auto = env.paypal_client_id || env.coinbase_commerce_api_key;
+      const manual = env.bit_payee_phone || env.bank_transfer_details;
+      if (auto && manual) out.payments = 'op';
+      else if (auto || manual) { out.payments = 'deg'; reasons.payments = 'חלק מאמצעי התשלום מוגדרים'; }
+      else { out.payments = 'deg'; reasons.payments = 'תשלומים לא הוגדרו'; }
+    } else { out.payments = 'unknown'; }
 
     return { statusBySvc: out, reasons };
   }

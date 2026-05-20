@@ -236,17 +236,17 @@ async function redeemAction(req, res) {
   existingList.push({ email: req.user.email || '', at: now.toISOString() });
   await kvSet('referral:redeemers:' + referrerSub, existingList.slice(-200));
 
-  // Grant referral_credit on both user records (overwrite if longer).
+  // Grant the free month — ONCE per user, ever. No stacking, no double promos:
+  // if a user already received a referral credit we still TRACK the referral
+  // (count + redeemers list above) but never grant a second month.
   for (const sub of [userSub, referrerSub]) {
     const rec = (await kvGet('user:' + sub)) || {};
-    const prev = rec.referral_credit ? new Date(rec.referral_credit).getTime() : 0;
-    if (grantedUntil > new Date(prev).toISOString() || !prev) {
-      rec.referral_credit = grantedUntil;
-      rec.referral_credit_granted_at = now.toISOString();
-      // Stamp who triggered it (helpful for support)
-      rec.referral_credit_source = (sub === userSub) ? 'redeemed:' + code : 'referrer_of:' + userSub.slice(0, 8);
-      await kvSet('user:' + sub, rec);
-    }
+    if (rec.referral_credit_granted_at) continue; // already benefited once
+    rec.referral_credit = grantedUntil;
+    rec.referral_credit_granted_at = now.toISOString();
+    // Stamp who triggered it (helpful for support)
+    rec.referral_credit_source = (sub === userSub) ? 'redeemed:' + code : 'referrer_of:' + userSub.slice(0, 8);
+    await kvSet('user:' + sub, rec);
   }
 
   // Try to surface the referrer's first name for the UX confirmation

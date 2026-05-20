@@ -173,6 +173,32 @@
     </div>
   </section>
 
+  <!-- ====== SECTION 1.5: PENDING PAYMENTS (Bit / bank manual confirm) ====== -->
+  <section class="mb-10" id="pending-payments-section">
+    <div class="mb-4 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">תשלומים ממתינים לאישור</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">ביט / העברה בנקאית — אשר לאחר שקיבלת את הכסף, והפרימיום יופעל מיד.</p>
+      </div>
+      <button onclick="window.kflLoadPending && window.kflLoadPending()" class="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
+        רענן
+      </button>
+    </div>
+    <div id="pending-payments-list" class="grid gap-3"></div>
+
+    <!-- PayPal one-time plan setup -->
+    <div class="mt-6 rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="font-bold">מסלולי PayPal</div>
+          <div class="text-xs text-ink-500 dark:text-ink-300">לחיצה אחת יוצרת את מסלולי Pro (₪19) ו-Family (₪39) ב-PayPal. דורש ש-PAYPAL_CLIENT_ID + PAYPAL_CLIENT_SECRET כבר מוגדרים ב-Vercel.</div>
+        </div>
+        <button id="kfl-paypal-setup-btn" onclick="window.kflCreatePaypalPlans && window.kflCreatePaypalPlans()" class="rounded-xl bg-[#0070ba] px-4 py-2 text-sm font-bold text-white hover:bg-[#005ea6]">צור מסלולי PayPal</button>
+      </div>
+      <div id="kfl-paypal-setup-result" class="mt-3 hidden whitespace-pre-line rounded-xl border border-brand-500/40 bg-brand-500/10 p-3 font-mono text-xs"></div>
+    </div>
+  </section>
+
   <!-- ====== SECTION 2: REAL-TIME ANALYTICS ====== -->
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between">
@@ -670,9 +696,9 @@
         <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-accent-500 to-accent-600 text-white">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         </div>
-        <h3 class="text-sm font-extrabold">חבר Stripe להפעלת חיוב</h3>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">כדי להמיר משתמשי ניסיון לתשלום. עכשיו 14 משתמשים בניסיון.</p>
-        <button class="mt-3 w-full rounded-xl bg-ink-900 px-3 py-2 text-xs font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">חבר Stripe</button>
+        <h3 class="text-sm font-extrabold">תשלומים — PayPal · קריפטו · ביט</h3>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">הגדר אמצעי תשלום במשתני הסביבה ב-Vercel. תשלומי ביט/העברה מאושרים בחלק "תשלומים ממתינים" למעלה.</p>
+        <a href="#pending-payments-section" class="mt-3 block w-full rounded-xl bg-ink-900 px-3 py-2 text-center text-xs font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">לתשלומים ממתינים</a>
       </div>
 
       <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
@@ -987,6 +1013,95 @@
     // initial pw focus
     setTimeout(() => gatePw.focus(), 200);
   }
+})();
+</script>
+
+<!-- Pending payments (manual Bit/bank confirm). Self-contained; auth is the
+     admin's Google ID token verified server-side by requireAdmin (ADMIN_EMAILS).
+     The page's password gate is cosmetic only. -->
+<script>
+(function () {
+  function token() { try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; } catch (e) { return ''; } }
+  function el(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  async function load() {
+    var list = el('pending-payments-list');
+    if (!list) return;
+    var t = token();
+    if (!t) {
+      list.innerHTML = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">כדי לאשר תשלומים, התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן), ואז חזור/חזרי לכאן.</div>';
+      return;
+    }
+    list.innerHTML = '<div class="text-sm text-ink-400">טוען…</div>';
+    try {
+      var res = await fetch('/api/billing/manual?action=list', { headers: { 'Authorization': 'Bearer ' + t } });
+      if (res.status === 401 || res.status === 403) {
+        list.innerHTML = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">הגישה נדחתה. ודא/י שהאימייל שלך מוגדר כמנהל (ADMIN_EMAILS ב-Vercel) ושאתה מחובר ב-<a href="/account" class="underline font-bold">/account</a>.</div>';
+        return;
+      }
+      var j = await res.json();
+      if (!j.ok) { list.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
+      if (!j.pending || !j.pending.length) {
+        list.innerHTML = '<div class="rounded-xl border border-ink-700/50 bg-ink-800/30 p-4 text-sm text-ink-400">אין תשלומים ממתינים. ✅</div>';
+        return;
+      }
+      list.innerHTML = j.pending.map(function (p) {
+        var when = '';
+        try { when = new Date(p.createdAt).toLocaleString('he-IL'); } catch (e) { when = esc(p.createdAt || ''); }
+        return '<div class="rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">'
+          + '<div class="flex items-center justify-between gap-3 flex-wrap">'
+          + '<div><div class="font-black">' + esc(p.plan) + ' · ' + esc(p.amountILS) + '₪ · ' + (p.method === 'bit' ? 'ביט' : 'העברה בנקאית') + '</div>'
+          + '<div class="text-xs text-ink-400 num">' + esc(p.phone || '—') + (p.email ? (' · ' + esc(p.email)) : '') + '</div>'
+          + '<div class="text-xs text-ink-400">קוד: <b class="num">' + esc(p.code) + '</b> · ' + esc(when) + '</div></div>'
+          + '<div class="flex gap-2">'
+          + '<button data-code="' + esc(p.code) + '" class="kfl-confirm rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white hover:bg-brand-400">אשר ✓</button>'
+          + '<button data-code="' + esc(p.code) + '" class="kfl-reject rounded-xl border border-ink-300 px-4 py-2 text-sm font-semibold hover:bg-ink-100 dark:border-ink-600 dark:hover:bg-ink-700">דחה</button>'
+          + '</div></div></div>';
+      }).join('');
+      list.querySelectorAll('.kfl-confirm').forEach(function (b) { b.addEventListener('click', function () { act('confirm', b.getAttribute('data-code')); }); });
+      list.querySelectorAll('.kfl-reject').forEach(function (b) { b.addEventListener('click', function () { act('reject', b.getAttribute('data-code')); }); });
+    } catch (e) {
+      list.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(e.message) + '</div>';
+    }
+  }
+
+  async function act(action, code) {
+    var t = token();
+    if (!t) { alert('התחבר/י תחילה ב-/account'); return; }
+    if (action === 'confirm' && !confirm('לאשר תשלום ' + code + '? הפרימיום יופעל מיד והלקוח יקבל אישור בוואטסאפ.')) return;
+    if (action === 'reject' && !confirm('לדחות את ' + code + '?')) return;
+    try {
+      var res = await fetch('/api/billing/manual?action=' + action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t },
+        body: JSON.stringify({ code: code }),
+      });
+      var j = await res.json();
+      if (j.ok) { load(); } else { alert('שגיאה: ' + (j.error || res.status)); }
+    } catch (e) { alert('שגיאה: ' + e.message); }
+  }
+
+  async function createPaypalPlans() {
+    var t = token();
+    if (!t) { alert('התחבר/י תחילה ב-/account'); return; }
+    var btn = el('kfl-paypal-setup-btn'); var out = el('kfl-paypal-setup-result');
+    if (btn) { btn.disabled = true; btn.textContent = 'יוצר…'; }
+    try {
+      var res = await fetch('/api/billing/paypal?action=setup-plans', { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
+      var j = await res.json();
+      out.textContent = j.ok
+        ? ('נוצר! העתק/י ל-Vercel:\nPAYPAL_PLAN_PRO=' + j.PAYPAL_PLAN_PRO + '\nPAYPAL_PLAN_FAMILY=' + j.PAYPAL_PLAN_FAMILY)
+        : ('שגיאה: ' + (j.error || res.status) + (j.hint ? ('\n' + j.hint) : ''));
+      out.classList.remove('hidden');
+    } catch (e) { if (out) { out.textContent = 'שגיאה: ' + e.message; out.classList.remove('hidden'); } }
+    if (btn) { btn.disabled = false; btn.textContent = 'צור מסלולי PayPal'; }
+  }
+  window.kflCreatePaypalPlans = createPaypalPlans;
+
+  window.kflLoadPending = load;
+  if (document.readyState !== 'loading') load();
+  else document.addEventListener('DOMContentLoaded', load);
 })();
 </script>
 </body>

@@ -45,8 +45,11 @@ function envFlags() {
     meta_phone_number_id: !!process.env.META_PHONE_NUMBER_ID,
     meta_access_token: !!process.env.META_ACCESS_TOKEN,
     template_sheet_id: !!process.env.KESEFLE_TEMPLATE_SHEET_ID,
-    stripe_secret_key: !!process.env.STRIPE_SECRET_KEY,
-    stripe_webhook_secret: !!process.env.STRIPE_WEBHOOK_SECRET,
+    // Payments: PayPal + crypto (auto) and Bit/bank (manual). Stripe was removed.
+    paypal_client_id: !!process.env.PAYPAL_CLIENT_ID,
+    coinbase_commerce_api_key: !!process.env.COINBASE_COMMERCE_API_KEY,
+    bit_payee_phone: !!process.env.BIT_PAYEE_PHONE,
+    bank_transfer_details: !!process.env.BANK_TRANSFER_DETAILS,
   };
 }
 

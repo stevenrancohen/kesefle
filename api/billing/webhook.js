@@ -1,3 +1,8 @@
+// ⚠️ DEPRECATED / UNUSED — Kesefle migrated off Stripe (2026-05) to PayPal,
+// crypto (Coinbase Commerce), and manual Bit/bank transfer. No Stripe webhook is
+// configured anymore; this is kept as dead code for reference only.
+// Active billing: lib/billing.js + api/billing/{paypal,crypto-create,crypto-webhook,manual}.js.
+//
 // /api/billing/webhook
 // Handles Stripe webhook events: subscription created/updated/canceled, payment succeeded/failed.
 // Updates user.plan in KV.

@@ -208,7 +208,7 @@
     <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
       <a href="https://wa.me/15556408123?text=%D7%99%D7%A9%20%D7%9C%D7%99%20%D7%A8%D7%A2%D7%99%D7%95%D7%9F%20%D7%9C%D7%9E%D7%A4%D7%AA%20%D7%94%D7%93%D7%A8%D7%9B%D7%99%D7%9D" target="_blank" rel="noopener"
          class="rounded-full bg-brand-600 px-5 py-2.5 font-semibold text-white hover:bg-brand-700">WhatsApp</a>
-      <a href="mailto:hi@kesefle.com?subject=רעיון%20למפת%20הדרכים" class="rounded-full border border-ink-300 bg-white px-5 py-2.5 font-semibold hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">אימייל</a>
+      <a href="mailto:info@kesefle.com?subject=רעיון%20למפת%20הדרכים" class="rounded-full border border-ink-300 bg-white px-5 py-2.5 font-semibold hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">אימייל</a>
     </div>
   </section>
 </main>
@@ -242,7 +242,7 @@
       <p class="font-bold dark:text-white">צור קשר</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
         <li><a href="https://wa.me/15556408123" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
-        <li><a href="mailto:srcslcollection@gmail.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
+        <li><a href="mailto:info@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
       </ul>
     </div>
   </div>
@@ -280,7 +280,7 @@
       desc:'BOT_COMMANDS.gs עונה על שאילתות חופשיות בעברית כולל "כמה הוצאתי על וולט?".', baseVotes: 134 },
     { id:'admin-panel', status:'shipped', tag:'Web',           title:"לוח אדמין ב-/admin",
       desc:'9 חלקים: משתמשים, משימות, מטריקות, ביקורת, feature flags, lookup לתמיכה.', baseVotes: 33 },
-    { id:'hmac-rawbody', status:'shipped', tag:'Security',     title:'אימות HMAC על raw-body של Meta + Stripe',
+    { id:'hmac-rawbody', status:'shipped', tag:'Security',     title:'אימות HMAC על raw-body של Meta + תשלומים',
       desc:'תיקון בעיה קריטית שבה re-stringify של body היה שובר חתימות.', baseVotes: 29 },
     { id:'formula-injection', status:'shipped', tag:'Security',title:"חיסון מפני formula injection בגיליון",
       desc:"valueInputOption=RAW + prefix של ' לערכים שמתחילים ב-= + - @. אין דרך להזריק נוסחאות.", baseVotes: 27 },
@@ -293,15 +293,15 @@
     { id:'sheet-provision', status:'shipped', tag:'Bot',       title:'הקצאת גיליון אוטומטית בהרשמה',
       desc:'/api/sheet/provision מעתיק את ה-template ל-Drive שלך עם scope drive.file בלבד.', baseVotes: 67 },
     { id:'docs-architecture', status:'shipped', tag:'Infra',   title:'תיעוד אדריכלות מלא',
-      desc:'docs/architecture: db-schema, api-routes, billing-stripe, jobs-cron, observability.', baseVotes: 22 },
+      desc:'docs/architecture: db-schema, api-routes, billing-payments, jobs-cron, observability.', baseVotes: 22 },
     { id:'rs256-jwt', status:'shipped', tag:'Security',        title:'אימות RS256 של Google ID token',
       desc:'כולל JWKS rotation cache. אפשר לסמוך על ה-sub במקום לבטוח ב-header.', baseVotes: 24 },
     { id:'test-suite-31', status:'shipped', tag:'Infra',       title:'31 בדיקות רגרסיה ב-/test',
       desc:'בדיקות frontend אוטומטיות כדי שלא נשבור גרסאות לפני deploy.', baseVotes: 28 },
+    { id:'payments-il', status:'shipped', tag:'Billing',       title:'תשלומים לישראל: PayPal, קריפטו, ביט והעברה בנקאית',
+      desc:'PayPal מתחדש אוטומטית, קריפטו דרך Coinbase, וביט/העברה בנקאית באישור ידני — הכל מאוחד דרך lib/billing.', baseVotes: 154 },
 
     // ===== IN PROGRESS =====
-    { id:'stripe-prices', status:'progress', tag:'Billing',    title:'אינטגרציית Stripe ל-Pro / Family',
-      desc:"Checkout + webhook כבר בנויים. ממתינים ליצירת מוצרים ב-Stripe + STRIPE_PRICE_* envs.", eta:'שבוע',  baseVotes: 154 },
     { id:'oauth-pkce-frontend', status:'progress', tag:'Security', title:'מעבר ל-OAuth PKCE בצד לקוח',
       desc:'/api/auth/google-exchange כבר תומך. account.html עובר מ-GIS-only לקוד+PKCE כדי לקבל refresh tokens.',
       eta:'היום', baseVotes: 47 },
