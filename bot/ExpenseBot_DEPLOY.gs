@@ -915,6 +915,68 @@ function _notifyOwnerNewLead_(fromPhone) {
   } catch (_we) { Logger.log('new-lead whatsapp err: ' + (_we && _we.message)); }
 }
 
+// Resolve the Google Sheet URL for a given sender. Owner → the main
+// company sheet; tenants → their own provisioned sheet (cached 1h to
+// avoid an HTTP lookup on every reply).
+function _userSheetUrl_(fromPhone) {
+  try {
+    var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+    var owner = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
+    if (!owner || clean === owner) {
+      return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit';
+    }
+    var cache = CacheService.getScriptCache();
+    var ck = 'sheeturl:' + clean;
+    var cached = cache.get(ck);
+    if (cached) return cached;
+    var rec = (typeof _kvLookupPhone_ === 'function') ? _kvLookupPhone_(clean) : null;
+    var url = (rec && rec.sheetId) ? ('https://docs.google.com/spreadsheets/d/' + rec.sheetId + '/edit')
+            : (rec && rec.sheetUrl) ? rec.sheetUrl : '';
+    if (url) cache.put(ck, url, 3600);
+    return url;
+  } catch (_e) {
+    return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit';
+  }
+}
+
+// The compact "check it in your sheet" line appended to expense/order
+// confirmations so the user can verify the row landed correctly.
+function _sheetLinkLine_(fromPhone) {
+  var u = _userSheetUrl_(fromPhone);
+  return u ? ('\n\n📊 לבדיקה: ' + u) : '';
+}
+
+// One-time welcome. The first time a phone messages the bot, send a
+// ≤3-line intro (what the service is + why it helps), how to use it, a
+// pin tip, and a link to their sheet. Deduped per phone via
+// welcomed:<phone>. NOTE: WhatsApp Cloud API has no programmatic
+// "pin message" button — pinning is a user gesture — so we instruct the
+// user how to pin (long-press → Pin) rather than fake a button.
+function _maybeSendWelcome_(fromPhone) {
+  if (!fromPhone) return;
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return;
+  var props = PropertiesService.getScriptProperties();
+  var key = 'welcomed:' + clean;
+  if (props.getProperty(key)) return;
+  props.setProperty(key, new Date().toISOString());
+
+  var sheetUrl = _userSheetUrl_(fromPhone);
+  var msg =
+    '👋 *ברוכים הבאים לכסף\'לה!*\n' +
+    'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. כל הוצאה נשמרת אוטומטית בגיליון Google הפרטי שלך, ואתה תמיד רואה לאן הכסף הולך.\n\n' +
+    '📝 *איך עובדים איתי?* פשוט כתוב כמו שמדברים:\n' +
+    '• "150 סופר"\n' +
+    '• "ארנונה 400"\n' +
+    'ואני אסווג ואשמור הכל לבד.\n\n' +
+    '📌 *טיפ:* לחיצה ארוכה על ההודעה הזו ← "הצמד" (Pin), כדי שתהיה תמיד בהישג יד.\n\n' +
+    (sheetUrl ? ('📊 הגיליון שלך:\n' + sheetUrl + '\n\n') : '') +
+    'רוצה עוד דוגמאות? שלח "דוגמאות". מוכן? פשוט נסה עכשיו 🚀';
+  try {
+    if (typeof sendWhatsAppMessage === 'function') sendWhatsAppMessage(fromPhone, msg);
+  } catch (_e) { Logger.log('welcome send err: ' + (_e && _e.message)); }
+}
+
 // Abuse blacklist — a Script Property holding a comma-separated list of
 // blocked phone numbers (digits only). Cached 5 min to avoid a property
 // read on every message. Manage via "blacklist" Script Property.
@@ -1115,6 +1177,11 @@ function doPost(e) {
       // Property so it fires once per customer, not per message. Placed
       // after the spam/rate-limit guards so junk doesn't trigger alerts.
       try { _notifyOwnerNewLead_(__from_); } catch (_nlErr) { Logger.log('new-lead alert err: ' + (_nlErr && _nlErr.message)); }
+
+      // 👋 One-time welcome — sent BEFORE processing so a brand-new user
+      // sees the intro + how-to + sheet link first, then their first
+      // expense confirmation. Deduped per phone.
+      try { _maybeSendWelcome_(__from_); } catch (_wErr) { Logger.log('welcome err: ' + (_wErr && _wErr.message)); }
 
       if (typeof ALLOWED_PHONES !== 'undefined' && ALLOWED_PHONES.length > 0) {
         var __clean_ = String(__from_).replace(/[^0-9]/g, '');
@@ -3049,7 +3116,7 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     if (code >= 200 && code < 300) {
       var nice = '₪' + Number(first.amount).toLocaleString('he-IL') + ' · ' + category;
       if (subcategory) nice += ' · ' + subcategory;
-      return { reply: '✅ נרשם: ' + nice };
+      return { reply: '✅ נרשם: ' + nice + _sheetLinkLine_(fromPhone) };
     }
     Logger.log('_tenantWriteExpense_ HTTP ' + code + ' ' + body.slice(0, 300));
     return { reply: '😬 לא הצלחתי לשמור עכשיו. ננסה שוב בעוד דקה?' };
@@ -3706,10 +3773,11 @@ function processExpense(text, fromPhone) {
         __streakTail +
         (__softHintTail || '') +
         '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.' +
-        '\nכתוב "סיכום" לראות איפה אתה עומד החודש.'
+        '\nכתוב "סיכום" לראות איפה אתה עומד החודש.' +
+        _sheetLinkLine_(fromPhone)
       };
     }
-    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail };
+    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail + _sheetLinkLine_(fromPhone) };
   } catch (err) {
     return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + (err && err.message || '') + '\n💡 ננסה שוב בעוד דקה? אם זה ממשיך — שלח "עזרה".' };
   }
