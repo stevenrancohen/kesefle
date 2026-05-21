@@ -8525,6 +8525,24 @@ function installKesefleBot() {
     ok++;
   }
 
+  // 5c. 🔴 CRITICAL for multi-tenant isolation: SHEET_OWNER_PHONE.
+  // This is the anchor that decides who may write to YOUR hardcoded SHEET_ID.
+  // If unset, the bot falls back to the hardcoded OWNER_PHONE constant — which
+  // still isolates correctly, but ONLY if that constant really is your number.
+  var ownerPhoneProp = String(props.getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
+  if (!ownerPhoneProp) {
+    report.push('⚠️  SHEET_OWNER_PHONE — NOT SET (multi-tenant isolation anchor). Falling back to OWNER_PHONE: ' + OWNER_PHONE);
+    report.push('   Only this number writes to YOUR sheet; everyone else routes to their own / onboarding.');
+    report.push('   FIX: add SHEET_OWNER_PHONE = your WhatsApp number (digits only, e.g. 972547760643) to Script Properties.');
+    warn++;
+  } else if (ownerPhoneProp === String(OWNER_PHONE).replace(/[^0-9]/g, '')) {
+    report.push('✅ SHEET_OWNER_PHONE — ' + ownerPhoneProp + ' (matches OWNER_PHONE; isolation anchor confirmed)');
+    ok++;
+  } else {
+    report.push('✅ SHEET_OWNER_PHONE — ' + ownerPhoneProp + ' (overrides OWNER_PHONE constant ' + OWNER_PHONE + ')');
+    ok++;
+  }
+
   // 5b. FX rate overrides — informational. Defaults always work; overrides are
   //     optional Script Properties (FX_RATE_USD, FX_RATE_EUR, ...).
   report.push('');
