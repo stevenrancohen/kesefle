@@ -505,6 +505,20 @@
     </div>
   </section>
 
+  <!-- ====== SECTION 3.5: CONVERSION FUNNEL (real analytics) ====== -->
+  <section class="mb-10">
+    <div class="mb-4 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">משפך המרה (30 ימים)</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">מצפייה באתר ועד הודעה ראשונה לבוט — נתוני אמת ממעקב האירועים.</p>
+      </div>
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-[11px] font-bold text-brand-500">נתונים אמיתיים</span>
+    </div>
+    <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div id="kfl-funnel" class="space-y-3 text-sm text-ink-400">טוען…</div>
+    </div>
+  </section>
+
   <!-- ====== SECTION 4: BOT HEALTH ====== -->
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between">
@@ -1250,6 +1264,32 @@
     if (s === 'trialing' || (!u.plan || u.plan === 'free')) return { status: 'trial', label: 'ניסיון', cls: 'bg-amber-500/15 text-amber-600' };
     return { status: 'active', label: 'פעיל', cls: 'bg-brand-500/15 text-brand-600' };
   }
+  var FUNNEL_HE = {
+    page_view: 'צפיות באתר',
+    signup_start: 'התחילו הרשמה',
+    signup_complete: 'השלימו הרשמה',
+    sheet_provisioned: 'נוצר גיליון',
+    first_message_received: 'הודעה ראשונה לבוט',
+  };
+  function renderFunnel(funnel) {
+    var box = el('kfl-funnel');
+    if (!box) return;
+    if (!funnel.length) { box.innerHTML = '<div class="text-ink-400">אין עדיין נתוני אירועים.</div>'; return; }
+    var top = funnel[0] && funnel[0].count ? funnel[0].count : 0;
+    box.innerHTML = funnel.map(function (stage, i) {
+      var label = FUNNEL_HE[stage.event] || stage.event;
+      var pctOfTop = top > 0 ? Math.round((stage.count / top) * 100) : 0;
+      var prev = i > 0 ? funnel[i - 1].count : null;
+      var conv = (prev && prev > 0) ? Math.round((stage.count / prev) * 100) : null;
+      return '<div>'
+        + '<div class="flex items-center justify-between text-xs">'
+        + '<span class="font-semibold">' + label + '</span>'
+        + '<span class="num font-bold">' + num(stage.count) + (conv !== null ? ' <span class="text-ink-400">(' + conv + '% מהשלב הקודם)</span>' : '') + '</span>'
+        + '</div>'
+        + '<div class="mt-1 h-2.5 w-full rounded-full bg-ink-100 dark:bg-ink-700"><div class="h-2.5 rounded-full bg-brand-500" style="width:' + Math.max(2, pctOfTop) + '%"></div></div>'
+        + '</div>';
+    }).join('');
+  }
   function authBanner(msg) {
     var grid = el('kfl-keystats');
     if (grid && !el('kfl-auth-banner')) {
@@ -1285,6 +1325,7 @@
     if (a && a.ok && a.totals) {
       setTxt('stat-pageviews', num(a.totals.page_view || 0));
       setTxt('stat-signups', num(a.totals.signup_complete || 0));
+      renderFunnel(a.funnel || []);
     }
     // USERS
     var u = await get('users&limit=200');
