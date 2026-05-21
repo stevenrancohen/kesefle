@@ -43,7 +43,7 @@ const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProp
 const BOT_PHONE_E164 = '+17745448053';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-21-concierge-1';
+const KFL_BUILD_VERSION = '2026-05-21-concierge-2';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -3407,31 +3407,42 @@ function _profileTrackingTypeCached_(fromPhone) {
 // a generic "didn't understand". Degrades gracefully: if GEMINI_API_KEY is not
 // set in Script Properties (or the call fails), this returns null and callers
 // keep their existing reply. Model is configurable via GEMINI_MODEL.
+var _KFL_GEMINI_LAST_ERR = '';
 function _geminiGenerate_(systemPrompt, userText) {
   try {
     var apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-    if (!apiKey) return null;
-    var model = PropertiesService.getScriptProperties().getProperty('GEMINI_MODEL') || 'gemini-2.0-flash';
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
-    var resp = UrlFetchApp.fetch(url, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify({
-        systemInstruction: { parts: [{ text: String(systemPrompt || '') }] },
-        contents: [{ role: 'user', parts: [{ text: String(userText || '').slice(0, 1000) }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 400 }
-      }),
-      muteHttpExceptions: true
+    if (!apiKey) { _KFL_GEMINI_LAST_ERR = 'no_api_key'; return null; }
+    // Try several models so a model-name mismatch (the most common failure)
+    // self-heals. A configured GEMINI_MODEL is tried first.
+    var models = [];
+    var configured = PropertiesService.getScriptProperties().getProperty('GEMINI_MODEL');
+    if (configured) models.push(configured);
+    ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-flash-latest'].forEach(function (m) {
+      if (models.indexOf(m) < 0) models.push(m);
     });
-    if (resp.getResponseCode() !== 200) {
-      Logger.log('_geminiGenerate_ HTTP ' + resp.getResponseCode() + ': ' + resp.getContentText().slice(0, 200));
-      return null;
+    var payload = JSON.stringify({
+      systemInstruction: { parts: [{ text: String(systemPrompt || '') }] },
+      contents: [{ role: 'user', parts: [{ text: String(userText || '').slice(0, 1000) }] }],
+      generationConfig: { temperature: 0.4, maxOutputTokens: 400 }
+    });
+    for (var i = 0; i < models.length; i++) {
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(models[i]) + ':generateContent?key=' + encodeURIComponent(apiKey);
+      var resp = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: payload, muteHttpExceptions: true });
+      var code = resp.getResponseCode();
+      if (code === 200) {
+        var body = JSON.parse(resp.getContentText());
+        var cand = body && body.candidates && body.candidates[0];
+        var txt = cand && cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text;
+        if (txt) { _KFL_GEMINI_LAST_ERR = ''; return String(txt); }
+        _KFL_GEMINI_LAST_ERR = models[i] + ': 200 but no text (safety block?)';
+        continue;
+      }
+      _KFL_GEMINI_LAST_ERR = models[i] + ' → HTTP ' + code + ': ' + String(resp.getContentText() || '').replace(/\s+/g, ' ').slice(0, 160);
+      Logger.log('_geminiGenerate_ ' + _KFL_GEMINI_LAST_ERR);
     }
-    var body = JSON.parse(resp.getContentText());
-    var cand = body && body.candidates && body.candidates[0];
-    var txt = cand && cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text;
-    return txt ? String(txt) : null;
+    return null;
   } catch (e) {
+    _KFL_GEMINI_LAST_ERR = 'exception: ' + (e && e.message);
     Logger.log('_geminiGenerate_ err: ' + (e && e.message));
     return null;
   }
@@ -4293,7 +4304,7 @@ function processExpense(text, fromPhone) {
       '🔧 בדיקת מערכת\n' +
       'גרסה: ' + KFL_BUILD_VERSION + '\n' +
       'מפתח Gemini: ' + (_hasGem ? '✅ קיים' : '❌ חסר (הוסף ב-Script Properties)') + '\n' +
-      'חיבור Gemini: ' + (_hasGem ? (_gemOk ? '✅ עובד' : '❌ נכשל') : '—') + '\n' +
+      'חיבור Gemini: ' + (_hasGem ? (_gemOk ? '✅ עובד' : ('❌ נכשל\nשגיאה: ' + (_KFL_GEMINI_LAST_ERR || 'unknown'))) : '—') + '\n' +
       'בוט-סיקרט: ' + (_hasSecret ? '✅' : '❌') };
   }
   if (trimmed === 'עזרה' || trimmed === 'help' || trimmed === '?') {
