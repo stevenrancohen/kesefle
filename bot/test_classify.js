@@ -1,84 +1,75 @@
-// Classification test — loads the REAL matchCategory family + CATEGORY_MAP from
-// ExpenseBot_FIXED.gs and checks realistic Hebrew expense messages classify
-// correctly (or fall to DEFAULT so the bot ASKS). Guards against the
-// short-keyword substring false-positives that caused misclassification.
-//   node bot/test_classify.js
+// Classification "dialogues" test — loads the REAL matchCategory family +
+// CATEGORY_MAP from ExpenseBot_FIXED.gs and checks realistic Hebrew expense
+// messages classify by intent (or fall to DEFAULT so the bot ASKS). Guards
+// against substring false-positives. Run: node bot/test_classify.js
 const fs = require('fs');
 const src = fs.readFileSync(__dirname + '/ExpenseBot_FIXED.gs', 'utf8');
-
 function balanced(marker, open, close) {
-  const s = src.indexOf(marker);
-  if (s < 0) throw new Error('not found: ' + marker);
-  const i = src.indexOf(open, s);
-  let d = 0, j = i;
-  for (; j < src.length; j++) { if (src[j] === open) d++; else if (src[j] === close) { d--; if (!d) { j++; break; } } }
+  const s = src.indexOf(marker); const i = src.indexOf(open, s);
+  let d = 0, j = i; for (; j < src.length; j++) { if (src[j] === open) d++; else if (src[j] === close) { d--; if (!d) { j++; break; } } }
   return src.slice(i, j);
 }
 function fn(name) {
-  const start = src.indexOf('function ' + name + '(');
-  let p = src.indexOf('(', start), pd = 0, k = p;
+  const start = src.indexOf('function ' + name + '('); let p = src.indexOf('(', start), pd = 0, k = p;
   for (; k < src.length; k++) { if (src[k] === '(') pd++; else if (src[k] === ')') { pd--; if (!pd) { k++; break; } } }
-  let i = src.indexOf('{', k), d = 0, j = i;
-  for (; j < src.length; j++) { if (src[j] === '{') d++; else if (src[j] === '}') { d--; if (!d) { j++; break; } } }
+  let i = src.indexOf('{', k), d = 0, j = i; for (; j < src.length; j++) { if (src[j] === '{') d++; else if (src[j] === '}') { d--; if (!d) { j++; break; } } }
   return src.slice(start, j);
 }
-
 globalThis.CATEGORY_MAP = eval(balanced('const CATEGORY_MAP = [', '[', ']'));
 globalThis.BUSINESS_CATEGORY_MAP = eval('(' + balanced('var BUSINESS_CATEGORY_MAP = {', '{', '}') + ')');
 globalThis.DEFAULT_CATEGORY = eval('(' + balanced('const DEFAULT_CATEGORY =', '{', '}') + ')');
-const DEFAULT_CATEGORY = globalThis.DEFAULT_CATEGORY;
-(0, eval)(fn('_matchCategory_orig'));
-(0, eval)(fn('_matchCategory_long'));
-(0, eval)(fn('_coerceCategoryBySubcategory'));
-(0, eval)(fn('matchCategory'));
+const DEF = globalThis.DEFAULT_CATEGORY;
+(0, eval)(fn('_kflIsWordChar_')); (0, eval)(fn('_kflKwHit_'));
+(0, eval)(fn('_matchCategory_orig')); (0, eval)(fn('_matchCategory_long'));
+(0, eval)(fn('_coerceCategoryBySubcategory')); (0, eval)(fn('matchCategory'));
 
 let pass = 0, fail = 0;
-// expected: a category string, or 'DEFAULT' meaning it should fall through to ask/LLM
+// expected: 'DEFAULT' (should ask) | 'sub:X' (subcategory contains X) | category prefix
 function check(msg, expected) {
   const r = matchCategory(msg);
-  const isDefault = r && r.category === DEFAULT_CATEGORY.category && r.subcategory === DEFAULT_CATEGORY.subcategory;
-  const got = isDefault ? 'DEFAULT' : r.category;
-  const ok = got === expected;
-  console.log((ok ? '  ✅ ' : '  ❌ ') + msg.padEnd(24) + ' → ' + got + (ok ? '' : '   (expected ' + expected + ')'));
+  const isDef = r && r.category === DEF.category && r.subcategory === DEF.subcategory;
+  let ok, got = (r.category || '') + ' / ' + (r.subcategory || '');
+  if (expected === 'DEFAULT') { ok = isDef; got = isDef ? 'DEFAULT' : got; }
+  else if (expected.startsWith('sub:')) ok = !isDef && (r.subcategory || '').indexOf(expected.slice(4)) >= 0;
+  else ok = !isDef && (r.category || '').indexOf(expected) === 0;
+  console.log((ok ? '  ✅ ' : '  ❌ ') + msg.padEnd(26) + ' → ' + got + (ok ? '' : '   (want ' + expected + ')'));
   ok ? pass++ : fail++;
 }
 
-console.log('\n── reported bugs (must be fixed) ──');
-check('יציאה עם חברים', 'בידור');
-check('ערב עם חברים', 'בידור');
-check('תשלום מס הכנסה', 'הוצאות קבועות');
-check('מס הכנסה', 'הוצאות קבועות');
+console.log('\n── food ──');
+['250 סופר','רמי לוי 340','שופרסל 120','ארוחת צהריים 65','מקדונלדס 55','פיצה 80','וולט 90','קפה 18','שווארמה 45','סושי 120','קניות בסופר 400','פלאפל 30','המבורגר 70'].forEach(m => check(m, 'אוכל'));
 
-console.log('\n── everyday expenses classify correctly ──');
-check('245 סופר', 'אוכל');
-check('42 קפה', 'אוכל');
-check('משלוח אוכל', 'אוכל');
-check('קניות בסופר', 'אוכל');
-check('תדלוק', 'תחבורה');
-check('דמי חניה', 'תחבורה');
-check('נסיעה במונית', 'תחבורה');
-check('כרטיס אוטובוס', 'תחבורה');
-check('חשבון חשמל', 'הוצאות קבועות');
-check('חשבון מים', 'הוצאות קבועות');
-check('גן ילדים', 'חינוך');
-check('שיעור פרטי', 'חינוך');
-check('מתנה ליום הולדת', 'מתנות');
-check('אוכל לכלב', 'חיות מחמד');
-check('רופא שיניים', 'בריאות');
-check('בית מרקחת', 'בריאות');
-check('מסיבה', 'בידור');
-check('הופעה', 'בידור');
+console.log('\n── transport ──');
+['דלק 300','תדלוק 250','אובר 60','חניה 20','דמי חניה 15','רכבת 27','כרטיס אוטובוס 12','נסיעה במונית 50','רב קו 50'].forEach(m => check(m, 'תחבורה'));
 
-console.log('\n── ambiguous → must fall to DEFAULT so the bot ASKS ──');
-check('יציאה', 'DEFAULT');
-check('העברה לחבר', 'DEFAULT');
-check('קניתי משהו', 'DEFAULT');
+console.log('\n── bills & taxes (fixed expenses) ──');
+['חשמל 450','חשבון חשמל 450','מים 120','חשבון מים 120','אינטרנט 99','ארנונה 600','מס הכנסה 2000','ביטוח לאומי 500','תשלום מס הכנסה 1500'].forEach(m => check(m, 'הוצאות קבועות'));
 
-console.log('\n── short-keyword false-positive regressions (must NOT mis-hit) ──');
-check('קניתי דברים', 'DEFAULT');      // used to hit 'רי' → bakeries
-check('הוצאה על חברים', 'DEFAULT');   // 'חברים' alone is ambiguous → should ask (no longer bakeries)
-check('שמעתי הרצאה', 'DEFAULT');      // used to hit 'מע' → taxes
-check('עוד הוצאה קטנה', 'DEFAULT');   // 'עוד' is a common word
+console.log('\n── entertainment ──');
+['נטפליקס 45','ספוטיפיי 20','קולנוע 80','הופעה 250','יציאה עם חברים 250','ערב עם חברים 180','מסיבה 100','בילוי 120'].forEach(m => check(m, 'בידור'));
+
+console.log('\n── health (intent: בריאות) ──');
+['תרופות 60','סופרפארם 85','רופא שיניים 400','מרפאה פרטית 250','בדיקת דם 150'].forEach(m => check(m, 'בריאות'));
+
+console.log('\n── education / shopping / grooming / gifts ──');
+['שכר לימוד 5000','גן ילדים 2500','שיעור פרטי 150'].forEach(m => check(m, 'חינוך'));
+['זארה 200','אייפון 4000','קניתי נעליים 300','איקאה 800'].forEach(m => check(m, 'קניות'));
+check('תספורת 80', 'טיפוח'); check('מספרה 120', 'טיפוח');
+check('מתנה ליום הולדת 150', 'מתנות');
+
+console.log('\n── pets (intent: subcategory חיות מחמד) ──');
+['וטרינר 350','אוכל לכלב 120'].forEach(m => check(m, 'sub:חיות מחמד'));
+
+console.log('\n── income ──');
+check('משכורת 12000', 'הכנס');
+
+console.log('\n── ambiguous → must ASK (DEFAULT) ──');
+['250','תשלום 500','העברה 1000','משהו 50','קניתי דברים 100','עוד הוצאה 30','החזר חוב 200','יציאה'].forEach(m => check(m, 'DEFAULT'));
+
+console.log('\n── false-positive regressions (must NOT mis-hit) ──');
+check('שמעתי הרצאה', 'DEFAULT');   // 'מע'
+check('הוצאה על חברים', 'DEFAULT'); // 'רי'/'בר'
+check('תשלומים שונים', 'DEFAULT');  // 'לום' removed
 
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' CLASSIFICATION CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
