@@ -3936,6 +3936,22 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
       return { reply: '✅ נרשם: ' + nice + _sheetLinkLine_(fromPhone) };
     }
     Logger.log('_tenantWriteExpense_ HTTP ' + code + ' ' + body.slice(0, 300));
+    var errCode = '';
+    try { errCode = (JSON.parse(body) || {}).error || ''; } catch (_pe) {}
+    // Structural failures: retrying never helps, so give real guidance instead
+    // of "try again in a minute".
+    if (errCode === 'no_sheet_provisioned' || errCode === 'incomplete_user_record' || errCode === 'no_user_for_phone') {
+      return { reply: '😬 נראה שעוד לא סיימת את ההרשמה — אין עדיין גיליון מחובר למספר הזה.\n👉 כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/account כדי לסיים את החיבור, ואז שלח/י שוב את ההוצאה.' };
+    }
+    if (errCode === 'sheet_ownership_mismatch') {
+      try { _adminAlertOnce_('🚨 sheet_ownership_mismatch לטלפון ' + String(fromPhone).replace(/[^0-9]/g, ''), fromPhone); } catch (_ae) {}
+      return { reply: '😬 נתקלנו בתקלה בחיבור הגיליון שלך. הצוות קיבל התראה ויטפל בהקדם 🙏' };
+    }
+    if (errCode === 'bot_secret_not_configured') {
+      try { _adminAlertOnce_('🚨 KESEFLE_BOT_SECRET לא תואם בין הבוט ל-Vercel — כתיבות נכשלות.', fromPhone); } catch (_ae2) {}
+      return { reply: '😬 הבוט בתחזוקה קצרה. ננסה שוב בעוד דקה 🙏' };
+    }
+    // 502 write_failed / 5xx / unknown → genuinely transient, retry is sensible.
     return { reply: '😬 לא הצלחתי לשמור עכשיו. ננסה שוב בעוד דקה?' };
   } catch (e) {
     Logger.log('_tenantWriteExpense_ throw: ' + (e && e.message));

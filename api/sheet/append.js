@@ -40,6 +40,21 @@ async function kvGet(key) {
   return j?.result ? JSON.parse(j.result) : null;
 }
 
+// Best-effort write — used to self-heal a phone record (never blocks a write).
+async function kvSet(key, val) {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return false;
+  try {
+    const r = await fetch(`${url}/set/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(val),
+    });
+    return r.ok;
+  } catch { return false; }
+}
+
 function normalizeE164(input) {
   if (!input) return null;
   let s = String(input).replace(/\D+/g, '');
@@ -86,11 +101,27 @@ async function handlerImpl(req, res) {
   // (The OAuth token is also minted from this same userSub, so Google
   //  itself rejects writes to a sheet the user doesn't own — this is the
   //  belt to that suspenders.)
-  if (!userRecord.userSub || !userRecord.spreadsheetId) {
+  if (!userRecord.userSub) {
     log.error('append.incomplete_user_record', { reqId: req.reqId, phone });
     return res.status(409).json({ ok: false, error: 'incomplete_user_record' });
   }
   const sheetRec = await kvGet(`sheet:${userRecord.userSub}`);
+  // SELF-HEAL: a phone linked before its sheet finished provisioning ends up
+  // with spreadsheetId:null. The bot still sees "linked" and tries to write,
+  // append used to reject 409 → the customer got "couldn't save, try again"
+  // forever. Recover the id from the CANONICAL sheet:{userSub} (the same source
+  // the ownership check trusts — so this cannot leak) and backfill the record.
+  if (!userRecord.spreadsheetId) {
+    if (sheetRec?.spreadsheetId) {
+      userRecord.spreadsheetId = sheetRec.spreadsheetId;
+      await kvSet(`phone:${phone}`, userRecord); // best-effort; write proceeds regardless
+      log.info('append.phone_record_healed', { reqId: req.reqId, phone, userSub: userRecord.userSub, spreadsheetId: userRecord.spreadsheetId });
+    } else {
+      // No canonical sheet either → the customer truly has no sheet yet.
+      log.error('append.no_sheet_provisioned', { reqId: req.reqId, phone, userSub: userRecord.userSub });
+      return res.status(409).json({ ok: false, error: 'no_sheet_provisioned' });
+    }
+  }
   if (sheetRec?.spreadsheetId && sheetRec.spreadsheetId !== userRecord.spreadsheetId) {
     log.error('append.sheet_ownership_mismatch', {
       reqId: req.reqId, phone, userSub: userRecord.userSub,
