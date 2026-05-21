@@ -109,6 +109,91 @@ async function getUser(req, res) {
   return res.status(200).json({ ok: true, user: sanitizeUser(user) });
 }
 
+// All onboarding questionnaire (profile) responses — so the owner can see WHY
+// people sign up (tracking type, recurring, auto-log preference) and optimize.
+async function listQuestionnaires(req, res) {
+  const keys = await kvScan('profile:*');
+  if (keys === null) return kvOutage(res);
+  const profiles = await kvMget(keys);
+  const items = [];
+  const byTrackingType = {}, byAutoLogPref = {};
+  let hasRecurringCount = 0;
+  keys.forEach((k, i) => {
+    const p = profiles[i];
+    if (!p) return;
+    const t = p.trackingType || 'unknown';
+    byTrackingType[t] = (byTrackingType[t] || 0) + 1;
+    if (p.autoLogPref) byAutoLogPref[p.autoLogPref] = (byAutoLogPref[p.autoLogPref] || 0) + 1;
+    if (p.hasRecurring) hasRecurringCount++;
+    items.push({
+      phone: k.replace(/^profile:/, ''),
+      trackingType: p.trackingType || null,
+      autoLogPref: p.autoLogPref || null,
+      hasRecurring: !!p.hasRecurring,
+      updatedAt: p.updatedAt || null,
+    });
+  });
+  items.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+  return res.status(200).json({
+    ok: true,
+    total: items.length,
+    summary: { byTrackingType, byAutoLogPref, hasRecurringCount },
+    questionnaires: items,
+  });
+}
+
+// Registration health — Steven's hard rule: a customer must NEVER finish
+// registration without a sheet appearing. The bot writes via the canonical
+// sheet:{sub} mapping, so a user is only "healthy" when BOTH the user record's
+// spreadsheetId AND the sheet:{sub} mapping exist. This endpoint scans every
+// user and flags anyone who registered but has no usable sheet, so the owner
+// can re-provision before that customer ever notices.
+async function registrationHealth(req, res) {
+  const userKeys = await kvScan('user:*');
+  if (userKeys === null) return kvOutage(res);
+  const users = await kvMget(userKeys);
+  const subs = [];
+  const userBySub = {};
+  userKeys.forEach((k, i) => {
+    const u = users[i];
+    if (!u) return;
+    const sub = u.userSub || u.sub || k.replace(/^user:/, '');
+    subs.push(sub);
+    userBySub[sub] = u;
+  });
+  const sheetMaps = subs.length ? await kvMget(subs.map(s => 'sheet:' + s)) : [];
+  const orphans = [];
+  let healthy = 0;
+  subs.forEach((sub, i) => {
+    const u = userBySub[sub];
+    const userSheetId = u.spreadsheetId || null;
+    const canonSheetId = sheetMaps[i]?.spreadsheetId || null;
+    if (userSheetId && canonSheetId) { healthy++; return; }
+    orphans.push({
+      sub,
+      email: u.email || null,
+      phone: u.phone || u.phoneE164 || null,
+      connectedAt: u.connectedAt || null,
+      hasUserSpreadsheetId: !!userSheetId,
+      hasCanonicalSheetMapping: !!canonSheetId,
+      reason: (!userSheetId && !canonSheetId) ? 'no_sheet_at_all'
+        : (!canonSheetId) ? 'user_has_sheet_but_no_bot_mapping'
+        : 'mapping_without_user_record_sheet',
+    });
+  });
+  orphans.sort((a, b) => String(b.connectedAt || '').localeCompare(String(a.connectedAt || '')));
+  return res.status(200).json({
+    ok: true,
+    totalUsers: subs.length,
+    healthy,
+    orphanCount: orphans.length,
+    orphans,
+    note: orphans.length === 0
+      ? 'every registered user has a usable sheet'
+      : 'these users registered but have no usable sheet — investigate / re-provision',
+  });
+}
+
 async function listJobs(req, res) {
   const failed = await kvScan('job:failed:*');
   const retry = await kvScan('job:retry:*');
@@ -398,7 +483,7 @@ async function dispatchPublicDiag(req, res) {
 // =============================================================
 async function handlerImpl(req, res) {
   const action = String(req.query.action || '').trim();
-  if (!action) return res.status(400).json({ ok: false, error: 'missing_action_param', hint: 'use ?action=users|user|jobs|metrics|analytics|audit|feature-flags|feature-flag-set|user-action|transactions|bot-status|errors-count|test-webhook' });
+  if (!action) return res.status(400).json({ ok: false, error: 'missing_action_param', hint: 'use ?action=users|user|jobs|metrics|analytics|audit|feature-flags|questionnaires|registration-health|feature-flag-set|user-action|transactions|bot-status|errors-count|test-webhook' });
 
   if (req.method === 'GET') {
     switch (action) {
@@ -409,6 +494,8 @@ async function handlerImpl(req, res) {
       case 'analytics': return getAnalytics(req, res);
       case 'audit': return listAudit(req, res);
       case 'feature-flags': return getFeatureFlags(req, res);
+      case 'questionnaires': return listQuestionnaires(req, res);
+      case 'registration-health': return registrationHealth(req, res);
       case 'transactions':
         return res.status(200).json({ ok: true, transactions: [], note: 'requires per-user sheet proxy — not implemented for privacy' });
       default: return res.status(400).json({ ok: false, error: 'unknown_action', action });
