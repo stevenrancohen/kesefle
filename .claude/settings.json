@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Write(.env)",
+      "Write(.env.*)",
+      "Write(**/.env)",
+      "Write(**/.env.*)",
+      "Write(**/*.pem)",
+      "Write(**/*.key)",
+      "Write(**/*.p12)",
+      "Write(**/id_rsa*)",
+      "Read(.env)",
+      "Read(.env.*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-secrets.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
