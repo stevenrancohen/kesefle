@@ -146,6 +146,41 @@ async function handlerImpl(req, res) {
     }
   } catch (_) { /* logging must never break a write */ }
 
+  // Anomaly detector (defense-in-depth): a PERSONAL sheet should only ever be
+  // written by ONE userSub (family expense-sharing goes through /api/group, not
+  // this endpoint). If a SECOND distinct userSub writes to the same
+  // spreadsheetId within an hour, that signals a corrupted phone→sheet mapping —
+  // exactly the class of bug behind the original cross-tenant leak. Log it
+  // loudly and persist a sheet_anomaly record for review. Fire-and-forget;
+  // never affects the write result.
+  try {
+    const kvUrl = process.env.KV_REST_API_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN;
+    if (kvUrl && kvToken && userRecord.spreadsheetId && userRecord.userSub) {
+      const swKey = `sheetwriters:${userRecord.spreadsheetId}`;
+      const prev = await kvGet(swKey);
+      const subs = (prev && Array.isArray(prev.subs)) ? prev.subs.slice(0, 10) : [];
+      if (!subs.includes(userRecord.userSub)) {
+        subs.push(userRecord.userSub);
+        await fetch(`${kvUrl}/set/${encodeURIComponent(swKey)}?EX=3600`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${kvToken}` },
+          body: JSON.stringify({ subs, at: new Date().toISOString() }),
+        }).catch(() => {});
+      }
+      if (subs.length > 1) {
+        log.error('append.sheet_multi_writer_anomaly', {
+          reqId: req.reqId, spreadsheetId: userRecord.spreadsheetId, userSubs: subs,
+        });
+        await fetch(`${kvUrl}/set/${encodeURIComponent('sheet_anomaly:' + Date.now())}?EX=2592000`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${kvToken}` },
+          body: JSON.stringify({ spreadsheetId: userRecord.spreadsheetId, userSubs: subs, lastPhone: phone, at: new Date().toISOString() }),
+        }).catch(() => {});
+      }
+    }
+  } catch (_) { /* detector must never break a write */ }
+
   return res.status(200).json({
     ok: true,
     rowIndex: result.rowIndex,
