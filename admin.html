@@ -233,12 +233,15 @@
     <div class="mb-4 flex items-end justify-between">
       <div>
         <h2 class="text-2xl font-black tracking-tight">אנליטיקה בזמן אמת</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">מבקרים, דפים פעילים ומקורות תנועה — עכשיו.</p>
+        <p class="text-sm text-ink-500 dark:text-ink-300">פילוח גאוגרפי, מכשירים ומקורות תנועה.</p>
       </div>
-      <div class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-[11px] font-bold text-brand-400">
-        <span class="live-dot h-2 w-2 rounded-full bg-brand-500"></span>
-        LIVE
+      <div class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-500">
+        מבנה לדוגמה
       </div>
+    </div>
+
+    <div class="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+      ⚠️ הפילוחים בחלק זה (גאוגרפיה, מכשירים, מקורות תנועה, מבקרים חיים) עדיין לא מחוברים למדידה אמיתית. נתוני אמת לצפיות והרשמות מופיעים ב״סטטיסטיקות מפתח״ למטה.
     </div>
 
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -461,75 +464,42 @@
   <!-- ====== SECTION 3: KEY STATS GRID ====== -->
   <section class="mb-10">
     <h2 class="mb-4 text-2xl font-black tracking-tight">סטטיסטיקות מפתח</h2>
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="kfl-keystats">
 
       <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">סשנים באתר</div>
-            <div class="mt-1 text-3xl font-black num count-pop" data-counter="3994" data-from="0">3,994</div>
-          </div>
-          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 17V7h10l-10 10z"/></svg>
-            +245%
-          </span>
-        </div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">לעומת אתמול (1,158)</div>
+        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">סה״כ משתמשים</div>
+        <div class="mt-1 text-3xl font-black num" id="stat-total-users">…</div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">חינם: <span class="num font-bold" id="stat-free">—</span></div>
       </div>
 
       <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">הרשמות היום</div>
-            <div class="mt-1 text-3xl font-black num count-pop" data-counter="47" data-from="0">47</div>
-          </div>
-          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">+292%</span>
-        </div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">אתמול: <span class="num font-bold">12</span></div>
+        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">משלמים</div>
+        <div class="mt-1 text-3xl font-black num" id="stat-paid">…</div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">Pro: <span class="num font-bold" id="stat-pro">—</span> · משפחה: <span class="num font-bold" id="stat-family">—</span></div>
       </div>
 
       <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">הודעות בוט היום</div>
-            <div class="mt-1 text-3xl font-black num count-pop" data-counter="1247" data-from="0">1,247</div>
-          </div>
-          <span class="inline-flex items-center gap-1 rounded-full bg-accent-500/15 px-2 py-1 text-[11px] font-bold text-accent-500">WhatsApp</span>
-        </div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">ממוצע: <span class="num font-bold">14.2</span>/דקה</div>
+        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">הכנסה חודשית (MRR)</div>
+        <div class="mt-1 text-3xl font-black num" id="stat-mrr">…</div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">לפי משלמים פעילים</div>
       </div>
 
       <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">קריאות AI (Tier 3)</div>
-            <div class="mt-1 text-3xl font-black num count-pop" data-counter="63" data-from="0">63</div>
-          </div>
-          <span class="inline-flex items-center gap-1 rounded-full bg-accent-500/15 px-2 py-1 text-[11px] font-bold text-accent-500">$0.019</span>
-        </div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">עלות ממוצעת: <span class="num font-bold">$0.0003</span> / קריאה</div>
+        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">פעילים לאחרונה</div>
+        <div class="mt-1 text-3xl font-black num" id="stat-active">…</div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">שלחו הודעה ב-25 השעות האחרונות</div>
       </div>
 
       <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">זמן תגובה ממוצע</div>
-            <div class="mt-1 text-3xl font-black num count-pop" data-counter="187" data-from="0">187<span class="text-base text-ink-400">ms</span></div>
-          </div>
-          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">תקין</span>
-        </div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">p95: <span class="num font-bold">412ms</span> • p99: <span class="num font-bold">680ms</span></div>
+        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">צפיות באתר (30 ימים)</div>
+        <div class="mt-1 text-3xl font-black num" id="stat-pageviews">…</div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">מתוך מעקב אירועים אמיתי</div>
       </div>
 
       <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">הצלחת הקצאת שיט</div>
-            <div class="mt-1 text-3xl font-black num count-pop" data-counter="98.4" data-from="0" data-decimal="1">98.4<span class="text-base text-ink-400">%</span></div>
-          </div>
-          <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/15 px-2 py-1 text-[11px] font-bold text-brand-500">תקין</span>
-        </div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">3 שגיאות מתוך <span class="num font-bold">189</span></div>
+        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">הרשמות שהושלמו (30 ימים)</div>
+        <div class="mt-1 text-3xl font-black num" id="stat-signups">…</div>
+        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">signup_complete במעקב</div>
       </div>
 
     </div>
@@ -542,9 +512,12 @@
         <h2 class="text-2xl font-black tracking-tight">בריאות הבוט</h2>
         <p class="text-sm text-ink-500 dark:text-ink-300">חלוקת קריאות לפי שכבת זיהוי — ככל שיותר T1/T2 ההוצאה נמוכה יותר.</p>
       </div>
-      <span class="inline-flex items-center gap-1.5 rounded-full bg-accent-500/10 px-3 py-1 text-[11px] font-bold text-accent-500">
-        Anthropic API: <span class="num">$9.81</span> / $10
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-500">
+        מבנה לדוגמה
       </span>
+    </div>
+    <div class="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+      ⚠️ מדדי שכבות הזיהוי (T1/T2/T3) ויתרת ה-API עדיין לא נמדדים בזמן אמת — הבוט מתעד אותם ביומן Apps Script בלבד. הנתונים כאן להמחשת המבנה.
     </div>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
@@ -613,7 +586,7 @@
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 class="text-2xl font-black tracking-tight">משתמשים</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">10 מתוך 47 שנרשמו ב-30 הימים האחרונים.</p>
+        <p class="text-sm text-ink-500 dark:text-ink-300" id="users-subtitle">טוען משתמשים אמיתיים…</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button class="filter-chip rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white" data-filter="all">הכל (10)</button>
@@ -858,18 +831,9 @@
   }
 
   // ===== USERS TABLE DATA =====
-  const USERS = [
-    { name: 'אביב כהן',      email: 'aviv.cohen@gmail.com',       phone: '+972-52-3942910', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-17', signupRaw: 'לפני 14 דק׳',    activity:'לפני 2 דק׳',  sheet:'ok',  tx: 247, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
-    { name: 'דנה לוי',        email: 'dana.levi@gmail.com',         phone: '+972-50-8273410', plan: 'משפחה',  planClass:'bg-accent-500/15 text-accent-500', signup: '2026-05-16', signupRaw: 'לפני יום',        activity:'לפני 38 דק׳', sheet:'ok',  tx: 184, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
-    { name: 'רונן מזרחי',    email: 'ronen.mizrahi@gmail.com',    phone: '+972-54-1923948', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-15', signupRaw: 'לפני יומיים',     activity:'לפני 3 שעות', sheet:'ok',  tx: 392, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
-    { name: 'נועה שטרן',    email: 'noa.shtern@gmail.com',         phone: '+972-52-7193821', plan: 'חינם',   planClass:'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200', signup: '2026-05-14', signupRaw: 'לפני 3 ימים',    activity:'לפני יום',    sheet:'ok',  tx: 28,  status:'trial',     statusLabel:'ניסיון',   statusClass:'bg-amber-500/15 text-amber-600' },
-    { name: 'אורי שמיר',    email: 'uri.shamir@gmail.com',         phone: '+972-50-2837461', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-12', signupRaw: 'לפני 5 ימים',    activity:'לפני 2 שעות', sheet:'ok',  tx: 218, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
-    { name: 'מיכל ברק',     email: 'michal.barak@gmail.com',      phone: '+972-54-9182734', plan: 'משפחה',  planClass:'bg-accent-500/15 text-accent-500', signup: '2026-05-10', signupRaw: 'לפני שבוע',       activity:'לפני 4 ימים', sheet:'err', tx: 41,  status:'paused',    statusLabel:'מושהה',   statusClass:'bg-amber-500/15 text-amber-600' },
-    { name: 'יואב אזולאי',  email: 'yoav.azulay@gmail.com',       phone: '+972-52-8273940', plan: 'חינם',   planClass:'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200', signup: '2026-05-09', signupRaw: 'לפני 8 ימים',    activity:'לפני 6 שעות', sheet:'ok',  tx: 67,  status:'trial',     statusLabel:'ניסיון',   statusClass:'bg-amber-500/15 text-amber-600' },
-    { name: 'תמר בן-דוד', email: 'tamar.bendavid@gmail.com',     phone: '+972-50-3829471', plan: 'Pro',     planClass:'bg-brand-500/15 text-brand-600',  signup: '2026-05-08', signupRaw: 'לפני 9 ימים',    activity:'לפני 12 שעות',sheet:'ok',  tx: 156, status:'active',    statusLabel:'פעיל',    statusClass:'bg-brand-500/15 text-brand-600' },
-    { name: 'גיא פרץ',      email: 'guy.peretz@gmail.com',         phone: '+972-54-1827394', plan: 'חינם',   planClass:'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200', signup: '2026-05-06', signupRaw: 'לפני 11 ימים',  activity:'לפני 9 ימים', sheet:'no',  tx: 0,   status:'cancelled', statusLabel:'בוטל',    statusClass:'bg-red-500/15 text-red-600' },
-    { name: 'שירה אלון',  email: 'shira.alon@gmail.com',         phone: '+972-52-9384721', plan: 'משפחה',  planClass:'bg-accent-500/15 text-accent-500', signup: '2026-05-04', signupRaw: 'לפני 13 ימים',  activity:'לפני 5 שעות', sheet:'ok',  tx: 89,  status:'trial',     statusLabel:'ניסיון',   statusClass:'bg-amber-500/15 text-amber-600' },
-  ];
+  // Real users are loaded live from /api/admin?action=users by the data loader
+  // below. No demo/seed rows — the table shows actual customers or nothing.
+  let USERS = [];
 
   function sheetIcon(s) {
     if (s === 'ok')  return '<span title="שיט תקין" class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-brand-500/15 text-brand-600 font-black">✓</span>';
@@ -936,20 +900,8 @@
   }
 
   // ===== ACTIVITY FEED =====
-  const ACTIVITIES = [
-    { icon:'👤', tone:'brand',  text:'<b>אביב כהן</b> נרשם לכסף\'לה',                                                         time:'לפני 14 דק׳' },
-    { icon:'💬', tone:'accent', text:'הבוט עיבד <b class="num">45</b> הודעות מ-<span class="num font-mono">user_2934</span>',  time:'לפני 23 דק׳' },
-    { icon:'🤖', tone:'brand',  text:'AI סיווג: <i>״הופעה של עומר אדם״</i> → <b>אירועים / בילויים</b>',                       time:'לפני 31 דק׳' },
-    { icon:'📊', tone:'accent', text:'הוקצה שיט חדש ל-<span class="num font-mono">ronen.mizrahi@gmail.com</span>',             time:'לפני 47 דק׳' },
-    { icon:'📧', tone:'brand',  text:'סיכום שבועי נשלח ל-<b class="num">12</b> משתמשים',                                        time:'לפני שעה' },
-    { icon:'💳', tone:'accent', text:'<b>דנה לוי</b> שדרגה לתוכנית משפחה (₪39/חודש)',                                          time:'לפני שעתיים' },
-    { icon:'⚡', tone:'brand',  text:'AI fallback ירד מ-7% ל-<b class="num">5%</b> אחרי הוספת keyword חדש',                     time:'לפני 3 שעות' },
-    { icon:'⚠️', tone:'orange', text:'שגיאה בהקצאת שיט ל-<span class="num font-mono">user_88f1</span> — חזרה אוטומטית הצליחה',  time:'לפני 4 שעות' },
-    { icon:'🔄', tone:'accent', text:'Cron יומי הסתיים בהצלחה — <b class="num">1,247</b> תנועות נסונכרנו',                       time:'לפני 5 שעות' },
-    { icon:'💰', tone:'brand',  text:'הכנסה חודשית (MRR) עברה את ה-<b class="num">₪500</b> לראשונה',                            time:'לפני 6 שעות' },
-    { icon:'📱', tone:'accent', text:'<b>אורי שמיר</b> שלח <b class="num">12</b> הוצאות בו-זמנית',                              time:'לפני 8 שעות' },
-    { icon:'🎯', tone:'brand',  text:'קמפיין Facebook "Pro Trial" — <b class="num">8</b> הרשמות, CPA ₪4.20',                    time:'לפני 9 שעות' },
-  ];
+  // Activity feed reflects REAL recent signups (loaded live below). No demo rows.
+  let ACTIVITIES = [];
 
   function toneClasses(tone) {
     if (tone === 'brand')  return 'bg-brand-500/10 text-brand-600 dark:text-brand-400';
@@ -1024,6 +976,11 @@
   }
 
   // ===== INIT =====
+  // Hook for the live data loader (below) to inject REAL users through the
+  // existing render + filter/search logic.
+  window.__kflSetUsers = function (list) { USERS = Array.isArray(list) ? list : []; renderUsers(USERS); };
+  window.__kflSetActivities = function (list) { ACTIVITIES = Array.isArray(list) ? list : []; renderActivityFeed(); };
+
   function initAll() {
     // animate counters
     document.querySelectorAll('[data-counter]').forEach(el => animateCounter(el));
@@ -1032,9 +989,8 @@
     bindFilters();
     // activity
     renderActivityFeed();
-    // live feed auto-update
-    setInterval(prependLive,    8000);
-    setInterval(prependActivity, 14000);
+    // NOTE: fake live-injection intervals (prependLive/prependActivity) removed —
+    // the panel must only ever show real events, never fabricated ones.
   }
 
   // if already opened (no gate), init
@@ -1256,6 +1212,115 @@
   window.kflLoadOnboarding = loadOnboarding;
   if (document.readyState !== 'loading') loadOnboarding();
   else document.addEventListener('DOMContentLoaded', loadOnboarding);
+})();
+</script>
+
+<!-- LIVE DATA LOADER — fills users table + key metrics from REAL KV data via
+     /api/admin (requireAdmin). No demo/fake values: real numbers or honest "—". -->
+<script>
+(function () {
+  function token() { try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; } catch (e) { return ''; } }
+  function el(id) { return document.getElementById(id); }
+  function setTxt(id, v) { var e = el(id); if (e) e.textContent = (v === null || v === undefined) ? '—' : v; }
+  function num(n) { return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('he-IL') : '—'; }
+  async function get(action) {
+    var t = token(); if (!t) return { _noauth: true };
+    var r = await fetch('/api/admin?action=' + action, { headers: { 'Authorization': 'Bearer ' + t } });
+    if (r.status === 401 || r.status === 403) return { _denied: true };
+    try { return await r.json(); } catch (e) { return { ok: false, error: 'bad_json' }; }
+  }
+  function rel(iso) {
+    if (!iso) return '—';
+    var t = Date.parse(iso); if (isNaN(t)) return '—';
+    var s = Math.max(0, (Date.now() - t) / 1000);
+    if (s < 90) return 'לפני רגע';
+    if (s < 3600) return 'לפני ' + Math.round(s / 60) + ' דק׳';
+    if (s < 86400) return 'לפני ' + Math.round(s / 3600) + ' שעות';
+    return 'לפני ' + Math.round(s / 86400) + ' ימים';
+  }
+  function planLabel(p) {
+    if (p === 'pro') return { label: 'Pro', cls: 'bg-brand-500/15 text-brand-600' };
+    if (p === 'family') return { label: 'משפחה', cls: 'bg-accent-500/15 text-accent-500' };
+    return { label: 'חינם', cls: 'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200' };
+  }
+  function statusOf(u) {
+    var s = String(u.subscriptionStatus || '').toLowerCase();
+    if (s === 'canceled' || s === 'cancelled') return { status: 'cancelled', label: 'בוטל', cls: 'bg-red-500/15 text-red-600' };
+    if (s === 'past_due' || s === 'paused') return { status: 'paused', label: 'מושהה', cls: 'bg-amber-500/15 text-amber-600' };
+    if (s === 'trialing' || (!u.plan || u.plan === 'free')) return { status: 'trial', label: 'ניסיון', cls: 'bg-amber-500/15 text-amber-600' };
+    return { status: 'active', label: 'פעיל', cls: 'bg-brand-500/15 text-brand-600' };
+  }
+  function authBanner(msg) {
+    var grid = el('kfl-keystats');
+    if (grid && !el('kfl-auth-banner')) {
+      var b = document.createElement('div');
+      b.id = 'kfl-auth-banner';
+      b.className = 'sm:col-span-2 lg:col-span-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm';
+      b.innerHTML = msg;
+      grid.insertBefore(b, grid.firstChild);
+    }
+    setTxt('users-subtitle', 'דרושה התחברות מנהל כדי לראות נתונים אמיתיים.');
+  }
+
+  async function load() {
+    if (!token()) {
+      authBanner('כדי לראות נתונים אמיתיים, התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן), ואז רענן/י את הדף.');
+      return;
+    }
+    // METRICS
+    var m = await get('metrics');
+    if (m._denied) { authBanner('הגישה נדחתה — ודא/י שהאימייל שלך מופיע ב-ADMIN_EMAILS ב-Vercel, ושאת/ה מחובר/ת ב-<a href="/account" class="underline font-bold">/account</a>.'); return; }
+    if (m && m.ok && m.metrics) {
+      var mt = m.metrics, bp = mt.byPlan || {};
+      setTxt('stat-total-users', num(mt.totalUsers));
+      setTxt('stat-free', num(bp.free || 0));
+      setTxt('stat-paid', num(mt.paidUsers));
+      setTxt('stat-pro', num(bp.pro || 0));
+      setTxt('stat-family', num(bp.family || 0));
+      setTxt('stat-mrr', '₪' + num(mt.mrr || 0));
+      setTxt('stat-active', num(mt.dau));
+    }
+    // ANALYTICS (real event counters)
+    var a = await get('analytics&days=30');
+    if (a && a.ok && a.totals) {
+      setTxt('stat-pageviews', num(a.totals.page_view || 0));
+      setTxt('stat-signups', num(a.totals.signup_complete || 0));
+    }
+    // USERS
+    var u = await get('users&limit=200');
+    if (u && u.ok && Array.isArray(u.users)) {
+      var mapped = u.users.map(function (x) {
+        var pl = planLabel(x.plan), st = statusOf(x);
+        return {
+          name: x.name || x.email || (x.sub || '').slice(0, 8),
+          email: x.email || '—',
+          phone: x.phone || '—',
+          plan: pl.label, planClass: pl.cls,
+          signup: (x.createdAt || '').slice(0, 10) || '—', signupRaw: rel(x.createdAt),
+          activity: x.lastActive ? rel(x.lastActive) : '—',
+          sheet: x.hasSheet ? 'ok' : 'no',
+          tx: '—',
+          status: st.status, statusLabel: st.label, statusClass: st.cls,
+        };
+      });
+      if (window.__kflSetUsers) window.__kflSetUsers(mapped);
+      setTxt('users-subtitle', mapped.length + ' משתמשים רשומים (מציג עד 200).');
+      // real filter-chip counts
+      var counts = { all: mapped.length, active: 0, trial: 0, paused: 0, cancelled: 0 };
+      mapped.forEach(function (x) { if (counts[x.status] !== undefined) counts[x.status]++; });
+      document.querySelectorAll('.filter-chip').forEach(function (chip) {
+        var f = chip.dataset.filter, labelMap = { all: 'הכל', active: 'פעיל', trial: 'ניסיון', paused: 'מושהה', cancelled: 'בוטל' };
+        if (labelMap[f] !== undefined) chip.textContent = labelMap[f] + ' (' + (counts[f] || 0) + ')';
+      });
+      // activity feed = real recent signups
+      var recent = mapped.slice(0, 12).map(function (x) {
+        return { icon: '👤', tone: 'brand', text: '<b>' + (x.email || x.name) + '</b> נרשם/ה לכספלה', time: x.signupRaw };
+      });
+      if (window.__kflSetActivities) window.__kflSetActivities(recent);
+    }
+  }
+  if (document.readyState !== 'loading') load();
+  else document.addEventListener('DOMContentLoaded', load);
 })();
 </script>
 </body>
