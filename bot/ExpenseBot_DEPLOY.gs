@@ -117,6 +117,8 @@ const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHAT
 const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1090404180828069';
 const BOT_PHONE_E164 = '+17745448053';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
+// Bump on every deploy so the "בדיקה" self-check confirms which build is live.
+const KFL_BUILD_VERSION = '2026-05-21-concierge-1';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4356,6 +4358,19 @@ function processExpense(text, fromPhone) {
   }
 
   const trimmed = text.trim().toLowerCase();
+  // Self-check: confirms which build is live + whether the Gemini key is visible.
+  if (trimmed === 'בדיקה' || trimmed === 'diag' || trimmed === 'דיבאג') {
+    var _hasGem = false, _hasSecret = false, _gemOk = false;
+    try { _hasGem = !!PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY'); } catch (_e1) {}
+    try { _hasSecret = !!PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET'); } catch (_e2) {}
+    if (_hasGem) { try { _gemOk = !!_geminiGenerate_('Reply with the single word OK.', 'OK'); } catch (_e3) {} }
+    return { reply:
+      '🔧 בדיקת מערכת\n' +
+      'גרסה: ' + KFL_BUILD_VERSION + '\n' +
+      'מפתח Gemini: ' + (_hasGem ? '✅ קיים' : '❌ חסר (הוסף ב-Script Properties)') + '\n' +
+      'חיבור Gemini: ' + (_hasGem ? (_gemOk ? '✅ עובד' : '❌ נכשל') : '—') + '\n' +
+      'בוט-סיקרט: ' + (_hasSecret ? '✅' : '❌') };
+  }
   if (trimmed === 'עזרה' || trimmed === 'help' || trimmed === '?') {
     return { reply: getHelpMessage() };
   }
