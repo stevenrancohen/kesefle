@@ -3400,6 +3400,71 @@ function _profileTrackingTypeCached_(fromPhone) {
   }
 }
 
+// === Gemini conversational layer ("concierge") =======================
+// Makes the bot UNDERSTAND free-form messages and reply personally instead of
+// a generic "didn't understand". Degrades gracefully: if GEMINI_API_KEY is not
+// set in Script Properties (or the call fails), this returns null and callers
+// keep their existing reply. Model is configurable via GEMINI_MODEL.
+function _geminiGenerate_(systemPrompt, userText) {
+  try {
+    var apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+    if (!apiKey) return null;
+    var model = PropertiesService.getScriptProperties().getProperty('GEMINI_MODEL') || 'gemini-2.0-flash';
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
+    var resp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({
+        systemInstruction: { parts: [{ text: String(systemPrompt || '') }] },
+        contents: [{ role: 'user', parts: [{ text: String(userText || '').slice(0, 1000) }] }],
+        generationConfig: { temperature: 0.4, maxOutputTokens: 400 }
+      }),
+      muteHttpExceptions: true
+    });
+    if (resp.getResponseCode() !== 200) {
+      Logger.log('_geminiGenerate_ HTTP ' + resp.getResponseCode() + ': ' + resp.getContentText().slice(0, 200));
+      return null;
+    }
+    var body = JSON.parse(resp.getContentText());
+    var cand = body && body.candidates && body.candidates[0];
+    var txt = cand && cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text;
+    return txt ? String(txt) : null;
+  } catch (e) {
+    Logger.log('_geminiGenerate_ err: ' + (e && e.message));
+    return null;
+  }
+}
+
+// Understand a message that is NOT a logged expense and decide how to respond.
+// Returns { action: 'summary'|'help'|'examples'|'orders'|'chat', reply } or
+// null when Gemini is unavailable (caller then uses its own fallback).
+function _botConcierge_(fromPhone, text) {
+  var tt = '';
+  try { tt = _profileTrackingTypeCached_(fromPhone) || ''; } catch (_e) {}
+  var who = (typeof _SURVEY_TRACKING_HUMAN_ !== 'undefined' && _SURVEY_TRACKING_HUMAN_[tt]) || '';
+  var sys =
+    'את כספלה — עוזרת פיננסית חכמה וחמה בעברית בתוך וואטסאפ. ' +
+    'המשתמש כתב הודעה שאינה רישום הוצאה. הביני מה הוא רוצה ותגיבי בעברית, קצר וחם (מתאים לוואטסאפ), בלי להיות גנרית. ' +
+    (who ? ('המשתמש סימן שהוא עוקב אחרי כספים מסוג: ' + who + ' — התאימי את הטון.\n') : '') +
+    'מה הבוט יודע לעשות: לרשום הוצאות (כמו "150 סופר"), לתת סיכום חודשי, עזרה, דוגמאות, וסיכום הזמנות לעסקים. ' +
+    'החזירי אך ורק JSON תקין, בלי טקסט נוסף: ' +
+    '{"action":"summary|help|examples|orders|chat","reply":"<טקסט בעברית רק כש-action הוא chat, אחרת מחרוזת ריקה>"}. ' +
+    'כללי החלטה: בקשת סיכום/יתרה/כמה הוצאתי/מצב → summary. בקשת עזרה/מה אפשר לעשות → help. בקשת דוגמאות → examples. ' +
+    'סיכום הזמנות/לקוחות/מחזור → orders. כל שאלה/בקשה/שיחה אחרת (למשל "אפשר להוסיף קטגוריה?") → chat, ' +
+    'וב-reply תני תשובה אמיתית, אישית ומועילה — לא משפט גנרי.';
+  var raw = _geminiGenerate_(sys, text);
+  if (!raw) return null;
+  var m = String(raw).match(/\{[\s\S]*\}/);
+  if (!m) return { action: 'chat', reply: String(raw).slice(0, 600) };
+  try {
+    var p = JSON.parse(m[0]);
+    var action = String(p.action || 'chat').trim();
+    return { action: action, reply: String(p.reply || '').slice(0, 600) };
+  } catch (_pe) {
+    return { action: 'chat', reply: String(raw).slice(0, 600) };
+  }
+}
+
 // Build + send the closing profile summary, then clear state.
 function _surveyFinish_(fromPhone) {
   var pref = _surveyGetAutoLogPref_(fromPhone);
@@ -3817,6 +3882,16 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   // tenants get the same classification quality as the owner path.
   var parsed = parseAmountAndDescription(rawText);
   if (!parsed || !parsed.items || !parsed.items.length) {
+    // Not an expense — let the concierge understand + reply personally. For a
+    // tenant we must NOT call owner-sheet summaries; we give safe guidance.
+    var __tcg = null;
+    try { __tcg = _botConcierge_(fromPhone, rawText); } catch (_tcge) { Logger.log('tenant concierge err: ' + (_tcge && _tcge.message)); }
+    if (__tcg) {
+      if (__tcg.action === 'help') { try { return { reply: getHelpMessage() }; } catch (_h) {} }
+      if (__tcg.reply) return { reply: __tcg.reply };
+      if (__tcg.action === 'summary') return { reply: '📊 רוצה לראות איפה אתה עומד? הכל מתעדכן בגיליון שלך' + _sheetLinkLine_(fromPhone) };
+      if (__tcg.action === 'examples') return { reply: '💡 דוגמאות: "150 סופר", "ארנונה 500", "60 דלק", "8500 משכורת". פשוט כותבים כמו שמדברים.' };
+    }
     return { reply: '😕 לא הצלחתי לזהות סכום. נסה: "245 סופר"' };
   }
   var first = parsed.items[0];
@@ -4375,6 +4450,17 @@ function processExpense(text, fromPhone) {
   const fx = parseForeignCurrencyHint(__workingText);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : __workingText);
   if (!parsed || !parsed.items || parsed.items.length === 0) {
+    // Not a logged expense — try the Gemini concierge to understand + respond
+    // personally before giving up with the generic line.
+    var __cg = null;
+    try { __cg = _botConcierge_(fromPhone, text); } catch (_cge) { Logger.log('concierge err: ' + (_cge && _cge.message)); }
+    if (__cg) {
+      if (__cg.action === 'summary') { try { return { reply: getMonthlySummary(fromPhone) }; } catch (_s1) {} }
+      if (__cg.action === 'help') { try { return { reply: getHelpMessage() }; } catch (_s2) {} }
+      if (__cg.action === 'examples') { try { return { reply: _getExamplesMessage_(fromPhone) }; } catch (_s3) {} }
+      if (__cg.action === 'orders') { try { return { reply: getOrdersSummary() }; } catch (_s4) {} }
+      if (__cg.reply) return { reply: __cg.reply };
+    }
     return { reply: '🤔 לא הבנתי. התכוונת לרשום הוצאה?\n' +
       'אפשר לכתוב כמו שמדברים — למשל "150 סופר" או "ארנונה 500".\n' +
       'שלח *דוגמאות* לעוד רעיונות 💡' };
