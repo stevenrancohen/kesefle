@@ -1009,12 +1009,12 @@ function _sheetLinkLine_(fromPhone) {
 // "pin message" button — pinning is a user gesture — so we instruct the
 // user how to pin (long-press → Pin) rather than fake a button.
 function _maybeSendWelcome_(fromPhone) {
-  if (!fromPhone) return;
+  if (!fromPhone) return false;
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
-  if (!clean) return;
+  if (!clean) return false;
   var props = PropertiesService.getScriptProperties();
   var key = 'welcomed:' + clean;
-  if (props.getProperty(key)) return;
+  if (props.getProperty(key)) return false;
   props.setProperty(key, new Date().toISOString());
 
   var sheetUrl = _userSheetUrl_(fromPhone);
@@ -1054,6 +1054,7 @@ function _maybeSendWelcome_(fromPhone) {
       _surveyStart_(fromPhone);
     }
   } catch (_sErr) { Logger.log('welcome survey kickoff err: ' + (_sErr && _sErr.message)); }
+  return true;
 }
 
 // Abuse blacklist — a Script Property holding a comma-separated list of
@@ -1260,7 +1261,24 @@ function doPost(e) {
       // 👋 One-time welcome — sent BEFORE processing so a brand-new user
       // sees the intro + how-to + sheet link first, then their first
       // expense confirmation. Deduped per phone.
-      try { _maybeSendWelcome_(__from_); } catch (_wErr) { Logger.log('welcome err: ' + (_wErr && _wErr.message)); }
+      var __welcomedNow = false;
+      try { __welcomedNow = _maybeSendWelcome_(__from_); } catch (_wErr) { Logger.log('welcome err: ' + (_wErr && _wErr.message)); }
+      // If this is the user's first-ever message and it isn't itself an expense
+      // (e.g. "שלום"), the welcome + questionnaire we just sent ARE the response.
+      // Don't also run it through the expense parser and reply "couldn't identify
+      // amount". A first message that DOES contain an amount falls through and is
+      // logged normally.
+      if (__welcomedNow && !__interactive_) {
+        var __looksExpense = false;
+        try {
+          var __wp = (typeof parseAmountAndDescription === 'function') ? parseAmountAndDescription(__text_) : null;
+          __looksExpense = !!(__wp && __wp.items && __wp.items.length);
+        } catch (_we) {}
+        if (!__looksExpense) {
+          Logger.log('doPost: first-message greeting — welcome+survey sent, skipping expense parse');
+          return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+        }
+      }
 
       if (typeof ALLOWED_PHONES !== 'undefined' && ALLOWED_PHONES.length > 0) {
         var __clean_ = String(__from_).replace(/[^0-9]/g, '');

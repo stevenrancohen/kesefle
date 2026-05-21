@@ -128,56 +128,58 @@ async function handlerImpl(req, res) {
     provisioned: new Date().toISOString(),
   };
 
-  if (kvUrl && kvToken) {
-    try {
-      await fetch(`${kvUrl}/set/${encodeURIComponent('sheet:' + userSub)}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(record),
-      });
-
-      // Also merge into the user record (which has the refresh token from /api/auth/google-exchange)
-      // so that the webhook's phone:<E.164> lookup gets the full picture.
+  // KV setter that VERIFIES the write succeeded and retries once. The bot finds
+  // a user's sheet via these mappings — a silent failure here means the user
+  // gets a sheet in their Drive but the bot can never write to it.
+  const kvSetChecked = async (key, val) => {
+    for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const userRes = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, {
-          headers: { 'Authorization': `Bearer ${kvToken}` },
+        const r = await fetch(`${kvUrl}/set/${encodeURIComponent(key)}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(val),
         });
-        const userJson = await userRes.json();
-        const userRec = userJson?.result ? JSON.parse(userJson.result) : null;
-        if (userRec) {
-          userRec.spreadsheetId = spreadsheetId;
-          userRec.spreadsheetUrl = spreadsheetUrl;
-          userRec.provisioned = record.provisioned;
-          await fetch(`${kvUrl}/set/${encodeURIComponent('user:' + userSub)}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(userRec),
-          });
-        }
-      } catch (e) {
-        console.warn('user_record_merge_failed', e);
-      }
-
-      try {
-        const tokRes = await fetch(`${kvUrl}/get/${encodeURIComponent('token:' + userSub)}`, {
-          headers: { 'Authorization': `Bearer ${kvToken}` },
-        });
-        const tokJson = await tokRes.json();
-        const tokRec = tokJson?.result ? JSON.parse(tokJson.result) : null;
-        if (tokRec) {
-          tokRec.sheetId = spreadsheetId;
-          await fetch(`${kvUrl}/set/${encodeURIComponent('token:' + userSub)}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(tokRec),
-          });
-        }
-      } catch (e) {
-        console.warn('token_record_merge_failed', e);
-      }
-    } catch (e) {
-      console.error('KV save failed', e);
+        if (r.ok) return true;
+      } catch (_e) { /* retry */ }
     }
+    return false;
+  };
+
+  if (kvUrl && kvToken) {
+    // CRITICAL mapping. If this fails after a retry, do NOT report success —
+    // the user must be able to retry rather than be left with an orphaned sheet.
+    const sheetSaved = await kvSetChecked('sheet:' + userSub, record);
+    if (!sheetSaved) {
+      log.error('provision.sheet_mapping_save_failed', { reqId: req.reqId, userSub, spreadsheetId });
+      return res.status(502).json({
+        ok: false,
+        error: 'sheet_registration_failed',
+        detail: 'הגיליון נוצר אך ההרשמה לא הושלמה. נסו שוב בעוד רגע.',
+        spreadsheetId,
+        spreadsheetUrl,
+      });
+    }
+
+    // Best-effort: mirror the sheet id into the user + token records so the
+    // phone:<E.164> link lookup can resolve it from any of them.
+    try {
+      const userRes = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, { headers: { 'Authorization': `Bearer ${kvToken}` } });
+      const userJson = await userRes.json();
+      const userRec = userJson?.result ? JSON.parse(userJson.result) : null;
+      if (userRec) {
+        userRec.spreadsheetId = spreadsheetId;
+        userRec.spreadsheetUrl = spreadsheetUrl;
+        userRec.provisioned = record.provisioned;
+        await kvSetChecked('user:' + userSub, userRec);
+      }
+    } catch (e) { console.warn('user_record_merge_failed', e); }
+
+    try {
+      const tokRes = await fetch(`${kvUrl}/get/${encodeURIComponent('token:' + userSub)}`, { headers: { 'Authorization': `Bearer ${kvToken}` } });
+      const tokJson = await tokRes.json();
+      const tokRec = tokJson?.result ? JSON.parse(tokJson.result) : null;
+      if (tokRec) { tokRec.sheetId = spreadsheetId; await kvSetChecked('token:' + userSub, tokRec); }
+    } catch (e) { console.warn('token_record_merge_failed', e); }
   } else {
     console.log('SHEET_PROVISIONED', JSON.stringify(record));
   }
