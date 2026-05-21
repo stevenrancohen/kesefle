@@ -90,6 +90,7 @@
   .toggle-track { width: 44px; height: 24px; transition: background-color 0.2s; }
   .toggle-thumb { transform: translateX(0); transition: transform 0.2s; }
   .toggle-on .toggle-thumb { transform: translateX(-20px); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
 </style>
 <script src="/lib/analytics.js" defer></script>
 </head>

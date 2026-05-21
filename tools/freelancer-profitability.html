@@ -93,6 +93,7 @@
   .toggle-on .toggle-thumb { transform: translateX(-20px); }
   @keyframes count-up { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   .animate-count { animation: count-up 0.3s ease-out; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
 </style>
 <script src="/lib/analytics.js" defer></script>
 </head>
