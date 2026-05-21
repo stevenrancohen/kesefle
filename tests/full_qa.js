@@ -18,6 +18,7 @@ const ROOT = path.join(__dirname, '..');
 const BOT = fs.readFileSync(path.join(ROOT, 'bot/ExpenseBot_DEPLOY.gs'), 'utf8');
 const SW = fs.readFileSync(path.join(ROOT, 'lib/sheet-writer.js'), 'utf8');
 const APPEND = fs.readFileSync(path.join(ROOT, 'api/sheet/append.js'), 'utf8');
+const RECURRING = fs.readFileSync(path.join(ROOT, 'api/recurring.js'), 'utf8');
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -85,6 +86,13 @@ ok('append.js hard ownership assertion', /sheet_ownership_mismatch/.test(APPEND)
 ok('append.js write_log', /write_log:/.test(APPEND));
 ok('append.js multi-writer anomaly', /sheet_multi_writer_anomaly/.test(APPEND));
 ok('dangerous unset-owner fallback gone', !/if \(!ownerPhone\) return \{ isOwner: true \}/.test(BOT));
+
+// Token-resolution guard (the "couldn't connect" bug): the bridge endpoints
+// MUST fetch the refresh token from user:{userSub} — the phone:{E164} record is
+// only a pointer and carries no token. If a refactor reverts to writing with
+// the bare phone record, every tenant write fails silently.
+ok('append.js resolves token from user:{userSub}', /user:\$\{phoneRec\.userSub\}/.test(APPEND) && /refreshTokenEnvelope/.test(APPEND));
+ok('recurring.js resolves token from user:{userSub}', /resolveTenantWriteRecord/.test(RECURRING) && /user:'\s*\+\s*phoneRec\.userSub/.test(RECURRING) && /refreshTokenEnvelope/.test(RECURRING));
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
