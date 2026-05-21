@@ -129,6 +129,11 @@
   .prov-step.active { color: #047857; font-weight: 700; }
   .prov-step.done { color: #475569; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .confetti, .step-just-done, .listen-dot, .prov-step.active .prov-dot, [class*="animate-"] {
+      animation: none !important; transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 <script src="/lib/analytics.js" defer></script>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -179,7 +184,7 @@
     <div class="relative flex items-start gap-4">
       <div id="banner-icon" class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors">👋</div>
       <div class="flex-1">
-        <h2 id="banner-title" class="text-xl font-black text-ink-900">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h2>
+        <h1 id="banner-title" class="text-xl font-black text-ink-900">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h1>
         <p id="banner-subtitle" class="mt-1 text-slate-700">פחות מדקה, ואתה מתחיל לעקוב אחרי הכסף שלך — ישר מתוך וואטסאפ.</p>
 
         <!-- Progress bar showing step completion -->
@@ -272,6 +277,7 @@
                     inputmode="tel"
                     autocomplete="tel"
                     placeholder="054-123-4567"
+                    aria-label="מספר וואטסאפ"
                     dir="ltr"
                     class="flex-1 min-w-[180px] rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-800 dark:text-white"
                   />

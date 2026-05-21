@@ -56,6 +56,10 @@
   .cmd-card { transition: background 0.2s; cursor: pointer; }
   .cmd-card:hover { background: #f0fdf6; }
   .cmd-card:active { background: #dcfce9; }
+  @media (prefers-reduced-motion: reduce) {
+    .confetti, .pulse-dot::before, [class*="animate-"] { animation: none !important; }
+    .step-card, .cmd-card { transition-duration: 0.01ms !important; }
+  }
 </style>
 <script src="/lib/analytics.js" defer></script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"ברוך הבא — כספ'לה","description":"ברוך הבא לכספ'לה. נסיים את ההתחברות לוואטסאפ ולגוגל שיטס תוך דקה.","url":"https://kesefle.com/welcome","inLanguage":"he","isPartOf":{"@type":"WebSite","name":"כספ'לה","url":"https://kesefle.com/"}}</script>
@@ -337,7 +341,7 @@
       לדשבורד שלי →
     </a>
     <div class="mt-3 text-xs text-ink-500 dark:text-ink-400">
-      שאלה? <a href="https://wa.me/17745448053" target="_blank" class="text-brand-600 hover:underline">כתוב לנו בוואטסאפ</a>
+      שאלה? <a href="https://wa.me/17745448053" target="_blank" rel="noopener" class="text-brand-600 hover:underline">כתוב לנו בוואטסאפ</a>
       ·
       <a href="/" class="text-ink-500 hover:underline">חזור לעמוד הראשי</a>
     </div>
