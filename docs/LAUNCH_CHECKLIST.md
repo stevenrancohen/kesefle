@@ -57,7 +57,7 @@
 
 ## Phase 4 — WhatsApp Business profile
 
-- [ ] **Display name** `כספ׳לה` — submit via Meta (review ~24h). See `docs/WHATSAPP_DISPLAY_NAME.md`.
+- [ ] **Display name** `כספ'לה` — submit via Meta (review ~24h). See `docs/WHATSAPP_DISPLAY_NAME.md`.
 - [ ] **Profile photo** = the logo (`/icon-512.png`).
 - [ ] **Remove the test recipient numbers** (Meta → WhatsApp → API Setup → "To" list)
       once the number is live.

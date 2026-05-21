@@ -101,7 +101,7 @@ async function handlerImpl(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: `כסף'לה — ${userEmail || userSub}`.slice(0, 200),
+          name: `כספ'לה — ${userEmail || userSub}`.slice(0, 200),
         }),
       }
     );

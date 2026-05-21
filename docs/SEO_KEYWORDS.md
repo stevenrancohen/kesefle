@@ -5,8 +5,8 @@ that page's `<title>`, meta description, H1/H2, body, and schema. Long-tail
 question phrases → blog posts / FAQ. **Don't keyword-stuff** — one primary
 intent per page, supporting terms woven in naturally.
 
-> Brand note: people search **"כספלה"** (no geresh) far more than **"כסף'לה"**.
-> Both, plus "כסףלה" and "kesefle", are now in the homepage schema. Keep using
+> Brand note: people search **"כספלה"** (no geresh) far more than **"כספ'לה"**.
+> Both, plus "כספלה" and "kesefle", are now in the homepage schema. Keep using
 > "כספלה" in copy + alt text so Google ties the brand to the domain.
 
 ## Cluster 1 — Core product → `/` (index.html)

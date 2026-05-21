@@ -43,7 +43,7 @@ Kesefle's opt-in flow:
 
 Hebrew:
 ```
-☐ אני מסכים/ה לקבל הודעות וואטסאפ משירות "כסף'לה" לצורך
+☐ אני מסכים/ה לקבל הודעות וואטסאפ משירות "כספ'לה" לצורך
    רישום ההוצאות שלי, אישורים, ותשובות לפניות שלי. ידוע לי שאוכל
    להפסיק את ההתכתבות בכל עת על ידי שליחת המילה "עצור" לבוט.
 ```
@@ -62,7 +62,7 @@ English (for international users):
 Kesefle sends a single welcome message that confirms the opt-in and reaffirms the stop word:
 
 ```
-שלום! 👋 חברנו את המספר שלך לחשבון "כסף'לה" שלך.
+שלום! 👋 חברנו את המספר שלך לחשבון "כספ'לה" שלך.
 כדי לרשום הוצאה, שלח לי הודעה כמו: "245 סופר" או "60 אובר".
 כדי לעצור — שלח "עצור". כדי לקבל עזרה — שלח "עזרה".
 ```
@@ -89,7 +89,7 @@ Kesefle's pattern:
 1. `weekly_summary_he` — "השבוע הוצאת ₪{{1}} ב-{{2}} קטגוריות. הקטגוריה המובילה: {{3}}."
 2. `monthly_summary_he` — "סיכום {{1}}: סה״כ ₪{{2}}. הנה הפירוט: {{3}}"
 3. `bill_reminder_he` — "תזכורת: הוצאה חוזרת ל-{{1}} בסך ₪{{2}} צפויה ב-{{3}}."
-4. `onboarding_he` — "ברוך הבא ל-כסף'לה, {{1}}! התחל ב: '{{2}}'"
+4. `onboarding_he` — "ברוך הבא ל-כספ'לה, {{1}}! התחל ב: '{{2}}'"
 5. `account_change_he` — "המנוי שלך {{1}}: {{2}}. שאלות? {{3}}"
 
 All under category **UTILITY** (not MARKETING) — utility templates aren't subject to the per-conversation marketing fee and have lower rejection rates.
@@ -109,7 +109,7 @@ Required steps with Meta:
 2. **Add the WhatsApp Business Cloud API product** in Meta Business Suite.
 3. **Verify the business** — upload incorporation certificate of SRC Solutions (תעודת התאגדות / עוסק מורשה). For Israeli sole proprietor: תעודת עוסק מורשה + תעודת זהות. For ח״פ: תדפיס רשם החברות.
 4. **Register the phone number** — must be a number NOT currently used in personal WhatsApp. The current `+1-774-544-8053` listed in privacy.html appears to be Steven's personal WhatsApp — **DO NOT use this for the API**. Procure a dedicated number (Twilio, MessageBird, or an Israeli SIM never used for WhatsApp).
-5. **Set the display name** — "Kesefle" or "כסף'לה". Meta reviews this in 1–3 days. Display name **cannot** contain "Bot", "Official", or generic words like "Service".
+5. **Set the display name** — "Kesefle" or "כספ'לה". Meta reviews this in 1–3 days. Display name **cannot** contain "Bot", "Official", or generic words like "Service".
 6. **Choose messaging tier** — start at Tier 1 (1,000 conversations/24h). Auto-upgrade to Tier 2 at 50% quality + 2k unique users in 7d.
 
 ---
@@ -200,7 +200,7 @@ See incident-response-runbook.md sections 2 + 3 for full playbook. Specifically:
 
 - [ ] Dedicated business phone number procured (not Steven's personal)
 - [ ] Meta Business verified (business docs uploaded)
-- [ ] Display name "Kesefle" / "כסף'לה" approved
+- [ ] Display name "Kesefle" / "כספ'לה" approved
 - [ ] 5 utility templates submitted + approved
 - [ ] Opt-in checkbox in /account.html with unchecked default + opt-in record stored
 - [ ] `STOP`/`עצור` handler in webhook.js

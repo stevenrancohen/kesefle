@@ -36,7 +36,7 @@ async function handlerImpl(req, res) {
 
   const payload = {
     name: `Kesefle ${PLAN_LABELS[plan] || 'Premium'}`,
-    description: `מנוי ${period === 'year' ? 'שנתי' : 'חודשי'} לכסף'לה — ${priceILS(plan, period)}₪`,
+    description: `מנוי ${period === 'year' ? 'שנתי' : 'חודשי'} לכספ'לה — ${priceILS(plan, period)}₪`,
     pricing_type: 'fixed_price',
     local_price: { amount: usd.toFixed(2), currency: 'USD' },
     // userSub is the canonical key the webhook activates against (legacy charges

@@ -46,7 +46,7 @@ Current privacy.html (reviewed): sections 3א and 3ב cover OAuth scopes and ret
 ### Per-scope justification text to add to privacy.html section 3א
 
 ```
-drive.file: כדי ליצור עבורך עותק של תבנית הגיליון "כסף'לה" ב-Drive שלך
+drive.file: כדי ליצור עבורך עותק של תבנית הגיליון "כספ'לה" ב-Drive שלך
    ולגשת רק לקובץ הזה. אנחנו לא רואים שום קובץ אחר ב-Drive שלך.
 
 spreadsheets: כדי לכתוב את ההוצאות וההכנסות שאתה שולח דרך הוואטסאפ

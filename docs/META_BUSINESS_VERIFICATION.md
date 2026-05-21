@@ -74,7 +74,7 @@ While Phase 1 is pending, you can prep Phase 2.
 3. If you don't see it: click **Add → WhatsApp account** → follow the wizard with your existing phone number
 4. Once visible, click the account → **Settings**
 5. Verify:
-   - Display name: `כסף'לה` or `Kesefle` (this is what users see when the bot messages them — they may need to approve it)
+   - Display name: `כספ'לה` or `Kesefle` (this is what users see when the bot messages them — they may need to approve it)
    - Category: **Business services** or **Finance**
    - Description: `מעקב הוצאות חכם בוואטסאפ` (or English version)
    - Profile photo: upload the 1024×1024 logo
@@ -86,7 +86,7 @@ This is the gotcha. Even if your business is verified, WhatsApp requires display
 1. Still in WhatsApp Account settings → **Phone numbers**
 2. Click the Numero number (`+1 774 544 8053`)
 3. Find **Display name** → click **Edit**
-4. Type `כסף'לה` (or whatever)
+4. Type `כספ'לה` (or whatever)
 5. **Submit for approval** — also 1-3 business days
 
 You CAN submit Phase 1 and Phase 2 in parallel — they review independently.
@@ -134,7 +134,7 @@ Send `סטטוס` from a phone OTHER than your own test devices (e.g. a friend's
 | "Business verification failed" email | Document name ≠ Business info name | Edit Business Info to match document exactly (incl. middle names) |
 | "Cannot upgrade app mode" | Privacy URL not set | Settings → Basic → add `https://kesefle.com/privacy` |
 | Webhook stops receiving messages after going Live | `messages` subscription cleared | Re-subscribe in Configuration |
-| "Display name rejected" | Used a generic word like "Bot" or "WhatsApp" in display name | Use the brand name `Kesefle` or `כסף'לה` |
+| "Display name rejected" | Used a generic word like "Bot" or "WhatsApp" in display name | Use the brand name `Kesefle` or `כספ'לה` |
 | Submission stuck on "Pending" >5 days | Meta queue backlog | Email `developers-support@fb.com` with case number in subject line |
 
 ---

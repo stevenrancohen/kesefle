@@ -1,4 +1,4 @@
-# כסף'לה (Kesef'le)
+# כספ'לה (Kesef'le)
 
 > הכסף שלך, על אוטומט.
 > Hebrew WhatsApp-bot expense tracker with Google Sheets backend.
@@ -165,6 +165,6 @@ The repo auto-deploys to Vercel on push to `main`. Required env vars:
 
 ## Brand
 
-- **Name:** כסף'לה (Kesef'le) — "little money" with affectionate Yiddish-Hebrew suffix
+- **Name:** כספ'לה (Kesef'le) — "little money" with affectionate Yiddish-Hebrew suffix
 - **Persona:** Hebrew-speaking Israeli individuals, freelancers, small businesses; ages 25-55
 - **Differentiation:** no bank/credit-card connection. Cash-friendly. Data lives in the user's own Google Drive (we touch only files we created via `drive.file` scope).

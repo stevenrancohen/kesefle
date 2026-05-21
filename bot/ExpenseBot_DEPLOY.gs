@@ -1,7 +1,7 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║   KESEFLE EXPENSE BOT — SINGLE-FILE DEPLOYMENT                           ║
- * ║   כסף'לה — בוט הוצאות לקובץ הדבקה יחיד                                   ║
+ * ║   כספ'לה — בוט הוצאות לקובץ הדבקה יחיד                                   ║
  * ║                                                                          ║
  * ║   Version: Phase 2 (family/business multi-user enabled)                  ║
  * ║   Updated: 2026-05-18                                                    ║

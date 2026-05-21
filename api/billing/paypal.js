@@ -216,7 +216,7 @@ async function createProduct(token) {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       name: 'Kesefle Premium',
-      description: "מנוי פרימיום לכסף'לה",
+      description: "מנוי פרימיום לכספ'לה",
       type: 'SERVICE',
       category: 'SOFTWARE',
     }),

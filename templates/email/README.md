@@ -78,7 +78,7 @@ async function sendWelcome(user) {
   await resend.emails.send({
     from: 'Kesefle <hello@kesefle.vercel.app>',
     to: user.email,
-    subject: `${user.firstName}, שמחים שהצטרפת לכסף'לה!`,
+    subject: `${user.firstName}, שמחים שהצטרפת לכספ'לה!`,
     html,
     headers: {
       'List-Unsubscribe': `<https://kesefle.com/unsubscribe?token=${user.unsubToken}>, <mailto:unsubscribe@kesefle.vercel.app>`,

@@ -269,7 +269,7 @@ async function handlerImpl(req, res) {
               refreshToken: creator.refreshToken,
               userSub: creator.userSub,
               templateId: GROUP_SHEET_TEMPLATE_ID,
-              name: `כסף'לה — ${groupName} (${code})`,
+              name: `כספ'לה — ${groupName} (${code})`,
             });
             group.sheetId = result.spreadsheetId;
             group.sheetUrl = result.spreadsheetUrl;
@@ -561,7 +561,7 @@ async function handlerImpl(req, res) {
           refreshToken: creator.refreshToken,
           userSub: creator.userSub,
           templateId: GROUP_SHEET_TEMPLATE_ID,
-          name: `כסף'לה — ${group.name} (${group.code})`,
+          name: `כספ'לה — ${group.name} (${group.code})`,
         });
         group.sheetId = r.spreadsheetId;
         group.sheetUrl = r.spreadsheetUrl;

@@ -61,7 +61,7 @@ Last updated: 2026-05-16
 
 ### High ROI
 - **Hero chat-bubble loop**: bubbles currently animate once on load (delays 0.7s/1.4s/2.1s). Add `animation-iteration-count: infinite` with a `pause` keyframe in the middle to create a 10s loop showing message → reply → fade → repeat.
-- **Social-proof bar at the very top** (above the existing nav): "⭐ 4.9 על TrustPilot · 1,200+ משפחות ישראליות משתמשות בכסף'לה · נכון ל-מאי 2026". Sticky, dismissible.
+- **Social-proof bar at the very top** (above the existing nav): "⭐ 4.9 על TrustPilot · 1,200+ משפחות ישראליות משתמשות בכספ'לה · נכון ל-מאי 2026". Sticky, dismissible.
 - **3 testimonials all use the same template** (rounded card, gradient avatar, italics, 5 stars). Vary:
   - Card 1: keep current "professional" treatment.
   - Card 2: WhatsApp-screenshot style — quote inside a green message bubble, simulating user posting the testimonial to the bot itself.
@@ -70,7 +70,7 @@ Last updated: 2026-05-16
 
 ### Medium ROI
 - **Interactive demo**: replace the static chat bubbles with a real input field where the user can type "245 סופר" and see the bot's parsed response — pure JS, no API call.
-- **Comparison table** ("כסף'לה vs YNAB vs Mint vs Excel"): row per feature, checkmarks. Powerful for Hebrew-speakers who tried English tools.
+- **Comparison table** ("כספ'לה vs YNAB vs Mint vs Excel"): row per feature, checkmarks. Powerful for Hebrew-speakers who tried English tools.
 - **FAQ accordion needs `<details>` markup** for SEO + a11y instead of JS-driven open/close.
 - **Sticky bottom CTA on mobile** after the user scrolls past the hero.
 

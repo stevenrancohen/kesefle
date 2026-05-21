@@ -10,7 +10,7 @@
 
 ## 1. What Kesefle Is
 
-Kesefle (כסף'לה — Hebrew diminutive for "money") is a Hebrew-first, WhatsApp-native personal expense tracker. The product is built around a single insight: in Israel, every adult uses WhatsApp daily. Asking them to install another app, learn another UI, or open another tab is friction they will not absorb. So Kesefle has no app.
+Kesefle (כספ'לה — Hebrew diminutive for "money") is a Hebrew-first, WhatsApp-native personal expense tracker. The product is built around a single insight: in Israel, every adult uses WhatsApp daily. Asking them to install another app, learn another UI, or open another tab is friction they will not absorb. So Kesefle has no app.
 
 **The user experience:**
 1. User signs up on the website with Google OAuth.

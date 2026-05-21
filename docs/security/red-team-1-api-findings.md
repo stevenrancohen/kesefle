@@ -433,12 +433,12 @@ const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
 
 **Severity:** LOW
 **Location:** `api/sheet/provision.js:68`
-**Exploit:** `name: \`כסף'לה — ${userEmail || userSub}\`` lets an attacker (combined with C4) put control characters, RTL override marks (`‮`), or zero-width joiners in their Drive file name. Cosmetic / phishing aid more than security, but RTL override could let a malicious file name display as something benign.
+**Exploit:** `name: \`כספ'לה — ${userEmail || userSub}\`` lets an attacker (combined with C4) put control characters, RTL override marks (`‮`), or zero-width joiners in their Drive file name. Cosmetic / phishing aid more than security, but RTL override could let a malicious file name display as something benign.
 
 **Fix:**
 ```javascript
 const safeName = (userEmail || userSub).replace(/[ -‎‏‪-‮]/g, '').slice(0, 100);
-name: `כסף'לה — ${safeName}`,
+name: `כספ'לה — ${safeName}`,
 ```
 
 ---

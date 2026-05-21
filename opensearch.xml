@@ -2,7 +2,7 @@
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"
                        xmlns:moz="http://www.mozilla.org/2006/browser/search/">
   <ShortName>Kesefle Help</ShortName>
-  <Description>חיפוש במרכז העזרה של כסף'לה — Search the Kesefle help center.</Description>
+  <Description>חיפוש במרכז העזרה של כספ'לה — Search the Kesefle help center.</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Language>he-IL</Language>
   <Url type="text/html" method="get" template="https://kesefle.com/help?q={searchTerms}"/>

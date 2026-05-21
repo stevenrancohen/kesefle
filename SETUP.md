@@ -7,7 +7,7 @@ To make the social login buttons work in production, you need to create three OA
 1. Go to **https://console.cloud.google.com** → create a new project (or reuse one).
 2. Sidebar → **APIs & Services** → **OAuth consent screen**:
    - User type: **External**.
-   - App name: `כסף'לה` (Kesef'le).
+   - App name: `כספ'לה` (Kesef'le).
    - Support email + developer email: your email.
    - Authorized domains: `kesefle.vercel.app` (and your real domain when you have one).
    - Scopes: `email`, `profile`, `openid`.

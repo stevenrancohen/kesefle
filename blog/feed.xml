@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>כסף'לה — בלוג</title>
+    <title>כספ'לה — בלוג</title>
     <link>https://kesefle.com/blog</link>
     <description>מדריכים פרקטיים בעברית על ניהול כסף, מעקב הוצאות, תקציב משפחתי, ותזרים מזומנים לעצמאים ועסקים קטנים בישראל.</description>
     <language>he</language>
-    <copyright>© 2026 כסף'לה. כל הזכויות שמורות.</copyright>
+    <copyright>© 2026 כספ'לה. כל הזכויות שמורות.</copyright>
     <lastBuildDate>Sun, 18 May 2026 12:00:00 +0300</lastBuildDate>
     <pubDate>Sun, 18 May 2026 12:00:00 +0300</pubDate>
     <ttl>1440</ttl>
     <generator>Kesefle</generator>
     <image>
       <url>https://kesefle.com/icon-512.png</url>
-      <title>כסף'לה — בלוג</title>
+      <title>כספ'לה — בלוג</title>
       <link>https://kesefle.com/blog</link>
     </image>
     <atom:link href="https://kesefle.com/blog/feed.xml" rel="self" type="application/rss+xml" />
 
     <item>
-      <title>כסף'לה מול האפליקציות הקיימות — מה ההבדל?</title>
+      <title>כספ'לה מול האפליקציות הקיימות — מה ההבדל?</title>
       <link>https://kesefle.com/blog/whatsapp-budget-tools-comparison</link>
       <guid isPermaLink="true">https://kesefle.com/blog/whatsapp-budget-tools-comparison</guid>
       <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>

@@ -1,4 +1,4 @@
-# DEPLOY — כסף'לה
+# DEPLOY — כספ'לה
 
 ## Quickest path (Vercel — recommended)
 

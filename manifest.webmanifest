@@ -1,6 +1,6 @@
 {
-  "name": "Kesefle — כסף'לה",
-  "short_name": "כסף'לה",
+  "name": "Kesefle — כספ'לה",
+  "short_name": "כספ'לה",
   "description": "מעקב הוצאות והכנסות באמצעות וואטסאפ — שלח הודעה, וההוצאה כבר רשומה ומקוטלגת בגוגל שיטס שלך.",
   "start_url": "/dashboard",
   "scope": "/",
@@ -69,7 +69,7 @@
       "sizes": "1200x630",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "דשבורד כסף'לה"
+      "label": "דשבורד כספ'לה"
     }
   ]
 }
