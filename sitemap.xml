@@ -43,6 +43,12 @@
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://kesefle.com/automations</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://kesefle.com/compare</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>monthly</changefreq>
