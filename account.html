@@ -17,6 +17,23 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
+  // Brand palette — without this the CDN renders all brand-*/accent-*/ink-*
+  // classes colorless (this page was missing it). Matches the rest of the site.
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:  { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent: { 500:'#a855f7', 600:'#9333ea' }
+        }
+      }
+    }
+  };
+</script>
+<script>
   window.KESEFLE_CONFIG = {
     GOOGLE_CLIENT_ID: '191938738571-tlpptgagkbs82tc1omrrk8i6l0c02cm4.apps.googleusercontent.com'
   };
