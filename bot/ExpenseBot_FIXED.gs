@@ -3362,6 +3362,43 @@ var _SURVEY_TRACKING_HUMAN_ = {
   personal: 'אישי בלבד', family: 'משפחתי',
   group: 'שותפים/קבוצה', business: 'עסק קטן/עוסק פטור',
 };
+// One-line nudges fed to the LLM categorizer based on how the customer said
+// they track money (from the onboarding questionnaire). English on purpose —
+// the model's system prompt is English. Used ONLY to break ties on ambiguous
+// expenses; clear vendor matches never reach the LLM.
+var _SURVEY_TRACKING_AI_HINT_ = {
+  personal: 'This person tracks PERSONAL spending. Lean toward everyday personal categories (אוכל, תחבורה, קניות, בידור, בריאות).',
+  family: 'This person tracks a FAMILY/household budget. Expect household items — ילדים, חינוך, אוכל לבית, הוצאות קבועות (ועד בית, חשמל, מים).',
+  group: 'This person tracks SHARED/GROUP expenses split among people. Expect group outings and events — בידור (יציאות, אירועים), אוכל בחוץ.',
+  business: 'This person runs a small BUSINESS / עוסק. When an expense could be personal OR business, prefer the business category עסק (חומרי גלם, ציוד עסקי, שיווק, תוכנות עסק, יועצים) and treat income as עצמאי.',
+};
+
+// Cached read of a customer's trackingType (profile:{phone}) so the LLM hint
+// costs at most one network call per hour per phone. Guarded everywhere: any
+// failure returns '' and the categorizer behaves exactly as before.
+function _profileTrackingTypeCached_(fromPhone) {
+  if (!fromPhone) return '';
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return '';
+  var cacheKey = 'profileTT:' + clean;
+  try {
+    var cache = CacheService.getScriptCache();
+    var hit = cache.get(cacheKey);
+    if (hit !== null) return hit === '_none_' ? '' : hit;
+    var tt = '';
+    try {
+      if (typeof _profileAPI_ === 'function') {
+        var g = _profileAPI_('get', { phone: clean });
+        if (g && g.ok && g.profile && g.profile.trackingType) tt = String(g.profile.trackingType);
+      }
+    } catch (_apiErr) { Logger.log('_profileTrackingTypeCached_ api err: ' + _apiErr.message); }
+    cache.put(cacheKey, tt || '_none_', _SURVEY_TTL_SEC_);
+    return tt;
+  } catch (_cErr) {
+    Logger.log('_profileTrackingTypeCached_ err: ' + _cErr.message);
+    return '';
+  }
+}
 
 // Build + send the closing profile summary, then clear state.
 function _surveyFinish_(fromPhone) {
@@ -5283,16 +5320,29 @@ function _aiCategorize(text, fromPhone) {
   if (fromPhone && !_hasActivePremium_(fromPhone)) {
     return null;
   }
-  var rich = _aiCategorizeRich(text);
+  var rich = _aiCategorizeRich(text, fromPhone);
   if (!rich) return null;
   if (rich.category === 'בלתי מזוהה') return null;
   return { category: rich.category, subcategory: rich.subcategory, confidence: rich.confidence, reason: rich.reason };
 }
 
-function _aiCategorizeRich(text) {
+function _aiCategorizeRich(text, fromPhone) {
   try {
     var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
     if (!apiKey) return null;
+
+    // Behavior learning from the onboarding questionnaire: if we know how this
+    // customer tracks money (trackingType from profile:{phone}), give the model
+    // a gentle nudge. This ONLY breaks ties on ambiguous text — clear vendor
+    // matches never reach the LLM (they're caught by CATEGORY_MAP first). Purely
+    // additive: no profile → empty block → identical behavior to before.
+    var profileHintBlock = '';
+    try {
+      var tt = fromPhone ? _profileTrackingTypeCached_(fromPhone) : '';
+      if (tt && _SURVEY_TRACKING_AI_HINT_ && _SURVEY_TRACKING_AI_HINT_[tt]) {
+        profileHintBlock = '\n\nUSER CONTEXT (use ONLY to break ties on ambiguous expenses, never to override a clear match):\n' + _SURVEY_TRACKING_AI_HINT_[tt] + '\n';
+      }
+    } catch (_ptErr) { Logger.log('profile hint err: ' + _ptErr.message); }
 
     // Smart few-shot: top-12 high-signal corrections, most-similar first.
     // Falls back to the original last-10 reader if the smart picker fails.
@@ -5372,7 +5422,7 @@ function _aiCategorizeRich(text) {
       '"משכורת" → {"category":"הכנסות","subcategory":"משכורת","confidence":0.99,"reason":"משכורת חודשית"}\n' +
       '"החזר מס" → {"category":"הכנסות","subcategory":"החזר מס","confidence":0.99,"reason":"החזר ממס הכנסה"}\n' +
       '"asdfgh" → {"category":"בלתי מזוהה","subcategory":"לא ברור","confidence":0.05,"reason":"טקסט לא מובן"}' +
-      userExamplesBlock;
+      userExamplesBlock + profileHintBlock;
 
     var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only with confidence and reason.';
 
