@@ -143,11 +143,14 @@ async function listQuestionnaires(req, res) {
 }
 
 // Registration health — Steven's hard rule: a customer must NEVER finish
-// registration without a sheet appearing. The bot writes via the canonical
-// sheet:{sub} mapping, so a user is only "healthy" when BOTH the user record's
-// spreadsheetId AND the sheet:{sub} mapping exist. This endpoint scans every
-// user and flags anyone who registered but has no usable sheet, so the owner
-// can re-provision before that customer ever notices.
+// registration without a sheet appearing. The bot can only serve a customer
+// when the WHOLE chain is intact: user:{sub} → canonical sheet:{sub} AND a
+// phone:{E164} mapping (carrying userSub + spreadsheetId that match the
+// canonical sheet — this is exactly what /api/sheet/append resolves on every
+// write). This endpoint scans every user and every phone link, and classifies:
+//   - orphans:          registered but NO canonical sheet      (critical)
+//   - pendingPhoneLink:  has sheet but WhatsApp not linked yet  (expected, nudge)
+//   - brokenPhone:       a phone:* points to a missing/mismatched sheet (critical)
 async function registrationHealth(req, res) {
   const userKeys = await kvScan('user:*');
   if (userKeys === null) return kvOutage(res);
@@ -162,33 +165,75 @@ async function registrationHealth(req, res) {
     userBySub[sub] = u;
   });
   const sheetMaps = subs.length ? await kvMget(subs.map(s => 'sheet:' + s)) : [];
-  const orphans = [];
-  let healthy = 0;
-  subs.forEach((sub, i) => {
-    const u = userBySub[sub];
-    const userSheetId = u.spreadsheetId || null;
-    const canonSheetId = sheetMaps[i]?.spreadsheetId || null;
-    if (userSheetId && canonSheetId) { healthy++; return; }
-    orphans.push({
-      sub,
-      email: u.email || null,
-      phone: u.phone || u.phoneE164 || null,
-      connectedAt: u.connectedAt || null,
-      hasUserSpreadsheetId: !!userSheetId,
-      hasCanonicalSheetMapping: !!canonSheetId,
-      reason: (!userSheetId && !canonSheetId) ? 'no_sheet_at_all'
-        : (!canonSheetId) ? 'user_has_sheet_but_no_bot_mapping'
-        : 'mapping_without_user_record_sheet',
+  const canonBySub = {};
+  subs.forEach((sub, i) => { canonBySub[sub] = sheetMaps[i]?.spreadsheetId || null; });
+
+  // Scan every phone link → which subs have a usable WhatsApp mapping, and which
+  // phone records are broken (point at a sub whose canonical sheet is missing or
+  // disagrees with the phone record's spreadsheetId).
+  const phoneKeys = await kvScan('phone:*');
+  const phoneRecs = phoneKeys.length ? await kvMget(phoneKeys) : [];
+  const phoneLinkedSubs = new Set();
+  const brokenPhone = [];
+  phoneKeys.forEach((k, i) => {
+    const p = phoneRecs[i];
+    if (!p) return;
+    const e164 = k.replace(/^phone:/, '');
+    const linkedSub = p.userSub || null;
+    const phoneSheet = p.spreadsheetId || null;
+    const canon = linkedSub ? canonBySub[linkedSub] : null;
+    if (linkedSub && phoneSheet && canon && phoneSheet === canon) {
+      phoneLinkedSubs.add(linkedSub);
+      return;
+    }
+    // Anything else is a broken link the bot would fail (or misroute) on.
+    brokenPhone.push({
+      phone: e164,
+      linkedSub,
+      phoneSheet,
+      canonicalSheet: canon,
+      reason: !linkedSub ? 'phone_record_missing_userSub'
+        : !phoneSheet ? 'phone_record_missing_sheet'
+        : !canon ? 'no_canonical_sheet_for_sub'
+        : 'phone_sheet_mismatch_canonical',
     });
   });
+
+  const orphans = [];
+  const pendingPhoneLink = [];
+  let healthy = 0;
+  subs.forEach((sub) => {
+    const u = userBySub[sub];
+    const userSheetId = u.spreadsheetId || null;
+    const canonSheetId = canonBySub[sub];
+    const phoneLinked = phoneLinkedSubs.has(sub);
+    if (canonSheetId && phoneLinked) { healthy++; return; }
+    const base = { sub, email: u.email || null, phone: u.phone || u.phoneE164 || null, connectedAt: u.connectedAt || null };
+    if (!canonSheetId) {
+      orphans.push({
+        ...base,
+        hasUserSpreadsheetId: !!userSheetId,
+        hasCanonicalSheetMapping: false,
+        reason: userSheetId ? 'user_has_sheet_but_no_bot_mapping' : 'no_sheet_at_all',
+      });
+    } else {
+      // Has a usable sheet, just hasn't linked WhatsApp yet — expected interim state.
+      pendingPhoneLink.push({ ...base, spreadsheetId: canonSheetId });
+    }
+  });
   orphans.sort((a, b) => String(b.connectedAt || '').localeCompare(String(a.connectedAt || '')));
+  pendingPhoneLink.sort((a, b) => String(b.connectedAt || '').localeCompare(String(a.connectedAt || '')));
   return res.status(200).json({
     ok: true,
     totalUsers: subs.length,
     healthy,
     orphanCount: orphans.length,
     orphans,
-    note: orphans.length === 0
+    pendingPhoneLinkCount: pendingPhoneLink.length,
+    pendingPhoneLink,
+    brokenPhoneCount: brokenPhone.length,
+    brokenPhone,
+    note: (orphans.length === 0 && brokenPhone.length === 0)
       ? 'every registered user has a usable sheet'
       : 'these users registered but have no usable sheet — investigate / re-provision',
   });

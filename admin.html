@@ -1146,6 +1146,10 @@
     no_sheet_at_all: 'אין גיליון כלל',
     user_has_sheet_but_no_bot_mapping: 'יש גיליון אך הבוט לא מקושר אליו',
     mapping_without_user_record_sheet: 'קישור קיים אך חסר ברשומת המשתמש',
+    phone_record_missing_userSub: 'קישור טלפון ללא מזהה משתמש',
+    phone_record_missing_sheet: 'קישור טלפון ללא גיליון',
+    no_canonical_sheet_for_sub: 'אין גיליון רשום למשתמש המקושר',
+    phone_sheet_mismatch_canonical: 'גיליון בקישור הטלפון שונה מהגיליון הרשום',
   };
   var AUTH_MSG = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן) ואז רענן/י.</div>';
 
@@ -1166,30 +1170,54 @@
       if (j._noauth) { box.innerHTML = AUTH_MSG; return; }
       if (j._denied) { box.innerHTML = '<div class="text-sm text-amber-500">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
       if (!j.ok) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
-      var bad = j.orphanCount > 0;
+      var critical = (j.orphanCount || 0) + (j.brokenPhoneCount || 0);
+      var bad = critical > 0;
       if (badge) {
-        badge.textContent = bad ? ('⚠ ' + j.orphanCount + ' ללא גיליון') : '✓ הכל תקין';
+        badge.textContent = bad ? ('⚠ ' + critical + ' לטיפול') : '✓ הכל תקין';
         badge.className = 'rounded-full px-2.5 py-0.5 text-xs font-bold ' + (bad ? 'bg-red-500/15 text-red-500' : 'bg-emerald-500/15 text-emerald-600');
       }
       var html = '<div class="flex flex-wrap gap-4 text-sm">'
         + '<div><span class="text-2xl font-black">' + j.totalUsers + '</span><div class="text-ink-400">סה״כ נרשמו</div></div>'
-        + '<div><span class="text-2xl font-black text-emerald-600">' + j.healthy + '</span><div class="text-ink-400">עם גיליון תקין</div></div>'
-        + '<div><span class="text-2xl font-black ' + (bad ? 'text-red-500' : '') + '">' + j.orphanCount + '</span><div class="text-ink-400">ללא גיליון</div></div>'
+        + '<div><span class="text-2xl font-black text-emerald-600">' + j.healthy + '</span><div class="text-ink-400">מחוברים ופעילים</div></div>'
+        + '<div><span class="text-2xl font-black ' + (j.orphanCount ? 'text-red-500' : '') + '">' + (j.orphanCount || 0) + '</span><div class="text-ink-400">ללא גיליון</div></div>'
+        + '<div><span class="text-2xl font-black ' + (j.brokenPhoneCount ? 'text-red-500' : '') + '">' + (j.brokenPhoneCount || 0) + '</span><div class="text-ink-400">קישור שבור</div></div>'
+        + '<div><span class="text-2xl font-black ' + (j.pendingPhoneLinkCount ? 'text-amber-500' : '') + '">' + (j.pendingPhoneLinkCount || 0) + '</span><div class="text-ink-400">ממתינים לחיבור וואטסאפ</div></div>'
         + '</div>';
-      if (bad) {
-        html += '<div class="mt-4 overflow-x-auto"><table class="w-full text-right text-xs"><thead class="text-ink-400"><tr>'
-          + '<th class="py-1 pl-3">אימייל</th><th class="py-1 pl-3">טלפון</th><th class="py-1 pl-3">נרשם</th><th class="py-1">סיבה</th></tr></thead><tbody>';
-        html += j.orphans.map(function (o) {
+      function tbl(title, rows, cls) {
+        if (!rows || !rows.length) return '';
+        var h = '<div class="mt-4"><div class="mb-1 text-xs font-bold ' + cls + '">' + title + '</div><div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="text-ink-400"><tr>'
+          + '<th class="py-1 pl-3">אימייל</th><th class="py-1 pl-3">טלפון</th><th class="py-1 pl-3">נרשם</th><th class="py-1">סיבה / סטטוס</th></tr></thead><tbody>';
+        h += rows.join('');
+        return h + '</tbody></table></div></div>';
+      }
+      if (j.orphans && j.orphans.length) {
+        html += tbl('קריטי — נרשמו ללא גיליון:', j.orphans.map(function (o) {
           return '<tr class="border-t border-ink-100 dark:border-ink-700">'
             + '<td class="py-1.5 pl-3">' + esc(o.email || '—') + '</td>'
             + '<td class="py-1.5 pl-3 num">' + esc(o.phone || '—') + '</td>'
             + '<td class="py-1.5 pl-3">' + when(o.connectedAt) + '</td>'
             + '<td class="py-1.5 font-semibold text-red-500">' + esc(REASON_HE[o.reason] || o.reason) + '</td></tr>';
-        }).join('');
-        html += '</tbody></table></div>';
-      } else {
-        html += '<div class="mt-3 text-sm text-emerald-600">כל לקוח שנרשם קיבל גיליון. ✅</div>';
+        }), 'text-red-500');
       }
+      if (j.brokenPhone && j.brokenPhone.length) {
+        html += tbl('קריטי — קישור וואטסאפ שבור:', j.brokenPhone.map(function (o) {
+          return '<tr class="border-t border-ink-100 dark:border-ink-700">'
+            + '<td class="py-1.5 pl-3">—</td>'
+            + '<td class="py-1.5 pl-3 num">' + esc(o.phone || '—') + '</td>'
+            + '<td class="py-1.5 pl-3">—</td>'
+            + '<td class="py-1.5 font-semibold text-red-500">' + esc(REASON_HE[o.reason] || o.reason) + '</td></tr>';
+        }), 'text-red-500');
+      }
+      if (j.pendingPhoneLink && j.pendingPhoneLink.length) {
+        html += tbl('ממתינים לחיבור וואטסאפ (יש גיליון, טרם שלחו הודעה):', j.pendingPhoneLink.map(function (o) {
+          return '<tr class="border-t border-ink-100 dark:border-ink-700">'
+            + '<td class="py-1.5 pl-3">' + esc(o.email || '—') + '</td>'
+            + '<td class="py-1.5 pl-3 num">' + esc(o.phone || '—') + '</td>'
+            + '<td class="py-1.5 pl-3">' + when(o.connectedAt) + '</td>'
+            + '<td class="py-1.5 font-semibold text-amber-500">ממתין לחיבור</td></tr>';
+        }), 'text-amber-500');
+      }
+      if (!bad) html += '<div class="mt-3 text-sm text-emerald-600">כל לקוח שנרשם קיבל גיליון. ✅</div>';
       box.innerHTML = html;
     } catch (e) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(e.message) + '</div>'; }
   }
