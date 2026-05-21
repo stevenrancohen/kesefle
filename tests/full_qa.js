@@ -19,6 +19,9 @@ const BOT = fs.readFileSync(path.join(ROOT, 'bot/ExpenseBot_DEPLOY.gs'), 'utf8')
 const SW = fs.readFileSync(path.join(ROOT, 'lib/sheet-writer.js'), 'utf8');
 const APPEND = fs.readFileSync(path.join(ROOT, 'api/sheet/append.js'), 'utf8');
 const RECURRING = fs.readFileSync(path.join(ROOT, 'api/recurring.js'), 'utf8');
+const ACCOUNT = fs.readFileSync(path.join(ROOT, 'api/account.js'), 'utf8');
+const LINK = fs.readFileSync(path.join(ROOT, 'api/whatsapp/link.js'), 'utf8');
+const ADMIN_STATS = fs.readFileSync(path.join(ROOT, 'api/admin/stats.js'), 'utf8');
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -93,6 +96,12 @@ ok('dangerous unset-owner fallback gone', !/if \(!ownerPhone\) return \{ isOwner
 // the bare phone record, every tenant write fails silently.
 ok('append.js resolves token from user:{userSub}', /user:\$\{phoneRec\.userSub\}/.test(APPEND) && /refreshTokenEnvelope/.test(APPEND));
 ok('recurring.js resolves token from user:{userSub}', /resolveTenantWriteRecord/.test(RECURRING) && /user:'\s*\+\s*phoneRec\.userSub/.test(RECURRING) && /refreshTokenEnvelope/.test(RECURRING));
+
+// GDPR + secret-hygiene guards (2026-05-21 audit) — keep these from regressing.
+ok('account.js delete purges token:{sub}', /'token:'\s*\+\s*userSub/.test(ACCOUNT));
+ok('account.js delete revokes encrypted-envelope grant', /refreshTokenEnvelope[\s\S]{0,80}decryptRefreshToken/.test(ACCOUNT));
+ok('link.js does NOT log the link code', !/code_issued'[^)]*\bcode\b/.test(LINK));
+ok('admin/stats.js uses constant-time token compare (no !==)', /ctEq\(/.test(ADMIN_STATS) && !/token !== ADMIN_TOKEN/.test(ADMIN_STATS));
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
