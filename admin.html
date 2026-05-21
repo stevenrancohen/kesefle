@@ -200,6 +200,34 @@
     </div>
   </section>
 
+  <!-- ====== SECTION 1.6: REGISTRATION HEALTH + QUESTIONNAIRES (live) ====== -->
+  <section class="mb-10" id="kfl-onboarding-section">
+    <div class="mb-4 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight">מצב הרשמות ושאלונים</h2>
+        <p class="text-sm text-ink-500 dark:text-ink-300">בדיקה חיה: לכל לקוח שנרשם באמת יש גיליון, ומה הוא ענה בשאלון ההתאמה.</p>
+      </div>
+      <button onclick="window.kflLoadOnboarding && window.kflLoadOnboarding()" class="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
+        רענן
+      </button>
+    </div>
+
+    <!-- Registration health -->
+    <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+      <div class="mb-3 flex items-center gap-2">
+        <span class="text-lg font-black">בריאות הרשמות</span>
+        <span id="kfl-reg-badge" class="rounded-full px-2.5 py-0.5 text-xs font-bold"></span>
+      </div>
+      <div id="kfl-reg-health" class="text-sm text-ink-400">טוען…</div>
+    </div>
+
+    <!-- Questionnaires -->
+    <div class="mt-4 rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+      <div class="mb-3 text-lg font-black">שאלוני לקוחות</div>
+      <div id="kfl-questionnaires" class="text-sm text-ink-400">טוען…</div>
+    </div>
+  </section>
+
   <!-- ====== SECTION 2: REAL-TIME ANALYTICS ====== -->
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between">
@@ -1103,6 +1131,103 @@
   window.kflLoadPending = load;
   if (document.readyState !== 'loading') load();
   else document.addEventListener('DOMContentLoaded', load);
+})();
+</script>
+
+<!-- Registration health + questionnaires (live, requireAdmin via Google ID token). -->
+<script>
+(function () {
+  function token() { try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; } catch (e) { return ''; } }
+  function el(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function when(s) { try { return new Date(s).toLocaleString('he-IL'); } catch (e) { return esc(s || '—'); } }
+  var TRACK_HE = { personal: 'אישי', family: 'משפחתי', group: 'קבוצה', business: 'עסקי', unknown: 'לא ידוע' };
+  var REASON_HE = {
+    no_sheet_at_all: 'אין גיליון כלל',
+    user_has_sheet_but_no_bot_mapping: 'יש גיליון אך הבוט לא מקושר אליו',
+    mapping_without_user_record_sheet: 'קישור קיים אך חסר ברשומת המשתמש',
+  };
+  var AUTH_MSG = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן) ואז רענן/י.</div>';
+
+  async function getJSON(action) {
+    var t = token();
+    if (!t) return { _noauth: true };
+    var res = await fetch('/api/admin?action=' + action, { headers: { 'Authorization': 'Bearer ' + t } });
+    if (res.status === 401 || res.status === 403) return { _denied: true };
+    return res.json();
+  }
+
+  async function loadHealth() {
+    var box = el('kfl-reg-health'); var badge = el('kfl-reg-badge');
+    if (!box) return;
+    box.innerHTML = '<div class="text-ink-400">טוען…</div>'; if (badge) badge.textContent = '';
+    try {
+      var j = await getJSON('registration-health');
+      if (j._noauth) { box.innerHTML = AUTH_MSG; return; }
+      if (j._denied) { box.innerHTML = '<div class="text-sm text-amber-500">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
+      if (!j.ok) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
+      var bad = j.orphanCount > 0;
+      if (badge) {
+        badge.textContent = bad ? ('⚠ ' + j.orphanCount + ' ללא גיליון') : '✓ הכל תקין';
+        badge.className = 'rounded-full px-2.5 py-0.5 text-xs font-bold ' + (bad ? 'bg-red-500/15 text-red-500' : 'bg-emerald-500/15 text-emerald-600');
+      }
+      var html = '<div class="flex flex-wrap gap-4 text-sm">'
+        + '<div><span class="text-2xl font-black">' + j.totalUsers + '</span><div class="text-ink-400">סה״כ נרשמו</div></div>'
+        + '<div><span class="text-2xl font-black text-emerald-600">' + j.healthy + '</span><div class="text-ink-400">עם גיליון תקין</div></div>'
+        + '<div><span class="text-2xl font-black ' + (bad ? 'text-red-500' : '') + '">' + j.orphanCount + '</span><div class="text-ink-400">ללא גיליון</div></div>'
+        + '</div>';
+      if (bad) {
+        html += '<div class="mt-4 overflow-x-auto"><table class="w-full text-right text-xs"><thead class="text-ink-400"><tr>'
+          + '<th class="py-1 pl-3">אימייל</th><th class="py-1 pl-3">טלפון</th><th class="py-1 pl-3">נרשם</th><th class="py-1">סיבה</th></tr></thead><tbody>';
+        html += j.orphans.map(function (o) {
+          return '<tr class="border-t border-ink-100 dark:border-ink-700">'
+            + '<td class="py-1.5 pl-3">' + esc(o.email || '—') + '</td>'
+            + '<td class="py-1.5 pl-3 num">' + esc(o.phone || '—') + '</td>'
+            + '<td class="py-1.5 pl-3">' + when(o.connectedAt) + '</td>'
+            + '<td class="py-1.5 font-semibold text-red-500">' + esc(REASON_HE[o.reason] || o.reason) + '</td></tr>';
+        }).join('');
+        html += '</tbody></table></div>';
+      } else {
+        html += '<div class="mt-3 text-sm text-emerald-600">כל לקוח שנרשם קיבל גיליון. ✅</div>';
+      }
+      box.innerHTML = html;
+    } catch (e) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(e.message) + '</div>'; }
+  }
+
+  async function loadQuestionnaires() {
+    var box = el('kfl-questionnaires');
+    if (!box) return;
+    box.innerHTML = '<div class="text-ink-400">טוען…</div>';
+    try {
+      var j = await getJSON('questionnaires');
+      if (j._noauth) { box.innerHTML = AUTH_MSG; return; }
+      if (j._denied) { box.innerHTML = '<div class="text-sm text-amber-500">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
+      if (!j.ok) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
+      if (!j.total) { box.innerHTML = '<div class="text-sm text-ink-400">עדיין אין שאלונים. ברגע שלקוחות יענו, הם יופיעו כאן.</div>'; return; }
+      var bt = j.summary && j.summary.byTrackingType || {};
+      var chips = Object.keys(bt).map(function (k) {
+        return '<span class="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-bold text-brand-600 dark:text-brand-300">' + esc(TRACK_HE[k] || k) + ': ' + bt[k] + '</span>';
+      }).join(' ');
+      var html = '<div class="mb-3 flex flex-wrap items-center gap-2"><span class="text-2xl font-black">' + j.total + '</span><span class="text-ink-400">שאלונים</span>' + chips + '</div>';
+      html += '<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="text-ink-400"><tr>'
+        + '<th class="py-1 pl-3">טלפון</th><th class="py-1 pl-3">סוג מעקב</th><th class="py-1 pl-3">הוצאות קבועות</th><th class="py-1 pl-3">רישום אוטומטי</th><th class="py-1">עודכן</th></tr></thead><tbody>';
+      html += j.questionnaires.map(function (q) {
+        return '<tr class="border-t border-ink-100 dark:border-ink-700">'
+          + '<td class="py-1.5 pl-3 num">' + esc(q.phone || '—') + '</td>'
+          + '<td class="py-1.5 pl-3">' + esc(TRACK_HE[q.trackingType] || q.trackingType || '—') + '</td>'
+          + '<td class="py-1.5 pl-3">' + (q.hasRecurring ? 'כן' : 'לא') + '</td>'
+          + '<td class="py-1.5 pl-3">' + esc(q.autoLogPref || '—') + '</td>'
+          + '<td class="py-1.5">' + when(q.updatedAt) + '</td></tr>';
+      }).join('');
+      html += '</tbody></table></div>';
+      box.innerHTML = html;
+    } catch (e) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(e.message) + '</div>'; }
+  }
+
+  function loadOnboarding() { loadHealth(); loadQuestionnaires(); }
+  window.kflLoadOnboarding = loadOnboarding;
+  if (document.readyState !== 'loading') loadOnboarding();
+  else document.addEventListener('DOMContentLoaded', loadOnboarding);
 })();
 </script>
 </body>
