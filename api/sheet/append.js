@@ -25,7 +25,7 @@
 //   { ok: false, error: "no_user_for_phone" | "refresh_token_decrypt_failed" | ... }
 
 import { withRequestId, log } from '../../lib/log.js';
-import { withRateLimit } from '../../lib/ratelimit.js';
+import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { appendRowToUserSheet, buildExpenseRow } from '../../lib/sheet-writer.js';
 
 async function kvGet(key) {
@@ -87,6 +87,15 @@ async function handlerImpl(req, res) {
 
   const phone = normalizeE164(body?.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
+
+  // Defense-in-depth: per-phone write cap (the per-IP wrapper is weak here since
+  // the bot calls from rotating egress IPs). 40 writes/min per phone is well
+  // above any human pace but stops a runaway loop or abusive sender.
+  const phoneLim = await rateLimitId(phone, { key: 'append_phone', limit: 40, windowSec: 60 });
+  if (!phoneLim.ok) {
+    log.warn('append.phone_rate_limited', { reqId: req.reqId, phone, count: phoneLim.count });
+    return res.status(429).json({ ok: false, error: 'rate_limit_exceeded', retry_after: phoneLim.retryAfter });
+  }
 
   const phoneRec = await kvGet(`phone:${phone}`);
   if (!phoneRec) {
