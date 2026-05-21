@@ -40,10 +40,24 @@ async function kvGetRaw(key) {
   return j.result;
 }
 
+// Constant-time string compare to avoid a timing oracle on the admin token.
+function ctEq(a, b) {
+  a = String(a == null ? '' : a); b = String(b == null ? '' : b);
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 module.exports = async (req, res) => {
+  // Fail closed if the admin token isn't configured (no universal fallback).
+  if (!ADMIN_TOKEN) {
+    res.status(503).json({ error: 'admin_token_not_configured' });
+    return;
+  }
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token || token !== ADMIN_TOKEN) {
+  if (!token || !ctEq(token, ADMIN_TOKEN)) {
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
