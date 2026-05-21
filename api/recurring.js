@@ -373,7 +373,14 @@ async function cronRun(body, res, reqId) {
           logged++;
           const when = ds === today ? '' : ` (${ds.slice(8)}/${ds.slice(5, 7)})`;
           await sendWhatsApp(phone, `📅 הוצאה קבועה: ₪${Number(tpl.amount).toLocaleString('he-IL')} ${tpl.description} נרשמה אוטומטית${when}.`).catch(() => {});
-        } else if (r.error) { errors++; }
+        } else if (r.error) {
+          errors++;
+          // The canonical-sheet leak guard firing in a cross-user cron is a
+          // corruption signal — log it loudly so it never fails silently.
+          if (r.error === 'sheet_ownership_mismatch') {
+            log.error('recurring.cron.sheet_ownership_mismatch', { reqId, phone, templateId: tpl.id });
+          }
+        }
       }
     }
   }
