@@ -307,7 +307,8 @@ async function handlerImpl(req, res) {
   const ok = await kvSet(`linkCode:${code}`, codeRec, 600); // 10 min TTL
   if (!ok) return res.status(500).json({ ok: false, error: 'kv_unavailable' });
 
-  log.info('link.code_issued', { reqId: req.reqId, userSub, code });
+  // Do NOT log the code itself — it's the secret that binds a phone to an account.
+  log.info('link.code_issued', { reqId: req.reqId, userSub });
   return res.status(200).json({
     ok: true,
     code,

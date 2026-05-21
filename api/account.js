@@ -87,14 +87,24 @@ async function deleteAccount(req, res) {
     return res.status(404).json({ ok: false, error: 'user not found' });
   }
 
-  if (userRec.refreshToken) {
-    await revokeGoogleToken(userRec.refreshToken);
+  // Revoke the Google grant on delete. Handle BOTH the encrypted envelope
+  // (current users) AND the legacy plaintext token — otherwise envelope users'
+  // Google access survives account deletion (GDPR). Mirrors deleteByPhone.
+  {
+    let _refresh = null;
+    try {
+      _refresh = userRec.refreshTokenEnvelope
+        ? decryptRefreshToken(userRec.refreshTokenEnvelope, userSub)
+        : userRec.refreshToken;
+    } catch (_e) { _refresh = userRec.refreshToken || null; }
+    if (_refresh) await revokeGoogleToken(_refresh);
   }
 
   const deleted = [];
   const keysToDelete = [
     'user:' + userSub,
     'sheet:' + userSub,
+    'token:' + userSub, // legacy PLAINTEXT token store — must be purged too (GDPR)
     // Referral keys (clean these up too)
     'referral:code:' + userSub,
   ];
@@ -308,7 +318,7 @@ async function deleteByPhone(req, res) {
     if (refresh) await revokeGoogleToken(refresh);
   }
   const deleted = [];
-  for (const k of ['user:' + userSub, 'sheet:' + userSub, 'phone:' + phone, 'userPhone:' + userSub, 'memberGroup:' + phone, 'reminders:' + phone]) {
+  for (const k of ['user:' + userSub, 'sheet:' + userSub, 'token:' + userSub, 'phone:' + phone, 'userPhone:' + userSub, 'profile:' + phone, 'recurring:' + phone, 'memberGroup:' + phone, 'reminders:' + phone]) {
     if (await kvDel(k)) deleted.push(k);
   }
   log.info('account.delete_by_phone', { reqId: req.reqId, phone: phone.replace(/\d(?=\d{4})/g, '*') });
