@@ -3865,7 +3865,7 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     try { errCode = (JSON.parse(body) || {}).error || ''; } catch (_pe) {}
     // Structural failures: retrying never helps, so give real guidance instead
     // of "try again in a minute".
-    if (errCode === 'no_sheet_provisioned' || errCode === 'incomplete_user_record' || errCode === 'no_user_for_phone') {
+    if (errCode === 'no_sheet_provisioned' || errCode === 'incomplete_user_record' || errCode === 'no_user_for_phone' || errCode === 'reauth_required') {
       return { reply: '😬 נראה שעוד לא סיימת את ההרשמה — אין עדיין גיליון מחובר למספר הזה.\n👉 כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/account כדי לסיים את החיבור, ואז שלח/י שוב את ההוצאה.' };
     }
     if (errCode === 'sheet_ownership_mismatch') {

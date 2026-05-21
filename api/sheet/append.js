@@ -88,47 +88,60 @@ async function handlerImpl(req, res) {
   const phone = normalizeE164(body?.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
 
-  const userRecord = await kvGet(`phone:${phone}`);
-  if (!userRecord) {
+  const phoneRec = await kvGet(`phone:${phone}`);
+  if (!phoneRec) {
     return res.status(404).json({ ok: false, error: 'no_user_for_phone' });
   }
-
-  // ── HARD ASSERTION — tenant isolation ──────────────────────────────
-  // The record resolved from phone:{phone} must carry a userSub AND a
-  // spreadsheetId, and that sheet must match the canonical sheet registered
-  // for the user (sheet:{userSub}). If a phone record were ever corrupted to
-  // point at someone else's sheet, abort BEFORE writing rather than leak.
-  // (The OAuth token is also minted from this same userSub, so Google
-  //  itself rejects writes to a sheet the user doesn't own — this is the
-  //  belt to that suspenders.)
-  if (!userRecord.userSub) {
+  if (!phoneRec.userSub) {
     log.error('append.incomplete_user_record', { reqId: req.reqId, phone });
     return res.status(409).json({ ok: false, error: 'incomplete_user_record' });
   }
-  const sheetRec = await kvGet(`sheet:${userRecord.userSub}`);
-  // SELF-HEAL: a phone linked before its sheet finished provisioning ends up
-  // with spreadsheetId:null. The bot still sees "linked" and tries to write,
-  // append used to reject 409 → the customer got "couldn't save, try again"
-  // forever. Recover the id from the CANONICAL sheet:{userSub} (the same source
-  // the ownership check trusts — so this cannot leak) and backfill the record.
-  if (!userRecord.spreadsheetId) {
-    if (sheetRec?.spreadsheetId) {
-      userRecord.spreadsheetId = sheetRec.spreadsheetId;
-      await kvSet(`phone:${phone}`, userRecord); // best-effort; write proceeds regardless
-      log.info('append.phone_record_healed', { reqId: req.reqId, phone, userSub: userRecord.userSub, spreadsheetId: userRecord.spreadsheetId });
-    } else {
-      // No canonical sheet either → the customer truly has no sheet yet.
-      log.error('append.no_sheet_provisioned', { reqId: req.reqId, phone, userSub: userRecord.userSub });
-      return res.status(409).json({ ok: false, error: 'no_sheet_provisioned' });
-    }
-  }
-  if (sheetRec?.spreadsheetId && sheetRec.spreadsheetId !== userRecord.spreadsheetId) {
+
+  // ── Resolve write target + credentials (same pattern as /api/group) ──
+  // The phone:{E164} record is just a pointer (userSub + maybe a cached sheet
+  // id) — the ENCRYPTED refresh token lives only in user:{userSub}. So resolve
+  // BOTH: the canonical sheet from sheet:{userSub}, the token from user:{userSub}.
+  // (append.js previously passed the tokenless phone record straight to the
+  // writer, so the OAuth exchange got no refresh token and every tenant write
+  // failed — the "couldn't connect" the customer saw.)
+  const sheetRec = await kvGet(`sheet:${phoneRec.userSub}`);
+  const userRec = (await kvGet(`user:${phoneRec.userSub}`)) || {};
+  const canonicalSheetId = sheetRec?.spreadsheetId || null;
+  const phoneSheetId = phoneRec.spreadsheetId || null;
+
+  // Leak guard (unchanged intent): if the phone record cached a sheet that
+  // disagrees with the canonical one, abort BEFORE writing rather than leak.
+  if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
     log.error('append.sheet_ownership_mismatch', {
-      reqId: req.reqId, phone, userSub: userRecord.userSub,
-      phoneRecordSheet: userRecord.spreadsheetId, canonicalSheet: sheetRec.spreadsheetId,
+      reqId: req.reqId, phone, userSub: phoneRec.userSub,
+      phoneRecordSheet: phoneSheetId, canonicalSheet: canonicalSheetId,
     });
     return res.status(409).json({ ok: false, error: 'sheet_ownership_mismatch' });
   }
+  const spreadsheetId = canonicalSheetId || phoneSheetId || userRec.spreadsheetId || null;
+  if (!spreadsheetId) {
+    log.error('append.no_sheet_provisioned', { reqId: req.reqId, phone, userSub: phoneRec.userSub });
+    return res.status(409).json({ ok: false, error: 'no_sheet_provisioned' });
+  }
+  if (!userRec.refreshTokenEnvelope && !userRec.refreshToken) {
+    log.error('append.reauth_required', { reqId: req.reqId, phone, userSub: phoneRec.userSub });
+    return res.status(409).json({ ok: false, error: 'reauth_required' });
+  }
+
+  // Self-heal: backfill the phone record's cached sheet id so the bot's
+  // "linked" check + future writes are clean. Best-effort, never blocks.
+  if (!phoneSheetId && canonicalSheetId) {
+    try { await kvSet(`phone:${phone}`, { ...phoneRec, spreadsheetId: canonicalSheetId }); } catch (_h) {}
+    log.info('append.phone_record_healed', { reqId: req.reqId, phone, userSub: phoneRec.userSub, spreadsheetId: canonicalSheetId });
+  }
+
+  // Record handed to the writer: sheet = canonical, token = user:{userSub}.
+  const userRecord = {
+    userSub: phoneRec.userSub,
+    spreadsheetId,
+    refreshTokenEnvelope: userRec.refreshTokenEnvelope || null,
+    refreshToken: userRec.refreshToken || null,
+  };
 
   const amount = Number(body?.amount);
   if (!isFinite(amount) || amount <= 0) {
