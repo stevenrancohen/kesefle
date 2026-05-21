@@ -3510,6 +3510,43 @@ function _geminiGenerate_(systemPrompt, userText) {
   }
 }
 
+// Compact, REAL spending context for a tenant so the concierge can answer
+// personally ("הוצאת החודש כ-₪X, בעיקר על Y") instead of generically. Pulls
+// from /api/sheet/stats (bot-secret, read-only), cached 10 min per phone.
+// Owner is skipped (uses the full summary command); any failure returns ''.
+function _spendingContextLine_(fromPhone) {
+  try {
+    if (!fromPhone) return '';
+    if (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(fromPhone)) return '';
+    var clean = String(fromPhone).replace(/[^0-9]/g, '');
+    if (!clean) return '';
+    var cacheKey = 'spendctx:' + clean;
+    var cache = CacheService.getScriptCache();
+    var hit = cache.get(cacheKey);
+    if (hit !== null) return hit === '_none_' ? '' : hit;
+    var secret = '';
+    try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!secret) return '';
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/stats', {
+      method: 'post', contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify({ phone: clean, botSecret: secret }),
+      muteHttpExceptions: true
+    });
+    if (resp.getResponseCode() !== 200) { cache.put(cacheKey, '_none_', 600); return ''; }
+    var j = JSON.parse(resp.getContentText());
+    if (!j || !j.ok || !j.thisMonth) { cache.put(cacheKey, '_none_', 600); return ''; }
+    var tm = j.thisMonth, lm = j.lastMonth || {};
+    var line = 'נתוני אמת של המשתמש לחודש הנוכחי (השתמשי בהם כדי לענות אישית, אל תמציאי מספרים): ' +
+      'סך הוצאות כ-₪' + (tm.total || 0) + ' ב-' + (tm.count || 0) + ' תנועות';
+    if (tm.topCategory) line += ', קטגוריה מובילה: ' + tm.topCategory + ' (₪' + (tm.topCategoryAmount || 0) + ')';
+    if (typeof lm.total === 'number') line += '. חודש קודם: ₪' + lm.total;
+    line += '.';
+    cache.put(cacheKey, line, 600);
+    return line;
+  } catch (e) { Logger.log('_spendingContextLine_ err: ' + (e && e.message)); return ''; }
+}
+
 // Understand a message that is NOT a logged expense and decide how to respond.
 // Returns { action: 'summary'|'help'|'examples'|'orders'|'chat', reply } or
 // null when Gemini is unavailable (caller then uses its own fallback).
@@ -3517,10 +3554,13 @@ function _botConcierge_(fromPhone, text) {
   var tt = '';
   try { tt = _profileTrackingTypeCached_(fromPhone) || ''; } catch (_e) {}
   var who = (typeof _SURVEY_TRACKING_HUMAN_ !== 'undefined' && _SURVEY_TRACKING_HUMAN_[tt]) || '';
+  var spend = '';
+  try { spend = _spendingContextLine_(fromPhone) || ''; } catch (_spe) {}
   var sys =
     'את כספלה — עוזרת פיננסית חכמה וחמה בעברית בתוך וואטסאפ. ' +
     'המשתמש כתב הודעה שאינה רישום הוצאה. הביני מה הוא רוצה ותגיבי בעברית, קצר וחם (מתאים לוואטסאפ), בלי להיות גנרית. ' +
     (who ? ('המשתמש סימן שהוא עוקב אחרי כספים מסוג: ' + who + ' — התאימי את הטון.\n') : '') +
+    (spend ? (spend + ' אם המשתמש שואל כמה הוציא/על מה — עני מהנתונים האלה (action=chat), אל תמציאי.\n') : '') +
     'מה הבוט יודע לעשות: לרשום הוצאות (כמו "150 סופר"), לתת סיכום חודשי, עזרה, דוגמאות, וסיכום הזמנות לעסקים. ' +
     'החזירי אך ורק JSON תקין, בלי טקסט נוסף: ' +
     '{"action":"summary|help|examples|orders|chat","reply":"<טקסט בעברית רק כש-action הוא chat, אחרת מחרוזת ריקה>"}. ' +
