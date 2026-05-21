@@ -170,9 +170,40 @@ function nextDue(tpl, fromStr) {
 export { matchesFreq, nextDue, addDaysStr, daysInMonth, diffDays };
 
 // ── Write one template occurrence to the user's sheet + return a log line ───────
-async function logOccurrence(phone, userRecord, tpl, dateStr) {
+// Resolve a tenant write record from a phone. The phone:{E164} record is only
+// a pointer — the encrypted refresh token lives in user:{userSub}, and the sheet
+// in canonical sheet:{userSub}. Same pattern as /api/sheet/append + /api/group.
+async function resolveTenantWriteRecord(phone, phoneRec) {
+  phoneRec = phoneRec || (await kvGet('phone:' + phone));
+  if (!phoneRec || !phoneRec.userSub) return { ok: false, error: 'no_user_for_phone' };
+  const sheetRec = await kvGet('sheet:' + phoneRec.userSub);
+  const userRec = (await kvGet('user:' + phoneRec.userSub)) || {};
+  const canonicalSheetId = sheetRec?.spreadsheetId || null;
+  const phoneSheetId = phoneRec.spreadsheetId || null;
+  if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
+    return { ok: false, error: 'sheet_ownership_mismatch' };
+  }
+  const spreadsheetId = canonicalSheetId || phoneSheetId || userRec.spreadsheetId || null;
+  if (!spreadsheetId) return { ok: false, error: 'no_sheet_provisioned' };
+  if (!userRec.refreshTokenEnvelope && !userRec.refreshToken) return { ok: false, error: 'reauth_required' };
+  return {
+    ok: true,
+    userRecord: {
+      userSub: phoneRec.userSub,
+      spreadsheetId,
+      refreshTokenEnvelope: userRec.refreshTokenEnvelope || null,
+      refreshToken: userRec.refreshToken || null,
+    },
+  };
+}
+
+async function logOccurrence(phone, phoneRec, tpl, dateStr) {
   const idemKey = `recurring_logged:${phone}:${tpl.id}:${dateStr}`;
   if (await kvExists(idemKey)) return { skipped: true };
+  // Resolve the real write record (token from user:{userSub}); the phone record
+  // alone has no refresh token, so writing with it would always fail.
+  const resolved = await resolveTenantWriteRecord(phone, phoneRec);
+  if (!resolved.ok) return { error: resolved.error };
   const row = buildExpenseRow({
     amount: Number(tpl.amount),
     currency: 'ILS',
@@ -183,7 +214,7 @@ async function logOccurrence(phone, userRecord, tpl, dateStr) {
     messageId: `recurring:${tpl.id}:${dateStr}`,
     date: dateStr, // sheet-writer may honour an explicit date; harmless if ignored
   });
-  const result = await appendRowToUserSheet({ userRecord, row });
+  const result = await appendRowToUserSheet({ userRecord: resolved.userRecord, row });
   if (!result.ok) return { error: result.error || 'write_failed' };
   await kvSetTTL(idemKey, '1', LOGGED_TTL_SEC);
   return { ok: true, dateStr, amount: Number(tpl.amount), description: tpl.description };
