@@ -4768,7 +4768,12 @@ function parseAmountAndDescription(text) {
     if (!isNaN(n) && n > 0) nums.push(n);
   }
   if (nums.length === 0) return null;
-  var note = t.replace(/[\d.,+]/g, ' ').replace(/\s+/g, ' ').trim();
+  // Strip digits/punctuation, the ₪ symbol, and standalone currency words so
+  // they don't pollute the saved description or the category match
+  // (e.g. "50 שח קפה" → "קפה", "₪50 קפה" → "קפה").
+  var note = t.replace(/[\d.,+₪$€]/g, ' ')
+              .replace(/(^|\s)(שח|ש"ח|ש״ח|שקל|שקלים|nis|ils|usd|eur)(?=\s|$)/gi, ' ')
+              .replace(/\s+/g, ' ').trim();
   if (!note) note = 'ללא פירוט';
   // originalText preserves the EXACT raw input so callers can save it as a
   // cell note in the transactions sheet. processExpense overrides this with
@@ -5132,16 +5137,18 @@ function _predictTopCategories(text, n) {
 
 // Curated "most common" set for users who hit a totally new term.
 function _fallbackCategorySet() {
+  // The 10 most common everyday categories — shown when we have no better
+  // prediction. Broad spread so the user can almost always pick the right one.
   return [
     { category: 'אוכל', subcategory: 'אוכל לבית', confidence: 0 },
     { category: 'אוכל', subcategory: 'אוכל בחוץ', confidence: 0 },
-    { category: 'אוכל', subcategory: 'בית קפה', confidence: 0 },
-    { category: 'תחבורה', subcategory: 'תחבורה ציבורית', confidence: 0 },
     { category: 'תחבורה', subcategory: 'דלק', confidence: 0 },
-    { category: 'הוצאות קבועות', subcategory: 'בית', confidence: 0 },
-    { category: 'הוצאות קבועות', subcategory: 'אפליקציות', confidence: 0 },
+    { category: 'תחבורה', subcategory: 'תחבורה ציבורית', confidence: 0 },
+    { category: 'הוצאות קבועות', subcategory: 'מיסים ואגרות', confidence: 0 },
+    { category: 'בידור', subcategory: 'יציאות', confidence: 0 },
     { category: 'בריאות', subcategory: 'בריאות', confidence: 0 },
     { category: 'קניות', subcategory: 'ביגוד', confidence: 0 },
+    { category: 'חינוך', subcategory: 'חינוך', confidence: 0 },
     { category: 'שונות', subcategory: 'שונות', confidence: 0 }
   ];
 }

@@ -57,5 +57,12 @@ eq('amount only ("100") → note fallback', P('100').note, 'ללא פירוט');
 eq('multi-number "352+165 אוכל" → 2 items', P('352+165 אוכל').count, 2);
 eq('multi-number first amount', P('352+165 אוכל').amount, 352);
 
+console.log('\n── currency tokens stripped from description ──');
+eq('"₪50 קפה" amount', P('₪50 קפה').amount, 50);
+eq('"₪50 קפה" note (₪ stripped)', P('₪50 קפה').note, 'קפה');
+eq('"50 שח סופר" note (שח stripped)', P('50 שח סופר').note, 'סופר');
+eq('"50 שקל קפה" note (שקל stripped)', P('50 שקל קפה').note, 'קפה');
+eq('"50 שקל" only → note fallback', P('50 שקל').note, 'ללא פירוט');
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' PARSER CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
