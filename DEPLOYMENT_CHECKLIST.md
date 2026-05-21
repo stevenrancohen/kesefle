@@ -7,6 +7,26 @@
 
 ---
 
+## 0. ⚠️ DECIDE THE BOT'S PUBLIC WHATSAPP NUMBER (before public launch)
+
+Right now every "message the bot" button on the site (45 links across 20 pages)
+points at the **Meta test number `+1 555 640 8123` (`15556408123`)**. Your bot
+config (`BOT_PHONE_E164`) says the production number is **`+1 774 544 8053`
+(`17745448053`)**, which appears in **zero** site links.
+
+- **If you're still in test phase** (allow‑listed testers only): the test number
+  is correct — leave it. The test number only delivers to allow‑listed recipients.
+- **Before opening to the public**: real users can't use the test number. Update
+  all `wa.me/15556408123` links → `wa.me/17745448053` (or whatever the live
+  number is). It's hardcoded in: index, welcome, about, dashboard, start, family,
+  group, pricing, help, trust, roadmap, blog, changelog, account, automations,
+  privacy, seo, team, tools (and test.html). Tell me to do the swap when you've
+  confirmed which number is live and receiving.
+- Note: `contact.html` correctly uses your **support** line `972547760643`
+  (054‑776‑0643) — that's separate from the bot number; leave it.
+
+---
+
 ## 1. 🔴 Deploy the bot (Apps Script)
 
 1. Open the Apps Script project (script.google.com → your "Kesefle / Expenses Bot").
