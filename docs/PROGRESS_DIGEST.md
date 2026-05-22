@@ -6,6 +6,31 @@ the persistent record. Newest first.)
 
 ---
 
+## 2026-05-22 (later) — brand consistency + phase reality-check
+
+**Standing rule recorded:** the brand name is **always כספ'לה**. Fixed every
+*display* occurrence: logo `alt` site-wide (38), the compare-page H3 heading,
+meta descriptions (admin/offline/index/test), the admin activity feed, and the
+bot's user-facing greetings/group-help/persona. **Intentionally NOT changed:**
+command keywords like "כספלה צור משפחה" (users type them without the geresh) and
+SEO alternate-name lists. Build stamped `2026-05-22-brand-3`.
+
+**Phase reality-check vs the latest plan:**
+- Recurring expenses (Phase 1): **already built + hardened** — not rebuilt.
+- Timeline page (Phase 6): **already exists** (`timeline.html`).
+- Voice transcription / Receipt OCR / Gmail parsing / Stripe portal / Resend
+  emails / Pinecone AI (Phases 4-5,8): **need Steven's API keys/accounts** —
+  cannot build without them (won't create accounts on his behalf).
+- 20 location pages + "3 blog posts/day" (Phase 2): **declining the mass-gen
+  version** — Google's 2024 spam policy penalizes doorway/near-duplicate pages.
+  Building a few genuinely-unique pages instead is fine.
+- New free tool shipped: `/tools/subscription-calculator`.
+
+### Action for Steven
+**Steven: redeploy the bot** (Gemini fix + brand display): paste
+`bot/ExpenseBot_DEPLOY.gs` → Save → Deploy → New Version → message `בדיקה`
+(should show `גרסה: 2026-05-22-brand-3`).
+
 ## 2026-05-22 — autonomous session (security audit + growth)
 
 **Build state:** green throughout — 143 checks pass (68 classify + 23 parser +
