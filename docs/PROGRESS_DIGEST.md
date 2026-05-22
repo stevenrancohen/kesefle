@@ -6,6 +6,27 @@ the persistent record. Newest first.)
 
 ---
 
+## 2026-05-22 (overnight) — growth: two new free tools
+
+Built two more high-quality, self-contained, auto-deploying tools (proven
+pattern, no bot redeploy needed):
+
+- **`/tools/expense-splitter`** (מחשבון פיצול הוצאות / "מי חייב למי") — enter
+  who-paid-what → fair share + the minimal settlement transfers (greedy
+  creditor↔debtor, verified correct on test cases). Ties to the group feature;
+  CTA → /group. Cross-linked FROM group.html.
+- **`/tools/savings-goal`** (מחשבון יעד חיסכון) — target + horizon + current +
+  return rate → required monthly deposit, with a compound-growth breakdown
+  (ordinary-annuity PMT; 0% case verified exact).
+
+Both: SoftwareApplication + FAQPage + BreadcrumbList schema (FAQ visible),
+prefers-reduced-motion, dark mode, RTL, wired into sitemap + the /tools index
+(cards + ItemList). The tools hub now has **7 free calculators**. All 34 QA
+checks pass; everything pushed.
+
+Not done (need Steven): bot redeploy (Gemini + brand display), and API
+keys/accounts for voice/OCR/Gmail/Stripe/Resend/Pinecone features.
+
 ## 2026-05-22 (later) — brand consistency + phase reality-check
 
 **Standing rule recorded:** the brand name is **always כספ'לה**. Fixed every
