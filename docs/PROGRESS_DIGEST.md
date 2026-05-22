@@ -6,6 +6,29 @@ the persistent record. Newest first.)
 
 ---
 
+## 2026-05-22 (later) — recurring intelligence + two new growth tools
+
+- **Proactive recurring detection** (bot, build `2026-05-22-learn-1`). When a
+  user logs the SAME expense across >=3 distinct months at a stable amount, the
+  bot now OFFERS to track it as recurring (suggests the exact `קבוע ...`
+  command — never auto-creates). Pure `_detectRecurringCandidate_` with gates
+  (same normalized desc, >=3 distinct months, amount max/min <= 1.5, expenses
+  only) → 17 unit tests (`tests/recurring_detect.js`). Wired into the owner
+  path (direct history read), deduped via a persistent marker so it never nags.
+  Tenant path needs a history API — clean follow-up. Also restored the
+  "📚 למדתי ממשתמשים אחרים" note on first cross-user-learning hit.
+- **Two new free calculators** (live, auto-deployed, verified):
+  `/tools/loan-calculator` (מחשבון הלוואה ומשכנתא — Spitzer amortization,
+  monthly payment + total interest, principal/interest split) and
+  `/tools/compound-interest` (מחשבון ריבית דריבית — future-value projection
+  with monthly deposits, deposits-vs-growth split). Both target top Israeli
+  finance search terms, use EXACT math (verified, incl. 0% edge), full schema,
+  dark mode, RTL. Wired into sitemap + /tools index. **Hub now has 10 free
+  calculators.**
+
+Full battery: 68 classify + 23 parser + 18 isolation + 155 golden + 17
+recurring + 46 full_qa — all green.
+
 ## 2026-05-22 — 10x bot intelligence: cross-user self-learning + accuracy net
 
 Two shipped, fully tested, pushed (bot build `2026-05-22-learn-1`):
