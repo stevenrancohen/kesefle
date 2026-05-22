@@ -42,11 +42,19 @@ async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
   if (!url || !token) return null;
-  const r = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  const j = await r.json();
-  return j?.result ? JSON.parse(j.result) : null;
+  // Guard every step: a KV 5xx or non-JSON body must NOT throw an unhandled
+  // rejection here (this is the Meta-facing path — a 500 makes Meta retry and
+  // can disable the webhook). Degrade to null on any failure.
+  try {
+    const r = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!r.ok) return null;
+    const j = await r.json().catch(() => null);
+    return j?.result ? JSON.parse(j.result) : null;
+  } catch (_e) {
+    return null;
+  }
 }
 
 async function sendReply(toPhone, text) {

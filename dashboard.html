@@ -865,10 +865,10 @@ function kesefleRenderReferralActive(data) {
     } catch (e) { /* fallback to raw URL */ }
   }
 
-  var msg = 'הי! אני משתמש.ת בכסף\'לה לעקוב אחרי הוצאות דרך וואטסאפ — הזמנתי אותך, מקבלים שנינו חודש Pro חינם: ' + shareUrl;
+  var msg = 'הי! אני משתמש.ת בכספ\'לה לעקוב אחרי הוצאות דרך וואטסאפ — הזמנתי אותך, מקבלים שנינו חודש Pro חינם: ' + shareUrl;
   document.getElementById('ref-share-whatsapp').href = 'https://wa.me/?text=' + encodeURIComponent(msg);
   document.getElementById('ref-share-email').href = 'mailto:?subject=' + encodeURIComponent('בוא ננהל הוצאות בוואטסאפ — חודש חינם לשנינו') + '&body=' + encodeURIComponent(msg);
-  document.getElementById('ref-share-twitter').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent('חברים ניהול הוצאות דרך וואטסאפ עם כסף\'לה? קישור הזמנה — חודש Pro חינם לשנינו: ' + shareUrl);
+  document.getElementById('ref-share-twitter').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent('חברים ניהול הוצאות דרך וואטסאפ עם כספ\'לה? קישור הזמנה — חודש Pro חינם לשנינו: ' + shareUrl);
 }
 
 async function kesefleGenerateReferralCode(force) {

@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-22-test-number';
+const KFL_BUILD_VERSION = '2026-05-22-test-number-2';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -930,7 +930,7 @@ function _handleAccountDeletion_(phone, confirmed) {
     }
   } catch (_e) {}
   return '✅ החשבון נמחק. הקישור והאסימונים הוסרו.\n' +
-    'הגיליון נשאר אצלך ב-Drive. תודה שניסית את כסף\'לה 💚\n\n' +
+    'הגיליון נשאר אצלך ב-Drive. תודה שניסית את כספ\'לה 💚\n\n' +
     'אם תרצה לחזור — היכנס שוב ל-https://kesefle.com/account.';
 }
 
@@ -963,7 +963,7 @@ function _notifyOwnerNewLead_(fromPhone) {
     if (addr) {
       MailApp.sendEmail({
         to: addr,
-        subject: '🆕 כסף\'לה — לקוח חדש התחבר לבוט',
+        subject: '🆕 כספ\'לה — לקוח חדש התחבר לבוט',
         body: 'לקוח חדש שלח הודעה ראשונה לבוט:\n\n' +
           '📞 מספר: ' + displayPhone + '\n' +
           '🕐 זמן: ' + when + '\n\n' +
@@ -1032,7 +1032,7 @@ function _maybeSendWelcome_(fromPhone) {
 
   var sheetUrl = _userSheetUrl_(fromPhone);
   var msg =
-    '👋 *ברוכים הבאים לכסף\'לה!*\n' +
+    '👋 *ברוכים הבאים לכספ\'לה!*\n' +
     'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. כל הוצאה נשמרת אוטומטית בגיליון Google הפרטי שלך.\n\n' +
     'פשוט תכתוב לי כמו שאתה מדבר 😎\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
@@ -2723,7 +2723,7 @@ function _getReferralLink_(fromPhone) {
     'הקוד והקישור שלך נמצאים בלוח הבקרה:\n' +
     'https://kesefle.com/dashboard#referral\n\n' +
     'שתף עם החברים שלך:\n' +
-    '"היי, נסה את כסף\'לה — בוט הוצאות בעברית בוואטסאפ:\n' +
+    '"היי, נסה את כספ\'לה — בוט הוצאות בעברית בוואטסאפ:\n' +
     'https://kesefle.com"';
 }
 
@@ -5576,7 +5576,7 @@ function cronHealthCheck() {
     if (addr) {
       MailApp.sendEmail({
         to: addr,
-        subject: '🚨 כסף\'לה — בעיה בבריאות המערכת',
+        subject: '🚨 כספ\'לה — בעיה בבריאות המערכת',
         body: 'בדיקת הבריאות זיהתה בעיות:\n\n  • ' + problems.join('\n  • ') +
           '\n\nזמן: ' + new Date().toISOString() +
           '\nendpoint: ' + KESEFLE_API_BASE + '/api/health/detailed' +
@@ -6921,7 +6921,7 @@ function detectDuplicate(amount, description) {
 }
 
 function getHelpMessage() {
-  return '🤖 *כסף\'לה — מדריך מהיר*\n' +
+  return '🤖 *כספ\'לה — מדריך מהיר*\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
     '📝 *רישום הוצאה:*\n' +
     '  • "85 סופר רמי לוי"\n' +

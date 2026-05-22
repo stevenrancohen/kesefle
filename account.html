@@ -442,7 +442,7 @@ function kesefleCelebrate() {
   var icon = document.getElementById('banner-icon');
   if (icon) { icon.textContent = '🎉'; icon.className = 'grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl transition-colors'; }
   var t = document.getElementById('banner-title');
-  if (t) t.textContent = 'הכל מוכן! כסף\'לה פעיל';
+  if (t) t.textContent = 'הכל מוכן! כספ\'לה פעיל';
   var s = document.getElementById('banner-subtitle');
   if (s) s.innerHTML = 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/dashboard" class="font-bold text-emerald-700 underline">לדשבורד שלי ←</a>';
 
@@ -1121,7 +1121,7 @@ async function kesefleProvisionSheet() {
         if (prog) prog.classList.add('hidden');
         status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
         status.innerHTML = '<div class="font-bold">לא קיבלנו אישור מגוגל.</div>' +
-                           '<div class="text-xs mt-1 text-red-600">למה? צריך לאשר ל-כסף\'לה גישה כדי שנוכל ליצור גיליון בדרייב שלך.</div>' +
+                           '<div class="text-xs mt-1 text-red-600">למה? צריך לאשר ל-כספ\'לה גישה כדי שנוכל ליצור גיליון בדרייב שלך.</div>' +
                            '<div class="mt-2 flex flex-wrap gap-2"><button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">נסי שוב — אשרי הכל</button>' +
                            '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary><div class="mt-1">בחלון של גוגל לוחצים על Allow / "אישור" עבור כל ההרשאות (Drive + Sheets). בלי זה לא נוכל להעתיק את התבנית.</div></details></div>';
         status.classList.remove('hidden');
