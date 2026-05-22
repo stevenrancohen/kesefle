@@ -33,9 +33,17 @@
       extend: {
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
-          ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand: { 50:'#f0fdf6', 100:'#dcfce9', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' }
-        }
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+          accent:  { 500:'#a855f7', 600:'#9333ea' }
+        },
+        boxShadow: {
+          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        },
+        backgroundImage: {
+          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+        },
       }
     }
   };
@@ -190,7 +198,7 @@
 </style>
 <script src="/lib/analytics.js" defer></script>
 </head>
-<body class="min-h-screen bg-ink-50 text-ink-900 dark:bg-ink-900 dark:text-white">
+<body class="min-h-screen bg-ink-50 bg-mesh text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
 
 <div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
   <div class="kfl-curtain-logo">₪</div>
@@ -212,25 +220,25 @@
 </script>
 
 <!-- nav -->
-<header class="border-b border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-900">
-  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
-    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
-      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">₪</span>
-      <span>כספ'לה</span>
+<header class="sticky top-0 z-40 border-b border-ink-200/70 bg-white/85 backdrop-blur-md dark:border-ink-700/60 dark:bg-ink-900/80">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3.5">
+    <a href="/" class="flex min-w-0 items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
+      <span class="truncate">כספ'לה</span>
     </a>
-    <div class="flex items-center gap-3">
-      <button type="button" onclick="kesefleStartTour()" class="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20" title="סיור בדשבורד">
+    <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+      <button type="button" onclick="kesefleStartTour()" class="hidden min-h-[44px] items-center gap-1.5 rounded-2xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 md:inline-flex dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20" title="סיור בדשבורד">
         <span>✨</span><span>סיור היכרות</span>
       </button>
-      <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden rounded-xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">📊 פתח גיליון</a>
+      <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden min-h-[44px] items-center rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 sm:inline-flex dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">📊 פתח גיליון</a>
       <img id="user-picture" class="hidden h-9 w-9 rounded-full ring-2 ring-brand-200" alt="" />
-      <span id="user-name" class="text-sm font-semibold">טוען...</span>
-      <button onclick="kesefleLogout()" class="rounded-xl border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-800">התנתק</button>
+      <span id="user-name" class="hidden truncate text-sm font-semibold sm:inline">טוען...</span>
+      <button onclick="kesefleLogout()" class="min-h-[44px] rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-800">התנתק</button>
     </div>
   </nav>
 </header>
 
-<main class="relative mx-auto max-w-6xl px-5 py-8">
+<main class="relative mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 md:px-6">
 
   <div class="kfl-parallax pointer-events-none absolute -top-20 -right-32 -z-10 h-80 w-80 rounded-full bg-gradient-to-br from-brand-300/30 to-accent-500/20 blur-3xl animate-blob" data-speed="0.18"></div>
   <div class="kfl-parallax pointer-events-none absolute top-1/3 -left-32 -z-10 h-80 w-80 rounded-full bg-gradient-to-tr from-accent-500/20 to-brand-300/25 blur-3xl animate-blob" data-speed="-0.12" style="animation-delay:-4s"></div>
@@ -242,31 +250,31 @@
         <h2 class="text-2xl font-black tracking-tight md:text-3xl">תנועות חיות מהגיליון</h2>
         <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">נתונים אמיתיים בזמן אמת — בלי רענון, בלי טפסים.</p>
       </div>
-      <button id="live-refresh" type="button" onclick="kefleLiveRefresh()" class="kfl-magnetic inline-flex items-center gap-1.5 rounded-2xl border border-ink-200 bg-white px-3.5 py-2 text-xs font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700" title="רענן">
+      <button id="live-refresh" type="button" onclick="kefleLiveRefresh()" class="kfl-magnetic inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl border border-ink-200 bg-white px-3.5 py-2 text-xs font-bold text-ink-700 shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700" title="רענן">
         <svg id="live-refresh-icon" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
         <span>🔄 רענן</span>
       </button>
     </div>
 
     <div id="live-cards" class="grid gap-4 sm:grid-cols-3">
-      <div class="kfl-hero-stage kfl-lift rounded-3xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800" data-stage="1">
+      <div class="kfl-hero-stage kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-5 shadow-glow dark:border-ink-700 dark:bg-ink-800" data-stage="1">
         <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">סך הוצאות החודש</div>
         <div class="mt-2 text-3xl font-black"><span class="num" id="live-month-total">—</span></div>
         <div id="live-month-count" class="mt-1 text-xs text-ink-500 dark:text-ink-400">טוען…</div>
       </div>
-      <div class="kfl-hero-stage kfl-lift rounded-3xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800" data-stage="2">
+      <div class="kfl-hero-stage kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800" data-stage="2">
         <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">קטגוריה מובילה</div>
-        <div class="mt-2 text-2xl font-black truncate" id="live-top-category">—</div>
+        <div class="mt-2 truncate text-2xl font-black" id="live-top-category">—</div>
         <div id="live-top-category-amount" class="mt-1 text-xs text-ink-500 dark:text-ink-400">טוען…</div>
       </div>
-      <div class="kfl-hero-stage kfl-lift rounded-3xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800" data-stage="3">
+      <div class="kfl-hero-stage kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800" data-stage="3">
         <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מול חודש שעבר</div>
         <div class="mt-2 text-3xl font-black"><span id="live-mom-delta">—</span></div>
         <div id="live-mom-detail" class="mt-1 text-xs text-ink-500 dark:text-ink-400">טוען…</div>
       </div>
     </div>
 
-    <div class="kfl-hero-stage mt-6 overflow-hidden rounded-3xl border border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-800" data-stage="4">
+    <div class="kfl-hero-stage mt-6 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800" data-stage="4">
       <div class="flex items-center justify-between gap-3 border-b border-ink-200 px-5 py-3 dark:border-ink-700">
         <h3 class="text-sm font-black">כל התנועות</h3>
         <div id="live-status" class="text-xs text-ink-500 dark:text-ink-400">טוען…</div>
@@ -280,7 +288,7 @@
       </div>
       <div id="live-error" class="hidden p-6 text-center">
         <div class="text-sm font-semibold text-ink-700 dark:text-ink-200">לא הצלחנו לטעון נתונים. נסי שוב.</div>
-        <button onclick="kefleLiveRefresh()" class="mt-3 rounded-xl bg-brand-600 px-4 py-2 text-xs font-bold text-white hover:bg-brand-700">נסה שוב</button>
+        <button onclick="kefleLiveRefresh()" class="mt-3 min-h-[44px] rounded-2xl bg-brand-500 px-4 py-2 text-xs font-bold text-white shadow-soft hover:bg-brand-600">נסה שוב</button>
       </div>
       <div id="live-empty" class="hidden p-6 text-center text-sm text-ink-500 dark:text-ink-400">אין תנועות עדיין.</div>
       <div id="live-table-wrap" class="hidden overflow-x-auto">
@@ -310,21 +318,21 @@
           <div class="text-xs text-amber-700 dark:text-amber-300">כדי לטעון את הנתונים שלך מהגיליון, צריך להתחבר מחדש לחשבון Google.</div>
         </div>
       </div>
-      <button onclick="kesefleReauth()" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-amber-600">
+      <button onclick="kesefleReauth()" class="min-h-[44px] rounded-2xl bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-amber-600">
         התחבר מחדש
       </button>
     </div>
   </section>
 
   <!-- empty state (when no transactions yet) -->
-  <section id="empty-state" class="hidden overflow-hidden rounded-3xl border border-ink-200 bg-gradient-to-br from-brand-50 via-white to-brand-50 shadow-soft dark:border-ink-700 dark:from-ink-800 dark:via-ink-900 dark:to-ink-800">
+  <section id="empty-state" class="hidden overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-brand-50 via-white to-brand-50 shadow-glow dark:border-ink-700 dark:from-ink-800 dark:via-ink-900 dark:to-ink-800">
     <!-- Demo preview toggle: shows users what the dashboard WILL look like once they have data -->
     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-ink-200 bg-white/60 px-5 py-2.5 text-xs dark:border-ink-700 dark:bg-ink-900/40">
       <span class="inline-flex items-center gap-1.5 font-bold text-ink-600 dark:text-ink-300">
         <span class="grid h-5 w-5 place-items-center rounded-md bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">i</span>
         אין עדיין נתונים — אבל הנה איך הדשבורד שלך ייראה בעוד דקה
       </span>
-      <button type="button" id="demo-preview-btn" onclick="kesefleToggleDemoPreview()" class="rounded-lg bg-ink-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
+      <button type="button" id="demo-preview-btn" onclick="kesefleToggleDemoPreview()" class="min-h-[36px] rounded-2xl bg-ink-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
         ✨ הראה לי תצוגת הדגמה
       </button>
     </div>
@@ -343,11 +351,11 @@
           פתח וואטסאפ, שלח <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — והשורה הזאת תופיע אצלך בדיוק כמו בתצוגה משמאל. <span class="num">2</span> שניות. בלי טפסים.
         </p>
         <div class="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-          <a id="empty-whatsapp" href="https://wa.me/15556408123?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" class="group inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-6 py-3.5 font-bold text-white shadow-soft transition hover:bg-[#1ebe5c]">
+          <a id="empty-whatsapp" href="https://wa.me/15556408123?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" class="group inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-6 py-3.5 font-bold text-white shadow-glow transition hover:bg-[#1ebe5c]">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
             פתח וואטסאפ ושלח עכשיו
           </a>
-          <a id="empty-copy-msg" href="#" onclick="kesefleCopyDemoMsg(event)" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white px-5 py-3.5 text-sm font-semibold text-ink-700 hover:border-ink-300 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100 dark:hover:bg-ink-700">
+          <a id="empty-copy-msg" href="#" onclick="kesefleCopyDemoMsg(event)" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white px-5 py-3.5 text-sm font-semibold text-ink-700 hover:border-ink-300 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100 dark:hover:bg-ink-700">
             העתק הודעה לדוגמה
           </a>
         </div>
@@ -401,8 +409,8 @@
   </section>
 
   <!-- summary cards -->
-  <section id="summary-cards" class="grid gap-4 md:grid-cols-4">
-    <div class="stat-card rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+  <section id="summary-cards" class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+    <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between">
         <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">החודש — הוצאות</div>
         <div class="grid h-7 w-7 place-items-center rounded-lg bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">↘</div>
@@ -420,7 +428,7 @@
         <path d="" id="spark-expenses-line" stroke="#ef4444" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
     </div>
-    <div class="stat-card rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+    <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-glow dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between">
         <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">החודש — הכנסות</div>
         <div class="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">↗</div>
@@ -438,7 +446,7 @@
         <path d="" id="spark-income-line" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
     </div>
-    <div class="stat-card rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800" id="card-balance">
+    <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800" id="card-balance">
       <div class="flex items-center justify-between">
         <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מאזן החודש</div>
         <div id="balance-icon" class="grid h-7 w-7 place-items-center rounded-lg bg-ink-100 text-ink-500 dark:bg-ink-700 dark:text-ink-300">=</div>
@@ -449,7 +457,7 @@
         <div id="balance-progress" class="h-full bg-brand-500 transition-all duration-700" style="width: 0%"></div>
       </div>
     </div>
-    <div class="stat-card rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+    <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between">
         <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">תנועות החודש</div>
         <div class="grid h-7 w-7 place-items-center rounded-lg bg-accent-500/10 text-accent-600 dark:text-accent-500">⚡</div>
@@ -466,11 +474,11 @@
   <section class="mt-6 grid gap-6 md:grid-cols-3">
 
     <!-- recent transactions -->
-    <div class="md:col-span-2 rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+    <div class="min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-6 md:col-span-2 dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between gap-2">
         <h3 class="text-lg font-bold">תנועות אחרונות</h3>
         <div class="flex items-center gap-2">
-          <button id="refresh-btn" type="button" onclick="kesefleRefresh()" class="inline-flex items-center gap-1.5 rounded-xl border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" title="רענן נתונים">
+          <button id="refresh-btn" type="button" onclick="kesefleRefresh()" class="inline-flex min-h-[36px] items-center gap-1.5 rounded-2xl border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" title="רענן נתונים">
             <svg id="refresh-icon" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             <span>רענן</span>
           </button>
@@ -485,7 +493,7 @@
     </div>
 
     <!-- top categories -->
-    <div class="rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+    <div class="min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-6 dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-bold">קטגוריות מובילות</h3>
         <span class="text-[10px] font-bold text-ink-400 dark:text-ink-500">החודש</span>
@@ -513,18 +521,18 @@
   </section>
 
   <!-- quick actions -->
-  <section class="mt-6 grid gap-4 md:grid-cols-3">
-    <a href="https://wa.me/15556408123?text=%D7%99%D7%95%D7%9E%D7%99%3F" target="_blank" rel="noopener" class="rounded-3xl border border-ink-200 bg-white p-6 text-center hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+  <section class="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+    <a href="https://wa.me/15556408123?text=%D7%99%D7%95%D7%9E%D7%99%3F" target="_blank" rel="noopener" class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
       <div class="text-2xl">💬</div>
       <div class="mt-2 font-bold">שאל סיכום יומי</div>
       <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">"יומי?" בוואטסאפ</div>
     </a>
-    <a href="https://wa.me/15556408123?text=%D7%97%D7%95%D7%93%D7%A9%D7%99%3F" target="_blank" rel="noopener" class="rounded-3xl border border-ink-200 bg-white p-6 text-center hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+    <a href="https://wa.me/15556408123?text=%D7%97%D7%95%D7%93%D7%A9%D7%99%3F" target="_blank" rel="noopener" class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
       <div class="text-2xl">📊</div>
       <div class="mt-2 font-bold">סיכום חודשי</div>
       <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">"חודשי?" בוואטסאפ</div>
     </a>
-    <a href="#settings" onclick="openSettings(event)" class="rounded-3xl border border-ink-200 bg-white p-6 text-center hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+    <a href="#settings" onclick="openSettings(event)" class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
       <div class="text-2xl">⚙️</div>
       <div class="mt-2 font-bold">הגדרות וחיוב</div>
       <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">מנוי, חיבור Google, ייצוא</div>
@@ -532,7 +540,7 @@
   </section>
 
   <!-- settings panel (collapsed by default) -->
-  <section id="settings-panel" class="mt-6 hidden rounded-3xl border border-ink-200 bg-white p-6 dark:border-ink-700 dark:bg-ink-800">
+  <section id="settings-panel" class="mt-6 hidden rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-6 dark:border-ink-700 dark:bg-ink-800">
     <h3 class="text-lg font-bold">הגדרות</h3>
     <div class="mt-4 space-y-3 text-sm">
       <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
@@ -573,7 +581,7 @@
 
       <!-- 1. user has NO code yet → show generate button -->
       <div id="ref-empty-state" class="mt-4 hidden">
-        <button type="button" onclick="kesefleGenerateReferralCode()" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700">
+        <button type="button" onclick="kesefleGenerateReferralCode()" class="inline-flex min-h-[44px] items-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
           🎁 צור את קוד ההזמנה שלי
         </button>
         <div id="ref-empty-status" class="mt-2 hidden text-xs"></div>
@@ -583,27 +591,27 @@
       <div id="ref-active-state" class="mt-4 hidden">
         <div class="flex flex-wrap items-stretch gap-2">
           <input id="ref-link-input" type="text" readonly aria-label="קישור הזמנה אישי"
-                 class="num min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm font-mono text-ink-700 ltr:text-left dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100" />
-          <button type="button" onclick="kesefleCopyReferralLink()" id="ref-copy-btn" class="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-brand-700">
+                 class="num min-w-0 flex-1 rounded-2xl border border-ink-200 bg-white px-3 py-2 text-sm font-mono text-ink-700 ltr:text-left dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100" />
+          <button type="button" onclick="kesefleCopyReferralLink()" id="ref-copy-btn" class="inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl bg-brand-500 px-3.5 py-2 text-sm font-bold text-white hover:bg-brand-600">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span id="ref-copy-label">העתק</span>
           </button>
         </div>
 
         <div id="ref-share-row" class="mt-3 flex flex-wrap gap-2">
-          <a id="ref-share-whatsapp" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2 text-xs font-bold text-white hover:opacity-90">
+          <a id="ref-share-whatsapp" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-[#25D366] px-3 py-2 text-xs font-bold text-white hover:opacity-90">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
             WhatsApp
           </a>
-          <a id="ref-share-email" href="#" class="inline-flex items-center gap-1.5 rounded-xl bg-ink-700 px-3 py-2 text-xs font-bold text-white hover:bg-ink-800 dark:bg-ink-200 dark:text-ink-900 dark:hover:bg-white">
+          <a id="ref-share-email" href="#" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-ink-700 px-3 py-2 text-xs font-bold text-white hover:bg-ink-800 dark:bg-ink-200 dark:text-ink-900 dark:hover:bg-white">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             Email
           </a>
-          <a id="ref-share-twitter" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-xl bg-black px-3 py-2 text-xs font-bold text-white hover:opacity-90">
+          <a id="ref-share-twitter" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-ink-900 px-3 py-2 text-xs font-bold text-white hover:opacity-90 dark:bg-ink-100 dark:text-ink-900">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             X / טוויטר
           </a>
-          <button type="button" onclick="kesefleRegenerateReferralCode()" class="inline-flex items-center gap-1.5 rounded-xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">
+          <button type="button" onclick="kesefleRegenerateReferralCode()" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">
             ↺ קוד חדש
           </button>
         </div>
@@ -621,7 +629,7 @@
 
 <!-- transaction action modal (edit/delete) -->
 <div id="tx-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink-900/60 px-4 backdrop-blur-sm" onclick="kesefleCloseTxModal(event)">
-  <div class="w-full max-w-md rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800" onclick="event.stopPropagation()">
+  <div class="w-full max-w-md rounded-2xl border border-ink-200 bg-white p-6 shadow-glow dark:border-ink-700 dark:bg-ink-800" onclick="event.stopPropagation()">
     <div class="flex items-start justify-between gap-3">
       <div class="flex items-center gap-3">
         <div id="tx-modal-icon" class="cat-chip" style="background:#64748b22;color:#64748b;">💸</div>
@@ -638,10 +646,10 @@
       <div id="tx-modal-raw" class="mt-3 break-words text-sm text-ink-600 dark:text-ink-300"></div>
     </div>
     <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
-      <a id="tx-modal-edit" href="#" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-200 px-4 py-2.5 text-sm font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-700">
+      <a id="tx-modal-edit" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-ink-200 px-4 py-2.5 text-sm font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-700">
         ✏️ ערוך בגיליון
       </a>
-      <button type="button" onclick="kesefleDeleteTransaction()" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-600">
+      <button type="button" onclick="kesefleDeleteTransaction()" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-soft hover:bg-red-600">
         🗑 מחק תנועה
       </button>
     </div>

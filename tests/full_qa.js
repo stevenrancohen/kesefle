@@ -62,18 +62,23 @@ ok('normal text untouched', sanitizeCell('סופר רמי לוי') === 'סופר
 ok('number passthrough', sanitizeCell(245) === 245);
 ok('null → empty', sanitizeCell(null) === '');
 
-// ── 3. buildExpenseRow — correct 9-column row ───────────────────────────────
+// ── 3. buildExpenseRow — correct 8-column row (matches user's template) ────
+// Layout: A=תאריך, B=חודש(YYYY-MM), C=סכום, D=קטגוריה, E=תת-קטגוריה,
+// F=פירוט, G=מקור, H=סטטוס(boolean: true=expense, false=income)
 console.log('\n══ 3. buildExpenseRow ══');
 (0, eval)(extractFn(SW, 'buildExpenseRow'));
-const rExp = buildExpenseRow({ amount: 245, currency: 'ILS', isIncome: false, category: 'אוכל', subcategory: 'סופר', rawText: '245 סופר' });
-ok('row has 9 columns', rExp.length === 9);
-ok('amount in col B', rExp[1] === 245);
-ok('expense flag in col D', rExp[3] === 'expense');
-ok('category in col E', rExp[4] === 'אוכל');
-ok('source = whatsapp', rExp[7] === 'whatsapp');
-const rInc = buildExpenseRow({ amount: 8500, isIncome: true, category: 'הכנסה', rawText: '8500 משכורת' });
-ok('income flag in col D', rInc[3] === 'income');
-ok('formula in rawText sanitized', String(buildExpenseRow({ amount: 1, rawText: '=HACK()' })[6]).startsWith("'"));
+(0, eval)(extractFn(SW, 'sanitizeCell'));
+const rExp = buildExpenseRow({ amount: 245, isIncome: false, category: 'אוכל', subcategory: 'סופר', rawText: '245 סופר', date: '2026-05-23T10:00:00Z' });
+ok('row has 8 columns', rExp.length === 8);
+ok('month in col B is YYYY-MM', /^\d{4}-\d{2}$/.test(rExp[1]));
+ok('amount in col C', rExp[2] === 245);
+ok('category in col D', rExp[3] === 'אוכל');
+ok('subcategory in col E', rExp[4] === 'סופר');
+ok('source = whatsapp in col G', rExp[6] === 'whatsapp');
+ok('expense flag in col H (true=expense)', rExp[7] === true);
+const rInc = buildExpenseRow({ amount: 8500, isIncome: true, category: 'הכנסה', subcategory: 'משכורת', rawText: '8500 משכורת' });
+ok('income flag in col H (false=income)', rInc[7] === false);
+ok('formula in rawText sanitized', String(buildExpenseRow({ amount: 1, rawText: '=HACK()' })[5]).startsWith("'"));
 
 // ── 4. Phone normalization (E.164) ──────────────────────────────────────────
 console.log('\n══ 4. normalizeE164 ══');
@@ -186,8 +191,18 @@ ok('account.html sign-in requests drive.file ONLY (no readonly / full spreadshee
    /auth\/drive\.file/.test(ACCOUNT_HTML) && !/auth\/drive\.readonly/.test(ACCOUNT_HTML) && !/auth\/spreadsheets/.test(ACCOUNT_HTML));
 ok('sheet-writer exports buildTenantSheetSpec + createUserSheetWithToken',
    /export function buildTenantSheetSpec/.test(SW) && /export async function createUserSheetWithToken/.test(SW));
-ok('fresh sheet uses the A:I תנועות headers (lock-step with buildExpenseRow)',
-   /TENANT_TX_HEADERS/.test(SW) && /createUserSheetWithRefresh/.test(SW));
+ok('fresh sheet uses the 8-col תנועות headers (lock-step with buildExpenseRow)',
+   /TX_HEADERS/.test(SW) && /createUserSheetWithRefresh/.test(SW));
+ok('template recreates the 4 tabs (transactions + orders + personal + company dashboards)',
+   /PERSONAL_DASHBOARD_TAB/.test(SW) && /COMPANY_DASHBOARD_TAB/.test(SW) && /ORDERS_TAB/.test(SW));
+ok('personal dashboard total ranges fixed (corrected from xlsx off-by-one)',
+   /_personalSectionTotal\('סה״כ הוצאות קבועות', 16, 27\)/.test(SW)
+   && /_personalSectionTotal\('סה״כ הוצאות זמניות', 31, 33\)/.test(SW)
+   && /_personalSectionTotal\('סה״כ אוכל', 37, 38\)/.test(SW)
+   && /_personalSectionTotal\('סה״כ תחבורה', 42, 49\)/.test(SW)
+   && /_personalSectionTotal\('סה״כ שונות', 53, 57\)/.test(SW));
+ok('appendRowToUserSheet writes to A:H (8 cols, not A:I)',
+   /'\$\{TX_TAB\}'!A:H/.test(SW) && !/'\$\{SHEETS_TX_TAB\}'!A:I/.test(SW));
 ok('group.js no longer copies a template (uses create-fresh)',
    !/copyTemplateToUserDrive/.test(fs.readFileSync(path.join(ROOT, 'api/group.js'), 'utf8')));
 // Sign-in must use the full-page REDIRECT OAuth flow (PKCE → google-exchange),

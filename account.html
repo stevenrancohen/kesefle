@@ -961,24 +961,44 @@ async function kesefleHandleOAuthReturn(code, state) {
     try { sessionStorage.removeItem('kfl_pkce_verifier'); sessionStorage.removeItem('kfl_oauth_state'); } catch (e) {}
 
     // Provision the user's sheet now, with the fresh access token.
-    var sheetId = null, sheetUrl = null;
+    // CRITICAL: do NOT silently swallow provision failures. If the user signs
+    // in but the sheet is not created, the dashboard will be empty + the bot
+    // cannot write -- worse than a fast retry. On failure, surface the error
+    // with a retry CTA instead of dropping the user on a half-broken state.
+    var sheetId = null, sheetUrl = null, provisionError = null;
     if (j.accessToken) {
       try {
         var pr = await fetch('/api/sheet/provision', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ accessToken: j.accessToken })
         });
-        var pj = await pr.json();
+        var pj = await pr.json().catch(function () { return {}; });
         if (pj && pj.ok) { sheetId = pj.spreadsheetId; sheetUrl = pj.spreadsheetUrl; }
-      } catch (e) { /* connected UI offers a manual retry */ }
+        else { provisionError = (pj && (pj.detail || pj.error)) || ('HTTP ' + pr.status); }
+      } catch (e) { provisionError = e.message || String(e); }
+    } else {
+      provisionError = 'no_access_token';
     }
+
     var user = j.user || {};
+    // SECURITY: do NOT persist the access token to localStorage. It expires
+    // in ~1h but localStorage is readable by any same-origin script (XSS) for
+    // weeks. The session cookie (HttpOnly) plus the encrypted refresh token
+    // on the server are the durable identity; the access token lives only in
+    // window memory for the brief provisioning window above.
     kesefleSetUser({
       sub: user.sub, email: user.email || '',
       name: user.name || (user.email ? user.email.split('@')[0] : 'משתמש'),
-      picture: user.picture || '', plan: 'free', idToken: j.accessToken || ''
+      picture: user.picture || '', plan: 'free',
     });
     if (sheetId) { try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: sheetId, spreadsheetUrl: sheetUrl })); } catch (e) {} }
+
+    if (provisionError) {
+      // Stay on /account, show a card with a retry button instead of
+      // reloading into a broken dashboard.
+      kesefleShowProvisionError(provisionError);
+      return;
+    }
     window.location.reload();
   } catch (e) {
     kesefleShowSigninError(e.message || String(e));
@@ -1004,6 +1024,56 @@ function kesefleShowSigninError(msg) {
   var isDark = document.documentElement.classList.contains('dark');
   var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#16a34a';
   _kflCardShell('<div style="font-size:40px;">😕</div><h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">ההתחברות לא הושלמה</h2><p style="margin-top:10px;font-size:13px;color:' + body + ';word-break:break-word;">' + String(msg || '').slice(0, 200) + '</p><button type="button" onclick="kesefleStartRedirectSignin()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה/י שוב</button>');
+}
+
+// Show a recovery card after sign-in succeeded but sheet provisioning failed.
+// Different from kesefleShowSigninError: the user IS signed in (session cookie
+// set), just the sheet creation failed -- retry should call /api/sheet/provision
+// again, not restart OAuth.
+function kesefleShowProvisionError(msg) {
+  var isDark = document.documentElement.classList.contains('dark');
+  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#16a34a';
+  var safeMsg = String(msg || '').replace(/[<>&"']/g, '').slice(0, 200);
+  _kflCardShell(
+    '<div style="font-size:40px;">📋</div>' +
+    '<h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">לא הצלחנו ליצור את הגיליון</h2>' +
+    '<p style="margin-top:10px;font-size:13px;color:' + body + ';">ההתחברות הצליחה, אבל יצירת הגיליון נכשלה. נסו שוב; אם זה ממשיך, פתחו צ\'אט תמיכה.</p>' +
+    '<p style="margin-top:6px;font-size:11px;color:#8a95b3;word-break:break-word;font-family:ui-monospace,monospace;">' + safeMsg + '</p>' +
+    '<button type="button" onclick="kesefleRetryProvision()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסי שוב ליצור גיליון</button>'
+  );
+}
+
+// Retry sheet provisioning using the session cookie. The server uses the
+// stored refresh token to mint a fresh access token, so no token is needed
+// from the client (which is why we stopped persisting it to localStorage).
+async function kesefleRetryProvision() {
+  try {
+    var pr = await fetch('/api/sheet/provision', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    var pj = await pr.json().catch(function () { return {}; });
+    if (pj && pj.ok) {
+      try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: pj.spreadsheetId, spreadsheetUrl: pj.spreadsheetUrl })); } catch (e) {}
+      window.location.reload();
+    } else {
+      kesefleShowProvisionError((pj && (pj.detail || pj.error)) || ('HTTP ' + pr.status));
+    }
+  } catch (e) {
+    kesefleShowProvisionError(e.message || String(e));
+  }
+}
+
+// Map common Google OAuth error codes to user-friendly Hebrew explanations.
+// Called from init() when the redirect returns ?error=<code>.
+function _kflOAuthErrorMessage(code) {
+  switch (String(code || '')) {
+    case 'access_denied':   return 'ההרשאות בוטלו. לא נוכל ליצור עבורך גיליון בלי גישה ל-Drive שלך. נסה/י שוב ואשר/י את ההרשאות.';
+    case 'invalid_request': return 'שגיאה בבקשת ההתחברות. נסה/י שוב.';
+    case 'unauthorized_client': return 'אפליקציית Kesefle לא מאושרת על ידי Google. נצור קשר עם התמיכה.';
+    case 'unsupported_response_type': return 'שגיאה טכנית בהתחברות. נסה/י שוב.';
+    case 'invalid_scope':   return 'ההרשאות שביקשנו אינן זמינות. נסה/י שוב או צור/י קשר עם התמיכה.';
+    case 'server_error':    return 'Google מדווח על שגיאה זמנית. נסה/י שוב בעוד דקה.';
+    case 'temporarily_unavailable': return 'שירות ההתחברות זמנית לא זמין. נסה/י שוב בעוד דקה.';
+    default: return 'ההתחברות לא הושלמה. נסה/י שוב.';
+  }
 }
 
 function kesefleShowSigninPrompt() {
@@ -1049,8 +1119,11 @@ function kesefleShowSigninPrompt() {
   var _q = new URLSearchParams(window.location.search);
   if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
   if (_q.get('error')) {
+    var errCode = _q.get('error');
     try { window.history.replaceState({}, document.title, window.location.origin + '/account'); } catch (e) {}
-    kesefleShowSigninPrompt();
+    // Render a real recovery card with the specific reason (access_denied,
+    // server_error, etc.) instead of dumping the user on a generic prompt.
+    try { kesefleShowSigninError(_kflOAuthErrorMessage(errCode)); } catch (e) { kesefleShowSigninPrompt(); }
     return;
   }
   var u = kesefleGetUser();

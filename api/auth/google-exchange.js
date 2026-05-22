@@ -183,25 +183,43 @@ async function handlerImpl(req, res) {
         Object.assign(record, newUserTrialFields(Date.now()));
         log.info('user.trial_started', { reqId: req.reqId, userSub: identity.sub });
       }
-      await fetch(`${kvUrl}/set/${encodeURIComponent('user:' + identity.sub)}`, {
+      // FAIL CLOSED: if KV refuses the write or the network drops, we must
+      // NOT return 200 with a session cookie -- the user would sign in but
+      // their refresh token would be lost and the bot could never write.
+      // Throw out of the inner try so the caller returns 502.
+      const r = await fetch(`${kvUrl}/set/${encodeURIComponent('user:' + identity.sub)}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(record),
       });
+      if (!r.ok) {
+        throw new Error('kv_set_user_status_' + r.status);
+      }
     } catch (e) {
-      console.error('user_record_kv_save_failed', e);
+      log.error('user_record_kv_save_failed', { reqId: req.reqId, userSub: identity.sub, error: e.message });
+      return res.status(502).json({
+        ok: false,
+        error: 'user_record_save_failed',
+        detail: 'הרישום לא הושלם, נסו שוב בעוד רגע.',
+      });
     }
   }
 
   if (kvUrl && kvToken && tokens.access_token) {
     try {
       const existingSheetId = await kvGetSheetId(kvUrl, kvToken, identity.sub);
+      // Honor Google's `expires_in` (seconds until token expires). Google
+      // normally returns 3599 but can return shorter on rotation; subtract a
+      // 60s safety margin so callers refresh BEFORE the token actually expires.
+      const expiresInSec = (typeof tokens.expires_in === 'number' && tokens.expires_in > 60)
+        ? tokens.expires_in - 60
+        : 3500;
       const tokenRecord = {
-        // Encrypted envelope only — never the plaintext refresh token at rest.
+        // Encrypted envelope only -- never the plaintext refresh token at rest.
         refreshTokenEnvelope: sharedRefreshEnvelope,
         refreshToken: null,
         accessToken: tokens.access_token,
-        expiry: Date.now() + 3500 * 1000,
+        expiry: Date.now() + expiresInSec * 1000,
         sheetId: existingSheetId,
       };
       await kvSetTokenRecord(kvUrl, kvToken, identity.sub, tokenRecord);

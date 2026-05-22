@@ -178,3 +178,41 @@ fail-closed scaffolding). See `docs/AUDIT_2026-05-21.md`.
 1. **Redeploy the bot** to turn on the Gemini brain: paste `bot/ExpenseBot_DEPLOY.gs`
    → Save → Deploy → New Version → message `בדיקה`.
 2. Decide if `/automations` should be indexed (currently hidden in robots.txt).
+
+---
+
+## 2026-05-23 — Template parity, dashboard restyle, security hardening (bot v2026-05-23-template-aligned)
+
+**What changed (verbatim user goal: "use the template sheet that i gave you and make sure everyone have it when they signup"):**
+
+### lib/sheet-writer.js — full template parity
+- `buildTenantSheetSpec` now emits the **4 tabs** of Steven's xlsx: `תנועות`, `הזמנות`, `מאזן אישי` (58-row personal dashboard), `מאזן חברה` (14-row company dashboard).
+- **Fixed the buggy total-row ranges** from the original xlsx: `סה״כ הוצאות קבועות = SUM(B16:B27)` (was `SUM(B13:B24)`), `סה״כ הוצאות זמניות = SUM(B31:B33)` (was `SUM(B28:B30)`), `סה״כ אוכל = SUM(B37:B38)` (was `SUM(B34:B35)`), `סה״כ תחבורה = SUM(B42:B49)` (was `SUM(B39:B46)`), `סה״כ שונות = SUM(B53:B57)` (was `SUM(B50:B54)`).
+- Section-total rows now have monthly SUM formulas in C–N too (xlsx had static `'0'`s there).
+- Color-coded headers using the homepage palette (ink/brand/accent), currency formatting (`#,##0.00 ₪`) and percent formatting (`0.0%`) where appropriate, with frozen rows + frozen columns.
+- `buildExpenseRow` realigned to **8 cols**: `[ISO date, "YYYY-MM" month, amount, category, subcategory, raw text, "whatsapp", !isIncome]` — matches both the template column order AND the bot's Apps Script appendRow calls. Boolean `H` (TRUE=expense, FALSE=income).
+- `appendRowToUserSheet` writes range `'תנועות'!A:H` (was `A:I`).
+
+### dashboard.html — homepage palette
+- Tailwind config extended with `ink`/`brand`/`accent` palette, `boxShadow.glow`+`.soft`, `bg-mesh`. Body class now matches index.html.
+- ~30 color tokens migrated from emerald/slate/etc. to brand/ink/accent.
+- Touch targets ≥44px on all buttons; cards `rounded-2xl`; live + summary cards get `shadow-glow`. All IDs/handlers preserved.
+
+### Security hardening (CRITICAL fixes from 3-agent audit)
+- **`api/whatsapp/link.js`** — atomic phone claim via Upstash `SET ... NX=true` (`kvSetNX`) eliminates the TOCTOU race where two confirm requests for the same E.164 both passed the "is it free?" check. Same-user re-link is idempotent; different-user race returns 409 + deletes the pending code.
+- **`api/sheet/provision.js`** — `kvSetChecked` now reads back the value after writing and verifies `spreadsheetId` round-trips correctly; HTTP 200 alone is no longer treated as success.
+- **`api/auth/google-exchange.js`** — fails closed (502) if the user-record KV write fails (was returning 200 with a session cookie despite losing the refresh token). Access-token TTL now honors Google's `expires_in` (60s safety margin) instead of hardcoded 3500s.
+- **`account.html`** — stopped persisting Google access token to localStorage (XSS exfil risk); provision failure now renders a recovery card with a session-cookie-driven retry button (was silently swallowed); OAuth `?error=` codes now map to specific Hebrew explanations (access_denied, server_error, invalid_scope, etc.).
+- **Deleted `admin.html.bak.20260517-222542`** (exposed admin email via direct fetch despite robots.txt).
+- **`vercel.json`** — removed `/contact` and `/team` redirects to `/about` (both pages exist; the redirects bounced sitemap URLs).
+- **`welcome.html`** — quick-try chips bumped to `min-h-[44px]` (iOS tap-target).
+- **`start.html`** — flipped `noindex,follow` to `index,follow` (was wasting internal link signal).
+
+### Tests
+- All 6 suites pass: classify 68/68, parser 23/23, isolation 18/18, golden-set 155/155 (100%), recurring-detect 17/17, full_qa 66/66 (added 4 new guards for template parity).
+- Bot version bumped to `2026-05-23-template-aligned`; DEPLOY.gs reassembled + syntax-checked.
+
+### Action for Steven
+1. **Redeploy the bot**: paste `bot/ExpenseBot_DEPLOY.gs` into Apps Script → Save → Deploy → New Version → message `בדיקה`. You should see `גרסה: 2026-05-23-template-aligned`.
+2. New signups will get the **4-tab dashboard** automatically (no manual setup needed).
+3. The dashboard rows are user-customizable — rename any row in column A and the SUMIFS auto-rebinds because formulas use `$A{row}` references.

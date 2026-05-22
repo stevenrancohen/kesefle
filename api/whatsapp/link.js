@@ -92,6 +92,25 @@ async function kvSet(key, value, ttlSec) {
   return r.ok;
 }
 
+// Atomic set-if-not-exists via Upstash's `NX=true` modifier. Returns true if
+// the key was set (claim won), false if the key already existed (claim lost).
+// Used to atomically claim a phone -> user mapping so two confirm requests
+// for the same E.164 can never both succeed.
+async function kvSetNX(key, value) {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return false;
+  const r = await fetch(`${url}/set/${encodeURIComponent(key)}?NX=true`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(value),
+  });
+  if (!r.ok) return false;
+  // Upstash returns { result: "OK" } on set, { result: null } on key-exists.
+  const j = await r.json().catch(() => ({}));
+  return j?.result === 'OK' || j?.result === 1;
+}
+
 async function kvDel(key) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -231,17 +250,6 @@ async function handlerImpl(req, res) {
       }
     }
 
-    // Reject if this phone is already linked to a different user. Without
-    // this check, a confirmed code could overwrite another user's mapping
-    // and silently re-route their bot messages to the attacker's sheet.
-    const existingPhone = await kvGet(`phone:${phone}`);
-    if (existingPhone && existingPhone.userSub && existingPhone.userSub !== userSub) {
-      log.warn('link.confirm.phone_already_linked', {
-        reqId: req.reqId, phone, existingUserSub: existingPhone.userSub, attemptedUserSub: userSub,
-      });
-      return res.status(409).json({ ok: false, error: 'phone_already_linked_to_another_account' });
-    }
-
     // Look up the user's sheet to attach to the phone mapping.
     const sheetRec = await kvGet(`sheet:${userSub}`);
     const userRec = await kvGet(`user:${userSub}`) || {};
@@ -255,7 +263,28 @@ async function handlerImpl(req, res) {
       spreadsheetUrl: sheetRec?.spreadsheetUrl || userRec.spreadsheetUrl || null,
       linkedAt: new Date().toISOString(),
     };
-    await kvSet(`phone:${phone}`, permRec);
+
+    // ATOMIC claim: SETNX (set-if-not-exists) eliminates the TOCTOU race where
+    // two confirm calls for the same phone within the same second both pass
+    // the "is it free?" check and the later write silently overwrites the
+    // earlier one. If SETNX fails, the key already exists -- either the same
+    // user is re-linking (idempotent, OK) or a different user beat us to it
+    // (409). We re-read after the failed claim to decide.
+    const claimed = await kvSetNX(`phone:${phone}`, permRec);
+    if (!claimed) {
+      const existingPhone = await kvGet(`phone:${phone}`);
+      if (existingPhone && existingPhone.userSub && existingPhone.userSub !== userSub) {
+        log.warn('link.confirm.phone_race_lost', {
+          reqId: req.reqId, phone, existingUserSub: existingPhone.userSub, attemptedUserSub: userSub,
+        });
+        // Cleanup the pending code so the loser cannot brute-force a re-claim
+        // by repeatedly hitting confirm with the same code.
+        await kvDel(`linkCode:${code}`).catch(() => {});
+        return res.status(409).json({ ok: false, error: 'phone_already_linked_to_another_account' });
+      }
+      // Same-user re-link: refresh the record (linkedAt + plan may have changed).
+      await kvSet(`phone:${phone}`, permRec);
+    }
 
     // Reverse mapping: user → phone (so /account can detect "linked" state)
     await kvSet(`userPhone:${userSub}`, { phone, linkedAt: permRec.linkedAt });

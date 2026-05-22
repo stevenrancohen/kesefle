@@ -159,12 +159,13 @@ async function handlerImpl(req, res) {
 
   const row = buildExpenseRow({
     amount,
-    currency: body?.currency,
     isIncome: !!body?.isIncome,
     category: body?.category,
     subcategory: body?.subcategory,
     rawText: body?.rawText,
-    messageId: body?.messageId,
+    // `currency` and `messageId` are no longer columns in the 8-col template;
+    // dedup happens upstream via KV. `date` may be supplied for backfills.
+    date: body?.date,
   });
 
   const result = await appendRowToUserSheet({ userRecord, row });

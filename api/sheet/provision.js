@@ -14,7 +14,9 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { getGoogleClientId } from '../../lib/auth.js';
-import { createUserSheetWithToken } from '../../lib/sheet-writer.js';
+import { createUserSheetWithToken, exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
+import { decryptRefreshToken } from '../../lib/crypto.js';
+import { getUserId } from '../_lib/session.js';
 
 // Server-side verification of a Google OAuth access token.
 // Returns { sub, email, scope, ... } if valid, throws if not.
@@ -46,24 +48,66 @@ async function handlerImpl(req, res) {
 
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-  const accessToken = String(body?.accessToken || '').trim();
+  const bodyAccessToken = String(body?.accessToken || '').trim();
 
-  if (!accessToken || accessToken.length < 20) {
-    return res.status(400).json({ ok: false, error: 'missing accessToken' });
-  }
+  // Two auth modes:
+  //   A) Initial provision (right after OAuth) -- browser passes `accessToken`
+  //      from the just-completed PKCE exchange. We verify via tokeninfo +
+  //      use the same token to create the sheet.
+  //   B) Retry path -- browser has no fresh access token but has a session
+  //      cookie. We use the session to find the user, then mint a new access
+  //      token from the stored encrypted refresh token, then create the sheet.
+  let userSub, userEmail, accessToken;
 
-  // SECURITY (C4 fix): verify access token server-side via Google's tokeninfo.
-  // The userSub comes from the VERIFIED tokeninfo response, NOT from body — prevents
-  // attacker supplying their own token + victim's sub to redirect the sheet.
-  let tokenInfo;
-  try {
-    tokenInfo = await verifyAccessToken(accessToken);
-  } catch (e) {
-    log.warn('provision.token_invalid', { reqId: req.reqId, error: e.message });
-    return res.status(401).json({ ok: false, error: 'invalid_access_token', detail: e.message });
+  if (bodyAccessToken && bodyAccessToken.length >= 20) {
+    // Mode A: verify the provided access token via tokeninfo.
+    let tokenInfo;
+    try {
+      tokenInfo = await verifyAccessToken(bodyAccessToken);
+    } catch (e) {
+      log.warn('provision.token_invalid', { reqId: req.reqId, error: e.message });
+      return res.status(401).json({ ok: false, error: 'invalid_access_token', detail: e.message });
+    }
+    userSub = tokenInfo.sub;
+    userEmail = tokenInfo.email || String(body?.userEmail || '').trim();
+    accessToken = bodyAccessToken;
+  } else {
+    // Mode B: session-cookie retry. Look up the user via the cookie, then
+    // mint a fresh access token from their stored refresh token.
+    userSub = getUserId(req);
+    if (!userSub) {
+      return res.status(401).json({ ok: false, error: 'not_signed_in' });
+    }
+    const kvUrl0 = process.env.KV_REST_API_URL;
+    const kvToken0 = process.env.KV_REST_API_TOKEN;
+    if (!kvUrl0 || !kvToken0) {
+      return res.status(503).json({ ok: false, error: 'kv_unavailable' });
+    }
+    try {
+      const tokRes = await fetch(`${kvUrl0}/get/${encodeURIComponent('token:' + userSub)}`, {
+        headers: { 'Authorization': `Bearer ${kvToken0}` },
+      });
+      const tokJson = await tokRes.json();
+      const tokRec = tokJson?.result ? JSON.parse(tokJson.result) : null;
+      if (!tokRec || (!tokRec.refreshTokenEnvelope && !tokRec.refreshToken)) {
+        return res.status(401).json({ ok: false, error: 'no_refresh_token_relink_needed' });
+      }
+      const refresh = tokRec.refreshToken || decryptRefreshToken(tokRec.refreshTokenEnvelope, userSub);
+      accessToken = await exchangeRefreshForAccess(refresh);
+    } catch (e) {
+      log.error('provision.session_token_mint_failed', { reqId: req.reqId, userSub, error: e.message });
+      return res.status(502).json({ ok: false, error: 'session_token_mint_failed', detail: e.message });
+    }
+    // Best-effort: pull email from the user record if we have one.
+    try {
+      const usrRes = await fetch(`${kvUrl0}/get/${encodeURIComponent('user:' + userSub)}`, {
+        headers: { 'Authorization': `Bearer ${kvToken0}` },
+      });
+      const usrJson = await usrRes.json();
+      const usrRec = usrJson?.result ? JSON.parse(usrJson.result) : null;
+      userEmail = usrRec?.email || '';
+    } catch (_e) { userEmail = ''; }
   }
-  const userSub = tokenInfo.sub;
-  const userEmail = tokenInfo.email || String(body?.userEmail || '').trim();
 
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
@@ -109,9 +153,12 @@ async function handlerImpl(req, res) {
     provisioned: new Date().toISOString(),
   };
 
-  // KV setter that VERIFIES the write succeeded and retries once. The bot finds
-  // a user's sheet via these mappings — a silent failure here means the user
-  // gets a sheet in their Drive but the bot can never write to it.
+  // KV setter that VERIFIES the write succeeded by reading it back. The bot
+  // finds a user's sheet via these mappings -- a silent failure here means
+  // the user gets a sheet in their Drive but the bot can never write to it.
+  // Upstash returns 200 even on transient inconsistencies, so an HTTP 200 is
+  // necessary but not sufficient; we re-read after every write and compare
+  // the stored spreadsheetId. Retries once on any mismatch.
   const kvSetChecked = async (key, val) => {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
@@ -120,7 +167,17 @@ async function handlerImpl(req, res) {
           headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(val),
         });
-        if (r.ok) return true;
+        if (!r.ok) continue;
+        // Verify the write by reading it back. If the value matches what we
+        // intended to store, we're done. If it's missing or different,
+        // something between us and Upstash dropped it -- retry.
+        const verifyRes = await fetch(`${kvUrl}/get/${encodeURIComponent(key)}`, {
+          headers: { 'Authorization': `Bearer ${kvToken}` },
+        });
+        if (!verifyRes.ok) continue;
+        const verifyJson = await verifyRes.json().catch(() => ({}));
+        const stored = verifyJson?.result ? JSON.parse(verifyJson.result) : null;
+        if (stored && stored.spreadsheetId === val.spreadsheetId) return true;
       } catch (_e) { /* retry */ }
     }
     return false;
