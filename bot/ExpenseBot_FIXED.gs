@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-22-test-number-3';
+const KFL_BUILD_VERSION = '2026-05-22-test-number-4';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -915,8 +915,17 @@ function _notifyOwnerNewLead_(fromPhone) {
 function _userSheetUrl_(fromPhone) {
   try {
     var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
-    var owner = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
-    if (!owner || clean === owner) {
+    // Resolve the owner via the canonical helper / constant — NOT just the
+    // Script Property (an unset property must never make every tenant "owner").
+    var owner = '';
+    try { if (typeof _ownerPhoneDigits_ === 'function') owner = String(_ownerPhoneDigits_() || '').replace(/[^0-9]/g, ''); } catch (_oe) {}
+    if (!owner) {
+      owner = String(PropertiesService.getScriptProperties().getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '')
+           || ((typeof OWNER_PHONE !== 'undefined') ? String(OWNER_PHONE).replace(/[^0-9]/g, '') : '');
+    }
+    // ONLY the verified owner gets the company SHEET_ID. A tenant whose own sheet
+    // can't be resolved gets '' (no link) — never the owner's sheet (leak guard).
+    if (owner && clean === owner) {
       return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit';
     }
     var cache = CacheService.getScriptCache();
@@ -929,7 +938,7 @@ function _userSheetUrl_(fromPhone) {
     if (url) cache.put(ck, url, 3600);
     return url;
   } catch (_e) {
-    return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit';
+    return '';   // on error, show no link rather than risk leaking the owner sheet
   }
 }
 
@@ -7031,6 +7040,24 @@ function getDictionaryLink() {
 // 📤 שליחת הודעה ל-WhatsApp
 // ============================================================
 
+// Defensive: if a reply ever arrives as the concierge's raw JSON
+// ({"action":"chat","reply":"..."}) — e.g. from a stale deploy or a future
+// code path — extract the reply text so the USER never sees the JSON wrapper.
+function _unwrapConciergeJson_(message) {
+  var s = String(message == null ? '' : message);
+  var t = s.trim();
+  if (t.charAt(0) === '{' && t.indexOf('"action"') >= 0 && t.indexOf('"reply"') >= 0) {
+    try {
+      var m = t.match(/\{[\s\S]*\}/);
+      if (m) {
+        var p = JSON.parse(m[0]);
+        if (p && typeof p.reply === 'string' && p.reply.trim()) return p.reply;
+      }
+    } catch (_e) {}
+  }
+  return s;
+}
+
 function sendWhatsAppMessage(to, message) {
   if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
     Logger.log('sendWhatsAppMessage: token not configured - skipping reply');
@@ -7049,7 +7076,7 @@ function sendWhatsAppMessage(to, message) {
     messaging_product: 'whatsapp',
     to: to,
     type: 'text',
-    text: { body: String(message).slice(0, 4096) }
+    text: { body: String(_unwrapConciergeJson_(message)).slice(0, 4096) }
   };
 
   Logger.log('sendWhatsAppMessage: to=' + to + ' len=' + String(message).length);
