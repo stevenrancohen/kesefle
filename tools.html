@@ -47,7 +47,8 @@
     { "@type": "ListItem", "position": 6, "url": "https://kesefle.com/tools/expense-splitter", "name": "מחשבון פיצול הוצאות" },
     { "@type": "ListItem", "position": 7, "url": "https://kesefle.com/tools/savings-goal", "name": "מחשבון יעד חיסכון" },
     { "@type": "ListItem", "position": 8, "url": "https://kesefle.com/tools/emergency-fund", "name": "מחשבון קרן חירום" },
-    { "@type": "ListItem", "position": 9, "url": "https://kesefle.com/tools/loan-calculator", "name": "מחשבון הלוואה ומשכנתא" }
+    { "@type": "ListItem", "position": 9, "url": "https://kesefle.com/tools/loan-calculator", "name": "מחשבון הלוואה ומשכנתא" },
+    { "@type": "ListItem", "position": 10, "url": "https://kesefle.com/tools/compound-interest", "name": "מחשבון ריבית דריבית" }
   ]
 }
 </script>
@@ -419,6 +420,29 @@
             הזן סכום, ריבית ותקופה — וקבל מיד את ההחזר החודשי, סך הריבית וסך התשלום, בשיטת שפיצר.
           </p>
           <div class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-brand-700 group-hover:gap-3 transition-all dark:text-brand-300">
+            פתח את הכלי
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <!-- Compound-interest calculator -->
+      <a href="/tools/compound-interest" class="group relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-7 shadow-soft transition hover:-translate-y-1 hover:border-accent-500 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800 dark:hover:border-accent-500">
+        <div class="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-accent-500/10 transition group-hover:bg-accent-500/20"></div>
+        <div class="relative">
+          <div class="mb-4 flex items-center justify-between">
+            <span class="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 text-2xl text-white shadow-soft">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-4 4"/></svg>
+            </span>
+            <span class="rounded-full bg-accent-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-accent-600 dark:bg-accent-500/20 dark:text-accent-500">כלי חינמי</span>
+          </div>
+          <h2 class="text-xl font-black tracking-tight md:text-2xl dark:text-white">
+            מחשבון ריבית דריבית
+          </h2>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-200 leading-relaxed">
+            הזן סכום התחלתי, הפקדה חודשית, תשואה ושנים — וראה לאן הכסף יגדל, וכמה מהסכום הוא רווח מריבית דריבית.
+          </p>
+          <div class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-accent-600 group-hover:gap-3 transition-all dark:text-accent-500">
             פתח את הכלי
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
           </div>
