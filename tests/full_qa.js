@@ -190,6 +190,14 @@ ok('fresh sheet uses the A:I תנועות headers (lock-step with buildExpenseRo
    /TENANT_TX_HEADERS/.test(SW) && /createUserSheetWithRefresh/.test(SW));
 ok('group.js no longer copies a template (uses create-fresh)',
    !/copyTemplateToUserDrive/.test(fs.readFileSync(path.join(ROOT, 'api/group.js'), 'utf8')));
+// Sign-in must use the full-page REDIRECT OAuth flow (PKCE → google-exchange),
+// not the popup/iframe GIS flow that renders a blank gsi page when 3rd-party
+// cookies are blocked (incognito, Safari, in-app browsers).
+ok('account.html sign-in uses full-page redirect OAuth (PKCE → google-exchange)',
+   /accounts\.google\.com\/o\/oauth2\/v2\/auth/.test(ACCOUNT_HTML) &&
+   /code_challenge_method/.test(ACCOUNT_HTML) &&
+   /\/api\/auth\/google-exchange/.test(ACCOUNT_HTML) &&
+   /kesefleHandleOAuthReturn/.test(ACCOUNT_HTML));
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {

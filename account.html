@@ -578,6 +578,13 @@ async function kesefleLinkRequestCode() {
 }
 
 async function _kflGetFreshAccessToken() {
+  // Prefer the access token captured during the redirect sign-in — avoids the
+  // GIS popup, which renders blank in incognito/Safari (3rd-party cookies). The
+  // popup below is only a fallback for older non-redirect sessions.
+  try {
+    var su = kesefleGetUser();
+    if (su && su.idToken && String(su.idToken).length > 20) return su.idToken;
+  } catch (e) {}
   return new Promise(function(resolve, reject) {
     var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
     if (!cid || cid.indexOf('__') === 0) return reject(new Error('Google Client ID לא מוגדר'));
@@ -868,51 +875,121 @@ function kesefleShowInAppBrowserHelp() {
 function kesefleAccountStartSignin() {
   // Embedded browsers (WhatsApp etc.) can't complete Google OAuth → guide out.
   if (kesefleIsInAppBrowser()) { kesefleShowInAppBrowserHelp(); return; }
+  // Full-page REDIRECT OAuth (PKCE). The popup/iframe GIS flow renders a blank
+  // accounts.google.com/gsi page whenever 3rd-party cookies are blocked
+  // (incognito, Safari, many in-app browsers). A top-level redirect has none of
+  // those constraints, so it works everywhere.
+  kesefleStartRedirectSignin();
+}
+
+function _kflB64Url(buf) {
+  var bytes = new Uint8Array(buf), s = '';
+  for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function _kflPkce() {
+  var verifier = _kflB64Url(crypto.getRandomValues(new Uint8Array(32)));
+  var digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return { verifier: verifier, challenge: _kflB64Url(digest) };
+}
+
+async function kesefleStartRedirectSignin() {
   var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
-  if (!cid || cid.indexOf('__') === 0) {
-    alert('Google Client ID לא מוגדר ב-Vercel env vars.');
-    return;
-  }
-  if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-    alert('Google SDK טרם נטען. רענני את הדף.');
-    return;
-  }
+  if (!cid || cid.indexOf('__') === 0) { alert('Google Client ID לא מוגדר.'); return; }
   var btn = document.getElementById('account-signin-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '…אנחנו בודקים את ההרשאות'; }
-  var client = window.google.accounts.oauth2.initTokenClient({
-    client_id: cid,
-    scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
-    callback: async function(tokenResponse) {
-      if (tokenResponse.error || !tokenResponse.access_token) {
-        if (btn) { btn.disabled = false; btn.textContent = 'התחבר עם Google'; }
-        alert('שגיאה: ' + (tokenResponse.error || 'אימות נכשל'));
-        return;
-      }
+  if (btn) { btn.disabled = true; btn.textContent = '…מעביר/ה ל-Google'; }
+  try {
+    var pk = await _kflPkce();
+    var state = _kflB64Url(crypto.getRandomValues(new Uint8Array(16)));
+    sessionStorage.setItem('kfl_pkce_verifier', pk.verifier);
+    sessionStorage.setItem('kfl_oauth_state', state);
+    var redirectUri = window.location.origin + '/account';
+    var params = new URLSearchParams({
+      client_id: cid,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      access_type: 'offline',
+      prompt: 'consent',
+      include_granted_scopes: 'true',
+      scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
+      code_challenge: pk.challenge,
+      code_challenge_method: 'S256',
+      state: state
+    });
+    window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'התחבר עם Google'; }
+    alert('שגיאה בהתחברות: ' + (e.message || e));
+  }
+}
+
+// Handles the redirect back from Google (?code=&state=): exchanges the code for
+// tokens server-side (google-exchange stores the refresh token + sets a session
+// cookie), then provisions the user's sheet with the fresh access token.
+async function kesefleHandleOAuthReturn(code, state) {
+  var savedState = null, verifier = null;
+  try { savedState = sessionStorage.getItem('kfl_oauth_state'); verifier = sessionStorage.getItem('kfl_pkce_verifier'); } catch (e) {}
+  var cleanUrl = window.location.origin + '/account';
+  // Strip the single-use code from the URL immediately (refresh-safe).
+  try { window.history.replaceState({}, document.title, cleanUrl); } catch (e) {}
+  if (!verifier || !savedState || savedState !== state) {
+    kesefleShowSigninError('פג תוקף בקשת ההתחברות. נסה/י שוב.');
+    return;
+  }
+  kesefleShowConnecting();
+  try {
+    var r = await fetch('/api/auth/google-exchange', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, codeVerifier: verifier, redirectUri: cleanUrl })
+    });
+    var j = await r.json();
+    if (!r.ok || !j.ok) throw new Error((j && (j.detail || j.error)) || ('HTTP ' + r.status));
+    try { sessionStorage.removeItem('kfl_pkce_verifier'); sessionStorage.removeItem('kfl_oauth_state'); } catch (e) {}
+
+    // Provision the user's sheet now, with the fresh access token.
+    var sheetId = null, sheetUrl = null;
+    if (j.accessToken) {
       try {
-        // Use Google's tokeninfo endpoint (CORS-friendly, doesn't need auth header)
-        // instead of openidconnect.googleapis.com (which Brave's shields block).
-        var ir = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(tokenResponse.access_token));
-        if (!ir.ok) throw new Error('tokeninfo HTTP ' + ir.status);
-        var info = await ir.json();
-        if (!info || !info.sub) throw new Error('missing user info (sub)');
-        // tokeninfo returns: sub, email, email_verified, aud, exp, scope, ...
-        // It does NOT return name/picture. We use email as display name fallback.
-        kesefleSetUser({
-          sub: info.sub,
-          email: info.email || '',
-          name: info.email ? info.email.split('@')[0] : 'משתמש',
-          picture: '',
-          plan: 'free',
-          idToken: tokenResponse.access_token
+        var pr = await fetch('/api/sheet/provision', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken: j.accessToken })
         });
-        window.location.reload();
-      } catch (e) {
-        if (btn) { btn.disabled = false; btn.textContent = 'התחבר עם Google'; }
-        alert('שגיאה בקבלת פרטי משתמש: ' + (e.message || e));
-      }
+        var pj = await pr.json();
+        if (pj && pj.ok) { sheetId = pj.spreadsheetId; sheetUrl = pj.spreadsheetUrl; }
+      } catch (e) { /* connected UI offers a manual retry */ }
     }
-  });
-  client.requestAccessToken({ prompt: 'consent' });
+    var user = j.user || {};
+    kesefleSetUser({
+      sub: user.sub, email: user.email || '',
+      name: user.name || (user.email ? user.email.split('@')[0] : 'משתמש'),
+      picture: user.picture || '', plan: 'free', idToken: j.accessToken || ''
+    });
+    if (sheetId) { try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: sheetId, spreadsheetUrl: sheetUrl })); } catch (e) {} }
+    window.location.reload();
+  } catch (e) {
+    kesefleShowSigninError(e.message || String(e));
+  }
+}
+
+function _kflCardShell(innerHtml) {
+  var isDark = document.documentElement.classList.contains('dark');
+  var bg = isDark ? '#1e2638' : '#ffffff', border = isDark ? '#2f3b54' : '#dde1ec';
+  var main = document.querySelector('main') || document.body;
+  var card = document.createElement('div');
+  card.style.cssText = 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;';
+  card.innerHTML = '<div style="border-radius:24px;border:1px solid ' + border + ';background:' + bg + ';padding:32px;box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);text-align:center;max-width:28rem;width:100%;">' + innerHtml + '</div>';
+  while (main.firstChild) main.removeChild(main.firstChild);
+  main.appendChild(card);
+}
+function kesefleShowConnecting() {
+  var isDark = document.documentElement.classList.contains('dark');
+  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f';
+  _kflCardShell('<div style="font-size:40px;">⏳</div><h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">מתחבר/ת ל-Google…</h2><p style="margin-top:10px;font-size:14px;color:' + body + ';">רגע, יוצרים לך גיליון ומסיימים את ההתחברות.</p>');
+}
+function kesefleShowSigninError(msg) {
+  var isDark = document.documentElement.classList.contains('dark');
+  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#16a34a';
+  _kflCardShell('<div style="font-size:40px;">😕</div><h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">ההתחברות לא הושלמה</h2><p style="margin-top:10px;font-size:13px;color:' + body + ';word-break:break-word;">' + String(msg || '').slice(0, 200) + '</p><button type="button" onclick="kesefleStartRedirectSignin()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה/י שוב</button>');
 }
 
 function kesefleShowSigninPrompt() {
@@ -954,6 +1031,14 @@ function kesefleShowSigninPrompt() {
 }
 
 (function init() {
+  // Returning from the Google redirect? Finish the exchange + provisioning.
+  var _q = new URLSearchParams(window.location.search);
+  if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
+  if (_q.get('error')) {
+    try { window.history.replaceState({}, document.title, window.location.origin + '/account'); } catch (e) {}
+    kesefleShowSigninPrompt();
+    return;
+  }
   var u = kesefleGetUser();
   if (!u) { kesefleShowSigninPrompt(); return; }
   document.getElementById('user-name').textContent = u.name || u.email || 'משתמש';
