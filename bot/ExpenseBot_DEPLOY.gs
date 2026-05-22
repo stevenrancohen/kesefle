@@ -118,7 +118,7 @@ const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProp
 const BOT_PHONE_E164 = '+17745448053';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-22-learn-1';
+const KFL_BUILD_VERSION = '2026-05-22-learn-2';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1674,6 +1674,9 @@ function handleInteractiveReply_(fromPhone, interactive) {
 
     try { _updateBusinessDashboard_(category, subcategory, monthKey, amount); }
     catch (_dashErr) { Logger.log('handleInteractiveReply_: dashboard err: ' + (_dashErr && _dashErr.message)); }
+    // Mirror the chosen-category expense into the dashboard cell note too.
+    try { _dashboardDetailNote_(category, subcategory, monthKey, amount, description, now); }
+    catch (_dnErr) { Logger.log('handleInteractiveReply_: dashboard note err: ' + (_dnErr && _dnErr.message)); }
 
     // Save to the learning cache so next time we don't ask
     try { _learnedSave(description, { category: category, subcategory: subcategory }, 'user'); }
@@ -4237,6 +4240,7 @@ function processExpense(text, fromPhone) {
                 if (__hPLast > 2) __hPSheet.getRange(2, 1, __hPLast - 1, 8).sort({ column: 1, ascending: true });
               } catch (__hPSortErr) {}
               try { _updateBusinessDashboard_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount); } catch (__hPDashErr) { Logger.log('smart_pending dashboard err: ' + (__hPDashErr && __hPDashErr.message)); }
+              try { _dashboardDetailNote_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount, __hPDesc, __hPNow); } catch (__hPDnErr) { Logger.log('smart_pending dashboard note err: ' + (__hPDnErr && __hPDnErr.message)); }
               return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון 📊\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
             }
           } catch (__hPWriteErr) {
@@ -4795,9 +4799,16 @@ function processExpense(text, fromPhone) {
       } catch (__sortErr) {
         Logger.log('processExpense: sort err: ' + (__sortErr && __sortErr.message));
       }
-      if (fx && fx.note) {
-        try { setDashboardNoteForTransaction_(matched.category, matched.subcategory, monthKey, fx.note); } catch (eN) { Logger.log('note err: ' + eN.message); }
-      }
+      // 📝 Mirror this expense into the matching dashboard cell as a NOTE
+      // (מאזן אישי / מאזן חברה) so hovering a monthly category total shows the
+      // breakdown of what made it up — same idea as the תנועות note. Note only:
+      // never touches the cell value or its SUMIFS formula. FX info, when
+      // present, is folded into the same line.
+      try {
+        var __dashDesc = String(item.description || item.originalText || text || '').trim();
+        if (fx && fx.note) __dashDesc += ' (' + fx.note + ')';
+        _dashboardDetailNote_(matched.category, matched.subcategory, monthKey, finalAmount, __dashDesc, now);
+      } catch (eN) { Logger.log('dashboard note err: ' + (eN && eN.message)); }
       try {
         _updateBusinessDashboard_(matched.category, matched.subcategory, monthKey, finalAmount);
       } catch (_dashErr) {
@@ -7441,22 +7452,39 @@ function _updateBusinessDashboard_(category, subcategory, monthKey, amount) {
   return false;
 }
 
+// Appends a NOTE to the dashboard cell that aggregates this transaction —
+// the (subcategory-row x month-column) intersection on מאזן אישי (personal) or
+// מאזן חברה (business). NOTE ONLY: never touches the cell's value or its SUMIFS
+// formula, so it cannot corrupt totals or user-typed numbers.
+//
+// Why the row label = subcategory: the personal dashboard cells are
+// SUMIFS(תנועות!C:C, תנועות!E:E, $A{row}, ...) — i.e. they key column A (the
+// row label) against תנועות col E (the subcategory the bot wrote). So the row
+// that sums this expense is, by construction, the row labeled with its
+// subcategory. For business we collapse to the canonical biz-sub the company
+// dashboard rows use (same mapping _updateBusinessDashboard_ relies on).
 function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteText) {
-  if (!noteText) return;
+  if (!noteText) return false;
   var ss = SpreadsheetApp.openById(SHEET_ID);
-  var bizCats = {'מחזור':1,'עלות חומרי גלם':1,'עלות שיווק':1,'משלוחים והתקנות':1,'הוצאות תפעוליות':1};
-  var dashNames = bizCats[category] ? ['מאזן חברה 2026','מאזן חברה'] : ['מאזן שנתי','מאזן אישי'];
+  var isBiz = (category === 'עסק');
+  var dashNames = isBiz ? ['מאזן חברה 2026', 'מאזן חברה'] : ['מאזן שנתי', 'מאזן אישי'];
+  var rowLabel = String(subcategory || '').trim();
+  if (isBiz && typeof _normalizeBizSub_ === 'function') {
+    var canon = _normalizeBizSub_(subcategory);
+    if (canon) rowLabel = canon;
+  }
+  if (!rowLabel) return false;
   var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   var monthIdx = parseInt((monthKey || '').split('-')[1], 10);
   var monthLabel = (!isNaN(monthIdx) && monthIdx >= 1 && monthIdx <= 12) ? hebMonths[monthIdx - 1] : null;
-  if (!monthLabel) return;
+  if (!monthLabel) return false;
   for (var d = 0; d < dashNames.length; d++) {
     var ds = ss.getSheetByName(dashNames[d]);
     if (!ds) continue;
     var dvals = ds.getDataRange().getValues();
     for (var r = 0; r < dvals.length; r++) {
       for (var c = 0; c < dvals[r].length; c++) {
-        if (String(dvals[r][c] || '').trim() === subcategory) {
+        if (String(dvals[r][c] || '').trim() === rowLabel) {
           for (var hr = 0; hr < r; hr++) {
             for (var hc = 0; hc < dvals[hr].length; hc++) {
               if (String(dvals[hr][hc] || '').trim() === monthLabel) {
@@ -7464,13 +7492,33 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
                 var existing = cell.getNote();
                 var combined = existing ? (existing + '\n' + noteText) : noteText;
                 cell.setNote(combined);
-                return;
+                Logger.log('setDashboardNoteForTransaction_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' += "' + noteText + '"');
+                return true;
               }
             }
           }
         }
       }
     }
+  }
+  Logger.log('setDashboardNoteForTransaction_: no cell for row "' + rowLabel + '" x "' + monthLabel + '"');
+  return false;
+}
+
+// Builds the compact per-expense breakdown line and appends it to the matching
+// dashboard cell as a note. Best-effort + silent on failure so it can never
+// block expense logging. Mirrors the תנועות original-text note onto the
+// dashboard so hovering a monthly category total shows what made it up.
+function _dashboardDetailNote_(category, subcategory, monthKey, amount, description, when) {
+  try {
+    var d = (when instanceof Date) ? when : new Date();
+    var line = Utilities.formatDate(d, 'Asia/Jerusalem', 'dd/MM HH:mm') +
+               ' · ₪' + Math.abs(Number(amount) || 0).toLocaleString('he-IL') +
+               ' · ' + String(description == null ? '' : description).trim().slice(0, 50);
+    return setDashboardNoteForTransaction_(category, subcategory, monthKey, line);
+  } catch (e) {
+    Logger.log('_dashboardDetailNote_: ' + (e && e.message));
+    return false;
   }
 }
 

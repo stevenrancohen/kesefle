@@ -141,6 +141,21 @@ ok('/api/learn validates category against VALID_CATS', /VALID_CATS\.has\(categor
 ok('/api/learn is bot-secret gated', /KESEFLE_BOT_SECRET/.test(LEARN) && /x-kesefle-bot-secret/.test(LEARN));
 ok('/api/learn stores only hashes (raw text never sent)', /global_learn:/.test(LEARN) && /HASH_RE/.test(LEARN));
 
+// ── 5c. Dashboard cell-note mirroring (מאזן אישי / מאזן חברה) ────────────────
+// Every owner expense path must mirror its detail into the dashboard cell as a
+// NOTE — and the note writer must NEVER touch a cell value/formula (notes only)
+// or it could corrupt the SUMIFS totals / user-typed numbers.
+console.log('\n══ 5c. Dashboard cell-note mirroring ══');
+const _setNoteFn = extractFn(BOT, 'setDashboardNoteForTransaction_');
+ok('note writer uses setNote (not setValue — safe, never corrupts totals)',
+   /\.setNote\(/.test(_setNoteFn) && !/\.setValue\(/.test(_setNoteFn) && !/setFormula\(/.test(_setNoteFn));
+ok('note writer routes business→company / else→personal',
+   /category === 'עסק'/.test(_setNoteFn) && /מאזן חברה/.test(_setNoteFn) && /מאזן אישי/.test(_setNoteFn));
+ok('all 3 owner expense paths mirror to the dashboard note',
+   (BOT.match(/_dashboardDetailNote_\(/g) || []).length >= 3);
+ok('_dashboardDetailNote_ is best-effort (wrapped in try/catch at call sites)',
+   /try\s*\{\s*_dashboardDetailNote_\(/.test(BOT));
+
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
   console.log('\n══ 6. Live API health (KESEFLE_BASE) ══');
