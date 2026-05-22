@@ -6,6 +6,40 @@ the persistent record. Newest first.)
 
 ---
 
+## 2026-05-22 — PRE-LAUNCH AUDIT (10 agents) + fixes; verdict for 1000 users
+
+Ran a 10-agent full-codebase audit ahead of a planned 1000-customer launch.
+**Verdict: NO-GO for 1000 users immediately** — code is healthy; the walls are
+external/free-tier limits. Hard blockers (no code fixes these):
+- **WhatsApp = Meta TEST number** (+1 555 640 8123) → delivers only to ~5
+  allow-listed phones / 250 msgs/day. Need a real business number + Meta
+  Business Verification (~1–3 business days; VoIP/Numero usually rejected).
+- **Google OAuth in Testing** → 100-user cap + refresh tokens die after 7 days.
+  Need Published + verification (~1–4 wks; drive.file avoids the CASA audit, so
+  it's the lighter path). Interim: Production-unverified for a soft beta.
+- **Upstash KV free tier** (~10k cmds/day) vs ~100k projected → upgrade to
+  pay-as-you-go BEFORE launch or idempotency/dedup breaks (double-charged rows).
+- **Apps Script 20k UrlFetch/day** vs ~30k projected (single project serves all
+  tenants) → Workspace account or route inbound to the Vercel webhook.
+
+Silent killers to verify on Vercel: `KESEFLE_DB_KEY` (+kid) and `SESSION_SECRET`
+(without them every write/login fails closed). Register redirect URI
+`https://kesefle.com/account`. Redeploy bot (now `2026-05-22-test-number-2`).
+
+Fixes shipped this pass (all pushed, 342 checks green, isolation re-verified safe):
+- Brand ף→פ (10 user-facing strings: WELCOME/HELP/referral/banners).
+- Per-category summary on the new tenant sheet: exact-match SUMIF → wildcard
+  expense-restricted SUMIFS (was under-reporting ~38% of spend into zero rows).
+- webhook.js kvGet r.ok/try-catch guard (Meta-facing crash path).
+- Refresh token no longer stored in plaintext in token:{sub} (encrypted envelope).
+
+Known 🟡 (post-launch): phone-link reuses a ~1h access token (later-visit link
+fails) — move /api/whatsapp/link to session auth; Apps Script Script-Properties
+dedup keys exhaust at scale — move to KV; bot-secret `!==` → constant-time.
+
+Realistic earliest true public launch: **~2 weeks**, Google-verification-driven.
+A working soft beta (allow-listed testers) is possible today.
+
 ## 2026-05-22 (later) — recurring intelligence + two new growth tools
 
 - **Proactive recurring detection** (bot, build `2026-05-22-learn-1`). When a
