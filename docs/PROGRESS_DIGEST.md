@@ -6,6 +6,39 @@ the persistent record. Newest first.)
 
 ---
 
+## 2026-05-22 — 10x bot intelligence: cross-user self-learning + accuracy net
+
+Two shipped, fully tested, pushed (bot build `2026-05-22-learn-1`):
+
+- **Cross-user self-learning** (`api/learn.js` + bot wiring). When ANY user
+  confirms a category correction, the bot SHA-256-hashes the normalized
+  description and POSTs the **hash** (never raw text) to `/api/learn`, which
+  stores `global_learn:{hash}` after validating the category against
+  `VALID_CATS` (server-side junk-category defense). Any other user typing the
+  EXACT same description then categorizes instantly — no LLM call. The global
+  tier sits AFTER the local dictionary and BEFORE the LLM (known words stay
+  instant; the network hop only happens on genuinely-unknown text, replacing a
+  costlier LLM call). Fixed a real bug: source `'user'` (interactive picks +
+  `teachCategory`) was silently excluded from propagation; now publishes on both
+  append and re-correction. CacheService caches hits (1h) + misses (5min).
+  Privacy: only one-way hashes leave the bot.
+- **Golden-set accuracy benchmark** (`tests/golden_set.js`, wired into full_qa).
+  155 hand-labeled real Hebrew expenses → asserts aggregate accuracy vs a 0.93
+  regression floor. Honest, not rigged: labels reconciled to the map's
+  consistent design (income tax = recurring; insurance follows its domain;
+  tuition = לימודים), business-only vendors excluded, ambiguous one-word inputs
+  labeled DEFAULT (asking ≠ miscategorizing). Baseline 100% (155/155).
+- **3 safe vocab fixes** (zero classify regressions): מעון→חינוך, חולצה→קניות,
+  רהיט→קניות. Curated, not mass expansion.
+
+Battery green: 68 classify + 23 parser + 18 isolation + 155 golden + 45 full_qa
+(+10 new global-learn regression guards locking the wiring + privacy in place).
+
+### Action for Steven
+**Redeploy the bot** to activate cross-user learning (and the still-pending
+Gemini/brand fixes): paste `bot/ExpenseBot_DEPLOY.gs` → Save → Deploy → New
+Version → message `בדיקה` (should show `גרסה: 2026-05-22-learn-1`).
+
 ## 2026-05-22 (overnight) — growth: two new free tools
 
 Built two more high-quality, self-contained, auto-deploying tools (proven
