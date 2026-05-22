@@ -7,23 +7,28 @@
 
 ---
 
-## 0. ⚠️ DECIDE THE BOT'S PUBLIC WHATSAPP NUMBER (before public launch)
+## 0. ⚠️ THE BOT'S PUBLIC WHATSAPP NUMBER (before public launch)
 
-Right now every "message the bot" button on the site (45 links across 20 pages)
-points at the **Meta test number `+1 555 640 8123` (`15556408123`)**. Your bot
-config (`BOT_PHONE_E164`) says the production number is **`+1 774 544 8053`
-(`17745448053`)**, which appears in **zero** site links.
+**As of 2026-05-22, everything is aligned on the Meta test number
+`+1 555 640 8123` (`15556408123`):** all site "message the bot" links AND the
+bot's own `BOT_PHONE_E164` point here. (We removed the earlier mismatch where
+the site advertised `+1 774 544 8053` / `17745448053` — that Numero number was
+never activated on WhatsApp, so those links were dead: "isn't on WhatsApp".)
 
-- **If you're still in test phase** (allow‑listed testers only): the test number
-  is correct — leave it. The test number only delivers to allow‑listed recipients.
-- **Before opening to the public**: real users can't use the test number. Update
-  all `wa.me/15556408123` links → `wa.me/17745448053` (or whatever the live
-  number is). It's hardcoded in: index, welcome, about, dashboard, start, family,
-  group, pricing, help, trust, roadmap, blog, changelog, account, automations,
-  privacy, seo, team, tools (and test.html). Tell me to do the swap when you've
-  confirmed which number is live and receiving.
-- Note: `contact.html` correctly uses your **support** line `972547760643`
-  (054‑776‑0643) — that's separate from the bot number; leave it.
+- **Test phase (now):** the test number only delivers to numbers you allow‑list
+  in Meta → WhatsApp → API Setup → "To". Add each tester's number + verify the
+  code. Great for demos with you + a handful of testers; NOT open to the public.
+- **Before opening to the public:** a Meta test number cannot serve real users.
+  Provision a real WhatsApp Business number (a mobile SIM or Meta‑purchased
+  number — VoIP/Numero numbers like 774‑544‑8053 are usually rejected by Meta),
+  verify the business in Meta Business Manager, take the app out of test mode,
+  then swap `wa.me/15556408123` → the live number across the site (index,
+  welcome, about, dashboard, start, family, group, pricing, help, trust,
+  roadmap, blog, changelog, account, automations, privacy, seo, team, tools,
+  test.html) **and** `BOT_PHONE_E164` in the bot. Tell me the number and I'll
+  do the swap in one pass.
+- Note: `contact.html` / `terms.html` correctly use your **support** line
+  `972547760643` (054‑776‑0643) — separate from the bot number; leave it.
 
 ---
 

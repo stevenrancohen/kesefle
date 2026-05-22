@@ -35,15 +35,18 @@ const DASHBOARD_SHEET = 'מאזן שנתי';
 
 const VERIFY_TOKEN = 'expense_bot_verify_2026';
 const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHATSAPP_TOKEN') || '';
-// New bot number: +17745448053 (Numero US, registered with Meta 2026-05-18)
+// Live bot number: +1 555 640 8123 (Meta test number, Phone Number ID below).
+// This is the number that actually sends/receives today; the site links point
+// here too. Test numbers only deliver to recipients allow-listed in Meta. When
+// a real production number is provisioned, update BOT_PHONE_E164 + the site.
 // Phone Number ID: 1090404180828069 (from Meta API Setup)
 // WABA ID: 986476207210292
 // Script Properties can override the default if needed.
 const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1090404180828069';
-const BOT_PHONE_E164 = '+17745448053';
+const BOT_PHONE_E164 = '+15556408123';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-22-learn-2';
+const KFL_BUILD_VERSION = '2026-05-22-learn-3';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -9176,7 +9179,7 @@ function installKesefleBot() {
 
   // Optional: send a test WhatsApp message to ALLOWED_PHONE (if it's set somewhere)
   // Skipped to avoid spamming during setup. To test manually, send a WhatsApp message
-  // to +17745448053 and check that you get a reply within 5 seconds.
+  // to +15556408123 (allow-listed recipients only) and check for a reply.
 
   return report.join('\n');
 }
