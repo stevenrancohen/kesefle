@@ -1879,5 +1879,19 @@ function generatePseudoSeries(target, n, intLike) {
 
 <script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
 if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+<script>
+/* Blank-screen safety net: if nothing rendered 2.5s after load, show a recovery
+   card + reload button instead of a white void. Fires only when truly empty. */
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    try {
+      var host = document.querySelector('main') || document.body;
+      if (!host) return;
+      if ((host.innerText || '').replace(/\s+/g, '').length >= 5) return;
+      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-size:20px;font-weight:800;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#16a34a;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
+    } catch (_e) {}
+  }, 2500);
+});
+</script>
 </body>
 </html>
