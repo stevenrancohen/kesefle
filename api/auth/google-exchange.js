@@ -11,7 +11,7 @@
 //          &response_type=code
 //          &access_type=offline       <-- this gives us a refresh token
 //          &prompt=consent            <-- forces refresh token on re-grant
-//          &scope=openid email profile https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets
+//          &scope=openid email profile https://www.googleapis.com/auth/drive.file
 //          &code_challenge=...&code_challenge_method=S256
 //          &state=<csrf-random>
 //   3. Google redirects back to /account?code=...&state=...

@@ -586,7 +586,7 @@ async function _kflGetFreshAccessToken() {
     }
     var client = window.google.accounts.oauth2.initTokenClient({
       client_id: cid,
-      scope: 'openid email profile https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+      scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
       callback: function(tokenResponse) {
         if (tokenResponse.error || !tokenResponse.access_token) {
           return reject(new Error(tokenResponse.error || 'לא קיבלנו אישור'));
@@ -881,7 +881,7 @@ function kesefleAccountStartSignin() {
   if (btn) { btn.disabled = true; btn.textContent = '…אנחנו בודקים את ההרשאות'; }
   var client = window.google.accounts.oauth2.initTokenClient({
     client_id: cid,
-    scope: 'openid email profile https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+    scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
     callback: async function(tokenResponse) {
       if (tokenResponse.error || !tokenResponse.access_token) {
         if (btn) { btn.disabled = false; btn.textContent = 'התחבר עם Google'; }
@@ -1027,10 +1027,10 @@ async function kesefleProvisionSheet() {
 
   var tokenClient = window.google.accounts.oauth2.initTokenClient({
     client_id: window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID,
-    // drive.readonly is needed to copy the template file (drive.file alone
-    // only grants access to files the app already created/opened with picker).
-    // drive.file is kept for ongoing access to files we provision.
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
+    // drive.file only: we now CREATE the user's sheet fresh (app-created), so we
+    // never need to read pre-existing Drive files. This narrow scope is what lets
+    // the app be published without a Google CASA security assessment.
+    scope: 'https://www.googleapis.com/auth/drive.file',
     callback: async function(tokenResponse) {
       if (tokenResponse.error || !tokenResponse.access_token) {
         if (prog) prog.classList.add('hidden');
@@ -1129,10 +1129,10 @@ async function kesefleProvisionSheet() {
             fixLabel = 'חזרי להתחברות ←';
             fixIsLink = true;
             fixHref = '/';
-          } else if (/missing_drive_readonly_scope/i.test(detail) || /missing_drive_readonly_scope/i.test(j.error || '')) {
-            what = 'נדרשת הרשאה נוספת.';
-            why = 'למה? כדי להעתיק את התבנית מהדרייב שלנו לדרייב שלך, צריך אישור לקריאת קבצים.';
-            fix = 'לחצי שוב על "צור את הגיליון" ואשרי את כל ההרשאות (כולל "View files in your Google Drive").';
+          } else if (/missing_drive_file_scope/i.test(detail) || /missing_drive_file_scope/i.test(j.error || '')) {
+            what = 'נדרשת הרשאה ליצירת הגיליון.';
+            why = 'למה? כדי ליצור עבורך גיליון חדש בדרייב שלך, צריך לאשר את ההרשאה.';
+            fix = 'לחצי שוב על "צור את הגיליון" ואשרי את ההרשאה.';
           } else {
             why = detail ? 'פרטים טכניים: ' + detail.slice(0, 120) : 'למה? לא בטוחים — זו תקלה לא צפויה.';
             fix = 'נסי שוב. אם זה ממשיך, שלחי לנו אימייל.';
@@ -1168,9 +1168,8 @@ async function kesefleProvisionSheet() {
       }
     }
   });
-  // Force consent prompt so existing users re-grant with the new drive.readonly
-  // scope. Without this, Google silently returns a cached token that only has
-  // the old scopes, causing the Drive copy to fail with "file not found".
+  // Force consent so the user grants the drive.file scope (and so anyone who
+  // previously granted broader scopes cleanly moves to the minimal one).
   tokenClient.requestAccessToken({ prompt: 'consent' });
 }
 </script>

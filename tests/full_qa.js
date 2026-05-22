@@ -23,6 +23,8 @@ const ACCOUNT = fs.readFileSync(path.join(ROOT, 'api/account.js'), 'utf8');
 const LINK = fs.readFileSync(path.join(ROOT, 'api/whatsapp/link.js'), 'utf8');
 const ADMIN_STATS = fs.readFileSync(path.join(ROOT, 'api/admin/stats.js'), 'utf8');
 const LEARN = fs.readFileSync(path.join(ROOT, 'api/learn.js'), 'utf8');
+const PROVISION = fs.readFileSync(path.join(ROOT, 'api/sheet/provision.js'), 'utf8');
+const ACCOUNT_HTML = fs.readFileSync(path.join(ROOT, 'account.html'), 'utf8');
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -169,6 +171,25 @@ ok('every /messages send targets the inbound number (no bare hardcoded id)',
    !/WHATSAPP_PHONE_NUMBER_ID \+ '\/messages'/.test(BOT) &&
    (BOT.match(/_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID|_pnid \+ '\/messages'/g) || []).length >= 3);
 ok('BOT_PHONE_E164 display number matches the test number', /BOT_PHONE_E164 = '\+15556408123'/.test(BOT));
+
+// ── 5e. Minimal OAuth scope (drive.file) — publishable without CASA audit ────
+// Provisioning must CREATE a fresh sheet (app-created → drive.file) rather than
+// COPY a template (which needed the restricted drive.readonly scope). Keeping
+// the requested scopes minimal is what lets the Google app be published without
+// a costly security assessment AND stops refresh tokens expiring every 7 days.
+console.log('\n══ 5e. Minimal OAuth scope (drive.file) ══');
+ok('provision.js requires only drive.file (no drive.readonly requirement)',
+   /missing_drive_file_scope/.test(PROVISION) && !/missing_drive_readonly_scope/.test(PROVISION));
+ok('provision.js creates a fresh sheet (no template drive-copy)',
+   /createUserSheetWithToken/.test(PROVISION) && !/files\/\$\{encodeURIComponent\(templateId\)\}\/copy/.test(PROVISION));
+ok('account.html sign-in requests drive.file ONLY (no readonly / full spreadsheets)',
+   /auth\/drive\.file/.test(ACCOUNT_HTML) && !/auth\/drive\.readonly/.test(ACCOUNT_HTML) && !/auth\/spreadsheets/.test(ACCOUNT_HTML));
+ok('sheet-writer exports buildTenantSheetSpec + createUserSheetWithToken',
+   /export function buildTenantSheetSpec/.test(SW) && /export async function createUserSheetWithToken/.test(SW));
+ok('fresh sheet uses the A:I תנועות headers (lock-step with buildExpenseRow)',
+   /TENANT_TX_HEADERS/.test(SW) && /createUserSheetWithRefresh/.test(SW));
+ok('group.js no longer copies a template (uses create-fresh)',
+   !/copyTemplateToUserDrive/.test(fs.readFileSync(path.join(ROOT, 'api/group.js'), 'utf8')));
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {

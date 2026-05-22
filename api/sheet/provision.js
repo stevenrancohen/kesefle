@@ -1,16 +1,20 @@
-// Provisions a new Google Sheet for a user by copying the template.
-// Env: KESEFLE_TEMPLATE_SHEET_ID (the master template), KV_REST_API_URL, KV_REST_API_TOKEN.
+// Provisions a new Google Sheet for a user by CREATING a fresh spreadsheet
+// (not copying a template). Env: KV_REST_API_URL, KV_REST_API_TOKEN.
 //
 // Flow:
-//   1. Browser obtains a Google access token with drive.file + spreadsheets scopes.
-//   2. Browser POSTs { accessToken, userSub, userEmail } to this endpoint.
-//   3. Server calls drive.files.copy to clone the template into user's Drive.
+//   1. Browser obtains a Google access token with the drive.file scope only.
+//   2. Browser POSTs { accessToken } to this endpoint.
+//   3. Server creates a fresh spreadsheet (תנועות + summary) in the user's Drive.
+//      Because the app created it, the narrow drive.file scope covers all later
+//      reads/writes — no drive.readonly, no full spreadsheets scope, so the app
+//      is publishable without a Google CASA security assessment.
 //   4. Server stores { userSub -> spreadsheetId } in Vercel KV.
 //   5. Server returns the new spreadsheet URL.
 
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { getGoogleClientId } from '../../lib/auth.js';
+import { createUserSheetWithToken } from '../../lib/sheet-writer.js';
 
 // Server-side verification of a Google OAuth access token.
 // Returns { sub, email, scope, ... } if valid, throws if not.
@@ -27,23 +31,17 @@ async function verifyAccessToken(accessToken) {
   // Check audience matches our OAuth client
   const expectedAud = getGoogleClientId();
   if (info.aud && info.aud !== expectedAud) throw new Error('tokeninfo_aud_mismatch');
-  // Check scopes include drive.file + drive.readonly + spreadsheets.
-  // drive.readonly is required to read the template Sheet (which the user
-  // hasn't opened via this app, so drive.file alone won't grant access).
+  // We CREATE a fresh sheet (app-created) instead of copying a template, so
+  // only the narrow drive.file scope is required — no drive.readonly, no full
+  // spreadsheets scope. That keeps the app verifiable without a CASA assessment.
   const scopes = String(info.scope || '').split(/\s+/);
   if (!scopes.includes('https://www.googleapis.com/auth/drive.file')) throw new Error('missing_drive_file_scope');
-  if (!scopes.includes('https://www.googleapis.com/auth/drive.readonly')) throw new Error('missing_drive_readonly_scope');
   return info;
 }
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
-  }
-
-  const templateId = process.env.KESEFLE_TEMPLATE_SHEET_ID;
-  if (!templateId) {
-    return res.status(500).json({ ok: false, error: 'server misconfigured: KESEFLE_TEMPLATE_SHEET_ID missing' });
   }
 
   let body = req.body;
@@ -90,35 +88,18 @@ async function handlerImpl(req, res) {
     }
   }
 
-  let copyResult;
+  // Create a FRESH spreadsheet (app-created → drive.file covers it) instead of
+  // copying a template (which needed drive.readonly). Same end result for the
+  // user: a sheet in their OWN Drive with a תנועות tab + live summary.
+  let spreadsheetId, spreadsheetUrl;
   try {
-    const copyRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(templateId)}/copy?supportsAllDrives=true`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `כספ'לה — ${userEmail || userSub}`.slice(0, 200),
-        }),
-      }
-    );
-    copyResult = await copyRes.json();
-    if (!copyRes.ok) {
-      return res.status(copyRes.status).json({
-        ok: false,
-        error: 'drive copy failed',
-        detail: copyResult?.error?.message || 'unknown',
-      });
-    }
+    const created = await createUserSheetWithToken(accessToken, `כספ'לה — ${userEmail || userSub}`);
+    spreadsheetId = created.spreadsheetId;
+    spreadsheetUrl = created.spreadsheetUrl;
   } catch (e) {
-    return res.status(502).json({ ok: false, error: 'drive api unreachable: ' + e.message });
+    log.error('provision.sheet_create_failed', { reqId: req.reqId, error: e.message });
+    return res.status(502).json({ ok: false, error: 'sheet_create_failed', detail: e.message });
   }
-
-  const spreadsheetId = copyResult.id;
-  const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
 
   const record = {
     userSub,

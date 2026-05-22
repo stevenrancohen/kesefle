@@ -31,7 +31,7 @@ import crypto from 'node:crypto';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken } from '../lib/crypto.js';
-import { exchangeRefreshForAccess, appendRowToUserSheet, sanitizeCell, copyTemplateToUserDrive, appendRowToTab, GROUP_LEDGER_TAB } from '../lib/sheet-writer.js';
+import { exchangeRefreshForAccess, appendRowToUserSheet, sanitizeCell, createUserSheetWithRefresh, appendRowToTab, GROUP_LEDGER_TAB } from '../lib/sheet-writer.js';
 
 // Look up a user record by phone (resolved via the existing phone:E164
 // → user mapping that the OAuth signup + WhatsApp link flow populates).
@@ -260,15 +260,14 @@ async function handlerImpl(req, res) {
       // gracefully if the creator hasn't OAuth'd or the template ID
       // isn't configured; KV is still the source of truth for fast
       // reads, the sheet is the audit trail.
-      if (GROUP_SHEET_TEMPLATE_ID) {
+      {
         try {
           const creator = await findUserByPhone(creatorPhone);
           if (creator && (creator.refreshToken || creator.refreshTokenEnvelope)) {
-            const result = await copyTemplateToUserDrive({
+            const result = await createUserSheetWithRefresh({
               refreshTokenEnvelope: creator.refreshTokenEnvelope,
               refreshToken: creator.refreshToken,
               userSub: creator.userSub,
-              templateId: GROUP_SHEET_TEMPLATE_ID,
               name: `כספ'לה — ${groupName} (${code})`,
             });
             group.sheetId = result.spreadsheetId;
@@ -550,17 +549,15 @@ async function handlerImpl(req, res) {
       if (group.sheetId) {
         return res.status(200).json({ ok: true, sheetUrl: group.sheetUrl, already: true });
       }
-      if (!GROUP_SHEET_TEMPLATE_ID) return res.status(503).json({ ok: false, error: 'template_not_configured' });
       const creator = await findUserByPhone(group.createdBy);
       if (!creator || (!creator.refreshToken && !creator.refreshTokenEnvelope)) {
         return res.status(412).json({ ok: false, error: 'creator_not_oauth' });
       }
       try {
-        const r = await copyTemplateToUserDrive({
+        const r = await createUserSheetWithRefresh({
           refreshTokenEnvelope: creator.refreshTokenEnvelope,
           refreshToken: creator.refreshToken,
           userSub: creator.userSub,
-          templateId: GROUP_SHEET_TEMPLATE_ID,
           name: `כספ'לה — ${group.name} (${group.code})`,
         });
         group.sheetId = r.spreadsheetId;
