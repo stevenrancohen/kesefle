@@ -140,7 +140,7 @@
   <meta name="theme-color" content="#22c55e">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/icon-192.png">
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900">
+<body class="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900">
 
 <!-- nav -->
 <header class="border-b border-slate-200 bg-white">
@@ -183,8 +183,8 @@
     <div class="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-brand-300/20 blur-3xl"></div>
     <div class="relative flex items-start gap-4">
       <div id="banner-icon" class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors">👋</div>
-      <div class="flex-1">
-        <h1 id="banner-title" class="text-xl font-black text-ink-900">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h1>
+      <div class="flex-1 min-w-0">
+        <h1 id="banner-title" class="text-xl font-black text-ink-900 break-words">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h1>
         <p id="banner-subtitle" class="mt-1 text-slate-700">פחות מדקה, ואתה מתחיל לעקוב אחרי הכסף שלך — ישר מתוך וואטסאפ.</p>
 
         <!-- Progress bar showing step completion -->
@@ -925,7 +925,6 @@ async function kesefleStartRedirectSignin() {
       response_type: 'code',
       access_type: 'offline',
       prompt: 'consent',
-      include_granted_scopes: 'true',
       scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
       code_challenge: pk.challenge,
       code_challenge_method: 'S256',
