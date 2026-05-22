@@ -43,7 +43,7 @@ const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProp
 const BOT_PHONE_E164 = '+17745448053';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-21-concierge-2';
+const KFL_BUILD_VERSION = '2026-05-22-brand-3';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -2244,7 +2244,7 @@ function _handleGroupCommand_(fromPhone, text) {
 }
 
 function _groupHelp_() {
-  return '🤝 *כספלה — הוצאות קבוצתיות*\n' +
+  return '🤝 *כספ\'לה — הוצאות קבוצתיות*\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
     '*התחלה:*\n' +
     '  • "כספלה צור משפחה כהן" — צור קבוצה חדשה\n' +
@@ -3495,7 +3495,7 @@ function _botConcierge_(fromPhone, text) {
   var spend = '';
   try { spend = _spendingContextLine_(fromPhone) || ''; } catch (_spe) {}
   var sys =
-    'את כספלה — עוזרת פיננסית חכמה וחמה בעברית בתוך וואטסאפ. ' +
+    'את כספ\'לה — עוזרת פיננסית חכמה וחמה בעברית בתוך וואטסאפ. ' +
     'המשתמש כתב הודעה שאינה רישום הוצאה. הביני מה הוא רוצה ותגיבי בעברית, קצר וחם (מתאים לוואטסאפ), בלי להיות גנרית. ' +
     (who ? ('המשתמש סימן שהוא עוקב אחרי כספים מסוג: ' + who + ' — התאימי את הטון.\n') : '') +
     (spend ? (spend + ' אם המשתמש שואל כמה הוציא/על מה — עני מהנתונים האלה (action=chat), אל תמציאי.\n') : '') +
@@ -4095,7 +4095,7 @@ function processExpense(text, fromPhone) {
     if (__tenant && __tenant.isOwner === false && !__tenant.userRecord) {
       // Unknown phone — neither owner nor registered tenant.
       return { reply:
-        'היי! 👋 אני כספלה — בוט ההוצאות שלך בוואטסאפ.\n' +
+        'היי! 👋 אני כספ\'לה — בוט ההוצאות שלך בוואטסאפ.\n' +
         'אני לא מזהה את המספר הזה עדיין, אז בוא נתחיל יחד.\n\n' +
         '1️⃣ פתח: https://kesefle.com/account\n' +
         '2️⃣ התחבר עם Google\n' +
@@ -4116,7 +4116,7 @@ function processExpense(text, fromPhone) {
     Logger.log('🚨 processExpense legacy path reached by non-owner ' + String(fromPhone).replace(/[^0-9]/g, '') + ' — aborting write.');
     try { _adminAlertOnce_('🚨 נחסמה כתיבה של מספר לא מוכר לגיליון שלך (processExpense). בדוק קישור מספרים.', String(fromPhone).replace(/[^0-9]/g, '')); } catch (_e) {}
     return { reply:
-      'היי! 👋 אני כספלה — אבל אני עוד לא מזהה את המספר הזה.\n' +
+      'היי! 👋 אני כספ\'לה — אבל אני עוד לא מזהה את המספר הזה.\n' +
       'התחבר ב-https://kesefle.com/account וקשר את המספר — לוקח 30 שניות, ואז ההוצאות יישמרו בגיליון שלך.' };
   }
 
