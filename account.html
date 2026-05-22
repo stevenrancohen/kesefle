@@ -558,6 +558,13 @@ async function kesefleLinkRequestCode() {
     var j = await r.json();
     if (btn) { btn.disabled = false; btn.textContent = 'צרי קוד חיבור'; }
     if (!j.ok) {
+      // Auth expired (the link step no longer relies on the ~1h access token,
+      // but an old session can still lapse) → re-sign-in to mint a fresh session.
+      if (/session_expired|not_signed_in|invalid_access_token/i.test(j.error || '')) {
+        _kflShowLinkError('ההתחברות פגה — מעבירים אותך להתחברות מחדש…');
+        setTimeout(kesefleStartRedirectSignin, 1300);
+        return;
+      }
       _kflShowLinkError(j.error || 'שגיאה ביצירת קוד');
       return;
     }

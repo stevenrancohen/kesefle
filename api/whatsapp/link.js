@@ -21,6 +21,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { computeEntitlement } from '../../lib/subscription.js';
+import { getUserId } from '../_lib/session.js';
 
 // Sends a one-shot WhatsApp welcome to a freshly-linked user. Fire-and-forget
 // from the confirm path — if Meta is down or the token has rotated, the link
@@ -261,23 +262,29 @@ async function handlerImpl(req, res) {
   }
 
   // === REQUEST action (default) — user requests a linking code ===
-  const accessToken = String(body?.accessToken || '').trim();
   const phone = normalizeE164(body?.phone);
-
-  if (!accessToken || accessToken.length < 20) {
-    return res.status(400).json({ ok: false, error: 'missing_access_token' });
-  }
   if (!phone) {
     return res.status(400).json({ ok: false, error: 'invalid_phone' });
   }
 
-  let tokenInfo;
-  try { tokenInfo = await verifyAccessToken(accessToken); }
-  catch (e) {
-    log.warn('link.request.token_invalid', { reqId: req.reqId, error: e.message });
-    return res.status(401).json({ ok: false, error: 'invalid_access_token' });
+  // AUTH: prefer the login SESSION cookie (set at sign-in, valid 30 days) so the
+  // link step never depends on the short-lived (~1h) Google ACCESS token — a
+  // stale access token was the cause of `invalid_access_token` at this step.
+  // Fall back to verifying an access token from the body for session-less calls.
+  let userSub = getUserId(req);
+  if (!userSub) {
+    const accessToken = String(body?.accessToken || '').trim();
+    if (!accessToken || accessToken.length < 20) {
+      return res.status(401).json({ ok: false, error: 'not_signed_in' });
+    }
+    try {
+      const tokenInfo = await verifyAccessToken(accessToken);
+      userSub = tokenInfo.sub;
+    } catch (e) {
+      log.warn('link.request.token_invalid', { reqId: req.reqId, error: e.message });
+      return res.status(401).json({ ok: false, error: 'session_expired' });
+    }
   }
-  const userSub = tokenInfo.sub;
 
   // Already linked? Tell the user so they don't generate a new code unnecessarily.
   const existing = await kvGet(`userPhone:${userSub}`);
