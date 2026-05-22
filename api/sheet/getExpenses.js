@@ -1,5 +1,6 @@
 import { requireUser } from '../_lib/session.js';
 import { getGoogleClientId } from '../../lib/auth.js';
+import { decryptRefreshToken } from '../../lib/crypto.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -102,11 +103,19 @@ export default async function handler(req, res) {
   const needsRefresh = !accessToken || expiry < Date.now() + 60 * 1000;
 
   if (needsRefresh) {
-    if (!record.refreshToken) {
+    // Refresh token is stored as an encrypted envelope (decrypt with userId as
+    // the AAD); fall back to a legacy plaintext field for pre-migration records.
+    let refreshTok = null;
+    if (record.refreshTokenEnvelope) {
+      try { refreshTok = decryptRefreshToken(record.refreshTokenEnvelope, userId); } catch (_e) { refreshTok = null; }
+    } else if (record.refreshToken) {
+      refreshTok = record.refreshToken;
+    }
+    if (!refreshTok) {
       return res.status(403).json({ error: 'reauth_needed' });
     }
     try {
-      const refreshed = await refreshAccessToken(record.refreshToken);
+      const refreshed = await refreshAccessToken(refreshTok);
       accessToken = refreshed.accessToken;
       const updated = { ...record, accessToken, expiry: refreshed.expiry };
       await kvSet('token:' + userId, updated);

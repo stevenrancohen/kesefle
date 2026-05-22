@@ -143,6 +143,9 @@ async function handlerImpl(req, res) {
   // unless prompt=consent was forced).
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
+  // Shared by BOTH the user: record and the token: record, so neither ever
+  // stores the refresh token in plaintext at rest.
+  let sharedRefreshEnvelope = null;
   if (tokens.refresh_token && kvUrl && kvToken) {
     try {
       // SECURITY: Encrypt refresh token at rest using AES-256-GCM with AAD bound to userSub.
@@ -151,6 +154,7 @@ async function handlerImpl(req, res) {
       let refreshTokenEnvelope = null;
       try {
         refreshTokenEnvelope = encryptRefreshToken(tokens.refresh_token, identity.sub);
+        sharedRefreshEnvelope = refreshTokenEnvelope;
       } catch (e) {
         log.error('refresh_token_encrypt_failed', { reqId: req.reqId, error: e.message });
         // Fail closed if encryption is misconfigured — refusing to store plaintext.
@@ -193,7 +197,9 @@ async function handlerImpl(req, res) {
     try {
       const existingSheetId = await kvGetSheetId(kvUrl, kvToken, identity.sub);
       const tokenRecord = {
-        refreshToken: tokens.refresh_token || null,
+        // Encrypted envelope only — never the plaintext refresh token at rest.
+        refreshTokenEnvelope: sharedRefreshEnvelope,
+        refreshToken: null,
         accessToken: tokens.access_token,
         expiry: Date.now() + 3500 * 1000,
         sheetId: existingSheetId,
