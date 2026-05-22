@@ -4774,6 +4774,26 @@ function processExpense(text, fromPhone) {
       try { __catCtx = _categoryMonthToDateLine_(matched.category, matched.isIncome); } catch (__ctxErr) {}
       var __subLabel = (matched.subcategory && matched.subcategory !== matched.category) ? '\n🏷️ ' + matched.subcategory : '';
       var __globalNote = matched.fromGlobal ? '\n📚 למדתי ממשתמשים אחרים' : '';
+      // 🔁 Proactive recurring suggestion (owner sheet → direct history read).
+      // If this expense has repeated at a stable amount across >=3 months we
+      // OFFER to track it as recurring (deduped to once per expense). Best-effort
+      // and silent on failure so it can never block the confirmation reply.
+      var __recurringTail = '';
+      try {
+        var __histData = sheet.getDataRange().getValues();
+        var __hist = [];
+        for (var __hr = 1; __hr < __histData.length; __hr++) {
+          __hist.push({
+            description: __histData[__hr][5],
+            amount: __histData[__hr][2],
+            monthKey: __histData[__hr][1],
+            isIncome: String(__histData[__hr][3] || '') === 'הכנסות',
+          });
+        }
+        __recurringTail = _recurringSuggestionLine_(fromPhone, __hist, {
+          description: it.description, amount: it.amount, monthKey: monthKey, isIncome: matched.isIncome,
+        });
+      } catch (__recErr) { Logger.log('recurring suggest err: ' + (__recErr && __recErr.message)); }
       // When FX auto-conversion happened, surface both the original and the ILS amount.
       var __fxOriginal = '';
       if (fx && fx.autoConverted && fx.foreignAmount && fx.foreignSymbol) {
@@ -4785,6 +4805,7 @@ function processExpense(text, fromPhone) {
         (__catCtx ? '\n💡 ' + __catCtx : '') +
         __anomalyTail +
         __budgetTail +
+        __recurringTail +
         __streakTail +
         (__softHintTail || '') +
         '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.' +
@@ -5224,7 +5245,9 @@ function matchCategorySmart(text, fromPhone) {
       // Cache locally (source 'global', excluded from re-publish) so we never
       // hit the endpoint again for this text within this tenant.
       try { _learnedSave(text, globalHit, 'global'); } catch (_glErr) {}
-      return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category };
+      // fromGlobal drives the "📚 למדתי ממשתמשים אחרים" note (shown once, since
+      // the local cache above means the next identical message is a local hit).
+      return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category, fromGlobal: true };
     }
   } catch (_glLookErr) { Logger.log('matchCategorySmart global err: ' + _glLookErr.message); }
 
@@ -5885,6 +5908,83 @@ function _learnedSave(text, result, source) {
     }
   } catch (e) {
     Logger.log('_learnedSave error: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROACTIVE RECURRING DETECTION
+//
+// When a user logs the SAME expense across several months at a stable amount
+// (the signature of a subscription/bill), proactively OFFER to track it as a
+// recurring expense. We never auto-create it — we suggest the exact "קבוע ..."
+// command so the user stays in control (propose-before-apply).
+//
+// _detectRecurringCandidate_ is a PURE function (no I/O) so it is fully unit-
+// tested offline (tests/recurring_detect.js). The bot feeds it the user's prior
+// rows; the gates below keep it from nagging on noisy categories:
+//   - same normalized description (digits/currency stripped)
+//   - present in >= minMonths DISTINCT calendar months (incl. the current one)
+//   - amount stability: max/min ratio <= maxRatio (groceries vary -> excluded)
+//   - expenses only (never income)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function _normForRecurring_(text) {
+  return String(text == null ? '' : text)
+    .toLowerCase()
+    .replace(/[0-9₪.,]+/g, ' ')   // strip amounts/currency so "נטפליקס 45" == "נטפליקס 50"
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function _detectRecurringCandidate_(history, current, opts) {
+  opts = opts || {};
+  var minMonths = opts.minMonths || 3;   // incl. current -> a true 3rd-month repeat
+  var maxRatio = opts.maxRatio || 1.5;   // amount-stability gate
+  if (!current || current.isIncome) return null;
+  var desc = _normForRecurring_(current.description);
+  if (!desc || desc.length < 2) return null;
+  var curAmt = Math.abs(Number(current.amount) || 0);
+  if (curAmt <= 0) return null;
+
+  var months = {};                       // distinct monthKeys with a matching expense
+  var amounts = [curAmt];
+  if (current.monthKey) months[current.monthKey] = true;
+  for (var i = 0; i < (history || []).length; i++) {
+    var h = history[i];
+    if (!h || h.isIncome) continue;
+    if (_normForRecurring_(h.description) !== desc) continue;
+    var a = Math.abs(Number(h.amount) || 0);
+    if (a <= 0) continue;
+    if (h.monthKey) months[h.monthKey] = true;
+    amounts.push(a);
+  }
+  var distinctMonths = Object.keys(months).length;
+  if (distinctMonths < minMonths) return null;
+
+  var mn = Math.min.apply(null, amounts);
+  var mx = Math.max.apply(null, amounts);
+  if (mn <= 0 || (mx / mn) > maxRatio) return null;
+
+  var avg = amounts.reduce(function (s, x) { return s + x; }, 0) / amounts.length;
+  return { count: distinctMonths, desc: String(current.description || '').trim(), amount: Math.round(avg) };
+}
+
+// Builds the user-facing suggestion line (or '' if no candidate). Dedupes via a
+// persistent marker so we offer each repeating expense at most once per user.
+function _recurringSuggestionLine_(fromPhone, history, current) {
+  try {
+    var cand = _detectRecurringCandidate_(history, current);
+    if (!cand) return '';
+    var markerKey = 'recsug_' + _sha256Hex_((fromPhone || '') + '|' + _normForRecurring_(current.description)).slice(0, 24);
+    var props = PropertiesService.getScriptProperties();
+    if (props.getProperty(markerKey)) return '';   // already offered once
+    props.setProperty(markerKey, '1');
+    return '\n\n🔁 שמתי לב ש"' + cand.desc + '" חוזר כבר ' + cand.count +
+           ' חודשים (~' + _money_(cand.amount) + '). רוצה שאוסיף אותו כהוצאה קבועה?\n' +
+           '👉 שלח/י: קבוע ' + cand.desc + ' ' + cand.amount;
+  } catch (e) {
+    Logger.log('_recurringSuggestionLine_: ' + e.message);
+    return '';
   }
 }
 
