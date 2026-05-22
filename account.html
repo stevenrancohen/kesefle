@@ -1056,37 +1056,64 @@ function kesefleShowSigninPrompt() {
   }
   var u = kesefleGetUser();
   if (!u) { kesefleShowSigninPrompt(); return; }
-  document.getElementById('user-name').textContent = u.name || u.email || 'משתמש';
-  if (u.picture) {
-    var img = document.getElementById('user-picture');
-    img.src = u.picture;
-    img.classList.remove('hidden');
-  }
-  // Fire signup_complete the first time a user lands on /account after auth.
-  // Dedup with localStorage so refreshes don't re-fire it.
+  // Everything below is best-effort + null-guarded: a single missing element or
+  // bad localStorage value must NEVER throw out of init() (the static
+  // onboarding UI must remain usable rather than the page going blank).
   try {
-    if (!localStorage.getItem('kfl_signup_complete_fired')) {
-      if (window.kfl) window.kfl.track('signup_complete', { plan: u.plan || 'free' });
-      localStorage.setItem('kfl_signup_complete_fired', '1');
+    var nameEl = document.getElementById('user-name');
+    if (nameEl) nameEl.textContent = u.name || u.email || 'משתמש';
+    if (u.picture) {
+      var img = document.getElementById('user-picture');
+      if (img) { img.src = u.picture; img.classList.remove('hidden'); }
     }
-  } catch (_) { /* private mode — best effort */ }
+    // Fire signup_complete once (dedup via localStorage).
+    try {
+      if (!localStorage.getItem('kfl_signup_complete_fired')) {
+        if (window.kfl) window.kfl.track('signup_complete', { plan: u.plan || 'free' });
+        localStorage.setItem('kfl_signup_complete_fired', '1');
+      }
+    } catch (_) { /* private mode — best effort */ }
 
-  // Referral flow: show "invited by" chip + attempt redemption (idempotent).
-  var ref = kesefleReadReferralCode();
-  if (ref.code) {
-    kesefleShowInvitedChip(ref);
-    // Fire redemption if we already have a fresh token (user just signed in).
-    kesefleRedeemReferralIfPending();
-  }
+    // Referral flow: show "invited by" chip + attempt redemption (idempotent).
+    try {
+      var ref = kesefleReadReferralCode();
+      if (ref && ref.code) { kesefleShowInvitedChip(ref); kesefleRedeemReferralIfPending(); }
+    } catch (_refErr) {}
 
-  // If sheet already provisioned, show it
-  var s = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
-  if (s && s.spreadsheetUrl) {
-    document.getElementById('sheet-link').href = s.spreadsheetUrl;
-    document.getElementById('linked-sheet').classList.remove('hidden');
-  }
-  kesefleUpdateOnboardingProgress();
+    // If a sheet was already provisioned, reveal its link.
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null'); } catch (_jp) { s = null; }
+    if (s && s.spreadsheetUrl) {
+      var sl = document.getElementById('sheet-link'); if (sl) sl.href = s.spreadsheetUrl;
+      var ls = document.getElementById('linked-sheet'); if (ls) ls.classList.remove('hidden');
+    }
+    try { kesefleUpdateOnboardingProgress(); } catch (_pe) {}
+  } catch (_initErr) { /* never blank the page over a render hiccup */ }
 })();
+
+// ── Blank-screen safety net ──────────────────────────────────────────────────
+// If, shortly after load, the content area rendered essentially nothing (an
+// uncaught error or a cleared-but-not-refilled <main>), show a recovery card
+// with a reload button instead of a white void. Guarded to fire ONLY when the
+// page is genuinely empty, so it never clobbers a good render or a spinner.
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    try {
+      var main = document.querySelector('main');
+      var host = main || document.body;
+      if (!host) return;
+      var visible = (host.innerText || '').replace(/\s+/g, '').length;
+      if (visible >= 5) return; // something rendered (UI / card / spinner) — leave it
+      host.innerHTML =
+        '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;">' +
+        '<div style="max-width:24rem;"><div style="font-size:44px;">🔄</div>' +
+        '<h2 style="font-size:20px;font-weight:800;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2>' +
+        '<p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב. אם זה ממשיך, פתח/י את הקישור ב-Safari או Chrome.</p>' +
+        '<button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#16a34a;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button>' +
+        '<a href="/account" style="display:block;margin-top:10px;color:#16a34a;font-size:13px;text-decoration:none;">חזרה להתחברות</a></div></div>';
+    } catch (_e) {}
+  }, 2500);
+});
 
 // Drive provisioning step helpers — updates the visual checklist
 function _kflSetProvStep(id, state) {
