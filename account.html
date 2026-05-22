@@ -801,10 +801,73 @@ async function kesefleRedeemReferralIfPending() {
 }
 // =====================================================
 
+// ── In-app browser guard ─────────────────────────────────────────────────────
+// Google BLOCKS OAuth inside embedded WebViews (WhatsApp, Instagram, FB, ...):
+// the sign-in popup just lands on a blank accounts.google.com/gsi/transform page.
+// So we detect the in-app browser and guide the user to open in Safari/Chrome,
+// where sign-in works. This is the #1 reason WhatsApp-driven signups fail.
+function kesefleIsInAppBrowser() {
+  try {
+    var ua = navigator.userAgent || '';
+    if (/WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Messenger|MicroMessenger|Snapchat|TikTok|Twitter|GSA\//i.test(ua)) return true;
+    var isIOS = /iPhone|iPad|iPod/i.test(ua);
+    if (isIOS && !/Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)) return true; // iOS WKWebView (in-app)
+    if (/Android/i.test(ua) && /;\s*wv\)/.test(ua)) return true; // Android System WebView
+    return false;
+  } catch (e) { return false; }
+}
+
+function kesefleCopyAccountLink(btn) {
+  var url = window.location.href;
+  function ok() { if (btn) btn.textContent = '✓ הקישור הועתק — פתח/י דפדפן והדבק/י'; }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(ok, function () { ok(); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); ok();
+    }
+  } catch (e) { ok(); }
+}
+
+function kesefleShowInAppBrowserHelp() {
+  var isDark = document.documentElement.classList.contains('dark');
+  var bg = isDark ? '#1e2638' : '#ffffff';
+  var border = isDark ? '#2f3b54' : '#dde1ec';
+  var title = isDark ? '#ffffff' : '#0f1422';
+  var body = isDark ? '#bcc4d6' : '#41506f';
+  var muted = isDark ? '#8a95b3' : '#5d6b8f';
+  var brand = '#16a34a';
+  var url = window.location.href;
+  var main = document.querySelector('main') || document.body;
+  var card = document.createElement('div');
+  card.style.cssText = 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;';
+  card.innerHTML =
+    '<div style="border-radius:24px;border:1px solid ' + border + ';background:' + bg + ';padding:32px;box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);text-align:center;max-width:28rem;width:100%;">' +
+      '<div style="font-size:44px;line-height:1;">🔒</div>' +
+      '<h2 style="font-size:22px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:14px 0 0;">פתח/י בדפדפן כדי להתחבר</h2>' +
+      '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">מטעמי אבטחה Google חוסמת התחברות מתוך הדפדפן הפנימי של וואטסאפ. צריך לפתוח את העמוד ב-<b>Safari</b> או <b>Chrome</b> — ואז ההתחברות תעבוד.</p>' +
+      '<ol style="margin:16px 0 0;padding-inline-start:22px;text-align:right;font-size:14px;color:' + body + ';line-height:1.9;">' +
+        '<li>לחצ/י על <b>⋯</b> או על אייקון <b>השיתוף</b> למעלה</li>' +
+        '<li>בחר/י <b>"פתח ב-Safari"</b> (או "Open in Chrome")</li>' +
+        '<li>בדפדפן שייפתח, לחצ/י שוב על <b>"התחבר עם Google"</b></li>' +
+      '</ol>' +
+      '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:20px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:14px;font-size:15px;font-weight:800;color:#ffffff;cursor:pointer;">העתק/י את הקישור</button>' +
+      '<p style="margin-top:10px;font-size:12px;color:' + muted + ';word-break:break-all;direction:ltr;">' + url + '</p>' +
+    '</div>';
+  while (main.firstChild) main.removeChild(main.firstChild);
+  main.appendChild(card);
+}
+
 // Sign-in flow used when /account is reached without a session (e.g. One Tap
 // failed silently in Brave/Firefox/incognito). Uses GIS popup OAuth which
 // works regardless of 3rd-party cookie policy.
 function kesefleAccountStartSignin() {
+  // Embedded browsers (WhatsApp etc.) can't complete Google OAuth → guide out.
+  if (kesefleIsInAppBrowser()) { kesefleShowInAppBrowserHelp(); return; }
   var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
   if (!cid || cid.indexOf('__') === 0) {
     alert('Google Client ID לא מוגדר ב-Vercel env vars.');
@@ -853,6 +916,9 @@ function kesefleAccountStartSignin() {
 }
 
 function kesefleShowSigninPrompt() {
+  // If we're inside an in-app browser (WhatsApp etc.), Google OAuth will fail —
+  // show the "open in Safari/Chrome" guidance instead of a doomed sign-in button.
+  if (kesefleIsInAppBrowser()) { kesefleShowInAppBrowserHelp(); return; }
   // Hide the onboarding flow and show a clean sign-in card.
   // NOTE: using inline styles (not Tailwind classes) because Tailwind CDN's
   // JIT scans the HTML at page load and won't pick up classes injected via
