@@ -177,14 +177,14 @@
   </section>
 
   <!-- onboarding banner -->
-  <section id="onboarding" class="relative mb-8 overflow-hidden rounded-3xl border border-brand-200/70 bg-gradient-to-br from-brand-50 via-white to-accent-50/40 p-6 shadow-[0_24px_60px_-32px_rgba(15,20,34,0.28)]">
+  <section id="onboarding" class="relative mb-8 overflow-hidden rounded-3xl border border-brand-200/70 bg-gradient-to-br from-brand-50 via-white to-accent-50/40 p-4 sm:p-6 shadow-[0_24px_60px_-32px_rgba(15,20,34,0.28)]">
     <div id="confetti-host" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
     <!-- soft glow accent -->
     <div class="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-brand-300/20 blur-3xl"></div>
     <div class="relative flex items-start gap-4">
       <div id="banner-icon" class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors">👋</div>
       <div class="flex-1 min-w-0">
-        <h1 id="banner-title" class="text-xl font-black text-ink-900 break-words">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h1>
+        <h1 id="banner-title" class="text-lg sm:text-xl font-black text-ink-900 break-words leading-snug">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h1>
         <p id="banner-subtitle" class="mt-1 text-slate-700">פחות מדקה, ואתה מתחיל לעקוב אחרי הכסף שלך — ישר מתוך וואטסאפ.</p>
 
         <!-- Progress bar showing step completion -->
@@ -198,14 +198,14 @@
         <ol class="mt-5 space-y-3">
           <li class="flex items-start gap-3" id="step-1">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white">✓</span>
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
               <div class="font-bold">התחברת עם Google</div>
               <div class="text-sm text-slate-600">החשבון מקושר.</div>
             </div>
           </li>
           <li class="flex items-start gap-3" id="step-2">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">2</span>
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 font-bold">
                 <span>צור את הגיליון שלך</span>
                 <span class="why-tip">
@@ -216,25 +216,25 @@
               <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
               <!-- Sheet structure preview (what they'll get) -->
               <div id="sheet-preview" class="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px]">
-                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px border-b border-slate-200 bg-slate-100 text-[9px] font-bold uppercase tracking-wide text-slate-500">
+                <div dir="ltr" class="grid grid-cols-[44px_1fr_58px_60px] gap-px border-b border-slate-200 bg-slate-100 text-[9px] font-bold uppercase tracking-wide text-slate-500">
                   <div class="px-2 py-1.5">Date</div>
                   <div class="px-2 py-1.5">Description</div>
                   <div class="px-2 py-1.5 text-right">Amount</div>
                   <div class="px-2 py-1.5">Category</div>
                 </div>
-                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px text-slate-700">
+                <div dir="ltr" class="grid grid-cols-[44px_1fr_58px_60px] gap-px text-slate-700">
                   <div class="px-2 py-1.5">Today</div>
                   <div class="px-2 py-1.5">סופר</div>
                   <div class="num px-2 py-1.5 text-right text-red-600">-₪245</div>
                   <div class="px-2 py-1.5">🍔 אוכל</div>
                 </div>
-                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px border-t border-slate-100 text-slate-700">
+                <div dir="ltr" class="grid grid-cols-[44px_1fr_58px_60px] gap-px border-t border-slate-100 text-slate-700">
                   <div class="px-2 py-1.5">Today</div>
                   <div class="px-2 py-1.5">דלק</div>
                   <div class="num px-2 py-1.5 text-right text-red-600">-₪320</div>
                   <div class="px-2 py-1.5">🚗 תחבורה</div>
                 </div>
-                <div dir="ltr" class="grid grid-cols-[60px_1fr_70px_70px] gap-px border-t border-slate-100 text-slate-700">
+                <div dir="ltr" class="grid grid-cols-[44px_1fr_58px_60px] gap-px border-t border-slate-100 text-slate-700">
                   <div class="px-2 py-1.5">Today</div>
                   <div class="px-2 py-1.5">משכורת</div>
                   <div class="num px-2 py-1.5 text-right text-emerald-600">+₪8,500</div>
@@ -258,7 +258,7 @@
           </li>
           <li class="flex items-start gap-3" id="step-3">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 font-bold">
                 <span>חבר/י את מספר הוואטסאפ שלך</span>
                 <span class="why-tip">
@@ -376,7 +376,7 @@
   <section id="linked-sheet" class="mt-6 hidden rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
     <div class="flex items-center gap-4">
       <div class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-white shadow-sm">📊</div>
-      <div class="flex-1">
+      <div class="flex-1 min-w-0">
         <div class="font-bold">הגיליון שלך מוכן</div>
         <div class="text-sm text-slate-600">כל הוצאה שתשלח לבוט תופיע כאן.</div>
       </div>
