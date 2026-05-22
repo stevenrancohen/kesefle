@@ -156,6 +156,20 @@ ok('all 3 owner expense paths mirror to the dashboard note',
 ok('_dashboardDetailNote_ is best-effort (wrapped in try/catch at call sites)',
    /try\s*\{\s*_dashboardDetailNote_\(/.test(BOT));
 
+// ── 5d. WhatsApp number routing (use the TEST number; reply from inbound) ────
+// The bot has two Meta numbers; it MUST default to the test number's Phone
+// Number ID and reply from whichever number the user actually messaged — else
+// replies go out the dead Numero number and no one can reach the bot.
+console.log('\n══ 5d. WhatsApp number routing ══');
+ok('default Phone Number ID = test number 1086749664527399 (not the dead Numero id)',
+   /getProperty\('WHATSAPP_PHONE_NUMBER_ID'\)\s*\|\|\s*'1086749664527399'/.test(BOT));
+ok('doPost captures the inbound phone_number_id into _ACTIVE_PHONE_NUMBER_ID_',
+   /_ACTIVE_PHONE_NUMBER_ID_\s*=\s*\(__meta_/.test(BOT) && /metadata/.test(BOT));
+ok('every /messages send targets the inbound number (no bare hardcoded id)',
+   !/WHATSAPP_PHONE_NUMBER_ID \+ '\/messages'/.test(BOT) &&
+   (BOT.match(/_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID|_pnid \+ '\/messages'/g) || []).length >= 3);
+ok('BOT_PHONE_E164 display number matches the test number', /BOT_PHONE_E164 = '\+15556408123'/.test(BOT));
+
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
   console.log('\n══ 6. Live API health (KESEFLE_BASE) ══');

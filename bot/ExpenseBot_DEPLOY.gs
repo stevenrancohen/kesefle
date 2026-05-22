@@ -110,18 +110,26 @@ const DASHBOARD_SHEET = 'מאזן שנתי';
 
 const VERIFY_TOKEN = 'expense_bot_verify_2026';
 const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHATSAPP_TOKEN') || '';
-// Live bot number: +1 555 640 8123 (Meta test number, Phone Number ID below).
-// This is the number that actually sends/receives today; the site links point
-// here too. Test numbers only deliver to recipients allow-listed in Meta. When
-// a real production number is provisioned, update BOT_PHONE_E164 + the site.
-// Phone Number ID: 1090404180828069 (from Meta API Setup)
-// WABA ID: 986476207210292
-// Script Properties can override the default if needed.
-const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1090404180828069';
+// Live bot number: +1 555 640 8123 (Meta TEST number) → Phone Number ID
+// 1086749664527399. Site links + outbound sends all use this number now.
+//
+// ⚠️ This Meta app has TWO numbers: the test number (id 1086749664527399) and a
+// Numero number +1 774 544 8053 (id 1090404180828069) that was NEVER activated
+// on WhatsApp ("isn't on WhatsApp"). We must use the TEST number. If the Script
+// Property WHATSAPP_PHONE_NUMBER_ID is set, it MUST equal 1086749664527399 —
+// otherwise replies + crons go out the dead Numero number. (Replies also
+// auto-target the inbound number via _ACTIVE_PHONE_NUMBER_ID_, set in doPost.)
+// WABA ID: 986476207210292. Test numbers deliver only to allow-listed recipients.
+const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1086749664527399';
 const BOT_PHONE_E164 = '+15556408123';
+
+// Set per-request from the inbound webhook metadata (phone_number_id) so the
+// bot ALWAYS replies from the SAME number the user messaged — even if the
+// configured default/Script-Property points elsewhere. See doPost + sendWhatsAppMessage.
+var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-22-learn-3';
+const KFL_BUILD_VERSION = '2026-05-22-test-number';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1189,6 +1197,17 @@ function doPost(e) {
     }
 
     var __parsed_ = __raw_ ? JSON.parse(__raw_) : null;
+    // Reply from the SAME number the user messaged: capture the inbound
+    // phone_number_id so sendWhatsAppMessage uses it instead of the (possibly
+    // stale) configured default. This is what makes the test number work even
+    // if WHATSAPP_PHONE_NUMBER_ID/Script-Property still points at the old number.
+    try {
+      var __meta_ = __parsed_ && __parsed_.entry && __parsed_.entry[0]
+                 && __parsed_.entry[0].changes && __parsed_.entry[0].changes[0]
+                 && __parsed_.entry[0].changes[0].value
+                 && __parsed_.entry[0].changes[0].value.metadata;
+      _ACTIVE_PHONE_NUMBER_ID_ = (__meta_ && __meta_.phone_number_id) ? String(__meta_.phone_number_id) : '';
+    } catch (_pnidErr) { _ACTIVE_PHONE_NUMBER_ID_ = ''; }
     var __msg_ = __parsed_ && __parsed_.entry && __parsed_.entry[0]
               && __parsed_.entry[0].changes && __parsed_.entry[0].changes[0]
               && __parsed_.entry[0].changes[0].value
@@ -7077,7 +7096,10 @@ function sendWhatsAppMessage(to, message) {
     return { ok: false, reason: 'missing_args' };
   }
 
-  const url = 'https://graph.facebook.com/v21.0/' + WHATSAPP_PHONE_NUMBER_ID + '/messages';
+  // Prefer the number the user actually messaged (set in doPost); fall back to
+  // the configured default for unsolicited sends (crons, alerts).
+  var _pnid = _ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID;
+  const url = 'https://graph.facebook.com/v21.0/' + _pnid + '/messages';
   const payload = {
     messaging_product: 'whatsapp',
     to: to,
@@ -7118,7 +7140,7 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
     Logger.log('WhatsApp token not configured — skipping list');
     return;
   }
-  var url = 'https://graph.facebook.com/v21.0/' + WHATSAPP_PHONE_NUMBER_ID + '/messages';
+  var url = 'https://graph.facebook.com/v21.0/' + (_ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID) + '/messages';
   var payload = {
     messaging_product: 'whatsapp',
     to: to,
@@ -7150,7 +7172,7 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
 // Quick reply buttons (max 3) — simpler than list, great for yes/no/correction prompts.
 function sendWhatsAppQuickButtons(to, bodyText, buttons) {
   if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) return;
-  var url = 'https://graph.facebook.com/v21.0/' + WHATSAPP_PHONE_NUMBER_ID + '/messages';
+  var url = 'https://graph.facebook.com/v21.0/' + (_ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID) + '/messages';
   var btns = (buttons || []).slice(0, 3).map(function(b) {
     return { type: 'reply', reply: { id: String(b.id), title: String(b.title).slice(0, 20) } };
   });
