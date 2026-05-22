@@ -19,7 +19,7 @@
 // Env: KV_REST_API_URL, KV_REST_API_TOKEN, GOOGLE_CLIENT_ID
 
 import { withRequestId, log } from '../../lib/log.js';
-import { withRateLimit } from '../../lib/ratelimit.js';
+import { rateLimit } from '../../lib/ratelimit.js';
 import { computeEntitlement } from '../../lib/subscription.js';
 import { getUserId } from '../_lib/session.js';
 
@@ -127,6 +127,25 @@ function gen6DigitCode() {
 }
 
 async function handlerImpl(req, res) {
+  // Per-method/action rate limiting. The status-check GET is POLLED every 4s by
+  // the browser (~150 calls / 10 min while waiting for the code), so it must NOT
+  // share the tight code-minting limit — a single 10/600s bucket was exhausted
+  // in ~40s, surfacing as rate_limit_exceeded mid-link.
+  {
+    const act = (req.query.action || 'request').toLowerCase();
+    const conf = req.method === 'GET'
+      ? { key: 'wa_link_status', limit: 400, windowSec: 600 }     // polled read
+      : act === 'confirm'
+        ? { key: 'wa_link_confirm', limit: 120, windowSec: 600 }  // bot-secret gated
+        : { key: 'wa_link_request', limit: 30, windowSec: 600 };  // code minting
+    const rl = await rateLimit(req, conf);
+    res.setHeader('X-RateLimit-Limit', String(conf.limit));
+    if (!rl.ok) {
+      res.setHeader('Retry-After', String(rl.retryAfter || conf.windowSec));
+      return res.status(429).json({ ok: false, error: 'rate_limit_exceeded', retry_after: rl.retryAfter || conf.windowSec });
+    }
+  }
+
   // GET — status check: is this phone already linked?
   if (req.method === 'GET') {
     const phone = normalizeE164(req.query.phone);
@@ -324,6 +343,4 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(
-  withRateLimit({ key: 'wa_link', limit: 10, windowSec: 600 })(handlerImpl)
-);
+export default withRequestId(handlerImpl);

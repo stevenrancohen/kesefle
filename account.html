@@ -565,6 +565,14 @@ async function kesefleLinkRequestCode() {
         setTimeout(kesefleStartRedirectSignin, 1300);
         return;
       }
+      if (/rate_limit_exceeded/i.test(j.error || '')) {
+        _kflShowLinkError('יותר מדי ניסיונות ברצף. המתיני דקה ונסי שוב.');
+        return;
+      }
+      if (/phone_already_linked_to_another_account/i.test(j.error || '')) {
+        _kflShowLinkError('המספר הזה כבר מחובר לחשבון אחר.');
+        return;
+      }
       _kflShowLinkError(j.error || 'שגיאה ביצירת קוד');
       return;
     }

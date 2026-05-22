@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-22-test-number-2';
+const KFL_BUILD_VERSION = '2026-05-22-test-number-3';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -6938,6 +6938,23 @@ function handleLinkCode_(code, fromPhone) {
   if (!fromPhone) {
     return '😬 לא הצלחתי לזהות את המספר שלך מההודעה\n💡 נסה לשלוח שוב מאותו וואטסאפ';
   }
+  // If this number is ALREADY linked, say so — no need to process a code (and
+  // avoid a confusing "code expired" reply when an old code is re-sent).
+  try {
+    var __statusUrl = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(String(fromPhone));
+    var __sResp = UrlFetchApp.fetch(__statusUrl, { method: 'get', muteHttpExceptions: true });
+    if (__sResp.getResponseCode() === 200) {
+      var __sBody = {};
+      try { __sBody = JSON.parse(__sResp.getContentText() || '{}'); } catch (_pe) {}
+      if (__sBody.ok && __sBody.linked) {
+        return '✅ *אתה כבר מחובר!*\n' +
+          '━━━━━━━━━━━━━━━━━━\n\n' +
+          'אין צורך בקוד — המספר הזה כבר מקושר לחשבון שלך.\n' +
+          'פשוט שלח/י הוצאה — למשל "45 קפה" או "245 סופר" — ואני אכניס אותה לגיליון. 📊';
+      }
+    }
+  } catch (_statusErr) { /* best-effort — fall through to the normal confirm */ }
+
   var url = KESEFLE_API_BASE + '/api/whatsapp/link?action=confirm';
   var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
   var payload = { code: String(code), phone: String(fromPhone) };
@@ -6964,6 +6981,9 @@ function handleLinkCode_(code, fromPhone) {
     }
     if (status === 404) {
       return '😬 הקוד פג תוקף או לא תקין\n💡 חזרי ל-https://kesefle.com/account וצרי קוד חדש (תקף ל-10 דק׳)';
+    }
+    if (status === 409) {
+      return '⚠️ המספר הזה כבר מחובר לחשבון אחר.\n💡 אם זה החשבון שלך — התחבר/י לאותו חשבון Google שאיתו נרשמת.';
     }
     if (status === 401) {
       return '😬 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי)\n💡 פנה לתמיכה דרך https://kesefle.com';
