@@ -238,6 +238,18 @@
   </nav>
 </header>
 
+<!-- ============== REFERRAL BANNER (logged-in users only) ============== -->
+<div id="referral-banner" class="hidden fixed inset-x-0 top-[60px] z-40 mx-auto max-w-6xl px-5">
+  <a href="/referral" class="mt-2 flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 to-brand-100/60 px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-soft transition hover:from-brand-100 hover:to-brand-200/60 dark:border-brand-700/40 dark:from-brand-900/30 dark:to-brand-800/30 dark:text-brand-200">
+    <span class="flex items-center gap-2">
+      <span class="text-base">💚</span>
+      <span>הביאו חבר וקבלו חודש Pro חינם — לשניכם</span>
+    </span>
+    <span class="text-xs opacity-80">פתח ←</span>
+  </a>
+</div>
+<script>(function(){try{var raw=localStorage.getItem('kesefle_user');if(!raw)return;var u=JSON.parse(raw);if(!u||(!u.sub&&!u.idToken&&!u.email))return;var b=document.getElementById('referral-banner');if(b)b.classList.remove('hidden');}catch(e){}})();</script>
+
 <main class="relative mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 md:px-6">
 
   <div class="kfl-parallax pointer-events-none absolute -top-20 -right-32 -z-10 h-80 w-80 rounded-full bg-gradient-to-br from-brand-300/30 to-accent-500/20 blur-3xl animate-blob" data-speed="0.18"></div>
