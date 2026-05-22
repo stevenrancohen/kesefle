@@ -22,6 +22,7 @@ const RECURRING = fs.readFileSync(path.join(ROOT, 'api/recurring.js'), 'utf8');
 const ACCOUNT = fs.readFileSync(path.join(ROOT, 'api/account.js'), 'utf8');
 const LINK = fs.readFileSync(path.join(ROOT, 'api/whatsapp/link.js'), 'utf8');
 const ADMIN_STATS = fs.readFileSync(path.join(ROOT, 'api/admin/stats.js'), 'utf8');
+const LEARN = fs.readFileSync(path.join(ROOT, 'api/learn.js'), 'utf8');
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -102,6 +103,43 @@ ok('account.js delete purges token:{sub}', /'token:'\s*\+\s*userSub/.test(ACCOUN
 ok('account.js delete revokes encrypted-envelope grant', /refreshTokenEnvelope[\s\S]{0,80}decryptRefreshToken/.test(ACCOUNT));
 ok('link.js does NOT log the link code', !/code_issued'[^)]*\bcode\b/.test(LINK));
 ok('admin/stats.js uses constant-time token compare (no !==)', /ctEq\(/.test(ADMIN_STATS) && !/token !== ADMIN_TOKEN/.test(ADMIN_STATS));
+
+// ── 5b. Cross-user self-learning (privacy-safe global knowledge base) ───────
+// These guard the "learn from every correction, get smarter for everyone"
+// pipeline so a refactor can't silently sever it or start leaking raw text.
+console.log('\n══ 5b. Cross-user global learning ══');
+const _mcs = extractFn(BOT, 'matchCategorySmart');
+const _iDict = _mcs.indexOf('matchCategory(text)');
+const _iGlobal = _mcs.indexOf('_globalLearnLookup_(');
+const _iLLM = _mcs.indexOf('_aiCategorize(');
+ok('global tier sits AFTER dictionary, BEFORE LLM (latency-safe order)',
+   _iDict > -1 && _iGlobal > _iDict && _iLLM > _iGlobal);
+// The hot in-memory lookup must NOT itself make the HTTP call (would add a hop
+// to every message). The global call lives only in matchCategorySmart.
+ok('_learnedLookup stays local (no global HTTP in the hot path)',
+   !/_globalLearnLookup_\(/.test(extractFn(BOT, '_learnedLookup')));
+// Bot must talk to the VALIDATED endpoint, never write raw KV global_learn keys.
+const _glPub = extractFn(BOT, '_globalLearnPublish_');
+const _glLook = extractFn(BOT, '_globalLearnLookup_');
+ok('publish routes through /api/learn (POST + bot secret)',
+   /\/api\/learn'/.test(_glPub) && /x-kesefle-bot-secret/.test(_glPub) && /method:\s*'post'/.test(_glPub));
+ok('lookup routes through /api/learn (GET + bot secret)',
+   /\/api\/learn\?h=/.test(_glLook) && /x-kesefle-bot-secret/.test(_glLook) && /method:\s*'get'/.test(_glLook));
+ok('bot never writes raw global_learn: keys to KV directly',
+   !/kvSet\(\s*'global_learn:/.test(BOT) && !/kvSet\(\s*"global_learn:/.test(BOT));
+// Publish + lookup MUST share one normalizer or hashes drift and never match.
+ok('publish + lookup share _globalLearnNorm_',
+   (BOT.match(/_globalLearnNorm_\(/g) || []).length >= 2 && /function _globalLearnNorm_\(/.test(BOT));
+// Only user-confirmed sources propagate; AI fallback + global re-imports do not.
+const _ls = extractFn(BOT, '_learnedSave');
+ok('only user-confirmed corrections publish (not ai/global)',
+   /_shouldPublishGlobal\s*=\s*\(source === 'user'/.test(_ls) &&
+   !/source === 'ai'/.test(_ls.replace(/Skip AI[\s\S]*?loop\./, '')) &&
+   !/source === 'global'/.test(_ls));
+// Server side: junk/typo categories must NOT pollute the shared store.
+ok('/api/learn validates category against VALID_CATS', /VALID_CATS\.has\(category\)/.test(LEARN) && /invalid_category/.test(LEARN));
+ok('/api/learn is bot-secret gated', /KESEFLE_BOT_SECRET/.test(LEARN) && /x-kesefle-bot-secret/.test(LEARN));
+ok('/api/learn stores only hashes (raw text never sent)', /global_learn:/.test(LEARN) && /HASH_RE/.test(LEARN));
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {

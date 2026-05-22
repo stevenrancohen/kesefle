@@ -43,7 +43,7 @@ const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProp
 const BOT_PHONE_E164 = '+17745448053';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-22-brand-3';
+const KFL_BUILD_VERSION = '2026-05-22-learn-1';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -5212,6 +5212,22 @@ function matchCategorySmart(text, fromPhone) {
 
   if (!isDefault) return matched;
 
+  // Step 2.7: cross-user global learning (privacy-safe). Before paying for an
+  // LLM call, check the shared store — another user may have already corrected
+  // this EXACT description. Only a SHA-256 hash is shared, never the raw text.
+  // Placed here (after the dictionary, before the LLM) so known words stay
+  // instant and we only spend a network hop on genuinely-unknown text.
+  try {
+    var globalHit = _globalLearnLookup_(text);
+    if (globalHit && globalHit.category) {
+      Logger.log('matchCategorySmart: global-learn hit "' + text + '" -> ' + globalHit.subcategory);
+      // Cache locally (source 'global', excluded from re-publish) so we never
+      // hit the endpoint again for this text within this tenant.
+      try { _learnedSave(text, globalHit, 'global'); } catch (_glErr) {}
+      return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category };
+    }
+  } catch (_glLookErr) { Logger.log('matchCategorySmart global err: ' + _glLookErr.message); }
+
   // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only)
   var ai = _aiCategorize(text, fromPhone);
   if (ai) {
@@ -5706,27 +5722,40 @@ function _learnedLookup(text) {
     }
   }
   if (bestKw) return map[bestKw];
-
-  // Fallback: cross-user global hash store (privacy-safe — only hashes shared).
-  var global = _globalLearnLookup_(t);
-  if (global && global.category) {
-    // Cache locally for future calls so we don't hit KV every time.
-    try { _learnedSave(t, global, 'global'); } catch (_e) {}
-    return { category: global.category, subcategory: global.subcategory || global.category, fromGlobal: true };
-  }
+  // NOTE: the cross-user global store is intentionally NOT consulted here.
+  // _learnedLookup must stay fast + in-memory because matchCategorySmart calls
+  // it FIRST (before the local dictionary). The global (HTTP) tier runs later,
+  // only after the dictionary also misses — see matchCategorySmart Step 2.7.
   return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CROSS-USER GLOBAL LEARNING (privacy-preserving)
 //
-// When any user confirms a category correction, we hash the description with
-// SHA-256 and store `global_learn:{hash}` → {category, subcategory, count}.
-// Future users sending the EXACT same description benefit immediately.
+// When ANY user confirms a category correction, the bot SHA-256-hashes the
+// normalized description and POSTs the HASH (never the raw text) to
+// /api/learn, which stores global_learn:{hash} -> {category, subcategory,
+// count} in KV. Future users who type the EXACT same description get the
+// right category instantly, with no LLM call.
+//
+// Why the endpoint and not direct KV:
+//   - Server-side VALID_CATS validation stops a junk/typo category from
+//     polluting the SHARED store for everyone.
+//   - Only needs KESEFLE_BOT_SECRET (always present), not raw KV creds.
+//   - Rate-limited + centralized, matching every other bot->Vercel call.
 //
 // Privacy: SHA-256 is one-way. The original text never leaves the user's bot.
-// Two users typing "מוביל הוצאות בית" produce the same hash → same lookup.
+// Two users typing "מוביל הוצאות בית" produce the same hash -> same lookup.
+//
+// IMPORTANT: publish and lookup MUST normalize identically (via
+// _globalLearnNorm_) or the hashes will never match.
 // ═══════════════════════════════════════════════════════════════════════════
+
+function _globalLearnNorm_(text) {
+  // Lowercase + collapse internal whitespace + trim. Shared by publish AND
+  // lookup so the hashes can never drift apart.
+  return String(text == null ? '' : text).toLowerCase().replace(/\s+/g, ' ').trim();
+}
 
 function _sha256Hex_(text) {
   var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(text || ''), Utilities.Charset.UTF_8);
@@ -5741,17 +5770,31 @@ function _sha256Hex_(text) {
 
 function _globalLearnPublish_(text, category, subcategory) {
   try {
-    var normalized = String(text || '').toLowerCase().trim();
+    var normalized = _globalLearnNorm_(text);
     if (!normalized || normalized.length < 2) return;
-    if (typeof kvSet !== 'function' || typeof kvGet !== 'function') return;
+    var secret = '';
+    try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!secret) return;
     var hash = _sha256Hex_(normalized);
-    var existing = kvGet('global_learn:' + hash);
-    var record = existing && typeof existing === 'object' ? existing : { count: 0 };
-    record.category = category;
-    record.subcategory = subcategory || category;
-    record.count = (record.count || 0) + 1;
-    record.lastSeen = Date.now();
-    kvSet('global_learn:' + hash, record, 0);
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/learn', {
+      method: 'post',
+      muteHttpExceptions: true,
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify({ hash: hash, category: category, subcategory: subcategory || category })
+    });
+    var code = resp.getResponseCode();
+    if (code !== 200) {
+      // 400 invalid_category is EXPECTED + fine: it just means this correction
+      // used a non-top-level category, so it stays local-only (not shared).
+      Logger.log('_globalLearnPublish_ http=' + code + ' ' + String(resp.getContentText()).slice(0, 120));
+      return;
+    }
+    // A fresh correction supersedes any stale cached MISS/value for this hash.
+    try {
+      var cache = CacheService.getScriptCache();
+      if (cache) cache.remove('gl:' + hash);
+    } catch (_ce) {}
   } catch (e) {
     Logger.log('_globalLearnPublish_: ' + e.message);
   }
@@ -5759,14 +5802,41 @@ function _globalLearnPublish_(text, category, subcategory) {
 
 function _globalLearnLookup_(text) {
   try {
-    var normalized = String(text || '').toLowerCase().trim();
+    var normalized = _globalLearnNorm_(text);
     if (!normalized || normalized.length < 2) return null;
-    if (typeof kvGet !== 'function') return null;
+    var secret = '';
+    try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!secret) return null;
     var hash = _sha256Hex_(normalized);
-    var record = kvGet('global_learn:' + hash);
-    if (record && typeof record === 'object' && record.category) {
-      return { category: record.category, subcategory: record.subcategory || record.category };
+
+    // Cache hits AND misses so a repeated unknown phrase doesn't hammer the
+    // endpoint. Hits live 1h; misses 5min (a correction elsewhere can fill it).
+    var cache = null;
+    try { cache = CacheService.getScriptCache(); } catch (_ce) {}
+    var ckey = 'gl:' + hash;
+    if (cache) {
+      var cHit = cache.get(ckey);
+      if (cHit === 'MISS') return null;
+      if (cHit) { try { var pc = JSON.parse(cHit); if (pc && pc.category) return pc; } catch (_pe) {} }
     }
+
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/learn?h=' + encodeURIComponent(hash), {
+      method: 'get',
+      muteHttpExceptions: true,
+      headers: { 'x-kesefle-bot-secret': secret }
+    });
+    if (resp.getResponseCode() !== 200) {
+      if (cache) { try { cache.put(ckey, 'MISS', 300); } catch (_pe1) {} }
+      return null;
+    }
+    var body = {};
+    try { body = JSON.parse(resp.getContentText() || '{}'); } catch (_je) { body = {}; }
+    if (body && body.ok && body.found && body.category) {
+      var out = { category: body.category, subcategory: body.subcategory || body.category };
+      if (cache) { try { cache.put(ckey, JSON.stringify(out), 3600); } catch (_pe2) {} }
+      return out;
+    }
+    if (cache) { try { cache.put(ckey, 'MISS', 300); } catch (_pe3) {} }
     return null;
   } catch (e) {
     Logger.log('_globalLearnLookup_: ' + e.message);
@@ -5778,6 +5848,10 @@ function _learnedSave(text, result, source) {
   try {
     var t = String(text || '').toLowerCase().trim();
     if (!t || !result || !result.category || !result.subcategory) return;
+    // Only USER-CONFIRMED sources propagate to the shared store. Exclude 'ai'
+    // (low-confidence fallback) and 'global' (re-import — would loop forever).
+    var _shouldPublishGlobal = (source === 'user' || source === 'user-correction' ||
+                                source === 'user-direct' || source === 'llm-extracted');
     var ss = SpreadsheetApp.openById(SHEET_ID);
     var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
     if (!sh) {
@@ -5793,6 +5867,10 @@ function _learnedSave(text, result, source) {
         sh.getRange(i + 1, 4).setValue(sanitizeForSheet(source || 'ai'));
         sh.getRange(i + 1, 5).setValue(new Date());
         _learnedCacheLoadedAt = 0; // invalidate cache
+        // A RE-correction must also update the shared store (count++, new value).
+        if (_shouldPublishGlobal) {
+          try { _globalLearnPublish_(t, result.category, result.subcategory); } catch (_gpErr0) {}
+        }
         return;
       }
     }
@@ -5802,7 +5880,7 @@ function _learnedSave(text, result, source) {
     // Propagate user-confirmed learnings to the global hash store so other
     // users benefit. Skip AI-fallback writes (low confidence) and global
     // re-imports (would loop).
-    if (source === 'user-correction' || source === 'user-direct' || source === 'llm-extracted') {
+    if (_shouldPublishGlobal) {
       try { _globalLearnPublish_(t, result.category, result.subcategory); } catch (_gpErr) {}
     }
   } catch (e) {
