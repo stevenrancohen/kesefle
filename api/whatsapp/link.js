@@ -179,17 +179,18 @@ function gen6DigitCode() {
 }
 
 async function handlerImpl(req, res) {
-  // Per-method/action rate limiting. The status-check GET is POLLED every 4s by
-  // the browser (~150 calls / 10 min while waiting for the code), so it must NOT
-  // share the tight code-minting limit — a single 10/600s bucket was exhausted
-  // in ~40s, surfacing as rate_limit_exceeded mid-link.
-  {
+  // Per-method/action rate limiting. The status-check GET is POLLED by the
+  // browser while waiting for code confirmation -- with the adaptive cadence
+  // (6s fast / 15s slow / 3min cap) that's ~15 polls per user. We SKIP the
+  // KV-backed rate limit for GET to save ~30 KV commands per user since the
+  // GET is read-only and already returns minimal info to anonymous callers
+  // (only {linked} -- see auth-gate added 2026-05-23 for billing fields).
+  // The mint (POST) and confirm (POST + bot-secret) paths keep their limits.
+  if (req.method !== 'GET') {
     const act = (req.query.action || 'request').toLowerCase();
-    const conf = req.method === 'GET'
-      ? { key: 'wa_link_status', limit: 400, windowSec: 600 }     // polled read
-      : act === 'confirm'
-        ? { key: 'wa_link_confirm', limit: 120, windowSec: 600 }  // bot-secret gated
-        : { key: 'wa_link_request', limit: 30, windowSec: 600 };  // code minting
+    const conf = act === 'confirm'
+      ? { key: 'wa_link_confirm', limit: 120, windowSec: 600 }   // bot-secret gated
+      : { key: 'wa_link_request', limit: 30, windowSec: 600 };   // code minting
     const rl = await rateLimit(req, conf);
     res.setHeader('X-RateLimit-Limit', String(conf.limit));
     if (!rl.ok) {

@@ -224,8 +224,22 @@ async function handlerImpl(req, res) {
       });
     }
 
-    // Best-effort: mirror the sheet id into the user + token records so the
-    // phone:<E.164> link lookup can resolve it from any of them.
+    // Best-effort mirror: write the sheet id into the user + token records.
+    // These are NON-CRITICAL (the canonical sheet:{sub} record above is the
+    // source of truth -- the bot resolves via that). To save 4 KV commands
+    // per signup (2 reads + 2 verify-reads from kvSetChecked), we use a plain
+    // SET here without the read-back verification. If the mirror fails the
+    // bot still works -- it just falls back to looking up sheet:{sub}.
+    async function kvSetSimple(key, val) {
+      try {
+        const r = await fetch(`${kvUrl}/set/${encodeURIComponent(key)}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(val),
+        });
+        return r.ok;
+      } catch (_e) { return false; }
+    }
     try {
       const userRes = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, { headers: { 'Authorization': `Bearer ${kvToken}` } });
       const userJson = await userRes.json();
@@ -234,7 +248,7 @@ async function handlerImpl(req, res) {
         userRec.spreadsheetId = spreadsheetId;
         userRec.spreadsheetUrl = spreadsheetUrl;
         userRec.provisioned = record.provisioned;
-        await kvSetChecked('user:' + userSub, userRec);
+        await kvSetSimple('user:' + userSub, userRec);
       }
     } catch (e) { console.warn('user_record_merge_failed', e); }
 
@@ -242,7 +256,7 @@ async function handlerImpl(req, res) {
       const tokRes = await fetch(`${kvUrl}/get/${encodeURIComponent('token:' + userSub)}`, { headers: { 'Authorization': `Bearer ${kvToken}` } });
       const tokJson = await tokRes.json();
       const tokRec = tokJson?.result ? JSON.parse(tokJson.result) : null;
-      if (tokRec) { tokRec.sheetId = spreadsheetId; await kvSetChecked('token:' + userSub, tokRec); }
+      if (tokRec) { tokRec.sheetId = spreadsheetId; await kvSetSimple('token:' + userSub, tokRec); }
     } catch (e) { console.warn('token_record_merge_failed', e); }
   } else {
     console.log('SHEET_PROVISIONED', JSON.stringify(record));

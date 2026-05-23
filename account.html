@@ -691,25 +691,45 @@ function _kflDisplayCode(code, ttlSec) {
   kflLinkTtlTimer = setInterval(tickTtl, 1000);
 }
 
+// Adaptive polling cadence: fast for the first 30s (user is staring at the
+// screen and just sent a message -- they want instant feedback) then slow
+// down to save KV commands. After 3 min total we stop polling and rely on
+// the page reload to detect linking. Steven didn't upgrade Upstash so we
+// have to count every KV command this week.
 function _kflStartPolling(phone) {
   _kflStopPolling();
-  // Poll /api/whatsapp/link?phone=<E164> every 4 seconds.
-  // The Vercel side returns { linked: true } once the bot confirms the code.
-  kflLinkPollTimer = setInterval(async function() {
-    try {
-      var r = await fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone), { credentials: 'include' });
-      var j = await r.json();
-      if (j.ok && j.linked) {
-        _kflStopPolling();
-        if (kflLinkTtlTimer) { clearInterval(kflLinkTtlTimer); kflLinkTtlTimer = null; }
-        _kflShowLinkSuccess(phone);
-      }
-    } catch (e) { /* network blip — keep polling */ }
-  }, 4000);
+  var startedAt = Date.now();
+  var POLL_FAST_MS = 6000;   // 6s for the first 30s (was 4s -> ~50% fewer commands)
+  var POLL_SLOW_MS = 15000;  // 15s after that
+  var POLL_MAX_MS = 3 * 60 * 1000; // give up after 3 min total
+
+  function tick() {
+    var elapsed = Date.now() - startedAt;
+    if (elapsed > POLL_MAX_MS) { _kflStopPolling(); return; }
+    var nextDelay = elapsed < 30000 ? POLL_FAST_MS : POLL_SLOW_MS;
+    fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone), { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok && j.linked) {
+          _kflStopPolling();
+          if (kflLinkTtlTimer) { clearInterval(kflLinkTtlTimer); kflLinkTtlTimer = null; }
+          _kflShowLinkSuccess(phone);
+          return;
+        }
+        kflLinkPollTimer = setTimeout(tick, nextDelay);
+      })
+      .catch(function () {
+        // Network blip -- keep polling at the slow cadence so we don't hammer.
+        kflLinkPollTimer = setTimeout(tick, POLL_SLOW_MS);
+      });
+  }
+  kflLinkPollTimer = setTimeout(tick, POLL_FAST_MS);
 }
 
 function _kflStopPolling() {
-  if (kflLinkPollTimer) { clearInterval(kflLinkPollTimer); kflLinkPollTimer = null; }
+  // Now uses setTimeout chain, so clearTimeout. clearInterval is a no-op on
+  // setTimeout handles but harmless; calling both is defensive.
+  if (kflLinkPollTimer) { clearTimeout(kflLinkPollTimer); clearInterval(kflLinkPollTimer); kflLinkPollTimer = null; }
 }
 
 // Pause the link poll when the tab is hidden, resume when shown. Also stop
