@@ -214,6 +214,18 @@
       </div>
     </div>
 
+    <!-- User-submitted problem reports -->
+    <div class="grid">
+      <div class="card full">
+        <h3 style="display:flex;justify-content:space-between;align-items:center">
+          <span>User-submitted problem reports</span>
+          <button onclick="kfl.loadReports()" style="font-size:11px">Refresh</button>
+        </h3>
+        <div class="sub" style="margin-bottom:8px">Captured from the "דווח/י על בעיה" floating button on /account.</div>
+        <div id="user-reports-list" class="ua-list">Loading…</div>
+      </div>
+    </div>
+
     <!-- In-app browser misses -->
     <div class="grid">
       <div class="card full">
@@ -495,7 +507,7 @@ window.kfl = (function () {
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
   // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
-  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); checkDrift(); checkBotVersion(); startPolling(); }
+  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); loadReports(); checkDrift(); checkBotVersion(); startPolling(); }
   if (document.readyState !== 'loading') _initAll();
   else document.addEventListener('DOMContentLoaded', _initAll);
 
@@ -620,6 +632,36 @@ window.kfl = (function () {
     }
   }
 
+  async function loadReports() {
+    var host = document.getElementById('user-reports-list');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/user-reports?limit=20', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { host.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { host.textContent = 'Error: ' + (j.error || r.status); return; }
+      if (!j.reports || !j.reports.length) {
+        host.innerHTML = '<div class="empty">No reports yet. ✓</div>';
+        return;
+      }
+      host.innerHTML = j.reports.map(function (rep) {
+        var when = '';
+        try { when = new Date(rep.at).toLocaleString('he-IL'); } catch (e) { when = String(rep.at || ''); }
+        var safeMsg = String(rep.message || '').replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; });
+        var safeUa = String(rep.ua || '').slice(0, 80).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; });
+        var hints = rep.stateHints || {};
+        var hintsStr = Object.entries(hints).map(function (kv) { return kv[0] + '=' + kv[1]; }).join(', ');
+        return '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin:6px 0;background:var(--card)">' +
+          '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">' + when + (rep.email ? ' · ' + rep.email : '') + ' · <code style="font-size:10px">' + safeUa + '</code></div>' +
+          '<div style="font-size:14px;color:var(--text);white-space:pre-wrap">' + safeMsg + '</div>' +
+          (hintsStr ? '<div style="font-size:11px;color:var(--muted);margin-top:6px">state: ' + hintsStr + '</div>' : '') +
+          (rep.lastErrors && rep.lastErrors.length ? '<details style="margin-top:6px;font-size:11px"><summary style="cursor:pointer;color:var(--muted)">' + rep.lastErrors.length + ' captured errors</summary><pre style="font-size:10px;color:var(--muted);background:var(--bg);padding:6px;border-radius:4px;margin-top:4px;overflow-x:auto">' + rep.lastErrors.map(function (e) { return String(e).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }).join('\n') + '</pre></details>' : '') +
+        '</div>';
+      }).join('');
+    } catch (e) { host.textContent = 'Load failed: ' + (e.message || e); }
+  }
+
   async function loadRecent() {
     var summary = document.getElementById('recent-summary');
     var tbody = document.getElementById('recent-tbody');
@@ -712,7 +754,8 @@ window.kfl = (function () {
     toggleRaw: toggleRaw,
     resendWelcome: resendWelcome,
     resendFromRow: resendFromRow,
-    loadRecent: loadRecent
+    loadRecent: loadRecent,
+    loadReports: loadReports
   };
 })();
 </script>

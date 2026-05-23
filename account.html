@@ -1572,5 +1572,107 @@ async function kesefleProvisionSheet() {
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(function(){});});}</script>
 <script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
 if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+
+<!-- ============== REPORT A PROBLEM (floating button + modal) ============== -->
+<!-- Tiny floating CTA at bottom-end. Opens a one-textarea modal. POSTs the
+     message + auto-collected context (URL, UA, sanitized localStorage hints,
+     last 5 captured console errors) to /api/log/user-report. Shows up in
+     /admin/launch-monitor for Steven to triage. Catches the bugs that
+     users would otherwise silently bounce on. -->
+<div id="kfl-report-host">
+  <button type="button" id="kfl-report-fab" onclick="_kflReportOpen()" aria-label="דווח על בעיה" style="position:fixed;bottom:16px;inset-inline-end:16px;z-index:50;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:10px 14px;border-radius:9999px;background:#1E293B;color:#fff;border:1px solid #334155;font:600 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Heebo,system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);opacity:0.85">
+    💬 <span>דווח/י על בעיה</span>
+  </button>
+  <div id="kfl-report-modal" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(15,23,42,0.7);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)_kflReportClose()">
+    <div style="background:#fff;color:#1E293B;border-radius:16px;max-width:28rem;width:100%;padding:20px;box-shadow:0 24px 50px rgba(0,0,0,0.3)" dir="rtl">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+        <h3 style="margin:0;font-size:17px;font-weight:600">דווח/י על בעיה</h3>
+        <button type="button" onclick="_kflReportClose()" aria-label="סגור" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94A3B8;padding:0;line-height:1">×</button>
+      </div>
+      <p style="margin:0 0 12px;font-size:13px;color:#475569">תאר/י מה לא עובד. נצרף אוטומטית את ה-URL והדפדפן — נראה את הדיווח בלוח הניהול.</p>
+      <textarea id="kfl-report-msg" rows="4" maxlength="1000" placeholder="לדוגמה: לחצתי 'התחבר עם Google' ולא קרה כלום…" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #E2E8F0;border-radius:10px;font:inherit;font-size:14px;resize:vertical;min-height:90px"></textarea>
+      <input type="email" id="kfl-report-email" placeholder="האימייל שלך (אופציונלי, כדי שנוכל לחזור אליך)" style="width:100%;box-sizing:border-box;margin-top:8px;padding:10px;border:1px solid #E2E8F0;border-radius:10px;font:inherit;font-size:13px" />
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button type="button" onclick="_kflReportClose()" style="padding:10px 14px;border:1px solid #E2E8F0;background:#fff;border-radius:10px;font:600 13px inherit;cursor:pointer">ביטול</button>
+        <button type="button" onclick="_kflReportSubmit()" id="kfl-report-send" style="padding:10px 14px;border:none;background:#3B82F6;color:#fff;border-radius:10px;font:600 13px inherit;cursor:pointer;min-height:44px">שליחה</button>
+      </div>
+      <div id="kfl-report-status" style="margin-top:8px;font-size:12px;color:#475569"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  // Capture the last 5 console errors so we can auto-attach.
+  var _kflErrs = [];
+  function _kflCaptureErr(msg, src, line, col, err) {
+    try {
+      _kflErrs.push((err && err.stack ? err.stack : msg) + ' @ ' + (src || '?') + ':' + (line || '?'));
+      if (_kflErrs.length > 5) _kflErrs.shift();
+    } catch (_e) {}
+  }
+  if (window.addEventListener) {
+    window.addEventListener('error', function (ev) { _kflCaptureErr(ev.message, ev.filename, ev.lineno, ev.colno, ev.error); }, true);
+    window.addEventListener('unhandledrejection', function (ev) {
+      var reason = ev.reason && (ev.reason.message || ev.reason.toString());
+      _kflCaptureErr('unhandledrejection: ' + reason, '', 0, 0, ev.reason);
+    });
+  }
+  window._kflReportOpen = function () {
+    document.getElementById('kfl-report-modal').style.display = 'flex';
+    setTimeout(function () { try { document.getElementById('kfl-report-msg').focus(); } catch (e) {} }, 50);
+    // Pre-fill email if we know it
+    try {
+      var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}');
+      if (u && u.email) document.getElementById('kfl-report-email').value = u.email;
+    } catch (e) {}
+  };
+  window._kflReportClose = function () {
+    document.getElementById('kfl-report-modal').style.display = 'none';
+    document.getElementById('kfl-report-status').textContent = '';
+  };
+  window._kflReportSubmit = async function () {
+    var btn = document.getElementById('kfl-report-send');
+    var status = document.getElementById('kfl-report-status');
+    var msg = document.getElementById('kfl-report-msg').value.trim();
+    if (!msg) { status.textContent = '✗ נא לכתוב הודעה.'; return; }
+    btn.disabled = true; status.textContent = 'שולח…';
+    // Pull non-sensitive state hints from localStorage.
+    var stateHints = {};
+    try {
+      var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}');
+      if (u && u.sub) stateHints.userSub = String(u.sub).slice(0, 20);
+      if (u && u.email) stateHints.userEmail = u.email;
+      var sheet = JSON.parse(localStorage.getItem('kesefle_sheet') || '{}');
+      if (sheet && sheet.spreadsheetId) stateHints.hasSheet = '1';
+      stateHints.whatsappLinked = localStorage.getItem('kesefle_whatsapp_linked') === '1' ? '1' : '0';
+      var prog = JSON.parse(localStorage.getItem('kesefle_signup_progress') || 'null');
+      if (prog) stateHints.signupStep = String(prog.step || '');
+    } catch (_e) {}
+    try {
+      var r = await fetch('/api/log/user-report', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          email: document.getElementById('kfl-report-email').value.trim().slice(0, 200),
+          url: window.location.href.slice(0, 300),
+          ua: navigator.userAgent.slice(0, 300),
+          lastErrors: _kflErrs.slice(),
+          stateHints: stateHints,
+        })
+      });
+      if (r.ok) {
+        status.textContent = '✓ תודה! קיבלנו את הדיווח. נחזור אלייך אם נשאיר את האימייל.';
+        document.getElementById('kfl-report-msg').value = '';
+        setTimeout(_kflReportClose, 2200);
+      } else {
+        status.textContent = '✗ שגיאה בשליחה: HTTP ' + r.status;
+      }
+    } catch (e) {
+      status.textContent = '✗ שגיאת רשת. נסה/י שוב.';
+    }
+    btn.disabled = false;
+  };
+})();
+</script>
 </body>
 </html>
