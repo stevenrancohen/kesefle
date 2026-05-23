@@ -210,6 +210,15 @@
       </div>
     </div>
 
+    <!-- Bot version drift (Apps Script vs repo) -->
+    <div class="grid">
+      <div class="card full" id="card-bot-version">
+        <h3>Bot deployed version (Apps Script vs repo)</h3>
+        <div class="sub" id="bot-version-detail">Checking…</div>
+        <pre id="bot-version-fix" style="display:none;font-size:11px;color:var(--text);background:var(--bg);padding:10px;border-radius:6px;border:1px solid var(--border);margin-top:8px;overflow-x:auto"></pre>
+      </div>
+    </div>
+
     <!-- Bot-number config drift -->
     <div class="grid">
       <div class="card full" id="card-drift">
@@ -454,8 +463,40 @@ window.kfl = (function () {
 
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
-  if (document.readyState !== 'loading') { fetchMonitor(); checkDrift(); startPolling(); }
-  else document.addEventListener('DOMContentLoaded', function () { fetchMonitor(); checkDrift(); startPolling(); });
+  if (document.readyState !== 'loading') { fetchMonitor(); checkDrift(); checkBotVersion(); startPolling(); }
+  else document.addEventListener('DOMContentLoaded', function () { fetchMonitor(); checkDrift(); checkBotVersion(); startPolling(); });
+
+  async function checkBotVersion() {
+    var detail = document.getElementById('bot-version-detail');
+    var card = document.getElementById('card-bot-version');
+    var fix = document.getElementById('bot-version-fix');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/bot-version', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { detail.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { detail.textContent = 'Error: ' + (j.error || r.status); return; }
+      if (j.unknown) {
+        card.className = 'card full warn';
+        detail.textContent = 'Bot has not reported its version yet. (Bot only reports on the next WhatsApp message it receives. Send "בדיקה" to the bot to trigger it.)';
+        fix.style.display = 'none';
+      } else if (j.drift) {
+        card.className = 'card full alert';
+        detail.innerHTML = '<strong style="color:var(--danger)">⚠ Bot version drift.</strong> ' +
+          'Deployed: <code>' + j.deployed_version + '</code> · Repo: <code>' + j.repo_version + '</code> · ' +
+          'Last seen ' + (j.stale_minutes != null ? j.stale_minutes + ' min ago' : 'unknown');
+        fix.textContent = (j.note || '') + '\n\nSteps:\n1. Open Apps Script editor → Kesefle bot project\n2. Paste bot/ExpenseBot_DEPLOY.gs (replace all)\n3. Save (Cmd+S)\n4. Deploy → Manage deployments → Edit → New version → Deploy\n5. Send "בדיקה" to the bot to verify';
+        fix.style.display = 'block';
+      } else {
+        card.className = 'card full';
+        detail.innerHTML = '✓ Bot is running the latest version (<code>' + j.deployed_version + '</code>). Last reported ' + (j.stale_minutes != null ? j.stale_minutes + ' min ago' : 'just now') + '.';
+        fix.style.display = 'none';
+      }
+    } catch (e) {
+      detail.textContent = 'Check failed: ' + (e.message || e);
+    }
+  }
 
   async function checkDrift() {
     var detail = document.getElementById('drift-detail');

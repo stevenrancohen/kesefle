@@ -4032,8 +4032,11 @@ function _kvLookupPhone_(phoneClean) {
     // Present the bot secret so the server returns the full record (userSub +
     // sheetId + effective plan for _hasActivePremium_ gating). Without it,
     // the server returns only { linked } to prevent directory enumeration.
+    // ALSO present our build version so the Vercel side can warn the admin
+    // if the deployed bot is stale (drift detector at /api/admin/bot-version).
     var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
-    var headers = botSecret ? { 'x-kesefle-bot-secret': botSecret } : {};
+    var headers = { 'x-kesefle-bot-version': KFL_BUILD_VERSION };
+    if (botSecret) headers['x-kesefle-bot-secret'] = botSecret;
     var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: headers });
     if (resp.getResponseCode() !== 200) return null;
     var j = JSON.parse(resp.getContentText());

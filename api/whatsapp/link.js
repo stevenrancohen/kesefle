@@ -217,12 +217,21 @@ async function handlerImpl(req, res) {
   if (req.method === 'GET') {
     const phone = normalizeE164(req.query.phone);
     if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
+
+    // If the bot announced its build version via header, stash the latest
+    // (with TTL) so /api/admin/bot-version can compare it to the repo. We
+    // only set this on bot-secret-authenticated calls to avoid spoofing.
+    const presentedSecret = req.headers['x-kesefle-bot-secret'] || '';
+    const botSecret = process.env.KESEFLE_BOT_SECRET;
+    const isBotCaller = !!botSecret && constantTimeEqual(String(presentedSecret), String(botSecret));
+    const botVersion = req.headers['x-kesefle-bot-version'];
+    if (isBotCaller && botVersion && typeof botVersion === 'string' && botVersion.length < 80) {
+      // Fire-and-forget; never block the bot's response on this telemetry.
+      kvSet('bot_version_latest', { version: botVersion, at: Date.now() }, 86400 * 7).catch(() => {});
+    }
+
     const rec = await kvGet(`phone:${phone}`);
     if (!rec) return res.status(200).json({ ok: true, linked: false });
-
-    const botSecret = process.env.KESEFLE_BOT_SECRET;
-    const presentedSecret = req.headers['x-kesefle-bot-secret'] || '';
-    const isBotCaller = !!botSecret && constantTimeEqual(String(presentedSecret), String(botSecret));
 
     if (!isBotCaller) {
       // Anonymous (browser polling) -- minimal response, no billing leak.
