@@ -92,6 +92,16 @@ ok('cte: length mismatch (longer b) detected', constantTimeEqual('abc', 'abcd') 
 ok('cte: 33-byte hex secrets equal', constantTimeEqual('a'.repeat(33), 'a'.repeat(33)) === true);
 ok('cte: 33-byte hex secrets differ at 0', constantTimeEqual('X' + 'a'.repeat(32), 'a'.repeat(33)) === false);
 
+// ── 3c. Admin auth: default ADMIN_EMAILS + session-cookie path ──────────────
+console.log('\n══ 3c. Admin auth defaults + session-cookie path ══');
+const AUTH = fs.readFileSync(path.join(ROOT, 'lib/auth.js'), 'utf8');
+ok('default admin includes stevenrancohen@gmail.com', /DEFAULT_ADMIN_EMAILS\s*=\s*'[^']*stevenrancohen@gmail\.com/.test(AUTH));
+ok('default admin includes info@kesefle.com', /DEFAULT_ADMIN_EMAILS\s*=\s*'[^']*info@kesefle\.com/.test(AUTH));
+ok('ADMIN_EMAILS env var still overrides default', /process\.env\.ADMIN_EMAILS\s*\|\|\s*DEFAULT_ADMIN_EMAILS/.test(AUTH));
+ok('admin email comparison is case-insensitive', /toLowerCase\(\)/.test(AUTH) && /admins\.includes\(userEmail\)/.test(AUTH));
+ok('requireAuth accepts session cookie (kefle_session via getUserId)', /getUserId\(req\)/.test(AUTH) && /from '\.\.\/api\/_lib\/session\.js'/.test(AUTH));
+ok('requireAuth falls back from Bearer to cookie on bearer failure', /bearer_failed/.test(AUTH));
+
 // ── 4. Phone normalization (E.164) ──────────────────────────────────────────
 console.log('\n══ 4. normalizeE164 ══');
 (0, eval)(extractFn(APPEND, 'normalizeE164'));

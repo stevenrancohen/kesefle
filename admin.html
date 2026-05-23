@@ -1020,21 +1020,27 @@
      The page's password gate is cosmetic only. -->
 <script>
 (function () {
+  // `idToken` is no longer persisted to localStorage (XSS-hardening change
+  // 2026-05-23) -- this still returns it when present so a fresh Bearer
+  // token can be opportunistically used, but admin auth now flows via the
+  // HttpOnly `kefle_session` cookie (sent automatically with credentials:
+  // 'include' on every fetch below).
   function token() { try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; } catch (e) { return ''; } }
+  function isLoggedIn() { try { var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}'); return !!(u && u.sub); } catch (e) { return false; } }
   function el(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   async function load() {
     var list = el('pending-payments-list');
     if (!list) return;
-    var t = token();
-    if (!t) {
+    if (!isLoggedIn()) {
       list.innerHTML = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">כדי לאשר תשלומים, התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן), ואז חזור/חזרי לכאן.</div>';
       return;
     }
+    var t = token();
     list.innerHTML = '<div class="text-sm text-ink-400">טוען…</div>';
     try {
-      var res = await fetch('/api/billing/manual?action=list', { headers: { 'Authorization': 'Bearer ' + t } });
+      var res = await fetch('/api/billing/manual?action=list', { credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
       if (res.status === 401 || res.status === 403) {
         list.innerHTML = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">הגישה נדחתה. ודא/י שהאימייל שלך מוגדר כמנהל (ADMIN_EMAILS ב-Vercel) ושאתה מחובר ב-<a href="/account" class="underline font-bold">/account</a>.</div>';
         return;
@@ -1066,14 +1072,17 @@
   }
 
   async function act(action, code) {
+    if (!isLoggedIn()) { alert('התחבר/י תחילה ב-/account'); return; }
     var t = token();
-    if (!t) { alert('התחבר/י תחילה ב-/account'); return; }
     if (action === 'confirm' && !confirm('לאשר תשלום ' + code + '? הפרימיום יופעל מיד והלקוח יקבל אישור בוואטסאפ.')) return;
     if (action === 'reject' && !confirm('לדחות את ' + code + '?')) return;
     try {
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
       var res = await fetch('/api/billing/manual?action=' + action, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t },
+        credentials: 'include',
+        headers: headers,
         body: JSON.stringify({ code: code }),
       });
       var j = await res.json();
@@ -1082,12 +1091,12 @@
   }
 
   async function createPaypalPlans() {
+    if (!isLoggedIn()) { alert('התחבר/י תחילה ב-/account'); return; }
     var t = token();
-    if (!t) { alert('התחבר/י תחילה ב-/account'); return; }
     var btn = el('kfl-paypal-setup-btn'); var out = el('kfl-paypal-setup-result');
     if (btn) { btn.disabled = true; btn.textContent = 'יוצר…'; }
     try {
-      var res = await fetch('/api/billing/paypal?action=setup-plans', { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
+      var res = await fetch('/api/billing/paypal?action=setup-plans', { method: 'POST', credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
       var j = await res.json();
       out.textContent = j.ok
         ? ('נוצר! העתק/י ל-Vercel:\nPAYPAL_PLAN_PRO=' + j.PAYPAL_PLAN_PRO + '\nPAYPAL_PLAN_FAMILY=' + j.PAYPAL_PLAN_FAMILY)
@@ -1107,7 +1116,13 @@
 <!-- Registration health + questionnaires (live, requireAdmin via Google ID token). -->
 <script>
 (function () {
+  // `idToken` is no longer persisted to localStorage (XSS-hardening change
+  // 2026-05-23) -- this still returns it when present so a fresh Bearer
+  // token can be opportunistically used, but admin auth now flows via the
+  // HttpOnly `kefle_session` cookie (sent automatically with credentials:
+  // 'include' on every fetch below).
   function token() { try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; } catch (e) { return ''; } }
+  function isLoggedIn() { try { var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}'); return !!(u && u.sub); } catch (e) { return false; } }
   function el(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function when(s) { try { return new Date(s).toLocaleString('he-IL'); } catch (e) { return esc(s || '—'); } }
@@ -1124,9 +1139,9 @@
   var AUTH_MSG = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן) ואז רענן/י.</div>';
 
   async function getJSON(action) {
+    if (!isLoggedIn()) return { _noauth: true };
     var t = token();
-    if (!t) return { _noauth: true };
-    var res = await fetch('/api/admin?action=' + action, { headers: { 'Authorization': 'Bearer ' + t } });
+    var res = await fetch('/api/admin?action=' + action, { credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
     if (res.status === 401 || res.status === 403) return { _denied: true };
     return res.json();
   }
@@ -1233,13 +1248,20 @@
      /api/admin (requireAdmin). No demo/fake values: real numbers or honest "—". -->
 <script>
 (function () {
+  // `idToken` is no longer persisted to localStorage (XSS-hardening change
+  // 2026-05-23) -- this still returns it when present so a fresh Bearer
+  // token can be opportunistically used, but admin auth now flows via the
+  // HttpOnly `kefle_session` cookie (sent automatically with credentials:
+  // 'include' on every fetch below).
   function token() { try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; } catch (e) { return ''; } }
+  function isLoggedIn() { try { var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}'); return !!(u && u.sub); } catch (e) { return false; } }
   function el(id) { return document.getElementById(id); }
   function setTxt(id, v) { var e = el(id); if (e) e.textContent = (v === null || v === undefined) ? '—' : v; }
   function num(n) { return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('he-IL') : '—'; }
   async function get(action) {
-    var t = token(); if (!t) return { _noauth: true };
-    var r = await fetch('/api/admin?action=' + action, { headers: { 'Authorization': 'Bearer ' + t } });
+    if (!isLoggedIn()) return { _noauth: true };
+    var t = token();
+    var r = await fetch('/api/admin?action=' + action, { credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
     if (r.status === 401 || r.status === 403) return { _denied: true };
     try { return await r.json(); } catch (e) { return { ok: false, error: 'bad_json' }; }
   }
