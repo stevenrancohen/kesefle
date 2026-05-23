@@ -80,6 +80,18 @@ const rInc = buildExpenseRow({ amount: 8500, isIncome: true, category: 'הכנס
 ok('income flag in col H (false=income)', rInc[7] === false);
 ok('formula in rawText sanitized', String(buildExpenseRow({ amount: 1, rawText: '=HACK()' })[5]).startsWith("'"));
 
+// ── 3b. constantTimeEqual (regression guard for the off-by-one bug found 2026-05-23) ──
+console.log('\n══ 3b. constantTimeEqual ══');
+(0, eval)(extractFn(LINK, 'constantTimeEqual'));
+ok('cte: empty strings equal', constantTimeEqual('', '') === true);
+ok('cte: identical strings equal', constantTimeEqual('abc', 'abc') === true);
+ok('cte: position-0 mismatch detected (off-by-one regression)', constantTimeEqual('Xbc', 'abc') === false);
+ok('cte: position-N mismatch detected', constantTimeEqual('abX', 'abc') === false);
+ok('cte: length mismatch (longer a) detected', constantTimeEqual('abcd', 'abc') === false);
+ok('cte: length mismatch (longer b) detected', constantTimeEqual('abc', 'abcd') === false);
+ok('cte: 33-byte hex secrets equal', constantTimeEqual('a'.repeat(33), 'a'.repeat(33)) === true);
+ok('cte: 33-byte hex secrets differ at 0', constantTimeEqual('X' + 'a'.repeat(32), 'a'.repeat(33)) === false);
+
 // ── 4. Phone normalization (E.164) ──────────────────────────────────────────
 console.log('\n══ 4. normalizeE164 ══');
 (0, eval)(extractFn(APPEND, 'normalizeE164'));

@@ -135,16 +135,23 @@ function normalizeE164(input) {
 }
 
 // Constant-time string comparison. Prevents timing-based leakage of a secret
-// when comparing against a presented header value. Returns false on length
-// mismatch (after still walking the longer string).
+// when comparing against a presented header value. Walks the longer string
+// so the comparison time depends only on the larger length, not the index of
+// the first differing byte.
+//
+// Out-of-bounds `charCodeAt` returns NaN; `NaN || 0 === 0`, so positions past
+// the end of either string contribute 0 to `diff` (but the initial
+// `la ^ lb` already accumulates a non-zero `diff` for any length mismatch).
 function constantTimeEqual(a, b) {
   const la = a.length, lb = b.length;
   let diff = la ^ lb;
   const max = Math.max(la, lb);
   for (let i = 0; i < max; i++) {
-    diff |= (a.charCodeAt(i % la || 1) ^ b.charCodeAt(i % lb || 1));
+    const ca = a.charCodeAt(i) || 0;
+    const cb = b.charCodeAt(i) || 0;
+    diff |= (ca ^ cb);
   }
-  return diff === 0 && la === lb;
+  return diff === 0;
 }
 
 // Cryptographically-safe, UNBIASED 6-digit code (100000-999999).
