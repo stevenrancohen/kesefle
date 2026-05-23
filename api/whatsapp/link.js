@@ -134,6 +134,19 @@ function normalizeE164(input) {
   return s;
 }
 
+// Constant-time string comparison. Prevents timing-based leakage of a secret
+// when comparing against a presented header value. Returns false on length
+// mismatch (after still walking the longer string).
+function constantTimeEqual(a, b) {
+  const la = a.length, lb = b.length;
+  let diff = la ^ lb;
+  const max = Math.max(la, lb);
+  for (let i = 0; i < max; i++) {
+    diff |= (a.charCodeAt(i % la || 1) ^ b.charCodeAt(i % lb || 1));
+  }
+  return diff === 0 && la === lb;
+}
+
 // Cryptographically-safe, UNBIASED 6-digit code (100000-999999).
 // The old `100000 + (buf[0] % 900000)` form is biased because 2^32 is not
 // divisible by 900000 -- the lowest 232 of 900000 buckets each got one extra
@@ -179,17 +192,38 @@ async function handlerImpl(req, res) {
   }
 
   // GET — status check: is this phone already linked?
+  //
+  // PRIVACY: this endpoint is queried in two patterns:
+  //   (a) the browser polls every 4s during onboarding to learn "did the bot
+  //       confirm my code?" -- needs only { ok, linked }
+  //   (b) the bot calls it server-side on every WhatsApp message to find the
+  //       tenant by phone -- needs userSub + sheetId, AND plan/premium so
+  //       _hasActivePremium_ can gate AI/OCR without an extra round trip
+  //
+  // Anonymous callers (no x-kesefle-bot-secret header) get the MINIMAL routing
+  // response. Bot callers (with a matching secret) get the rich response that
+  // includes billing fields. This prevents directory enumeration where an
+  // attacker iterates phone numbers to learn who is a Kesefle user + their
+  // plan tier, while leaving the bot's existing call pattern intact (the bot
+  // sends the secret -- update bot to add the header on next deploy).
   if (req.method === 'GET') {
     const phone = normalizeE164(req.query.phone);
     if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
     const rec = await kvGet(`phone:${phone}`);
     if (!rec) return res.status(200).json({ ok: true, linked: false });
-    // Surface the EFFECTIVE plan so the bot's _hasActivePremium_ check can gate
-    // AI categorisation + OCR + group caps without an extra round trip. We pull
-    // from the canonical user record (the phone-record can lag behind plan
-    // changes by one Stripe webhook) and run it through computeEntitlement so an
-    // active 14-day trial reports as 'pro' — the deployed bot only checks
-    // plan ∈ {pro,family,business}, so this makes trials work with no bot redeploy.
+
+    const botSecret = process.env.KESEFLE_BOT_SECRET;
+    const presentedSecret = req.headers['x-kesefle-bot-secret'] || '';
+    const isBotCaller = !!botSecret && constantTimeEqual(String(presentedSecret), String(botSecret));
+
+    if (!isBotCaller) {
+      // Anonymous (browser polling) -- minimal response, no billing leak.
+      return res.status(200).json({ ok: true, linked: true });
+    }
+
+    // Bot path: full record incl. effective plan from the canonical user
+    // record (the phone-record can lag behind plan changes by one Stripe
+    // webhook). computeEntitlement reports an active 14-day trial as 'pro'.
     let entitlement = computeEntitlement(rec);
     if (rec.userSub) {
       try {

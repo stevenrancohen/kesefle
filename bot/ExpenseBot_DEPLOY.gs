@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-23-template-aligned';
+const KFL_BUILD_VERSION = '2026-05-23-bot-secret-on-lookup';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4029,7 +4029,12 @@ function _resolveTenant_(fromPhone) {
 function _kvLookupPhone_(phoneClean) {
   try {
     var url = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(phoneClean);
-    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    // Present the bot secret so the server returns the full record (userSub +
+    // sheetId + effective plan for _hasActivePremium_ gating). Without it,
+    // the server returns only { linked } to prevent directory enumeration.
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
+    var headers = botSecret ? { 'x-kesefle-bot-secret': botSecret } : {};
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: headers });
     if (resp.getResponseCode() !== 200) return null;
     var j = JSON.parse(resp.getContentText());
     return j && j.ok ? j : null;
@@ -5622,7 +5627,11 @@ function _hasActivePremium_(fromPhone) {
     if (cached === 'P') return true;
     if (cached === 'N') return false;
     var url = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(clean);
-    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    // Bot secret unlocks the rich response (with plan); without it the
+    // server returns only { linked } and we default to free (safe degrade).
+    var __premBotSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
+    var __premHeaders = __premBotSecret ? { 'x-kesefle-bot-secret': __premBotSecret } : {};
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: __premHeaders });
     if (resp.getResponseCode() !== 200) { cache.put(cacheKey, 'N', 120); return false; }
     var j = JSON.parse(resp.getContentText());
     if (!j || !j.ok || !j.linked) { cache.put(cacheKey, 'N', 600); return false; }
@@ -7026,6 +7035,7 @@ function handleLinkCode_(code, fromPhone) {
   // avoid a confusing "code expired" reply when an old code is re-sent).
   try {
     var __statusUrl = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(String(fromPhone));
+    // Anonymous response is enough here: we only need { linked }.
     var __sResp = UrlFetchApp.fetch(__statusUrl, { method: 'get', muteHttpExceptions: true });
     if (__sResp.getResponseCode() === 200) {
       var __sBody = {};
