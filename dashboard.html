@@ -1754,6 +1754,41 @@ function generatePseudoSeries(target, n, intLike) {
   } else {
     load();
   }
+
+  // ── Auto-refresh during empty-state ─────────────────────────────────────
+  // A first-time user who lands here and sends their first WhatsApp message
+  // would otherwise have to manually refresh to see the new row appear --
+  // and most won't, so they'd think nothing happened. Poll every 15s while
+  // the empty-state is showing, and stop once they have at least one row.
+  // Tab-backgrounded pages don't poll (visibilitychange).
+  var _kflAutoRefreshTimer = null;
+  function _kflShouldAutoRefresh() {
+    var empty = document.getElementById('empty-state');
+    return empty && !empty.classList.contains('hidden');
+  }
+  function _kflStartAutoRefresh() {
+    if (_kflAutoRefreshTimer) return;
+    _kflAutoRefreshTimer = setInterval(function () {
+      if (document.visibilityState !== 'visible') return;
+      if (!_kflShouldAutoRefresh()) {
+        clearInterval(_kflAutoRefreshTimer);
+        _kflAutoRefreshTimer = null;
+        return;
+      }
+      load();
+    }, 15000);
+  }
+  function _kflStopAutoRefresh() {
+    if (_kflAutoRefreshTimer) { clearInterval(_kflAutoRefreshTimer); _kflAutoRefreshTimer = null; }
+  }
+  // Kick off ~1s after first load so the initial render has a chance to set
+  // the empty-state visibility correctly.
+  setTimeout(function () { if (_kflShouldAutoRefresh()) _kflStartAutoRefresh(); }, 1500);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') _kflStopAutoRefresh();
+    else if (_kflShouldAutoRefresh()) { load(); _kflStartAutoRefresh(); }
+  });
+  window.addEventListener('beforeunload', _kflStopAutoRefresh);
 })();
 </script>
 
