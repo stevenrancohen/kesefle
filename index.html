@@ -1801,7 +1801,29 @@ function kesefleShowSuccess(user) {
   setTimeout(function() { location.href = '/account'; }, 1400);
 }
 
+// Detect Google-blocked in-app browsers (WhatsApp, WA Business, Instagram,
+// FB, etc.). Google OAuth renders blank inside these -- redirect to /account
+// which shows the "open in Safari/Chrome" guidance card.
+function _kflIsInAppBrowser() {
+  try {
+    var ua = navigator.userAgent || '';
+    if (/WhatsApp|WhatsAppBusiness|WhatsApp Business|WABusiness|WA Business|WAB\/|GBWhatsApp|FMWhatsApp|YoWhatsApp/i.test(ua)) return true;
+    if (/FBAN|FBAV|FB_IAB|FBSV|FBSS|Instagram|Line\/|LineWebView|MQQBrowser|Messenger|MicroMessenger|Snapchat|TikTok|Twitter|GSA\/|XING|Slack|Discord|MetaApp/i.test(ua)) return true;
+    var isIOS = /iPhone|iPad|iPod/i.test(ua);
+    if (isIOS && !/Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)) return true;
+    if (/Android/i.test(ua) && /;\s*wv\)/.test(ua)) return true;
+    return false;
+  } catch (e) { return false; }
+}
+
 async function kesefleStartGoogle() {
+  // If the user is inside an in-app browser, GIS One Tap will render a blank
+  // accounts.google.com page and they'll be stuck. Bounce to /account, which
+  // shows the "open in Safari" help card before any Google call happens.
+  if (_kflIsInAppBrowser()) {
+    window.location.href = '/account?from=hero&plan=' + encodeURIComponent((window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free');
+    return;
+  }
   var cid = window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
   if (!cid || cid.indexOf('__') === 0) {
     return kesefleShowAuthMsg('Google Client ID לא מוגדר. ראה SETUP.md.', 'err');
@@ -1864,6 +1886,10 @@ async function kesefleStartGoogle() {
 }
 
 async function kesefleStartFacebook() {
+  if (_kflIsInAppBrowser()) {
+    window.location.href = '/account?from=hero&plan=' + encodeURIComponent((window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free');
+    return;
+  }
   var aid = window.KESEFLE_CONFIG.FACEBOOK_APP_ID;
   if (!aid || aid.indexOf('__') === 0) {
     return kesefleShowAuthMsg('Facebook App ID לא מוגדר. ראה SETUP.md.', 'err');
@@ -1908,6 +1934,10 @@ async function kesefleStartFacebook() {
 }
 
 async function kesefleStartApple() {
+  if (_kflIsInAppBrowser()) {
+    window.location.href = '/account?from=hero&plan=' + encodeURIComponent((window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free');
+    return;
+  }
   var cid = window.KESEFLE_CONFIG.APPLE_CLIENT_ID;
   var redirect = window.KESEFLE_CONFIG.APPLE_REDIRECT_URI;
   if (!cid || cid.indexOf('__') === 0) {

@@ -558,6 +558,7 @@ async function kesefleLinkRequestCode() {
   try {
     var r = await fetch('/api/whatsapp/link', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken: accessToken, phone: phone }),
     });
@@ -666,7 +667,7 @@ function _kflStartPolling(phone) {
   // The Vercel side returns { linked: true } once the bot confirms the code.
   kflLinkPollTimer = setInterval(async function() {
     try {
-      var r = await fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone));
+      var r = await fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone), { credentials: 'include' });
       var j = await r.json();
       if (j.ok && j.linked) {
         _kflStopPolling();
@@ -869,12 +870,30 @@ async function kesefleRedeemReferralIfPending() {
 function kesefleIsInAppBrowser() {
   try {
     var ua = navigator.userAgent || '';
-    if (/WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Messenger|MicroMessenger|Snapchat|TikTok|Twitter|GSA\//i.test(ua)) return true;
+    // WhatsApp + Business variants on iOS/Android. WhatsApp Business UAs seen
+    // in the wild: "WhatsAppBusiness/x.x", "WhatsApp Business/x.x", "WA/Business",
+    // and the modded Israeli/Arab variants GBWhatsApp, FMWhatsApp, YoWhatsApp.
+    if (/WhatsApp|WhatsAppBusiness|WhatsApp Business|WABusiness|WA Business|WAB\/|GBWhatsApp|FMWhatsApp|YoWhatsApp/i.test(ua)) return true;
+    // Other in-app browsers blocked by Google OAuth.
+    if (/FBAN|FBAV|FB_IAB|FBSV|FBSS|Instagram|Line\/|LineWebView|MQQBrowser|Messenger|MicroMessenger|Snapchat|TikTok|Twitter|GSA\/|XING|Slack|Discord|MetaApp/i.test(ua)) return true;
     var isIOS = /iPhone|iPad|iPod/i.test(ua);
     if (isIOS && !/Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)) return true; // iOS WKWebView (in-app)
     if (/Android/i.test(ua) && /;\s*wv\)/.test(ua)) return true; // Android System WebView
     return false;
   } catch (e) { return false; }
+}
+
+// Telemetry beacon: when in-app detection misses (we get back from a Google
+// redirect with no `code` param and no `error`, suggesting Google rendered
+// blank for the in-app browser), POST the UA so we can extend the regex.
+// Fire-and-forget, no PII (UA is not user-identifying).
+function _kflLogMissedInApp(reason) {
+  try {
+    var ua = navigator.userAgent || '';
+    navigator.sendBeacon
+      ? navigator.sendBeacon('/api/log/missed-inapp', JSON.stringify({ ua: ua.slice(0, 300), reason: reason, at: Date.now() }))
+      : fetch('/api/log/missed-inapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ua: ua.slice(0, 300), reason: reason, at: Date.now() }) }).catch(function () {});
+  } catch (_e) {}
 }
 
 function kesefleCopyAccountLink(btn) {
@@ -984,6 +1003,12 @@ async function kesefleStartRedirectSignin() {
 // tokens server-side (google-exchange stores the refresh token + sets a session
 // cookie), then provisions the user's sheet with the fresh access token.
 async function kesefleHandleOAuthReturn(code, state) {
+  // If somehow we're back from an OAuth redirect inside an in-app browser
+  // (e.g. user started in Safari, finished in WA, or WA opens the redirect
+  // back inside its own webview on iOS), the subsequent google-exchange and
+  // provision calls will fight 3rd-party cookie + WebView fights. Surface
+  // the "open in Safari" card instead of looping through the error path.
+  if (kesefleIsInAppBrowser()) { _kflLogMissedInApp('oauth_return_in_app'); kesefleShowInAppBrowserHelp(); return; }
   var savedState = null, verifier = null;
   try {
     // Prefer the state-namespaced verifier (per-tab) so two parallel sign-ins
@@ -1003,7 +1028,7 @@ async function kesefleHandleOAuthReturn(code, state) {
   kesefleShowConnecting();
   try {
     var r = await fetch('/api/auth/google-exchange', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: code, codeVerifier: verifier, redirectUri: cleanUrl })
     });
     var j = await r.json();
@@ -1023,7 +1048,7 @@ async function kesefleHandleOAuthReturn(code, state) {
     if (j.accessToken) {
       try {
         var pr = await fetch('/api/sheet/provision', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ accessToken: j.accessToken })
         });
         var pj = await pr.json().catch(function () { return {}; });
@@ -1102,7 +1127,7 @@ function kesefleShowProvisionError(msg) {
 // from the client (which is why we stopped persisting it to localStorage).
 async function kesefleRetryProvision() {
   try {
-    var pr = await fetch('/api/sheet/provision', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    var pr = await fetch('/api/sheet/provision', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } });
     var pj = await pr.json().catch(function () { return {}; });
     if (pj && pj.ok) {
       try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: pj.spreadsheetId, spreadsheetUrl: pj.spreadsheetUrl })); } catch (e) {}

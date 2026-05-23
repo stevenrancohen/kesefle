@@ -9,626 +9,639 @@
 <meta name="theme-color" content="#0f1422" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <script>
   tailwind.config = {
     darkMode: 'class',
     theme: {
       extend: {
-        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
-        colors: {
-          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
-          accent:  { 400:'#c084fc', 500:'#a855f7', 600:'#9333ea' }
+        fontFamily: {
+          sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'system-ui', 'sans-serif'],
         },
-        boxShadow: {
-          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
-          soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
+        colors: {
+          slate: {
+            50:'#F8FAFC', 100:'#F1F5F9', 200:'#E2E8F0', 300:'#CBD5E1',
+            400:'#94A3B8', 500:'#64748B', 600:'#475569', 700:'#334155',
+            800:'#1E293B', 900:'#0F172A', 950:'#020617',
+          },
         },
       },
     },
   };
 </script>
-<link rel="stylesheet" href="/assets/futuristic.css" />
 <style>
+  /* Base typography + colors per design spec */
   html { scroll-behavior: smooth; }
-  body { font-family: 'Heebo', system-ui, sans-serif; }
-  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
-  /* slide-in for live feed */
-  @keyframes slide-in-top {
-    from { opacity: 0; transform: translateY(-10px); max-height: 0; }
-    to   { opacity: 1; transform: translateY(0); max-height: 200px; }
+  body {
+    background: #F8FAFC;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: #1E293B;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  .slide-in { animation: slide-in-top 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  /* sparkline stroke draw */
-  @keyframes draw-line { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
-  .sparkline path { stroke-dasharray: 200; stroke-dashoffset: 200; animation: draw-line 2.2s ease-out forwards; }
-  /* map pulse */
-  @keyframes map-pulse {
-    0%   { transform: scale(1);   opacity: 1; }
-    100% { transform: scale(3.5); opacity: 0; }
+  html.dark body {
+    background: #0F172A;
+    color: #E2E8F0;
   }
-  .map-pulse { animation: map-pulse 2.4s ease-out infinite; transform-origin: center; }
-  /* counter pop */
-  @keyframes count-pop { 0% { transform: scale(0.85); opacity:0.4; } 100% { transform: scale(1); opacity:1; } }
-  .count-pop { animation: count-pop 0.5s ease-out both; }
-  /* gentle bar grow */
-  @keyframes bar-grow { from { width: 0%; } }
-  .bar-grow { animation: bar-grow 1.4s cubic-bezier(0.22,0.61,0.36,1) both; }
-  /* skeleton */
-  @keyframes skel-shine { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  .skel { background: linear-gradient(90deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.04) 100%); background-size: 200% 100%; animation: skel-shine 1.8s infinite; }
-  /* hover lift */
-  .lift { transition: transform 0.25s cubic-bezier(0.22,0.61,0.36,1), box-shadow 0.25s; }
-  .lift:hover { transform: translateY(-3px); box-shadow: 0 18px 50px -18px rgba(15,20,34,0.45); }
-  /* status dot */
-  .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; }
-  /* horizontal bar (custom container) */
-  .hbar { height: 8px; border-radius: 999px; background: rgba(34,197,94,0.10); overflow: hidden; }
-  .hbar > span { display:block; height:100%; border-radius: inherit; }
-  /* tiny "ripple ring" around live counters */
-  @keyframes ring { 0%{box-shadow:0 0 0 0 rgba(34,197,94,0.55)} 100%{box-shadow:0 0 0 14px rgba(34,197,94,0)} }
-  .ring-pulse { animation: ring 1.8s ease-out infinite; }
-  /* table row hover */
-  tbody tr.user-row:hover { background: rgba(34,197,94,0.04); }
-  .dark tbody tr.user-row:hover { background: rgba(34,197,94,0.08); }
-  /* mobile-friendly horizontal scroll for table */
+  /* LTR-isolated numerals */
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; font-variant-numeric: tabular-nums; }
+
+  /* Enterprise card */
+  .card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+  html.dark .card {
+    background: #1E293B;
+    border-color: #334155;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Subtle hover for cards */
+  .card-hover { transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+  .card-hover:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.06);
+  }
+  html.dark .card-hover:hover {
+    border-color: #475569;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Section heading rule */
+  .section-rule { border-bottom: 1px solid #E2E8F0; }
+  html.dark .section-rule { border-bottom-color: #334155; }
+
+  /* Discrete status dot */
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Quiet bar */
+  .qbar { height: 4px; border-radius: 999px; background: #F1F5F9; overflow: hidden; }
+  html.dark .qbar { background: #334155; }
+  .qbar > span { display: block; height: 100%; border-radius: inherit; background: #3B82F6; }
+
+  /* Row hover only */
+  tbody tr.user-row { transition: background-color 0.12s; }
+  tbody tr.user-row:hover { background: #F1F5F9; }
+  html.dark tbody tr.user-row:hover { background: #0F172A; }
+
+  /* Recent users list rows */
+  .row-hover { transition: background-color 0.12s; }
+  .row-hover:hover { background: #F1F5F9; }
+  html.dark .row-hover:hover { background: #0F172A; }
+
+  /* Mobile scroll */
   .scroll-x { overflow-x: auto; }
   .scroll-x::-webkit-scrollbar { height: 6px; }
-  .scroll-x::-webkit-scrollbar-thumb { background: rgba(127,127,127,0.3); border-radius: 999px; }
-  /* gate */
+  .scroll-x::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
+  html.dark .scroll-x::-webkit-scrollbar-thumb { background: #475569; }
+
+  /* Gate blur */
   .gate-blur { filter: blur(6px); pointer-events: none; user-select: none; }
+
+  /* Reduce motion */
   @media (prefers-reduced-motion: reduce) {
-    .slide-in, .sparkline path, .map-pulse, .count-pop, .bar-grow, .skel, .ring-pulse { animation: none !important; }
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 </style>
 </head>
-<body class="bg-ink-50 text-ink-900 antialiased dark:bg-ink-900 dark:text-white">
+<body>
 
 <!-- ============== AUTH GATE OVERLAY ============== -->
-<div id="kfl-gate" class="fixed inset-0 z-[100] flex items-center justify-center bg-ink-900/95 backdrop-blur-md">
-  <div class="relative max-w-md w-[90vw] rounded-3xl border border-ink-700/60 bg-ink-800/80 p-8 shadow-glow glass-panel scan-line">
-    <div class="absolute -inset-1 -z-10 rounded-3xl bg-gradient-to-br from-brand-500/20 to-accent-500/20 blur-2xl"></div>
-    <div class="mb-5 flex items-center gap-3">
-      <span class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-2xl font-black text-white shadow-glow">₪</span>
+<div id="kfl-gate" class="fixed inset-0 z-[100] flex items-center justify-center" style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
+  <div class="card max-w-md w-[90vw] p-8" style="border-radius: 12px;">
+    <div class="mb-6 flex items-center gap-3">
+      <span class="grid h-10 w-10 place-items-center rounded-lg text-base font-medium text-white" style="background: #1E293B;">K</span>
       <div>
-        <div class="text-lg font-extrabold tracking-tight holo-text">כספ'לה Admin</div>
-        <div class="text-xs text-ink-400">פאנל ניהול פנימי</div>
+        <div class="text-base font-medium tracking-tight" style="color: #1E293B;">Kesefle Admin</div>
+        <div class="text-xs" style="color: #64748B;">Restricted access</div>
       </div>
     </div>
-    <h2 class="text-2xl font-black mb-1">גישה מוגבלת</h2>
-    <p class="text-sm text-ink-300 mb-5">כדי להמשיך, הזן את סיסמת הניהול.</p>
+    <h2 class="text-lg font-medium mb-2" style="color: #1E293B;">Sign in to continue</h2>
+    <p class="text-sm mb-5" style="color: #64748B;">Enter the admin password to access the panel.</p>
     <form id="gate-form" class="flex flex-col gap-3">
-      <input id="gate-pw" type="password" autocomplete="off" placeholder="סיסמה" class="w-full rounded-xl border border-ink-700 bg-ink-900/70 px-4 py-3 text-base text-white placeholder:text-ink-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30" dir="ltr" />
-      <div id="gate-error" class="hidden text-xs font-semibold text-red-400">סיסמה שגויה. נסה שוב.</div>
-      <button type="submit" class="rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-glow transition hover:bg-brand-500">היכנס לפאנל</button>
+      <input id="gate-pw" type="password" autocomplete="off" placeholder="Password" class="w-full rounded-lg px-4 py-2.5 text-sm" style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B; outline: none;" dir="ltr" />
+      <div id="gate-error" class="hidden text-xs font-medium" style="color: #EF4444;">Incorrect password. Try again.</div>
+      <button type="submit" class="rounded-lg px-4 py-2.5 text-sm font-medium text-white" style="background: #3B82F6;">Sign in</button>
     </form>
-    <div class="mt-4 text-[11px] text-ink-500 text-center">דף זה אינו מקושר חיצונית. אם הגעת בטעות, <a href="/" class="text-brand-400 hover:underline">חזור לאתר</a>.</div>
+    <div class="mt-5 text-xs text-center" style="color: #94A3B8;">This page is not externally linked. <a href="/" style="color: #3B82F6;">Return to site</a>.</div>
   </div>
 </div>
 
-<!-- ============== NAV (matches site) ============== -->
-<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
-  <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
-    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
-      <img src="/logo.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
+<!-- ============== NAV ============== -->
+<header class="fixed inset-x-0 top-0 z-50" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); border-bottom: 1px solid #E2E8F0;">
+  <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
+    <a href="/" class="flex items-center gap-2.5 text-base font-medium tracking-tight" style="color: #1E293B;">
+      <img src="/logo.png" alt="כספ'לה" class="h-7 w-7 rounded-md" />
       <span>כספ'לה</span>
-      <span class="hidden sm:inline-flex items-center gap-1 rounded-full bg-accent-500/15 px-2 py-0.5 text-[10px] font-bold text-accent-500">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span class="hidden sm:inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #F8FAFC;">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Admin
       </span>
     </a>
     <div class="hidden gap-7 md:flex">
-      <a href="/" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">בית</a>
-      <a href="/pricing" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">מחיר</a>
-      
-      <a href="/trust" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">אבטחה</a>
-      <a href="/help" class="text-sm font-medium text-ink-700 hover:text-ink-900 dark:text-ink-200 dark:hover:text-white">עזרה</a>
+      <a href="/" class="text-sm font-normal" style="color: #475569;">בית</a>
+      <a href="/pricing" class="text-sm font-normal" style="color: #475569;">מחיר</a>
+      <a href="/trust" class="text-sm font-normal" style="color: #475569;">אבטחה</a>
+      <a href="/help" class="text-sm font-normal" style="color: #475569;">עזרה</a>
     </div>
     <div class="flex items-center gap-2">
-      <button id="theme-toggle" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-200 bg-white/70 text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:bg-ink-700" aria-label="מצב כהה/בהיר" title="מצב כהה/בהיר">
-        <svg id="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-        <svg id="theme-icon-dark" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <button id="theme-toggle" class="grid h-8 w-8 place-items-center rounded-md" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;" aria-label="Toggle theme" title="Toggle theme">
+        <svg id="theme-icon-light" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg id="theme-icon-dark" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <a href="/account" class="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800 sm:inline-block">החשבון שלי</a>
-      <button id="admin-logout" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">התנתק</button>
+      <a href="/account" class="hidden rounded-md px-3 py-1.5 text-sm font-normal sm:inline-block" style="color: #475569;">My account</a>
+      <button id="admin-logout" class="rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">Sign out</button>
     </div>
   </nav>
 </header>
 
 <!-- ============== APP SHELL ============== -->
-<main id="kfl-app" class="gate-blur mx-auto max-w-7xl px-5 pt-24 pb-24">
+<main id="kfl-app" class="gate-blur mx-auto max-w-7xl px-5 pt-20 pb-20">
 
-  <!-- ====== SECTION 1: WELCOME HEADER ====== -->
-  <section class="mb-8">
+  <!-- ====== SECTION 1: HEADER ====== -->
+  <section class="mb-10 pt-4">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[11px] font-bold text-brand-400">
-          <span class="live-dot inline-block h-2 w-2 rounded-full bg-brand-500"></span>
-          LIVE • <span class="num" id="now-clock">00:00:00</span>
+        <div class="mb-3 inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-[11px] font-medium" style="background: #F1F5F9; color: #475569;">
+          <span class="status-dot" style="background: #10B981;"></span>
+          Live <span class="num" style="color: #64748B;" id="now-clock">00:00:00</span>
         </div>
-        <h1 class="text-4xl md:text-5xl font-black tracking-tight">
-          ברוך שובך, <span class="holo-text">Steven</span>
+        <h1 class="text-3xl tracking-tight" style="font-weight: 300; color: #1E293B;">
+          dashboard
         </h1>
-        <p class="mt-2 text-ink-500 dark:text-ink-300">הנה תמונת מצב מלאה של כספ'לה — נכון לרגע זה.</p>
+        <p class="mt-1 text-sm" style="color: #64748B;">Welcome back, Steven.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 px-3 py-1.5 text-xs font-bold text-white shadow-soft">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          תוכנית Pro
+        <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium" style="background: #F1F5F9; color: #475569;">
+          Plan: Pro
         </span>
-        <a href="https://kesefle.com" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
-          <span class="status-dot bg-brand-500"></span>
-          kesefle.vercel.app
+        <a href="https://kesefle.com" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-normal" style="border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569;">
+          <span class="status-dot" style="background: #10B981;"></span>
+          kesefle.com
         </a>
-        <a href="https://kesefle.com" target="_blank" rel="noopener" class="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
-          צפה באתר
+        <a href="https://kesefle.com" target="_blank" rel="noopener" class="rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569;">
+          View site
         </a>
-        <button onclick="alert('עורך האתר עדיין בפיתוח. בקרוב.')" class="rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
-          ערוך אתר
+        <button onclick="alert('Site editor coming soon.')" class="rounded-md px-3 py-1.5 text-sm font-medium text-white" style="background: #1E293B;">
+          Edit site
         </button>
       </div>
     </div>
   </section>
 
-  <!-- ====== SECTION 1.5: PENDING PAYMENTS (Bit / bank manual confirm) ====== -->
+  <!-- ====== SECTION 1.5: PENDING PAYMENTS ====== -->
   <section class="mb-10" id="pending-payments-section">
-    <div class="mb-4 flex items-end justify-between">
+    <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-2xl font-black tracking-tight">תשלומים ממתינים לאישור</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">ביט / העברה בנקאית — אשר לאחר שקיבלת את הכסף, והפרימיום יופעל מיד.</p>
+        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Pending payments</h2>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">Bit / bank transfer — approve once funds are received; Premium activates immediately.</p>
       </div>
-      <button onclick="window.kflLoadPending && window.kflLoadPending()" class="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
-        רענן
+      <button onclick="window.kflLoadPending && window.kflLoadPending()" class="rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">
+        Refresh
       </button>
     </div>
     <div id="pending-payments-list" class="grid gap-3"></div>
 
     <!-- PayPal one-time plan setup -->
-    <div class="mt-6 rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">
+    <div class="card card-hover mt-5 p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div class="font-bold">מסלולי PayPal</div>
-          <div class="text-xs text-ink-500 dark:text-ink-300">לחיצה אחת יוצרת את מסלולי Pro (₪19) ו-Family (₪39) ב-PayPal. דורש ש-PAYPAL_CLIENT_ID + PAYPAL_CLIENT_SECRET כבר מוגדרים ב-Vercel.</div>
+          <div class="text-sm font-medium" style="color: #1E293B;">PayPal plans</div>
+          <div class="mt-0.5 text-xs" style="color: #64748B;">One click creates the Pro (₪19) and Family (₪39) plans in PayPal. Requires PAYPAL_CLIENT_ID + PAYPAL_CLIENT_SECRET on Vercel.</div>
         </div>
-        <button id="kfl-paypal-setup-btn" onclick="window.kflCreatePaypalPlans && window.kflCreatePaypalPlans()" class="rounded-xl bg-[#0070ba] px-4 py-2 text-sm font-bold text-white hover:bg-[#005ea6]">צור מסלולי PayPal</button>
+        <button id="kfl-paypal-setup-btn" onclick="window.kflCreatePaypalPlans && window.kflCreatePaypalPlans()" class="rounded-md px-3 py-1.5 text-sm font-medium text-white" style="background: #3B82F6;">Create PayPal plans</button>
       </div>
-      <div id="kfl-paypal-setup-result" class="mt-3 hidden whitespace-pre-line rounded-xl border border-brand-500/40 bg-brand-500/10 p-3 font-mono text-xs"></div>
+      <div id="kfl-paypal-setup-result" class="mt-3 hidden whitespace-pre-line rounded-md p-3 font-mono text-xs" style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B;"></div>
     </div>
   </section>
 
-  <!-- ====== SECTION 1.6: REGISTRATION HEALTH + QUESTIONNAIRES (live) ====== -->
+  <!-- ====== SECTION 1.6: REGISTRATION HEALTH + QUESTIONNAIRES ====== -->
   <section class="mb-10" id="kfl-onboarding-section">
-    <div class="mb-4 flex items-end justify-between">
+    <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-2xl font-black tracking-tight">מצב הרשמות ושאלונים</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">בדיקה חיה: לכל לקוח שנרשם באמת יש גיליון, ומה הוא ענה בשאלון ההתאמה.</p>
+        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Registration health &amp; questionnaires</h2>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">Live check: every paying customer has a sheet, and what they answered in the onboarding form.</p>
       </div>
-      <button onclick="window.kflLoadOnboarding && window.kflLoadOnboarding()" class="rounded-xl border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700">
-        רענן
+      <button onclick="window.kflLoadOnboarding && window.kflLoadOnboarding()" class="rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">
+        Refresh
       </button>
     </div>
 
-    <!-- Registration health -->
-    <div class="rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+    <div class="card card-hover p-5">
       <div class="mb-3 flex items-center gap-2">
-        <span class="text-lg font-black">בריאות הרשמות</span>
-        <span id="kfl-reg-badge" class="rounded-full px-2.5 py-0.5 text-xs font-bold"></span>
+        <span class="text-sm font-medium" style="color: #1E293B;">Registration health</span>
+        <span id="kfl-reg-badge" class="rounded-md px-2 py-0.5 text-xs font-medium"></span>
       </div>
-      <div id="kfl-reg-health" class="text-sm text-ink-400">טוען…</div>
+      <div id="kfl-reg-health" class="text-sm" style="color: #64748B;">Loading...</div>
     </div>
 
-    <!-- Questionnaires -->
-    <div class="mt-4 rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
-      <div class="mb-3 text-lg font-black">שאלוני לקוחות</div>
-      <div id="kfl-questionnaires" class="text-sm text-ink-400">טוען…</div>
+    <div class="card card-hover mt-4 p-5">
+      <div class="mb-3 text-sm font-medium" style="color: #1E293B;">Customer questionnaires</div>
+      <div id="kfl-questionnaires" class="text-sm" style="color: #64748B;">Loading...</div>
     </div>
   </section>
 
   <!-- ====== SECTION 2: REAL-TIME ANALYTICS ====== -->
   <section class="mb-10">
-    <div class="mb-4 flex items-end justify-between">
+    <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-2xl font-black tracking-tight">אנליטיקה בזמן אמת</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">פילוח גאוגרפי, מכשירים ומקורות תנועה.</p>
-      </div>
-      <div class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-500">
-        מבנה לדוגמה
+        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Real-time Analytics</h2>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">Connecting to live data...</p>
       </div>
     </div>
 
-    <div class="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
-      ⚠️ הפילוחים בחלק זה (גאוגרפיה, מכשירים, מקורות תנועה, מבקרים חיים) עדיין לא מחוברים למדידה אמיתית. נתוני אמת לצפיות והרשמות מופיעים ב״סטטיסטיקות מפתח״ למטה.
-    </div>
-
-    <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
       <!-- 2a: Visitors counters -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="mb-3 flex items-center justify-between">
-          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מבקרים ב-30 הדקות האחרונות</div>
-          <span class="text-[11px] font-bold text-brand-500">+3 ↑</span>
+      <div class="card card-hover p-5">
+        <div class="mb-2 flex items-center justify-between">
+          <div class="text-xs font-medium" style="color: #64748B;">Visitors (last 30 min)</div>
+          <span class="text-[11px] font-medium" style="color: #10B981;">+3</span>
         </div>
-        <div class="text-5xl font-black tracking-tight num count-pop" data-counter="15" data-from="0">15</div>
-        <!-- sparkline -->
-        <svg class="sparkline mt-3 w-full" viewBox="0 0 200 40" preserveAspectRatio="none" height="40">
-          <defs><linearGradient id="spark1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity="0.4"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
-          <path d="M0,30 L20,28 L40,25 L60,22 L80,28 L100,18 L120,15 L140,20 L160,10 L180,12 L200,6" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
-          <path d="M0,30 L20,28 L40,25 L60,22 L80,28 L100,18 L120,15 L140,20 L160,10 L180,12 L200,6 L200,40 L0,40 Z" fill="url(#spark1)"/>
-        </svg>
-        <div class="mt-6 border-t border-ink-100 pt-4 dark:border-ink-700">
+        <div class="text-3xl tracking-tight num" style="font-weight: 500; color: #1E293B;">15</div>
+        <div class="mt-5 pt-4" style="border-top: 1px solid #E2E8F0;">
           <div class="mb-1 flex items-center justify-between">
-            <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מבקרים פעילים כעת</div>
-            <span class="inline-flex items-center gap-1 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-500">
-              <span class="live-dot h-1.5 w-1.5 rounded-full bg-brand-500"></span>
-              LIVE
+            <div class="text-xs font-medium" style="color: #64748B;">Active now</div>
+            <span class="inline-flex items-center gap-1 text-[10px] font-medium" style="color: #10B981;">
+              <span class="status-dot" style="background: #10B981;"></span>
+              Live
             </span>
           </div>
           <div class="flex items-baseline gap-2">
-            <div class="text-4xl font-black num count-pop" data-counter="2" data-from="0">2</div>
-            <div class="relative h-3 w-3 ring-pulse rounded-full bg-brand-500"></div>
+            <div class="text-2xl num" style="font-weight: 500; color: #1E293B;">2</div>
           </div>
-          <div class="mt-1 text-xs text-ink-500 dark:text-ink-300">צופים באתר עכשיו</div>
+          <div class="mt-1 text-xs" style="color: #94A3B8;">viewing the site now</div>
         </div>
       </div>
 
-      <!-- 2b: Map + countries -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+      <!-- 2b: Region table (no map) -->
+      <div class="card card-hover p-5">
         <div class="mb-3 flex items-center justify-between">
-          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">מיקום מבקרים</div>
-          <span class="text-[10px] font-bold text-ink-400">15 בסך הכל</span>
+          <div class="text-xs font-medium" style="color: #64748B;">Active Users by Region</div>
+          <span class="text-[10px] font-medium" style="color: #94A3B8;">15 total</span>
         </div>
-        <!-- Mini world / Israel SVG -->
-        <div class="relative rounded-2xl bg-gradient-to-br from-brand-500/10 to-accent-500/10 p-3 h-40 overflow-hidden border border-ink-100 dark:border-ink-700">
-          <svg viewBox="0 0 240 160" class="w-full h-full">
-            <!-- simplified middle-east continents shape -->
-            <path d="M40,40 Q60,20 100,30 Q150,20 180,40 Q210,60 200,90 Q190,120 160,130 Q120,140 80,130 Q40,120 30,90 Q30,60 40,40 Z" fill="rgba(34,197,94,0.10)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
-            <path d="M130,55 Q140,50 145,55 Q150,65 148,80 Q146,95 140,100 Q134,95 132,80 Q130,65 130,55 Z" fill="rgba(34,197,94,0.45)" stroke="#22c55e" stroke-width="1.5"/>
-            <!-- Tel Aviv pin pulse -->
-            <g transform="translate(140,72)">
-              <circle r="5" fill="#22c55e"/>
-              <circle r="5" fill="#22c55e" class="map-pulse" opacity="0.6"/>
-              <circle r="2" fill="#fff"/>
-            </g>
-            <!-- Romania pin -->
-            <g transform="translate(105,40)">
-              <circle r="3" fill="#a855f7"/>
-              <circle r="3" fill="#a855f7" class="map-pulse" opacity="0.6" style="animation-delay:1s"/>
-            </g>
-            <text x="148" y="68" font-size="9" fill="currentColor" class="text-ink-700 dark:text-white" font-weight="700">ת״א</text>
-          </svg>
-        </div>
-        <div class="mt-4 space-y-2">
-          <div class="flex items-center justify-between text-sm">
-            <div class="flex items-center gap-2">
-              <span class="text-base">🇮🇱</span>
-              <span class="font-semibold">ישראל</span>
-            </div>
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between">
+            <span style="color: #1E293B;">ישראל</span>
             <div class="flex items-center gap-3">
-              <div class="hbar w-24"><span class="bar-grow bg-brand-500" style="width:93%;animation-delay:.2s"></span></div>
-              <span class="num font-black w-6 text-end">14</span>
+              <div class="qbar w-24"><span style="width:93%"></span></div>
+              <span class="num font-medium w-6 text-end" style="color: #1E293B;">14</span>
             </div>
           </div>
-          <div class="flex items-center justify-between text-sm">
-            <div class="flex items-center gap-2">
-              <span class="text-base">🇷🇴</span>
-              <span class="font-semibold">רומניה</span>
-            </div>
+          <div class="flex items-center justify-between">
+            <span style="color: #1E293B;">רומניה</span>
             <div class="flex items-center gap-3">
-              <div class="hbar w-24"><span class="bar-grow bg-accent-500" style="width:7%;animation-delay:.4s"></span></div>
-              <span class="num font-black w-6 text-end">1</span>
+              <div class="qbar w-24"><span style="width:7%"></span></div>
+              <span class="num font-medium w-6 text-end" style="color: #1E293B;">1</span>
             </div>
+          </div>
+          <div class="flex items-center justify-between pt-2" style="border-top: 1px solid #E2E8F0;">
+            <span class="text-xs font-medium" style="color: #64748B;">Total</span>
+            <span class="num text-xs font-medium" style="color: #1E293B;">15</span>
           </div>
         </div>
       </div>
 
-      <!-- 2c: Device + Recent visitors -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="mb-3 text-sm font-semibold text-ink-500 dark:text-ink-300">מכשירים</div>
-        <div class="flex items-center gap-4">
-          <!-- Donut chart pure SVG -->
-          <svg viewBox="0 0 42 42" class="h-24 w-24 -rotate-90">
-            <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="rgba(34,197,94,0.15)" stroke-width="6"/>
-            <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#22c55e" stroke-width="6" stroke-dasharray="100 0" stroke-dashoffset="0" stroke-linecap="round"/>
-          </svg>
+      <!-- 2c: Devices breakdown -->
+      <div class="card card-hover p-5">
+        <div class="mb-3 text-xs font-medium" style="color: #64748B;">Devices</div>
+        <div>
+          <div class="text-3xl tracking-tight num" style="font-weight: 500; color: #1E293B;">100%</div>
+          <div class="mt-1 text-xs font-medium" style="color: #64748B;">Mobile</div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3 pt-3" style="border-top: 1px solid #E2E8F0;">
           <div>
-            <div class="flex items-center gap-2"><span class="status-dot bg-brand-500"></span><span class="text-sm font-semibold">מובייל</span><span class="num font-black text-lg">100%</span></div>
-            <div class="flex items-center gap-2 opacity-60"><span class="status-dot bg-ink-400"></span><span class="text-sm">דסקטופ</span><span class="num text-sm">0%</span></div>
-            <div class="flex items-center gap-2 opacity-60"><span class="status-dot bg-ink-400"></span><span class="text-sm">טאבלט</span><span class="num text-sm">0%</span></div>
+            <div class="text-xs" style="color: #64748B;">Desktop</div>
+            <div class="num text-sm font-medium" style="color: #1E293B;">0%</div>
+          </div>
+          <div>
+            <div class="text-xs" style="color: #64748B;">Tablet</div>
+            <div class="num text-sm font-medium" style="color: #1E293B;">0%</div>
           </div>
         </div>
-        <div class="mt-5 border-t border-ink-100 pt-4 dark:border-ink-700">
-          <div class="mb-2 text-sm font-semibold text-ink-500 dark:text-ink-300">מבקרים אחרונים</div>
-          <ul class="space-y-2 text-sm">
-            <li class="flex items-center justify-between">
-              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500/15 text-[10px] font-bold text-brand-500 num">A92</span><span class="num text-ink-500 dark:text-ink-300">user_a92f</span></span>
-              <span class="text-xs text-brand-500 font-semibold">גולש</span>
+
+        <div class="mt-5 pt-4" style="border-top: 1px solid #E2E8F0;">
+          <div class="mb-2 text-xs font-medium" style="color: #64748B;">Recent Users</div>
+          <ul class="text-sm">
+            <li class="row-hover flex items-center justify-between rounded-md px-2 py-1.5 -mx-2">
+              <span class="num text-sm" style="color: #475569;">user_a92f</span>
+              <span class="text-xs font-medium" style="color: #3B82F6;">Browsing</span>
             </li>
-            <li class="flex items-center justify-between">
-              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-accent-500/15 text-[10px] font-bold text-accent-500 num">7B1</span><span class="num text-ink-500 dark:text-ink-300">user_7b1e</span></span>
-              <span class="text-xs text-ink-400">לפני 3 דק׳</span>
+            <li class="row-hover flex items-center justify-between rounded-md px-2 py-1.5 -mx-2">
+              <span class="num text-sm" style="color: #475569;">user_7b1e</span>
+              <span class="text-xs" style="color: #94A3B8;">3 min ago</span>
             </li>
-            <li class="flex items-center justify-between">
-              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500/15 text-[10px] font-bold text-brand-500 num">CD4</span><span class="num text-ink-500 dark:text-ink-300">user_cd4a</span></span>
-              <span class="text-xs text-ink-400">לפני 8 דק׳</span>
+            <li class="row-hover flex items-center justify-between rounded-md px-2 py-1.5 -mx-2">
+              <span class="num text-sm" style="color: #475569;">user_cd4a</span>
+              <span class="text-xs" style="color: #94A3B8;">8 min ago</span>
             </li>
-            <li class="flex items-center justify-between">
-              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-accent-500/15 text-[10px] font-bold text-accent-500 num">5F8</span><span class="num text-ink-500 dark:text-ink-300">user_5f80</span></span>
-              <span class="text-xs text-ink-400">לפני 12 דק׳</span>
+            <li class="row-hover flex items-center justify-between rounded-md px-2 py-1.5 -mx-2">
+              <span class="num text-sm" style="color: #475569;">user_5f80</span>
+              <span class="text-xs" style="color: #94A3B8;">12 min ago</span>
             </li>
-            <li class="flex items-center justify-between">
-              <span class="flex items-center gap-2"><span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500/15 text-[10px] font-bold text-brand-500 num">19D</span><span class="num text-ink-500 dark:text-ink-300">user_19d3</span></span>
-              <span class="text-xs text-ink-400">לפני 18 דק׳</span>
+            <li class="row-hover flex items-center justify-between rounded-md px-2 py-1.5 -mx-2">
+              <span class="num text-sm" style="color: #475569;">user_19d3</span>
+              <span class="text-xs" style="color: #94A3B8;">18 min ago</span>
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- 2d: Page views table -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift lg:col-span-1">
+      <!-- 2d: Popular Pages -->
+      <div class="card card-hover p-5">
         <div class="mb-3 flex items-center justify-between">
-          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">דפים פופולריים</div>
-          <span class="text-[10px] font-bold text-ink-400">19 צפיות</span>
+          <div class="text-xs font-medium" style="color: #64748B;">Popular Pages</div>
+          <span class="text-[10px] font-medium" style="color: #94A3B8;">19 views</span>
         </div>
-        <ul class="space-y-2.5 text-sm">
-          <li>
-            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/homepage</span><span class="num font-bold">8</span></div>
-            <div class="hbar"><span class="bar-grow bg-brand-500" style="width:100%"></span></div>
-          </li>
-          <li>
-            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/pricing</span><span class="num font-bold">5</span></div>
-            <div class="hbar"><span class="bar-grow bg-brand-500" style="width:62%;animation-delay:.1s"></span></div>
-          </li>
-          <li>
-            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/compare</span><span class="num font-bold">3</span></div>
-            <div class="hbar"><span class="bar-grow bg-accent-500" style="width:38%;animation-delay:.2s"></span></div>
-          </li>
-          <li>
-            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/trust</span><span class="num font-bold">2</span></div>
-            <div class="hbar"><span class="bar-grow bg-accent-500" style="width:25%;animation-delay:.3s"></span></div>
-          </li>
-          <li>
-            <div class="mb-1 flex items-center justify-between"><span class="font-mono text-ink-700 dark:text-ink-200">/account</span><span class="num font-bold">1</span></div>
-            <div class="hbar"><span class="bar-grow bg-ink-400" style="width:12%;animation-delay:.4s"></span></div>
-          </li>
-        </ul>
+        <table class="w-full text-sm">
+          <tbody>
+            <tr class="row-hover">
+              <td class="py-1.5 font-mono text-xs" style="color: #475569;">/homepage</td>
+              <td class="py-1.5 text-end num font-medium" style="color: #1E293B;">8</td>
+            </tr>
+            <tr class="row-hover">
+              <td class="py-1.5 font-mono text-xs" style="color: #475569;">/pricing</td>
+              <td class="py-1.5 text-end num font-medium" style="color: #1E293B;">5</td>
+            </tr>
+            <tr class="row-hover">
+              <td class="py-1.5 font-mono text-xs" style="color: #475569;">/compare</td>
+              <td class="py-1.5 text-end num font-medium" style="color: #1E293B;">3</td>
+            </tr>
+            <tr class="row-hover">
+              <td class="py-1.5 font-mono text-xs" style="color: #475569;">/trust</td>
+              <td class="py-1.5 text-end num font-medium" style="color: #1E293B;">2</td>
+            </tr>
+            <tr class="row-hover">
+              <td class="py-1.5 font-mono text-xs" style="color: #475569;">/account</td>
+              <td class="py-1.5 text-end num font-medium" style="color: #1E293B;">1</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- 2e: Traffic sources -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="mb-3 text-sm font-semibold text-ink-500 dark:text-ink-300">מקורות תנועה</div>
-        <ul class="space-y-3 text-sm">
-          <li class="flex items-center justify-between">
-            <div class="flex items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-blue-500/15 text-blue-500 font-black">f</span>
+      <!-- 2e: Traffic Sources -->
+      <div class="card card-hover p-5">
+        <div class="mb-3 text-xs font-medium" style="color: #64748B;">Traffic Sources</div>
+        <ul class="text-sm">
+          <li class="row-hover flex items-center justify-between rounded-md px-2 py-2 -mx-2">
+            <div class="flex items-center gap-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
               <div>
-                <div class="font-semibold">Facebook</div>
-                <div class="text-[11px] text-ink-400">Paid Ads</div>
+                <div class="text-sm" style="color: #1E293B;">Facebook</div>
+                <div class="text-[11px]" style="color: #94A3B8;">Paid Ads</div>
               </div>
             </div>
             <div class="text-end">
-              <div class="num font-black text-lg">8</div>
-              <div class="text-[11px] text-ink-400">53%</div>
+              <div class="num text-sm font-medium" style="color: #1E293B;">8</div>
+              <div class="text-[11px]" style="color: #94A3B8;">53%</div>
             </div>
           </li>
-          <li class="flex items-center justify-between">
-            <div class="flex items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-accent-500 to-brand-500 text-white font-black">IG</span>
+          <li class="row-hover flex items-center justify-between rounded-md px-2 py-2 -mx-2">
+            <div class="flex items-center gap-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               <div>
-                <div class="font-semibold">Instagram</div>
-                <div class="text-[11px] text-ink-400">Paid Ads</div>
+                <div class="text-sm" style="color: #1E293B;">Instagram</div>
+                <div class="text-[11px]" style="color: #94A3B8;">Paid Ads</div>
               </div>
             </div>
             <div class="text-end">
-              <div class="num font-black text-lg">5</div>
-              <div class="text-[11px] text-ink-400">33%</div>
+              <div class="num text-sm font-medium" style="color: #1E293B;">5</div>
+              <div class="text-[11px]" style="color: #94A3B8;">33%</div>
             </div>
           </li>
-          <li class="flex items-center justify-between">
-            <div class="flex items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-500/15 text-brand-500">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg></span>
+          <li class="row-hover flex items-center justify-between rounded-md px-2 py-2 -mx-2">
+            <div class="flex items-center gap-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg>
               <div>
-                <div class="font-semibold">ישיר</div>
-                <div class="text-[11px] text-ink-400">Direct</div>
+                <div class="text-sm" style="color: #1E293B;">Direct</div>
+                <div class="text-[11px]" style="color: #94A3B8;">No referrer</div>
               </div>
             </div>
             <div class="text-end">
-              <div class="num font-black text-lg">1</div>
-              <div class="text-[11px] text-ink-400">7%</div>
+              <div class="num text-sm font-medium" style="color: #1E293B;">1</div>
+              <div class="text-[11px]" style="color: #94A3B8;">7%</div>
             </div>
           </li>
         </ul>
-        <button class="mt-4 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">צפה בדוח מלא ←</button>
+        <button class="mt-3 w-full rounded-md px-3 py-1.5 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">View full report</button>
       </div>
 
-      <!-- 2f: Live activity feed -->
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
+      <!-- 2f: Activity Feed -->
+      <div class="card card-hover p-5">
         <div class="mb-3 flex items-center justify-between">
-          <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">פעילות חיה</div>
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-500">
-            <span class="live-dot h-1.5 w-1.5 rounded-full bg-brand-500"></span>LIVE
+          <div class="text-xs font-medium" style="color: #64748B;">Activity Feed</div>
+          <span class="inline-flex items-center gap-1.5 text-[10px] font-medium" style="color: #10B981;">
+            <span class="status-dot" style="background: #10B981;"></span>Live
           </span>
         </div>
-        <ul id="live-feed" class="space-y-2 text-sm max-h-72 overflow-y-auto pr-1">
-          <li class="slide-in flex items-start gap-2 rounded-lg bg-brand-500/5 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-brand-500 flex-shrink-0"></span><div><div class="font-medium">צופה ב <span class="font-mono text-brand-500">/homepage</span></div><div class="text-[11px] text-ink-400">user_a92f • לפני שניות</div></div></li>
-          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-accent-500 flex-shrink-0"></span><div><div class="font-medium">לחץ על <span class="font-mono text-accent-500">CTA "התחל חינם"</span></div><div class="text-[11px] text-ink-400">user_7b1e • לפני 2 דק׳</div></div></li>
-          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-brand-500 flex-shrink-0"></span><div><div class="font-medium">צופה ב <span class="font-mono text-brand-500">/pricing</span></div><div class="text-[11px] text-ink-400">user_cd4a • לפני 5 דק׳</div></div></li>
-          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-accent-500 flex-shrink-0"></span><div><div class="font-medium">התחיל הרשמה (לא סיים)</div><div class="text-[11px] text-ink-400">user_5f80 • לפני 9 דק׳</div></div></li>
-          <li class="flex items-start gap-2 p-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-brand-500 flex-shrink-0"></span><div><div class="font-medium">צופה ב <span class="font-mono text-brand-500">/compare</span></div><div class="text-[11px] text-ink-400">user_19d3 • לפני 14 דק׳</div></div></li>
+        <ul id="live-feed" class="text-sm max-h-72 overflow-y-auto pr-1">
+          <li class="row-hover flex items-start gap-2 rounded-md px-2 py-2 -mx-2">
+            <span class="mt-1.5 status-dot" style="background: #94A3B8;"></span>
+            <div>
+              <div style="color: #1E293B;">Viewing <span class="font-mono" style="color: #475569;">/homepage</span></div>
+              <div class="text-[11px]" style="color: #94A3B8;"><span style="color: #3B82F6;">user_a92f</span> &middot; seconds ago</div>
+            </div>
+          </li>
+          <li class="row-hover flex items-start gap-2 rounded-md px-2 py-2 -mx-2">
+            <span class="mt-1.5 status-dot" style="background: #94A3B8;"></span>
+            <div>
+              <div style="color: #1E293B;">Clicked <span class="font-mono" style="color: #475569;">CTA "Start free"</span></div>
+              <div class="text-[11px]" style="color: #94A3B8;"><span style="color: #3B82F6;">user_7b1e</span> &middot; 2 min ago</div>
+            </div>
+          </li>
+          <li class="row-hover flex items-start gap-2 rounded-md px-2 py-2 -mx-2">
+            <span class="mt-1.5 status-dot" style="background: #94A3B8;"></span>
+            <div>
+              <div style="color: #1E293B;">Viewing <span class="font-mono" style="color: #475569;">/pricing</span></div>
+              <div class="text-[11px]" style="color: #94A3B8;"><span style="color: #3B82F6;">user_cd4a</span> &middot; 5 min ago</div>
+            </div>
+          </li>
+          <li class="row-hover flex items-start gap-2 rounded-md px-2 py-2 -mx-2">
+            <span class="mt-1.5 status-dot" style="background: #94A3B8;"></span>
+            <div>
+              <div style="color: #1E293B;">Started signup (incomplete)</div>
+              <div class="text-[11px]" style="color: #94A3B8;"><span style="color: #3B82F6;">user_5f80</span> &middot; 9 min ago</div>
+            </div>
+          </li>
+          <li class="row-hover flex items-start gap-2 rounded-md px-2 py-2 -mx-2">
+            <span class="mt-1.5 status-dot" style="background: #94A3B8;"></span>
+            <div>
+              <div style="color: #1E293B;">Viewing <span class="font-mono" style="color: #475569;">/compare</span></div>
+              <div class="text-[11px]" style="color: #94A3B8;"><span style="color: #3B82F6;">user_19d3</span> &middot; 14 min ago</div>
+            </div>
+          </li>
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- ====== SECTION 3: KEY STATS GRID ====== -->
+  <!-- ====== SECTION 3: KEY STATS ====== -->
   <section class="mb-10">
-    <h2 class="mb-4 text-2xl font-black tracking-tight">סטטיסטיקות מפתח</h2>
+    <div class="mb-4 section-rule pb-3">
+      <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Key metrics</h2>
+    </div>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="kfl-keystats">
 
-      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">סה״כ משתמשים</div>
-        <div class="mt-1 text-3xl font-black num" id="stat-total-users">…</div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">חינם: <span class="num font-bold" id="stat-free">—</span></div>
+      <div class="card card-hover p-5">
+        <div class="text-xs font-medium" style="color: #64748B;">Total users</div>
+        <div class="mt-1 text-2xl num" style="font-weight: 500; color: #1E293B;" id="stat-total-users">...</div>
+        <div class="mt-2 text-xs" style="color: #64748B;">Free: <span class="num font-medium" style="color: #475569;" id="stat-free">—</span></div>
       </div>
 
-      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">משלמים</div>
-        <div class="mt-1 text-3xl font-black num" id="stat-paid">…</div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">Pro: <span class="num font-bold" id="stat-pro">—</span> · משפחה: <span class="num font-bold" id="stat-family">—</span></div>
+      <div class="card card-hover p-5">
+        <div class="text-xs font-medium" style="color: #64748B;">Paying customers</div>
+        <div class="mt-1 text-2xl num" style="font-weight: 500; color: #1E293B;" id="stat-paid">...</div>
+        <div class="mt-2 text-xs" style="color: #64748B;">Pro: <span class="num font-medium" style="color: #475569;" id="stat-pro">—</span> &middot; Family: <span class="num font-medium" style="color: #475569;" id="stat-family">—</span></div>
       </div>
 
-      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">הכנסה חודשית (MRR)</div>
-        <div class="mt-1 text-3xl font-black num" id="stat-mrr">…</div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">לפי משלמים פעילים</div>
+      <div class="card card-hover p-5">
+        <div class="text-xs font-medium" style="color: #64748B;">Monthly revenue (MRR)</div>
+        <div class="mt-1 text-2xl num" style="font-weight: 500; color: #1E293B;" id="stat-mrr">...</div>
+        <div class="mt-2 text-xs" style="color: #64748B;">From active subscribers</div>
       </div>
 
-      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">פעילים לאחרונה</div>
-        <div class="mt-1 text-3xl font-black num" id="stat-active">…</div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">שלחו הודעה ב-25 השעות האחרונות</div>
+      <div class="card card-hover p-5">
+        <div class="text-xs font-medium" style="color: #64748B;">Recently active</div>
+        <div class="mt-1 text-2xl num" style="font-weight: 500; color: #1E293B;" id="stat-active">...</div>
+        <div class="mt-2 text-xs" style="color: #64748B;">Sent a message in last 24h</div>
       </div>
 
-      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">צפיות באתר (30 ימים)</div>
-        <div class="mt-1 text-3xl font-black num" id="stat-pageviews">…</div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">מתוך מעקב אירועים אמיתי</div>
+      <div class="card card-hover p-5">
+        <div class="text-xs font-medium" style="color: #64748B;">Page views (30d)</div>
+        <div class="mt-1 text-2xl num" style="font-weight: 500; color: #1E293B;" id="stat-pageviews">...</div>
+        <div class="mt-2 text-xs" style="color: #64748B;">From real event tracking</div>
       </div>
 
-      <div class="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="text-xs font-semibold text-ink-500 dark:text-ink-300">הרשמות שהושלמו (30 ימים)</div>
-        <div class="mt-1 text-3xl font-black num" id="stat-signups">…</div>
-        <div class="mt-2 text-xs text-ink-500 dark:text-ink-300">signup_complete במעקב</div>
+      <div class="card card-hover p-5">
+        <div class="text-xs font-medium" style="color: #64748B;">Completed signups (30d)</div>
+        <div class="mt-1 text-2xl num" style="font-weight: 500; color: #1E293B;" id="stat-signups">...</div>
+        <div class="mt-2 text-xs" style="color: #64748B;">signup_complete events</div>
       </div>
 
     </div>
   </section>
 
-  <!-- ====== SECTION 3.5: CONVERSION FUNNEL (real analytics) ====== -->
+  <!-- ====== SECTION 3.5: CONVERSION FUNNEL ====== -->
   <section class="mb-10">
-    <div class="mb-4 flex items-end justify-between">
+    <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-2xl font-black tracking-tight">משפך המרה (30 ימים)</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">מצפייה באתר ועד הודעה ראשונה לבוט — נתוני אמת ממעקב האירועים.</p>
+        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Conversion funnel (30 days)</h2>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">From site visit to first message to the bot — real event data.</p>
       </div>
-      <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-[11px] font-bold text-brand-500">נתונים אמיתיים</span>
+      <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium" style="background: #F1F5F9; color: #475569;">Live data</span>
     </div>
-    <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
-      <div id="kfl-funnel" class="space-y-3 text-sm text-ink-400">טוען…</div>
+    <div class="card card-hover p-5">
+      <div id="kfl-funnel" class="space-y-3 text-sm" style="color: #64748B;">Loading...</div>
     </div>
   </section>
 
   <!-- ====== SECTION 4: BOT HEALTH ====== -->
   <section class="mb-10">
-    <div class="mb-4 flex items-end justify-between">
+    <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-2xl font-black tracking-tight">בריאות הבוט</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">חלוקת קריאות לפי שכבת זיהוי — ככל שיותר T1/T2 ההוצאה נמוכה יותר.</p>
+        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Bot health</h2>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">Inference-tier distribution — higher T1/T2 share means lower spend.</p>
       </div>
-      <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-500">
-        מבנה לדוגמה
-      </span>
-    </div>
-    <div class="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
-      ⚠️ מדדי שכבות הזיהוי (T1/T2/T3) ויתרת ה-API עדיין לא נמדדים בזמן אמת — הבוט מתעד אותם ביומן Apps Script בלבד. הנתונים כאן להמחשת המבנה.
     </div>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift scan-line">
-        <div class="mb-1 flex items-center gap-2">
-          <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-500/15 text-brand-500 font-black">T1</span>
+      <div class="card card-hover p-5">
+        <div class="mb-2 flex items-center gap-2">
+          <span class="grid h-7 w-7 place-items-center rounded-md text-xs font-medium" style="background: #F1F5F9; color: #475569;">T1</span>
           <div>
-            <div class="text-sm font-bold">Cache Hit</div>
-            <div class="text-[11px] text-ink-400">חיפוש במטמון</div>
+            <div class="text-sm font-medium" style="color: #1E293B;">Cache hit</div>
+            <div class="text-[11px]" style="color: #94A3B8;">Local cache lookup</div>
           </div>
         </div>
-        <div class="mt-3 text-4xl font-black num count-pop" data-counter="30" data-from="0">30%</div>
-        <div class="hbar mt-3"><span class="bar-grow bg-brand-500" style="width:30%"></span></div>
+        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;">30%</div>
+        <div class="qbar mt-2"><span style="width:30%"></span></div>
         <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div><div class="text-ink-400">עלות</div><div class="num font-bold">$0.00</div></div>
-          <div><div class="text-ink-400">זמן</div><div class="num font-bold">12ms</div></div>
+          <div><div style="color: #94A3B8;">Cost</div><div class="num font-medium" style="color: #1E293B;">$0.00</div></div>
+          <div><div style="color: #94A3B8;">Latency</div><div class="num font-medium" style="color: #1E293B;">12ms</div></div>
         </div>
       </div>
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift scan-line">
-        <div class="mb-1 flex items-center gap-2">
-          <span class="grid h-8 w-8 place-items-center rounded-lg bg-accent-500/15 text-accent-500 font-black">T2</span>
+      <div class="card card-hover p-5">
+        <div class="mb-2 flex items-center gap-2">
+          <span class="grid h-7 w-7 place-items-center rounded-md text-xs font-medium" style="background: #F1F5F9; color: #475569;">T2</span>
           <div>
-            <div class="text-sm font-bold">Keyword Match</div>
-            <div class="text-[11px] text-ink-400">חיפוש מילות מפתח</div>
+            <div class="text-sm font-medium" style="color: #1E293B;">Keyword match</div>
+            <div class="text-[11px]" style="color: #94A3B8;">Rule-based parse</div>
           </div>
         </div>
-        <div class="mt-3 text-4xl font-black num count-pop" data-counter="65" data-from="0">65%</div>
-        <div class="hbar mt-3"><span class="bar-grow bg-accent-500" style="width:65%"></span></div>
+        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;">65%</div>
+        <div class="qbar mt-2"><span style="width:65%"></span></div>
         <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div><div class="text-ink-400">עלות</div><div class="num font-bold">$0.00</div></div>
-          <div><div class="text-ink-400">זמן</div><div class="num font-bold">38ms</div></div>
+          <div><div style="color: #94A3B8;">Cost</div><div class="num font-medium" style="color: #1E293B;">$0.00</div></div>
+          <div><div style="color: #94A3B8;">Latency</div><div class="num font-medium" style="color: #1E293B;">38ms</div></div>
         </div>
       </div>
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift scan-line">
-        <div class="mb-1 flex items-center gap-2">
-          <span class="grid h-8 w-8 place-items-center rounded-lg bg-accent-500/15 text-accent-500 font-black">T3</span>
+      <div class="card card-hover p-5">
+        <div class="mb-2 flex items-center gap-2">
+          <span class="grid h-7 w-7 place-items-center rounded-md text-xs font-medium" style="background: #F1F5F9; color: #475569;">T3</span>
           <div>
-            <div class="text-sm font-bold">AI Fallback</div>
-            <div class="text-[11px] text-ink-400">Claude Haiku</div>
+            <div class="text-sm font-medium" style="color: #1E293B;">AI fallback</div>
+            <div class="text-[11px]" style="color: #94A3B8;">Claude Haiku</div>
           </div>
         </div>
-        <div class="mt-3 text-4xl font-black num count-pop" data-counter="5" data-from="0">5%</div>
-        <div class="hbar mt-3"><span class="bar-grow bg-accent-500" style="width:5%"></span></div>
+        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;">5%</div>
+        <div class="qbar mt-2"><span style="width:5%"></span></div>
         <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div><div class="text-ink-400">עלות</div><div class="num font-bold">$0.019</div></div>
-          <div><div class="text-ink-400">זמן</div><div class="num font-bold">680ms</div></div>
+          <div><div style="color: #94A3B8;">Cost</div><div class="num font-medium" style="color: #1E293B;">$0.019</div></div>
+          <div><div style="color: #94A3B8;">Latency</div><div class="num font-medium" style="color: #1E293B;">680ms</div></div>
         </div>
       </div>
     </div>
 
     <!-- Budget bar -->
-    <div class="mt-4 rounded-2xl border border-ink-200 bg-white p-5 dark:border-ink-700 dark:bg-ink-800">
+    <div class="card card-hover mt-4 p-5">
       <div class="flex items-center justify-between mb-2">
-        <div class="text-sm font-semibold">Anthropic API — יתרה חודשית</div>
-        <div class="text-sm"><span class="num font-black text-brand-500">$9.81</span><span class="text-ink-400 num"> / $10.00</span></div>
+        <div class="text-sm font-medium" style="color: #1E293B;">Anthropic API — monthly budget</div>
+        <div class="text-sm"><span class="num font-medium" style="color: #1E293B;">$9.81</span><span class="num" style="color: #94A3B8;"> / $10.00</span></div>
       </div>
-      <div class="hbar h-3"><span class="bar-grow bg-gradient-to-r from-brand-500 to-accent-500" style="width:98%"></span></div>
-      <div class="mt-2 text-[11px] text-ink-500 dark:text-ink-300">מקצב צריכה: <span class="num font-bold">$0.019/יום</span> • צפי גמר: <span class="num font-bold">~516 ימים</span></div>
+      <div class="qbar"><span style="width:98%"></span></div>
+      <div class="mt-2 text-xs" style="color: #64748B;">Burn rate: <span class="num font-medium" style="color: #475569;">$0.019/day</span> &middot; Est. depletion: <span class="num font-medium" style="color: #475569;">~516 days</span></div>
     </div>
   </section>
 
-  <!-- ====== SECTION 5: USER MANAGEMENT TABLE ====== -->
+  <!-- ====== SECTION 5: USERS TABLE ====== -->
   <section class="mb-10">
-    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between section-rule pb-3">
       <div>
-        <h2 class="text-2xl font-black tracking-tight">משתמשים</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300" id="users-subtitle">טוען משתמשים אמיתיים…</p>
+        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Users</h2>
+        <p class="mt-0.5 text-sm" style="color: #64748B;" id="users-subtitle">Loading real users...</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button class="filter-chip rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white" data-filter="all">הכל (10)</button>
-        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="active">פעיל (5)</button>
-        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="trial">ניסיון (3)</button>
-        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="paused">מושהה (1)</button>
-        <button class="filter-chip rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" data-filter="cancelled">בוטל (1)</button>
-        <input type="search" placeholder="חיפוש..." class="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs dark:border-ink-700 dark:bg-ink-800" id="user-search">
+        <button class="filter-chip rounded-md px-2.5 py-1 text-xs font-medium text-white" style="background: #1E293B;" data-filter="all">All (10)</button>
+        <button class="filter-chip rounded-md px-2.5 py-1 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;" data-filter="active">Active (5)</button>
+        <button class="filter-chip rounded-md px-2.5 py-1 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;" data-filter="trial">Trial (3)</button>
+        <button class="filter-chip rounded-md px-2.5 py-1 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;" data-filter="paused">Paused (1)</button>
+        <button class="filter-chip rounded-md px-2.5 py-1 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;" data-filter="cancelled">Cancelled (1)</button>
+        <input type="search" placeholder="Search..." class="rounded-md px-2.5 py-1 text-xs" style="border: 1px solid #E2E8F0; background: #FFFFFF; color: #1E293B;" id="user-search">
       </div>
     </div>
 
-    <div class="rounded-3xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800 overflow-hidden">
+    <div class="card overflow-hidden">
       <div class="scroll-x">
         <table class="w-full text-sm" id="users-table">
-          <thead class="bg-ink-50 text-[11px] text-ink-500 dark:bg-ink-900/50 dark:text-ink-300">
-            <tr>
-              <th class="p-3 text-start font-bold cursor-pointer hover:text-brand-500" data-sort="email">אימייל ▾</th>
-              <th class="p-3 text-start font-bold">טלפון</th>
-              <th class="p-3 text-start font-bold cursor-pointer hover:text-brand-500" data-sort="plan">תוכנית ▾</th>
-              <th class="p-3 text-start font-bold cursor-pointer hover:text-brand-500" data-sort="signup">הרשמה ▾</th>
-              <th class="p-3 text-start font-bold">פעילות אחרונה</th>
-              <th class="p-3 text-center font-bold">שיט</th>
-              <th class="p-3 text-end font-bold cursor-pointer hover:text-brand-500" data-sort="tx">תנועות ▾</th>
-              <th class="p-3 text-start font-bold">סטטוס</th>
+          <thead style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+            <tr style="color: #64748B;">
+              <th class="p-3 text-start text-[11px] font-medium cursor-pointer" data-sort="email">Email</th>
+              <th class="p-3 text-start text-[11px] font-medium">Phone</th>
+              <th class="p-3 text-start text-[11px] font-medium cursor-pointer" data-sort="plan">Plan</th>
+              <th class="p-3 text-start text-[11px] font-medium cursor-pointer" data-sort="signup">Signup</th>
+              <th class="p-3 text-start text-[11px] font-medium">Last active</th>
+              <th class="p-3 text-center text-[11px] font-medium">Sheet</th>
+              <th class="p-3 text-end text-[11px] font-medium cursor-pointer" data-sort="tx">Transactions</th>
+              <th class="p-3 text-start text-[11px] font-medium">Status</th>
               <th class="p-3"></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-ink-100 dark:divide-ink-700" id="users-tbody">
+          <tbody id="users-tbody">
             <!-- populated by JS -->
           </tbody>
         </table>
@@ -636,112 +649,95 @@
     </div>
   </section>
 
-  <!-- ====== SECTION 6: ACTIVITY FEED ====== -->
+  <!-- ====== SECTION 6: ACTIVITY LOG ====== -->
   <section class="mb-10">
-    <div class="mb-4 flex items-end justify-between">
+    <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-2xl font-black tracking-tight">יומן פעילות</h2>
-        <p class="text-sm text-ink-500 dark:text-ink-300">כל מה שקרה במערכת בזמן האחרון.</p>
+        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Activity log</h2>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">Recent system events.</p>
       </div>
-      <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-[11px] font-bold text-brand-500">
-        <span class="live-dot h-2 w-2 rounded-full bg-brand-500"></span>
-        מתעדכן אוטומטית
+      <span class="inline-flex items-center gap-1.5 text-[11px] font-medium" style="color: #10B981;">
+        <span class="status-dot" style="background: #10B981;"></span>
+        Auto-refreshing
       </span>
     </div>
-    <div class="rounded-3xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800">
-      <ul id="activity-feed" class="divide-y divide-ink-100 dark:divide-ink-700">
-        <!-- populated by JS, plus auto-prepend every 8s -->
+    <div class="card overflow-hidden">
+      <ul id="activity-feed">
+        <!-- populated by JS -->
       </ul>
-      <div class="border-t border-ink-100 p-3 text-center dark:border-ink-700">
-        <button class="text-xs font-semibold text-brand-500 hover:underline">טען עוד אירועים</button>
+      <div class="p-3 text-center" style="border-top: 1px solid #E2E8F0;">
+        <button class="text-xs font-medium" style="color: #3B82F6;">Load more events</button>
       </div>
     </div>
   </section>
 
   <!-- ====== SECTION 7: DAILY INSIGHTS ====== -->
   <section class="mb-10">
-    <h2 class="mb-1 text-2xl font-black tracking-tight">תובנות יומיות</h2>
-    <p class="mb-4 text-sm text-ink-500 dark:text-ink-300">ניתוחים אוטומטיים מבוססי הנתונים של היום.</p>
+    <div class="mb-4 section-rule pb-3">
+      <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Daily insights</h2>
+      <p class="mt-0.5 text-sm" style="color: #64748B;">Automated analysis based on today's data.</p>
+    </div>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
-      <div class="relative overflow-hidden rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-50 to-white p-6 shadow-soft dark:border-brand-500/40 dark:from-brand-900/20 dark:to-ink-800 lift">
-        <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-500/15 blur-3xl"></div>
-        <div class="relative">
-          <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-brand-500/20 px-2 py-0.5 text-[10px] font-bold text-brand-600 dark:text-brand-400">
-            <span>📈</span> תובנת שיווק
-          </div>
-          <h3 class="text-base font-extrabold leading-snug">חלון השיא לפיק הרשמות: יום שישי 16:00-20:00</h3>
-          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">12 מתוך 47 הרשמות (25%) קרו בחלון הזה. תזמן פוסטים בפייסבוק/אינסטגרם לשעות אלו.</p>
-          <button class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline">תזמן פוסט עכשיו ←</button>
+      <div class="card card-hover p-5">
+        <div class="mb-2 inline-flex items-center text-[10px] font-medium" style="color: #64748B;">
+          Marketing insight
         </div>
+        <h3 class="text-sm font-medium leading-snug" style="color: #1E293B;">Peak signup window: Friday 16:00–20:00</h3>
+        <p class="mt-2 text-sm" style="color: #475569;">12 of 47 signups (25%) happened in this window. Schedule Facebook/Instagram posts here.</p>
+        <button class="mt-3 text-xs font-medium" style="color: #3B82F6;">Schedule post</button>
       </div>
 
-      <div class="relative overflow-hidden rounded-3xl border border-accent-500/30 bg-gradient-to-br from-purple-50 to-white p-6 shadow-soft dark:border-accent-500/40 dark:from-purple-900/20 dark:to-ink-800 lift">
-        <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent-500/15 blur-3xl"></div>
-        <div class="relative">
-          <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-accent-500/20 px-2 py-0.5 text-[10px] font-bold text-accent-600 dark:text-accent-400">
-            <span>💌</span> שימור משתמשים
-          </div>
-          <h3 class="text-base font-extrabold leading-snug">5 משתמשים לא שלחו הודעה ב-7 ימים</h3>
-          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">שקול לשלוח הודעת re-engagement עם דוגמת שימוש או טיפ קצר.</p>
-          <button class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-accent-600 dark:text-accent-400 hover:underline">שלח הודעה חוזרת ←</button>
+      <div class="card card-hover p-5">
+        <div class="mb-2 inline-flex items-center text-[10px] font-medium" style="color: #64748B;">
+          Retention
         </div>
+        <h3 class="text-sm font-medium leading-snug" style="color: #1E293B;">5 users have not messaged in 7 days</h3>
+        <p class="mt-2 text-sm" style="color: #475569;">Consider sending a re-engagement message with an example or short tip.</p>
+        <button class="mt-3 text-xs font-medium" style="color: #3B82F6;">Send re-engagement</button>
       </div>
 
-      <div class="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-50 to-white p-6 shadow-soft dark:border-amber-500/40 dark:from-amber-900/20 dark:to-ink-800 lift">
-        <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-amber-500/15 blur-3xl"></div>
-        <div class="relative">
-          <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
-            <span>⚠️</span> מעקב עלויות
-          </div>
-          <h3 class="text-base font-extrabold leading-snug">עלות AI עלתה ב-23% היום</h3>
-          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">הגידול מונע ע״י הקטגוריה "אירועים" (חופעות, סרטים, וכו'). שקול להוסיף keywords ל-T2.</p>
-          <button class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline">צפה בפירוט קטגוריות ←</button>
+      <div class="card card-hover p-5">
+        <div class="mb-2 inline-flex items-center text-[10px] font-medium" style="color: #F59E0B;">
+          Cost watch
         </div>
+        <h3 class="text-sm font-medium leading-snug" style="color: #1E293B;">AI cost up 23% today</h3>
+        <p class="mt-2 text-sm" style="color: #475569;">Driven by the "events" category (shows, films, etc.). Consider adding keywords to T2.</p>
+        <button class="mt-3 text-xs font-medium" style="color: #3B82F6;">View category breakdown</button>
       </div>
     </div>
   </section>
 
   <!-- ====== SECTION 8: SUGGESTED ACTIONS ====== -->
   <section class="mb-12">
-    <h2 class="mb-1 text-2xl font-black tracking-tight">מומלץ בשבילך</h2>
-    <p class="mb-4 text-sm text-ink-500 dark:text-ink-300">פעולות שיעזרו לכספ'לה לגדול בצורה אוטונומית.</p>
+    <div class="mb-4 section-rule pb-3">
+      <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Recommended actions</h2>
+      <p class="mt-0.5 text-sm" style="color: #64748B;">Steps to help Kesefle grow autonomously.</p>
+    </div>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-accent-500 to-accent-600 text-white">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        </div>
-        <h3 class="text-sm font-extrabold">תשלומים — PayPal · קריפטו · ביט</h3>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">הגדר אמצעי תשלום במשתני הסביבה ב-Vercel. תשלומי ביט/העברה מאושרים בחלק "תשלומים ממתינים" למעלה.</p>
-        <a href="#pending-payments-section" class="mt-3 block w-full rounded-xl bg-ink-900 px-3 py-2 text-center text-xs font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">לתשלומים ממתינים</a>
+      <div class="card card-hover p-5">
+        <h3 class="text-sm font-medium" style="color: #1E293B;">Payments — PayPal &middot; Crypto &middot; Bit</h3>
+        <p class="mt-1.5 text-xs" style="color: #64748B;">Configure payment methods in Vercel environment variables. Bit/bank transfers are approved in the Pending Payments section above.</p>
+        <a href="#pending-payments-section" class="mt-3 block w-full rounded-md px-3 py-1.5 text-center text-xs font-medium text-white" style="background: #1E293B;">View pending payments</a>
       </div>
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-accent-500 to-brand-500 text-white">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        </div>
-        <h3 class="text-sm font-extrabold">הגדר אימייל ברוך הבא</h3>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">משתמש שמקבל אימייל ברוך הבא נטה לחזור ב-37% יותר.</p>
-        <button class="mt-3 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">הגדר תבנית</button>
+      <div class="card card-hover p-5">
+        <h3 class="text-sm font-medium" style="color: #1E293B;">Welcome email</h3>
+        <p class="mt-1.5 text-xs" style="color: #64748B;">Users who get a welcome email return 37% more often.</p>
+        <button class="mt-3 w-full rounded-md px-3 py-1.5 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">Set template</button>
       </div>
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <h3 class="text-sm font-extrabold">קונפיגר Cron לסיכום שבועי</h3>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">שלח אוטומטית סיכום שבועי לכל המשתמשים ביום שישי בבוקר.</p>
-        <button class="mt-3 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">הפעל אוטומציה</button>
+      <div class="card card-hover p-5">
+        <h3 class="text-sm font-medium" style="color: #1E293B;">Weekly summary cron</h3>
+        <p class="mt-1.5 text-xs" style="color: #64748B;">Auto-send a weekly summary to all users on Friday mornings.</p>
+        <button class="mt-3 w-full rounded-md px-3 py-1.5 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">Enable automation</button>
       </div>
 
-      <div class="rounded-3xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800 lift">
-        <div class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
-        </div>
-        <h3 class="text-sm font-extrabold">הוסף בדיקות מערכת</h3>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-300">קבל התראה ב-Telegram אם זמן תגובה > 1s או יתרת API < $1.</p>
-        <button class="mt-3 w-full rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700">חבר Telegram</button>
+      <div class="card card-hover p-5">
+        <h3 class="text-sm font-medium" style="color: #1E293B;">System health alerts</h3>
+        <p class="mt-1.5 text-xs" style="color: #64748B;">Telegram alert when response time &gt; 1s or API balance &lt; $1.</p>
+        <button class="mt-3 w-full rounded-md px-3 py-1.5 text-xs font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">Connect Telegram</button>
       </div>
     </div>
   </section>
@@ -823,61 +819,44 @@
   }
   setInterval(tickClock, 1000); tickClock();
 
-  // ===== ANIMATED COUNTERS =====
-  function animateCounter(el) {
-    const target = parseFloat(el.dataset.counter);
-    const from = parseFloat(el.dataset.from || '0');
-    const decimal = parseInt(el.dataset.decimal || '0', 10);
-    const duration = 1400;
-    const start = performance.now();
-    const suffix = el.textContent.match(/[^\d.,\s]+$/)?.[0] || '';
-    const innerHTML = el.innerHTML;
-    const suffixHTML = innerHTML.match(/<[^>]+>[\s\S]*$/)?.[0] || '';
-    function frame(now) {
-      const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const v = from + (target - from) * eased;
-      const display = decimal ? v.toFixed(decimal) : Math.round(v).toLocaleString('en-US');
-      el.innerHTML = display + suffixHTML;
-      if (t < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  }
-
   // ===== USERS TABLE DATA =====
   // Real users are loaded live from /api/admin?action=users by the data loader
-  // below. No demo/seed rows — the table shows actual customers or nothing.
+  // below. No demo/seed rows -- the table shows actual customers or nothing.
   let USERS = [];
 
   function sheetIcon(s) {
-    if (s === 'ok')  return '<span title="שיט תקין" class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-brand-500/15 text-brand-600 font-black">✓</span>';
-    if (s === 'err') return '<span title="שגיאה בשיט" class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-500/15 text-red-600 font-black">!</span>';
-    return '<span title="ללא שיט" class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-ink-100 text-ink-500 dark:bg-ink-700 dark:text-ink-300 font-black">—</span>';
+    if (s === 'ok')  return '<span title="Sheet OK" class="inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-medium" style="background: #ECFDF5; color: #10B981;">&#10003;</span>';
+    if (s === 'err') return '<span title="Sheet error" class="inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-medium" style="background: #FEF2F2; color: #EF4444;">!</span>';
+    return '<span title="No sheet" class="inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-medium" style="background: #F1F5F9; color: #94A3B8;">&mdash;</span>';
   }
 
   function renderUsers(list) {
     const tbody = document.getElementById('users-tbody');
     if (!tbody) return;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-sm" style="color: #94A3B8;">No users to display.</td></tr>';
+      return;
+    }
     tbody.innerHTML = list.map(u => `
-      <tr class="user-row" data-status="${u.status}">
+      <tr class="user-row" data-status="${u.status}" style="border-bottom: 1px solid #E2E8F0;">
         <td class="p-3">
-          <div class="flex items-center gap-2">
-            <span class="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-brand-400 to-accent-500 text-[10px] font-black text-white">${u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</span>
+          <div class="flex items-center gap-2.5">
+            <span class="grid h-7 w-7 place-items-center rounded-full text-[10px] font-medium" style="background: #F1F5F9; color: #475569;">${u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</span>
             <div>
-              <div class="font-semibold">${u.name}</div>
-              <div class="text-[11px] text-ink-500 dark:text-ink-400 num" dir="ltr">${u.email}</div>
+              <div class="text-sm" style="color: #1E293B;">${u.name}</div>
+              <div class="text-[11px] num" style="color: #94A3B8;" dir="ltr">${u.email}</div>
             </div>
           </div>
         </td>
-        <td class="p-3 num text-xs" dir="ltr">${u.phone}</td>
-        <td class="p-3"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${u.planClass}">${u.plan}</span></td>
-        <td class="p-3 num text-xs" dir="ltr">${u.signup}<div class="text-[10px] text-ink-400">${u.signupRaw}</div></td>
-        <td class="p-3 text-xs">${u.activity}</td>
+        <td class="p-3 num text-xs" style="color: #475569;" dir="ltr">${u.phone}</td>
+        <td class="p-3"><span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium" style="${u.planClass}">${u.plan}</span></td>
+        <td class="p-3 num text-xs" style="color: #475569;" dir="ltr">${u.signup}<div class="text-[10px]" style="color: #94A3B8;">${u.signupRaw}</div></td>
+        <td class="p-3 text-xs" style="color: #475569;">${u.activity}</td>
         <td class="p-3 text-center">${sheetIcon(u.sheet)}</td>
-        <td class="p-3 text-end num font-bold">${u.tx}</td>
-        <td class="p-3"><span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${u.statusClass}"><span class="h-1.5 w-1.5 rounded-full bg-current opacity-70"></span>${u.statusLabel}</span></td>
+        <td class="p-3 text-end num text-sm font-medium" style="color: #1E293B;">${u.tx}</td>
+        <td class="p-3"><span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium" style="${u.statusClass}"><span class="status-dot" style="background: currentColor;"></span>${u.statusLabel}</span></td>
         <td class="p-3">
-          <button class="rounded-lg p-1.5 hover:bg-ink-100 dark:hover:bg-ink-700" title="פעולות">
+          <button class="rounded p-1" style="color: #94A3B8;" title="Actions">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
         </td>
@@ -889,11 +868,13 @@
     document.querySelectorAll('.filter-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         document.querySelectorAll('.filter-chip').forEach(c => {
-          c.classList.remove('bg-brand-600','text-white');
-          c.classList.add('border','border-ink-200','text-ink-700','dark:border-ink-700','dark:text-ink-200');
+          c.style.background = '#FFFFFF';
+          c.style.color = '#475569';
+          c.style.border = '1px solid #E2E8F0';
         });
-        chip.classList.add('bg-brand-600','text-white');
-        chip.classList.remove('border','border-ink-200','text-ink-700','dark:border-ink-700','dark:text-ink-200');
+        chip.style.background = '#1E293B';
+        chip.style.color = '#FFFFFF';
+        chip.style.border = '1px solid #1E293B';
         const f = chip.dataset.filter;
         const filtered = f === 'all' ? USERS : USERS.filter(u => u.status === f);
         renderUsers(filtered);
@@ -917,22 +898,15 @@
   // Activity feed reflects REAL recent signups (loaded live below). No demo rows.
   let ACTIVITIES = [];
 
-  function toneClasses(tone) {
-    if (tone === 'brand')  return 'bg-brand-500/10 text-brand-600 dark:text-brand-400';
-    if (tone === 'accent') return 'bg-accent-500/10 text-accent-500';
-    if (tone === 'orange') return 'bg-amber-500/10 text-amber-500';
-    return 'bg-ink-500/10 text-ink-500';
-  }
-
-  function activityRow(act, slideIn=false) {
+  function activityRow(act) {
     return `
-      <li class="${slideIn?'slide-in':''} flex items-center gap-3 p-4">
-        <span class="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full ${toneClasses(act.tone)} text-base">${act.icon}</span>
+      <li class="row-hover flex items-center gap-3 p-4" style="border-bottom: 1px solid #E2E8F0;">
+        <span class="status-dot flex-shrink-0" style="background: #94A3B8;"></span>
         <div class="flex-1 min-w-0">
-          <div class="text-sm">${act.text}</div>
-          <div class="text-[11px] text-ink-400">${act.time}</div>
+          <div class="text-sm" style="color: #1E293B;">${act.text}</div>
+          <div class="text-[11px]" style="color: #94A3B8;">${act.time}</div>
         </div>
-        <button class="hidden sm:block rounded-lg px-2 py-1 text-[11px] font-semibold text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-700">צפה</button>
+        <button class="hidden sm:block rounded px-2 py-1 text-[11px] font-medium" style="color: #3B82F6;">View</button>
       </li>
     `;
   }
@@ -940,53 +914,11 @@
   function renderActivityFeed() {
     const ul = document.getElementById('activity-feed');
     if (!ul) return;
+    if (!ACTIVITIES.length) {
+      ul.innerHTML = '<li class="p-6 text-center text-sm" style="color: #94A3B8;">No recent activity.</li>';
+      return;
+    }
     ul.innerHTML = ACTIVITIES.map(a => activityRow(a)).join('');
-  }
-
-  // ===== LIVE FEED (Wix-style "Visitors live") - prepend every 8s =====
-  const LIVE_TEMPLATES = [
-    { tone:'brand',  path:'/homepage' },
-    { tone:'accent', path:'/pricing' },
-    { tone:'brand',  path:'/compare' },
-    { tone:'accent', path:'/trust' },
-    { tone:'brand',  path:'/help' },
-  ];
-
-  function randomUid() {
-    return 'user_' + Math.random().toString(36).slice(2, 6);
-  }
-
-  function prependLive() {
-    const ul = document.getElementById('live-feed');
-    if (!ul) return;
-    const t = LIVE_TEMPLATES[Math.floor(Math.random() * LIVE_TEMPLATES.length)];
-    const uid = randomUid();
-    const li = document.createElement('li');
-    li.className = 'slide-in flex items-start gap-2 rounded-lg bg-brand-500/5 p-2';
-    li.innerHTML = `<span class="mt-1 h-1.5 w-1.5 rounded-full bg-${t.tone === 'brand' ? 'brand' : 'accent'}-500 flex-shrink-0"></span>
-      <div><div class="font-medium">צופה ב <span class="font-mono text-${t.tone === 'brand' ? 'brand' : 'accent'}-500">${t.path}</span></div>
-      <div class="text-[11px] text-ink-400">${uid} • זה עתה</div></div>`;
-    ul.insertBefore(li, ul.firstChild);
-    while (ul.children.length > 8) ul.removeChild(ul.lastChild);
-  }
-
-  // ===== ACTIVITY FEED auto-prepend =====
-  const NEW_ACTIVITIES_POOL = [
-    { icon:'👤', tone:'brand',  text:'משתמש חדש נרשם דרך <b>Facebook Ads</b>' },
-    { icon:'💬', tone:'accent', text:'הבוט עיבד הודעה חדשה — <i>״250 דלק״</i>' },
-    { icon:'🤖', tone:'brand',  text:'AI סיווג: <i>״קפה ארומה״</i> → <b>קפה / מסעדות</b>' },
-    { icon:'📊', tone:'accent', text:'גיליון שיט עודכן עם תנועה חדשה' },
-    { icon:'⚡', tone:'brand',  text:'Cache hit חדש נשמר ל-T1' },
-    { icon:'💳', tone:'accent', text:'משתמש שדרג לתוכנית Pro' },
-  ];
-
-  function prependActivity() {
-    const ul = document.getElementById('activity-feed');
-    if (!ul) return;
-    const t = NEW_ACTIVITIES_POOL[Math.floor(Math.random() * NEW_ACTIVITIES_POOL.length)];
-    const html = activityRow({ ...t, time: 'זה עתה' }, true);
-    ul.insertAdjacentHTML('afterbegin', html);
-    while (ul.children.length > 14) ul.removeChild(ul.lastChild);
   }
 
   // ===== INIT =====
@@ -996,15 +928,13 @@
   window.__kflSetActivities = function (list) { ACTIVITIES = Array.isArray(list) ? list : []; renderActivityFeed(); };
 
   function initAll() {
-    // animate counters
-    document.querySelectorAll('[data-counter]').forEach(el => animateCounter(el));
     // table
     renderUsers(USERS);
     bindFilters();
     // activity
     renderActivityFeed();
-    // NOTE: fake live-injection intervals (prependLive/prependActivity) removed —
-    // the panel must only ever show real events, never fabricated ones.
+    // NOTE: fake live-injection intervals removed -- the panel must only ever
+    // show real events, never fabricated ones.
   }
 
   // if already opened (no gate), init
@@ -1034,40 +964,40 @@
     var list = el('pending-payments-list');
     if (!list) return;
     if (!isLoggedIn()) {
-      list.innerHTML = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">כדי לאשר תשלומים, התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן), ואז חזור/חזרי לכאן.</div>';
+      list.innerHTML = '<div class="rounded-md p-4 text-sm" style="background: #FFFBEB; border: 1px solid #FCD34D; color: #92400E;">כדי לאשר תשלומים, התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-medium">/account</a> (באותו דפדפן), ואז חזור/חזרי לכאן.</div>';
       return;
     }
     var t = token();
-    list.innerHTML = '<div class="text-sm text-ink-400">טוען…</div>';
+    list.innerHTML = '<div class="text-sm" style="color: #94A3B8;">Loading...</div>';
     try {
       var res = await fetch('/api/billing/manual?action=list', { credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
       if (res.status === 401 || res.status === 403) {
-        list.innerHTML = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">הגישה נדחתה. ודא/י שהאימייל שלך מוגדר כמנהל (ADMIN_EMAILS ב-Vercel) ושאתה מחובר ב-<a href="/account" class="underline font-bold">/account</a>.</div>';
+        list.innerHTML = '<div class="rounded-md p-4 text-sm" style="background: #FFFBEB; border: 1px solid #FCD34D; color: #92400E;">הגישה נדחתה. ודא/י שהאימייל שלך מוגדר כמנהל (ADMIN_EMAILS ב-Vercel) ושאתה מחובר ב-<a href="/account" class="underline font-medium">/account</a>.</div>';
         return;
       }
       var j = await res.json();
-      if (!j.ok) { list.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
+      if (!j.ok) { list.innerHTML = '<div class="text-sm" style="color: #EF4444;">Error: ' + esc(j.error || '') + '</div>'; return; }
       if (!j.pending || !j.pending.length) {
-        list.innerHTML = '<div class="rounded-xl border border-ink-700/50 bg-ink-800/30 p-4 text-sm text-ink-400">אין תשלומים ממתינים. ✅</div>';
+        list.innerHTML = '<div class="card p-4 text-sm" style="color: #64748B;">No pending payments.</div>';
         return;
       }
       list.innerHTML = j.pending.map(function (p) {
         var when = '';
         try { when = new Date(p.createdAt).toLocaleString('he-IL'); } catch (e) { when = esc(p.createdAt || ''); }
-        return '<div class="rounded-2xl border border-ink-200 bg-white p-4 dark:border-ink-700 dark:bg-ink-800">'
+        return '<div class="card p-4">'
           + '<div class="flex items-center justify-between gap-3 flex-wrap">'
-          + '<div><div class="font-black">' + esc(p.plan) + ' · ' + esc(p.amountILS) + '₪ · ' + (p.method === 'bit' ? 'ביט' : 'העברה בנקאית') + '</div>'
-          + '<div class="text-xs text-ink-400 num">' + esc(p.phone || '—') + (p.email ? (' · ' + esc(p.email)) : '') + '</div>'
-          + '<div class="text-xs text-ink-400">קוד: <b class="num">' + esc(p.code) + '</b> · ' + esc(when) + '</div></div>'
+          + '<div><div class="text-sm font-medium" style="color: #1E293B;">' + esc(p.plan) + ' &middot; ' + esc(p.amountILS) + '&#8362; &middot; ' + (p.method === 'bit' ? 'ביט' : 'העברה בנקאית') + '</div>'
+          + '<div class="text-xs num" style="color: #64748B;">' + esc(p.phone || '—') + (p.email ? (' &middot; ' + esc(p.email)) : '') + '</div>'
+          + '<div class="text-xs" style="color: #94A3B8;">קוד: <span class="num font-medium" style="color: #475569;">' + esc(p.code) + '</span> &middot; ' + esc(when) + '</div></div>'
           + '<div class="flex gap-2">'
-          + '<button data-code="' + esc(p.code) + '" class="kfl-confirm rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white hover:bg-brand-400">אשר ✓</button>'
-          + '<button data-code="' + esc(p.code) + '" class="kfl-reject rounded-xl border border-ink-300 px-4 py-2 text-sm font-semibold hover:bg-ink-100 dark:border-ink-600 dark:hover:bg-ink-700">דחה</button>'
+          + '<button data-code="' + esc(p.code) + '" class="kfl-confirm rounded-md px-3 py-1.5 text-sm font-medium text-white" style="background: #10B981;">Approve</button>'
+          + '<button data-code="' + esc(p.code) + '" class="kfl-reject rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">Reject</button>'
           + '</div></div></div>';
       }).join('');
       list.querySelectorAll('.kfl-confirm').forEach(function (b) { b.addEventListener('click', function () { act('confirm', b.getAttribute('data-code')); }); });
       list.querySelectorAll('.kfl-reject').forEach(function (b) { b.addEventListener('click', function () { act('reject', b.getAttribute('data-code')); }); });
     } catch (e) {
-      list.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(e.message) + '</div>';
+      list.innerHTML = '<div class="text-sm" style="color: #EF4444;">Error: ' + esc(e.message) + '</div>';
     }
   }
 
@@ -1094,16 +1024,16 @@
     if (!isLoggedIn()) { alert('התחבר/י תחילה ב-/account'); return; }
     var t = token();
     var btn = el('kfl-paypal-setup-btn'); var out = el('kfl-paypal-setup-result');
-    if (btn) { btn.disabled = true; btn.textContent = 'יוצר…'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
     try {
       var res = await fetch('/api/billing/paypal?action=setup-plans', { method: 'POST', credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
       var j = await res.json();
       out.textContent = j.ok
-        ? ('נוצר! העתק/י ל-Vercel:\nPAYPAL_PLAN_PRO=' + j.PAYPAL_PLAN_PRO + '\nPAYPAL_PLAN_FAMILY=' + j.PAYPAL_PLAN_FAMILY)
-        : ('שגיאה: ' + (j.error || res.status) + (j.hint ? ('\n' + j.hint) : ''));
+        ? ('Created. Copy to Vercel:\nPAYPAL_PLAN_PRO=' + j.PAYPAL_PLAN_PRO + '\nPAYPAL_PLAN_FAMILY=' + j.PAYPAL_PLAN_FAMILY)
+        : ('Error: ' + (j.error || res.status) + (j.hint ? ('\n' + j.hint) : ''));
       out.classList.remove('hidden');
-    } catch (e) { if (out) { out.textContent = 'שגיאה: ' + e.message; out.classList.remove('hidden'); } }
-    if (btn) { btn.disabled = false; btn.textContent = 'צור מסלולי PayPal'; }
+    } catch (e) { if (out) { out.textContent = 'Error: ' + e.message; out.classList.remove('hidden'); } }
+    if (btn) { btn.disabled = false; btn.textContent = 'Create PayPal plans'; }
   }
   window.kflCreatePaypalPlans = createPaypalPlans;
 
@@ -1136,7 +1066,7 @@
     no_canonical_sheet_for_sub: 'אין גיליון רשום למשתמש המקושר',
     phone_sheet_mismatch_canonical: 'גיליון בקישור הטלפון שונה מהגיליון הרשום',
   };
-  var AUTH_MSG = '<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן) ואז רענן/י.</div>';
+  var AUTH_MSG = '<div class="rounded-md p-4 text-sm" style="background: #FFFBEB; border: 1px solid #FCD34D; color: #92400E;">התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-medium">/account</a> (באותו דפדפן) ואז רענן/י.</div>';
 
   async function getJSON(action) {
     if (!isLoggedIn()) return { _noauth: true };
@@ -1149,92 +1079,99 @@
   async function loadHealth() {
     var box = el('kfl-reg-health'); var badge = el('kfl-reg-badge');
     if (!box) return;
-    box.innerHTML = '<div class="text-ink-400">טוען…</div>'; if (badge) badge.textContent = '';
+    box.innerHTML = '<div style="color: #94A3B8;">Loading...</div>'; if (badge) badge.textContent = '';
     try {
       var j = await getJSON('registration-health');
       if (j._noauth) { box.innerHTML = AUTH_MSG; return; }
-      if (j._denied) { box.innerHTML = '<div class="text-sm text-amber-500">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
-      if (!j.ok) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
+      if (j._denied) { box.innerHTML = '<div class="text-sm" style="color: #F59E0B;">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
+      if (!j.ok) { box.innerHTML = '<div class="text-sm" style="color: #EF4444;">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
       var critical = (j.orphanCount || 0) + (j.brokenPhoneCount || 0);
       var bad = critical > 0;
       if (badge) {
-        badge.textContent = bad ? ('⚠ ' + critical + ' לטיפול') : '✓ הכל תקין';
-        badge.className = 'rounded-full px-2.5 py-0.5 text-xs font-bold ' + (bad ? 'bg-red-500/15 text-red-500' : 'bg-emerald-500/15 text-emerald-600');
+        badge.textContent = bad ? (critical + ' to fix') : 'All healthy';
+        badge.className = 'rounded-md px-2 py-0.5 text-xs font-medium';
+        if (bad) {
+          badge.style.background = '#FEF2F2';
+          badge.style.color = '#EF4444';
+        } else {
+          badge.style.background = '#ECFDF5';
+          badge.style.color = '#10B981';
+        }
       }
-      var html = '<div class="flex flex-wrap gap-4 text-sm">'
-        + '<div><span class="text-2xl font-black">' + j.totalUsers + '</span><div class="text-ink-400">סה״כ נרשמו</div></div>'
-        + '<div><span class="text-2xl font-black text-emerald-600">' + j.healthy + '</span><div class="text-ink-400">מחוברים ופעילים</div></div>'
-        + '<div><span class="text-2xl font-black ' + (j.orphanCount ? 'text-red-500' : '') + '">' + (j.orphanCount || 0) + '</span><div class="text-ink-400">ללא גיליון</div></div>'
-        + '<div><span class="text-2xl font-black ' + (j.brokenPhoneCount ? 'text-red-500' : '') + '">' + (j.brokenPhoneCount || 0) + '</span><div class="text-ink-400">קישור שבור</div></div>'
-        + '<div><span class="text-2xl font-black ' + (j.pendingPhoneLinkCount ? 'text-amber-500' : '') + '">' + (j.pendingPhoneLinkCount || 0) + '</span><div class="text-ink-400">ממתינים לחיבור וואטסאפ</div></div>'
+      var html = '<div class="flex flex-wrap gap-5 text-sm">'
+        + '<div><span class="text-xl num" style="font-weight: 500; color: #1E293B;">' + j.totalUsers + '</span><div class="text-xs" style="color: #94A3B8;">Total signups</div></div>'
+        + '<div><span class="text-xl num" style="font-weight: 500; color: #10B981;">' + j.healthy + '</span><div class="text-xs" style="color: #94A3B8;">Healthy &amp; active</div></div>'
+        + '<div><span class="text-xl num" style="font-weight: 500;' + (j.orphanCount ? ' color: #EF4444;' : ' color: #1E293B;') + '">' + (j.orphanCount || 0) + '</span><div class="text-xs" style="color: #94A3B8;">No sheet</div></div>'
+        + '<div><span class="text-xl num" style="font-weight: 500;' + (j.brokenPhoneCount ? ' color: #EF4444;' : ' color: #1E293B;') + '">' + (j.brokenPhoneCount || 0) + '</span><div class="text-xs" style="color: #94A3B8;">Broken link</div></div>'
+        + '<div><span class="text-xl num" style="font-weight: 500;' + (j.pendingPhoneLinkCount ? ' color: #F59E0B;' : ' color: #1E293B;') + '">' + (j.pendingPhoneLinkCount || 0) + '</span><div class="text-xs" style="color: #94A3B8;">Pending WhatsApp link</div></div>'
         + '</div>';
-      function tbl(title, rows, cls) {
+      function tbl(title, rows, color) {
         if (!rows || !rows.length) return '';
-        var h = '<div class="mt-4"><div class="mb-1 text-xs font-bold ' + cls + '">' + title + '</div><div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="text-ink-400"><tr>'
-          + '<th class="py-1 pl-3">אימייל</th><th class="py-1 pl-3">טלפון</th><th class="py-1 pl-3">נרשם</th><th class="py-1">סיבה / סטטוס</th></tr></thead><tbody>';
+        var h = '<div class="mt-4"><div class="mb-1 text-xs font-medium" style="color: ' + color + ';">' + title + '</div><div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead style="color: #94A3B8;"><tr>'
+          + '<th class="py-1 pl-3 font-medium">אימייל</th><th class="py-1 pl-3 font-medium">טלפון</th><th class="py-1 pl-3 font-medium">נרשם</th><th class="py-1 font-medium">סיבה / סטטוס</th></tr></thead><tbody>';
         h += rows.join('');
         return h + '</tbody></table></div></div>';
       }
       if (j.orphans && j.orphans.length) {
-        html += tbl('קריטי — נרשמו ללא גיליון:', j.orphans.map(function (o) {
-          return '<tr class="border-t border-ink-100 dark:border-ink-700">'
-            + '<td class="py-1.5 pl-3">' + esc(o.email || '—') + '</td>'
-            + '<td class="py-1.5 pl-3 num">' + esc(o.phone || '—') + '</td>'
-            + '<td class="py-1.5 pl-3">' + when(o.connectedAt) + '</td>'
-            + '<td class="py-1.5 font-semibold text-red-500">' + esc(REASON_HE[o.reason] || o.reason) + '</td></tr>';
-        }), 'text-red-500');
+        html += tbl('Critical — signed up without a sheet:', j.orphans.map(function (o) {
+          return '<tr style="border-top: 1px solid #E2E8F0;">'
+            + '<td class="py-1.5 pl-3" style="color: #475569;">' + esc(o.email || '—') + '</td>'
+            + '<td class="py-1.5 pl-3 num" style="color: #475569;">' + esc(o.phone || '—') + '</td>'
+            + '<td class="py-1.5 pl-3" style="color: #475569;">' + when(o.connectedAt) + '</td>'
+            + '<td class="py-1.5 font-medium" style="color: #EF4444;">' + esc(REASON_HE[o.reason] || o.reason) + '</td></tr>';
+        }), '#EF4444');
       }
       if (j.brokenPhone && j.brokenPhone.length) {
-        html += tbl('קריטי — קישור וואטסאפ שבור:', j.brokenPhone.map(function (o) {
-          return '<tr class="border-t border-ink-100 dark:border-ink-700">'
-            + '<td class="py-1.5 pl-3">—</td>'
-            + '<td class="py-1.5 pl-3 num">' + esc(o.phone || '—') + '</td>'
-            + '<td class="py-1.5 pl-3">—</td>'
-            + '<td class="py-1.5 font-semibold text-red-500">' + esc(REASON_HE[o.reason] || o.reason) + '</td></tr>';
-        }), 'text-red-500');
+        html += tbl('Critical — broken WhatsApp link:', j.brokenPhone.map(function (o) {
+          return '<tr style="border-top: 1px solid #E2E8F0;">'
+            + '<td class="py-1.5 pl-3" style="color: #475569;">—</td>'
+            + '<td class="py-1.5 pl-3 num" style="color: #475569;">' + esc(o.phone || '—') + '</td>'
+            + '<td class="py-1.5 pl-3" style="color: #475569;">—</td>'
+            + '<td class="py-1.5 font-medium" style="color: #EF4444;">' + esc(REASON_HE[o.reason] || o.reason) + '</td></tr>';
+        }), '#EF4444');
       }
       if (j.pendingPhoneLink && j.pendingPhoneLink.length) {
-        html += tbl('ממתינים לחיבור וואטסאפ (יש גיליון, טרם שלחו הודעה):', j.pendingPhoneLink.map(function (o) {
-          return '<tr class="border-t border-ink-100 dark:border-ink-700">'
-            + '<td class="py-1.5 pl-3">' + esc(o.email || '—') + '</td>'
-            + '<td class="py-1.5 pl-3 num">' + esc(o.phone || '—') + '</td>'
-            + '<td class="py-1.5 pl-3">' + when(o.connectedAt) + '</td>'
-            + '<td class="py-1.5 font-semibold text-amber-500">ממתין לחיבור</td></tr>';
-        }), 'text-amber-500');
+        html += tbl('Pending WhatsApp link (sheet exists, no message yet):', j.pendingPhoneLink.map(function (o) {
+          return '<tr style="border-top: 1px solid #E2E8F0;">'
+            + '<td class="py-1.5 pl-3" style="color: #475569;">' + esc(o.email || '—') + '</td>'
+            + '<td class="py-1.5 pl-3 num" style="color: #475569;">' + esc(o.phone || '—') + '</td>'
+            + '<td class="py-1.5 pl-3" style="color: #475569;">' + when(o.connectedAt) + '</td>'
+            + '<td class="py-1.5 font-medium" style="color: #F59E0B;">Awaiting link</td></tr>';
+        }), '#F59E0B');
       }
-      if (!bad) html += '<div class="mt-3 text-sm text-emerald-600">כל לקוח שנרשם קיבל גיליון. ✅</div>';
+      if (!bad) html += '<div class="mt-3 text-sm" style="color: #10B981;">Every paying customer has a sheet.</div>';
       box.innerHTML = html;
-    } catch (e) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(e.message) + '</div>'; }
+    } catch (e) { box.innerHTML = '<div class="text-sm" style="color: #EF4444;">Error: ' + esc(e.message) + '</div>'; }
   }
 
   async function loadQuestionnaires() {
     var box = el('kfl-questionnaires');
     if (!box) return;
-    box.innerHTML = '<div class="text-ink-400">טוען…</div>';
+    box.innerHTML = '<div style="color: #94A3B8;">Loading...</div>';
     try {
       var j = await getJSON('questionnaires');
       if (j._noauth) { box.innerHTML = AUTH_MSG; return; }
-      if (j._denied) { box.innerHTML = '<div class="text-sm text-amber-500">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
-      if (!j.ok) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
-      if (!j.total) { box.innerHTML = '<div class="text-sm text-ink-400">עדיין אין שאלונים. ברגע שלקוחות יענו, הם יופיעו כאן.</div>'; return; }
+      if (j._denied) { box.innerHTML = '<div class="text-sm" style="color: #F59E0B;">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
+      if (!j.ok) { box.innerHTML = '<div class="text-sm" style="color: #EF4444;">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
+      if (!j.total) { box.innerHTML = '<div class="text-sm" style="color: #94A3B8;">No questionnaires yet. They will appear here once customers respond.</div>'; return; }
       var bt = j.summary && j.summary.byTrackingType || {};
       var chips = Object.keys(bt).map(function (k) {
-        return '<span class="rounded-full bg-brand-500/10 px-3 py-1 text-xs font-bold text-brand-600 dark:text-brand-300">' + esc(TRACK_HE[k] || k) + ': ' + bt[k] + '</span>';
+        return '<span class="rounded-md px-2 py-0.5 text-xs font-medium" style="background: #F1F5F9; color: #475569;">' + esc(TRACK_HE[k] || k) + ': ' + bt[k] + '</span>';
       }).join(' ');
-      var html = '<div class="mb-3 flex flex-wrap items-center gap-2"><span class="text-2xl font-black">' + j.total + '</span><span class="text-ink-400">שאלונים</span>' + chips + '</div>';
-      html += '<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="text-ink-400"><tr>'
-        + '<th class="py-1 pl-3">טלפון</th><th class="py-1 pl-3">סוג מעקב</th><th class="py-1 pl-3">הוצאות קבועות</th><th class="py-1 pl-3">רישום אוטומטי</th><th class="py-1">עודכן</th></tr></thead><tbody>';
+      var html = '<div class="mb-3 flex flex-wrap items-center gap-2"><span class="text-xl num" style="font-weight: 500; color: #1E293B;">' + j.total + '</span><span class="text-xs" style="color: #94A3B8;">questionnaires</span>' + chips + '</div>';
+      html += '<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead style="color: #94A3B8;"><tr>'
+        + '<th class="py-1 pl-3 font-medium">טלפון</th><th class="py-1 pl-3 font-medium">סוג מעקב</th><th class="py-1 pl-3 font-medium">הוצאות קבועות</th><th class="py-1 pl-3 font-medium">רישום אוטומטי</th><th class="py-1 font-medium">עודכן</th></tr></thead><tbody>';
       html += j.questionnaires.map(function (q) {
-        return '<tr class="border-t border-ink-100 dark:border-ink-700">'
-          + '<td class="py-1.5 pl-3 num">' + esc(q.phone || '—') + '</td>'
-          + '<td class="py-1.5 pl-3">' + esc(TRACK_HE[q.trackingType] || q.trackingType || '—') + '</td>'
-          + '<td class="py-1.5 pl-3">' + (q.hasRecurring ? 'כן' : 'לא') + '</td>'
-          + '<td class="py-1.5 pl-3">' + esc(q.autoLogPref || '—') + '</td>'
-          + '<td class="py-1.5">' + when(q.updatedAt) + '</td></tr>';
+        return '<tr style="border-top: 1px solid #E2E8F0;">'
+          + '<td class="py-1.5 pl-3 num" style="color: #475569;">' + esc(q.phone || '—') + '</td>'
+          + '<td class="py-1.5 pl-3" style="color: #475569;">' + esc(TRACK_HE[q.trackingType] || q.trackingType || '—') + '</td>'
+          + '<td class="py-1.5 pl-3" style="color: #475569;">' + (q.hasRecurring ? 'כן' : 'לא') + '</td>'
+          + '<td class="py-1.5 pl-3" style="color: #475569;">' + esc(q.autoLogPref || '—') + '</td>'
+          + '<td class="py-1.5" style="color: #475569;">' + when(q.updatedAt) + '</td></tr>';
       }).join('');
       html += '</tbody></table></div>';
       box.innerHTML = html;
-    } catch (e) { box.innerHTML = '<div class="text-sm text-red-400">שגיאה: ' + esc(e.message) + '</div>'; }
+    } catch (e) { box.innerHTML = '<div class="text-sm" style="color: #EF4444;">Error: ' + esc(e.message) + '</div>'; }
   }
 
   function loadOnboarding() { loadHealth(); loadQuestionnaires(); }
@@ -1244,8 +1181,8 @@
 })();
 </script>
 
-<!-- LIVE DATA LOADER — fills users table + key metrics from REAL KV data via
-     /api/admin (requireAdmin). No demo/fake values: real numbers or honest "—". -->
+<!-- LIVE DATA LOADER -- fills users table + key metrics from REAL KV data via
+     /api/admin (requireAdmin). No demo/fake values: real numbers or honest "-". -->
 <script>
 (function () {
   // `idToken` is no longer persisted to localStorage (XSS-hardening change
@@ -1257,7 +1194,7 @@
   function isLoggedIn() { try { var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}'); return !!(u && u.sub); } catch (e) { return false; } }
   function el(id) { return document.getElementById(id); }
   function setTxt(id, v) { var e = el(id); if (e) e.textContent = (v === null || v === undefined) ? '—' : v; }
-  function num(n) { return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('he-IL') : '—'; }
+  function num(n) { return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('en-US') : '—'; }
   async function get(action) {
     if (!isLoggedIn()) return { _noauth: true };
     var t = token();
@@ -1269,34 +1206,34 @@
     if (!iso) return '—';
     var t = Date.parse(iso); if (isNaN(t)) return '—';
     var s = Math.max(0, (Date.now() - t) / 1000);
-    if (s < 90) return 'לפני רגע';
-    if (s < 3600) return 'לפני ' + Math.round(s / 60) + ' דק׳';
-    if (s < 86400) return 'לפני ' + Math.round(s / 3600) + ' שעות';
-    return 'לפני ' + Math.round(s / 86400) + ' ימים';
+    if (s < 90) return 'just now';
+    if (s < 3600) return Math.round(s / 60) + ' min ago';
+    if (s < 86400) return Math.round(s / 3600) + ' h ago';
+    return Math.round(s / 86400) + ' d ago';
   }
   function planLabel(p) {
-    if (p === 'pro') return { label: 'Pro', cls: 'bg-brand-500/15 text-brand-600' };
-    if (p === 'family') return { label: 'משפחה', cls: 'bg-accent-500/15 text-accent-500' };
-    return { label: 'חינם', cls: 'bg-ink-100 text-ink-700 dark:bg-ink-700 dark:text-ink-200' };
+    if (p === 'pro') return { label: 'Pro', cls: 'background: #EFF6FF; color: #3B82F6;' };
+    if (p === 'family') return { label: 'Family', cls: 'background: #ECFDF5; color: #10B981;' };
+    return { label: 'Free', cls: 'background: #F1F5F9; color: #475569;' };
   }
   function statusOf(u) {
     var s = String(u.subscriptionStatus || '').toLowerCase();
-    if (s === 'canceled' || s === 'cancelled') return { status: 'cancelled', label: 'בוטל', cls: 'bg-red-500/15 text-red-600' };
-    if (s === 'past_due' || s === 'paused') return { status: 'paused', label: 'מושהה', cls: 'bg-amber-500/15 text-amber-600' };
-    if (s === 'trialing' || (!u.plan || u.plan === 'free')) return { status: 'trial', label: 'ניסיון', cls: 'bg-amber-500/15 text-amber-600' };
-    return { status: 'active', label: 'פעיל', cls: 'bg-brand-500/15 text-brand-600' };
+    if (s === 'canceled' || s === 'cancelled') return { status: 'cancelled', label: 'Cancelled', cls: 'background: #FEF2F2; color: #EF4444;' };
+    if (s === 'past_due' || s === 'paused') return { status: 'paused', label: 'Paused', cls: 'background: #FFFBEB; color: #F59E0B;' };
+    if (s === 'trialing' || (!u.plan || u.plan === 'free')) return { status: 'trial', label: 'Trial', cls: 'background: #FFFBEB; color: #F59E0B;' };
+    return { status: 'active', label: 'Active', cls: 'background: #ECFDF5; color: #10B981;' };
   }
   var FUNNEL_HE = {
-    page_view: 'צפיות באתר',
-    signup_start: 'התחילו הרשמה',
-    signup_complete: 'השלימו הרשמה',
-    sheet_provisioned: 'נוצר גיליון',
-    first_message_received: 'הודעה ראשונה לבוט',
+    page_view: 'Page views',
+    signup_start: 'Started signup',
+    signup_complete: 'Completed signup',
+    sheet_provisioned: 'Sheet provisioned',
+    first_message_received: 'First message to bot',
   };
   function renderFunnel(funnel) {
     var box = el('kfl-funnel');
     if (!box) return;
-    if (!funnel.length) { box.innerHTML = '<div class="text-ink-400">אין עדיין נתוני אירועים.</div>'; return; }
+    if (!funnel.length) { box.innerHTML = '<div style="color: #94A3B8;">No event data yet.</div>'; return; }
     var top = funnel[0] && funnel[0].count ? funnel[0].count : 0;
     box.innerHTML = funnel.map(function (stage, i) {
       var label = FUNNEL_HE[stage.event] || stage.event;
@@ -1305,10 +1242,10 @@
       var conv = (prev && prev > 0) ? Math.round((stage.count / prev) * 100) : null;
       return '<div>'
         + '<div class="flex items-center justify-between text-xs">'
-        + '<span class="font-semibold">' + label + '</span>'
-        + '<span class="num font-bold">' + num(stage.count) + (conv !== null ? ' <span class="text-ink-400">(' + conv + '% מהשלב הקודם)</span>' : '') + '</span>'
+        + '<span class="font-medium" style="color: #1E293B;">' + label + '</span>'
+        + '<span class="num font-medium" style="color: #1E293B;">' + num(stage.count) + (conv !== null ? ' <span style="color: #94A3B8;">(' + conv + '% from prev)</span>' : '') + '</span>'
         + '</div>'
-        + '<div class="mt-1 h-2.5 w-full rounded-full bg-ink-100 dark:bg-ink-700"><div class="h-2.5 rounded-full bg-brand-500" style="width:' + Math.max(2, pctOfTop) + '%"></div></div>'
+        + '<div class="mt-1 qbar"><span style="width:' + Math.max(2, pctOfTop) + '%"></span></div>'
         + '</div>';
     }).join('');
   }
@@ -1317,21 +1254,24 @@
     if (grid && !el('kfl-auth-banner')) {
       var b = document.createElement('div');
       b.id = 'kfl-auth-banner';
-      b.className = 'sm:col-span-2 lg:col-span-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm';
+      b.className = 'sm:col-span-2 lg:col-span-3 rounded-md p-4 text-sm';
+      b.style.background = '#FFFBEB';
+      b.style.border = '1px solid #FCD34D';
+      b.style.color = '#92400E';
       b.innerHTML = msg;
       grid.insertBefore(b, grid.firstChild);
     }
-    setTxt('users-subtitle', 'דרושה התחברות מנהל כדי לראות נתונים אמיתיים.');
+    setTxt('users-subtitle', 'Sign in as admin to see real data.');
   }
 
   async function load() {
     if (!token()) {
-      authBanner('כדי לראות נתונים אמיתיים, התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-bold">/account</a> (באותו דפדפן), ואז רענן/י את הדף.');
+      authBanner('כדי לראות נתונים אמיתיים, התחבר/י עם חשבון המנהל ב-<a href="/account" class="underline font-medium">/account</a> (באותו דפדפן), ואז רענן/י את הדף.');
       return;
     }
     // METRICS
     var m = await get('metrics');
-    if (m._denied) { authBanner('הגישה נדחתה — ודא/י שהאימייל שלך מופיע ב-ADMIN_EMAILS ב-Vercel, ושאת/ה מחובר/ת ב-<a href="/account" class="underline font-bold">/account</a>.'); return; }
+    if (m._denied) { authBanner('הגישה נדחתה — ודא/י שהאימייל שלך מופיע ב-ADMIN_EMAILS ב-Vercel, ושאת/ה מחובר/ת ב-<a href="/account" class="underline font-medium">/account</a>.'); return; }
     if (m && m.ok && m.metrics) {
       var mt = m.metrics, bp = mt.byPlan || {};
       setTxt('stat-total-users', num(mt.totalUsers));
@@ -1367,17 +1307,17 @@
         };
       });
       if (window.__kflSetUsers) window.__kflSetUsers(mapped);
-      setTxt('users-subtitle', mapped.length + ' משתמשים רשומים (מציג עד 200).');
+      setTxt('users-subtitle', mapped.length + ' users registered (showing up to 200).');
       // real filter-chip counts
       var counts = { all: mapped.length, active: 0, trial: 0, paused: 0, cancelled: 0 };
       mapped.forEach(function (x) { if (counts[x.status] !== undefined) counts[x.status]++; });
       document.querySelectorAll('.filter-chip').forEach(function (chip) {
-        var f = chip.dataset.filter, labelMap = { all: 'הכל', active: 'פעיל', trial: 'ניסיון', paused: 'מושהה', cancelled: 'בוטל' };
+        var f = chip.dataset.filter, labelMap = { all: 'All', active: 'Active', trial: 'Trial', paused: 'Paused', cancelled: 'Cancelled' };
         if (labelMap[f] !== undefined) chip.textContent = labelMap[f] + ' (' + (counts[f] || 0) + ')';
       });
       // activity feed = real recent signups
       var recent = mapped.slice(0, 12).map(function (x) {
-        return { icon: '👤', tone: 'brand', text: '<b>' + (x.email || x.name) + '</b> נרשם/ה לכספ\'לה', time: x.signupRaw };
+        return { text: '<span style="font-weight: 500;">' + (x.email || x.name) + '</span> signed up for Kesefle', time: x.signupRaw };
       });
       if (window.__kflSetActivities) window.__kflSetActivities(recent);
     }
