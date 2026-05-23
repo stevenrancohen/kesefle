@@ -210,6 +210,15 @@
       </div>
     </div>
 
+    <!-- Bot-number config drift -->
+    <div class="grid">
+      <div class="card full" id="card-drift">
+        <h3>Bot number configuration</h3>
+        <div class="sub" id="drift-detail">Checking…</div>
+        <pre id="drift-fix" style="display:none;font-size:11px;color:var(--text);background:var(--bg);padding:10px;border-radius:6px;border:1px solid var(--border);margin-top:8px;overflow-x:auto"></pre>
+      </div>
+    </div>
+
     <!-- Resend welcome WhatsApp action -->
     <div class="grid">
       <div class="card full">
@@ -443,9 +452,49 @@ window.kfl = (function () {
     else if (autoRefresh) { fetchMonitor(); startPolling(); }
   });
 
-  // Initial load
-  if (document.readyState !== 'loading') { fetchMonitor(); startPolling(); }
-  else document.addEventListener('DOMContentLoaded', function () { fetchMonitor(); startPolling(); });
+  // Initial load: monitor + one-shot drift check (drift only changes on env or
+  // codebase changes, not in real-time, so we don't poll it).
+  if (document.readyState !== 'loading') { fetchMonitor(); checkDrift(); startPolling(); }
+  else document.addEventListener('DOMContentLoaded', function () { fetchMonitor(); checkDrift(); startPolling(); });
+
+  async function checkDrift() {
+    var detail = document.getElementById('drift-detail');
+    var card = document.getElementById('card-drift');
+    var fix = document.getElementById('drift-fix');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/config-drift', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) {
+        detail.textContent = 'Not authorized to check drift.'; return;
+      }
+      var j = await r.json();
+      if (!j.ok) { detail.textContent = 'Error: ' + (j.error || r.status); return; }
+      var hard = j.hardcoded || {};
+      if (j.drift) {
+        card.className = 'card full alert';
+        detail.innerHTML = '<strong style="color:var(--danger)">⚠ Drift detected.</strong> ' +
+          'Env says bot number = <code>+' + j.configured + '</code>, but homepage has ' +
+          hard.mismatch_count + ' anchors pointing at: ' +
+          (hard.unique_numbers || []).map(function (n) { return '<code>+' + n + '</code>'; }).join(', ') +
+          '. Run the fix command below.';
+        fix.textContent = j.fix_instructions || '';
+        fix.style.display = 'block';
+      } else if (!j.configured) {
+        card.className = 'card full warn';
+        detail.textContent = 'No KESEFLE_BOT_NUMBER env var set. Default ' +
+          ((hard.unique_numbers || []).join(', ') || '?') + ' in use.';
+        fix.style.display = 'none';
+      } else {
+        card.className = 'card full';
+        detail.innerHTML = '✓ All <code>wa.me/</code> anchors point at <code>+' + j.configured + '</code> (' +
+          hard.total + ' total). No drift.';
+        fix.style.display = 'none';
+      }
+    } catch (e) {
+      detail.textContent = 'Drift check failed: ' + (e.message || e);
+    }
+  }
 
   async function resendWelcome() {
     var input = document.getElementById('resend-phone');
