@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -259,7 +259,7 @@
   <section id="live-dashboard" class="mb-8">
     <div class="mb-4 flex items-end justify-between gap-3">
       <div class="kfl-hero-stage" data-stage="1">
-        <h2 class="text-2xl font-black tracking-tight md:text-3xl">תנועות חיות מהגיליון</h2>
+        <h1 class="text-2xl font-black tracking-tight md:text-3xl">תנועות חיות מהגיליון</h1>
         <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">נתונים אמיתיים בזמן אמת — בלי רענון, בלי טפסים.</p>
       </div>
       <button id="live-refresh" type="button" onclick="kefleLiveRefresh()" class="kfl-magnetic inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl border border-ink-200 bg-white px-3.5 py-2 text-xs font-bold text-ink-700 shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200 dark:hover:bg-ink-700" title="רענן">
@@ -676,6 +676,11 @@ function kesefleGetSheet() {
   try { return JSON.parse(localStorage.getItem('kesefle_sheet') || 'null'); } catch { return null; }
 }
 function kesefleLogout() {
+  // Best-effort server-side clear of the HttpOnly session cookie, then
+  // local cleanup, then redirect.
+  try {
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
+  } catch (e) {}
   localStorage.removeItem('kesefle_user');
   localStorage.removeItem('kesefle_sheet');
   window.location.href = '/';

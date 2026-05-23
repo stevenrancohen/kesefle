@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -396,6 +396,12 @@ function kesefleSetUser(u) {
   localStorage.setItem('kesefle_user', JSON.stringify(u));
 }
 function kesefleLogout() {
+  // Best-effort server-side clear of the HttpOnly session cookie, then
+  // local cleanup, then redirect. Fire-and-forget the POST -- the
+  // redirect happens whether or not the server reachable.
+  try {
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
+  } catch (e) {}
   localStorage.removeItem('kesefle_user');
   localStorage.removeItem('kesefle_sheet');
   window.location.href = '/';
@@ -1039,7 +1045,7 @@ function kesefleShowProvisionError(msg) {
     '<h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">לא הצלחנו ליצור את הגיליון</h2>' +
     '<p style="margin-top:10px;font-size:13px;color:' + body + ';">ההתחברות הצליחה, אבל יצירת הגיליון נכשלה. נסו שוב; אם זה ממשיך, פתחו צ\'אט תמיכה.</p>' +
     '<p style="margin-top:6px;font-size:11px;color:#8a95b3;word-break:break-word;font-family:ui-monospace,monospace;">' + safeMsg + '</p>' +
-    '<button type="button" onclick="kesefleRetryProvision()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסי שוב ליצור גיליון</button>'
+    '<button type="button" onclick="kesefleRetryProvision()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה/י שוב ליצור גיליון</button>'
   );
 }
 
@@ -1067,11 +1073,11 @@ function _kflOAuthErrorMessage(code) {
   switch (String(code || '')) {
     case 'access_denied':   return 'ההרשאות בוטלו. לא נוכל ליצור עבורך גיליון בלי גישה ל-Drive שלך. נסה/י שוב ואשר/י את ההרשאות.';
     case 'invalid_request': return 'שגיאה בבקשת ההתחברות. נסה/י שוב.';
-    case 'unauthorized_client': return 'אפליקציית Kesefle לא מאושרת על ידי Google. נצור קשר עם התמיכה.';
+    case 'unauthorized_client': return 'אפליקציית Kesefle לא מאושרת על ידי Google כרגע. צרו קשר עם התמיכה.';
     case 'unsupported_response_type': return 'שגיאה טכנית בהתחברות. נסה/י שוב.';
-    case 'invalid_scope':   return 'ההרשאות שביקשנו אינן זמינות. נסה/י שוב או צור/י קשר עם התמיכה.';
+    case 'invalid_scope':   return 'ההרשאות שביקשנו אינן זמינות. נסה/י שוב או צרו קשר עם התמיכה.';
     case 'server_error':    return 'Google מדווח על שגיאה זמנית. נסה/י שוב בעוד דקה.';
-    case 'temporarily_unavailable': return 'שירות ההתחברות זמנית לא זמין. נסה/י שוב בעוד דקה.';
+    case 'temporarily_unavailable': return 'שירות ההתחברות אינו זמין כרגע. נסה/י שוב בעוד דקה.';
     default: return 'ההתחברות לא הושלמה. נסה/י שוב.';
   }
 }

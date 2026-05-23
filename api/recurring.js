@@ -204,15 +204,16 @@ async function logOccurrence(phone, phoneRec, tpl, dateStr) {
   // alone has no refresh token, so writing with it would always fail.
   const resolved = await resolveTenantWriteRecord(phone, phoneRec);
   if (!resolved.ok) return { error: resolved.error };
+  // Note: 8-col template -- currency + messageId are no longer columns.
+  // Dedup happens upstream via idemKey (recurring_logged:...) above, not via
+  // a messageId row column.
   const row = buildExpenseRow({
     amount: Number(tpl.amount),
-    currency: 'ILS',
     isIncome: false,
     category: tpl.category || 'הוצאות קבועות',
     subcategory: tpl.subcategory || 'קבוע',
     rawText: `🔁 [קבוע] ${tpl.amount} ${tpl.description}`,
-    messageId: `recurring:${tpl.id}:${dateStr}`,
-    date: dateStr, // sheet-writer may honour an explicit date; harmless if ignored
+    date: dateStr, // backfills to the right YYYY-MM in col B
   });
   const result = await appendRowToUserSheet({ userRecord: resolved.userRecord, row });
   if (!result.ok) return { error: result.error || 'write_failed' };
