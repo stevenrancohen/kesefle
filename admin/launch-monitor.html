@@ -191,6 +191,19 @@
       </div>
     </div>
 
+    <!-- Today's conversion funnel -->
+    <div class="grid">
+      <div class="card full" id="card-funnel">
+        <h3>Conversion funnel — today (UTC)</h3>
+        <div class="sub" id="funnel-summary-line" style="margin-bottom:12px">Loading…</div>
+        <table style="margin-top:4px" id="funnel-table" style="display:none">
+          <thead><tr><th>Step</th><th style="text-align:right">Count</th><th style="text-align:right">→ %</th><th style="text-align:right">Drop-off</th></tr></thead>
+          <tbody id="funnel-tbody"></tbody>
+        </table>
+        <div id="funnel-errors" class="sub" style="margin-top:12px"></div>
+      </div>
+    </div>
+
     <!-- KV usage -->
     <div class="grid">
       <div class="card full" id="card-kv">
@@ -225,6 +238,24 @@
         <h3>Bot number configuration</h3>
         <div class="sub" id="drift-detail">Checking…</div>
         <pre id="drift-fix" style="display:none;font-size:11px;color:var(--text);background:var(--bg);padding:10px;border-radius:6px;border:1px solid var(--border);margin-top:8px;overflow-x:auto"></pre>
+      </div>
+    </div>
+
+    <!-- Recent signups (last 6h) with per-row actions -->
+    <div class="grid">
+      <div class="card full">
+        <h3 style="display:flex;justify-content:space-between;align-items:center">
+          <span>Recent signups (last 6h)</span>
+          <button onclick="kfl.loadRecent()" style="font-size:11px">Refresh</button>
+        </h3>
+        <div id="recent-summary" class="sub" style="margin-bottom:8px">Loading…</div>
+        <table id="recent-table" style="display:none">
+          <thead><tr>
+            <th>When</th><th>Email</th><th>Step</th><th>Sheet</th><th>Phone</th><th>Action</th>
+          </tr></thead>
+          <tbody id="recent-tbody"></tbody>
+        </table>
+        <div id="recent-empty" class="empty" style="display:none">No signups in the last 6 hours.</div>
       </div>
     </div>
 
@@ -463,8 +494,60 @@ window.kfl = (function () {
 
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
-  if (document.readyState !== 'loading') { fetchMonitor(); checkDrift(); checkBotVersion(); startPolling(); }
-  else document.addEventListener('DOMContentLoaded', function () { fetchMonitor(); checkDrift(); checkBotVersion(); startPolling(); });
+  // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
+  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); checkDrift(); checkBotVersion(); startPolling(); }
+  if (document.readyState !== 'loading') _initAll();
+  else document.addEventListener('DOMContentLoaded', _initAll);
+
+  // Also refresh funnel on visibility-resume so Steven sees fresh data after
+  // returning to the tab. fetchMonitor already wired this; chain loadFunnel.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') loadFunnel();
+  });
+
+  async function loadFunnel() {
+    var line = document.getElementById('funnel-summary-line');
+    var tbody = document.getElementById('funnel-tbody');
+    var errBox = document.getElementById('funnel-errors');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/funnel-summary', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { line.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { line.textContent = 'Error: ' + (j.error || r.status); return; }
+      var s = j.summary;
+      var e2e = (s.end_to_end_conversion * 100).toFixed(1) + '%';
+      line.innerHTML =
+        '<strong>' + s.total_landings + '</strong> landed · ' +
+        '<strong>' + s.total_completions + '</strong> completed (first WA message) · ' +
+        'end-to-end <strong>' + e2e + '</strong>' +
+        (s.total_errors > 0 ? ' · <span style="color:var(--danger)">' + s.total_errors + ' errors</span>' : '');
+
+      tbody.innerHTML = j.funnel.map(function (row, i) {
+        var pct = i === 0 ? '—' : (row.conversion_from_prev * 100).toFixed(0) + '%';
+        var pctColor = i > 0 && row.conversion_from_prev < 0.5 ? 'color:var(--danger)' :
+                       i > 0 && row.conversion_from_prev < 0.8 ? 'color:var(--warning)' : '';
+        return '<tr>' +
+          '<td>' + row.step + '</td>' +
+          '<td style="text-align:right" class="num">' + row.count + '</td>' +
+          '<td style="text-align:right;' + pctColor + '" class="num">' + pct + '</td>' +
+          '<td style="text-align:right" class="num">' + (row.dropoff_from_prev || '') + '</td>' +
+        '</tr>';
+      }).join('');
+      document.getElementById('funnel-table').style.display = 'table';
+
+      // Errors breakdown
+      var errs = Object.entries(j.errors || {}).filter(function (e) { return e[1] > 0; });
+      if (errs.length) {
+        errBox.innerHTML = '<strong>Errors:</strong> ' + errs.map(function (e) {
+          return '<code>' + e[0] + '</code>: ' + e[1];
+        }).join(' · ');
+      } else {
+        errBox.innerHTML = '<span style="color:var(--success)">✓ No errors recorded today</span>';
+      }
+    } catch (e) { line.textContent = 'Funnel load failed: ' + (e.message || e); }
+  }
 
   async function checkBotVersion() {
     var detail = document.getElementById('bot-version-detail');
@@ -537,6 +620,63 @@ window.kfl = (function () {
     }
   }
 
+  async function loadRecent() {
+    var summary = document.getElementById('recent-summary');
+    var tbody = document.getElementById('recent-tbody');
+    var table = document.getElementById('recent-table');
+    var empty = document.getElementById('recent-empty');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/recent-signups?limit=20&hours=6', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
+      summary.innerHTML =
+        '<strong>' + j.returned + '</strong> users in last ' + j.window_hours + 'h · ' +
+        '<span style="color:var(--warning)">' + j.by_step.step_1_oauth_only + '</span> stuck at OAuth · ' +
+        '<span style="color:var(--warning)">' + j.by_step.step_2_sheet_no_phone + '</span> need to link WA · ' +
+        '<span style="color:var(--success)">' + j.by_step.step_3_fully_linked + '</span> fully linked';
+      if (!j.users.length) {
+        table.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      table.style.display = 'table';
+      tbody.innerHTML = j.users.map(function (u) {
+        var stepBadge = u.step === 3
+          ? '<span style="color:var(--success)">✓ Linked</span>'
+          : u.step === 2
+            ? '<span style="color:var(--warning)">Sheet, no phone</span>'
+            : '<span style="color:var(--danger)">OAuth only</span>';
+        var phoneCell = u.linkedPhone
+          ? '<span class="num">+' + u.linkedPhone + '</span>'
+          : '<span style="color:var(--faint)">—</span>';
+        var sheetCell = u.sheetUrl
+          ? '<a href="' + u.sheetUrl + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">Open</a>'
+          : '<span style="color:var(--faint)">—</span>';
+        var actionCell = u.linkedPhone
+          ? '<button onclick="kfl.resendFromRow(\'' + u.linkedPhone + '\')" style="font-size:11px">Resend WA</button>'
+          : '<span style="color:var(--faint);font-size:11px">no phone</span>';
+        return '<tr>' +
+          '<td style="font-size:12px;color:var(--muted)">' + u.minutes_ago + 'm ago</td>' +
+          '<td style="font-size:12px">' + (u.email || '(no email)') + '</td>' +
+          '<td style="font-size:12px">' + stepBadge + '</td>' +
+          '<td>' + sheetCell + '</td>' +
+          '<td>' + phoneCell + '</td>' +
+          '<td>' + actionCell + '</td>' +
+        '</tr>';
+      }).join('');
+    } catch (e) { summary.textContent = 'Load failed: ' + (e.message || e); }
+  }
+
+  function resendFromRow(phone) {
+    var input = document.getElementById('resend-phone');
+    if (input) { input.value = phone; }
+    resendWelcome();
+  }
+
   async function resendWelcome() {
     var input = document.getElementById('resend-phone');
     var status = document.getElementById('resend-status');
@@ -566,7 +706,14 @@ window.kfl = (function () {
     }
   }
 
-  return { refresh: refresh, toggleAuto: toggleAuto, toggleRaw: toggleRaw, resendWelcome: resendWelcome };
+  return {
+    refresh: refresh,
+    toggleAuto: toggleAuto,
+    toggleRaw: toggleRaw,
+    resendWelcome: resendWelcome,
+    resendFromRow: resendFromRow,
+    loadRecent: loadRecent
+  };
 })();
 </script>
 
