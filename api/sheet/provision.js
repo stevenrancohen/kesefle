@@ -12,7 +12,7 @@
 //   5. Server returns the new spreadsheet URL.
 
 import { withRequestId, log } from '../../lib/log.js';
-import { withRateLimit } from '../../lib/ratelimit.js';
+import { rateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { getGoogleClientId } from '../../lib/auth.js';
 import { createUserSheetWithToken, exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
@@ -107,6 +107,15 @@ async function handlerImpl(req, res) {
       const usrRec = usrJson?.result ? JSON.parse(usrJson.result) : null;
       userEmail = usrRec?.email || '';
     } catch (_e) { userEmail = ''; }
+  }
+
+  // Per-userSub rate limit (50/hr) -- the actual protective cap. Since we
+  // know who the user is, this is NAT-safe: hundreds of users behind one
+  // Israeli carrier IP each get their own bucket.
+  const userLim = await rateLimitId(userSub, { key: 'sheet_provision_user', limit: 50, windowSec: 3600 });
+  if (!userLim.ok) {
+    res.setHeader('Retry-After', String(userLim.retryAfter || 3600));
+    return res.status(429).json({ ok: false, error: 'rate_limit_exceeded', detail: 'יותר מדי בקשות יצירת גיליון מהחשבון הזה. נסה/י שוב בעוד שעה.' });
   }
 
   const kvUrl = process.env.KV_REST_API_URL;
@@ -247,10 +256,30 @@ async function handlerImpl(req, res) {
   });
 }
 
-// Apply security middleware: request ID → rate limit (5/hour for sheet provisioning).
-// Auth is done inside handlerImpl via verifyAccessToken (tokeninfo) — gives us the same
-// cryptographic guarantee about the user's identity as requireAuth, but works with the
-// access-token-only flow the frontend currently uses.
-export default withRequestId(
-  withRateLimit({ key: 'sheet_provision', limit: 5, windowSec: 3600 })(handlerImpl)
-);
+// Two-tier rate limit:
+//   1. Per-IP cap of 100/hr to prevent obvious abuse / cross-tenant scraping.
+//   2. After we know the userSub (identified inside handlerImpl), enforce a
+//      per-user cap (we do this INSIDE handlerImpl since the userSub isn't
+//      known to the wrapper). This is critical because Israeli mobile carriers
+//      NAT thousands of users behind one egress IP -- per-IP alone would
+//      block hundreds of legitimate signups during a launch spike.
+//
+// Auth is done inside handlerImpl via verifyAccessToken (tokeninfo) or the
+// session cookie (Mode B). Same cryptographic guarantee about the user's
+// identity as requireAuth.
+async function wrappedHandler(req, res) {
+  // Tier 1: per-IP soft cap (lenient -- carrier NAT shares IPs).
+  const ipLim = await rateLimit(req, { key: 'sheet_provision_ip', limit: 100, windowSec: 3600 });
+  if (!ipLim.ok) {
+    res.setHeader('Retry-After', String(ipLim.retryAfter || 3600));
+    res.setHeader('X-RateLimit-Limit', '100');
+    return res.status(429).json({ ok: false, error: 'rate_limit_exceeded', detail: 'Too many provisions from this IP. Try in an hour.' });
+  }
+  res.setHeader('X-RateLimit-Limit', '100');
+  if (ipLim.remaining != null) res.setHeader('X-RateLimit-Remaining', String(ipLim.remaining));
+
+  // Hand off to the real handler (which runs auth + a per-userSub limit).
+  return handlerImpl(req, res);
+}
+
+export default withRequestId(wrappedHandler);
