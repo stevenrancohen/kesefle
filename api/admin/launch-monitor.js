@@ -126,11 +126,16 @@ async function handlerImpl(req, res) {
     } catch (_e) {}
   }
 
-  // 6. KV usage estimate: count today's commands from our own counter.
-  //    We increment kv_cmd_today on every write; reset daily via TTL.
-  const kvUsageToday = await kvGet('kv_cmd_today_count') || 0;
+  // 6. KV usage estimate: read the counter incremented by lib/ratelimit.js on
+  //    every command. Returns null if no counter exists yet (e.g. fresh deploy
+  //    before any write happened), distinguishing "0 commands" from "not yet
+  //    tracking" so we don't show a misleading green dot.
+  const kvUsageRaw = await kvFetch('/get/' + encodeURIComponent('kv_cmd_today_count'));
+  const kvUsageToday = (kvUsageRaw && kvUsageRaw.result != null) ? Number(kvUsageRaw.result) : null;
   const KV_FREE_TIER_DAILY = 10000;
-  const kvUsagePct = Math.min(100, Math.round((Number(kvUsageToday) / KV_FREE_TIER_DAILY) * 100));
+  const kvUsagePct = kvUsageToday == null
+    ? null
+    : Math.min(100, Math.round((kvUsageToday / KV_FREE_TIER_DAILY) * 100));
 
   return res.status(200).json({
     ok: true,
@@ -158,18 +163,22 @@ async function handlerImpl(req, res) {
       top_user_agents: topMissedUas,
     },
     kvUsage: {
-      commands_today: Number(kvUsageToday),
+      commands_today: kvUsageToday,
       free_tier_daily: KV_FREE_TIER_DAILY,
       pct_used: kvUsagePct,
-      warning: kvUsagePct >= 80,
-      critical: kvUsagePct >= 95,
+      warning: kvUsagePct != null && kvUsagePct >= 80,
+      critical: kvUsagePct != null && kvUsagePct >= 95,
+      tracked: kvUsageToday != null,
     },
     notes: {
       sample_warning: sampleSize < totalUsers
         ? `Sampled first ${sampleSize} of ${totalUsers} users. Signup counts are extrapolated.`
         : null,
-      kv_watchdog: kvUsagePct >= 80
+      kv_watchdog: (kvUsagePct != null && kvUsagePct >= 80)
         ? 'KV usage past 80% — upgrade to paid tier or curb writes immediately.'
+        : null,
+      kv_untracked: kvUsageToday == null
+        ? 'KV command counter not yet implemented. Will be wired in a follow-up commit.'
         : null,
     },
   });

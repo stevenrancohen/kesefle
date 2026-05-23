@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="he" dir="rtl" class="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Launch Monitor — Kesefle Admin</title>
+<meta name="robots" content="noindex,nofollow" />
+<meta name="theme-color" content="#1E293B" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%82%AA%3C/text%3E%3C/svg%3E" />
+
+<style>
+  :root {
+    --bg: #F8FAFC;
+    --card: #FFFFFF;
+    --border: #E2E8F0;
+    --text: #1E293B;
+    --muted: #475569;
+    --faint: #94A3B8;
+    --accent: #3B82F6;
+    --danger: #EF4444;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --hover: #F1F5F9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F172A;
+      --card: #1E293B;
+      --border: #334155;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --faint: #64748B;
+      --hover: #334155;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px 20px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 32px; gap: 16px; flex-wrap: wrap; }
+  h1 { font-weight: 300; font-size: 28px; margin: 0; letter-spacing: -0.02em; }
+  .h-meta { font-size: 12px; color: var(--muted); }
+  .h-actions { display: flex; gap: 8px; align-items: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    border: 1px solid var(--border); color: var(--muted); background: var(--card);
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+  .pill.ok .dot { background: var(--success); }
+  .pill.warn .dot { background: var(--warning); }
+  .pill.crit .dot { background: var(--danger); }
+  button {
+    font: inherit; cursor: pointer;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; font-size: 12px; font-weight: 500;
+    transition: background 0.15s;
+  }
+  button:hover { background: var(--hover); }
+  button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  button.primary:hover { background: #2563EB; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+  }
+  .card h3 { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .card .big-num { font-size: 32px; font-weight: 500; line-height: 1.1; margin: 8px 0 4px; }
+  .card .sub { font-size: 12px; color: var(--muted); }
+  .card.alert { border-color: var(--danger); }
+  .card.warn { border-color: var(--warning); }
+
+  .progress { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .progress .fill { height: 100%; background: var(--success); transition: width 0.4s; }
+  .progress .fill.warn { background: var(--warning); }
+  .progress .fill.crit { background: var(--danger); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--border); }
+  th { font-weight: 500; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { color: var(--text); }
+  td.num { font-variant-numeric: tabular-nums; color: var(--muted); }
+  tbody tr:hover { background: var(--hover); }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .ua-list code { display: block; font-size: 11px; color: var(--muted); word-break: break-all; padding: 6px 8px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); margin: 4px 0; }
+
+  .full { grid-column: 1 / -1; }
+
+  .footer-note { margin-top: 32px; font-size: 11px; color: var(--faint); text-align: center; }
+
+  .empty { color: var(--faint); padding: 16px 0; text-align: center; font-size: 13px; }
+
+  .error-banner { background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; }
+  @media (prefers-color-scheme: dark) {
+    .error-banner { background: #450A0A; border-color: #7F1D1D; color: #FCA5A5; }
+  }
+
+  .access-denied { padding: 40px 20px; text-align: center; color: var(--muted); }
+  .access-denied h2 { font-weight: 500; font-size: 18px; color: var(--text); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>launch monitor</h1>
+      <div class="h-meta" id="last-updated">Loading…</div>
+    </div>
+    <div class="h-actions">
+      <span id="refresh-pill" class="pill"><span class="dot"></span><span id="refresh-status">Initializing</span></span>
+      <button id="refresh-btn" onclick="kfl.refresh()">Refresh now</button>
+      <button onclick="kfl.toggleAuto()" id="auto-btn" class="primary">Auto: ON</button>
+      <a href="/admin" style="text-decoration:none;"><button>← Admin</button></a>
+    </div>
+  </header>
+
+  <div id="error-banner-host"></div>
+
+  <div id="content" style="display:none">
+
+    <!-- Top-level health overview -->
+    <div class="grid">
+      <div class="card" id="card-users">
+        <h3>Total users</h3>
+        <div class="big-num" id="m-total-users">—</div>
+        <div class="sub" id="m-total-users-sub">All-time signups</div>
+      </div>
+
+      <div class="card" id="card-success-rate">
+        <h3>Provision success</h3>
+        <div class="big-num" id="m-success-rate">—</div>
+        <div class="sub">% of users with a provisioned sheet</div>
+      </div>
+
+      <div class="card" id="card-new-hour">
+        <h3>New signups (1h)</h3>
+        <div class="big-num" id="m-new-hour">—</div>
+        <div class="sub" id="m-new-hour-sub">Last 60 minutes</div>
+      </div>
+
+      <div class="card" id="card-new-day">
+        <h3>New signups (24h)</h3>
+        <div class="big-num" id="m-new-day">—</div>
+        <div class="sub" id="m-new-day-sub">Last 24 hours</div>
+      </div>
+
+      <div class="card" id="card-active-hour">
+        <h3>Active users (1h)</h3>
+        <div class="big-num" id="m-active-hour">—</div>
+        <div class="sub">Signed in within last hour</div>
+      </div>
+
+      <div class="card" id="card-phones">
+        <h3>Phones linked</h3>
+        <div class="big-num" id="m-phones">—</div>
+        <div class="sub">WhatsApp connections active</div>
+      </div>
+    </div>
+
+    <!-- Subsystem health -->
+    <div class="grid">
+      <div class="card full">
+        <h3>Subsystem health</h3>
+        <table style="margin-top:8px">
+          <thead><tr><th>System</th><th>Status</th><th>Detail</th></tr></thead>
+          <tbody id="health-tbody">
+            <tr><td>Bot (Apps Script)</td><td id="h-bot">—</td><td id="h-bot-detail" class="sub">—</td></tr>
+            <tr><td>Vercel KV (Upstash)</td><td id="h-kv">—</td><td id="h-kv-detail" class="sub">—</td></tr>
+            <tr><td>Signup funnel</td><td id="h-signup">—</td><td id="h-signup-detail" class="sub">—</td></tr>
+            <tr><td>In-app browser detection</td><td id="h-inapp">—</td><td id="h-inapp-detail" class="sub">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- KV usage -->
+    <div class="grid">
+      <div class="card full" id="card-kv">
+        <h3>KV usage today (Upstash free tier)</h3>
+        <div class="big-num" id="m-kv-pct">—</div>
+        <div class="sub" id="m-kv-detail">—</div>
+        <div class="progress"><div class="fill" id="m-kv-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- In-app browser misses -->
+    <div class="grid">
+      <div class="card full">
+        <h3>In-app browser detection misses (recent)</h3>
+        <div class="sub" style="margin-bottom:8px">If you see a User-Agent here repeatedly, the detection regex needs to be extended. <a href="https://github.com/stevenrancohen/kesefle/blob/main/account.html" style="color:var(--accent);text-decoration:none">View source</a>.</div>
+        <div class="ua-list" id="missed-uas"></div>
+      </div>
+    </div>
+
+    <!-- Raw JSON dump for diagnostics -->
+    <div class="grid">
+      <div class="card full">
+        <h3 style="display:flex;justify-content:space-between;align-items:center">
+          <span>Raw payload (diagnostic)</span>
+          <button onclick="kfl.toggleRaw()" style="font-size:11px">Show / hide</button>
+        </h3>
+        <pre id="raw-json" style="display:none;font-size:11px;color:var(--muted);background:var(--bg);padding:12px;border-radius:8px;overflow-x:auto;border:1px solid var(--border);margin-top:8px"></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="access-denied" class="access-denied" style="display:none">
+    <h2>הגישה נדחתה</h2>
+    <p>צריך להיות מחובר כאדמין (<code>stevenrancohen@gmail.com</code> או <code>info@kesefle.com</code>) ב-<a href="/account" style="color:var(--accent)">/account</a> ואז לחזור לכאן.</p>
+  </div>
+
+  <div class="footer-note">
+    Polls /api/admin/launch-monitor every 30s. Built 2026-05-23.
+  </div>
+</div>
+
+<script>
+window.kfl = (function () {
+  var pollTimer = null;
+  var autoRefresh = true;
+  var pollIntervalMs = 30000;
+  var refreshPill = document.getElementById('refresh-pill');
+  var refreshStatus = document.getElementById('refresh-status');
+  var autoBtn = document.getElementById('auto-btn');
+
+  function isLoggedIn() {
+    try { var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}'); return !!(u && u.sub); }
+    catch (e) { return false; }
+  }
+  function token() {
+    try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; }
+    catch (e) { return ''; }
+  }
+
+  function setStatus(text, kind) {
+    refreshPill.className = 'pill' + (kind ? ' ' + kind : '');
+    refreshStatus.textContent = text;
+  }
+
+  function fmtTime(ms) {
+    if (!ms) return '—';
+    try { return new Date(ms).toLocaleString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+    catch (e) { return String(ms); }
+  }
+
+  function fmtNum(n) {
+    if (n == null) return '—';
+    return Number(n).toLocaleString('he-IL');
+  }
+
+  function setHealth(elId, detailId, status, detailText) {
+    var el = document.getElementById(elId);
+    var d = document.getElementById(detailId);
+    if (!el) return;
+    var label = { ok: '🟢 OK', warn: '🟡 Warning', crit: '🔴 Critical', unknown: '⚪ Unknown' }[status] || status;
+    el.innerHTML = '<span style="font-weight:500">' + label + '</span>';
+    if (d) d.textContent = detailText || '';
+  }
+
+  async function fetchMonitor() {
+    if (!isLoggedIn()) {
+      document.getElementById('content').style.display = 'none';
+      document.getElementById('access-denied').style.display = 'block';
+      setStatus('Not signed in', 'crit');
+      return;
+    }
+    setStatus('Refreshing…');
+    try {
+      var t = token();
+      var headers = {};
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      var r = await fetch('/api/admin/launch-monitor', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) {
+        document.getElementById('content').style.display = 'none';
+        document.getElementById('access-denied').style.display = 'block';
+        setStatus('Auth failed', 'crit');
+        return;
+      }
+      var j = await r.json();
+      if (!j.ok) {
+        showError('Endpoint returned error: ' + (j.error || r.status));
+        setStatus('Error', 'crit');
+        return;
+      }
+      render(j);
+      setStatus('OK · ' + fmtTime(Date.now()), 'ok');
+      document.getElementById('access-denied').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+    } catch (e) {
+      showError('Network error: ' + (e.message || e));
+      setStatus('Network error', 'crit');
+    }
+  }
+
+  function showError(msg) {
+    var host = document.getElementById('error-banner-host');
+    host.innerHTML = '<div class="error-banner">' + String(msg).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) + '</div>';
+  }
+  function clearError() {
+    document.getElementById('error-banner-host').innerHTML = '';
+  }
+
+  function render(j) {
+    clearError();
+    document.getElementById('last-updated').textContent = 'Last update: ' + fmtTime(Date.parse(j.at));
+    document.getElementById('raw-json').textContent = JSON.stringify(j, null, 2);
+
+    // Top-level metrics
+    document.getElementById('m-total-users').textContent = fmtNum(j.totals.users);
+    document.getElementById('m-success-rate').textContent = (Number(j.totals.provisionSuccessRate) * 100).toFixed(0) + '%';
+    document.getElementById('m-new-hour').textContent = fmtNum(j.signups.new_last_hour);
+    document.getElementById('m-new-day').textContent = fmtNum(j.signups.new_last_day);
+    document.getElementById('m-active-hour').textContent = fmtNum(j.signups.active_last_hour);
+    document.getElementById('m-phones').textContent = fmtNum(j.totals.phonesLinked);
+
+    if (j.notes && j.notes.sample_warning) {
+      document.getElementById('m-total-users-sub').textContent = j.notes.sample_warning;
+    }
+
+    // KV usage card
+    var kvBar = document.getElementById('m-kv-bar');
+    var kvCard = document.getElementById('card-kv');
+    if (j.kvUsage.tracked) {
+      document.getElementById('m-kv-pct').textContent = j.kvUsage.pct_used + '%';
+      document.getElementById('m-kv-detail').textContent =
+        fmtNum(j.kvUsage.commands_today) + ' of ' + fmtNum(j.kvUsage.free_tier_daily) + ' commands today';
+      kvBar.style.width = j.kvUsage.pct_used + '%';
+      kvBar.className = 'fill' + (j.kvUsage.critical ? ' crit' : (j.kvUsage.warning ? ' warn' : ''));
+      kvCard.className = 'card full' + (j.kvUsage.critical ? ' alert' : (j.kvUsage.warning ? ' warn' : ''));
+    } else {
+      document.getElementById('m-kv-pct').textContent = '—';
+      document.getElementById('m-kv-detail').textContent = 'Counter not yet wired. Upstash console: console.upstash.com → "Usage" tab.';
+      kvBar.style.width = '0%';
+      kvCard.className = 'card full';
+    }
+
+    // Subsystem health
+    var botMinutes = j.bot.minutes_since_last_write;
+    if (botMinutes == null) {
+      setHealth('h-bot', 'h-bot-detail', 'unknown', 'No bot writes recorded yet');
+    } else if (j.bot.healthy) {
+      setHealth('h-bot', 'h-bot-detail', 'ok', 'Last write ' + botMinutes + ' min ago');
+    } else {
+      setHealth('h-bot', 'h-bot-detail', 'crit', 'Last write ' + botMinutes + ' min ago — bot might be down or unconfigured');
+    }
+
+    if (!j.kvUsage.tracked) {
+      setHealth('h-kv', 'h-kv-detail', 'unknown', 'Counter not yet wired (check upstash.com manually)');
+    } else if (j.kvUsage.critical) {
+      setHealth('h-kv', 'h-kv-detail', 'crit', 'Over 95% of free tier — upgrade NOW or writes will fail');
+    } else if (j.kvUsage.warning) {
+      setHealth('h-kv', 'h-kv-detail', 'warn', 'Past 80% of free tier — plan upgrade');
+    } else {
+      setHealth('h-kv', 'h-kv-detail', 'ok', fmtNum(j.kvUsage.commands_today) + ' / ' + fmtNum(j.kvUsage.free_tier_daily) + ' commands');
+    }
+
+    var sr = Number(j.totals.provisionSuccessRate);
+    if (j.totals.users === 0) {
+      setHealth('h-signup', 'h-signup-detail', 'unknown', 'No users yet');
+    } else if (sr >= 0.95) {
+      setHealth('h-signup', 'h-signup-detail', 'ok', (sr * 100).toFixed(0) + '% of users have a provisioned sheet');
+    } else if (sr >= 0.80) {
+      setHealth('h-signup', 'h-signup-detail', 'warn', (sr * 100).toFixed(0) + '% — investigate the ~' + Math.round((1 - sr) * j.totals.users) + ' users without a sheet');
+    } else {
+      setHealth('h-signup', 'h-signup-detail', 'crit', (sr * 100).toFixed(0) + '% — provision is failing for most users');
+    }
+
+    var missCount = j.inappBrowserMisses.total_last_50;
+    if (missCount === 0) {
+      setHealth('h-inapp', 'h-inapp-detail', 'ok', 'No detection misses recorded');
+    } else if (missCount < 5) {
+      setHealth('h-inapp', 'h-inapp-detail', 'warn', missCount + ' misses recently — investigate UAs below');
+    } else {
+      setHealth('h-inapp', 'h-inapp-detail', 'crit', missCount + ' misses recently — extend the regex urgently');
+    }
+
+    // Missed UAs list
+    var uaHost = document.getElementById('missed-uas');
+    if (!j.inappBrowserMisses.top_user_agents || !j.inappBrowserMisses.top_user_agents.length) {
+      uaHost.innerHTML = '<div class="empty">No misses recorded recently. ✓</div>';
+    } else {
+      uaHost.innerHTML = j.inappBrowserMisses.top_user_agents.map(function (m) {
+        var safeUa = String(m.ua).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; });
+        return '<code>×' + m.count + '  ' + safeUa + '</code>';
+      }).join('');
+    }
+  }
+
+  function refresh() { fetchMonitor(); }
+  function toggleAuto() {
+    autoRefresh = !autoRefresh;
+    autoBtn.textContent = 'Auto: ' + (autoRefresh ? 'ON' : 'OFF');
+    autoBtn.className = autoRefresh ? 'primary' : '';
+    if (autoRefresh) startPolling(); else stopPolling();
+  }
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(fetchMonitor, pollIntervalMs);
+  }
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+  function toggleRaw() {
+    var el = document.getElementById('raw-json');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // Pause polling when tab is hidden (saves KV commands).
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') stopPolling();
+    else if (autoRefresh) { fetchMonitor(); startPolling(); }
+  });
+
+  // Initial load
+  if (document.readyState !== 'loading') { fetchMonitor(); startPolling(); }
+  else document.addEventListener('DOMContentLoaded', function () { fetchMonitor(); startPolling(); });
+
+  return { refresh: refresh, toggleAuto: toggleAuto, toggleRaw: toggleRaw };
+})();
+</script>
+
+</body>
+</html>
