@@ -681,6 +681,36 @@ function _kflStopPolling() {
   if (kflLinkPollTimer) { clearInterval(kflLinkPollTimer); kflLinkPollTimer = null; }
 }
 
+// Pause the link poll when the tab is hidden, resume when shown. Also stop
+// for good on page unload. Without this, _kflStartPolling kept hitting the
+// server every 4s for the lifetime of the page even after the user closed
+// the code card or navigated away.
+(function _kflWirePollLifecycle() {
+  var savedPhone = null;
+  // Wrap _kflStartPolling so we remember the phone for resume.
+  var __origStart = window._kflStartPolling;
+  if (typeof __origStart === 'function') {
+    window._kflStartPolling = function (phone) {
+      savedPhone = phone;
+      return __origStart.apply(this, arguments);
+    };
+  }
+  try {
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') {
+        if (kflLinkPollTimer) { _kflStopPolling(); }
+      } else if (document.visibilityState === 'visible' && savedPhone && !kflLinkPollTimer) {
+        // Only resume if the user is still in the "waiting for confirm" state.
+        var st = document.getElementById('link-code-card');
+        if (st && !st.classList.contains('hidden')) {
+          try { (window._kflStartPolling || __origStart)(savedPhone); } catch (e) {}
+        }
+      }
+    });
+    window.addEventListener('beforeunload', function () { _kflStopPolling(); });
+  } catch (e) { /* old browser — best-effort */ }
+})();
+
 function _kflShowLinkSuccess(phone) {
   var el = document.getElementById('link-confirmed-phone');
   if (el) el.textContent = '+' + phone;

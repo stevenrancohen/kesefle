@@ -1670,7 +1670,14 @@ function generatePseudoSeries(target, n, intLike) {
         var pct = Math.round(ratio * 100);
         var arrow = ratio >= 0 ? '▲' : '▼';
         var color = ratio >= 0 ? 'text-red-600 dark:text-red-400' : 'text-brand-600 dark:text-brand-400';
-        deltaEl.innerHTML = '<span class="' + color + '">' + arrow + ' ' + Math.abs(pct) + '%</span>';
+        // Build with createElement + textContent instead of innerHTML so a
+        // future change to `pct` source can never become an XSS hole. All
+        // inputs are Number/constant today, but consistency > cleverness.
+        deltaEl.textContent = '';
+        var __dSpan = document.createElement('span');
+        __dSpan.className = color;
+        __dSpan.textContent = arrow + ' ' + Math.abs(pct) + '%';
+        deltaEl.appendChild(__dSpan);
         detailEl.textContent = money(s.prevMonth) + ' בחודש שעבר';
       }
     }

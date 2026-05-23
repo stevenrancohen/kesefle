@@ -184,17 +184,34 @@ async function handlerImpl(req, res) {
   };
 
   if (kvUrl && kvToken) {
-    // CRITICAL mapping. If this fails after a retry, do NOT report success —
+    // CRITICAL mapping. If this fails after a retry, do NOT report success --
     // the user must be able to retry rather than be left with an orphaned sheet.
     const sheetSaved = await kvSetChecked('sheet:' + userSub, record);
     if (!sheetSaved) {
       log.error('provision.sheet_mapping_save_failed', { reqId: req.reqId, userSub, spreadsheetId });
+      // Best-effort: delete the orphan sheet from the user's Drive so the
+      // retry doesn't leave a trail of duplicates. We just created it under
+      // drive.file, so we have permission. Fire-and-forget -- if delete
+      // fails, the user can manually delete from Drive. We STILL return the
+      // error so the user can retry the provision.
+      try {
+        await fetch(
+          `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(spreadsheetId)}`,
+          { method: 'DELETE', headers: { 'Authorization': `Bearer ${accessToken}` } }
+        ).then(function (delRes) {
+          if (delRes.ok || delRes.status === 204) {
+            log.info('provision.orphan_sheet_cleaned', { reqId: req.reqId, userSub, spreadsheetId });
+          } else {
+            log.warn('provision.orphan_sheet_delete_failed', { reqId: req.reqId, userSub, spreadsheetId, status: delRes.status });
+          }
+        }).catch(function (e) {
+          log.warn('provision.orphan_sheet_delete_threw', { reqId: req.reqId, userSub, spreadsheetId, error: e.message });
+        });
+      } catch (_e) { /* never block the response on cleanup */ }
       return res.status(502).json({
         ok: false,
         error: 'sheet_registration_failed',
-        detail: 'הגיליון נוצר אך ההרשמה לא הושלמה. נסו שוב בעוד רגע.',
-        spreadsheetId,
-        spreadsheetUrl,
+        detail: 'הרישום לא הושלם. נסה/י שוב בעוד רגע — לא נוצר עותק כפול.',
       });
     }
 
