@@ -216,3 +216,45 @@ fail-closed scaffolding). See `docs/AUDIT_2026-05-21.md`.
 1. **Redeploy the bot**: paste `bot/ExpenseBot_DEPLOY.gs` into Apps Script → Save → Deploy → New Version → message `בדיקה`. You should see `גרסה: 2026-05-23-template-aligned`.
 2. New signups will get the **4-tab dashboard** automatically (no manual setup needed).
 3. The dashboard rows are user-customizable — rename any row in column A and the SUMIFS auto-rebinds because formulas use `$A{row}` references.
+
+---
+
+## 2026-05-23 (PM continuation) — Audit cleanup batch (commits a126143 → 743f7b8)
+
+Six commits shipped after the 3-agent audit (signin / website / dashboard-color), addressing all CRITICAL + HIGH + MEDIUM findings.
+
+### Ship-blockers fixed
+- **Phone TOCTOU race** at link confirm: atomic `kvSetNX` via Upstash `SET ... NX=true` so two confirm calls for the same E.164 can never both succeed.
+- **Silent KV save failure** in google-exchange.js now returns 502 (was 200 with cookie despite losing the refresh token).
+- **KV write verification** in provision.js: reads back + compares `spreadsheetId` instead of trusting HTTP 200.
+- **Access token persistence to localStorage** removed (XSS exfil risk); access token now lives only in window memory for the provisioning window.
+- **Orphan sheet cleanup**: if KV save fails after sheet creation, the just-created sheet is deleted from the user's Drive (drive.file scope covers it). User retries get a clean state, no duplicate sheets accumulating.
+- **Anonymous directory enumeration** via `/api/whatsapp/link?phone=`: anonymous callers now get only `{ ok, linked }`. Bot callers presenting `x-kesefle-bot-secret` header get the full record (userSub + sheetId + plan). Constant-time secret compare.
+
+### Quality / polish
+- Hebrew tone fixes: "נצור קשר" → "צרו קשר", "זמנית לא זמין" → "אינו זמין כרגע", "נסי" → "נסה/י" (consistency).
+- `/api/auth/logout`: POST-only, rate-limited, clears HttpOnly session cookie. `kesefleLogout()` now hits it before clearing localStorage.
+- Dashboard `<h1>` (was missing entirely — screen readers + SEO).
+- Dark-mode `class="dark"` added to `account.html`, `welcome.html`, `dashboard.html`, `pricing.html`, `demo.html` (5 pages were rendering light despite homepage's "dark only" design, causing flash on cross-page nav).
+- Unbiased `gen6DigitCode` via rejection sampling (was `100000 + (n % 900000)` — biased because 2^32 ≢ 0 mod 900000).
+- `escapeHtml` strips single-quote `'` in addition to `<>&"` for future-proofing.
+- PKCE verifier namespaced by `state` (`kfl_pkce_verifier_<state>`) so two parallel sign-ins in two tabs don't poison each other.
+- Link-code poll now pauses on `visibilitychange` + cleans up on `beforeunload` (was hitting the server every 4s for the page lifetime).
+- Dashboard delta render uses `createElement + textContent` instead of `innerHTML` (defense-in-depth).
+
+### Homepage UX
+- "מה זה כספ'לה?" section promoted to **position #2** (right after hero); was buried above the footer.
+- Referral banner ("חבר מביא חבר") removed from homepage; added to `/pricing`, `/family`, `/business`, `/group`, `/dashboard`, `/welcome` (still hidden by default, only renders for logged-in visitors).
+
+### Bot
+- `KFL_BUILD_VERSION = 2026-05-23-bot-secret-on-lookup`. **Steven needs to redeploy** to: (a) activate the privacy fix on tenant lookups, (b) match the new 8-col template format for any new appendRow calls.
+- 3 bot call sites updated to send `x-kesefle-bot-secret` header on `/api/whatsapp/link?phone=` GET.
+
+### Deploy verification (post-push)
+- 6 test suites green: classify 68, parser 23, isolation 18, golden 155 (100%), recurring 17, full_qa 66 = **347 checks**.
+- `node --check` clean on 6 changed API files.
+- Inline JS validated across 10 HTML pages (60 inline blocks).
+- No secrets in any of the 6 commit diffs.
+
+### Action for Steven
+1. **Redeploy the bot**: Apps Script → paste `bot/ExpenseBot_DEPLOY.gs` → Save → Deploy → New Version → message `בדיקה` → should reply `גרסה: 2026-05-23-bot-secret-on-lookup`.
