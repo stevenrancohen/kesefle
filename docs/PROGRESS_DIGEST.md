@@ -258,3 +258,78 @@ Six commits shipped after the 3-agent audit (signin / website / dashboard-color)
 
 ### Action for Steven
 1. **Redeploy the bot**: Apps Script → paste `bot/ExpenseBot_DEPLOY.gs` → Save → Deploy → New Version → message `בדיקה` → should reply `גרסה: 2026-05-23-bot-secret-on-lookup`.
+
+---
+
+## 2026-05-24 — Launch sprint (25 commits, 4d97f02..af2eee4)
+
+Full autonomous sprint while Steven handled the WABA application + observability decisions. From "0% of WhatsApp Business users can sign up" to a paid-launch-ready stack with real-time monitoring, recovery flows, and a runbook.
+
+### CRITICAL P0 unblock (commit `4a9127b`)
+The screenshot Steven sent confirmed the launch blocker: every WA Business user clicking "Continue with Google" got a blank `accounts.google.com` page. Root cause: `index.html`'s `kesefleStartGoogle/Facebook/Apple` ran SDK calls unconditionally; only `account.html` checked for in-app browsers, and even there the regex missed `WhatsAppBusiness` (no space) and `WhatsApp Business` (with space). Fixed across 4 files with 9 UA test cases proving coverage. All `/api/*` fetches now include `credentials: 'include'` so the HttpOnly session cookie survives Safari iOS strict cookie policy. SW bumped v11→v12 to force cache refresh.
+
+### Admin restore (commit `4d97f02`)
+The XSS-hardening earlier (removing access token from localStorage) silently locked Steven out of `/admin`. `requireAuth` now accepts the `kefle_session` HttpOnly cookie (looks up email from KV user record), and `ADMIN_EMAILS` defaults to `stevenrancohen@gmail.com,info@kesefle.com` so the panel works without Vercel env-var setup. All admin endpoints rewired to send `credentials: 'include'`.
+
+### Operability (commits `b558ddc`, `d811267`, `4b1283d`, `da1a9d2`, `2577a41`, `d56d55f`, `476fdd8`, `af2eee4`, `70c2e37`)
+Built a full **`/admin/launch-monitor`** dashboard (slate palette per spec, auto-refresh 30s, visibilitychange pause to save KV) with cards for:
+- Top metrics: total users, provision success rate, new signups 1h/24h
+- Subsystem health (bot, KV, signup funnel, in-app detection) with semantic dots
+- KV usage (honest "not yet tracked" vs % used)
+- Today's conversion funnel (7 steps) with per-step drop-off %
+- Recent signups (last 6h, top 20) with per-row "Resend WA" button
+- User-submitted problem reports (from floating "דווח/י על בעיה" button on /account)
+- In-app browser detection misses
+- Bot version drift (auto-detects when bot is running older build than repo)
+- Bot number config drift (Vercel env vs hardcoded HTML)
+- Standalone "Resend welcome WhatsApp" action
+
+Backing endpoints: `/api/admin/launch-monitor`, `/api/admin/funnel-summary`, `/api/admin/recent-signups`, `/api/admin/user-reports`, `/api/admin/bot-version`, `/api/admin/config-drift`, `/api/admin/resend-welcome`. Plus public-ish: `/api/log/missed-inapp`, `/api/log/funnel-event`, `/api/log/user-report`, `/api/log/bot-heartbeat`, `/api/config`.
+
+### Recovery UX (commits `da1a9d2`, `7192aca`, `e166b6c`)
+For paid traffic where every drop-off costs €2-5:
+- **Auto-retry provision** on failure with exp backoff (0.5s, 1.5s, 3.5s)
+- **Partial-state resume** — track step 1/2/3 in localStorage so a tab-close + return goes to the right point
+- **Empty-state auto-refresh** on /dashboard (15s while empty-state visible) — first WA message appears without manual reload
+- **Critical CSS fallback** (~1.5KB inline) on /account so 3G Israel mobile sees a usable page in t+0 instead of waiting 3s for Tailwind CDN
+- **Floating "דווח/י על בעיה" button** with one-textarea modal that captures URL + UA + last 5 console errors + sanitized localStorage hints, surfaced in admin
+
+### KV cost cuts (commit `a85c954`)
+Steven declined the paid Upstash tier ($10/mo) → we had to cut commands per signup ~60% to survive the 10k/day ceiling:
+- Adaptive link-polling: 6s fast for 30s, then 15s, 3min cap
+- Skip KV rate-limit on GET status check
+- Drop verify-on-write for non-critical KV mirrors
+Net: signup dropped from ~250 commands to ~25. Still binding at >200 active users/day; KV watchdog warns at 80%.
+
+### Security hardening (commits `50dc003`, `37e380f`, `277d618`, `743f7b8`)
+- Unbiased `gen6DigitCode` via rejection sampling
+- `escapeHtml` strips `'` defense-in-depth
+- PKCE verifier namespaced by state (per-tab isolation)
+- Privacy: anonymous `/api/whatsapp/link?phone=` returns only `{linked}`; bot-secret callers get the rich record
+- Orphan-sheet cleanup on KV-fail
+- Poll lifecycle (visibilitychange pause + beforeunload cleanup)
+- Dashboard delta render switched from `innerHTML` to `createElement+textContent`
+- **constantTimeEqual off-by-one fixed** (self-caught by pr-review skill; 8 regression guards added) — buggy version would have falsely matched secrets differing at position 0
+
+### Documentation (commits `5aa40fc`, `dc183ea`, `8e23994`, `d811267`, `476fdd8`)
+- `docs/WABA_SETUP_STEP_BY_STEP.md` — 3 options for getting a real WABA number, step-by-step
+- `docs/OBSERVABILITY_SETUP_STEP_BY_STEP.md` — PostHog/AppSignal/Leiga keys requested
+- `docs/LAUNCH_24H_BATTLE_PLAN.md` — 24h plan with 8-blocker ranking
+- `docs/LAUNCH_DAY_RUNBOOK.md` — 10 failure-mode scenarios with 1-min responses
+- `docs/BOT_SECRET_ROTATION.md` — 5-min zero-downtime rotation procedure
+- `scripts/swap-bot-number.sh` — one-command WABA-number cutover
+- `scripts/preflight-test.mjs` — 10-check pre-launch smoke test (run before posting the link)
+
+### Bot
+- Version `2026-05-23-bot-secret-on-lookup` (announces itself via `x-kesefle-bot-version` header on every `/api/whatsapp/link` call)
+- New `cronBotHeartbeat` Apps Script trigger (hourly POST to `/api/log/bot-heartbeat`)
+- DEPLOY.gs reassembled multiple times; all 6 test suites green throughout (361 checks at session end)
+
+### Action items for Steven (in priority order)
+1. **Real-device test** the WA Business signup on his phone (5 min) — confirm blank-screen is fixed.
+2. **WABA application** via 360dialog (recommended) — see `docs/WABA_SETUP_STEP_BY_STEP.md`. 30 min of his work + 24-48h Meta wait.
+3. **Redeploy the bot** in Apps Script (paste `bot/ExpenseBot_DEPLOY.gs`) → activates heartbeat + version drift detection.
+4. **(Optional) PostHog key** — paste it and we wire real analytics in 10 min.
+5. **Run `node scripts/preflight-test.mjs https://kesefle.com`** before posting the launch link.
+
+Realistic 24h verdict: launch is technically possible on the Meta test number with 5 allow-listed users for QA; full 1,000-user launch is gated on WABA approval (1-3 days).
