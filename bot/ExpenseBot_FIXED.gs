@@ -2852,6 +2852,39 @@ function installKeepWarmTrigger() {
   Logger.log('✅ cronKeepWarm installed: every 5 min');
 }
 
+// Daily heartbeat — POSTs the bot's KFL_BUILD_VERSION + timestamp to Vercel
+// even when no WhatsApp messages have arrived. Without this, a silent Apps
+// Script outage (revoked permissions, trigger broken, project disabled) is
+// invisible -- the admin would only notice "no new bot writes" after hours.
+// Runs once an hour to keep bot_version_latest fresh in KV.
+function cronBotHeartbeat() {
+  try {
+    var url = KESEFLE_API_BASE + '/api/log/bot-heartbeat';
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
+    var headers = { 'Content-Type': 'application/json' };
+    if (botSecret) headers['x-kesefle-bot-secret'] = botSecret;
+    UrlFetchApp.fetch(url, {
+      method: 'post',
+      headers: headers,
+      payload: JSON.stringify({
+        version: KFL_BUILD_VERSION,
+        at: Date.now(),
+        source: 'cron'
+      }),
+      muteHttpExceptions: true,
+    });
+  } catch (e) { Logger.log('cronBotHeartbeat err: ' + (e && e.message)); }
+}
+
+function installBotHeartbeatTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronBotHeartbeat') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronBotHeartbeat').timeBased().everyHours(1).create();
+  Logger.log('✅ cronBotHeartbeat installed: every 1 hour');
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Re-engagement engine — daily 18:00 ping of users gone quiet
 //
