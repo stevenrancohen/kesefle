@@ -210,6 +210,19 @@
       </div>
     </div>
 
+    <!-- Resend welcome WhatsApp action -->
+    <div class="grid">
+      <div class="card full">
+        <h3>Resend WhatsApp welcome message</h3>
+        <div class="sub" style="margin-bottom:12px">If a user signed up but never received the welcome message (Meta flake, cleared chat, etc.), paste their phone in E.164 format and resend.</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input id="resend-phone" type="tel" placeholder="972547760643" style="font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);min-width:200px" />
+          <button class="primary" onclick="kfl.resendWelcome()">Send welcome</button>
+          <span id="resend-status" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Raw JSON dump for diagnostics -->
     <div class="grid">
       <div class="card full">
@@ -434,7 +447,36 @@ window.kfl = (function () {
   if (document.readyState !== 'loading') { fetchMonitor(); startPolling(); }
   else document.addEventListener('DOMContentLoaded', function () { fetchMonitor(); startPolling(); });
 
-  return { refresh: refresh, toggleAuto: toggleAuto, toggleRaw: toggleRaw };
+  async function resendWelcome() {
+    var input = document.getElementById('resend-phone');
+    var status = document.getElementById('resend-status');
+    var phone = (input.value || '').trim();
+    if (!phone) { status.textContent = '✗ Enter a phone number first.'; status.style.color = 'var(--danger)'; return; }
+    status.textContent = 'Sending…'; status.style.color = 'var(--muted)';
+    try {
+      var t = token();
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      var r = await fetch('/api/admin/resend-welcome', {
+        method: 'POST', credentials: 'include', headers: headers,
+        body: JSON.stringify({ phone: phone })
+      });
+      var j = await r.json();
+      if (j.ok) {
+        status.textContent = '✓ Sent to +' + j.sentTo + (j.userEmail ? ' (' + j.userEmail + ')' : '');
+        status.style.color = 'var(--success)';
+        input.value = '';
+      } else {
+        status.textContent = '✗ ' + (j.error || r.status) + (j.detail ? ': ' + j.detail.slice(0, 80) : '');
+        status.style.color = 'var(--danger)';
+      }
+    } catch (e) {
+      status.textContent = '✗ Network error: ' + (e.message || e);
+      status.style.color = 'var(--danger)';
+    }
+  }
+
+  return { refresh: refresh, toggleAuto: toggleAuto, toggleRaw: toggleRaw, resendWelcome: resendWelcome };
 })();
 </script>
 

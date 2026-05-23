@@ -395,6 +395,36 @@ function kesefleGetUser() {
 function kesefleSetUser(u) {
   localStorage.setItem('kesefle_user', JSON.stringify(u));
 }
+
+// ── Partial-state resume ────────────────────────────────────────────────────
+// Paid-traffic launch UX: a user who closes the tab mid-signup (e.g. their
+// phone rang, they switched apps) should be able to come back and resume
+// from the last completed step instead of starting over. We track which
+// step the user reached in localStorage so init() can route appropriately.
+//
+// Steps:
+//   1 = OAuth complete (kesefle_user set)
+//   2 = sheet provisioned (kesefle_sheet set)
+//   3 = WhatsApp linked (kesefle_whatsapp_linked = '1')
+//
+// kesefle_signup_progress holds { step, at, hint } so we can show a friendly
+// "we left off here" banner on return.
+function _kflSetProgress(step, hint) {
+  try {
+    localStorage.setItem('kesefle_signup_progress', JSON.stringify({
+      step: step,
+      at: Date.now(),
+      hint: hint || ''
+    }));
+  } catch (e) {}
+}
+function _kflGetProgress() {
+  try { return JSON.parse(localStorage.getItem('kesefle_signup_progress') || 'null'); }
+  catch (e) { return null; }
+}
+function _kflClearProgress() {
+  try { localStorage.removeItem('kesefle_signup_progress'); } catch (e) {}
+}
 function kesefleLogout() {
   // Best-effort server-side clear of the HttpOnly session cookie, then
   // local cleanup, then redirect. Fire-and-forget the POST -- the
@@ -718,6 +748,8 @@ function _kflShowLinkSuccess(phone) {
   _kflSetLinkState('success');
   localStorage.setItem('kesefle_whatsapp_linked', '1');
   localStorage.setItem('kesefle_whatsapp_phone', phone);
+  if (typeof _kflSetProgress === 'function') _kflSetProgress(3, 'whatsapp_linked');
+  if (typeof _kflClearProgress === 'function') _kflClearProgress(); // signup complete -- no more resume needed
   kesefleUpdateOnboardingProgress();
   // Confetti for the win
   try { kesefleCelebrate && kesefleCelebrate(); } catch (e) {}
@@ -1039,22 +1071,32 @@ async function kesefleHandleOAuthReturn(code, state) {
       sessionStorage.removeItem('kfl_oauth_state');
     } catch (e) {}
 
-    // Provision the user's sheet now, with the fresh access token.
-    // CRITICAL: do NOT silently swallow provision failures. If the user signs
-    // in but the sheet is not created, the dashboard will be empty + the bot
-    // cannot write -- worse than a fast retry. On failure, surface the error
-    // with a retry CTA instead of dropping the user on a half-broken state.
+    // Provision the user's sheet -- with auto-retry on transient failure.
+    // Paid-traffic launch context: every drop-off costs ~€2-5 in ad spend.
+    // We retry up to 3 times with exponential backoff (0.5s, 1.5s, 3.5s)
+    // before surfacing the manual retry card. Rate-limit (429) is NOT
+    // retried (we'd just hit it again); other errors are.
     var sheetId = null, sheetUrl = null, provisionError = null;
     if (j.accessToken) {
-      try {
-        var pr = await fetch('/api/sheet/provision', {
-          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken: j.accessToken })
-        });
-        var pj = await pr.json().catch(function () { return {}; });
-        if (pj && pj.ok) { sheetId = pj.spreadsheetId; sheetUrl = pj.spreadsheetUrl; }
-        else { provisionError = (pj && (pj.detail || pj.error)) || ('HTTP ' + pr.status); }
-      } catch (e) { provisionError = e.message || String(e); }
+      var attempts = 0;
+      var delays = [0, 500, 1500, 3500]; // first attempt immediate
+      while (attempts < delays.length) {
+        if (delays[attempts] > 0) await new Promise(function (rs) { setTimeout(rs, delays[attempts]); });
+        attempts++;
+        try {
+          var pr = await fetch('/api/sheet/provision', {
+            method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken: j.accessToken })
+          });
+          var pj = await pr.json().catch(function () { return {}; });
+          if (pj && pj.ok) { sheetId = pj.spreadsheetId; sheetUrl = pj.spreadsheetUrl; provisionError = null; break; }
+          provisionError = (pj && (pj.detail || pj.error)) || ('HTTP ' + pr.status);
+          // Stop retrying on auth or rate-limit errors -- retrying won't help.
+          if (pr.status === 401 || pr.status === 403 || pr.status === 429) break;
+          // Stop on definitive failures from our own server.
+          if (pj && /no_access_token|invalid_access_token|missing_drive_file_scope/i.test(pj.error || '')) break;
+        } catch (e) { provisionError = e.message || String(e); }
+      }
     } else {
       provisionError = 'no_access_token';
     }
@@ -1070,11 +1112,16 @@ async function kesefleHandleOAuthReturn(code, state) {
       name: user.name || (user.email ? user.email.split('@')[0] : 'משתמש'),
       picture: user.picture || '', plan: 'free',
     });
-    if (sheetId) { try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: sheetId, spreadsheetUrl: sheetUrl })); } catch (e) {} }
+    _kflSetProgress(1, 'oauth_complete'); // step 1 reached: user is signed in
+    if (sheetId) {
+      try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: sheetId, spreadsheetUrl: sheetUrl })); } catch (e) {}
+      _kflSetProgress(2, 'sheet_provisioned'); // step 2 reached: sheet exists
+    }
 
     if (provisionError) {
       // Stay on /account, show a card with a retry button instead of
-      // reloading into a broken dashboard.
+      // reloading into a broken dashboard. Progress is at step 1 so
+      // a tab-close + return goes straight to the retry card.
       kesefleShowProvisionError(provisionError);
       return;
     }
