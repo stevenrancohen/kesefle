@@ -134,15 +134,28 @@ function normalizeE164(input) {
   return s;
 }
 
-// Cryptographically-safe 6-digit code (100000-999999).
+// Cryptographically-safe, UNBIASED 6-digit code (100000-999999).
+// The old `100000 + (buf[0] % 900000)` form is biased because 2^32 is not
+// divisible by 900000 -- the lowest 232 of 900000 buckets each got one extra
+// candidate value, so an attacker brute-forcing codes could narrow the search
+// space slightly. Rejection sampling: draw, accept if in the unbiased window
+// (< floor(2^32 / 900000) * 900000), otherwise redraw. Expected redraws < 1.0.
 function gen6DigitCode() {
+  const LIMIT = 900000;
+  const MAX = 0xFFFFFFFF;
+  const BIASED_TOP = Math.floor((MAX + 1) / LIMIT) * LIMIT;
   const buf = new Uint32Array(1);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(buf);
-  } else {
-    buf[0] = Math.floor(Math.random() * 0xFFFFFFFF);
+  let n;
+  for (let tries = 0; tries < 8; tries++) {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(buf);
+    } else {
+      buf[0] = Math.floor(Math.random() * MAX);
+    }
+    n = buf[0];
+    if (n < BIASED_TOP) break;
   }
-  return String(100000 + (buf[0] % 900000));
+  return String(100000 + (n % LIMIT));
 }
 
 async function handlerImpl(req, res) {

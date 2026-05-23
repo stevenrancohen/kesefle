@@ -503,7 +503,10 @@ window.addEventListener('appinstalled', function() {
     var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}');
     var first = String(u.name || u.given_name || '').trim().split(/\s+/)[0];
     if (!first) return;
-    var safe = first.replace(/[<>&"]/g, '');
+    // Strip <,>,&,",' so the name is safe in both attribute and innerHTML
+    // contexts. Single-quote escape added to harden against future markup
+    // changes that might switch the surrounding quote style.
+    var safe = first.replace(/[<>&"']/g, '');
     var h1 = document.querySelector('main h1');
     if (h1) h1.innerHTML = 'ברוך הבא, <span class="holo-text">' + safe + '</span>! 👋';
   } catch (e) {}

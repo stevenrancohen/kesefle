@@ -768,7 +768,9 @@ function kesefleShowInvitedChip(ref) {
   banner.classList.remove('hidden');
   chip.classList.remove('hidden');
   if (ref.name) {
-    var safe = ref.name.replace(/[<>&"]/g, '').slice(0, 32);
+    // Strip <,>,&,",' to keep the name safe for both attribute and innerHTML
+    // contexts even if surrounding markup later switches between them.
+    var safe = ref.name.replace(/[<>&"']/g, '').slice(0, 32);
     document.getElementById('ref-inviter-name').textContent = safe;
   }
 }
@@ -922,6 +924,11 @@ async function kesefleStartRedirectSignin() {
   try {
     var pk = await _kflPkce();
     var state = _kflB64Url(crypto.getRandomValues(new Uint8Array(16)));
+    // Namespace the verifier by state so two parallel sign-ins in two tabs
+    // don't collide (each tab gets its own state -> its own verifier slot).
+    // The single-key fallback is kept for the legacy in-flight redirect on
+    // OLDER clients that completed the redirect before this code shipped.
+    sessionStorage.setItem('kfl_pkce_verifier_' + state, pk.verifier);
     sessionStorage.setItem('kfl_pkce_verifier', pk.verifier);
     sessionStorage.setItem('kfl_oauth_state', state);
     var redirectUri = window.location.origin + '/account';
@@ -948,7 +955,14 @@ async function kesefleStartRedirectSignin() {
 // cookie), then provisions the user's sheet with the fresh access token.
 async function kesefleHandleOAuthReturn(code, state) {
   var savedState = null, verifier = null;
-  try { savedState = sessionStorage.getItem('kfl_oauth_state'); verifier = sessionStorage.getItem('kfl_pkce_verifier'); } catch (e) {}
+  try {
+    // Prefer the state-namespaced verifier (per-tab) so two parallel sign-ins
+    // don't poison each other. Fall back to the legacy single-key slot for
+    // in-flight redirects from an older client build.
+    verifier = sessionStorage.getItem('kfl_pkce_verifier_' + state)
+            || sessionStorage.getItem('kfl_pkce_verifier');
+    savedState = sessionStorage.getItem('kfl_oauth_state');
+  } catch (e) {}
   var cleanUrl = window.location.origin + '/account';
   // Strip the single-use code from the URL immediately (refresh-safe).
   try { window.history.replaceState({}, document.title, cleanUrl); } catch (e) {}
@@ -964,7 +978,11 @@ async function kesefleHandleOAuthReturn(code, state) {
     });
     var j = await r.json();
     if (!r.ok || !j.ok) throw new Error((j && (j.detail || j.error)) || ('HTTP ' + r.status));
-    try { sessionStorage.removeItem('kfl_pkce_verifier'); sessionStorage.removeItem('kfl_oauth_state'); } catch (e) {}
+    try {
+      sessionStorage.removeItem('kfl_pkce_verifier_' + state);
+      sessionStorage.removeItem('kfl_pkce_verifier');
+      sessionStorage.removeItem('kfl_oauth_state');
+    } catch (e) {}
 
     // Provision the user's sheet now, with the fresh access token.
     // CRITICAL: do NOT silently swallow provision failures. If the user signs
