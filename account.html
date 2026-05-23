@@ -373,10 +373,10 @@
   </section>
 
   <!-- linked sheet card -->
-  <section id="linked-sheet" class="mt-6 hidden rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
-    <div class="flex items-center gap-4">
-      <div class="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-white shadow-sm">📊</div>
-      <div class="flex-1 min-w-0">
+  <section id="linked-sheet" class="mt-6 hidden rounded-3xl border border-emerald-200 bg-emerald-50 p-4 sm:p-6">
+    <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+      <div class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-white shadow-sm">📊</div>
+      <div class="min-w-0 flex-1">
         <div class="font-bold">הגיליון שלך מוכן</div>
         <div class="text-sm text-slate-600">כל הוצאה שתשלח לבוט תופיע כאן.</div>
       </div>
@@ -770,6 +770,7 @@ function _kflShowLinkSuccess(phone) {
   localStorage.setItem('kesefle_whatsapp_phone', phone);
   if (typeof _kflSetProgress === 'function') _kflSetProgress(3, 'whatsapp_linked');
   if (typeof _kflClearProgress === 'function') _kflClearProgress(); // signup complete -- no more resume needed
+  try { if (typeof _kflFunnel === 'function') _kflFunnel('phone_link_done'); } catch (e) {}
   kesefleUpdateOnboardingProgress();
   // Confetti for the win
   try { kesefleCelebrate && kesefleCelebrate(); } catch (e) {}
@@ -935,6 +936,22 @@ function kesefleIsInAppBrowser() {
   } catch (e) { return false; }
 }
 
+// Tiny funnel-event tracker. Single event name + optional anonymous meta.
+// Used in lieu of PostHog/GA -- aggregates summed by /api/admin/funnel-summary.
+function _kflFunnel(event, meta) {
+  try {
+    var body = JSON.stringify({ event: event, meta: meta || {} });
+    if (navigator.sendBeacon) {
+      var blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon('/api/log/funnel-event', blob);
+    } else {
+      fetch('/api/log/funnel-event', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body
+      }).catch(function () {});
+    }
+  } catch (_e) {}
+}
+
 // Telemetry beacon: when in-app detection misses (we get back from a Google
 // redirect with no `code` param and no `error`, suggesting Google rendered
 // blank for the in-app browser), POST the UA so we can extend the regex.
@@ -965,6 +982,7 @@ function kesefleCopyAccountLink(btn) {
 }
 
 function kesefleShowInAppBrowserHelp() {
+  try { _kflFunnel('inapp_browser_detected'); } catch (e) {}
   var isDark = document.documentElement.classList.contains('dark');
   var bg = isDark ? '#1e2638' : '#ffffff';
   var border = isDark ? '#2f3b54' : '#dde1ec';
@@ -1018,6 +1036,7 @@ async function _kflPkce() {
 }
 
 async function kesefleStartRedirectSignin() {
+  try { _kflFunnel('google_clicked', { browser: kesefleIsInAppBrowser() ? 'inapp' : 'standard' }); } catch (e) {}
   var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
   if (!cid || cid.indexOf('__') === 0) { alert('Google Client ID לא מוגדר.'); return; }
   var btn = document.getElementById('account-signin-btn');
@@ -1133,12 +1152,15 @@ async function kesefleHandleOAuthReturn(code, state) {
       picture: user.picture || '', plan: 'free',
     });
     _kflSetProgress(1, 'oauth_complete'); // step 1 reached: user is signed in
+    try { _kflFunnel('oauth_completed'); } catch (e) {}
     if (sheetId) {
       try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: sheetId, spreadsheetUrl: sheetUrl })); } catch (e) {}
       _kflSetProgress(2, 'sheet_provisioned'); // step 2 reached: sheet exists
+      try { _kflFunnel('sheet_provisioned'); } catch (e) {}
     }
 
     if (provisionError) {
+      try { _kflFunnel('sheet_provision_failed', { error_kind: String(provisionError).slice(0, 40) }); } catch (e) {}
       // Stay on /account, show a card with a retry button instead of
       // reloading into a broken dashboard. Progress is at step 1 so
       // a tab-close + return goes straight to the retry card.
@@ -1261,11 +1283,17 @@ function kesefleShowSigninPrompt() {
 }
 
 (function init() {
-  // Returning from the Google redirect? Finish the exchange + provisioning.
+  // Fire the funnel landing event ONCE per pageview (not on OAuth-return,
+  // which is the same page reloaded). Detect OAuth-return by ?code= param.
   var _q = new URLSearchParams(window.location.search);
+  if (!_q.get('code') && !_q.get('error')) {
+    try { _kflFunnel('signup_page_loaded', { page: 'account', source: _q.get('from') || 'direct' }); } catch (e) {}
+  }
+  // Returning from the Google redirect? Finish the exchange + provisioning.
   if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
   if (_q.get('error')) {
     var errCode = _q.get('error');
+    try { _kflFunnel('oauth_failed', { error_kind: errCode }); } catch (e) {}
     try { window.history.replaceState({}, document.title, window.location.origin + '/account'); } catch (e) {}
     // Render a real recovery card with the specific reason (access_denied,
     // server_error, etc.) instead of dumping the user on a generic prompt.

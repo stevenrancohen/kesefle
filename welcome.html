@@ -68,28 +68,28 @@
 
 <!-- nav -->
 <header class="border-b border-ink-200 bg-white dark:border-ink-700 dark:bg-ink-900">
-  <nav class="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
-    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
-      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">₪</span>
-      <span>כספ'לה</span>
+  <nav class="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3.5 sm:px-5">
+    <a href="/" class="flex min-w-0 items-center gap-2 font-extrabold text-xl tracking-tight">
+      <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">₪</span>
+      <span class="truncate">כספ'לה</span>
     </a>
-    <a href="/dashboard" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700">לדשבורד שלי →</a>
+    <a href="/dashboard" class="inline-flex min-h-[44px] flex-shrink-0 items-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700">לדשבורד שלי →</a>
   </nav>
 </header>
 
 <!-- ============== REFERRAL BANNER (logged-in users only) ============== -->
-<div id="referral-banner" class="hidden fixed inset-x-0 top-[60px] z-40 mx-auto max-w-6xl px-5">
-  <a href="/referral" class="mt-2 flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 to-brand-100/60 px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-soft transition hover:from-brand-100 hover:to-brand-200/60 dark:border-brand-700/40 dark:from-brand-900/30 dark:to-brand-800/30 dark:text-brand-200">
-    <span class="flex items-center gap-2">
-      <span class="text-base">💚</span>
-      <span>הביאו חבר וקבלו חודש Pro חינם — לשניכם</span>
+<div id="referral-banner" class="hidden fixed inset-x-0 top-[60px] z-40 mx-auto max-w-6xl px-4 sm:px-5">
+  <a href="/referral" class="mt-2 flex min-h-[44px] items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 to-brand-100/60 px-3 py-2.5 text-sm font-semibold text-brand-700 shadow-soft transition hover:from-brand-100 hover:to-brand-200/60 dark:border-brand-700/40 dark:from-brand-900/30 dark:to-brand-800/30 dark:text-brand-200 sm:px-4">
+    <span class="flex min-w-0 items-center gap-2">
+      <span class="flex-shrink-0 text-base">💚</span>
+      <span class="truncate">הביאו חבר וקבלו חודש Pro חינם — לשניכם</span>
     </span>
-    <span class="text-xs opacity-80">פתח ←</span>
+    <span class="flex-shrink-0 text-xs opacity-80">פתח ←</span>
   </a>
 </div>
 <script>(function(){try{var raw=localStorage.getItem('kesefle_user');if(!raw)return;var u=JSON.parse(raw);if(!u||(!u.sub&&!u.idToken&&!u.email))return;var b=document.getElementById('referral-banner');if(b)b.classList.remove('hidden');}catch(e){}})();</script>
 
-<main class="mx-auto max-w-5xl px-5 py-10 md:py-14">
+<main class="mx-auto max-w-5xl px-4 py-8 sm:px-5 sm:py-10 md:py-14">
 
   <!-- Hero -->
   <section class="relative text-center">
@@ -104,7 +104,7 @@
       </span>
       <span class="font-mono">ACCOUNT • READY</span>
     </div>
-    <h1 class="mt-4 text-4xl font-black md:text-5xl">
+    <h1 class="mt-4 text-3xl font-black sm:text-4xl md:text-5xl">
       ברוך הבא ל<span class="holo-text">כספ'לה</span>
     </h1>
     <p class="mt-3 text-lg text-ink-600 dark:text-ink-300">
@@ -144,7 +144,7 @@
 
   <!-- ONE-CLICK first message (autonomous primary action) -->
   <section class="mt-10 max-w-3xl mx-auto">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 p-7 text-white shadow-2xl md:p-9">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 p-5 text-white shadow-2xl sm:p-7 md:p-9">
       <div class="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
       <div class="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-accent-300/20 blur-2xl"></div>
       <div class="relative">
@@ -170,7 +170,7 @@
 
   <!-- First projection widget — illustrative numbers for brand new users -->
   <section class="mt-12 max-w-3xl mx-auto">
-    <div class="rounded-3xl border border-ink-200 bg-white p-6 dark:bg-ink-800 dark:border-ink-700 md:p-7">
+    <div class="rounded-3xl border border-ink-200 bg-white p-4 dark:bg-ink-800 dark:border-ink-700 sm:p-6 md:p-7">
       <div class="flex items-start justify-between gap-3">
         <div>
           <div class="text-xs font-bold text-brand-700 dark:text-brand-300">התחזית הראשונה שלך</div>
@@ -240,9 +240,9 @@
             <div class="text-[11px] text-ink-600 dark:text-ink-300">סמל ישיר במסך הבית, פותח את הדשבורד שלך בלי לחפש בדפדפן.</div>
           </div>
         </div>
-        <div class="flex gap-2">
-          <button id="pwa-install-btn" class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">הוסף לבית</button>
-          <button id="pwa-install-dismiss" class="rounded-xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200">אחר כך</button>
+        <div class="flex flex-wrap gap-2">
+          <button id="pwa-install-btn" class="inline-flex min-h-[44px] items-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">הוסף לבית</button>
+          <button id="pwa-install-dismiss" class="inline-flex min-h-[44px] items-center rounded-xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-50 dark:border-ink-700 dark:text-ink-200">אחר כך</button>
         </div>
       </div>
     </div>
@@ -255,7 +255,7 @@
 
     <div class="mt-8 grid gap-4 md:grid-cols-2">
       <!-- 1 -->
-      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-6 dark:bg-ink-800 dark:border-ink-700" onclick="copyText(event, '245 סופר')">
+      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-4 dark:bg-ink-800 dark:border-ink-700 sm:p-6" onclick="copyText(event, '245 סופר')">
         <div class="flex items-start gap-4">
           <span class="step-num bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">1</span>
           <div class="flex-1">
@@ -267,7 +267,7 @@
       </div>
 
       <!-- 2 -->
-      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-6 dark:bg-ink-800 dark:border-ink-700" onclick="copyText(event, '15000 משכורת')">
+      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-4 dark:bg-ink-800 dark:border-ink-700 sm:p-6" onclick="copyText(event, '15000 משכורת')">
         <div class="flex items-start gap-4">
           <span class="step-num bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">2</span>
           <div class="flex-1">
@@ -279,7 +279,7 @@
       </div>
 
       <!-- 3 -->
-      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-6 dark:bg-ink-800 dark:border-ink-700" onclick="copyText(event, 'היום?')">
+      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-4 dark:bg-ink-800 dark:border-ink-700 sm:p-6" onclick="copyText(event, 'היום?')">
         <div class="flex items-start gap-4">
           <span class="step-num bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">3</span>
           <div class="flex-1">
@@ -291,7 +291,7 @@
       </div>
 
       <!-- 4 -->
-      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-6 dark:bg-ink-800 dark:border-ink-700" onclick="copyText(event, '5000 ב 10 תשלומים מחשב')">
+      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-4 dark:bg-ink-800 dark:border-ink-700 sm:p-6" onclick="copyText(event, '5000 ב 10 תשלומים מחשב')">
         <div class="flex items-start gap-4">
           <span class="step-num bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300">4</span>
           <div class="flex-1">
@@ -303,7 +303,7 @@
       </div>
 
       <!-- 5 -->
-      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-6 dark:bg-ink-800 dark:border-ink-700 md:col-span-2" onclick="copyText(event, 'מחק אחרון')">
+      <div class="cmd-card step-card rounded-2xl border border-ink-200 bg-white p-4 dark:bg-ink-800 dark:border-ink-700 sm:p-6 md:col-span-2" onclick="copyText(event, 'מחק אחרון')">
         <div class="flex items-start gap-4">
           <span class="step-num bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300">5</span>
           <div class="flex-1">
@@ -318,10 +318,10 @@
 
   <!-- Bot phone number reference (small footer chip) -->
   <section class="mt-10 text-center">
-    <div class="inline-flex items-center gap-2 rounded-full bg-ink-100 px-4 py-2 text-xs text-ink-700 dark:bg-ink-800 dark:text-ink-300">
+    <div class="inline-flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-ink-100 px-4 py-2 text-xs text-ink-700 dark:bg-ink-800 dark:text-ink-300">
       <span>📞</span>
       <span>מספר הבוט: <span class="font-mono font-bold">+1-555-640-8123</span></span>
-      <button onclick="copyText(event, '+15556408123')" class="rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-brand-700 hover:bg-brand-50 dark:bg-ink-700 dark:text-brand-300">העתק</button>
+      <button onclick="copyText(event, '+15556408123')" class="inline-flex min-h-[36px] items-center rounded-md bg-white px-2.5 py-1 text-[11px] font-bold text-brand-700 hover:bg-brand-50 dark:bg-ink-700 dark:text-brand-300">העתק</button>
     </div>
   </section>
 
