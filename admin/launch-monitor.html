@@ -284,6 +284,27 @@
       </div>
     </div>
 
+    <!-- Announcements (publish "what's new" to bot users) -->
+    <div class="grid">
+      <div class="card full">
+        <h3>📣 Publish announcement to bot users</h3>
+        <div class="sub" style="margin-bottom:8px">Users get this when they send "חדש" to the bot. Use sparingly -- one per major feature.</div>
+        <div style="display:grid;gap:8px;margin-top:8px">
+          <input id="ann-title" type="text" placeholder="כותרת (לדוגמה: ייצוא הוצאות לקובץ)" maxlength="80" style="font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)" />
+          <textarea id="ann-body" placeholder="גוף ההודעה (תיאור הפיצ'ר, איך משתמשים)..." rows="3" maxlength="800" style="font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);resize:vertical"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="ann-cta-label" type="text" placeholder="טקסט כפתור (אופציונלי)" maxlength="40" style="flex:1;min-width:140px;font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)" />
+            <input id="ann-cta-url" type="url" placeholder="https://kesefle.com/..." maxlength="300" style="flex:2;min-width:200px;font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)" />
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="primary" onclick="kfl.publishAnnouncement()">Publish</button>
+            <span id="ann-status" style="font-size:12px;color:var(--muted)"></span>
+          </div>
+        </div>
+        <div id="ann-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+
     <!-- Revenue / MRR -->
     <div class="grid">
       <div class="card full">
@@ -585,7 +606,7 @@ window.kfl = (function () {
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
   // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
-  function _initAll() { fetchMonitor(); loadRevenue(); loadInbox(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); loadTestimonials(); checkDrift(); checkBotVersion(); startPolling(); }
+  function _initAll() { fetchMonitor(); loadRevenue(); loadAnnouncementList(); loadInbox(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); loadTestimonials(); checkDrift(); checkBotVersion(); startPolling(); }
   if (document.readyState !== 'loading') _initAll();
   else document.addEventListener('DOMContentLoaded', _initAll);
 
@@ -862,6 +883,79 @@ window.kfl = (function () {
     }
   }
 
+  async function publishAnnouncement() {
+    var title = document.getElementById('ann-title').value.trim();
+    var body = document.getElementById('ann-body').value.trim();
+    var ctaLabel = document.getElementById('ann-cta-label').value.trim();
+    var ctaUrl = document.getElementById('ann-cta-url').value.trim();
+    var status = document.getElementById('ann-status');
+    if (!title || !body) { status.textContent = '✗ Title + body required.'; status.style.color = 'var(--danger)'; return; }
+    status.textContent = 'Publishing...'; status.style.color = 'var(--muted)';
+    try {
+      var t = token();
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      var r = await fetch('/api/announcements', {
+        method: 'POST', credentials: 'include', headers: headers,
+        body: JSON.stringify({ action: 'create', title: title, body: body, ctaUrl: ctaUrl, ctaLabel: ctaLabel }),
+      });
+      var j = await r.json();
+      if (j.ok) {
+        status.textContent = '✓ Published. Users get it next time they ask /חדש.';
+        status.style.color = 'var(--success)';
+        document.getElementById('ann-title').value = '';
+        document.getElementById('ann-body').value = '';
+        document.getElementById('ann-cta-label').value = '';
+        document.getElementById('ann-cta-url').value = '';
+        loadAnnouncementList();
+      } else {
+        status.textContent = '✗ ' + (j.error || r.status);
+        status.style.color = 'var(--danger)';
+      }
+    } catch (e) {
+      status.textContent = '✗ Network: ' + (e.message || e);
+      status.style.color = 'var(--danger)';
+    }
+  }
+
+  async function loadAnnouncementList() {
+    var list = document.getElementById('ann-list');
+    try {
+      var t = token();
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      var r = await fetch('/api/announcements', {
+        method: 'POST', credentials: 'include', headers: headers,
+        body: JSON.stringify({ action: 'list_all' }),
+      });
+      var j = await r.json();
+      if (!j.ok || !j.items || !j.items.length) { list.innerHTML = ''; return; }
+      list.innerHTML = j.items.slice(0, 10).map(function (a) {
+        var safeT = String(a.title).replace(/[<>&]/g, function (c) { return { '<':'&lt;','>':'&gt;','&':'&amp;' }[c]; });
+        var status = a.archived ? '<span style="color:var(--muted);font-size:10px">archived</span>' : '<span style="color:var(--success);font-size:10px">active</span>';
+        var btn = a.archived ? '' : '<button onclick="kfl.archiveAnnouncement(\'' + a.id + '\')" style="font-size:10px;color:var(--muted)">archive</button>';
+        return '<div style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;display:flex;justify-content:space-between;gap:8px;background:var(--card)">' +
+          '<div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:600" dir="rtl">' + safeT + '</div><div style="font-size:10px;color:var(--muted)">' + (a.created_at || '').slice(0, 10) + ' &middot; ' + status + '</div></div>' +
+          btn +
+        '</div>';
+      }).join('');
+    } catch (_e) {}
+  }
+
+  async function archiveAnnouncement(id) {
+    if (!confirm('Archive this announcement?')) return;
+    try {
+      var t = token();
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      await fetch('/api/announcements', {
+        method: 'POST', credentials: 'include', headers: headers,
+        body: JSON.stringify({ action: 'archive', id: id }),
+      });
+      loadAnnouncementList();
+    } catch (_e) {}
+  }
+
   async function loadRevenue() {
     var summary = document.getElementById('revenue-summary');
     var grid = document.getElementById('revenue-grid');
@@ -1135,6 +1229,8 @@ window.kfl = (function () {
     loadTestimonials: loadTestimonials,
     loadInbox: loadInbox,
     loadRevenue: loadRevenue,
+    publishAnnouncement: publishAnnouncement,
+    archiveAnnouncement: archiveAnnouncement,
     testimonialAction: testimonialAction,
     createSample: createSample
   };

@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-bot-data-queries';
+const KFL_BUILD_VERSION = '2026-05-24-announcements';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4847,6 +4847,14 @@ function processExpense(text, fromPhone) {
   }
   if (trimmed === 'עזרה' || trimmed === 'help' || trimmed === '?') {
     return { reply: getHelpMessage() };
+  }
+  // "What's new" command: show recent feature announcements pushed by admin.
+  if (trimmed === 'חדש' || trimmed === '/חדש' || trimmed === 'whats new' || trimmed === "what's new" || trimmed === 'מה חדש') {
+    try {
+      var __annReply = _fetchAnnouncements_(fromPhone);
+      if (__annReply) return { reply: __annReply };
+    } catch (_aErr) { Logger.log('announcement fetch err: ' + (_aErr && _aErr.message)); }
+    return { reply: 'אין עדכונים חדשים כרגע. עקוב/י אחרינו ב-kesefle.com/changelog' };
   }
   // Greetings: catch "שלום"/"היי"/"hi"/"hello"/"hey" as standalone short
   // message. Respond with a real intro + capabilities, not "didn't understand".
@@ -11285,6 +11293,42 @@ function _adminAlertOnce_(message, fromPhone) {
     }
   } catch (e) {
     Logger.log('_adminAlertOnce_ err: ' + e.message);
+  }
+}
+
+// Bot-side helper: GET announcements via /api/announcements with bot-secret.
+// Returns a formatted Hebrew reply with up to 3 recent feature announcements.
+// Marks them as "seen" server-side so re-asking won't show the same ones.
+function _fetchAnnouncements_(fromPhone) {
+  try {
+    var apiBase = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET');
+    if (!botSecret) return null;
+    var phoneClean = String(fromPhone || '').replace(/[^0-9]/g, '');
+    var url = apiBase + '/api/announcements?phone=' + encodeURIComponent(phoneClean);
+    var resp = UrlFetchApp.fetch(url, {
+      method: 'get',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    if (code < 200 || code >= 300) return null;
+    var j = null;
+    try { j = JSON.parse(resp.getContentText()); } catch (_pe) {}
+    if (!j || !j.ok || !j.announcements || !j.announcements.length) return null;
+    var lines = ['📣 *מה חדש בכספ\'לה:*\n'];
+    j.announcements.slice(0, 3).forEach(function (a) {
+      lines.push('━━━━━━━━━━━━━━━━━━');
+      lines.push('*' + (a.title || '').slice(0, 80) + '*');
+      lines.push(String(a.body || '').slice(0, 400));
+      if (a.ctaUrl && a.ctaLabel) {
+        lines.push('👉 ' + a.ctaLabel + ': ' + a.ctaUrl);
+      }
+    });
+    return lines.join('\n');
+  } catch (e) {
+    Logger.log('_fetchAnnouncements_ throw: ' + (e && e.message));
+    return null;
   }
 }
 
