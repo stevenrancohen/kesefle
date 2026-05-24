@@ -745,6 +745,7 @@
       </div>
       <div class="mt-2 text-3xl font-black"><span class="num stat-num text-red-600 dark:text-red-400" id="month-expenses" data-target="0">₪0</span></div>
       <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="month-expenses-delta">—</div>
+      <div class="text-[10px] font-medium text-ink-400 dark:text-ink-500" id="month-expenses-yoy"></div>
       <svg class="sparkline" id="spark-expenses" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="grad-expenses" x1="0" x2="0" y1="0" y2="1">
@@ -794,6 +795,34 @@
       <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="month-count-detail">—</div>
       <div class="mt-3 flex items-end gap-0.5" id="count-bars" aria-hidden="true">
         <!-- 14 daily mini-bars injected by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Custom categories management (premium-only) -->
+  <section id="kfl-custom-cats" class="hidden mt-6 rounded-2xl border border-ink-200 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+    <div class="flex items-center justify-between gap-2 mb-3">
+      <h3 class="text-lg font-bold flex items-center gap-2">
+        🏷️ קטגוריות מותאמות אישית
+        <span id="kfl-cats-badge" class="text-[10px] font-bold rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-700 dark:text-brand-300 px-2 py-0.5"></span>
+      </h3>
+      <button onclick="document.getElementById('kfl-cats-body').classList.toggle('hidden')" class="text-xs font-semibold text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-200">פתח/סגור</button>
+    </div>
+    <div id="kfl-cats-body" class="hidden">
+      <p id="kfl-cats-locked" class="hidden text-sm text-ink-500 dark:text-ink-400 mb-3">
+        🔒 קטגוריות מותאמות אישית זמינות במסלול Pro/Family.
+        <a href="/pricing" class="font-bold text-brand-600 dark:text-brand-400 underline">שדרג כאן →</a>
+      </p>
+      <div id="kfl-cats-pro" class="hidden space-y-3">
+        <p class="text-xs text-ink-500 dark:text-ink-400">
+          הוסף קטגוריות אישיות שיופיעו לבחירה בבוט ובטופס האתר. עד <span class="num">50</span> קטגוריות.
+        </p>
+        <div class="flex gap-2">
+          <input id="kfl-cats-input" type="text" maxlength="60" placeholder="לדוגמה: עסק יוסי / לימודים פרטיים"
+            class="flex-1 rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
+          <button onclick="kflCatAdd()" class="rounded-xl bg-brand-600 hover:bg-brand-700 px-4 py-2 text-sm font-bold text-white">הוסף</button>
+        </div>
+        <ul id="kfl-cats-list" class="space-y-1.5"></ul>
       </div>
     </div>
   </section>
@@ -2660,6 +2689,30 @@ function generatePseudoSeries(target, n, intLike) {
     if (gc) gc.textContent = '0';
     // Budgets card -- pulls /api/budgets (session-auth) and renders bars.
     try { renderBudgets(rows); } catch (e) { /* never block the rest */ }
+    // YoY (year-over-year) delta on the month-expenses card.
+    try { renderYoY(rows); } catch (e) { /* never block */ }
+  }
+
+  // Year-over-year delta: this month's expense total vs same month one year
+  // ago. Updates the small line under the month-expenses summary card. Hides
+  // gracefully if we don't have a year of history yet.
+  function renderYoY(rows) {
+    var el = safeEl('month-expenses-yoy');
+    if (!el) return;
+    var byMonth = buildMonthlyTotals(rows);
+    var now = new Date();
+    var thisKey = ym(now);
+    var lyKey = ym(new Date(now.getFullYear() - 1, now.getMonth(), 1));
+    var thisTotal = (byMonth[thisKey] && byMonth[thisKey].total) || 0;
+    var lyTotal = (byMonth[lyKey] && byMonth[lyKey].total) || 0;
+    if (lyTotal <= 0) {
+      el.textContent = '';
+      return;
+    }
+    var pct = Math.round(((thisTotal - lyTotal) / lyTotal) * 100);
+    var sign = pct >= 0 ? '+' : '';
+    el.textContent = 'vs לפני שנה: ' + sign + pct + '% (₪' + Math.round(lyTotal).toLocaleString('he-IL') + ')';
+    el.className = 'text-[10px] font-medium ' + (pct > 10 ? 'text-red-500' : pct < -10 ? 'text-brand-600 dark:text-brand-400' : 'text-ink-400 dark:text-ink-500');
   }
 
   // Expose globally so kefleLiveDashboard can invoke after fetch resolves
@@ -3176,6 +3229,112 @@ function generatePseudoSeries(target, n, intLike) {
       }).catch(function () {});
     } catch (_e) {}
   });
+})();
+</script>
+<script>
+/* Custom categories management card. Hidden by default; shows itself once
+   we know the user's plan. Pro/Family see the editor; free users see the
+   upgrade CTA. Backed by /api/custom-categories. */
+(function () {
+  var section = document.getElementById('kfl-custom-cats');
+  if (!section) return;
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  async function fetchList() {
+    try {
+      var r = await fetch('/api/custom-categories', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' }),
+      });
+      if (r.status === 401) return null; // not signed in -- keep card hidden
+      var j = await r.json();
+      if (!j.ok) return null;
+      return j;
+    } catch (_e) { return null; }
+  }
+
+  function render(data) {
+    if (!data) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+    var badge = document.getElementById('kfl-cats-badge');
+    var locked = document.getElementById('kfl-cats-locked');
+    var pro = document.getElementById('kfl-cats-pro');
+    var list = document.getElementById('kfl-cats-list');
+    if (data.premium) {
+      locked.classList.add('hidden');
+      pro.classList.remove('hidden');
+      badge.textContent = (data.items || []).length + ' / ' + (data.max_allowed || 50);
+      list.innerHTML = (data.items || []).map(function (item) {
+        return '<li class="flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg bg-ink-50 dark:bg-ink-900/40 text-sm">' +
+          '<span>' + escapeHtml(item.name) + '</span>' +
+          '<button onclick="kflCatRemove(\'' + escapeHtml(item.name).replace(/'/g, '\\\'') + '\')" class="text-xs text-ink-400 dark:text-ink-500 hover:text-red-500" title="הסר">×</button>' +
+        '</li>';
+      }).join('') || '<li class="text-xs text-ink-500 dark:text-ink-400 italic py-2">אין עדיין קטגוריות מותאמות.</li>';
+    } else {
+      pro.classList.add('hidden');
+      locked.classList.remove('hidden');
+      badge.textContent = 'Pro';
+    }
+  }
+
+  window.kflCatAdd = async function () {
+    var input = document.getElementById('kfl-cats-input');
+    var name = (input.value || '').trim();
+    if (!name) return;
+    try {
+      var r = await fetch('/api/custom-categories', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', name: name }),
+      });
+      var j = await r.json();
+      if (j.ok) {
+        input.value = '';
+        var data = await fetchList();
+        render(data);
+      } else {
+        alert(j.detail || j.error || 'שגיאה');
+      }
+    } catch (_e) {}
+  };
+
+  window.kflCatRemove = async function (name) {
+    if (!confirm('למחוק את "' + name + '"?')) return;
+    try {
+      var r = await fetch('/api/custom-categories', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'remove', name: name }),
+      });
+      var j = await r.json();
+      if (j.ok) {
+        var data = await fetchList();
+        render(data);
+      }
+    } catch (_e) {}
+  };
+
+  // Allow Enter to submit.
+  setTimeout(function () {
+    var input = document.getElementById('kfl-cats-input');
+    if (input) input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); window.kflCatAdd(); }
+    });
+  }, 100);
+
+  if (document.readyState === 'complete') {
+    fetchList().then(render);
+  } else {
+    window.addEventListener('load', function () {
+      setTimeout(function () { fetchList().then(render); }, 1500);
+    });
+  }
 })();
 </script>
 <script>
