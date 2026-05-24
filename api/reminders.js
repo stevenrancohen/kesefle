@@ -113,7 +113,8 @@ async function handlerImpl(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const got = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-  if (got !== expected) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  const { constantTimeEqual } = await import('../lib/crypto.js');
+  if (!got || !constantTimeEqual(String(got), expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
   const action = String(body?.action || '').toLowerCase();
 
@@ -173,7 +174,8 @@ async function handlerImpl(req, res) {
         return res.status(503).json({ ok: false, error: 'cron_secret_not_configured' });
       }
       const gotCron = req.headers['x-kesefle-cron-secret'] || body?.cronSecret;
-      if (gotCron !== cronSecret) {
+      const { constantTimeEqual: ctEq2 } = await import('../lib/crypto.js');
+      if (!gotCron || !ctEq2(String(gotCron), cronSecret)) {
         log.warn('reminders.due.unauthorized', { reqId: req.reqId });
         return res.status(401).json({ ok: false, error: 'cron_unauthorized' });
       }

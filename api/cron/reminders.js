@@ -10,7 +10,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 
-function verifyCronAuth(req) {
+async function verifyCronAuth(req) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     log.error('cron.reminders.cron_secret_unset');
@@ -18,7 +18,8 @@ function verifyCronAuth(req) {
   }
   const auth = req.headers['authorization'] || '';
   const expected = `Bearer ${cronSecret}`;
-  if (auth !== expected) {
+  const { constantTimeEqual } = await import('../../lib/crypto.js');
+  if (!auth || !constantTimeEqual(String(auth), expected)) {
     log.error('cron.reminders.unauthorized');
     return { ok: false, code: 401, error: 'cron_unauthorized' };
   }
@@ -26,7 +27,7 @@ function verifyCronAuth(req) {
 }
 
 async function handlerImpl(req, res) {
-  const authCheck = verifyCronAuth(req);
+  const authCheck = await verifyCronAuth(req);
   if (!authCheck.ok) return res.status(authCheck.code).json({ ok: false, error: authCheck.error });
 
   // The existing /api/reminders endpoint expects a bot-secret-style POST with

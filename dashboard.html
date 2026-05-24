@@ -1807,10 +1807,15 @@ function renderDashboard(d) {
     var pct = totalCats > 0 ? Math.round((seg.total / totalCats) * 100) : 0;
     var row = document.createElement('div');
     row.className = 'flex items-center gap-2 text-sm';
+    // Escape seg.name + seg.icon — they originate from sheet cell content
+    // and could contain HTML if the user typed something weird (or if a
+    // shared sheet has a poisoned cell that another viewer's dashboard
+    // would render). escapeHtml is defined earlier in this file.
+    var colorSafe = String(seg.color || '#888').replace(/[^#A-Za-z0-9(),.%\s-]/g, '');
     row.innerHTML =
-      '<span class="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full" style="background:' + seg.color + '"></span>' +
-      '<span class="flex-shrink-0">' + seg.icon + '</span>' +
-      '<span class="flex-1 truncate font-semibold">' + seg.name + '</span>' +
+      '<span class="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full" style="background:' + colorSafe + '"></span>' +
+      '<span class="flex-shrink-0">' + escapeHtml(seg.icon || '') + '</span>' +
+      '<span class="flex-1 truncate font-semibold">' + escapeHtml(seg.name || '') + '</span>' +
       '<span class="num text-xs font-bold text-ink-500 dark:text-ink-400">' + pct + '%</span>' +
       '<span class="num w-20 text-left text-xs font-semibold tabular-nums">' + num(seg.total) + '</span>';
     cl.appendChild(row);

@@ -29,11 +29,13 @@ const BACKUP_KEY_PREFIXES = ['user:', 'phone:', 'sheet:', 'profile:', 'referral:
 // first 1000 paid users with margin.
 const MAX_KEYS_PER_PREFIX = 5000;
 
-function verifyCronAuth(req) {
+async function verifyCronAuth(req) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return { ok: false, code: 503, error: 'cron_secret_not_configured' };
   const auth = req.headers['authorization'] || '';
-  if (auth !== `Bearer ${cronSecret}`) return { ok: false, code: 401, error: 'cron_unauthorized' };
+  const expected = `Bearer ${cronSecret}`;
+  const { constantTimeEqual } = await import('../../lib/crypto.js');
+  if (!auth || !constantTimeEqual(String(auth), expected)) return { ok: false, code: 401, error: 'cron_unauthorized' };
   return { ok: true };
 }
 
@@ -170,7 +172,7 @@ async function deleteFile(accessToken, fileId) {
 }
 
 async function handlerImpl(req, res) {
-  const authCheck = verifyCronAuth(req);
+  const authCheck = await verifyCronAuth(req);
   if (!authCheck.ok) return res.status(authCheck.code).json({ ok: false, error: authCheck.error });
 
   if (!KV_URL || !KV_TOKEN) {

@@ -70,7 +70,8 @@ async function handlerImpl(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const botSecret = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-  if (botSecret !== expected) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  const { constantTimeEqual } = await import('../../lib/crypto.js');
+  if (!botSecret || !constantTimeEqual(String(botSecret), expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
   const phone = normalizeE164(body?.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });

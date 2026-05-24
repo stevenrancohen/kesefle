@@ -82,7 +82,8 @@ async function handlerImpl(req, res) {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
 
   const botSecret = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-  if (botSecret !== expected) {
+  const { constantTimeEqual } = await import('../../lib/crypto.js');
+  if (!botSecret || !constantTimeEqual(String(botSecret), expected)) {
     log.warn('append.unauthorized', { reqId: req.reqId });
     return res.status(401).json({ ok: false, error: 'unauthorized' });
   }

@@ -304,7 +304,8 @@ async function handlerImpl(req, res) {
       return res.status(503).json({ ok: false, error: 'bot_secret_not_configured' });
     }
     const botSecret = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-    if (botSecret !== expected) {
+    const { constantTimeEqual } = await import('../../lib/crypto.js');
+    if (!botSecret || !constantTimeEqual(String(botSecret), expected)) {
       log.warn('link.confirm.unauthorized', { reqId: req.reqId });
       return res.status(401).json({ ok: false, error: 'unauthorized' });
     }

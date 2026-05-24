@@ -417,11 +417,12 @@ async function handlerImpl(req, res) {
   // The cron is a cross-user, sheet-writing path → gate on the dedicated
   // KESEFLE_CRON_SECRET (same posture as reminders' "due"), so a bot-secret
   // leak alone can't trigger mass writes.
+  const { constantTimeEqual } = await import('../lib/crypto.js');
   if (action === 'cron') {
     const cronSecret = process.env.KESEFLE_CRON_SECRET;
     if (!cronSecret) return res.status(503).json({ ok: false, error: 'cron_secret_not_configured' });
     const got = req.headers['x-kesefle-cron-secret'] || body?.cronSecret;
-    if (got !== cronSecret) return res.status(401).json({ ok: false, error: 'cron_unauthorized' });
+    if (!got || !constantTimeEqual(String(got), cronSecret)) return res.status(401).json({ ok: false, error: 'cron_unauthorized' });
     return cronRun(body, res, req.reqId);
   }
 
@@ -429,7 +430,7 @@ async function handlerImpl(req, res) {
   const expected = process.env.KESEFLE_BOT_SECRET;
   if (!expected) return res.status(503).json({ ok: false, error: 'bot_secret_not_configured' });
   const got = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-  if (got !== expected) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  if (!got || !constantTimeEqual(String(got), expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
   switch (action) {
     case 'add':    return addTemplate(body, res);

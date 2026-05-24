@@ -221,7 +221,8 @@ async function handlerImpl(req, res) {
     return res.status(503).json({ ok: false, error: 'bot_secret_not_configured' });
   }
   const got = req.headers['x-kesefle-bot-secret'] || (req.body && req.body.botSecret);
-  if (got !== expected) {
+  const { constantTimeEqual } = await import('../lib/crypto.js');
+  if (!got || !constantTimeEqual(String(got), expected)) {
     log.warn('group.unauthorized', { reqId: req.reqId });
     return res.status(401).json({ ok: false, error: 'unauthorized' });
   }
@@ -641,7 +642,8 @@ async function handlerImpl(req, res) {
       const cronSecret = process.env.KESEFLE_CRON_SECRET;
       if (!cronSecret) return res.status(503).json({ ok: false, error: 'cron_secret_not_configured' });
       const gotCron = req.headers['x-kesefle-cron-secret'] || body?.cronSecret;
-      if (gotCron !== cronSecret) return res.status(401).json({ ok: false, error: 'cron_unauthorized' });
+      const { constantTimeEqual: ctEq3 } = await import('../lib/crypto.js');
+      if (!gotCron || !ctEq3(String(gotCron), cronSecret)) return res.status(401).json({ ok: false, error: 'cron_unauthorized' });
       const code = String(body.code || '').trim().toUpperCase();
       const recurringId = String(body.recurringId || '');
       const group = await kvGet('group:' + code);

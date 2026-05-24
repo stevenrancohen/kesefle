@@ -184,6 +184,13 @@ async function handlerImpl(req, res) {
 
   const name = sanitizeName(body.name);
   if (!name) return res.status(400).json({ ok: false, error: 'missing_name' });
+  // Defense in depth (2026-05-24): reject names containing quotes or
+  // backslashes. The REGEXMATCH formula does double-escape both, but
+  // legit Hebrew category names never contain " or \, so any input with
+  // them is either an injection probe or a typo. Reject up-front.
+  if (/["\\]/.test(name)) {
+    return res.status(400).json({ ok: false, error: 'invalid_name', detail: 'name may not contain " or \\' });
+  }
 
   const emoji = body.emoji ? sanitizeName(body.emoji).slice(0, 4) : '';
   const label = (emoji ? emoji + ' ' : '') + name;
