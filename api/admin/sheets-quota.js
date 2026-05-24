@@ -12,6 +12,7 @@
 // GET /api/admin/sheets-quota
 
 import { withRequestId } from '../../lib/log.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 import { requireAdmin } from '../../lib/auth.js';
 import { getSheetQuotaSnapshot } from '../../lib/sheet-quota.js';
 
@@ -32,4 +33,6 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(requireAdmin(handlerImpl));
+export default withRequestId(
+  withRateLimit({ key: 'admin_sheets_quota', limit: 60, windowSec: 60 })(requireAdmin(handlerImpl))
+);

@@ -52,7 +52,11 @@ async function handlerImpl(req, res) {
   body = body || {};
 
   const presented = req.headers['x-kesefle-bot-secret'] || body.botSecret;
-  if (presented !== expected) {
+  // Timing-safe comparison: prevents an attacker from inferring the secret
+  // byte-by-byte via response-time differentials. lib/crypto.js exports
+  // constantTimeEqual; we import it lazily to keep cold-start small.
+  const { constantTimeEqual } = await import('../../lib/crypto.js');
+  if (!presented || !constantTimeEqual(String(presented), expected)) {
     log.warn('wa.send.unauthorized', { reqId: req.reqId });
     return res.status(401).json({ ok: false, error: 'unauthorized' });
   }

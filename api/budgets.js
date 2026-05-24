@@ -208,10 +208,13 @@ async function handlerImpl(req, res) {
 
   // Bot path: bot-secret header + phone (no user session). Resolve phone ->
   // userSub via KV and then run the same per-userSub dispatch as the authed
-  // path. Per-phone rate limit (30/hour).
+  // path. Per-phone rate limit (30/hour). Bot-secret comparison is timing-
+  // safe via constantTimeEqual -- prevents byte-by-byte secret inference
+  // via response-time differentials.
   const expectedBotSecret = process.env.KESEFLE_BOT_SECRET;
   const presentedSecret = req.headers['x-kesefle-bot-secret'] || body.botSecret;
-  if (expectedBotSecret && presentedSecret && presentedSecret === expectedBotSecret) {
+  const { constantTimeEqual } = await import('../lib/crypto.js');
+  if (expectedBotSecret && presentedSecret && constantTimeEqual(String(presentedSecret), expectedBotSecret)) {
     const phone = normalizeE164(body.phone);
     if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
 

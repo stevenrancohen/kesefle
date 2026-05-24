@@ -16,6 +16,7 @@
 // Admin-only via requireAdmin.
 
 import { withRequestId, log } from '../../lib/log.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 import { requireAdmin } from '../../lib/auth.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
@@ -134,4 +135,6 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(requireAdmin(handlerImpl));
+export default withRequestId(
+  withRateLimit({ key: 'admin_user_timeline', limit: 60, windowSec: 60 })(requireAdmin(handlerImpl))
+);
