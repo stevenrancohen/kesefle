@@ -1560,7 +1560,16 @@ async function kesefleReprovisionSheet() {
     // Update the visible linked-sheet card to point to the new URL.
     var sl = document.getElementById('sheet-link'); if (sl) sl.href = j.spreadsheetUrl;
     statusEl.className = 'mt-2 text-xs text-emerald-700';
-    statusEl.innerHTML = '✅ נוצר! <a href="' + j.spreadsheetUrl + '" target="_blank" rel="noopener" class="underline">פתח/י את הגיליון החדש</a>';
+    // Build the anchor safely — server-side spreadsheetUrl is fixed-form
+    // but escape defensively to match the rest of the page's hygiene.
+    statusEl.textContent = '✅ נוצר! ';
+    var openA = document.createElement('a');
+    openA.href = String(j.spreadsheetUrl);
+    openA.target = '_blank';
+    openA.rel = 'noopener';
+    openA.className = 'underline';
+    openA.textContent = 'פתח/י את הגיליון החדש';
+    statusEl.appendChild(openA);
   } catch (e) {
     statusEl.className = 'mt-2 text-xs text-red-600';
     statusEl.textContent = '😬 נכשל: ' + (e && e.message || 'unknown') + '. נסה/י שוב, ואם זה ממשיך — צ\'אט תמיכה למטה.';
