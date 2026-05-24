@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-create-category-kids';
+const KFL_BUILD_VERSION = '2026-05-24-honesty-pass';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -937,18 +937,41 @@ function _handleAccountDeletion_(phone, confirmed) {
     props.deleteProperty(_settingsKey_(phone));
     props.deleteProperty('lastPing:' + clean);
   } catch (_e) {}
+  // HONESTY (2026-05-24): GDPR-sensitive. The original silently swallowed
+  // a server failure and told the user "deleted" anyway. Capture the
+  // response code and only confirm success on 2xx. On failure return a
+  // try-again message so the user knows their tokens are STILL on file.
+  var delOk = false;
+  var delDetail = '';
   try {
     var secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '');
-    if (secret) {
-      UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/account?action=delete-by-phone', {
+    if (!secret) {
+      delDetail = 'bot_secret_not_set';
+    } else {
+      var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/account?action=delete-by-phone', {
         method: 'post',
         contentType: 'application/json',
         headers: { 'x-kesefle-bot-secret': secret },
         payload: JSON.stringify({ botSecret: secret, phone: clean }),
         muteHttpExceptions: true,
       });
+      var code = resp.getResponseCode();
+      if (code >= 200 && code < 300) {
+        delOk = true;
+      } else {
+        delDetail = 'http_' + code + ' ' + String(resp.getContentText() || '').slice(0, 100);
+        Logger.log('_handleAccountDeletion_ failed: ' + delDetail);
+      }
     }
-  } catch (_e) {}
+  } catch (e) {
+    delDetail = 'threw: ' + (e && e.message);
+    Logger.log('_handleAccountDeletion_ threw: ' + delDetail);
+  }
+  if (!delOk) {
+    return '😬 לא הצלחתי למחוק את החשבון עכשיו. הקישור והאסימונים עדיין על השרת.\n' +
+      'נסה/י שוב בעוד דקה. אם החיוב הזה חוזר — כתוב/י לתמיכה ב-support@kesefle.com.\n\n' +
+      '(שגיאה: ' + delDetail.slice(0, 60) + ')';
+  }
   return '✅ החשבון נמחק. הקישור והאסימונים הוסרו.\n' +
     'הגיליון נשאר אצלך ב-Drive. תודה שניסית את כספ\'לה 💚\n\n' +
     'אם תרצה לחזור — היכנס שוב ל-https://kesefle.com/account.';
@@ -2549,11 +2572,18 @@ function _groupAddRecurring_(fromPhone, rest) {
     code: a.active, payerPhone: fromPhone, amount: amount, description: description, interval: interval,
   });
   if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
+  // HONESTY (2026-05-24): cronGroupRecurring runs only on the bot owner's
+  // Apps Script project, so the "auto-reminders" line only applies to
+  // owner-installed setups. For everyone else the recurring item is stored
+  // but no cron fires it. Be honest about that.
+  var reminderLine = (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(fromPhone))
+    ? 'הבוט יזכיר לך אוטומטית בכל מחזור.'
+    : 'הקבוע נשמר ויופיע ברשימה. תזכורות אוטומטיות לכל הקבוצות בפיתוח.';
   return { handled: true, replyText:
     '🔁 קבוע נוסף:\n' +
     '  ₪' + amount.toLocaleString('he-IL') + ' · ' + description + '\n' +
     '  כל ' + ilabel + '\n\n' +
-    'הבוט יזכיר לך אוטומטית. שלח "כספלה קבועים" לרשימה המלאה.' };
+    reminderLine + ' שלח "כספלה קבועים" לרשימה המלאה.' };
 }
 
 function _groupListRecurring_(fromPhone) {
@@ -2597,8 +2627,26 @@ function _groupExport_(fromPhone) {
     ].join(','));
   });
   var csv = lines.join('\n');
+  // HONESTY + PRIVACY (2026-05-24 audit): Session.getActiveUser().getEmail()
+  // returns the BOT OWNER's Gmail (Steven), not the requester. The old
+  // reply lied to non-owners that their CSV was emailed to them — it was
+  // actually emailed to the owner. Two problems: privacy leak + lying.
+  //
+  // Fix: only auto-email when the requester IS the owner. Everyone else
+  // gets directed to the web export at /dashboard which is the real,
+  // authenticated download path for their own data.
   try {
-    var addr = Session.getActiveUser().getEmail();
+    var addr = '';
+    try { addr = Session.getActiveUser().getEmail(); } catch (_e) {}
+    var isOwner = (typeof _isOwnerPhone_ === 'function') && _isOwnerPhone_(fromPhone);
+    if (!isOwner || !addr) {
+      return { handled: true, replyText:
+        '📥 ייצוא CSV של הקבוצה:\n' +
+        '1. כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/dashboard\n' +
+        '2. התחבר/י עם Google\n' +
+        '3. לחצ/י על "ייצוא" → CSV\n\n' +
+        'הקובץ ירד ישירות אליך באופן מאובטח (' + (group.expenses || []).length + ' הוצאות בקבוצה).' };
+    }
     MailApp.sendEmail({
       to: addr,
       subject: 'כספלה — ייצוא קבוצה ' + group.code,
@@ -2607,7 +2655,7 @@ function _groupExport_(fromPhone) {
             'נשלח על-ידי הבוט בעקבות פקודת "כספלה ייצא" מ-' + fromPhone + '.',
       attachments: [Utilities.newBlob(csv, 'text/csv', group.code + '-' + new Date().toISOString().slice(0,10) + '.csv')],
     });
-    return { handled: true, replyText: '📧 שלחתי לך CSV למייל ' + addr + ' עם ' + (group.expenses || []).length + ' הוצאות.' };
+    return { handled: true, replyText: '📧 שלחתי לך CSV למייל ' + addr + ' (' + (group.expenses || []).length + ' הוצאות).' };
   } catch (e) {
     Logger.log('_groupExport_ err: ' + (e && e.message));
     return { handled: true, replyText: '😬 לא הצלחתי לשלוח: ' + (e && e.message || '') };
@@ -5379,8 +5427,7 @@ function processExpense(text, fromPhone) {
       '  ✓ עד 6 חברים בקבוצה\n' +
       '  ✓ דוחות משפחתיים\n' +
       '  ✓ תזכורות מתקדמות\n\n' +
-      'לשדרוג: https://kesefle.com/upgrade?ref=bot\n\n' +
-      '🎁 מקוד WhatsApp10 ב-checkout = 10% הנחה לחודש הראשון.' };
+      'לשדרוג: https://kesefle.com/pricing?ref=bot' };
   }
   if (trimmed === 'תובנות' || trimmed === 'תובנה' || trimmed === 'insights' || trimmed === 'insight') {
     return { reply: getInsightsMessage() };
@@ -10772,7 +10819,9 @@ function addGoal(parsed) {
     'יעד: ₪' + parsed.target.toLocaleString() + '\n' +
     (parsed.category ? 'קטגוריה: ' + parsed.category + '\n' : '') +
     (parsed.deadline ? 'תאריך יעד: ' + parsed.deadline + '\n' : '') +
-    '\nאעדכן אותך בהתקדמות. שלחי "מטרות" לראות הכל.';
+    // HONESTY (2026-05-24): there's no cron that nudges goal progress —
+    // the user has to ask. Don't promise updates we don't send.
+    '\nשלח/י *"מטרות"* בכל עת כדי לראות התקדמות.';
 }
 
 function deleteGoal(idOrIndex) {

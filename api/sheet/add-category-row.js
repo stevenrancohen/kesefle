@@ -67,6 +67,18 @@ async function kvSet(key, value, ttlSec) {
   } catch (_e) { return false; }
 }
 
+// Normalize Israeli mobile to E.164 — mirrors api/sheet/append.js. Without
+// this, "0526003090" looked up `phone:526003090` instead of
+// `phone:972526003090` and 404'd. (2026-05-24 fix.)
+function normalizeE164(input) {
+  if (!input) return null;
+  let s = String(input).replace(/\D+/g, '');
+  if (!s) return null;
+  if (s.startsWith('0')) s = '972' + s.slice(1);
+  if (s.length < 7 || s.length > 15) return null;
+  return s;
+}
+
 // Sanitise a user-supplied category name. Strips control chars + leading
 // formula chars (sanitizeCell already does this defensively, but we also
 // enforce a length cap and reject empty/punctuation-only inputs).
@@ -100,12 +112,23 @@ async function readDashboardLabels(spreadsheetId, accessToken) {
 // Build the row payload (label in A, SUMPRODUCT formula in B that matches
 // the name across category/subcategory/description columns of תנועות).
 // USER_ENTERED so the formula is evaluated by Sheets.
+//
+// 2026-05-24 fix: the v1 formula used SEARCH which substring-matched.
+// Result: a name like "דן" would match "דניאל" and over-count. We now
+// use REGEXMATCH with explicit word boundaries (\b for Latin, lookarounds
+// for Hebrew via (^|[^֐-׿]) and ([^֐-׿]|$)) so "דן"
+// only matches "דן" — not "דניאל" or "דנה".
 function buildCategoryRowValues(label, name) {
-  const escaped = String(name).replace(/"/g, '""');
+  // Escape regex meta chars + quote-double for the formula literal.
+  const reEscaped = String(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = reEscaped.replace(/"/g, '""');
+  // Word-aware pattern: either at start/end of cell, or surrounded by
+  // non-Hebrew, non-alphanumeric chars. Case-insensitive via (?i).
+  const pattern = `(?i)(^|[^֐-׿A-Za-z0-9])${escaped}([^֐-׿A-Za-z0-9]|$)`;
   const formula = `=IFERROR(SUMPRODUCT(('${TX_TAB}'!C2:C5000)*` +
-    `((ISNUMBER(SEARCH("${escaped}",'${TX_TAB}'!D2:D5000)))+` +
-    `(ISNUMBER(SEARCH("${escaped}",'${TX_TAB}'!E2:E5000)))+` +
-    `(ISNUMBER(SEARCH("${escaped}",'${TX_TAB}'!F2:F5000)))>0)),0)`;
+    `((IFERROR(REGEXMATCH('${TX_TAB}'!D2:D5000,"${pattern}"),FALSE))+` +
+    `(IFERROR(REGEXMATCH('${TX_TAB}'!E2:E5000,"${pattern}"),FALSE))+` +
+    `(IFERROR(REGEXMATCH('${TX_TAB}'!F2:F5000,"${pattern}"),FALSE))>0)),0)`;
   return [sanitizeCell(label), formula];
 }
 
@@ -156,7 +179,7 @@ async function handlerImpl(req, res) {
   }
   body = body || {};
 
-  const phone = String(body.phone || '').replace(/\D+/g, '');
+  const phone = normalizeE164(body.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'missing_phone' });
 
   const name = sanitizeName(body.name);
@@ -212,9 +235,14 @@ async function handlerImpl(req, res) {
     return res.status(502).json({ ok: false, error: 'sheet_read_failed', detail: String(labelsR.detail).slice(0, 200) });
   }
   const labels = labelsR.values;
+  // 2026-05-24 fix: the previous includes() check flagged "דן" as a dup
+  // of an existing "דניאל" row. Use exact-equality on the bare name AND
+  // the emoji-prefixed label; also strip any leading emoji+space to
+  // compare just the user-facing word.
+  const stripEmoji = (s) => String(s || '').replace(/^[\p{Extended_Pictographic}\p{Emoji_Component}]+\s+/u, '').trim();
   for (let i = 0; i < labels.length; i++) {
-    // Compare against the bare name AND the prefixed label.
-    if (labels[i] && (labels[i] === name || labels[i] === label || labels[i].includes(name))) {
+    const existing = stripEmoji(labels[i]);
+    if (existing && (existing === name || labels[i] === label)) {
       return res.status(200).json({
         ok: true,
         rowIndex: i + 1,
