@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-23-bot-secret-on-lookup';
+const KFL_BUILD_VERSION = '2026-05-24-vat-budgets-celebrate-support';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4471,6 +4471,36 @@ function processExpense(text, fromPhone) {
       var __survConfirm = _surveyHandleText_(fromPhone, 'אשר');
       return { reply: (__survConfirm && __survConfirm.replyText) || '' };
     }
+  }
+
+  // ───── VAT-DEDUCTIBLE FLAG ("מעמ" / "/מעמ" / "ניכוי מעמ") ─────
+  // Israeli עוסק מורשה need to mark certain expenses as VAT-deductible so
+  // they can claim back the VAT at year-end. The user logs an expense
+  // normally, then sends "מעמ" (or any of the aliases below) to flip the
+  // LAST row's col I (ניכוי מע״מ) to TRUE.
+  //
+  // Matched BEFORE the expense parser so a user typing "מעמ" alone is not
+  // mis-parsed as an expense. Also matches the geresh + slash forms
+  // ("מע״מ", "מע'מ", "/מעמ") because Hebrew users vary how they type מע״מ.
+  if (/^\s*\/?\s*(?:מעמ|מע["׳'״]מ|ניכוי\s+מע["׳'״]?מ|ניכוי\s+מעמ|vat)\s*$/i.test(text)) {
+    return { reply: _markLastExpenseAsVatDeductible_(fromPhone) };
+  }
+
+  // ───── BUDGETS ("תקציבים") ─────
+  // MUST run before the expense parser below, otherwise "תקציב מזון 1500"
+  // would attempt to register as a ₪1500 expense.
+  //
+  //   "תקציב"          -> show current budgets + MTD progress per category
+  //   "תקציב <cat> <n>" -> set monthly cap of n NIS for <cat> (full label)
+  //
+  // Talks to Vercel /api/budgets using bot-secret + phone identification
+  // (same pattern as _tenantAppendStructured_).
+  if (trimmed === 'תקציב' || trimmed === 'תקציבים' || trimmed === 'budget' || trimmed === 'budgets') {
+    if (typeof _budgetListAndProgress_ === 'function') return { reply: _budgetListAndProgress_(fromPhone) };
+  }
+  var __budSet = text.trim().match(/^(?:תקציב|budget)\s+(.+?)\s+(\d+(?:[.,]\d+)?)\s*$/i);
+  if (__budSet && typeof _budgetSet_ === 'function') {
+    return { reply: _budgetSet_(fromPhone, __budSet[1].trim(), parseFloat(String(__budSet[2]).replace(',', '.'))) };
   }
 
   // ───── PERSONAL RECURRING EXPENSES ("הוצאות קבועות") ─────

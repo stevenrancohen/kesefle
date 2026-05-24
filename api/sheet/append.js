@@ -13,6 +13,8 @@
 //     amount: 245,
 //     currency: "ILS",               // optional, default ILS
 //     isIncome: false,               // optional, default false
+//     vatDeductible: false,          // optional, default false (col I -- the
+//                                    //   ניכוי מע״מ flag for עוסק מורשה)
 //     category: "מזון",
 //     subcategory: "סופר",
 //     rawText: "245 סופר רמי לוי",
@@ -163,9 +165,14 @@ async function handlerImpl(req, res) {
     category: body?.category,
     subcategory: body?.subcategory,
     rawText: body?.rawText,
-    // `currency` and `messageId` are no longer columns in the 8-col template;
+    // `currency` and `messageId` are no longer columns in the 9-col template;
     // dedup happens upstream via KV. `date` may be supplied for backfills.
     date: body?.date,
+    // VAT-deductible flag (col I) — defaults FALSE if the bot/caller omits
+    // it. Used by /api/sheet/tax-report to sum year-end deductible totals
+    // for עוסק מורשה customers. Bot exposes the "/מעמ" command to retro-
+    // actively flip the most recent row, so the common path is false here.
+    vatDeductible: !!body?.vatDeductible,
   });
 
   const result = await appendRowToUserSheet({ userRecord, row });

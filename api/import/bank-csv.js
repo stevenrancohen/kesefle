@@ -47,7 +47,10 @@ import { findGroupForSubcategory } from '../../lib/categories.js';
 import crypto from 'node:crypto';
 
 const TX_TAB = 'תנועות';
-const TX_HEADERS = ['תאריך', 'חודש', 'סכום', 'קטגוריה', 'תת-קטגוריה', 'פירוט', 'מקור', 'סטטוס'];
+// Keep in sync with lib/sheet-writer.js TX_HEADERS -- col I "ניכוי מע״מ"
+// added 2026-05-24. Bank-imported rows default to vatDeductible=false
+// (the user can flip individual rows from the bot or sheet UI).
+const TX_HEADERS = ['תאריך', 'חודש', 'סכום', 'קטגוריה', 'תת-קטגוריה', 'פירוט', 'מקור', 'סטטוס', 'ניכוי מע״מ'];
 
 // Vercel default body limit is 1 MB; bank exports for one month are usually
 // well under that, but a full-year export can push past it. 2 MB headroom.
@@ -246,7 +249,7 @@ function classifyFromDescription(description, isIncome) {
 async function appendRowsBatched({ spreadsheetId, accessToken, rows }) {
   if (!rows.length) return { ok: true, updatedRange: null };
 
-  const range = encodeURIComponent(`'${TX_TAB}'!A:H`);
+  const range = encodeURIComponent(`'${TX_TAB}'!A:I`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
   const body = JSON.stringify({ values: rows });
   const opts = (tok) => ({

@@ -293,6 +293,45 @@ async function webhookImpl(req, res) {
       const map = subId ? await billingKvGet(`paypalSub:${subId}`) : null;
       const userSub = map?.userSub || resource.custom_id;
       if (userSub) await deactivatePremium(userSub, 'canceled');
+    } else if (
+      type === 'PAYMENT.SALE.DENIED' ||
+      type === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED'
+    ) {
+      // Dunning trigger: payment failed -> mark KV state + send Day 0 email.
+      // The lifecycle cron picks it up on subsequent days for Day 3 + Day 7
+      // retry reminders using the same KV record.
+      const subId = resource.billing_agreement_id || resource.id;
+      const map = subId ? await billingKvGet(`paypalSub:${subId}`) : null;
+      const userSub = map?.userSub || resource.custom_id;
+      if (userSub) {
+        await billingKvSet(`payment_failed:${userSub}`, {
+          subId,
+          plan: map?.plan || 'pro',
+          firstFailureAt: new Date().toISOString(),
+          lastTriggerType: type,
+          amountIls: Number(resource.amount?.total) || priceILS(map?.plan || 'pro', 'month'),
+        });
+        // Fire Day-0 email immediately (best-effort, env-fail-soft).
+        try {
+          const { sendTemplate } = await import('../../lib/email.js');
+          const u = await billingKvGet(`user:${userSub}`);
+          if (u?.email) {
+            await sendTemplate({
+              to: u.email,
+              template: 'payment-failed',
+              vars: {
+                firstName: u.name ? String(u.name).split(/\s+/)[0] : 'שלום',
+                userEmail: u.email,
+                planName: (map?.plan === 'family') ? 'Family' : 'Pro',
+                amount: String(Number(resource.amount?.total) || priceILS(map?.plan || 'pro', 'month')),
+                unsubscribeUrl: `https://kesefle.com/unsubscribe?sub=${encodeURIComponent(userSub)}`,
+              },
+            });
+          }
+        } catch (eMail) {
+          log.warn('paypal.payment_failed_email_unhandled', { reqId: req.reqId, error: eMail.message });
+        }
+      }
     }
     if (event.id) await billingKvSet(seenKey, { type, ts: new Date().toISOString() });
   } catch (e) {

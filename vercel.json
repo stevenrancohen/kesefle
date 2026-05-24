@@ -104,9 +104,11 @@
     }
   ],
   "crons": [
+    { "path": "/api/cron/kv-backup", "schedule": "0 3 * * *" },
     { "path": "/api/cron/reminders", "schedule": "0 6 * * *" },
     { "path": "/api/cron/recurring", "schedule": "5 6 * * *" },
     { "path": "/api/cron/lifecycle", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/budget-check", "schedule": "0 8 * * *" },
     { "path": "/api/cron/kv-monitor", "schedule": "0 * * * *" }
   ],
   "cleanUrls": true,

@@ -172,6 +172,27 @@ async function handlerImpl(req, res) {
           if (r.ok || r.skipped) { stats.inactivity++; scheduled++; }
         }
       }
+
+      // Dunning sequence: payment_failed:{userSub} record drives Day 3 + Day 7
+      // reminder emails after the initial Day 0 from the PayPal webhook.
+      // Idempotent via the email_sent:{userSub}:{template}_day{N} guards.
+      const pf = await kvGet(`payment_failed:${u.userSub}`);
+      if (pf?.firstFailureAt) {
+        const failureDays = daysBetween(new Date(pf.firstFailureAt), now);
+        const dunningVars = {
+          ...baseVars,
+          planName: pf.plan === 'family' ? 'Family' : 'Pro',
+          amount: String(pf.amountIls || 19),
+        };
+        if (failureDays === 3) {
+          const r = await maybeSend(u.userSub, 'payment-failed_day3', dunningVars, 30 * 24 * 3600);
+          if (r.ok || r.skipped) { stats.dunning_day3 = (stats.dunning_day3 || 0) + 1; scheduled++; }
+        }
+        if (failureDays === 7) {
+          const r = await maybeSend(u.userSub, 'payment-failed_day7', dunningVars, 30 * 24 * 3600);
+          if (r.ok || r.skipped) { stats.dunning_day7 = (stats.dunning_day7 || 0) + 1; scheduled++; }
+        }
+      }
     } catch (e) {
       errors++;
       log.warn('cron.lifecycle.user_failed', { userSub: u.userSub, error: e.message });

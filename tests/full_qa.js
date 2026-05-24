@@ -69,7 +69,7 @@ console.log('\n══ 3. buildExpenseRow ══');
 (0, eval)(extractFn(SW, 'buildExpenseRow'));
 (0, eval)(extractFn(SW, 'sanitizeCell'));
 const rExp = buildExpenseRow({ amount: 245, isIncome: false, category: 'אוכל', subcategory: 'סופר', rawText: '245 סופר', date: '2026-05-23T10:00:00Z' });
-ok('row has 8 columns', rExp.length === 8);
+ok('row has 9 columns (8 original + col I "vatDeductible")', rExp.length === 9);
 ok('month in col B is YYYY-MM', /^\d{4}-\d{2}$/.test(rExp[1]));
 ok('amount in col C', rExp[2] === 245);
 ok('category in col D', rExp[3] === 'אוכל');
@@ -223,8 +223,8 @@ ok('personal dashboard total ranges fixed (corrected from xlsx off-by-one)',
    && /_personalSectionTotal\('סה״כ אוכל', 37, 38\)/.test(SW)
    && /_personalSectionTotal\('סה״כ תחבורה', 42, 49\)/.test(SW)
    && /_personalSectionTotal\('סה״כ שונות', 53, 57\)/.test(SW));
-ok('appendRowToUserSheet writes to A:H (8 cols, not A:I)',
-   /'\$\{TX_TAB\}'!A:H/.test(SW) && !/'\$\{SHEETS_TX_TAB\}'!A:I/.test(SW));
+ok('appendRowToUserSheet writes to A:I (9 cols incl. VAT-deductible)',
+   /'\$\{TX_TAB\}'!A:I/.test(SW));
 ok('group.js no longer copies a template (uses create-fresh)',
    !/copyTemplateToUserDrive/.test(fs.readFileSync(path.join(ROOT, 'api/group.js'), 'utf8')));
 // Sign-in must use the full-page REDIRECT OAuth flow (PKCE → google-exchange),
