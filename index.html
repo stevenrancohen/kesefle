@@ -16,7 +16,7 @@
 <meta property="og:description" content="שלח הודעה בוואטסאפ — '245 סופר' — וזה כבר רשום, מקוטלג, מסוכם." />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="he_IL" />
-<meta property="og:image" content="https://kesefle.com/og-image.png" />
+<meta property="og:image" content="https://kesefle.com/og-image.png?v=2026-05-24" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -580,7 +580,7 @@
         <span>הדרך הפשוטה לנהל את הכסף שלך</span>
       </div>
       <h1 class="text-balance text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl md:text-7xl md:leading-[1.02] dark:text-white">
-        כל ההוצאות שלך —
+        כל ההוצאות שלך,
         <span class="block holo-text">בלי מאמץ. בלי טפסים.</span>
       </h1>
       <p class="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
@@ -1305,7 +1305,7 @@
           <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> קטלוג אוטומטי בסיסי</li>
           <li class="flex items-center gap-2 text-ink-400"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M6 18L18 6"/></svg> ללא סיכום חודשי</li>
         </ul>
-        <a href="#signup" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">התחל בחינם</a>
+        <a href="#signup" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">הרשמה או התחברות</a>
       </div>
       <!-- pro plan (recommended) -->
       <div class="relative rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-500/10 via-white to-accent-50 p-8 shadow-glow dark:from-brand-500/20 dark:via-ink-800 dark:to-accent-500/10">
@@ -1817,72 +1817,20 @@ function _kflIsInAppBrowser() {
 }
 
 async function kesefleStartGoogle() {
-  // If the user is inside an in-app browser, GIS One Tap will render a blank
-  // accounts.google.com page and they'll be stuck. Bounce to /account, which
-  // shows the "open in Safari" help card before any Google call happens.
-  if (_kflIsInAppBrowser()) {
-    window.location.href = '/account?from=hero&plan=' + encodeURIComponent((window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free');
-    return;
+  // 2026-05-24: REMOVED the GIS One Tap flow entirely. It renders a blank
+  // accounts.google.com/gsi/transform iframe whenever 3rd-party cookies are
+  // blocked (Safari default, Brave, Firefox strict, ALL in-app browsers,
+  // and Chrome's gradual 3PC phase-out). Steven sent a screenshot showing
+  // the gsi/transform blank page during signup.
+  //
+  // Fix: always redirect to /account, which uses the bulletproof full-page
+  // PKCE redirect OAuth (account.html kesefleStartRedirectSignin). Works in
+  // every browser, every cookie policy, every in-app webview. One reliable
+  // path, no exotic edge cases.
+  if (window.kfl) {
+    try { window.kfl.track('signup_start', { source: 'google', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' }); } catch (e) {}
   }
-  var cid = window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
-  if (!cid || cid.indexOf('__') === 0) {
-    return kesefleShowAuthMsg('Google Client ID לא מוגדר. ראה SETUP.md.', 'err');
-  }
-  if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-    return kesefleShowAuthMsg('Google SDK טרם נטען. נסה שוב בעוד רגע.', 'err');
-  }
-  if (window.kfl) window.kfl.track('signup_start', { source: 'google', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' });
-
-  // Use One Tap prompt. Falls back to a redirect to /account if dismissed,
-  // skipped, or unavailable (e.g. incognito mode blocks 3rd-party cookies).
-  var fellBack = false;
-  function fallbackToAccount() {
-    if (fellBack) return;
-    fellBack = true;
-    kesefleShowAuthMsg('פותח חלון התחברות…', 'info');
-    // /account uses oauth2.initTokenClient which works in incognito (popup).
-    window.location.href = '/account?from=hero&plan=' + encodeURIComponent((window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free');
-  }
-
-  try {
-    window.google.accounts.id.initialize({
-      client_id: cid,
-      callback: async function(response) {
-        kesefleShowAuthMsg('מתחבר…', 'info');
-        try {
-          var r = await fetch('/api/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credential: response.credential, plan: window.KESEFLE_STATE.plan })
-          });
-          var j = await r.json();
-          if (j.ok) {
-            // CRITICAL: persist user in localStorage BEFORE redirecting.
-            // /account checks kesefleGetUser() and bounces to / if missing.
-            try { localStorage.setItem('kesefle_user', JSON.stringify(j.user)); } catch(_e) {}
-            kesefleShowAuthMsg('מתחבר… מעביר אותך לחשבון', 'info');
-            window.location.href = '/account?welcome=1';
-          } else {
-            kesefleShowAuthMsg('שגיאה: ' + (j.error || 'אימות נכשל'), 'err');
-          }
-        } catch (e) {
-          kesefleShowAuthMsg('שגיאת רשת. נסה שוב.', 'err');
-        }
-      },
-      auto_select: false,
-    });
-    window.google.accounts.id.prompt(function(notification) {
-      // GIS notification — if One Tap is unavailable, fall back to redirect flow.
-      if (!notification) return;
-      if (notification.isNotDisplayed && notification.isNotDisplayed()) { fallbackToAccount(); return; }
-      if (notification.isSkippedMoment && notification.isSkippedMoment()) { fallbackToAccount(); return; }
-      if (notification.isDismissedMoment && notification.isDismissedMoment()) { fallbackToAccount(); return; }
-    });
-    // Safety net: if nothing happens in 2.5s (incognito quietly blocks), redirect.
-    setTimeout(fallbackToAccount, 2500);
-  } catch (e) {
-    fallbackToAccount();
-  }
+  window.location.href = '/account?from=hero&plan=' + encodeURIComponent((window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free');
 }
 
 async function kesefleStartFacebook() {

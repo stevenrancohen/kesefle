@@ -68,11 +68,14 @@ async function handlerImpl(req, res) {
   const phone = normalizeE164(body?.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
 
+  // Look up the user record if linked. If not linked (e.g. the owner's own
+  // phone hardcoded as SHEET_OWNER, or a phone in pre-link onboarding), STILL
+  // attempt to send a generic welcome -- the admin explicitly requested it
+  // and Meta will reject if the number isn't on WhatsApp anyway, surfacing a
+  // useful error rather than us blocking with a confusing "phone_not_linked".
   const phoneRec = await kvGet(`phone:${phone}`);
-  if (!phoneRec || !phoneRec.userSub) {
-    return res.status(404).json({ ok: false, error: 'phone_not_linked' });
-  }
-  const sheetRec = await kvGet(`sheet:${phoneRec.userSub}`);
+  const userSub = phoneRec?.userSub || null;
+  const sheetRec = userSub ? await kvGet(`sheet:${userSub}`) : null;
   const sheetUrl = sheetRec?.spreadsheetUrl
     || (sheetRec?.spreadsheetId ? `https://docs.google.com/spreadsheets/d/${sheetRec.spreadsheetId}/edit` : '');
 
@@ -87,12 +90,14 @@ async function handlerImpl(req, res) {
 
   try {
     await sendWhatsAppText(phone, message);
-    log.info('admin.resend_welcome.ok', { reqId: req.reqId, adminEmail: req.user.email, phone, userSub: phoneRec.userSub });
+    log.info('admin.resend_welcome.ok', { reqId: req.reqId, adminEmail: req.user.email, phone, userSub, linked: !!userSub });
     return res.status(200).json({
       ok: true,
       sentTo: phone,
       sheetUrl: sheetUrl || null,
-      userEmail: phoneRec.email || null,
+      userEmail: phoneRec?.email || null,
+      linked: !!userSub,
+      note: userSub ? null : 'Phone is not linked in our KV -- welcome sent generically (no sheet URL attached).',
     });
   } catch (e) {
     log.error('admin.resend_welcome.failed', { reqId: req.reqId, phone, error: e.message });

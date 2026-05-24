@@ -284,16 +284,8 @@
       </div>
     </div>
 
-    <!-- Raw JSON dump for diagnostics -->
-    <div class="grid">
-      <div class="card full">
-        <h3 style="display:flex;justify-content:space-between;align-items:center">
-          <span>Raw payload (diagnostic)</span>
-          <button onclick="kfl.toggleRaw()" style="font-size:11px">Show / hide</button>
-        </h3>
-        <pre id="raw-json" style="display:none;font-size:11px;color:var(--muted);background:var(--bg);padding:12px;border-radius:8px;overflow-x:auto;border:1px solid var(--border);margin-top:8px"></pre>
-      </div>
-    </div>
+    <!-- Diagnostic JSON kept hidden by default; only shown via console for debugging. -->
+    <pre id="raw-json" style="display:none"></pre>
 
   </div>
 
