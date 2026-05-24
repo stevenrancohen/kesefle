@@ -284,6 +284,21 @@
       </div>
     </div>
 
+    <!-- Create sample sheet action -->
+    <div class="grid">
+      <div class="card full">
+        <h3>Create sample sheet in my Drive</h3>
+        <div class="sub" style="margin-bottom:12px">Generates a fresh per-tenant sheet using the EXACT spec every new customer receives: 5 tabs (transactions, orders, personal dashboard, business dashboard, extended breakdown) + 2 pie charts. The sheet lands in your own Google Drive so you can review it.</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="primary" onclick="kfl.createSample()">Create sample sheet</button>
+          <span id="sample-status" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <div id="sample-result" style="margin-top:10px;display:none">
+          <a id="sample-link" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none;border:1px solid var(--border);padding:8px 14px;border-radius:8px;display:inline-block">📄 Open the sample sheet</a>
+        </div>
+      </div>
+    </div>
+
     <!-- Diagnostic JSON kept hidden by default; only shown via console for debugging. -->
     <pre id="raw-json" style="display:none"></pre>
 
@@ -740,6 +755,37 @@ window.kfl = (function () {
     }
   }
 
+  async function createSample() {
+    var status = document.getElementById('sample-status');
+    var result = document.getElementById('sample-result');
+    var link = document.getElementById('sample-link');
+    status.textContent = 'Creating sheet in your Drive… (3-8s)'; status.style.color = 'var(--muted)';
+    result.style.display = 'none';
+    try {
+      var t = token();
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      var r = await fetch('/api/admin/create-sample-sheet', {
+        method: 'POST', credentials: 'include', headers: headers,
+        body: JSON.stringify({})
+      });
+      var j = await r.json();
+      if (j.ok && j.spreadsheetUrl) {
+        status.textContent = '✓ Created: ' + (j.name || 'sample');
+        status.style.color = 'var(--success)';
+        link.href = j.spreadsheetUrl;
+        link.textContent = '📄 ' + (j.name || 'Open the sample sheet');
+        result.style.display = 'block';
+      } else {
+        status.textContent = '✗ ' + (j.error || r.status) + (j.detail ? ': ' + j.detail.slice(0, 120) : '');
+        status.style.color = 'var(--danger)';
+      }
+    } catch (e) {
+      status.textContent = '✗ Network error: ' + (e.message || e);
+      status.style.color = 'var(--danger)';
+    }
+  }
+
   return {
     refresh: refresh,
     toggleAuto: toggleAuto,
@@ -747,7 +793,8 @@ window.kfl = (function () {
     resendWelcome: resendWelcome,
     resendFromRow: resendFromRow,
     loadRecent: loadRecent,
-    loadReports: loadReports
+    loadReports: loadReports,
+    createSample: createSample
   };
 })();
 </script>
