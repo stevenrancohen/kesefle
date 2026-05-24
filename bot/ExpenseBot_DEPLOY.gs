@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-vat-budgets-celebrate-support';
+const KFL_BUILD_VERSION = '2026-05-24-greeting-link-help-freechat';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4144,7 +4144,22 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     try { errCode = (JSON.parse(body) || {}).error || ''; } catch (_pe) {}
     // Structural failures: retrying never helps, so give real guidance instead
     // of "try again in a minute".
-    if (errCode === 'no_sheet_provisioned' || errCode === 'incomplete_user_record' || errCode === 'no_user_for_phone' || errCode === 'reauth_required') {
+    if (errCode === 'no_user_for_phone') {
+      // The user's account exists on the website but this PHONE isn't linked
+      // yet -- we need them to do the 6-digit code dance. The previous copy
+      // told them to "complete signup" which was confusing because they
+      // already did sign up; they just hadn't linked the phone.
+      return { reply:
+        '👋 כמעט שם!\n\n' +
+        'החשבון שלך באתר מוכן ✓ — אבל המספר הזה עדיין לא מחובר אליו.\n\n' +
+        '*כדי לחבר אותו (30 שניות):*\n' +
+        '1. פתח/י בטלפון: ' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/welcome\n' +
+        '2. לחץ/י על "חבר/י את המספר הזה"\n' +
+        '3. תקבל/י קוד בן 6 ספרות — שלח/י לי אותו (לדוגמה: "קוד 123456")\n\n' +
+        'אחרי זה — כל הוצאה תיכנס אוטומטית לגיליון שלך 📊'
+      };
+    }
+    if (errCode === 'no_sheet_provisioned' || errCode === 'incomplete_user_record' || errCode === 'reauth_required') {
       return { reply: '😬 נראה שעוד לא סיימת את ההרשמה — אין עדיין גיליון מחובר למספר הזה.\n👉 כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/account כדי לסיים את החיבור, ואז שלח/י שוב את ההוצאה.' };
     }
     if (errCode === 'sheet_ownership_mismatch') {
@@ -4676,6 +4691,55 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'עזרה' || trimmed === 'help' || trimmed === '?') {
     return { reply: getHelpMessage() };
   }
+  // Greetings: catch "שלום"/"היי"/"hi"/"hello"/"hey" as standalone short
+  // message. Respond with a real intro + capabilities, not "didn't understand".
+  // Conservative regex: only fires for a pure greeting, not a sentence that
+  // contains the word (e.g. "שלום, אכלתי בסופר ב-45" still goes to the parser).
+  var __greetMatch = trimmed.match(/^\s*(שלום|היי|hi|hey|hello|בוקר טוב|ערב טוב|שבוע טוב|מה נשמע|מה קורה|good morning|good evening)\s*[!.?]*\s*$/i);
+  if (__greetMatch) {
+    return { reply:
+      '👋 היי! אני כספ\'לה — הבוט שעוקב אחרי ההוצאות שלך *בלי טפסים ובלי אקסל*.\n\n' +
+      '📝 *פשוט תכתוב הוצאה כמו שאתה מדבר:*\n' +
+      '  • "45 קפה"\n' +
+      '  • "1,200 שכר דירה"\n' +
+      '  • "230 סופר רמי לוי"\n' +
+      '  • "אתמול 60 מכולת" (תאריך אחר)\n' +
+      '  • "50$ אמזון" (מטבע זר -> ILS אוטומטית)\n\n' +
+      '🧾 *גם ככה:*\n' +
+      '  • שלח לי *צילום קבלה* — אני אקרא אותה\n' +
+      '  • שלח לי *הודעה קולית* — אני אתמלל\n' +
+      '  • "/קבוע 2500 שכירות" — הוצאה חוזרת חודשית\n' +
+      '  • "/תקציב מזון 1500" — תקציב + התראות\n' +
+      '  • "/מעמ" — סמן הוצאה לניכוי מס\n\n' +
+      '📊 *לראות מה רשמתי:*\n' +
+      '  • "סיכום" — סיכום החודש\n' +
+      '  • "עזרה" — רשימת הפקודות המלאה\n\n' +
+      '💬 יש לך שאלה על הכסף שלך? תשאל אותי חופשי — אני יודע להסביר.'
+    };
+  }
+  // NPS reply: user replies with a 0-10 score (optionally followed by a
+  // comment) within 48h of being prompted. Prompt is fired by the lifecycle
+  // cron via /api/whatsapp/send at day-60.
+  var __npsCtxKey = 'nps_pending:' + String(fromPhone).replace(/[^0-9]/g, '');
+  var __npsPending = false;
+  try { __npsPending = !!PropertiesService.getScriptProperties().getProperty(__npsCtxKey); } catch (_npsErr) {}
+  if (__npsPending) {
+    var __npsMatch = text.trim().match(/^\s*(10|[0-9])\s*([\s\S]*)$/);
+    if (__npsMatch) {
+      var __npsScore = parseInt(__npsMatch[1], 10);
+      var __npsComment = (__npsMatch[2] || '').trim().slice(0, 280);
+      try {
+        _submitNps_(fromPhone, __npsScore, __npsComment);
+        try { PropertiesService.getScriptProperties().deleteProperty(__npsCtxKey); } catch (_npsCtxErr) {}
+      } catch (_npsSubErr) { Logger.log('nps submit err: ' + (_npsSubErr && _npsSubErr.message)); }
+      var __npsThanks = __npsScore >= 9
+        ? 'תודה רבה! 🙏 שמחים שאתה ממליץ. אם מתחשק לך לעזור לחבר/ה — ' + 'wa.me/15556408123?text=שלום'
+        : __npsScore >= 7
+        ? 'תודה על המשוב! 🙏 איפה אנחנו יכולים להשתפר?'
+        : 'תודה על הכנות. 🙏 נשמח שתשלח/י לנו הצעות שיפור ל-info@kesefle.com';
+      return { reply: __npsThanks };
+    }
+  }
   // Testimonial submission: user replies with their experience after the bot
   // asks at day-14. Pattern: starts with 'המלצה:' / 'המלצה ' / 'recommend:'.
   // Anything else goes through the normal classifier. Submission is queued
@@ -4953,9 +5017,35 @@ function processExpense(text, fromPhone) {
       if (__cg.action === 'orders') { try { return { reply: getOrdersSummary() }; } catch (_s4) {} }
       if (__cg.reply) return { reply: __cg.reply };
     }
+    // Last resort: try Gemini as a money-coach for the user's question.
+    // This is the "free-form chat" feature -- the bot answers money/budgeting
+    // questions in Hebrew, scoped to topics it can actually help with. Only
+    // fires for messages that look like real questions (>= 3 words OR contain
+    // "?"), to avoid spending an LLM call on every garbage message. Gracefully
+    // falls through to the generic reply if Gemini is unavailable or returns
+    // something nonsensical.
+    try {
+      var __isQuestion = /\?$|איך|מתי|למה|כמה|מה|איפה|why|when|how|what|where/i.test(text.trim());
+      var __wordCount = String(text || '').trim().split(/\s+/).length;
+      if ((typeof _geminiGenerate_ === 'function') && (__isQuestion || __wordCount >= 3)) {
+        var __coachSystem =
+          'אתה כספלה - בוט יועץ פיננסי חברותי בעברית. ' +
+          'תענה בקצרה (עד 4 משפטים) בעברית ידידותית. ' +
+          'הקפד: רק עצות פיננסיות פרקטיות (תקציב, חיסכון, ניהול הוצאות, החזרי מסים, הוצאות חוזרות). ' +
+          'אל תיתן ייעוץ השקעות ספציפי, לא ייעוץ משכנתאות, לא תחזיות על מטבעות/מניות. ' +
+          'אם השאלה לא קשורה לכסף - תפנה לכתיבת הוצאה, בלי להסביר למה. ' +
+          'תזכיר את הפקודות הרלוונטיות (סיכום / תקציב / קבוע / מעמ) כשמתאים.';
+        var __coachReply = _geminiGenerate_(__coachSystem, text);
+        if (__coachReply && String(__coachReply).trim().length > 10 && String(__coachReply).trim().length < 500) {
+          return { reply: '💬 ' + String(__coachReply).trim() };
+        }
+      }
+    } catch (__chatErr) { Logger.log('free-chat err: ' + (__chatErr && __chatErr.message)); }
+
     return { reply: '🤔 לא הבנתי. התכוונת לרשום הוצאה?\n' +
       'אפשר לכתוב כמו שמדברים — למשל "150 סופר" או "ארנונה 500".\n' +
-      'שלח *דוגמאות* לעוד רעיונות 💡' };
+      'שלח *דוגמאות* לעוד רעיונות 💡\n' +
+      'או שאל אותי שאלה על הכסף שלך 💬' };
   }
   // Stamp the EXACT raw user input onto every parsed item (overriding the
   // parser's view, which may be the FX-rewritten text). This is the value we
@@ -11027,6 +11117,35 @@ function _adminAlertOnce_(message, fromPhone) {
     }
   } catch (e) {
     Logger.log('_adminAlertOnce_ err: ' + e.message);
+  }
+}
+
+// Bot-side helper: POST an NPS score to /api/nps. Resolves phone->userSub
+// via the same lookup pattern; uses the same bot-secret auth.
+function _submitNps_(fromPhone, score, comment) {
+  try {
+    var apiBase = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET');
+    if (!botSecret) return { ok: false, error: 'bot_secret_not_configured' };
+    var userSub = null;
+    try {
+      if (typeof _kvLookupPhone_ === 'function') {
+        var lookup = _kvLookupPhone_(fromPhone);
+        if (lookup && lookup.userSub) userSub = lookup.userSub;
+      }
+    } catch (_lErr) {}
+    if (!userSub) userSub = 'phone:' + String(fromPhone).replace(/[^0-9]/g, '');
+    UrlFetchApp.fetch(apiBase + '/api/nps', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify({ userSub: userSub, score: score, comment: comment || '' }),
+      muteHttpExceptions: true,
+    });
+    return { ok: true };
+  } catch (e) {
+    Logger.log('_submitNps_ throw: ' + (e && e.message));
+    return { ok: false, error: 'exception' };
   }
 }
 

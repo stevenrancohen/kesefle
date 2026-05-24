@@ -964,6 +964,14 @@ async function kesefleRedeemReferralIfPending() {
 // where sign-in works. This is the #1 reason WhatsApp-driven signups fail.
 function kesefleIsInAppBrowser() {
   try {
+    // Escape hatch: ?force_signin=1 in the URL bypasses the block entirely.
+    // Lets a user trapped by a false-positive (e.g. Chrome iOS incognito +
+    // Google Translate proxy that changes the UA) get to sign-in anyway.
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('force_signin') === '1') return false;
+    } catch (_pe) {}
+
     var ua = navigator.userAgent || '';
     // WhatsApp + Business variants on iOS/Android. WhatsApp Business UAs seen
     // in the wild: "WhatsAppBusiness/x.x", "WhatsApp Business/x.x", "WA/Business",
@@ -971,9 +979,14 @@ function kesefleIsInAppBrowser() {
     if (/WhatsApp|WhatsAppBusiness|WhatsApp Business|WABusiness|WA Business|WAB\/|GBWhatsApp|FMWhatsApp|YoWhatsApp/i.test(ua)) return true;
     // Other in-app browsers blocked by Google OAuth.
     if (/FBAN|FBAV|FB_IAB|FBSV|FBSS|Instagram|Line\/|LineWebView|MQQBrowser|Messenger|MicroMessenger|Snapchat|TikTok|Twitter|GSA\/|XING|Slack|Discord|MetaApp/i.test(ua)) return true;
-    var isIOS = /iPhone|iPad|iPod/i.test(ua);
-    if (isIOS && !/Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)) return true; // iOS WKWebView (in-app)
-    if (/Android/i.test(ua) && /;\s*wv\)/.test(ua)) return true; // Android System WebView
+    // Android System WebView is reliably tagged with "; wv)" -- safe to block.
+    if (/Android/i.test(ua) && /;\s*wv\)/.test(ua)) return true;
+    // NOTE: previously we also blocked iOS when UA lacked Safari + Chrome/Firefox
+    // markers, but that produced false positives on Chrome iOS Incognito +
+    // Google Translate (UA modified by the translate proxy) and on some
+    // iOS Safari versions during page transitions. The PKCE full-page redirect
+    // flow we use works in iOS WKWebViews anyway, so being permissive here is
+    // strictly safer than being noisy with false positives.
     return false;
   } catch (e) { return false; }
 }
@@ -1048,6 +1061,7 @@ function kesefleShowInAppBrowserHelp() {
       '</ol>' +
       '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:20px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:14px;font-size:15px;font-weight:800;color:#ffffff;cursor:pointer;">העתק/י את הקישור</button>' +
       '<p style="margin-top:10px;font-size:12px;color:' + muted + ';word-break:break-all;direction:ltr;">' + url + '</p>' +
+      '<button type="button" onclick="(function(){var u=new URL(location.href);u.searchParams.set(\'force_signin\',\'1\');location.href=u.toString();})()" style="margin-top:16px;background:transparent;border:none;color:' + muted + ';font-size:12px;text-decoration:underline;cursor:pointer;">אני בדפדפן רגיל — המשך/י בכל זאת</button>' +
     '</div>';
   while (main.firstChild) main.removeChild(main.firstChild);
   main.appendChild(card);
