@@ -293,11 +293,11 @@
       <span class="opacity-50">&middot;</span>
       <span>שקלים, כולל מע"מ. חשבונית אוטומטית.</span>
     </div>
-    <h1 class="kfl-hero-stage text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl" data-stage="1">
+    <h1 id="kfl-hero-headline" class="kfl-hero-stage text-balance text-4xl font-black leading-[1.1] tracking-tight md:text-6xl" data-stage="1">
       תוכנית לכל משק בית.
       <span class="block holo-text">בלי הפתעות בחיוב.</span>
     </h1>
-    <p class="kfl-hero-stage mt-5 mx-auto max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200" data-stage="2">
+    <p id="kfl-hero-subhead" class="kfl-hero-stage mt-5 mx-auto max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200" data-stage="2">
       התחל בחינם, שדרג רק כשתצטרך. <span class="num">14</span> יום ניסיון על Pro ומשפחה. ביטול בלחיצה.
     </p>
 
@@ -1077,6 +1077,61 @@ function kesefleToggleDark() {
     }, { passive: true });
     update();
   })();
+</script>
+<script src="/js/ab-client.js" defer></script>
+<script>
+/* A/B experiments for the pricing page. Each experiment is independent;
+   missing/disabled experiments return 'control' so the page renders fine
+   even before Steven turns one on in /admin (via POST /api/ab action=set).
+   Fires a `pricing_viewed` funnel event with the variant tags so the
+   downstream conversion (signup completion) can be attributed. */
+(function () {
+  if (!window.kflAB) return; // ab-client not loaded
+  var experiments = {
+    pricing_hero_headline: {
+      variant_money: function () {
+        var el = document.getElementById('kfl-hero-headline');
+        if (el) el.innerHTML = 'תחסוך אלפי שקלים בשנה. <span class="block holo-text">פחות מקפה ביום.</span>';
+      },
+      variant_simple: function () {
+        var el = document.getElementById('kfl-hero-headline');
+        if (el) el.innerHTML = 'כסף מסודר. <span class="block holo-text">בלי טפסים.</span>';
+      },
+    },
+    pricing_subhead_framing: {
+      variant_daily: function () {
+        var el = document.getElementById('kfl-hero-subhead');
+        if (el) el.innerHTML = 'התחל בחינם. רק 63 אגורות ביום ל-Pro. ביטול בלחיצה.';
+      },
+      variant_annual: function () {
+        var el = document.getElementById('kfl-hero-subhead');
+        if (el) el.innerHTML = 'התחל בחינם. רק 190 ש"ח לשנה - חיסכון של חודשיים. ביטול בלחיצה.';
+      },
+    },
+  };
+
+  Promise.all(Object.keys(experiments).map(function (name) {
+    return window.kflAB(name).then(function (variant) { return { name: name, variant: variant }; });
+  })).then(function (results) {
+    var fired = [];
+    results.forEach(function (r) {
+      var exp = experiments[r.name];
+      if (exp && exp[r.variant] && typeof exp[r.variant] === 'function') {
+        try { exp[r.variant](); } catch (_e) {}
+      }
+      fired.push(r.name + ':' + r.variant);
+    });
+    // One pixel per page-load with all active variants.
+    try {
+      fetch('/api/log/funnel-event', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'pricing_viewed', meta: { source: fired.join('|') } }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (_e) {}
+  });
+})();
 </script>
 <script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
 if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>

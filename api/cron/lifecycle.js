@@ -61,6 +61,17 @@ function daysBetween(a, b) {
   return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// ISO 8601 week key (e.g. "2026-W21"). Used as a dedup namespace for the
+// weekly digest so re-running the cron the same Sunday doesn't double-send.
+function isoWeekKey(d) {
+  var t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  var dayNum = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  var weekNum = Math.ceil((((t - yearStart) / 86400000) + 1) / 7);
+  return t.getUTCFullYear() + '-W' + String(weekNum).padStart(2, '0');
+}
+
 function firstNameFromUser(u) {
   if (u?.name) return String(u.name).split(/\s+/)[0];
   if (u?.email) return String(u.email).split('@')[0];
@@ -164,6 +175,31 @@ async function handlerImpl(req, res) {
         const r = await maybeSend(u.userSub, 'day_30_pro_completed', vars30);
         if (r.ok || r.skipped) { stats.day_30++; scheduled++; }
       }
+      // Weekly digest: every Sunday morning, send last-7-day summary to
+      // engaged users. We only run this branch on Sunday (UTC) -- the cron
+      // fires daily, but the digest sends only once a week. Dedup key is
+      // per-ISO-week so re-running the cron on the same Sunday is safe.
+      if (now.getUTCDay() === 0 && (u.expensesCount || 0) >= 3 && !u.emailUnsubscribed) {
+        var weekKey = isoWeekKey(now);
+        var weeklyGuardKey = `email_sent:${u.userSub}:weekly_digest_${weekKey}`;
+        var alreadyWeekly = await kvGet(weeklyGuardKey);
+        if (!alreadyWeekly) {
+          var stats7w = await kvGet(`stats:${u.userSub}:7d`) || {};
+          var digestVars = {
+            ...baseVars,
+            week_total: stats7w.total || 0,
+            transactions: stats7w.count || 0,
+            top_category: stats7w.top_category || 'מזון',
+          };
+          var rd = await sendTemplate({ to: u.email, template: 'weekly-digest', vars: digestVars });
+          if (rd.ok || rd.skipped) {
+            await kvSetEx(weeklyGuardKey, JSON.stringify({ at: new Date().toISOString(), id: rd.id || null, skipped: !!rd.skipped }), 14 * 24 * 3600);
+            stats.weekly_digest = (stats.weekly_digest || 0) + 1;
+            scheduled++;
+          }
+        }
+      }
+
       // Inactivity: lastActive older than 7d. Only send once per 30d window.
       if (u.lastActive) {
         const lastDays = daysBetween(new Date(u.lastActive), now);
@@ -191,6 +227,39 @@ async function handlerImpl(req, res) {
         if (failureDays === 7) {
           const r = await maybeSend(u.userSub, 'payment-failed_day7', dunningVars, 30 * 24 * 3600);
           if (r.ok || r.skipped) { stats.dunning_day7 = (stats.dunning_day7 || 0) + 1; scheduled++; }
+        }
+      }
+
+      // NPS prompt at day 60: send a WhatsApp asking for a 0-10 score. The
+      // bot watches for nps_pending:{phone} Script Property to parse the
+      // reply -- the Apps Script side sets that flag when it sends the
+      // prompt. Here we just trigger the prompt via /api/whatsapp/send.
+      // Dedup is permanent (sub may answer once).
+      if (days === 60 && (u.linkedPhone || u.phone) && !u.emailUnsubscribed) {
+        var npsGuardKey = `email_sent:${u.userSub}:nps_d60`;
+        var npsSent = await kvGet(npsGuardKey);
+        if (!npsSent) {
+          try {
+            var npsWaUrl = (process.env.SELF_URL || 'https://kesefle.com') + '/api/whatsapp/send';
+            var npsBotSecret = process.env.KESEFLE_BOT_SECRET;
+            var npsPhone = u.linkedPhone || u.phone;
+            if (npsBotSecret && npsPhone) {
+              var npsText =
+                'היי ' + firstName + ', שאלה קצרה — ' +
+                'בקנה מידה של 0 עד 10, באיזה סבירות תמליצי/ימליץ על כספ\'לה לחבר/ה?\n\n' +
+                'פשוט השב/י עם מספר. אופציונלי: תוסיף/י משפט קצר אחרי המספר.';
+              await fetch(npsWaUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-kesefle-bot-secret': npsBotSecret },
+                body: JSON.stringify({ phone: npsPhone, text: npsText }),
+              });
+              await kvSetEx(npsGuardKey, JSON.stringify({ at: new Date().toISOString() }), 365 * 24 * 3600);
+              stats.nps_d60 = (stats.nps_d60 || 0) + 1;
+              scheduled++;
+            }
+          } catch (npsErr) {
+            log.warn('cron.lifecycle.nps_d60_failed', { userSub: u.userSub, error: npsErr.message });
+          }
         }
       }
 

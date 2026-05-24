@@ -4601,6 +4601,44 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'עזרה' || trimmed === 'help' || trimmed === '?') {
     return { reply: getHelpMessage() };
   }
+  // NPS reply: user replies with a 0-10 score (optionally followed by a
+  // comment) within 48h of being prompted. Prompt is fired by the lifecycle
+  // cron via /api/whatsapp/send at day-60.
+  var __npsCtxKey = 'nps_pending:' + String(fromPhone).replace(/[^0-9]/g, '');
+  var __npsPending = false;
+  try { __npsPending = !!PropertiesService.getScriptProperties().getProperty(__npsCtxKey); } catch (_npsErr) {}
+  if (__npsPending) {
+    var __npsMatch = text.trim().match(/^\s*(10|[0-9])\s*([\s\S]*)$/);
+    if (__npsMatch) {
+      var __npsScore = parseInt(__npsMatch[1], 10);
+      var __npsComment = (__npsMatch[2] || '').trim().slice(0, 280);
+      try {
+        _submitNps_(fromPhone, __npsScore, __npsComment);
+        try { PropertiesService.getScriptProperties().deleteProperty(__npsCtxKey); } catch (_npsCtxErr) {}
+      } catch (_npsSubErr) { Logger.log('nps submit err: ' + (_npsSubErr && _npsSubErr.message)); }
+      var __npsThanks = __npsScore >= 9
+        ? 'תודה רבה! 🙏 שמחים שאתה ממליץ. אם מתחשק לך לעזור לחבר/ה — ' + 'wa.me/15556408123?text=שלום'
+        : __npsScore >= 7
+        ? 'תודה על המשוב! 🙏 איפה אנחנו יכולים להשתפר?'
+        : 'תודה על הכנות. 🙏 נשמח שתשלח/י לנו הצעות שיפור ל-info@kesefle.com';
+      return { reply: __npsThanks };
+    }
+  }
+  // Testimonial submission: user replies with their experience after the bot
+  // asks at day-14. Pattern: starts with 'המלצה:' / 'המלצה ' / 'recommend:'.
+  // Anything else goes through the normal classifier. Submission is queued
+  // for admin review (not auto-published).
+  var __testimonialMatch = text.match(/^\s*(?:המלצה[\s:]+|recommend[\s:]+)(.{10,280})$/i);
+  if (__testimonialMatch) {
+    try {
+      var __testimonialText = __testimonialMatch[1].trim();
+      var __submitResp = _submitTestimonial_(fromPhone, __testimonialText);
+      if (__submitResp && __submitResp.ok) {
+        return { reply: 'תודה רבה! 🙏 ההמלצה התקבלה ותעבור בדיקה לפני שתפורסם באתר.' };
+      }
+      return { reply: 'תודה! קיבלנו את ההמלצה (ייתכן עיכוב בעיבוד).' };
+    } catch (_tErr) { Logger.log('testimonial submit err: ' + (_tErr && _tErr.message)); }
+  }
   // Support escalation: customer needs a human. Match common Hebrew + English
   // phrases. We DO NOT classify these as expenses, we DO notify the owner via
   // the existing admin-alert path, and we reply with a friendly ack.
@@ -10937,6 +10975,75 @@ function _adminAlertOnce_(message, fromPhone) {
     }
   } catch (e) {
     Logger.log('_adminAlertOnce_ err: ' + e.message);
+  }
+}
+
+// Bot-side helper: POST an NPS score to /api/nps. Resolves phone->userSub
+// via the same lookup pattern; uses the same bot-secret auth.
+function _submitNps_(fromPhone, score, comment) {
+  try {
+    var apiBase = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET');
+    if (!botSecret) return { ok: false, error: 'bot_secret_not_configured' };
+    var userSub = null;
+    try {
+      if (typeof _kvLookupPhone_ === 'function') {
+        var lookup = _kvLookupPhone_(fromPhone);
+        if (lookup && lookup.userSub) userSub = lookup.userSub;
+      }
+    } catch (_lErr) {}
+    if (!userSub) userSub = 'phone:' + String(fromPhone).replace(/[^0-9]/g, '');
+    UrlFetchApp.fetch(apiBase + '/api/nps', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify({ userSub: userSub, score: score, comment: comment || '' }),
+      muteHttpExceptions: true,
+    });
+    return { ok: true };
+  } catch (e) {
+    Logger.log('_submitNps_ throw: ' + (e && e.message));
+    return { ok: false, error: 'exception' };
+  }
+}
+
+// Bot-side helper: POST a testimonial to /api/testimonials. Resolves the
+// phone -> userSub via the same bot-secret path that the budget/append
+// helpers use, so we don't leak phone numbers into the public site.
+function _submitTestimonial_(fromPhone, textBody) {
+  try {
+    var apiBase = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET');
+    if (!botSecret) return { ok: false, error: 'bot_secret_not_configured' };
+    // Resolve userSub via the existing _kvLookupPhone_ pattern (already used
+    // elsewhere). Falls back to using the phone as a stable opaque key if the
+    // user isn't fully registered yet -- still gives Steven a row to review.
+    var userSub = null;
+    try {
+      if (typeof _kvLookupPhone_ === 'function') {
+        var lookup = _kvLookupPhone_(fromPhone);
+        if (lookup && lookup.userSub) userSub = lookup.userSub;
+      }
+    } catch (_lErr) {}
+    if (!userSub) userSub = 'phone:' + String(fromPhone).replace(/[^0-9]/g, '');
+    var resp = UrlFetchApp.fetch(apiBase + '/api/testimonials', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify({
+        userSub: userSub,
+        text: String(textBody || ''),
+        name: '',
+      }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    if (code >= 200 && code < 300) return { ok: true };
+    Logger.log('_submitTestimonial_ HTTP ' + code + ': ' + String(resp.getContentText()).slice(0, 200));
+    return { ok: false, status: code };
+  } catch (e) {
+    Logger.log('_submitTestimonial_ throw: ' + (e && e.message));
+    return { ok: false, error: 'exception' };
   }
 }
 

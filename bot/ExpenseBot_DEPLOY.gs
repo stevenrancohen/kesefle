@@ -4676,6 +4676,21 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'עזרה' || trimmed === 'help' || trimmed === '?') {
     return { reply: getHelpMessage() };
   }
+  // Testimonial submission: user replies with their experience after the bot
+  // asks at day-14. Pattern: starts with 'המלצה:' / 'המלצה ' / 'recommend:'.
+  // Anything else goes through the normal classifier. Submission is queued
+  // for admin review (not auto-published).
+  var __testimonialMatch = text.match(/^\s*(?:המלצה[\s:]+|recommend[\s:]+)(.{10,280})$/i);
+  if (__testimonialMatch) {
+    try {
+      var __testimonialText = __testimonialMatch[1].trim();
+      var __submitResp = _submitTestimonial_(fromPhone, __testimonialText);
+      if (__submitResp && __submitResp.ok) {
+        return { reply: 'תודה רבה! 🙏 ההמלצה התקבלה ותעבור בדיקה לפני שתפורסם באתר.' };
+      }
+      return { reply: 'תודה! קיבלנו את ההמלצה (ייתכן עיכוב בעיבוד).' };
+    } catch (_tErr) { Logger.log('testimonial submit err: ' + (_tErr && _tErr.message)); }
+  }
   // Support escalation: customer needs a human. Match common Hebrew + English
   // phrases. We DO NOT classify these as expenses, we DO notify the owner via
   // the existing admin-alert path, and we reply with a friendly ack.
@@ -11012,6 +11027,46 @@ function _adminAlertOnce_(message, fromPhone) {
     }
   } catch (e) {
     Logger.log('_adminAlertOnce_ err: ' + e.message);
+  }
+}
+
+// Bot-side helper: POST a testimonial to /api/testimonials. Resolves the
+// phone -> userSub via the same bot-secret path that the budget/append
+// helpers use, so we don't leak phone numbers into the public site.
+function _submitTestimonial_(fromPhone, textBody) {
+  try {
+    var apiBase = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET');
+    if (!botSecret) return { ok: false, error: 'bot_secret_not_configured' };
+    // Resolve userSub via the existing _kvLookupPhone_ pattern (already used
+    // elsewhere). Falls back to using the phone as a stable opaque key if the
+    // user isn't fully registered yet -- still gives Steven a row to review.
+    var userSub = null;
+    try {
+      if (typeof _kvLookupPhone_ === 'function') {
+        var lookup = _kvLookupPhone_(fromPhone);
+        if (lookup && lookup.userSub) userSub = lookup.userSub;
+      }
+    } catch (_lErr) {}
+    if (!userSub) userSub = 'phone:' + String(fromPhone).replace(/[^0-9]/g, '');
+    var resp = UrlFetchApp.fetch(apiBase + '/api/testimonials', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify({
+        userSub: userSub,
+        text: String(textBody || ''),
+        name: '',
+      }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    if (code >= 200 && code < 300) return { ok: true };
+    Logger.log('_submitTestimonial_ HTTP ' + code + ': ' + String(resp.getContentText()).slice(0, 200));
+    return { ok: false, status: code };
+  } catch (e) {
+    Logger.log('_submitTestimonial_ throw: ' + (e && e.message));
+    return { ok: false, error: 'exception' };
   }
 }
 

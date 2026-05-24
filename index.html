@@ -1113,6 +1113,52 @@
 </section>
 
 
+<!-- ============== TESTIMONIALS ============== -->
+<section id="testimonials" class="relative py-20 md:py-24 bg-ink-100/40 dark:bg-ink-800/20">
+  <div class="mx-auto max-w-5xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-xs font-extrabold uppercase tracking-widest bg-gradient-to-l from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-300">לקוחות אמיתיים</p>
+      <h2 class="mt-2 text-3xl font-black tracking-tight md:text-4xl dark:text-white">מה אומרים עלינו</h2>
+    </div>
+    <div id="kfl-testimonials-grid" class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+    <div id="kfl-testimonials-empty" class="mt-10 text-center text-sm text-ink-500 dark:text-ink-400 hidden">
+      <p>טוענים את ההמלצות הראשונות... 🌱</p>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var grid = document.getElementById('kfl-testimonials-grid');
+      var empty = document.getElementById('kfl-testimonials-empty');
+      if (!grid) return;
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+      function render(items) {
+        if (!items.length) {
+          grid.style.display = 'none';
+          empty.classList.remove('hidden');
+          return;
+        }
+        grid.innerHTML = items.slice(0, 3).map(function (t) {
+          var safeText = escapeHtml(t.text);
+          var safeName = escapeHtml(t.name || 'משתמש/ת');
+          return '<figure class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-6 shadow-soft">' +
+            '<div class="text-brand-500 text-2xl leading-none">&ldquo;</div>' +
+            '<blockquote class="mt-2 text-base text-ink-700 dark:text-ink-200 leading-relaxed">' + safeText + '</blockquote>' +
+            '<figcaption class="mt-4 text-sm font-semibold text-ink-900 dark:text-white">&mdash; ' + safeName + '</figcaption>' +
+          '</figure>';
+        }).join('');
+      }
+      fetch('/api/testimonials', { cache: 'force-cache' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.ok) render(j.testimonials || []); else render([]); })
+        .catch(function () { render([]); });
+    })();
+  </script>
+</section>
+
 <!-- ============== PRICING ============== -->
 <section id="pricing" class="relative py-24 md:py-32">
   <div class="mx-auto max-w-6xl px-5">

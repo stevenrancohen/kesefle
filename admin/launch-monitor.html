@@ -284,6 +284,19 @@
       </div>
     </div>
 
+    <!-- Testimonials pending review -->
+    <div class="grid">
+      <div class="card full">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+          <h3>Testimonials</h3>
+          <button onclick="kfl.loadTestimonials()" style="font-size:11px">Refresh</button>
+        </div>
+        <div class="sub" style="margin-bottom:8px">Users submit by replying "המלצה: ..." to the bot. Approve to publish on the homepage; hide to keep but not display; delete to remove permanently.</div>
+        <div id="testimonials-summary" class="sub" style="margin-bottom:8px">Loading...</div>
+        <div id="testimonials-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
     <!-- Top help-center search queries (today) -->
     <div class="grid">
       <div class="card full">
@@ -546,7 +559,7 @@ window.kfl = (function () {
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
   // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
-  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); checkDrift(); checkBotVersion(); startPolling(); }
+  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); loadTestimonials(); checkDrift(); checkBotVersion(); startPolling(); }
   if (document.readyState !== 'loading') _initAll();
   else document.addEventListener('DOMContentLoaded', _initAll);
 
@@ -823,6 +836,65 @@ window.kfl = (function () {
     }
   }
 
+  async function loadTestimonials() {
+    var summary = document.getElementById('testimonials-summary');
+    var list = document.getElementById('testimonials-list');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/testimonials?list_all=1', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
+      if (!j.testimonials.length) {
+        summary.innerHTML = '<em>No testimonials yet. Users reply "המלצה: ..." in WhatsApp to submit.</em>';
+        list.innerHTML = '';
+        return;
+      }
+      var approved = j.testimonials.filter(function (t) { return t.approved && !t.hidden; }).length;
+      var pending = j.testimonials.filter(function (t) { return !t.approved && !t.hidden; }).length;
+      var hidden = j.testimonials.filter(function (t) { return t.hidden; }).length;
+      summary.innerHTML =
+        '<strong>' + j.testimonials.length + '</strong> total &middot; ' +
+        '<span style="color:var(--success)">' + approved + ' approved</span> &middot; ' +
+        '<span style="color:var(--warning)">' + pending + ' pending</span> &middot; ' +
+        hidden + ' hidden';
+      list.innerHTML = j.testimonials.map(function (item) {
+        var safeText = String(item.text).replace(/[<>&]/g, function (c) { return { '<':'&lt;','>':'&gt;','&':'&amp;' }[c]; });
+        var safeName = String(item.name).replace(/[<>&]/g, function (c) { return { '<':'&lt;','>':'&gt;','&':'&amp;' }[c]; });
+        var statusTag = item.approved && !item.hidden ? '<span style="color:var(--success);font-weight:600">✓ approved</span>'
+          : item.hidden ? '<span style="color:var(--muted)">hidden</span>'
+          : '<span style="color:var(--warning);font-weight:600">pending</span>';
+        var actionBtns =
+          (item.approved ? '' : '<button onclick="kfl.testimonialAction(\'' + item.userSub + '\',\'approve\')" style="font-size:11px;background:var(--success);color:white">Approve</button> ') +
+          (item.hidden ? '<button onclick="kfl.testimonialAction(\'' + item.userSub + '\',\'unhide\')" style="font-size:11px">Unhide</button> ' : '<button onclick="kfl.testimonialAction(\'' + item.userSub + '\',\'hide\')" style="font-size:11px">Hide</button> ') +
+          '<button onclick="if(confirm(\'Delete this testimonial?\')) kfl.testimonialAction(\'' + item.userSub + '\',\'delete\')" style="font-size:11px;color:var(--danger)">Delete</button>';
+        return '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 14px;background:var(--card)">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">' +
+            '<div style="flex:1">' +
+              '<div dir="rtl" style="font-size:14px;color:var(--text);line-height:1.5">"' + safeText + '"</div>' +
+              '<div style="font-size:11px;color:var(--muted);margin-top:6px">— ' + safeName + ' &middot; ' + (item.at || '').slice(0, 10) + ' &middot; ' + statusTag + '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0">' + actionBtns + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch (e) { summary.textContent = 'Testimonials load failed: ' + (e.message || e); }
+  }
+
+  async function testimonialAction(userSub, action) {
+    try {
+      var t = token();
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      await fetch('/api/testimonials', {
+        method: 'POST', credentials: 'include', headers: headers,
+        body: JSON.stringify({ adminAction: action, userSub: userSub }),
+      });
+      loadTestimonials();
+    } catch (_e) {}
+  }
+
   async function loadHelpQueries() {
     var summary = document.getElementById('help-queries-summary');
     var tbody = document.getElementById('help-queries-tbody');
@@ -941,6 +1013,8 @@ window.kfl = (function () {
     loadReports: loadReports,
     loadReferrers: loadReferrers,
     loadHelpQueries: loadHelpQueries,
+    loadTestimonials: loadTestimonials,
+    testimonialAction: testimonialAction,
     createSample: createSample
   };
 })();
