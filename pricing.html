@@ -330,6 +330,19 @@
 <!-- ============== PRICING TIERS ============== -->
 <section id="tiers" class="bg-ink-50 pb-20 dark:bg-ink-900 scroll-mt-24">
   <div class="mx-auto max-w-6xl px-5">
+
+    <!-- Annual/monthly toggle (above the tier grid) -->
+    <div class="mb-8 flex justify-center">
+      <div class="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1 dark:border-ink-700 dark:bg-ink-800">
+        <button id="kfl-period-month" onclick="kflSetPeriod('month')" class="rounded-full px-5 py-2 text-sm font-bold transition bg-brand-600 text-white">
+          חודשי
+        </button>
+        <button id="kfl-period-year" onclick="kflSetPeriod('year')" class="rounded-full px-5 py-2 text-sm font-bold transition text-ink-700 dark:text-ink-200">
+          שנתי <span class="ml-1 inline-block rounded-full bg-brand-100 px-2 py-0.5 text-[10px] text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">חיסכון 17%</span>
+        </button>
+      </div>
+    </div>
+
     <div class="grid gap-6 md:grid-cols-3">
 
       <!-- free plan -->
@@ -363,10 +376,11 @@
           <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"><span class="num">14</span> יום חינם</span>
         </div>
         <div class="mt-5 flex items-baseline gap-1">
-          <span class="text-5xl font-black dark:text-white"><span class="num">19</span></span>
+          <span class="text-5xl font-black dark:text-white"><span class="num kfl-price" data-plan="pro" data-month="19" data-year="190">19</span></span>
           <span class="text-2xl font-bold text-ink-400">&#8362;</span>
-          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+          <span class="text-ink-500 dark:text-ink-300 kfl-period">/לחודש</span>
         </div>
+        <p class="mt-2 text-xs text-brand-600 dark:text-brand-400 kfl-savings hidden" data-plan="pro">חיסכון <span class="num">38</span>&#8362; בשנה</p>
         <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">למי שרציני לגבי הכסף.</p>
         <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>כל מה שכלול בחינם</strong></li>
@@ -388,10 +402,11 @@
           <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">פנקס משותף</span>
         </div>
         <div class="mt-5 flex items-baseline gap-1">
-          <span class="text-5xl font-black dark:text-white"><span class="num">39</span></span>
+          <span class="text-5xl font-black dark:text-white"><span class="num kfl-price" data-plan="family" data-month="39" data-year="390">39</span></span>
           <span class="text-2xl font-bold text-ink-400">&#8362;</span>
-          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+          <span class="text-ink-500 dark:text-ink-300 kfl-period">/לחודש</span>
         </div>
+        <p class="mt-2 text-xs text-accent-600 dark:text-accent-500 kfl-savings hidden" data-plan="family">חיסכון <span class="num">78</span>&#8362; בשנה</p>
         <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">לעד <span class="num">6</span> בני בית בפנקס אחד.</p>
         <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>כל מה שכלול ב-Pro</strong></li>
@@ -1077,6 +1092,56 @@ function kesefleToggleDark() {
     }, { passive: true });
     update();
   })();
+</script>
+<script>
+/* Annual/monthly toggle. Swaps prices, period label, and the CTA hrefs to
+   pass ?period=year to /account so the signup flow knows which sub to create.
+   Stored in sessionStorage so re-load preserves the choice. */
+window.kflSetPeriod = function (period) {
+  if (period !== 'month' && period !== 'year') period = 'month';
+  try { sessionStorage.setItem('kfl_pricing_period', period); } catch (_e) {}
+  var prices = document.querySelectorAll('.kfl-price');
+  for (var i = 0; i < prices.length; i++) {
+    var el = prices[i];
+    var v = period === 'year' ? el.getAttribute('data-year') : el.getAttribute('data-month');
+    el.textContent = v;
+  }
+  var periods = document.querySelectorAll('.kfl-period');
+  for (var j = 0; j < periods.length; j++) {
+    periods[j].textContent = period === 'year' ? '/לשנה' : '/לחודש';
+  }
+  var savings = document.querySelectorAll('.kfl-savings');
+  for (var k = 0; k < savings.length; k++) {
+    savings[k].classList.toggle('hidden', period !== 'year');
+  }
+  // Toggle button active states.
+  var monBtn = document.getElementById('kfl-period-month');
+  var yearBtn = document.getElementById('kfl-period-year');
+  if (monBtn && yearBtn) {
+    if (period === 'year') {
+      yearBtn.className = 'rounded-full px-5 py-2 text-sm font-bold transition bg-brand-600 text-white';
+      monBtn.className = 'rounded-full px-5 py-2 text-sm font-bold transition text-ink-700 dark:text-ink-200';
+    } else {
+      monBtn.className = 'rounded-full px-5 py-2 text-sm font-bold transition bg-brand-600 text-white';
+      yearBtn.className = 'rounded-full px-5 py-2 text-sm font-bold transition text-ink-700 dark:text-ink-200';
+    }
+  }
+  // Rewrite tier CTA hrefs to include ?period.
+  var ctas = document.querySelectorAll('a[href^="/account?plan="]');
+  for (var m = 0; m < ctas.length; m++) {
+    var href = ctas[m].getAttribute('href');
+    href = href.replace(/&period=(month|year)/, '');
+    if (period === 'year') href += '&period=year';
+    ctas[m].setAttribute('href', href);
+  }
+};
+// Restore saved choice on load.
+(function () {
+  try {
+    var saved = sessionStorage.getItem('kfl_pricing_period');
+    if (saved === 'year') window.kflSetPeriod('year');
+  } catch (_e) {}
+})();
 </script>
 <script src="/js/ab-client.js" defer></script>
 <script>
