@@ -284,6 +284,19 @@
       </div>
     </div>
 
+    <!-- Waitlist (lead capture from blocked signups) -->
+    <div class="grid">
+      <div class="card full">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+          <h3>🎯 Waitlist (blocked signups)</h3>
+          <button onclick="kfl.loadWaitlist()" style="font-size:11px">Refresh</button>
+        </div>
+        <div class="sub" style="margin-bottom:8px">Users who hit the in-app browser block (or any other gate) left their contact info. Reach out via WhatsApp once WABA is approved.</div>
+        <div id="waitlist-summary" class="sub" style="margin-bottom:8px">Loading...</div>
+        <div id="waitlist-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto"></div>
+      </div>
+    </div>
+
     <!-- Announcements (publish "what's new" to bot users) -->
     <div class="grid">
       <div class="card full">
@@ -606,7 +619,7 @@ window.kfl = (function () {
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
   // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
-  function _initAll() { fetchMonitor(); loadRevenue(); loadAnnouncementList(); loadInbox(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); loadTestimonials(); checkDrift(); checkBotVersion(); startPolling(); }
+  function _initAll() { fetchMonitor(); loadRevenue(); loadWaitlist(); loadAnnouncementList(); loadInbox(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); loadTestimonials(); checkDrift(); checkBotVersion(); startPolling(); }
   if (document.readyState !== 'loading') _initAll();
   else document.addEventListener('DOMContentLoaded', _initAll);
 
@@ -881,6 +894,74 @@ window.kfl = (function () {
       status.textContent = '✗ Network error: ' + (e.message || e);
       status.style.color = 'var(--danger)';
     }
+  }
+
+  async function loadWaitlist() {
+    var summary = document.getElementById('waitlist-summary');
+    var list = document.getElementById('waitlist-list');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/waitlist', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
+      if (!j.items.length) {
+        summary.innerHTML = '<em>No waitlist entries yet.</em>';
+        list.innerHTML = '';
+        return;
+      }
+      summary.innerHTML =
+        '<strong>' + j.total + '</strong> entries &middot; ' +
+        '<span style="color:var(--warning)">' + j.pending + ' pending</span> &middot; ' +
+        j.contacted + ' contacted &middot; ' +
+        '<span style="color:var(--success)">' + j.converted + ' converted</span>';
+      list.innerHTML = j.items.slice(0, 30).map(function (item) {
+        var safePhone = item.phone ? String(item.phone).replace(/[<>&]/g, '') : '';
+        var safeEmail = item.email ? String(item.email).replace(/[<>&]/g, function (c) { return { '<':'&lt;','>':'&gt;','&':'&amp;' }[c]; }) : '';
+        var safeMsg = String(item.message || '').replace(/[<>&]/g, function (c) { return { '<':'&lt;','>':'&gt;','&':'&amp;' }[c]; });
+        var statusColor = item.status === 'converted' ? 'var(--success)' : item.status === 'contacted' ? 'var(--accent)' : item.status === 'declined' ? 'var(--muted)' : 'var(--warning)';
+        var waLink = safePhone ? '<a href="https://wa.me/' + safePhone + '" target="_blank" style="color:#25D366;text-decoration:none;font-weight:600">📲 WA</a>' : '';
+        var emailLink = safeEmail ? '<a href="mailto:' + safeEmail + '" style="color:var(--accent);text-decoration:none;font-weight:600">✉ Email</a>' : '';
+        return '<div style="border:1px solid var(--border);border-radius:6px;padding:8px 12px;background:var(--card)">' +
+          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">' +
+            '<div style="font-size:13px;font-weight:600">' +
+              (safePhone ? '+' + safePhone + ' &middot; ' : '') +
+              (safeEmail ? safeEmail + ' &middot; ' : '') +
+              '<span style="color:' + statusColor + ';font-size:11px">' + item.status + '</span>' +
+            '</div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+              waLink + ' ' + emailLink +
+              ' <select onchange="kfl.waitlistUpdate(\'' + item.id + '\', this.value)" style="font-size:11px;padding:2px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:4px">' +
+                '<option value="">change status</option>' +
+                '<option value="pending">pending</option>' +
+                '<option value="contacted">contacted</option>' +
+                '<option value="converted">converted</option>' +
+                '<option value="declined">declined</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          '<div style="font-size:10px;color:var(--muted);margin-top:2px">' +
+            (item.at || '').slice(0, 16).replace('T', ' ') + ' &middot; from <code>' + item.source + '</code>' +
+            (safeMsg ? ' &middot; "' + safeMsg + '"' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch (e) { summary.textContent = 'Waitlist load failed: ' + (e.message || e); }
+  }
+
+  async function waitlistUpdate(id, status) {
+    if (!status) return;
+    try {
+      var t = token();
+      var headers = { 'Content-Type': 'application/json' };
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      await fetch('/api/waitlist', {
+        method: 'POST', credentials: 'include', headers: headers,
+        body: JSON.stringify({ adminAction: 'update', id: id, status: status }),
+      });
+      loadWaitlist();
+    } catch (_e) {}
   }
 
   async function publishAnnouncement() {
@@ -1231,6 +1312,8 @@ window.kfl = (function () {
     loadRevenue: loadRevenue,
     publishAnnouncement: publishAnnouncement,
     archiveAnnouncement: archiveAnnouncement,
+    loadWaitlist: loadWaitlist,
+    waitlistUpdate: waitlistUpdate,
     testimonialAction: testimonialAction,
     createSample: createSample
   };

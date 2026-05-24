@@ -1036,6 +1036,55 @@ function kesefleCopyAccountLink(btn) {
   } catch (e) { ok(); }
 }
 
+// Submit the waitlist form (rendered inside the in-app browser block card).
+// Persists phone + email to /api/waitlist so Steven can follow up.
+window.kesefleSubmitWaitlist = function (btn) {
+  var phone = (document.getElementById('kfl-wait-phone') || {}).value || '';
+  var email = (document.getElementById('kfl-wait-email') || {}).value || '';
+  var statusEl = document.getElementById('kfl-wait-status');
+  if (!phone.trim() && !email.trim()) {
+    statusEl.textContent = '⚠️ צריך מספר טלפון או אימייל';
+    statusEl.style.color = '#f59e0b';
+    return;
+  }
+  btn.disabled = true; btn.textContent = '...שולח';
+  fetch('/api/waitlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone: phone.trim(),
+      email: email.trim(),
+      source: 'inapp_block',
+      ua: navigator.userAgent.slice(0, 200),
+    }),
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      btn.disabled = false; btn.textContent = 'הוסף/י אותי לרשימת המתנה';
+      if (j && j.ok) {
+        if (j.already_on_list) {
+          statusEl.textContent = '✓ כבר ברשימה - נחזור אליך בקרוב';
+        } else {
+          statusEl.textContent = '✓ נרשמת! נחזור אליך תוך 24 שעות';
+        }
+        statusEl.style.color = '#16a34a';
+        // Clear inputs after success.
+        var p = document.getElementById('kfl-wait-phone');
+        var e = document.getElementById('kfl-wait-email');
+        if (p) p.value = '';
+        if (e) e.value = '';
+      } else {
+        statusEl.textContent = '✗ ' + (j.error || 'שגיאה');
+        statusEl.style.color = '#dc2626';
+      }
+    })
+    .catch(function (e) {
+      btn.disabled = false; btn.textContent = 'הוסף/י אותי לרשימת המתנה';
+      statusEl.textContent = '✗ שגיאת רשת';
+      statusEl.style.color = '#dc2626';
+    });
+};
+
 function kesefleShowInAppBrowserHelp() {
   try { _kflFunnel('inapp_browser_detected'); } catch (e) {}
   var isDark = document.documentElement.classList.contains('dark');
@@ -1099,6 +1148,18 @@ function kesefleShowInAppBrowserHelp() {
           '<li>בחר/י <b>"פתח ב-' + (isIos ? 'Safari' : 'Chrome') + '"</b></li>' +
           '<li>בדפדפן שייפתח, לחצ/י שוב על <b>"התחבר עם Google"</b></li>' +
         '</ol>' +
+      '</details>' +
+      // Waitlist fallback: if user is genuinely stuck, capture their phone/
+      // email so Steven can reach out. Form expands on click; submission
+      // hits POST /api/waitlist with source=inapp_block.
+      '<details style="margin-top:14px;text-align:right;border-top:1px solid ' + border + ';padding-top:14px;">' +
+        '<summary style="cursor:pointer;font-size:13px;color:' + brand + ';font-weight:700;">אף פתרון לא עזר? השאר/י פרטים ונחזור אליך 👋</summary>' +
+        '<div style="margin-top:10px;">' +
+          '<input id="kfl-wait-phone" type="tel" inputmode="tel" placeholder="050-1234567" autocomplete="tel" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;margin-bottom:6px;" />' +
+          '<input id="kfl-wait-email" type="email" inputmode="email" placeholder="email@example.com" autocomplete="email" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;" />' +
+          '<button type="button" onclick="kesefleSubmitWaitlist(this)" style="margin-top:8px;width:100%;border-radius:12px;background:' + brand + ';border:none;padding:12px;font-size:14px;font-weight:700;color:#ffffff;cursor:pointer;">הוסף/י אותי לרשימת המתנה</button>' +
+          '<p id="kfl-wait-status" style="margin-top:6px;font-size:11px;color:' + muted + ';min-height:14px;"></p>' +
+        '</div>' +
       '</details>' +
       '<button type="button" onclick="(function(){var u=new URL(location.href);u.searchParams.set(\'force_signin\',\'1\');location.href=u.toString();})()" style="margin-top:14px;background:transparent;border:none;color:' + muted + ';font-size:11px;text-decoration:underline;cursor:pointer;">אני בדפדפן רגיל — המשך/י בכל זאת</button>' +
     '</div>';
