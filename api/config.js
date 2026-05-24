@@ -46,6 +46,13 @@ async function handlerImpl(req, res) {
     ga4_id: process.env.GA4_MEASUREMENT_ID || '',
     meta_pixel_id: process.env.META_PIXEL_ID || '',
     tiktok_pixel_id: process.env.TIKTOK_PIXEL_ID || '',
+    // VAPID public key for Web Push subscriptions. Safe to expose to the
+    // browser -- it's the applicationServerKey for PushManager.subscribe().
+    // The matching PRIVATE key (VAPID_PRIVATE_KEY) is server-only and is
+    // read by lib/push.js to sign the push request. Empty string if the
+    // owner hasn't generated the keypair yet (push then degrades gracefully:
+    // the dashboard hides the enable-push card; lib/push.js fails soft).
+    vapid_public_key: process.env.VAPID_PUBLIC_KEY || '',
   });
 }
 

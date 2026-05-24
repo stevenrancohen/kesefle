@@ -284,6 +284,19 @@
       </div>
     </div>
 
+    <!-- Revenue / MRR -->
+    <div class="grid">
+      <div class="card full">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+          <h3>💰 Revenue + MRR</h3>
+          <button onclick="kfl.loadRevenue()" style="font-size:11px">Refresh</button>
+        </div>
+        <div class="sub" style="margin-bottom:8px">Aggregated from user:* records. Trial = signed up but no PayPal yet. Churn = exit-survey records in the last 30 days.</div>
+        <div id="revenue-summary" class="sub" style="margin-bottom:8px">Loading...</div>
+        <div id="revenue-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:10px;margin-top:10px"></div>
+      </div>
+    </div>
+
     <!-- Unified inbox: all customer signals in one feed -->
     <div class="grid">
       <div class="card full">
@@ -572,7 +585,7 @@ window.kfl = (function () {
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
   // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
-  function _initAll() { fetchMonitor(); loadInbox(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); loadTestimonials(); checkDrift(); checkBotVersion(); startPolling(); }
+  function _initAll() { fetchMonitor(); loadRevenue(); loadInbox(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); loadTestimonials(); checkDrift(); checkBotVersion(); startPolling(); }
   if (document.readyState !== 'loading') _initAll();
   else document.addEventListener('DOMContentLoaded', _initAll);
 
@@ -849,6 +862,43 @@ window.kfl = (function () {
     }
   }
 
+  async function loadRevenue() {
+    var summary = document.getElementById('revenue-summary');
+    var grid = document.getElementById('revenue-grid');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/revenue', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
+      summary.innerHTML =
+        '<strong>' + j.counts.total + '</strong> total users (' +
+        '<span style="color:var(--success)">' + j.counts.paid + ' paid</span>, ' +
+        j.counts.trial + ' trial, ' +
+        j.counts.free + ' free, ' +
+        j.counts.cancelled + ' cancelled)';
+
+      var cards = [
+        { label: 'MRR', value: '₪' + j.mrr.ils, hint: '~$' + j.mrr.usd_approx + ' USD', color: 'var(--success)' },
+        { label: 'ARR', value: '₪' + j.arr.ils, hint: '~$' + j.arr.usd_approx + ' USD', color: 'var(--accent)' },
+        { label: 'ARPU', value: '₪' + j.mrr.avg_revenue_per_user_ils, hint: 'per paying user / month', color: 'var(--text)' },
+        { label: 'Pro', value: j.mrr.by_plan.pro.count + ' users', hint: '₪' + j.mrr.by_plan.pro.mrr + '/mo MRR', color: 'var(--text)' },
+        { label: 'Family', value: j.mrr.by_plan.family.count + ' users', hint: '₪' + j.mrr.by_plan.family.mrr + '/mo MRR', color: 'var(--text)' },
+        { label: 'Monthly churn', value: j.churn.monthly_churn_rate_pct + '%', hint: j.churn.cancellations_last_30d + ' cancels / 30d', color: j.churn.monthly_churn_rate_pct > 10 ? 'var(--danger)' : 'var(--text)' },
+        { label: 'LTV', value: '₪' + j.ltv.avg_ils, hint: '~$' + j.ltv.avg_usd + ' (rough)', color: 'var(--text)' },
+        { label: 'Trial -> Paid', value: j.conversion.trial_to_paid_pct + '%', hint: 'of completed trials', color: j.conversion.trial_to_paid_pct >= 20 ? 'var(--success)' : 'var(--warning)' },
+      ];
+      grid.innerHTML = cards.map(function (c) {
+        return '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--card)">' +
+          '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">' + c.label + '</div>' +
+          '<div style="font-size:18px;font-weight:800;margin-top:4px;color:' + c.color + '">' + c.value + '</div>' +
+          '<div style="font-size:10px;color:var(--muted);margin-top:2px">' + c.hint + '</div>' +
+        '</div>';
+      }).join('');
+    } catch (e) { summary.textContent = 'Revenue load failed: ' + (e.message || e); }
+  }
+
   async function loadInbox() {
     var countsEl = document.getElementById('inbox-counts');
     var listEl = document.getElementById('inbox-list');
@@ -1084,6 +1134,7 @@ window.kfl = (function () {
     loadHelpQueries: loadHelpQueries,
     loadTestimonials: loadTestimonials,
     loadInbox: loadInbox,
+    loadRevenue: loadRevenue,
     testimonialAction: testimonialAction,
     createSample: createSample
   };

@@ -628,6 +628,35 @@
     </div>
   </section>
 
+  <!-- Web Push opt-in card. Hidden by default; only revealed if:
+         - PushManager + Notification APIs are supported
+         - Notification.permission === 'default' (not granted, not denied)
+         - the user hasn't dismissed the card before (localStorage flag)
+         - /api/config returned a non-empty vapid_public_key
+       Steven's WABA is pending so push is the immediate engagement channel. -->
+  <section id="kfl-push-card" class="mb-6 hidden rounded-2xl border border-brand-300 bg-brand-50 p-5 shadow-soft dark:border-brand-400/40 dark:bg-brand-500/10">
+    <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-3">
+        <div class="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-white text-2xl shadow-soft dark:bg-ink-800">🔔</div>
+        <div>
+          <div class="font-bold text-ink-900 dark:text-white">הפעל/י התראות לדפדפן</div>
+          <div class="mt-1 text-xs text-ink-600 dark:text-ink-300">
+            התראות מיידיות על חריגות תקציב, סיכומים שבועיים ועדכונים — ישירות למכשיר, גם בלי וואטסאפ.
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-shrink-0 gap-2">
+        <button id="kfl-push-enable" type="button" class="min-h-[44px] rounded-2xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-700">
+          הפעל התראות
+        </button>
+        <button id="kfl-push-dismiss" type="button" class="min-h-[44px] rounded-2xl border border-ink-300 px-3 py-2 text-sm text-ink-600 hover:bg-white dark:border-ink-600 dark:text-ink-300 dark:hover:bg-ink-800">
+          לא עכשיו
+        </button>
+      </div>
+    </div>
+    <div id="kfl-push-status" class="mt-3 hidden text-xs"></div>
+  </section>
+
   <!-- re-auth banner (shows when API returns 401) -->
   <section id="reauth-banner" class="mb-6 hidden rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/40">
     <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -3055,6 +3084,164 @@ function generatePseudoSeries(target, n, intLike) {
       navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
     });
   }
+</script>
+
+<script>
+/* Web Push opt-in flow.
+   Shows the #kfl-push-card iff:
+     - PushManager + Notification + serviceWorker are all supported
+     - Notification.permission === 'default'
+     - localStorage 'kfl_push_dismissed' is unset
+     - GET /api/config returned a non-empty vapid_public_key
+     - GET /api/push/subscribe returned { subscribed: false }
+   On click: request permission, subscribe via PushManager, POST the
+   subscription to /api/push/subscribe. On success, hide the card forever. */
+(function(){
+  if (window.__kflPushBound) return;
+  window.__kflPushBound = true;
+
+  var CARD_DISMISSED = 'kfl_push_dismissed';
+  var SUBSCRIBED_FLAG = 'kfl_push_subscribed';
+
+  function getCard()  { return document.getElementById('kfl-push-card'); }
+  function getBtn()   { return document.getElementById('kfl-push-enable'); }
+  function getX()     { return document.getElementById('kfl-push-dismiss'); }
+  function getStatus(){ return document.getElementById('kfl-push-status'); }
+
+  function setStatus(msg, isError) {
+    var s = getStatus(); if (!s) return;
+    s.textContent = msg; s.classList.remove('hidden');
+    s.style.color = isError ? '#b91c1c' : '#15803d';
+  }
+
+  function hideCardForever() {
+    try { localStorage.setItem(SUBSCRIBED_FLAG, '1'); } catch(_e){}
+    var c = getCard(); if (c) c.classList.add('hidden');
+  }
+
+  function dismissCard() {
+    try { localStorage.setItem(CARD_DISMISSED, String(Date.now())); } catch(_e){}
+    var c = getCard(); if (c) c.classList.add('hidden');
+  }
+
+  // Convert a base64url-encoded VAPID public key into the Uint8Array the
+  // PushManager.subscribe() API requires for applicationServerKey.
+  function urlBase64ToUint8(base64String) {
+    var pad = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + pad).replace(/-/g, '+').replace(/_/g, '/');
+    var raw = atob(base64);
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  async function maybeShowCard() {
+    var card = getCard(); if (!card) return;
+
+    // Quick local checks first -- avoid any network calls if we can.
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+    if (Notification.permission !== 'default') {
+      // 'granted' -> hide (user already opted in elsewhere). 'denied' -> hide
+      // (browser will silently no-op the subscribe call anyway).
+      if (Notification.permission === 'granted') hideCardForever();
+      return;
+    }
+    try {
+      if (localStorage.getItem(SUBSCRIBED_FLAG)) return;
+      // Short cooldown after manual dismiss: don't pester within 7 days.
+      var until = parseInt(localStorage.getItem(CARD_DISMISSED) || '0', 10);
+      if (until && (Date.now() - until) < 7 * 24 * 3600 * 1000) return;
+    } catch(_e){}
+
+    // Fetch config + current subscription status. We need both before showing
+    // the card, but they're cheap and run in parallel.
+    var vapidPub = '';
+    var alreadySubscribed = false;
+    try {
+      var results = await Promise.all([
+        fetch('/api/config', { credentials: 'same-origin' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+        fetch('/api/push/subscribe', { credentials: 'same-origin' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+      ]);
+      if (results[0] && results[0].vapid_public_key) vapidPub = results[0].vapid_public_key;
+      if (results[1] && results[1].subscribed) alreadySubscribed = true;
+    } catch(_e){}
+
+    if (!vapidPub) return;                 // owner hasn't generated VAPID keys -- silently skip
+    if (alreadySubscribed) { hideCardForever(); return; }
+
+    // Stash the public key on the card element so the click handler doesn't
+    // have to refetch it.
+    card.dataset.vapid = vapidPub;
+    card.classList.remove('hidden');
+  }
+
+  async function onEnableClick() {
+    var card = getCard(); var btn = getBtn();
+    var vapidPub = card && card.dataset.vapid;
+    if (!vapidPub || !btn) return;
+    btn.disabled = true; btn.textContent = 'מבקש הרשאה…';
+    try {
+      var perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        setStatus(perm === 'denied' ? 'ההרשאה נדחתה. ניתן לשנות בהגדרות הדפדפן.' : 'ההרשאה לא ניתנה.', true);
+        btn.disabled = false; btn.textContent = 'הפעל התראות';
+        return;
+      }
+      btn.textContent = 'נרשם…';
+      var reg = await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8(vapidPub),
+      });
+      var payload = {
+        subscription: sub.toJSON(),
+        deviceInfo: {
+          ua: (navigator.userAgent || '').slice(0, 200),
+          lang: navigator.language || '',
+          tz: (Intl.DateTimeFormat().resolvedOptions() || {}).timeZone || '',
+          addedFrom: 'dashboard',
+        },
+      };
+      var r = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        setStatus('שמירה נכשלה (' + r.status + '). נסה/י שוב מאוחר יותר.', true);
+        btn.disabled = false; btn.textContent = 'הפעל התראות';
+        return;
+      }
+      setStatus('יופי! ההתראות הופעלו.', false);
+      setTimeout(hideCardForever, 1800);
+      try {
+        fetch('/api/log/funnel-event', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+          body: JSON.stringify({ event: 'push_enabled', meta: { page: 'dashboard' } }),
+        }).catch(function(){});
+      } catch(_e){}
+    } catch (e) {
+      setStatus('לא הצלחנו להפעיל התראות: ' + (e && e.message || 'unknown'), true);
+      btn.disabled = false; btn.textContent = 'הפעל התראות';
+    }
+  }
+
+  function bind() {
+    var btn = getBtn(), x = getX();
+    if (btn) btn.addEventListener('click', onEnableClick);
+    if (x) x.addEventListener('click', dismissCard);
+    // Defer the show check until after first paint so we don't compete with
+    // the dashboard's data fetch.
+    setTimeout(function(){ maybeShowCard().catch(function(){}); }, 2500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind);
+  } else {
+    bind();
+  }
+})();
 </script>
 
 <!-- NPS feedback widget: appears once per user after 5+ days, then 90-day cooldown -->

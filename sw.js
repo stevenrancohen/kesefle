@@ -218,3 +218,67 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// ---------------------------------------------------------------------------
+// push — display a notification from a Web Push message
+//
+// lib/push.js encrypts a JSON payload of the shape:
+//   { title, body, icon?, badge?, tag?, url? }
+// If the payload fails to parse (or arrives empty -- some push services strip
+// the body on certain platforms) we still surface a generic notification so
+// the user sees that something happened. Better a vague nudge than silence.
+// ---------------------------------------------------------------------------
+self.addEventListener('push', (event) => {
+  let data = {};
+  if (event.data) {
+    try { data = event.data.json(); }
+    catch (_) {
+      try { data = { body: event.data.text() }; }
+      catch (_) { data = {}; }
+    }
+  }
+  const title = (data && data.title) || "כספ'לה";
+  const body  = (data && data.body)  || 'יש לך עדכון חדש';
+  const opts = {
+    body: body,
+    icon: (data && data.icon) || '/icon-192.png',
+    badge: (data && data.badge) || '/icon-192.png',
+    // tag dedupes -- a second push with the same tag replaces the first.
+    tag: (data && data.tag) || 'kesefle-default',
+    // RTL Hebrew copy.
+    dir: 'rtl',
+    lang: 'he',
+    // url is read by the notificationclick handler below.
+    data: { url: (data && data.url) || '/dashboard' },
+  };
+  event.waitUntil(self.registration.showNotification(title, opts));
+});
+
+// ---------------------------------------------------------------------------
+// notificationclick — focus the existing tab if open, else open a new one
+// ---------------------------------------------------------------------------
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/dashboard';
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // If an existing tab is already on the target URL, just focus it.
+    for (const client of all) {
+      try {
+        const u = new URL(client.url);
+        if (u.pathname === targetUrl || client.url === targetUrl) {
+          return client.focus();
+        }
+      } catch (_) { /* ignore */ }
+    }
+    // Otherwise, prefer to navigate the most recently focused tab.
+    if (all.length && all[0].navigate) {
+      try { await all[0].navigate(targetUrl); return all[0].focus(); }
+      catch (_) { /* fall through */ }
+    }
+    // Last resort: pop a new window.
+    if (self.clients.openWindow) {
+      return self.clients.openWindow(targetUrl);
+    }
+  })());
+});
