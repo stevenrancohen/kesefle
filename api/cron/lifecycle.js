@@ -193,6 +193,25 @@ async function handlerImpl(req, res) {
           if (r.ok || r.skipped) { stats.dunning_day7 = (stats.dunning_day7 || 0) + 1; scheduled++; }
         }
       }
+
+      // Win-back: 30 days after cancellation, send the 50%-off-forever offer.
+      // Pulls from exit_survey:{userSub} created when /api/billing/cancel-flow
+      // action=cancel was hit. Dedup is 1 year so we don't keep nagging.
+      const exit = await kvGet(`exit_survey:${u.userSub}`);
+      if (exit?.cancelled_at) {
+        const sinceCancel = daysBetween(new Date(exit.cancelled_at), now);
+        if (sinceCancel === 30) {
+          // Generate a single-use winback token (just userSub + a short
+          // hash); the /win-back page will validate it server-side before
+          // applying the discount.
+          const winbackVars = {
+            ...baseVars,
+            winbackToken: u.userSub.slice(0, 24),
+          };
+          const r = await maybeSend(u.userSub, 'winback_30_days', winbackVars, 365 * 24 * 3600);
+          if (r.ok || r.skipped) { stats.winback = (stats.winback || 0) + 1; scheduled++; }
+        }
+      }
     } catch (e) {
       errors++;
       log.warn('cron.lifecycle.user_failed', { userSub: u.userSub, error: e.message });
