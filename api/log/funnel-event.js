@@ -94,6 +94,32 @@ async function handlerImpl(req, res) {
     await fetch(`${KV_URL}/ltrim/${encodeURIComponent('funnel_log:' + dayKey)}/0/4999`, {
       method: 'POST', headers: { Authorization: `Bearer ${KV_TOKEN}` },
     });
+
+    // help_search query-text aggregation. We want top-N actual queries per day
+    // (not just a count) so Steven can see what content people are looking
+    // for in the help center. Stored in a sorted set with ZINCRBY so popular
+    // queries float to the top. Day-level TTL keeps the KV cost bounded.
+    // (Total cost: 1-2 extra KV ops per help_search event, only fires when
+    // the user is actually typing in /help.)
+    if (event === 'help_search' && safeMeta.q) {
+      // Normalize: lowercase + trim + collapse whitespace so "ארנונה " and
+      // "Arnona" don't bloat the top-N list with duplicate entries. We keep
+      // the original-case copy in the funnel_log: list above for forensics.
+      const normalizedQ = String(safeMeta.q).toLowerCase().replace(/\s+/g, ' ').trim();
+      if (normalizedQ.length >= 2) {
+        const queryKey = `help_queries:${dayKey}`;
+        await fetch(`${KV_URL}/zincrby/${encodeURIComponent(queryKey)}/1/${encodeURIComponent(normalizedQ)}`, {
+          method: 'POST', headers: { Authorization: `Bearer ${KV_TOKEN}` },
+        });
+        // Set the TTL only the first time we touch the key today (matches the
+        // funnel counter TTL pattern -- 48h gives Steven all of yesterday + today).
+        if (incrJson?.result === 1) {
+          await fetch(`${KV_URL}/expire/${encodeURIComponent(queryKey)}/${86400 * 2}`, {
+            method: 'POST', headers: { Authorization: `Bearer ${KV_TOKEN}` },
+          });
+        }
+      }
+    }
   } catch (e) {
     log.warn('funnel_event.kv_failed', { reqId: req.reqId, event, error: e.message });
   }

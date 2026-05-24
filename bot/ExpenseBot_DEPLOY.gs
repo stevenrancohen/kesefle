@@ -4201,6 +4201,84 @@ function _tenantAppendStructured_(fromPhone, fields) {
   }
 }
 
+// ───── VAT DEDUCTIBLE — flip col I of the user's LAST row to TRUE ─────
+// Two paths:
+//   1. OWNER PATH (legacy single-tenant): the message came from the script
+//      owner's WhatsApp number. We edit SHEET_ID directly via SpreadsheetApp
+//      since this script has full access to that sheet.
+//   2. TENANT PATH (multi-tenant via Vercel): the message came from any other
+//      registered Kesefle user. We hit POST /api/sheet/append-vat with the
+//      bot secret + phone; Vercel does the OAuth + Sheets API dance.
+//
+// "Last row" = the bottom non-empty data row in the תנועות tab. We constrain
+// to rows whose timestamp is within the last 24 hours -- so accidentally
+// sending "מעמ" days later doesn't retroactively edit a stale row.
+// Returns the Hebrew reply string.
+function _markLastExpenseAsVatDeductible_(fromPhone) {
+  // 1. OWNER PATH -- script-owned SHEET_ID.
+  if (_isOwnerPhone_(fromPhone)) {
+    try {
+      var sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+      if (!sh) return '😬 אין לשונית תנועות עדיין. שלח/י הוצאה ראשונה.';
+      var last = sh.getLastRow();
+      if (last < 2) return '🤔 אין הוצאה אחרונה לסמן. תרשום/תרשמי קודם הוצאה.';
+      // Make sure the row is from the last 24h -- otherwise the user probably
+      // meant to flag a fresh expense, not an old one.
+      var ts = sh.getRange(last, 1).getValue();
+      var when = (ts instanceof Date) ? ts.getTime() : new Date(ts).getTime();
+      if (!isNaN(when) && (Date.now() - when) > 24 * 60 * 60 * 1000) {
+        return '⚠️ ההוצאה האחרונה בת יותר מ-24 שעות. סמן/י ידנית בעמודה ניכוי מע״מ בגיליון.';
+      }
+      // Make sure the sheet has at least 9 columns (legacy sheets may have 8).
+      var maxCols = sh.getMaxColumns();
+      if (maxCols < 9) sh.insertColumnsAfter(maxCols, 9 - maxCols);
+      // Seed the I1 header if it's empty -- a sheet that predates this feature
+      // won't have "ניכוי מע״מ" in row 1. Don't overwrite if the user already
+      // labelled it themselves.
+      var hdr = sh.getRange(1, 9).getValue();
+      if (hdr === '' || hdr == null) sh.getRange(1, 9).setValue('ניכוי מע״מ');
+      sh.getRange(last, 9).setValue(true);
+      return '✅ סומן לניכוי מע״מ. לסיכום בסוף השנה: /מעמ-סיכום';
+    } catch (e) {
+      Logger.log('_markLastExpenseAsVatDeductible_ owner err: ' + (e && e.message));
+      return '😬 שגיאה בסימון. נסה/י שוב בעוד רגע.';
+    }
+  }
+
+  // 2. TENANT PATH -- multi-tenant via Vercel bridge.
+  var botSecret = '';
+  try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!botSecret) {
+    Logger.log('_markLastExpenseAsVatDeductible_: KESEFLE_BOT_SECRET not set');
+    return '😬 הבוט עוד בקונפיגורציה. רגע.';
+  }
+  var payload = {
+    phone: String(fromPhone).replace(/[^0-9]/g, ''),
+    botSecret: botSecret,
+  };
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/mark-vat', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code >= 200 && code < 300) {
+      return '✅ סומן לניכוי מע״מ. לסיכום בסוף השנה: /מעמ-סיכום';
+    }
+    Logger.log('_markLastExpenseAsVatDeductible_ HTTP ' + code + ' ' + body.slice(0, 200));
+    if (code === 404) return '🤔 אין הוצאה אחרונה לסמן. תרשום/תרשמי קודם הוצאה ואז שלח/י "מעמ".';
+    if (code === 409) return '⚠️ ההוצאה האחרונה בת יותר מ-24 שעות. סמן/י ידנית בעמודה ניכוי מע״מ בגיליון.';
+    return '😬 שגיאה בסימון. נסה/י שוב בעוד רגע.';
+  } catch (e) {
+    Logger.log('_markLastExpenseAsVatDeductible_ tenant err: ' + (e && e.message));
+    return '😬 שגיאת רשת בסימון. נסה/י שוב בעוד רגע.';
+  }
+}
+
 function processExpense(text, fromPhone) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
@@ -4546,6 +4624,19 @@ function processExpense(text, fromPhone) {
       var __survConfirm = _surveyHandleText_(fromPhone, 'אשר');
       return { reply: (__survConfirm && __survConfirm.replyText) || '' };
     }
+  }
+
+  // ───── VAT-DEDUCTIBLE FLAG ("מעמ" / "/מעמ" / "ניכוי מעמ") ─────
+  // Israeli עוסק מורשה need to mark certain expenses as VAT-deductible so
+  // they can claim back the VAT at year-end. The user logs an expense
+  // normally, then sends "מעמ" (or any of the aliases below) to flip the
+  // LAST row's col I (ניכוי מע״מ) to TRUE.
+  //
+  // Matched BEFORE the expense parser so a user typing "מעמ" alone is not
+  // mis-parsed as an expense. Also matches the geresh + slash forms
+  // ("מע״מ", "מע'מ", "/מעמ") because Hebrew users vary how they type מע״מ.
+  if (/^\s*\/?\s*(?:מעמ|מע["׳'״]מ|ניכוי\s+מע["׳'״]?מ|ניכוי\s+מעמ|vat)\s*$/i.test(text)) {
+    return { reply: _markLastExpenseAsVatDeductible_(fromPhone) };
   }
 
   // ───── BUDGETS ("תקציבים") ─────

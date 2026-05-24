@@ -2,7 +2,7 @@
 //
 // Daily cross-user budget alert cron.
 //
-// For each user with a `budget:{userSub}` record:
+// For each user with a `usr_budget:{userSub}` record:
 //   1. Resolve their canonical sheet + decrypt their refresh token.
 //   2. Read MTD spending per category from their תנועות tab.
 //   3. For each budgeted category, compute MTD / cap = pct.
@@ -183,13 +183,13 @@ async function handlerImpl(req, res) {
   const selfBaseUrl = process.env.SELF_URL || 'https://kesefle.com';
   const ymNow = monthKey(new Date());
 
-  const budgetKeys = await kvScan('budget:*');
+  const budgetKeys = await kvScan('usr_budget:*');
   let scanned = 0, alerted = 0, skipped = 0, errors = 0;
   const perUser = [];
 
   for (const key of budgetKeys) {
     scanned++;
-    const userSub = key.replace(/^budget:/, '');
+    const userSub = key.replace(/^usr_budget:/, '');
     if (!userSub) { skipped++; continue; }
 
     const budget = await kvGet(key);

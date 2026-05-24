@@ -284,6 +284,22 @@
       </div>
     </div>
 
+    <!-- Top help-center search queries (today) -->
+    <div class="grid">
+      <div class="card full">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+          <h3>Top help-center searches — today</h3>
+          <button onclick="kfl.loadHelpQueries()" style="font-size:11px">Refresh</button>
+        </div>
+        <div class="sub" style="margin-bottom:8px">What people are typing into the /help search box. Use this to pick which docs to write next.</div>
+        <div id="help-queries-summary" class="sub" style="margin-bottom:8px">Loading...</div>
+        <table style="margin-top:4px" id="help-queries-table" style="display:none">
+          <thead><tr><th>#</th><th>Query</th><th style="text-align:right">Searches</th></tr></thead>
+          <tbody id="help-queries-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Top referrers leaderboard -->
     <div class="grid">
       <div class="card full">
@@ -530,7 +546,7 @@ window.kfl = (function () {
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
   // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
-  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); checkDrift(); checkBotVersion(); startPolling(); }
+  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); loadHelpQueries(); checkDrift(); checkBotVersion(); startPolling(); }
   if (document.readyState !== 'loading') _initAll();
   else document.addEventListener('DOMContentLoaded', _initAll);
 
@@ -807,6 +823,40 @@ window.kfl = (function () {
     }
   }
 
+  async function loadHelpQueries() {
+    var summary = document.getElementById('help-queries-summary');
+    var tbody = document.getElementById('help-queries-tbody');
+    var table = document.getElementById('help-queries-table');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/help-queries?limit=20', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
+      if (!j.queries.length) {
+        summary.innerHTML = '<em>' + (j.note || 'No searches yet today.') + '</em>';
+        table.style.display = 'none';
+        return;
+      }
+      summary.innerHTML =
+        '<strong>' + j.total_searches + '</strong> searches across ' +
+        '<strong>' + j.total_unique + '</strong> unique queries today.';
+      tbody.innerHTML = j.queries.map(function (row, i) {
+        var safeQ = String(row.q).replace(/[<>&]/g, function (c) {
+          return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c];
+        });
+        var rank = i < 3 ? ['🥇', '🥈', '🥉'][i] : '#' + (i + 1);
+        return '<tr>' +
+          '<td style="font-size:14px">' + rank + '</td>' +
+          '<td style="font-family:ui-monospace,monospace;color:var(--text)">' + safeQ + '</td>' +
+          '<td style="text-align:right;font-weight:700" class="num">' + row.count + '</td>' +
+        '</tr>';
+      }).join('');
+      table.style.display = 'table';
+    } catch (e) { summary.textContent = 'Help-queries load failed: ' + (e.message || e); }
+  }
+
   async function loadReferrers() {
     var summary = document.getElementById('referrers-summary');
     var tbody = document.getElementById('referrers-tbody');
@@ -890,6 +940,7 @@ window.kfl = (function () {
     loadRecent: loadRecent,
     loadReports: loadReports,
     loadReferrers: loadReferrers,
+    loadHelpQueries: loadHelpQueries,
     createSample: createSample
   };
 })();

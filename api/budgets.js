@@ -5,10 +5,13 @@
 // to the cap and fires a WhatsApp alert when it crosses the threshold).
 //
 // Storage (KV):
-//   budget:{userSub} -> {
+//   usr_budget:{userSub} -> {
 //     categories: { 'מזון ופארמה': { cap: 1500, threshold: 80 }, ... },
 //     updatedAt: 'ISO',
 //   }
+// Namespace deliberately distinct from the bot's OWNER-only `budget:{phone}:{cat}`
+// keys so the daily cron's KV scan doesn't accidentally pick up unrelated rows
+// (different value shape entirely).
 //
 // Routing:
 //   POST + { action: 'set'|'list'|'remove'|'clear' } via session/Bearer auth.
@@ -116,7 +119,7 @@ async function actSet(userSub, body) {
     return { code: 400, json: { ok: false, error: 'invalid_threshold' } };
   }
 
-  const key = `budget:${userSub}`;
+  const key = `usr_budget:${userSub}`;
   const current = (await kvGet(key)) || emptyBudget();
   const existing = current.categories[category];
   const nextCats = { ...current.categories, [category]: { cap, threshold } };
@@ -130,7 +133,7 @@ async function actSet(userSub, body) {
 }
 
 async function actList(userSub) {
-  const key = `budget:${userSub}`;
+  const key = `usr_budget:${userSub}`;
   const b = (await kvGet(key)) || emptyBudget();
   return { code: 200, json: { ok: true, budget: b } };
 }
@@ -138,7 +141,7 @@ async function actList(userSub) {
 async function actRemove(userSub, body) {
   const category = String(body.category || '').trim();
   if (!category) return { code: 400, json: { ok: false, error: 'missing_category' } };
-  const key = `budget:${userSub}`;
+  const key = `usr_budget:${userSub}`;
   const current = (await kvGet(key)) || emptyBudget();
   if (!current.categories || !(category in current.categories)) {
     return { code: 200, json: { ok: true, budget: current, removed: false } };
@@ -152,7 +155,7 @@ async function actRemove(userSub, body) {
 }
 
 async function actClear(userSub) {
-  const key = `budget:${userSub}`;
+  const key = `usr_budget:${userSub}`;
   const ok = await kvDel(key);
   if (!ok) return { code: 502, json: { ok: false, error: 'kv_delete_failed' } };
   return { code: 200, json: { ok: true, budget: emptyBudget(), cleared: true } };
