@@ -49,6 +49,11 @@ async function handlerImpl(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const bodyAccessToken = String(body?.accessToken || '').trim();
+  // Steven 2026-05-24: existing users with the old sheet structure need a way
+  // to provision a FRESH sheet ("מאזן אישי" first, new dashboards, etc.). When
+  // forceNew=true we archive the old sheet:{sub} record under a timestamped
+  // key and create a brand-new sheet from scratch.
+  const forceNew = !!body?.forceNew || !!body?.reprovision;
 
   // Two auth modes:
   //   A) Initial provision (right after OAuth) -- browser passes `accessToken`
@@ -129,12 +134,27 @@ async function handlerImpl(req, res) {
       const existing = await existingRes.json();
       if (existing?.result) {
         const parsed = JSON.parse(existing.result);
-        return res.status(200).json({
-          ok: true,
-          reused: true,
-          spreadsheetId: parsed.spreadsheetId,
-          spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${parsed.spreadsheetId}`,
-        });
+        if (forceNew) {
+          // Archive the old mapping under a timestamped key so we never silently
+          // lose the user's previous sheet URL. The old sheet stays in their
+          // Drive — we only swap the canonical pointer here.
+          const archiveKey = `sheet:${userSub}:archived:${Date.now()}`;
+          try {
+            await fetch(`${kvUrl}/set/${encodeURIComponent(archiveKey)}`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...parsed, archivedAt: new Date().toISOString(), reason: 'user_requested_reprovision' }),
+            });
+          } catch (_archErr) {}
+          log.info('provision.reprovision_requested', { reqId: req.reqId, userSub, oldSheet: parsed.spreadsheetId });
+        } else {
+          return res.status(200).json({
+            ok: true,
+            reused: true,
+            spreadsheetId: parsed.spreadsheetId,
+            spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${parsed.spreadsheetId}`,
+          });
+        }
       }
     } catch (e) {
       console.warn('KV lookup failed, will provision new', e);
@@ -151,6 +171,14 @@ async function handlerImpl(req, res) {
     spreadsheetUrl = created.spreadsheetUrl;
   } catch (e) {
     log.error('provision.sheet_create_failed', { reqId: req.reqId, error: e.message });
+    // Alert Steven on WhatsApp so he can investigate immediately.
+    try {
+      const { alertOwnerOfClientError } = await import('../../lib/error-alert.js');
+      alertOwnerOfClientError({
+        reqId: req.reqId, userSub, route: '/api/sheet/provision',
+        code: 'sheet_create_failed', detail: e.message, severity: 'critical',
+      });
+    } catch (_alertErr) {}
     return res.status(502).json({ ok: false, error: 'sheet_create_failed', detail: e.message });
   }
 

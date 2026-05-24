@@ -165,36 +165,7 @@
   /* Clickable tx rows */
   .tx-row { cursor: pointer; }
   .tx-row:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
-
-  /* Demo tour — floating tooltip + highlight */
-  .tour-backdrop {
-    position: fixed; inset: 0; background: rgba(15,20,34,0.55);
-    z-index: 60; backdrop-filter: blur(2px);
-    animation: tour-fade 0.2s ease both;
-  }
-  @keyframes tour-fade { from { opacity: 0; } to { opacity: 1; } }
-  .tour-highlight {
-    position: relative; z-index: 62;
-    box-shadow: 0 0 0 4px #22c55e, 0 0 0 9999px rgba(15,20,34,0.55);
-    border-radius: 24px;
-    transition: box-shadow 0.3s;
-  }
-  .tour-tip {
-    position: absolute; z-index: 63;
-    max-width: 320px;
-    background: white; color: #0f1422;
-    border-radius: 16px; padding: 16px;
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.4);
-    font-size: 13px; line-height: 1.5;
-  }
-  .dark .tour-tip { background: #1e2638; color: #f7f8fb; }
-  .tour-tip h4 { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
-  .tour-tip .tour-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: space-between; align-items: center; }
-  .tour-tip button.next { background: #16a34a; color: white; padding: 6px 14px; border-radius: 10px; font-weight: 700; font-size: 12px; border: 0; cursor: pointer; }
-  .tour-tip button.next:hover { background: #15803d; }
-  .tour-tip button.skip { color: #5d6b8f; font-size: 11px; font-weight: 600; cursor: pointer; background: transparent; border: 0; }
-  .dark .tour-tip button.skip { color: #bcc4d6; }
-  .tour-step-counter { font-size: 10px; font-weight: 700; color: #5d6b8f; letter-spacing: 0.05em; text-transform: uppercase; }
+  /* Dashboard tour CSS removed 2026-05-24 per Steven's request. */
 </style>
 <script src="/lib/analytics.js" defer></script>
   <script src="/js/analytics-loader.js" defer></script>
@@ -228,9 +199,6 @@
       <span class="truncate">כספ'לה</span>
     </a>
     <div class="flex min-w-0 items-center gap-2 sm:gap-3">
-      <button type="button" onclick="kesefleStartTour()" class="hidden min-h-[44px] items-center gap-1.5 rounded-2xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 md:inline-flex dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20" title="סיור בדשבורד">
-        <span>✨</span><span>סיור היכרות</span>
-      </button>
       <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden min-h-[44px] items-center rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 sm:inline-flex dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">📊 פתח גיליון</a>
       <img id="user-picture" class="hidden h-9 w-9 rounded-full ring-2 ring-brand-200" alt="" />
       <span id="user-name" class="hidden truncate text-sm font-semibold sm:inline">טוען...</span>
@@ -239,27 +207,20 @@
   </nav>
 </header>
 
-<!-- ============== REFERRAL BANNER (logged-in users only) ============== -->
-<div id="referral-banner" class="hidden fixed inset-x-0 top-[60px] z-40 mx-auto max-w-6xl px-5">
-  <a href="/referral" class="mt-2 flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 to-brand-100/60 px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-soft transition hover:from-brand-100 hover:to-brand-200/60 dark:border-brand-700/40 dark:from-brand-900/30 dark:to-brand-800/30 dark:text-brand-200">
-    <span class="flex items-center gap-2">
-      <span class="text-base">💚</span>
-      <span>הביאו חבר וקבלו חודש Pro חינם — לשניכם</span>
-    </span>
-    <span class="text-xs opacity-80">פתח ←</span>
-  </a>
-</div>
-<script>(function(){try{var raw=localStorage.getItem('kesefle_user');if(!raw)return;var u=JSON.parse(raw);if(!u||(!u.sub&&!u.idToken&&!u.email))return;var b=document.getElementById('referral-banner');if(b)b.classList.remove('hidden');}catch(e){}})();</script>
+<!-- Referral banner removed 2026-05-24 per Steven: "תוריד ותשים פשוט עמוד שיהיה חבר מביא חבר".
+     Standalone page lives at /referral and is linked from the user menu / footer. -->
 
 <main class="relative mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 md:px-6">
 
   <!-- Floating "add expense" FAB for desktop+mobile -->
-  <a href="/expense" class="fixed bottom-6 left-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-brand-600 text-white shadow-glow hover:bg-brand-700 transition" title="הוסף הוצאה במהירות" aria-label="הוסף הוצאה">
+  <a id="kfl-fab" href="/expense" class="fixed bottom-6 left-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-brand-600 text-white shadow-glow hover:bg-brand-700 transition" title="הוסף הוצאה במהירות" aria-label="הוסף הוצאה">
     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
   </a>
 
-  <!-- Bulk-actions bar: appears when 1+ checkbox selected -->
-  <div id="kfl-bulk-bar" class="fixed bottom-6 right-6 left-24 sm:left-auto sm:max-w-md z-40 hidden">
+  <!-- Bulk-actions bar: appears when 1+ checkbox selected.
+       Mobile: pinned higher (bottom-24) so it doesn't sit on top of the FAB.
+       The FAB also dims when this bar is visible (see kflShowBulkBar). -->
+  <div id="kfl-bulk-bar" class="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-auto sm:max-w-md z-40 hidden">
     <div class="rounded-2xl bg-ink-900 dark:bg-white text-white dark:text-ink-900 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500 text-white text-sm font-black" id="kfl-bulk-count">0</span>
@@ -749,21 +710,21 @@
         </div>
         <div class="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800">
           <!-- sheet header row -->
-          <div dir="ltr" class="grid grid-cols-[58px_1fr_68px_64px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-b border-ink-200 bg-ink-100 text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-400">
+          <div dir="ltr" class="grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-b border-ink-200 bg-ink-100 text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-400">
             <div class="px-1.5 py-2 sm:px-2">Date</div>
             <div class="px-1.5 py-2 sm:px-2">Description</div>
             <div class="px-1.5 py-2 sm:px-2 text-right">Amount</div>
             <div class="px-1.5 py-2 sm:px-2">Category</div>
           </div>
           <!-- placeholder rows -->
-          <div dir="ltr" class="grid grid-cols-[58px_1fr_68px_64px] sm:grid-cols-[80px_1fr_90px_80px] gap-px text-xs">
+          <div dir="ltr" class="grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px text-xs">
             <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
             <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
             <div class="px-1.5 py-2.5 sm:px-2 text-right text-ink-300 dark:text-ink-600">—</div>
             <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
           </div>
           <!-- THE row that will land -->
-          <div dir="ltr" class="relative grid grid-cols-[58px_1fr_68px_64px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-y-2 border-brand-500 bg-brand-50 text-xs font-semibold text-ink-900 dark:bg-brand-500/10 dark:text-white">
+          <div dir="ltr" class="relative grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-y-2 border-brand-500 bg-brand-50 text-xs font-semibold text-ink-900 dark:bg-brand-500/10 dark:text-white">
             <div class="px-1.5 py-2.5 sm:px-2">Today</div>
             <div class="px-1.5 py-2.5 sm:px-2 truncate">סופר · Shufersal</div>
             <div class="px-1.5 py-2.5 sm:px-2 text-right num text-red-600 dark:text-red-400">-₪245</div>
@@ -771,7 +732,7 @@
             <span class="absolute -right-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 animate-ping rounded-full bg-brand-400 md:block"></span>
             <span class="absolute -right-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 rounded-full bg-brand-500 md:block"></span>
           </div>
-          <div dir="ltr" class="grid grid-cols-[58px_1fr_68px_64px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-t border-ink-200 text-xs dark:border-ink-700">
+          <div dir="ltr" class="grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-t border-ink-200 text-xs dark:border-ink-700">
             <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
             <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
             <div class="px-1.5 py-2.5 sm:px-2 text-right text-ink-300 dark:text-ink-600">—</div>
@@ -1098,113 +1059,11 @@ function openSettings(e) {
   }
 }
 
-// ============== DEMO TOUR ==============
-// Walks the user through the 4 key sections with floating tooltips.
-// Auto-triggers on first visit (no kesefle_dashboard_seen flag).
-var KFL_TOUR_STEPS = [
-  {
-    selector: '#summary-cards',
-    title: 'הסיכום החודשי',
-    body: 'בקצרה: כמה הוצאת, כמה הכנסת, והמאזן. הספארקליין מראה את המגמה של 14 הימים האחרונים.'
-  },
-  {
-    selector: '.md\\:col-span-2.rounded-3xl',
-    title: 'תנועות אחרונות',
-    body: 'כל הוצאה והכנסה שרשמת בוואטסאפ מופיעה כאן. לחיצה על שורה — לעריכה או מחיקה.'
-  },
-  {
-    selector: 'section.mt-6 > .rounded-3xl:last-child',
-    title: 'קטגוריות מובילות',
-    body: 'הסבר ויזואלי איפה הכסף שלך הולך. הקטגוריות נקבעות אוטומטית מהמילה שאתה כותב.'
-  },
-  {
-    selector: 'section.mt-6.grid.gap-4',
-    title: 'פעולות מהירות',
-    body: 'שאלות מהירות לבוט בוואטסאפ: סיכום יומי, חודשי, או הגדרות החשבון שלך.'
-  }
-];
-var _kflTourState = { idx: 0, backdrop: null, tip: null, prevHighlight: null };
-
-function kesefleStartTour() {
-  _kflTourState.idx = 0;
-  _kflTourShow();
-}
-
-function _kflTourShow() {
-  var step = KFL_TOUR_STEPS[_kflTourState.idx];
-  if (!step) { _kflTourEnd(); return; }
-  var target = document.querySelector(step.selector);
-  if (!target) { // skip silently if not on page
-    _kflTourState.idx++;
-    return _kflTourShow();
-  }
-  // Backdrop
-  if (!_kflTourState.backdrop) {
-    var bd = document.createElement('div');
-    bd.className = 'tour-backdrop';
-    bd.onclick = _kflTourEnd;
-    document.body.appendChild(bd);
-    _kflTourState.backdrop = bd;
-  }
-  // Highlight target
-  if (_kflTourState.prevHighlight) _kflTourState.prevHighlight.classList.remove('tour-highlight');
-  target.classList.add('tour-highlight');
-  _kflTourState.prevHighlight = target;
-  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  // Position tooltip
-  if (_kflTourState.tip) _kflTourState.tip.remove();
-  var tip = document.createElement('div');
-  tip.className = 'tour-tip';
-  tip.innerHTML =
-    '<div class="tour-step-counter">צעד <span class="num">' + (_kflTourState.idx + 1) + '</span> מתוך <span class="num">' + KFL_TOUR_STEPS.length + '</span></div>' +
-    '<h4>' + step.title + '</h4>' +
-    '<div>' + step.body + '</div>' +
-    '<div class="tour-actions">' +
-      '<button class="skip" type="button">דלגי על הסיור</button>' +
-      '<button class="next" type="button">' + (_kflTourState.idx === KFL_TOUR_STEPS.length - 1 ? 'סיימתי ←' : 'הבא ←') + '</button>' +
-    '</div>';
-  document.body.appendChild(tip);
-  _kflTourState.tip = tip;
-  // Position below target (or above if no space)
-  setTimeout(function() {
-    var rect = target.getBoundingClientRect();
-    var tipH = tip.offsetHeight;
-    var tipW = tip.offsetWidth;
-    var top, left;
-    if (rect.bottom + tipH + 16 < window.innerHeight) {
-      top = rect.bottom + window.scrollY + 12;
-    } else {
-      top = rect.top + window.scrollY - tipH - 12;
-    }
-    left = Math.max(12, Math.min(rect.left + rect.width / 2 - tipW / 2, window.innerWidth - tipW - 12));
-    tip.style.top = top + 'px';
-    tip.style.left = left + 'px';
-  }, 50);
-  tip.querySelector('.next').onclick = function() {
-    _kflTourState.idx++;
-    _kflTourShow();
-  };
-  tip.querySelector('.skip').onclick = _kflTourEnd;
-}
-
-function _kflTourEnd() {
-  if (_kflTourState.backdrop) { _kflTourState.backdrop.remove(); _kflTourState.backdrop = null; }
-  if (_kflTourState.tip) { _kflTourState.tip.remove(); _kflTourState.tip = null; }
-  if (_kflTourState.prevHighlight) { _kflTourState.prevHighlight.classList.remove('tour-highlight'); _kflTourState.prevHighlight = null; }
-  try { localStorage.setItem('kesefle_dashboard_seen', '1'); } catch (e) {}
-}
-
-// Auto-trigger tour on first dashboard visit.
-window.addEventListener('load', function() {
-  setTimeout(function() {
-    try {
-      if (!localStorage.getItem('kesefle_dashboard_seen')) {
-        kesefleStartTour();
-      }
-    } catch (e) {}
-  }, 1200);
-});
-// ============== /DEMO TOUR ==============
+// Demo tour removed 2026-05-24 per Steven's request:
+// "לכל יוזר יש דשבורד, תמחק את האפשרות של סיור אין צורך בכך".
+// Kept the kesefleStartTour stub so any stale onclick references no-op
+// instead of throwing.
+function kesefleStartTour() { /* removed */ }
 
 // ===================== REFERRAL PROGRAM =====================
 // Loads the user's referral code + count + redeemers via /api/referral?action=mine.

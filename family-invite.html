@@ -81,12 +81,13 @@ tailwind.config = {
       <div class="rounded-3xl bg-white dark:bg-ink-800 border-2 border-brand-500 dark:border-brand-400 p-8 shadow-glow">
         <p class="text-xs font-extrabold uppercase tracking-widest text-brand-600 dark:text-brand-400">קוד הקבוצה שלך</p>
         <div id="kfl-group-name" class="mt-1 text-base font-bold text-ink-600 dark:text-ink-300"></div>
-        <div id="kfl-group-code" class="mt-3 font-mono text-5xl md:text-6xl font-black tracking-[0.3em] text-brand-700 dark:text-brand-300" dir="ltr">XXXXXX</div>
+        <div id="kfl-group-code" class="mt-3 font-mono text-3xl sm:text-5xl md:text-6xl font-black tracking-[0.15em] sm:tracking-[0.3em] text-brand-700 dark:text-brand-300 break-all" dir="ltr">XXXXXX</div>
 
         <!-- QR image - loaded from qrserver.com (privacy-safe: encodes only a public wa.me URL) -->
         <div class="mt-6 inline-block p-4 rounded-2xl bg-white border-4 border-ink-200 dark:border-ink-700">
-          <img id="kfl-qr" alt="QR code" width="280" height="280" loading="lazy"
-            style="display:block;width:280px;height:280px;background:#f7f8fb" />
+          <img id="kfl-qr" alt="QR code" loading="lazy"
+            class="block w-full max-w-[260px] aspect-square h-auto"
+            style="background:#f7f8fb" />
         </div>
 
         <p class="mt-4 text-sm text-ink-600 dark:text-ink-300">סרקו עם וואטסאפ → לחצו על הקישור → שלחו הודעה</p>

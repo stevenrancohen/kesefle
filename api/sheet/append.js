@@ -178,6 +178,15 @@ async function handlerImpl(req, res) {
   const result = await appendRowToUserSheet({ userRecord, row });
   if (!result.ok) {
     log.warn('append.write_failed', { reqId: req.reqId, phone, error: result.error });
+    try {
+      const { alertOwnerOfClientError } = await import('../../lib/error-alert.js');
+      alertOwnerOfClientError({
+        reqId: req.reqId, phone, userSub: userRecord?.userSub,
+        route: '/api/sheet/append',
+        code: result.error || 'append_failed',
+        detail: result.detail,
+      });
+    } catch (_alertErr) {}
     return res.status(502).json({ ok: false, error: result.error, detail: result.detail });
   }
 

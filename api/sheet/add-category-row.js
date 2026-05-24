@@ -257,6 +257,15 @@ async function handlerImpl(req, res) {
   const [labelCell, formulaCell] = buildCategoryRowValues(label, name);
   const writeR = await appendDashboardRow(spreadsheetId, accessToken, labelCell, formulaCell);
   if (!writeR.ok) {
+    try {
+      const { alertOwnerOfClientError } = await import('../../lib/error-alert.js');
+      alertOwnerOfClientError({
+        reqId: req.reqId, phone, userSub,
+        route: '/api/sheet/add-category-row',
+        code: 'sheet_write_failed',
+        detail: `name=${name} status=${writeR.status} ${String(writeR.detail).slice(0, 120)}`,
+      });
+    } catch (_alertErr) {}
     return res.status(502).json({
       ok: false,
       error: 'sheet_write_failed',
