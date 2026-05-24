@@ -258,6 +258,24 @@
     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
   </a>
 
+  <!-- Bulk-actions bar: appears when 1+ checkbox selected -->
+  <div id="kfl-bulk-bar" class="fixed bottom-6 right-6 left-24 sm:left-auto sm:max-w-md z-40 hidden">
+    <div class="rounded-2xl bg-ink-900 dark:bg-white text-white dark:text-ink-900 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500 text-white text-sm font-black" id="kfl-bulk-count">0</span>
+        <span class="text-sm font-bold">נבחרו</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="kflBulkDelete()" class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-xs font-bold text-white transition" id="kfl-bulk-delete">
+          🗑 מחק/י
+        </button>
+        <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-ink-800 dark:hover:bg-ink-100">
+          ביטול
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Onboarding checklist (first-time users; auto-hides when all done) -->
   <section id="kfl-onboarding" class="hidden mb-6 rounded-2xl border-2 border-brand-500/50 bg-brand-50 dark:bg-brand-500/10 dark:border-brand-400/40 p-5 md:p-6">
     <div class="flex items-start justify-between gap-3 mb-4">
@@ -1835,34 +1853,43 @@ function renderDashboard(d) {
   drawSparkline('spark-income-line', 'spark-income-fill', incSeries);
   drawCountBars(d.daily_count || generatePseudoSeries(d.month_count || 0, 14, true));
 
-  // --- Recent transactions with category icons
+  // --- Recent transactions with category icons + bulk-select
   var recent = d.recent || [];
   if (recent.length === 0) { showEmptyState(); return; }
   var list = document.getElementById('recent-list');
   list.innerHTML = '';
+  // Reset bulk-select state when re-rendering.
+  window._kflSelected = window._kflSelected || new Set();
+  window._kflRecentRows = recent.slice(0, 10); // store for bulk action lookup
+  window._kflSelected.clear();
+  if (typeof kflBulkBarUpdate === 'function') kflBulkBarUpdate();
   recent.slice(0, 10).forEach(function(t, i) {
     var meta = categoryMeta(t.subcategory || t.category);
     var row = document.createElement('div');
     row.className = 'tx-row row-in flex items-center gap-3 rounded-2xl bg-ink-50 p-3 transition hover:bg-ink-100 dark:bg-ink-900 dark:hover:bg-ink-700';
     row.style.animationDelay = (i * 40) + 'ms';
-    row.setAttribute('role', 'button');
-    row.setAttribute('tabindex', '0');
     row.setAttribute('data-tx-idx', i);
-    row.addEventListener('click', function(){ kesefleOpenTxModal(i); });
-    row.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); kesefleOpenTxModal(i); } });
     var sign = t.is_income ? '+' : '-';
     var amountColor = t.is_income ? 'text-brand-600 dark:text-brand-400' : 'text-ink-900 dark:text-white';
     var safeDesc = escapeHtml(t.description || t.subcategory || 'הוצאה');
     var safeSub = escapeHtml(t.subcategory || '—');
     var safeDate = escapeHtml(t.date || '');
     row.innerHTML =
+      '<input type="checkbox" class="kfl-tx-check accent-brand-600 h-4 w-4 flex-shrink-0 cursor-pointer" data-idx="' + i + '" onclick="event.stopPropagation();" />' +
       '<div class="cat-chip" style="background:' + meta.color + '22;color:' + meta.color + ';">' + meta.icon + '</div>' +
-      '<div class="min-w-0 flex-1">' +
+      '<div class="min-w-0 flex-1 cursor-pointer" onclick="kesefleOpenTxModal(' + i + ')" role="button" tabindex="0">' +
         '<div class="truncate font-semibold">' + safeDesc + '</div>' +
         '<div class="text-xs text-ink-500 dark:text-ink-400">' + safeSub + ' · ' + safeDate + '</div>' +
       '</div>' +
       '<div class="' + amountColor + ' num text-base font-black">' + sign + num(t.amount) + '</div>';
     list.appendChild(row);
+    // Wire the checkbox to the global selection set.
+    row.querySelector('.kfl-tx-check').addEventListener('change', function (e) {
+      var idx = Number(e.target.getAttribute('data-idx'));
+      if (e.target.checked) window._kflSelected.add(idx);
+      else window._kflSelected.delete(idx);
+      if (typeof kflBulkBarUpdate === 'function') kflBulkBarUpdate();
+    });
   });
 
   // --- Top categories: donut + colored legend
@@ -3454,6 +3481,73 @@ function generatePseudoSeries(target, n, intLike) {
   if (document.readyState === 'complete') render();
   else window.addEventListener('load', function () { setTimeout(render, 1500); });
 })();
+</script>
+<script>
+/* Bulk-actions on recent transactions. Counts the selected checkboxes,
+   shows/hides the floating bottom-right action bar, and wires the delete
+   action to POST /api/sheet/delete-rows with the matched (date,amount,
+   description) tuples. The server scans the sheet for matches and runs
+   deleteDimension in reverse order so indices don't shift. */
+window.kflBulkBarUpdate = function () {
+  var bar = document.getElementById('kfl-bulk-bar');
+  var count = document.getElementById('kfl-bulk-count');
+  var n = (window._kflSelected && window._kflSelected.size) || 0;
+  if (!bar || !count) return;
+  if (n > 0) { bar.classList.remove('hidden'); count.textContent = n; }
+  else { bar.classList.add('hidden'); }
+};
+
+window.kflBulkClear = function () {
+  if (window._kflSelected) window._kflSelected.clear();
+  var boxes = document.querySelectorAll('.kfl-tx-check');
+  for (var i = 0; i < boxes.length; i++) boxes[i].checked = false;
+  window.kflBulkBarUpdate();
+};
+
+window.kflBulkDelete = async function () {
+  var sel = window._kflSelected;
+  var rows = window._kflRecentRows || [];
+  if (!sel || sel.size === 0) return;
+  var matches = [];
+  sel.forEach(function (idx) {
+    var t = rows[idx];
+    if (!t) return;
+    matches.push({
+      date: t.date,
+      amount: t.amount,
+      description: t.description || t.subcategory || 'הוצאה',
+      isIncome: !!t.is_income,
+    });
+  });
+  if (!matches.length) return;
+  if (!confirm('למחוק ' + matches.length + ' הוצאות מהגיליון? פעולה זו לא ניתנת לביטול.')) return;
+  var btn = document.getElementById('kfl-bulk-delete');
+  btn.disabled = true; btn.textContent = '...מוחקת';
+  try {
+    var r = await fetch('/api/sheet/delete-rows', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matches: matches }),
+    });
+    var j = await r.json().catch(function () { return { ok: false }; });
+    if (j.ok) {
+      var msg = '✓ נמחקו ' + j.deleted + ' שורות';
+      if (j.notFound && j.notFound.length) {
+        msg += ' (לא נמצאו: ' + j.notFound.length + ')';
+      }
+      alert(msg);
+      // Reload dashboard data so the deletion reflects immediately.
+      if (typeof kesefleRefresh === 'function') kesefleRefresh();
+    } else {
+      alert('שגיאה: ' + (j.error || r.status) + (j.detail ? ' — ' + String(j.detail).slice(0, 80) : ''));
+    }
+  } catch (e) {
+    alert('שגיאת רשת: ' + (e.message || e));
+  } finally {
+    btn.disabled = false; btn.textContent = '🗑 מחק/י';
+    window.kflBulkClear();
+  }
+};
 </script>
 <script src="/js/dashboard-tour.js" defer></script>
 <script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */

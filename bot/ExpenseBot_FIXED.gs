@@ -4931,7 +4931,18 @@ function processExpense(text, fromPhone) {
   const fx = parseForeignCurrencyHint(__workingText);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : __workingText);
   if (!parsed || !parsed.items || parsed.items.length === 0) {
-    // Not a logged expense — try the Gemini concierge to understand + respond
+    // FIRST: try the deterministic data-query path -- pattern-match the
+    // question against the user's real sheet data via /api/sheet/bot-query.
+    // This is BEFORE concierge + Gemini so questions like "how much did I
+    // spend this week" get a real number, not an LLM hallucination. Only
+    // fires for premium users (free tier sees an upgrade reply); falls
+    // through silently when no pattern matches.
+    var __bqAns = null;
+    try { __bqAns = _botQueryAnswer_(fromPhone, text); } catch (_bqe) { Logger.log('bot-query err: ' + (_bqe && _bqe.message)); }
+    if (__bqAns && __bqAns.ok && __bqAns.reply) {
+      return { reply: __bqAns.reply };
+    }
+    // Not a logged expense -- try the Gemini concierge to understand + respond
     // personally before giving up with the generic line.
     var __cg = null;
     try { __cg = _botConcierge_(fromPhone, text); } catch (_cge) { Logger.log('concierge err: ' + (_cge && _cge.message)); }
