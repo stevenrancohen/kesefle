@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-honesty-pass';
+const KFL_BUILD_VERSION = '2026-05-24-honesty-2';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -11217,8 +11217,17 @@ function _familyCreate_(fromPhone) {
     admin: String(fromPhone),
     createdAt: Date.now()
   };
-  kvSet('family:' + familyId, rec, 0);
-  kvSet('family:of:' + fromPhone, familyId, 0);
+  // HONESTY (2026-05-24): both KV writes are critical. If either fails
+  // (KV down, quota exceeded) the sheet exists in Drive but no one can
+  // join because the admin/family mapping is lost. Fail closed.
+  var w1 = kvSet('family:' + familyId, rec, 0);
+  var w2 = kvSet('family:of:' + fromPhone, familyId, 0);
+  if (!w1 || !w2) {
+    Logger.log('_familyCreate_: KV write failed (w1=' + w1 + ' w2=' + w2 + ')');
+    return { handled: true, replyText:
+      '😬 הקבוצה לא נשמרה במאגר (תקלת רשת זמנית). הגיליון נוצר אבל לא ניתן להזמין עדיין.\n' +
+      'נסה/י שוב בעוד דקה.' };
+  }
 
   var msg =
     '✅ המשפחה הוקמה!\n\n' +
@@ -11238,7 +11247,10 @@ function _familyJoinRequest_(fromPhone, familyId) {
     return { handled: true, replyText: '✅ אתם כבר חברים במשפחה הזו.' };
   }
 
-  kvSet('family:pending:' + familyId + ':' + fromPhone, '1', 600);
+  if (!kvSet('family:pending:' + familyId + ':' + fromPhone, '1', 600)) {
+    Logger.log('_familyJoinRequest_: KV write failed for pending');
+    return { handled: true, replyText: '😬 תקלת רשת זמנית, הבקשה לא נשמרה. נסה/י שוב בעוד רגע.' };
+  }
 
   try {
     if (typeof sendWhatsAppInteractiveList === 'function') {
@@ -11289,8 +11301,13 @@ function _familyApprove_(adminPhone, requesterPhone) {
   }
   if (!rec.members) rec.members = [];
   if (rec.members.indexOf(String(requesterPhone)) < 0) rec.members.push(String(requesterPhone));
-  kvSet('family:' + familyId, rec, 0);
-  kvSet('family:of:' + requesterPhone, familyId, 0);
+  // HONESTY: if either critical write fails, don't tell anyone they're in.
+  var aw1 = kvSet('family:' + familyId, rec, 0);
+  var aw2 = kvSet('family:of:' + requesterPhone, familyId, 0);
+  if (!aw1 || !aw2) {
+    Logger.log('_familyApprove_: KV write failed (aw1=' + aw1 + ' aw2=' + aw2 + ')');
+    return { handled: true, replyText: '😬 לא הצלחתי לעדכן את הרישום (תקלת רשת). אשר/י שוב בעוד רגע.' };
+  }
   kvDel('family:pending:' + familyId + ':' + requesterPhone);
 
   try {
