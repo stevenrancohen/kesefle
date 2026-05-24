@@ -850,17 +850,25 @@
 
     <!-- recent transactions -->
     <div class="min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-6 md:col-span-2 dark:border-ink-700 dark:bg-ink-800">
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
         <h3 class="text-lg font-bold">תנועות אחרונות</h3>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <button id="refresh-btn" type="button" onclick="kesefleRefresh()" class="inline-flex min-h-[36px] items-center gap-1.5 rounded-2xl border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" title="רענן נתונים">
             <svg id="refresh-icon" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             <span>רענן</span>
           </button>
+          <button onclick="kflExportData()" class="inline-flex min-h-[36px] items-center gap-1.5 rounded-2xl border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-700" title="הורד קובץ CSV/JSON">
+            ⬇ ייצא
+          </button>
           <a id="see-all-link" href="#" target="_blank" rel="noopener" class="text-xs font-semibold text-brand-600 hover:underline">ראה הכל בגיליון →</a>
         </div>
       </div>
-      <div id="recent-list" class="mt-4 space-y-2">
+      <!-- Search box (client-side filter of the visible recent list) -->
+      <div class="mt-3 relative">
+        <input id="kfl-recent-search" type="search" placeholder="🔍 חפש הוצאה (לפי תיאור / קטגוריה)..."
+          class="w-full rounded-xl border border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-900 px-3 py-2 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-ink-800 outline-none" />
+      </div>
+      <div id="recent-list" class="mt-3 space-y-2">
         <div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">
           טוען תנועות…
         </div>
@@ -3480,6 +3488,76 @@ function generatePseudoSeries(target, n, intLike) {
 
   if (document.readyState === 'complete') render();
   else window.addEventListener('load', function () { setTimeout(render, 1500); });
+})();
+</script>
+<script>
+/* Export: ask the user CSV or JSON, then download from /api/sheet/export. */
+window.kflExportData = async function () {
+  var fmt = prompt('איך להוריד את הנתונים? הקלד CSV או JSON', 'CSV');
+  if (!fmt) return;
+  fmt = String(fmt).trim().toLowerCase();
+  if (fmt !== 'csv' && fmt !== 'json') {
+    alert('פורמט לא תקין. הקלד CSV או JSON.');
+    return;
+  }
+  try {
+    var r = await fetch('/api/sheet/export?format=' + fmt, { credentials: 'include' });
+    if (!r.ok) {
+      var j = await r.json().catch(function () { return {}; });
+      alert('שגיאה: ' + (j.error || r.status));
+      return;
+    }
+    var blob = await r.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'kesefle-export-' + new Date().toISOString().slice(0, 10) + '.' + fmt;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  } catch (e) {
+    alert('שגיאת רשת: ' + (e.message || e));
+  }
+};
+
+/* Search: client-side filter of the visible recent rows. Hides rows whose
+   description+category don't contain the query (case-insensitive). Empty
+   query restores all. */
+(function () {
+  var input = document.getElementById('kfl-recent-search');
+  if (!input) return;
+  function applyFilter() {
+    var q = (input.value || '').trim().toLowerCase();
+    var rows = document.querySelectorAll('#recent-list .tx-row');
+    var anyVisible = false;
+    for (var i = 0; i < rows.length; i++) {
+      var txt = (rows[i].textContent || '').toLowerCase();
+      var match = !q || txt.indexOf(q) >= 0;
+      rows[i].style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    }
+    // Show a small "no matches" placeholder if everything is hidden.
+    var placeholder = document.getElementById('kfl-search-no-matches');
+    if (!anyVisible && q) {
+      if (!placeholder) {
+        placeholder = document.createElement('div');
+        placeholder.id = 'kfl-search-no-matches';
+        placeholder.className = 'rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400';
+        placeholder.textContent = '🔍 אין תוצאות עבור "' + q + '"';
+        document.getElementById('recent-list').appendChild(placeholder);
+      } else {
+        placeholder.textContent = '🔍 אין תוצאות עבור "' + q + '"';
+        placeholder.style.display = '';
+      }
+    } else if (placeholder) {
+      placeholder.style.display = 'none';
+    }
+  }
+  // Debounce: 150ms typing pause before filtering.
+  var t = null;
+  input.addEventListener('input', function () {
+    clearTimeout(t);
+    t = setTimeout(applyFilter, 150);
+  });
 })();
 </script>
 <script>

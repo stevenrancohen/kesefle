@@ -352,6 +352,28 @@ ok('budgets validates categories against lib/categories.js EXPENSE_GROUPS',
 ok('budget-check dedup key uses YYYY-MM + category',
    /budget_alerted:\$\{userSub\}:\$\{ymNow\}:\$\{category\}/.test(BUDGET_CRON));
 
+// ── 5j. Bot data queries (conversational Q&A on the user's sheet) ───────────
+// Users ask "כמה הוצאתי החודש" / "ההוצאה הכי גדולה" etc. The bot pattern-
+// matches the question BEFORE the Gemini coach, calls /api/sheet/bot-query
+// for the real number, and formats a Hebrew reply. Premium-only (free users
+// get the upgrade nudge). These assertions keep the load-bearing pieces from
+// regressing: the endpoint must use the timing-safe bot-secret check + a
+// per-phone rate limit, the bot must have the helper, and the helper must
+// run BEFORE the Gemini coach so we don't hallucinate numbers.
+console.log('\n══ 5j. Bot data queries ══');
+const BOT_QUERY_API = fs.readFileSync(path.join(ROOT, 'api/sheet/bot-query.js'), 'utf8');
+ok('api/sheet/bot-query.js exists + uses constantTimeEqual + per-phone rate limit',
+   /constantTimeEqual/.test(BOT_QUERY_API) &&
+   /rateLimitId\(phone,\s*\{\s*key:\s*'bot_query_phone'[\s\S]*limit:\s*30[\s\S]*windowSec:\s*3600/.test(BOT_QUERY_API));
+ok('bot has _botQueryAnswer_ helper + match + call + format functions',
+   /function _botQueryAnswer_\(/.test(BOT) &&
+   /function _botQueryMatchPattern_\(/.test(BOT) &&
+   /function _botQueryCall_\(/.test(BOT) &&
+   /function _botQueryFormatReply_\(/.test(BOT));
+ok('bot routes data queries BEFORE Gemini coach fallback (ordering)',
+   BOT.indexOf('__bqAns = _botQueryAnswer_(') > -1 &&
+   BOT.indexOf('__bqAns = _botQueryAnswer_(') < BOT.indexOf('__coachReply = _geminiGenerate_('));
+
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
   console.log('\n══ 6. Live API health (KESEFLE_BASE) ══');

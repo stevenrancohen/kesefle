@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-greeting-link-help-freechat';
+const KFL_BUILD_VERSION = '2026-05-24-bot-data-queries';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -3661,6 +3661,238 @@ function _botConcierge_(fromPhone, text) {
   }
 }
 
+// ============================================================
+// Deterministic data-query path: pattern-match common Hebrew
+// questions ("how much did I spend this week", "what is my
+// biggest expense this month", etc.) and answer with REAL
+// numbers from the user's sheet via /api/sheet/bot-query.
+//
+// Runs BEFORE the Gemini money-coach so we don't pay for an
+// LLM call AND we don't hallucinate a number. Premium-only
+// (free users get an upgrade nudge). Returns:
+//   { ok: true,  reply: '...' }  -- matched + answered
+//   { ok: false, reason: '...' } -- no pattern matched OR API failed
+// On any return value where ok!==true the caller falls through
+// to the existing Gemini concierge -> coach -> generic chain.
+// ============================================================
+function _botQueryAnswer_(fromPhone, rawText) {
+  if (!fromPhone || !rawText) return { ok: false, reason: 'no_input' };
+  var text = String(rawText).trim();
+  if (text.length < 4) return { ok: false, reason: 'too_short' };
+
+  // Owner is always premium; for everyone else, gate on the cached
+  // /api/whatsapp/link plan field via _hasActivePremium_. We must run
+  // the regex match FIRST so a free user who clearly asked a data
+  // question gets the upgrade nudge -- not the generic "didn't
+  // understand" reply at the very bottom.
+  var matched = _botQueryMatchPattern_(text);
+  if (!matched) return { ok: false, reason: 'no_pattern' };
+
+  var isPremium = false;
+  try { isPremium = !!_hasActivePremium_(fromPhone); } catch (_pe) {}
+  if (!isPremium) {
+    return { ok: true, reply:
+      'שאלות חופשיות על הכסף שלך זמינות במסלול Pro.\n' +
+      'שדרוג ב-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/pricing'
+    };
+  }
+
+  // Call the bridge. Lazy try/catch on EVERYTHING so a bot-query
+  // outage never crashes the bot -- we fall through to Gemini.
+  var apiResp = null;
+  try { apiResp = _botQueryCall_(fromPhone, matched); }
+  catch (_ce) { Logger.log('_botQueryCall_ err: ' + (_ce && _ce.message)); }
+  if (!apiResp || !apiResp.ok) return { ok: false, reason: 'api_failed' };
+
+  // Format the reply per queryType. Hebrew, friendly, with a tip.
+  var reply = _botQueryFormatReply_(matched, apiResp);
+  if (!reply) return { ok: false, reason: 'format_failed' };
+  return { ok: true, reply: reply };
+}
+
+// Match user text against 7 question shapes. Conservative: ONLY
+// fires on clear question patterns (question word + topic) so an
+// expense entry like "150 על מזון" doesn't false-positive into
+// a data query.
+function _botQueryMatchPattern_(text) {
+  // Normalize lightweight: trim + collapse whitespace. Preserve
+  // Hebrew chars verbatim (no transliteration).
+  var t = String(text).trim().replace(/\s+/g, ' ');
+
+  // 1. Comparison vs last month: "השוואה לחודש שעבר", "השווה לחודש שעבר"
+  if (/(?:השוואה|השווה|השוו|בהשוואה)[^?!.]{0,20}(?:לחודש שעבר|חודש שעבר|קודם)/.test(t)) {
+    return { queryType: 'comparison', period: 'month' };
+  }
+
+  // 2. Largest expense (this month / week): MUST have a question-word
+  // shape, not a bare phrase. "ההוצאה הכי גדולה החודש?"
+  if (/(?:ההוצאה|הוצאה|מה ההוצאה).{0,12}(?:הכי גדולה|הגדולה ביותר|גבוהה ביותר|הכי גבוהה)/.test(t)
+      || /מה(?:י)?\s+(?:ההוצאה|הוצאה)\s+(?:הכי גדולה|הגדולה|הגבוהה)/.test(t)) {
+    var perLg = /השבוע/.test(t) ? 'week' : (/החודש שעבר|חודש שעבר/.test(t) ? 'last_month' : 'month');
+    return { queryType: 'largest', period: perLg };
+  }
+
+  // 3. Income this month: "כמה משכורת קיבלתי החודש", "כמה הכנסות החודש"
+  if (/(?:כמה|איך|מה)[^?!.]{0,30}(?:משכורת|הכנסה|הכנסות|רווח|רווחים|הכנסנו|הרווחתי|קיבלתי)/.test(t)) {
+    var perInc = /השבוע/.test(t) ? 'week' : (/השנה/.test(t) ? 'year' : (/החודש שעבר|חודש שעבר/.test(t) ? 'last_month' : 'month'));
+    return { queryType: 'income', period: perInc };
+  }
+
+  // 4. Top categories: "איפה הוצאתי הכי הרבה", "על מה הכי הרבה כסף"
+  if (/(?:איפה|במה|על מה)[^?!.]{0,20}(?:הכי הרבה|הוצאתי הכי|המוצא|הרבה כסף)/.test(t)
+      || /(?:הקטגוריות|קטגוריות)[^?!.]{0,12}(?:המובילות|העיקריות|הכי גדולות)/.test(t)) {
+    var perTop = /השבוע/.test(t) ? 'week' : (/השנה/.test(t) ? 'year' : 'month');
+    return { queryType: 'top_categories', period: perTop };
+  }
+
+  // 5. Spend on a specific category: "כמה הוצאתי על מזון השבוע?"
+  //    "כמה הוצאתי על דלק החודש". The "על X" makes this unambiguous.
+  var catM = t.match(/כמה[^?!.]{0,15}(?:הוצאתי|בזבזתי|שילמתי|הוצאנו)[^?!.]{0,5}על\s+([֐-׿A-Za-z'׳"\-\s]{2,30}?)(?:\s+(?:השבוע|השבוע הזה|החודש|החודש הזה|השנה|חודש שעבר|החודש שעבר))?\s*[?!.]*\s*$/);
+  if (catM) {
+    var cat = catM[1].trim().replace(/[\s,]+$/, '');
+    var perCat = /השבוע/.test(t) ? 'week' : (/השנה/.test(t) ? 'year' : (/החודש שעבר|חודש שעבר/.test(t) ? 'last_month' : 'month'));
+    return { queryType: 'category', period: perCat, category: cat };
+  }
+
+  // 6. Total this week: "כמה הוצאתי השבוע?"
+  if (/(?:כמה)[^?!.]{0,15}(?:הוצאתי|בזבזתי|שילמתי|הוצאנו)[^?!.]{0,15}(?:השבוע|השבוע הזה)\s*[?!.]*\s*$/.test(t)) {
+    return { queryType: 'total', period: 'week' };
+  }
+
+  // 7. Total this month: "כמה הוצאתי החודש?" / "כמה הוצאתי בסך הכל החודש"
+  if (/(?:כמה)[^?!.]{0,15}(?:הוצאתי|בזבזתי|שילמתי|הוצאנו)[^?!.]{0,25}(?:החודש|החודש הזה|בסך הכל|בסה"כ)\s*[?!.]*\s*$/.test(t)
+      || /^\s*(?:סך הכל|סה"כ|סך הכל החודש|כמה הוצאתי)\s*[?!.]*\s*$/.test(t)) {
+    var perTot = /חודש שעבר|החודש שעבר/.test(t) ? 'last_month' : 'month';
+    return { queryType: 'total', period: perTot };
+  }
+
+  // 8. Total last month: explicit "כמה הוצאתי חודש שעבר?"
+  if (/(?:כמה)[^?!.]{0,15}(?:הוצאתי|בזבזתי|שילמתי)[^?!.]{0,15}(?:חודש שעבר|בחודש שעבר|חודש קודם)\s*[?!.]*\s*$/.test(t)) {
+    return { queryType: 'total', period: 'last_month' };
+  }
+
+  return null;
+}
+
+// POST to /api/sheet/bot-query with the bot secret + match params.
+// Returns parsed JSON or null on any failure.
+function _botQueryCall_(fromPhone, match) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+  if (!secret) return null;
+  var payload = {
+    phone: String(fromPhone).replace(/[^0-9]/g, ''),
+    queryType: match.queryType,
+    period: match.period || 'month',
+    botSecret: secret,
+  };
+  if (match.category) payload.category = match.category;
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/bot-query', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    if (code < 200 || code >= 300) return null;
+    return JSON.parse(resp.getContentText());
+  } catch (e) {
+    Logger.log('_botQueryCall_ throw: ' + (e && e.message));
+    return null;
+  }
+}
+
+// Format the bot-query JSON response into a friendly Hebrew reply.
+function _botQueryFormatReply_(match, j) {
+  var fmt = function(n) { return '₪' + Number(n || 0).toLocaleString('he-IL'); };
+  var periodLabel = j.periodLabel || (
+    match.period === 'week' ? 'השבוע' :
+    match.period === 'last_month' ? 'חודש שעבר' :
+    match.period === 'year' ? 'השנה' : 'החודש'
+  );
+
+  if (match.queryType === 'total') {
+    if (!j.total && !j.count) {
+      return 'לא רשמת הוצאות ' + periodLabel + ' עדיין.\nתכתוב הוצאה כמו "150 סופר" ונתחיל לעקוב.';
+    }
+    var line = 'הוצאת ' + fmt(j.total) + ' ' + periodLabel + ' (' + j.count + ' תנועות).';
+    if (j.breakdown && j.breakdown.length) {
+      line += '\nהקטגוריה המובילה: ' + j.breakdown[0].label + ' (' + fmt(j.breakdown[0].amount) + ')';
+    }
+    return line;
+  }
+
+  if (match.queryType === 'category') {
+    if (!j.count) {
+      return 'לא מצאתי הוצאות על "' + (match.category || '') + '" ' + periodLabel + '.\n' +
+             'אולי הקטגוריה רשומה בשם אחר? תכתוב "סיכום" לראות הכל.';
+    }
+    var catLine = 'הוצאת ' + fmt(j.total) + ' על ' + (match.category || j.matchedCategory || '') + ' ' + periodLabel + ' (' + j.count + ' תנועות).';
+    if (j.breakdown && j.breakdown.length && j.breakdown.length > 1) {
+      catLine += '\nהאחרונות:';
+      for (var k = 0; k < Math.min(3, j.breakdown.length); k++) {
+        catLine += '\n  - ' + j.breakdown[k].label + ' ' + fmt(j.breakdown[k].amount);
+      }
+    }
+    return catLine;
+  }
+
+  if (match.queryType === 'largest') {
+    if (!j.breakdown || !j.breakdown.length) {
+      return 'אין הוצאות רשומות ' + periodLabel + '.';
+    }
+    var top = j.breakdown[0];
+    var largeLine = 'ההוצאה הגדולה ' + periodLabel + ':\n' +
+      fmt(top.amount) + ' - ' + (top.label || top.category || 'הוצאה');
+    if (top.category && top.label && top.label !== top.category) {
+      largeLine += ' (' + top.category + ')';
+    }
+    return largeLine;
+  }
+
+  if (match.queryType === 'income') {
+    if (!j.count) {
+      return 'לא רשמת הכנסות ' + periodLabel + '.\nכתוב "8500 משכורת" ואני אוסיף.';
+    }
+    var incLine = 'הכנסת ' + fmt(j.total) + ' ' + periodLabel + ' (' + j.count + ' תנועות).';
+    if (j.breakdown && j.breakdown.length) {
+      incLine += '\nמקור עיקרי: ' + j.breakdown[0].label + ' (' + fmt(j.breakdown[0].amount) + ')';
+    }
+    return incLine;
+  }
+
+  if (match.queryType === 'comparison') {
+    var cmp = j.comparison || {};
+    var prev = cmp.prev_total || 0;
+    var pct = cmp.pct;
+    if (!prev && !j.total) {
+      return 'אין מספיק נתונים להשוואה - כתוב כמה הוצאות ונחזור לזה.';
+    }
+    var arrow = pct === null ? '' : (pct > 0 ? 'יותר' : (pct < 0 ? 'פחות' : 'אותו דבר'));
+    var cmpLine = 'החודש: ' + fmt(j.total) + '\nחודש שעבר: ' + fmt(prev);
+    if (pct !== null && pct !== undefined) {
+      cmpLine += '\n' + (pct > 0 ? '+' : '') + pct + '% (' + arrow + ')';
+    }
+    return cmpLine;
+  }
+
+  if (match.queryType === 'top_categories') {
+    if (!j.breakdown || !j.breakdown.length) {
+      return 'אין הוצאות רשומות ' + periodLabel + '.';
+    }
+    var topLine = 'הקטגוריות הגדולות ' + periodLabel + ':';
+    for (var i = 0; i < Math.min(5, j.breakdown.length); i++) {
+      topLine += '\n' + (i + 1) + '. ' + j.breakdown[i].label + ' - ' + fmt(j.breakdown[i].amount);
+    }
+    topLine += '\n\nסך הכל: ' + fmt(j.total);
+    return topLine;
+  }
+
+  return null;
+}
+
 // Build + send the closing profile summary, then clear state.
 function _surveyFinish_(fromPhone) {
   var pref = _surveyGetAutoLogPref_(fromPhone);
@@ -5006,7 +5238,18 @@ function processExpense(text, fromPhone) {
   const fx = parseForeignCurrencyHint(__workingText);
   const parsed = parseAmountAndDescription(fx ? (fx.ilsAmount + ' ' + fx.cleanedText) : __workingText);
   if (!parsed || !parsed.items || parsed.items.length === 0) {
-    // Not a logged expense — try the Gemini concierge to understand + respond
+    // FIRST: try the deterministic data-query path -- pattern-match the
+    // question against the user's real sheet data via /api/sheet/bot-query.
+    // This is BEFORE concierge + Gemini so questions like "how much did I
+    // spend this week" get a real number, not an LLM hallucination. Only
+    // fires for premium users (free tier sees an upgrade reply); falls
+    // through silently when no pattern matches.
+    var __bqAns = null;
+    try { __bqAns = _botQueryAnswer_(fromPhone, text); } catch (_bqe) { Logger.log('bot-query err: ' + (_bqe && _bqe.message)); }
+    if (__bqAns && __bqAns.ok && __bqAns.reply) {
+      return { reply: __bqAns.reply };
+    }
+    // Not a logged expense -- try the Gemini concierge to understand + respond
     // personally before giving up with the generic line.
     var __cg = null;
     try { __cg = _botConcierge_(fromPhone, text); } catch (_cge) { Logger.log('concierge err: ' + (_cge && _cge.message)); }
