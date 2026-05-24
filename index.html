@@ -424,10 +424,39 @@
     .holo-text, .matrix-grid, .neon-card, .scan-line::before, .live-dot, .type-cursor::after, .particle, .btn-neon::after { animation: none !important; }
     .tilt-soft:hover { transform: none; }
   }
+  /* ===== CONTINUOUS-FLOW PAGE LAYER (2026-05-24) =====
+     One color, one mesh, across the whole page. Sections stop being
+     visually distinct boxes -- their boundaries are felt via soft
+     gradient masks rather than seen as hard background switches. */
+  .dark .kfl-continuous-body {
+    background-color: #0a0e1a;
+    background-image:
+      radial-gradient(ellipse 1200px 800px at 15% 5%, rgba(34,197,94,0.10) 0px, transparent 60%),
+      radial-gradient(ellipse 1000px 700px at 85% 22%, rgba(168,85,247,0.09) 0px, transparent 60%),
+      radial-gradient(ellipse 900px 600px at 50% 50%, rgba(34,197,94,0.06) 0px, transparent 65%),
+      radial-gradient(ellipse 1100px 700px at 10% 78%, rgba(99,102,241,0.07) 0px, transparent 60%),
+      radial-gradient(ellipse 900px 600px at 90% 100%, rgba(168,85,247,0.06) 0px, transparent 65%);
+    background-attachment: fixed;
+  }
+  /* Header transparency: starts invisible over hero, gains a subtle
+     blurred panel + faint border only once user scrolls past 40px. */
+  .kfl-header {
+    background: transparent;
+    border-bottom: 1px solid transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: background-color 0.35s ease, border-color 0.35s ease, backdrop-filter 0.35s ease, -webkit-backdrop-filter 0.35s ease;
+  }
+  .kfl-header.scrolled {
+    background-color: rgba(10, 14, 26, 0.55);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+  }
 </style>
 <script src="/lib/analytics.js" defer></script>
 </head>
-<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+<body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-950 dark:text-white kfl-continuous-body">
 
 <!-- Cinematic page-load curtain — lifts after first paint -->
 <div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
@@ -449,10 +478,31 @@
     else window.addEventListener('load', lift);
   })();
 </script>
+<script>
+  // Header scroll-state: transparent over hero, faint panel after 40px
+  (function headerScroll(){
+    var hdr = document.getElementById('kfl-site-header');
+    if (!hdr) return;
+    var ticking = false;
+    function update(){
+      var y = window.scrollY || document.documentElement.scrollTop || 0;
+      if (y > 40) hdr.classList.add('scrolled');
+      else hdr.classList.remove('scrolled');
+      ticking = false;
+    }
+    window.addEventListener('scroll', function(){
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  })();
+</script>
 
 
 <!-- ============== NAV ============== -->
-<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-900/70">
+<!-- Header is transparent over the hero; a tiny scroll listener adds .scrolled
+     after ~40px so it gains a faint blur and divider without a hard edge.
+     Light-mode classes kept for fallback; site is forced dark by default. -->
+<header id="kfl-site-header" class="kfl-header fixed inset-x-0 top-0 z-50">
   <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
     <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
       <img src="/logo.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
@@ -541,8 +591,9 @@
     </div>
   </nav>
 
-  <!-- Mobile menu (native accordion) -->
-  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-200/60 bg-white/95 px-5 py-3 backdrop-blur dark:border-ink-700/60 dark:bg-ink-900/95 md:hidden">
+  <!-- Mobile menu (native accordion). Slightly more opaque so it reads
+       as a panel even over the transparent header. -->
+  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-white/[0.06] bg-white/95 px-5 py-3 backdrop-blur-lg dark:bg-ink-900/95 md:hidden">
     <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">המוצר<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/#how" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">איך זה עובד</a><a href="/#features" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">תכונות</a><a href="/demo" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הדגמה חיה</a><a href="/tools" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">כלים חינמיים</a><a href="/automations" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">אוטומציות</a></div></details>
     <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">למי זה מתאים<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/business" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">עצמאים ובעלי עסק</a><a href="/family" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">משפחות</a><a href="/group" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">קבוצות ושותפים</a></div></details>
     <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מחירים<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/pricing" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מסלולים</a><a href="/upgrade" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">שדרוג ל-Pro</a><a href="/compare" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואת מסלולים</a></div></details>
@@ -561,8 +612,10 @@
   <!-- cursor-following spotlight (Vercel-style) -->
   <div id="kfl-spotlight" class="pointer-events-none absolute inset-0 -z-[5] opacity-0 transition-opacity duration-500" style="background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%), rgba(34,197,94,0.18), transparent 60%); mix-blend-mode: screen;"></div>
   <!-- aurora gradient mesh background (premium) -->
-  <div class="absolute inset-0 -z-10 aurora"></div>
-  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/70 via-white/40 to-white/80 dark:from-ink-900/70 dark:via-ink-900/30 dark:to-ink-900/80"></div>
+  <div class="absolute inset-0 -z-10 aurora opacity-90"></div>
+  <!-- 2026-05-24: lightened the wash + removed the hard bottom band so the
+       hero feathers naturally into the next section. -->
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/40 via-transparent to-white/0 dark:from-ink-950/30 dark:via-transparent dark:to-ink-950/0"></div>
   <!-- subtle dot-grid texture -->
   <div class="pointer-events-none absolute inset-0 -z-10 text-ink-900/[0.06] dotgrid dark:text-white/[0.04]"></div>
   <!-- animated floating blobs (bigger + more dramatic) -->
@@ -720,7 +773,8 @@
 </section>
 
 <!-- ============== ABOUT KESEFLE / SEO LONG-FORM (moved to position #2 per Steven 2026-05-23) ============== -->
-<section id="about-kesefle" class="border-t border-ink-200 bg-ink-50 py-16 dark:border-ink-700 dark:bg-ink-900/60">
+<!-- Backgrounds + hard borders removed 2026-05-24 for continuous-flow page. -->
+<section id="about-kesefle" class="relative py-20 md:py-24">
   <div class="mx-auto max-w-3xl px-5 text-right" dir="rtl">
     <h2 class="text-3xl font-black tracking-tight md:text-4xl dark:text-white">מה זה כספ'לה?</h2>
     <p class="mt-4 leading-relaxed text-ink-700 dark:text-ink-200">
@@ -750,7 +804,8 @@
 </section>
 
 <!-- ============== LIVE STATS STRIP (animated count-up) ============== -->
-<section class="border-y border-ink-200/60 bg-white/40 py-8 backdrop-blur dark:border-ink-700/50 dark:bg-ink-900/40">
+<!-- Hard borders + tinted panel removed for continuous flow 2026-05-24. -->
+<section class="relative py-10">
   <div class="mx-auto grid max-w-5xl grid-cols-2 gap-6 px-5 md:grid-cols-4">
     <div class="kfl-reveal text-center">
       <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="18725">0</span></div>
@@ -785,7 +840,7 @@
 })();
 </script>
 
-<section id="value" class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
+<section id="value" class="relative overflow-hidden py-24 md:py-32">
   <div class="pointer-events-none absolute inset-0 -z-10 dotgrid text-ink-300/30 dark:text-white/[0.04]"></div>
   <div class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-500/5 blur-3xl"></div>
   <div class="mx-auto max-w-3xl px-5 text-center">
@@ -883,7 +938,7 @@
 </section>
 
 <!-- ============== HOW IT WORKS — cinematic timeline ============== -->
-<section id="how" class="relative overflow-hidden py-20 md:py-28">
+<section id="how" class="relative overflow-hidden py-24 md:py-32">
   <!-- ambient glow -->
   <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
     <div class="absolute left-1/2 top-28 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-400/10 blur-3xl dark:bg-brand-500/10"></div>
@@ -980,11 +1035,11 @@
 </section>
 
 <!-- ============== FEATURES ============== -->
-<section id="features" class="relative overflow-hidden bg-ink-950 py-24 text-white md:py-32">
-  <!-- subtle ambient: one soft radial, no matrix grid, no blob movement -->
+<!-- 2026-05-24: dropped bg-ink-950 + the hard top/bottom hairlines for
+     continuous-flow page. Text stays white; the ambient radial below
+     gives this section its own gentle warmth. -->
+<section id="features" class="relative overflow-hidden py-24 text-white md:py-32">
   <div class="pointer-events-none absolute top-0 left-1/2 -z-10 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-brand-500/[0.06] blur-[120px]"></div>
-  <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-  <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
   <div class="mx-auto max-w-6xl px-5">
     <div class="mx-auto max-w-2xl text-center">
@@ -1180,8 +1235,8 @@
 </section>
 
 <!-- ============== ROI CALCULATOR (interactive) ============== -->
-<section class="relative overflow-hidden py-20 md:py-28 dark:bg-ink-900">
-  <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-30"></div>
+<section class="relative overflow-hidden py-24 md:py-32">
+  <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-20"></div>
   <div class="mx-auto max-w-4xl px-5">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-sm font-extrabold">🧮 <span class="bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">חישוב חיסכון</span></p>
@@ -1273,7 +1328,7 @@
 </section>
 
 <!-- ============== PRICING ============== -->
-<section id="pricing" class="bg-ink-50 py-20 md:py-28 dark:bg-ink-900">
+<section id="pricing" class="relative py-24 md:py-32">
   <div class="mx-auto max-w-6xl px-5">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">מחיר</p>
@@ -1357,10 +1412,11 @@
 </section>
 
 <!-- ============== SIGNUP ============== -->
-<section id="signup" class="relative overflow-hidden py-20 md:py-28">
-  <div class="absolute inset-0 -z-10 bg-gradient-to-br from-ink-900 via-ink-800 to-ink-900"></div>
-  <div class="absolute inset-0 -z-10 bg-mesh opacity-60"></div>
-  <!-- spotlight blobs -->
+<!-- 2026-05-24: dropped the boxy inset gradient + mesh overlay so the
+     signup blends into the page rhythm. The two spotlight blobs stay
+     for depth, but the section no longer reads as its own dark panel. -->
+<section id="signup" class="relative overflow-hidden py-24 md:py-32">
+  <!-- spotlight blobs (only depth left; no opaque panel) -->
   <div class="pointer-events-none absolute -top-40 -right-40 -z-10 h-[32rem] w-[32rem] rounded-full bg-brand-500/20 blur-3xl animate-blob"></div>
   <div class="pointer-events-none absolute -bottom-40 -left-40 -z-10 h-[32rem] w-[32rem] rounded-full bg-accent-500/15 blur-3xl animate-blob" style="animation-delay:-5s"></div>
   <div class="mx-auto max-w-3xl px-5 text-center text-white">
@@ -1452,7 +1508,7 @@
 </section>
 
 <!-- ============== FAQ ============== -->
-<section id="faq" class="py-20 md:py-28 dark:bg-ink-900">
+<section id="faq" class="relative py-24 md:py-32">
   <div class="mx-auto max-w-3xl px-5">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">שאלות נפוצות</p>
@@ -1513,7 +1569,9 @@
 </section>
 
 <!-- ============== FOOTER ============== -->
-<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-900">
+<!-- Footer kept as its own visual identity (rest period before page end);
+     border softened to a faint glow so the seam isn't a hard line. -->
+<footer class="relative border-t border-ink-200/50 bg-white py-14 dark:border-white/[0.06] dark:bg-ink-900/70">
   <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
     <div>
       <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
