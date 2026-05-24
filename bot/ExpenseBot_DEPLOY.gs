@@ -1666,7 +1666,7 @@ function handleInteractiveReply_(fromPhone, interactive) {
         isIncome: false,
       });
       if (__ar.ok) {
-        return { replyText: '✅ נרשם בגיליון שלך!\n💰 ₪' + amount + '\n📁 ' + decoded.category + (decoded.subcategory ? ' / ' + decoded.subcategory : '') + '\n📝 ' + description };
+        return { replyText: '✅ נרשם בגיליון שלך!\n💰 ₪' + amount + '\n📁 ' + decoded.category + (decoded.subcategory ? ' / ' + decoded.subcategory : '') + '\n📝 ' + description + _celebrateIfFirstExpense_(fromPhone) };
       }
       Logger.log('handleInteractiveReply_ tenant append failed: ' + __ar.code + ' ' + String(__ar.body).slice(0, 200));
       return { replyText: '😬 לא הצלחתי לשמור עכשיו. שלח שוב את ההוצאה בעוד רגע.' };
@@ -1742,7 +1742,8 @@ function handleInteractiveReply_(fromPhone, interactive) {
         '💰 סכום: ₪' + amount + '\n' +
         '📁 קטגוריה: ' + category + ' / ' + subcategory + '\n' +
         '📝 פירוט: ' + description + '\n\n' +
-        '💡 בפעם הבאה שתשלח "' + description + '" — אזכור את הקטגוריה הזו אוטומטית.'
+        '💡 בפעם הבאה שתשלח "' + description + '" — אזכור את הקטגוריה הזו אוטומטית.' +
+        _celebrateIfFirstExpense_(fromPhone)
     };
   } catch (e) {
     Logger.log('handleInteractiveReply_: write error: ' + (e && e.stack || e));
@@ -4136,7 +4137,7 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     if (code >= 200 && code < 300) {
       var nice = '₪' + Number(first.amount).toLocaleString('he-IL') + ' · ' + category;
       if (subcategory) nice += ' · ' + subcategory;
-      return { reply: '✅ נרשם: ' + nice + _sheetLinkLine_(fromPhone) };
+      return { reply: '✅ נרשם: ' + nice + _sheetLinkLine_(fromPhone) + _celebrateIfFirstExpense_(fromPhone) };
     }
     Logger.log('_tenantWriteExpense_ HTTP ' + code + ' ' + body.slice(0, 300));
     var errCode = '';
@@ -4460,6 +4461,21 @@ function processExpense(text, fromPhone) {
   }
   if (trimmed === 'עזרה' || trimmed === 'help' || trimmed === '?') {
     return { reply: getHelpMessage() };
+  }
+  // Support escalation: customer needs a human. Match common Hebrew + English
+  // phrases. We DO NOT classify these as expenses, we DO notify the owner via
+  // the existing admin-alert path, and we reply with a friendly ack.
+  if (_isSupportEscalation_(trimmed)) {
+    try {
+      _adminAlertOnce_(
+        '🆘 SUPPORT REQUEST\n' +
+        'From: +' + fromPhone + '\n' +
+        'Text: "' + text.slice(0, 280) + '"\n\n' +
+        'Reply to them on WhatsApp directly: https://wa.me/' + fromPhone,
+        fromPhone
+      );
+    } catch (_supErr) { Logger.log('support escalation alert err: ' + (_supErr && _supErr.message)); }
+    return { reply: 'קיבלתי. הצוות יחזור אליך כאן בוואטסאפ תוך כמה שעות.\nאם זה דחוף — info@kesefle.com 📧' };
   }
   if (trimmed === 'סיכום' || trimmed === 'summary') {
     return { reply: getMonthlySummary(fromPhone) };
@@ -6325,7 +6341,7 @@ function _handleReceiptImage_(fromPhone, image) {
         isIncome: false,
       });
       if (__rr.ok) {
-        return { replyText: '✅ נרשם בגיליון שלך מהקבלה!\n💰 ₪' + amount + '\n📁 ' + matched.category + (matched.subcategory ? ' / ' + matched.subcategory : '') + '\n📝 ' + (vendor || description) };
+        return { replyText: '✅ נרשם בגיליון שלך מהקבלה!\n💰 ₪' + amount + '\n📁 ' + matched.category + (matched.subcategory ? ' / ' + matched.subcategory : '') + '\n📝 ' + (vendor || description) + _celebrateIfFirstExpense_(fromPhone) };
       }
       Logger.log('_handleReceiptImage_ tenant append failed: ' + __rr.code + ' ' + String(__rr.body).slice(0, 200));
       return { replyText: '😬 לא הצלחתי לשמור את הקבלה כרגע. נסה שוב בעוד רגע.' };
@@ -10748,6 +10764,56 @@ function _adminAlertOnce_(message, fromPhone) {
   } catch (e) {
     Logger.log('_adminAlertOnce_ err: ' + e.message);
   }
+}
+
+// First-expense celebration: returns a friendly suffix string the first time
+// a particular phone successfully writes an expense, then an empty string
+// every subsequent time. The flag is stored under 'fxcel:' + phone (dedup
+// across the bot's whole lifetime) so we never double-celebrate.
+function _celebrateIfFirstExpense_(fromPhone) {
+  try {
+    var p = String(fromPhone || '').replace(/[^0-9]/g, '');
+    if (!p) return '';
+    var props = PropertiesService.getScriptProperties();
+    var key = 'fxcel:' + p;
+    if (props.getProperty(key)) return '';
+    props.setProperty(key, new Date().toISOString());
+    return '\n\n🎉 זאת ההוצאה הראשונה שלך! מעכשיו כל הוצאה שתשלח/י תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב/י "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
+  } catch (_e) { return ''; }
+}
+
+// Pre-classification check: does the user's message look like a support
+// request that should go to a HUMAN, not the expense parser? If so, we skip
+// LLM classification entirely and alert the owner. Conservative on purpose:
+// only fires when the WHOLE message is a help phrase (10 chars or fewer)
+// or when one of the strong escalation triggers shows up on its own line,
+// so "אכלתי בבדיקה רפואית" doesn't accidentally escalate.
+function _isSupportEscalation_(trimmedLowercaseText) {
+  if (!trimmedLowercaseText || typeof trimmedLowercaseText !== 'string') return false;
+  var t = trimmedLowercaseText.trim();
+  if (!t) return false;
+  // Strong: stand-alone short messages that are obviously a support call.
+  // We allow up to 30 chars so "אני צריך נציג בבקשה" still triggers.
+  var SHORT_TRIGGERS = [
+    'נציג', 'אנושי', 'דבר עם בנאדם', 'מישהו', 'תמיכה', 'שירות לקוחות', 'בעיה',
+    'תקלה דחופה', 'תקלה רצינית', 'help me', 'support', 'human', 'agent',
+    'representative', 'איש קשר', 'איש שירות'
+  ];
+  if (t.length <= 30) {
+    for (var i = 0; i < SHORT_TRIGGERS.length; i++) {
+      if (t.indexOf(SHORT_TRIGGERS[i]) >= 0) return true;
+    }
+  }
+  // Strong stand-alone phrases (any length, must be exact match or start-of-line).
+  var EXACT = [
+    'דבר איתי', 'תחזור אליי', 'תחזרו אליי', 'תחזור אלי', 'תחזרו אלי',
+    'אני צריך עזרה', 'אני צריכה עזרה', 'יש לי בעיה', 'יש לי תקלה',
+    'הבוט לא עובד', 'משהו לא עובד', 'שום דבר לא עובד'
+  ];
+  for (var j = 0; j < EXACT.length; j++) {
+    if (t === EXACT[j] || t.indexOf(EXACT[j]) === 0) return true;
+  }
+  return false;
 }
 
 // --- 2) Smart few-shot construction --------------------------------------

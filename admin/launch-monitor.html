@@ -284,6 +284,22 @@
       </div>
     </div>
 
+    <!-- Top referrers leaderboard -->
+    <div class="grid">
+      <div class="card full">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+          <h3>Top referrers (all-time)</h3>
+          <button onclick="kfl.loadReferrers()" style="font-size:11px">Refresh</button>
+        </div>
+        <div class="sub" style="margin-bottom:8px">Whoever brings the most paying customers wins. Estimated $-value uses Pro plan monthly price.</div>
+        <div id="referrers-summary" class="sub" style="margin-bottom:8px">Loading...</div>
+        <table style="margin-top:4px" id="referrers-table" style="display:none">
+          <thead><tr><th>#</th><th>Referrer</th><th style="text-align:right">Referrals</th><th style="text-align:right">Plan</th><th style="text-align:right">$ earned</th></tr></thead>
+          <tbody id="referrers-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Create sample sheet action -->
     <div class="grid">
       <div class="card full">
@@ -514,7 +530,7 @@ window.kfl = (function () {
   // Initial load: monitor + one-shot drift check (drift only changes on env or
   // codebase changes, not in real-time, so we don't poll it).
   // The monitor + funnel poll at 30s; drift + bot-version are one-shot.
-  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); loadReports(); checkDrift(); checkBotVersion(); startPolling(); }
+  function _initAll() { fetchMonitor(); loadFunnel(); loadRecent(); loadReports(); loadReferrers(); checkDrift(); checkBotVersion(); startPolling(); }
   if (document.readyState !== 'loading') _initAll();
   else document.addEventListener('DOMContentLoaded', _initAll);
 
@@ -547,14 +563,41 @@ window.kfl = (function () {
         var pct = i === 0 ? '—' : (row.conversion_from_prev * 100).toFixed(0) + '%';
         var pctColor = i > 0 && row.conversion_from_prev < 0.5 ? 'color:var(--danger)' :
                        i > 0 && row.conversion_from_prev < 0.8 ? 'color:var(--warning)' : '';
+        // Visual sparkline bar reflecting the count relative to the top step.
+        var topCount = (j.funnel[0] && j.funnel[0].count) || 1;
+        var widthPct = Math.max(1, Math.round((row.count / topCount) * 100));
+        var barColor = i === 0 ? 'var(--accent)' :
+                       row.conversion_from_prev < 0.5 ? 'var(--danger)' :
+                       row.conversion_from_prev < 0.8 ? 'var(--warning)' :
+                       'var(--success)';
+        var safeLabel = String(row.label || row.step).replace(/[<>&]/g, function (c) {
+          return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c];
+        });
         return '<tr>' +
-          '<td>' + row.step + '</td>' +
-          '<td style="text-align:right" class="num">' + row.count + '</td>' +
-          '<td style="text-align:right;' + pctColor + '" class="num">' + pct + '</td>' +
-          '<td style="text-align:right" class="num">' + (row.dropoff_from_prev || '') + '</td>' +
+          '<td>' +
+            '<div style="font-weight:600">' + safeLabel + '</div>' +
+            '<div class="sub" style="font-size:10px;color:var(--muted);margin-top:1px">' + row.step + '</div>' +
+            '<div style="height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden">' +
+              '<div style="height:100%;width:' + widthPct + '%;background:' + barColor + '"></div>' +
+            '</div>' +
+          '</td>' +
+          '<td style="text-align:right;vertical-align:top" class="num">' + row.count + '</td>' +
+          '<td style="text-align:right;vertical-align:top;' + pctColor + '" class="num">' + pct + '</td>' +
+          '<td style="text-align:right;vertical-align:top" class="num">' + (row.dropoff_from_prev || '') + '</td>' +
         '</tr>';
       }).join('');
       document.getElementById('funnel-table').style.display = 'table';
+
+      // Biggest-leak callout: jump straight to the worst-converting step.
+      var leakLine = document.getElementById('funnel-summary-line');
+      if (j.biggest_leak && j.biggest_leak.dropoff > 0) {
+        var leakPct = (j.biggest_leak.dropoff_pct * 100).toFixed(0);
+        var safeLeakLabel = String(j.biggest_leak.label || j.biggest_leak.step).replace(/[<>&]/g, function (c) {
+          return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c];
+        });
+        leakLine.innerHTML += '<br><span style="color:var(--danger);font-weight:600">🚨 דליפה הכי גדולה:</span> ' +
+          safeLeakLabel + ' (' + j.biggest_leak.dropoff + ' אנשים, ' + leakPct + '% נשרו)';
+      }
 
       // Errors breakdown
       var errs = Object.entries(j.errors || {}).filter(function (e) { return e[1] > 0; });
@@ -564,6 +607,15 @@ window.kfl = (function () {
         }).join(' · ');
       } else {
         errBox.innerHTML = '<span style="color:var(--success)">✓ No errors recorded today</span>';
+      }
+
+      // Secondary events line (help searches, pricing views, etc.)
+      if (j.secondary) {
+        var secs = Object.entries(j.secondary).filter(function (e) { return e[1] > 0; });
+        if (secs.length) {
+          errBox.innerHTML += '<br><strong style="margin-top:6px;display:inline-block">פעולות נוספות:</strong> ' +
+            secs.map(function (e) { return '<code>' + e[0] + '</code>: ' + e[1]; }).join(' · ');
+        }
       }
     } catch (e) { line.textContent = 'Funnel load failed: ' + (e.message || e); }
   }
@@ -755,6 +807,49 @@ window.kfl = (function () {
     }
   }
 
+  async function loadReferrers() {
+    var summary = document.getElementById('referrers-summary');
+    var tbody = document.getElementById('referrers-tbody');
+    var table = document.getElementById('referrers-table');
+    try {
+      var t = token();
+      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
+      var r = await fetch('/api/admin/referral-leaderboard', { credentials: 'include', headers: headers });
+      if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
+      var j = await r.json();
+      if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
+      if (!j.leaderboard.length) {
+        summary.innerHTML = '<em>No referrals yet. First referrer wins.</em>';
+        table.style.display = 'none';
+        return;
+      }
+      summary.innerHTML =
+        '<strong>' + j.total_referrals + '</strong> total referrals across ' +
+        '<strong>' + j.leaderboard.length + '</strong> referrers &middot; ' +
+        '~<strong>$' + j.total_value_usd + '</strong> value earned (at $' + j.pro_monthly_usd + '/mo Pro).';
+      tbody.innerHTML = j.leaderboard.map(function (row, i) {
+        var safeName = String(row.name).replace(/[<>&]/g, function (c) {
+          return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c];
+        });
+        var safeEmail = String(row.email || '').replace(/[<>&]/g, function (c) {
+          return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c];
+        });
+        var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+        var planTag = row.plan === 'pro' ? '<span style="color:var(--success);font-weight:600">Pro</span>' :
+                      row.plan === 'family' ? '<span style="color:var(--accent);font-weight:600">Family</span>' :
+                      '<span style="color:var(--muted)">Free</span>';
+        return '<tr>' +
+          '<td style="font-size:18px">' + medal + '</td>' +
+          '<td><div style="font-weight:600">' + safeName + '</div><div class="sub" style="font-size:10px">' + safeEmail + '</div></td>' +
+          '<td style="text-align:right;font-weight:700;font-size:18px" class="num">' + row.count + '</td>' +
+          '<td style="text-align:right">' + planTag + '</td>' +
+          '<td style="text-align:right;color:var(--success);font-weight:600" class="num">$' + row.value_usd + '</td>' +
+        '</tr>';
+      }).join('');
+      table.style.display = 'table';
+    } catch (e) { summary.textContent = 'Leaderboard load failed: ' + (e.message || e); }
+  }
+
   async function createSample() {
     var status = document.getElementById('sample-status');
     var result = document.getElementById('sample-result');
@@ -794,6 +889,7 @@ window.kfl = (function () {
     resendFromRow: resendFromRow,
     loadRecent: loadRecent,
     loadReports: loadReports,
+    loadReferrers: loadReferrers,
     createSample: createSample
   };
 })();
