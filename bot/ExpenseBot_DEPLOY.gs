@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-honesty-2';
+const KFL_BUILD_VERSION = '2026-05-24-help-add-cat';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -7854,6 +7854,10 @@ function getHelpMessage() {
     '  • "תקציב מזון ופארמה 1500" — קבע תקרה חודשית\n' +
     '  • "תקציב תחבורה 800" / "תקציב דיור 4500"\n' +
     '  • אתראה אוטומטית כשעוברים 80% מהתקציב — בלי לעקוב ידנית\n\n' +
+    '✨ *קטגוריות מותאמות אישית (חדש):*\n' +
+    '  • "צור קטגוריה דניאל" — שורה חדשה במאזן אישי לדניאל\n' +
+    '  • "צור קטגוריה ילד 1 דניאל, ילד 2 מיכל" — שורה לכל ילד\n' +
+    '  • כל הוצאה שמזכירה את השם תיכנס לשורה אוטומטית\n\n' +
     '📊 *פקודות מהירות:*\n' +
     '  • "סיכום" — סיכום החודש\n' +
     '  • "הזמנות" — סיכום הזמנות החודש (לקוחות, מחזור, רווח)\n' +
