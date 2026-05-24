@@ -1180,6 +1180,26 @@ function kesefleAccountStartSignin() {
   kesefleStartRedirectSignin();
 }
 
+// If the user arrived with ?force_signin=1 (clicked "המשך/י בכל זאת" on the
+// in-app browser block, or a power user manually appended the param), auto-
+// trigger the signin so they don't have to click "התחבר עם Google" a second
+// time. The flag only bypasses our own detection -- Google may still block
+// at OAuth time inside the WhatsApp webview, but we've given the user the
+// best shot we can.
+(function () {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('force_signin') === '1') {
+      // Wait for the page to fully render the sign-in button before clicking.
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          try { kesefleStartRedirectSignin(); } catch (_e) {}
+        }, 500);
+      });
+    }
+  } catch (_e) {}
+})();
+
 function _kflB64Url(buf) {
   var bytes = new Uint8Array(buf), s = '';
   for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);

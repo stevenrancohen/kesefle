@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-announcements';
+const KFL_BUILD_VERSION = '2026-05-24-linkcode-fix';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4617,16 +4617,31 @@ function processExpense(text, fromPhone) {
   }
 
   // ───── MULTI-TENANT ROUTER ─────
+  // CRITICAL: link-code verification MUST happen before the tenant router.
+  // Otherwise an unknown phone sending "קוד 123456" gets routed to
+  // _tenantWriteExpense_ -> /api/sheet/append -> 404 no_user_for_phone
+  // -> "כמעט שם!" message, and the code is never actually verified.
+  // (Bug Steven hit 2026-05-24 -- sent two different codes, both got the
+  // same welcome reply.) The codeMatch lower in the function is dead code
+  // for non-owner phones; this is the canonical entry point.
+  var __codeMatchEarly = text.match(/(?:קוד|code|link)\s*[:\-]?\s*(\d{6})\b/i);
+  if (__codeMatchEarly) {
+    return { reply: handleLinkCode_(__codeMatchEarly[1], fromPhone) };
+  }
+
   // If the sender is NOT the script owner, route the write to that user's
   // own Google Sheet via the Kesefle Vercel bridge. We still run the rich
   // parsers below for category/subcategory, then post the parsed expense
   // to /api/sheet/append which handles the OAuth dance and tenant write.
-  // Owners (the script's home phone) keep the legacy single-tenant path —
+  // Owners (the script's home phone) keep the legacy single-tenant path --
   // it has features like _updateBusinessDashboard_, smart_pending,
   // installCompanyDashboardFormulas etc. that aren't yet ported.
+  // Guard: only route to tenant-write when we actually HAVE a userRecord.
+  // Without this guard, unknown phones (userRecord=null) get routed to a
+  // doomed write that always 404s, masking other onboarding signals.
   try {
     var __tenant = _resolveTenant_(fromPhone);
-    if (__tenant && !__tenant.isOwner) {
+    if (__tenant && !__tenant.isOwner && __tenant.userRecord) {
       return _tenantWriteExpense_(fromPhone, text, __tenant.userRecord);
     }
     if (__tenant && __tenant.isOwner === false && !__tenant.userRecord) {
