@@ -18,6 +18,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
+import { sendPush } from '../../lib/push.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -260,6 +261,19 @@ async function handlerImpl(req, res) {
       const text = `התראה: עברת ${threshold}% מתקציב ${category} (₪${spentStr} מתוך ₪${capStr}, ${pctStr}%)`;
 
       const sendResult = await sendWhatsAppAlert(selfBaseUrl, phone, text);
+      // Best-effort push (env-fail-soft when VAPID isn't configured or the
+      // user never opted in). Push is a SECOND channel, not a replacement
+      // for WhatsApp -- both can succeed independently. Pushed BEFORE the
+      // dedup-key write so a push-only failure doesn't re-trigger tomorrow.
+      try {
+        await sendPush(userSub, {
+          title: 'התראת תקציב',
+          body: text,
+          tag: `budget-${category}`,
+          url: '/dashboard',
+        });
+      } catch (_pushErr) { /* push must never abort the cron */ }
+
       if (sendResult.ok) {
         await kvSetEx(dedupKey, JSON.stringify({ at: new Date().toISOString(), spent, cap, pct: pctStr }), ALERT_TTL_SEC);
         alerted++;

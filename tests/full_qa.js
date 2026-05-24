@@ -374,6 +374,29 @@ ok('bot routes data queries BEFORE Gemini coach fallback (ordering)',
    BOT.indexOf('__bqAns = _botQueryAnswer_(') > -1 &&
    BOT.indexOf('__bqAns = _botQueryAnswer_(') < BOT.indexOf('__coachReply = _geminiGenerate_('));
 
+// ── 5k. Web Push (PWA notification channel, WhatsApp-independent) ───────────
+// Until Steven's WABA is approved, Web Push is the immediate engagement
+// channel for budget alerts, NPS prompts, and weekly digests. These guard
+// the load-bearing pieces from regression:
+//   - lib/push.js exports sendPush (the encryption + VAPID JWT sender)
+//   - api/push/subscribe.js requires auth (subscribe must be tied to a user)
+//   - sw.js handles `push` and `notificationclick` (without breaking caching)
+//   - api/config.js surfaces vapid_public_key so the browser can subscribe
+console.log('\n══ 5k. Web Push ══');
+const PUSH_LIB = fs.readFileSync(path.join(ROOT, 'lib/push.js'), 'utf8');
+const PUSH_SUBSCRIBE = fs.readFileSync(path.join(ROOT, 'api/push/subscribe.js'), 'utf8');
+const SW_SRC = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+const CONFIG_API = fs.readFileSync(path.join(ROOT, 'api/config.js'), 'utf8');
+ok('lib/push.js exports sendPush', /export\s+(async\s+)?function\s+sendPush\b/.test(PUSH_LIB));
+ok('api/push/subscribe.js requires auth (requireAuth wrap)',
+   /requireAuth\(/.test(PUSH_SUBSCRIBE) && /from '\.\.\/\.\.\/lib\/auth\.js'/.test(PUSH_SUBSCRIBE));
+ok('sw.js has push + notificationclick handlers (without breaking the existing fetch handler)',
+   /addEventListener\(\s*['"]push['"]/.test(SW_SRC) &&
+   /addEventListener\(\s*['"]notificationclick['"]/.test(SW_SRC) &&
+   /addEventListener\(\s*['"]fetch['"]/.test(SW_SRC));
+ok('api/config.js returns vapid_public_key',
+   /vapid_public_key:\s*process\.env\.VAPID_PUBLIC_KEY/.test(CONFIG_API));
+
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
   console.log('\n══ 6. Live API health (KESEFLE_BASE) ══');

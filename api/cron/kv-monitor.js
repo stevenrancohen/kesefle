@@ -61,8 +61,17 @@ async function handlerImpl(req, res) {
     }
   } catch (_) {}
 
-  // Threshold alert.
-  if (usage.ok && usage.pct != null && usage.pct >= 80) {
+  // Threshold alert. Two tiers:
+  //   >= 95% -> critical (also fires Web Push to admins via lib/alert.js)
+  //   >= 80% ->  warning (Slack + email only)
+  if (usage.ok && usage.pct != null && usage.pct >= 95) {
+    await sendAlert({
+      severity: 'critical',
+      title: `Upstash KV usage at ${usage.pct}% (capacity)`,
+      body: `Daily KV commands: ${usage.dailyUsed}/${usage.dailyLimit}. Writes will start failing soon -- upgrade Upstash or strip more defensive writes IMMEDIATELY. (cron/kv-monitor)`,
+      tags: ['kv', 'capacity'],
+    });
+  } else if (usage.ok && usage.pct != null && usage.pct >= 80) {
     await sendAlert({
       severity: 'warning',
       title: `Upstash KV usage at ${usage.pct}%`,
