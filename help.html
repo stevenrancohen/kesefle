@@ -1842,7 +1842,7 @@ document.addEventListener('keydown', function(e) {
       hint = { title: 'הגעת מהדשבורד — נראה לעזור עם', q: ['הסנכרון לא עובד', 'מחק תנועה', 'עריכת קטגוריה'] };
     } else if (path.indexOf('/account') >= 0) {
       hint = { title: 'הגעת מהגדרות החשבון — שאלות שכיחות', q: ['drive.file', 'חיבור Google', 'ביטול מנוי'] };
-    } else if (path.indexOf('/pricing') >= 0 || path.indexOf('/compare') >= 0) {
+    } else if (path.indexOf('/pricing') >= 0) {
       hint = { title: 'שאלות נפוצות לפני שנרשמים', q: ['מה ההבדל בין החבילות', 'ניסיון חינם', 'ביטול בכל עת'] };
     }
     if (!hint) return;
