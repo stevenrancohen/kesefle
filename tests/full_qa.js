@@ -287,6 +287,59 @@ ok('profile schema accepts taxId + companyName',
    /profile\.taxId\s*=/.test(PROFILE_API) &&
    /profile\.companyName\s*=/.test(PROFILE_API));
 
+// ── 5h. VAT deductible flag (col I 'ניכוי מע״מ' + year-end tax report) ──────
+// עוסק מורשה customers mark expenses as VAT-deductible via the bot ("/מעמ")
+// and pull a year-end summary via /api/sheet/tax-report. Load-bearing pieces:
+// the תנועות tab MUST have col I in the header (otherwise SUMs miss it), the
+// row writer MUST emit 9 cells when vatDeductible is set (otherwise the bot
+// silently writes 8-col rows and the flag is lost), the append range MUST be
+// A:I (otherwise Sheets truncates), and the tax-report endpoint MUST live
+// behind requireAuth (otherwise PII leaks). Regression here would silently
+// break year-end VAT claims for the entire customer base.
+console.log('\n══ 5h. VAT deductible flag ══');
+const TAX_REPORT_API = fs.readFileSync(path.join(ROOT, 'api/sheet/tax-report.js'), 'utf8');
+ok("sheet-writer _buildTxTab header includes 'ניכוי מע״מ' column",
+   /TX_HEADERS\s*=\s*\[[^\]]*['"]ניכוי מע[״"]?מ['"][^\]]*\]/.test(SW));
+ok('buildExpenseRow emits 9 cells when vatDeductible=true',
+   buildExpenseRow({ amount: 1, vatDeductible: true }).length === 9 &&
+   buildExpenseRow({ amount: 1, vatDeductible: true })[8] === true);
+ok("appendRowToUserSheet writes to 'תנועות'!A:I (not A:H)",
+   /'\$\{TX_TAB\}'!A:I/.test(SW) &&
+   !/'\$\{TX_TAB\}'!A:H/.test(SW));
+ok('api/sheet/tax-report.js exists + uses requireAuth + has rate limit',
+   /import\s*\{\s*requireAuth\s*\}/.test(TAX_REPORT_API) &&
+   /requireAuth\(handlerImpl\)/.test(TAX_REPORT_API) &&
+   /rateLimitId\(userSub,\s*\{\s*key:\s*'sheet_tax_report'/.test(TAX_REPORT_API));
+
+// ── 5i. Budgets (per-category monthly caps + WhatsApp overspend alerts) ─────
+// Users set a cap per category via /api/budgets (authed) or the bot's
+// "תקציב X N" command (bot-secret). The daily cron checks MTD spending vs
+// cap and fires a WhatsApp message via /api/whatsapp/send when the user
+// crosses the threshold. These assertions guard the load-bearing pieces
+// from regression: auth + rate limit on the CRUD endpoint, CRON_SECRET on
+// the cron, the cron path in vercel.json, server-side category validation
+// against the single source of truth in lib/categories.js, and the
+// year-month + category dedup key (so users do not get re-alerted next day
+// because the cron re-ran).
+console.log('\n══ 5i. Budgets ══');
+const BUDGETS_API = fs.readFileSync(path.join(ROOT, 'api/budgets.js'), 'utf8');
+const BUDGET_CRON = fs.readFileSync(path.join(ROOT, 'api/cron/budget-check.js'), 'utf8');
+const VERCEL_JSON = fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8');
+ok('api/budgets.js requires auth + has rate limit',
+   /requireAuth\(/.test(BUDGETS_API) &&
+   /rateLimitId\(\s*userSub,\s*\{\s*key:\s*'budgets'/.test(BUDGETS_API));
+ok('api/cron/budget-check.js verifies CRON_SECRET',
+   /process\.env\.CRON_SECRET/.test(BUDGET_CRON) &&
+   /Bearer \$\{cronSecret\}/.test(BUDGET_CRON));
+ok('vercel.json includes the new cron path',
+   /"\/api\/cron\/budget-check"/.test(VERCEL_JSON));
+ok('budgets validates categories against lib/categories.js EXPENSE_GROUPS',
+   /from '\.\.\/lib\/categories\.js'/.test(BUDGETS_API) &&
+   /EXPENSE_GROUPS/.test(BUDGETS_API) &&
+   /invalid_category/.test(BUDGETS_API));
+ok('budget-check dedup key uses YYYY-MM + category',
+   /budget_alerted:\$\{userSub\}:\$\{ymNow\}:\$\{category\}/.test(BUDGET_CRON));
+
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
   console.log('\n══ 6. Live API health (KESEFLE_BASE) ══');

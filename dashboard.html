@@ -559,6 +559,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Row 5: Budgets per category -->
+    <div class="mt-4 grid gap-4 lg:grid-cols-1">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">תקציבים</div>
+            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">מעקב חודשי לפי קטגוריה — התראה אוטומטית מעל 80%</div>
+          </div>
+          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-200">
+            <span class="num" id="budget-active-count">0</span> פעילים
+          </div>
+        </div>
+        <!-- Loading state -->
+        <div id="budget-loading" class="mt-4 text-xs text-ink-400">טוען תקציבים…</div>
+        <!-- Empty state -->
+        <div id="budget-empty" class="mt-4 hidden rounded-2xl border border-dashed border-ink-700 bg-ink-900/40 p-6 text-center">
+          <div class="text-4xl">💰</div>
+          <div class="mt-2 text-sm font-bold text-ink-200">אין תקציבים?</div>
+          <p class="mt-1 text-xs text-ink-400">הגדר אחד בוואטסאפ: <span class="font-bold">/תקציב מזון ופארמה 1500</span></p>
+          <a href="https://wa.me/15556408123?text=%D7%AA%D7%A7%D7%A6%D7%99%D7%91%20%D7%9E%D7%96%D7%95%D7%9F%20%D7%95%D7%A4%D7%90%D7%A8%D7%9E%D7%94%201500" target="_blank" rel="noopener"
+             class="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
+            הגדר תקציב עם הבוט
+          </a>
+        </div>
+        <!-- List of budget bars -->
+        <ul id="budget-list" class="mt-4 hidden space-y-3"></ul>
+      </div>
+    </div>
   </section>
 
   <!-- re-auth banner (shows when API returns 401) -->
@@ -2506,6 +2535,96 @@ function generatePseudoSeries(target, n, intLike) {
   }
 
   // ---- Main entry -------------------------------------------------------
+  // ---- 12. Budgets card -------------------------------------------------
+  // Reads /api/budgets (action=list, session cookie) and renders a progress
+  // bar per category vs MTD spending computed from the row dataset already
+  // loaded for this dashboard view. Pure inline SVG bars -- no extra libs.
+  function computeMtdByCategory(rows){
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth();
+    var out = Object.create(null);
+    rows.forEach(function(r){
+      var d = parseDate(r.date);
+      if (!d) return;
+      if (d.getFullYear() !== y || d.getMonth() !== m) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return;
+      var c = String(r.category || '').trim();
+      if (!c) return;
+      out[c] = (out[c] || 0) + amt;
+    });
+    return out;
+  }
+  function _budgetBarColor(pct, threshold){
+    // <60% green, 60-threshold yellow, >=threshold red.
+    if (pct >= threshold) return '#ef4444';
+    if (pct >= 60) return '#f59e0b';
+    return '#22c55e';
+  }
+  function renderBudgets(rows){
+    var listEl = safeEl('budget-list');
+    var emptyEl = safeEl('budget-empty');
+    var loadingEl = safeEl('budget-loading');
+    var countEl = safeEl('budget-active-count');
+    if (!listEl || !emptyEl || !loadingEl) return;
+    function showLoading(){ loadingEl.classList.remove('hidden'); listEl.classList.add('hidden'); emptyEl.classList.add('hidden'); }
+    function showEmpty(){ loadingEl.classList.add('hidden'); listEl.classList.add('hidden'); emptyEl.classList.remove('hidden'); }
+    function showList(){ loadingEl.classList.add('hidden'); emptyEl.classList.add('hidden'); listEl.classList.remove('hidden'); }
+
+    showLoading();
+    fetch('/api/budgets', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' }),
+    }).then(function(r){
+      if (r.status === 401 || r.status === 404) return null; // not signed in / no record
+      if (!r.ok) return null;
+      return r.json();
+    }).then(function(j){
+      var cats = (j && j.ok && j.budget && j.budget.categories) || {};
+      var names = Object.keys(cats);
+      if (countEl) countEl.textContent = String(names.length);
+      if (!names.length) { showEmpty(); return; }
+      var mtd = computeMtdByCategory(rows);
+      // Sort: highest percentage first so the at-risk categories pop visually.
+      names.sort(function(a, b){
+        var pa = Number(cats[a].cap) > 0 ? (Number(mtd[a] || 0) / Number(cats[a].cap)) : 0;
+        var pb = Number(cats[b].cap) > 0 ? (Number(mtd[b] || 0) / Number(cats[b].cap)) : 0;
+        return pb - pa;
+      });
+      var html = names.map(function(cat){
+        var conf = cats[cat] || {};
+        var cap = Number(conf.cap) || 0;
+        var th = Number(conf.threshold) || 80;
+        var spent = Math.round(Number(mtd[cat] || 0));
+        var pct = cap > 0 ? Math.round((spent / cap) * 100) : 0;
+        var color = _budgetBarColor(pct, th);
+        var widthPct = Math.min(100, pct);
+        return (
+          '<li>' +
+            '<div class="flex items-center justify-between text-xs">' +
+              '<span class="font-semibold text-ink-200">' + escapeHtml(cat) + '</span>' +
+              '<span class="num font-bold text-ink-100">' + moneyShekel(spent) + ' / ' + moneyShekel(cap) +
+                ' <span class="text-ink-400">(' + pct + '%)</span></span>' +
+            '</div>' +
+            '<div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-ink-700/60">' +
+              // Inline SVG-equivalent: a flat div with width:%; same visual as
+              // the other progress bars in this card. No external libs.
+              '<div style="width:' + widthPct + '%; background:' + color + '" class="h-full transition-all duration-700"></div>' +
+            '</div>' +
+          '</li>'
+        );
+      }).join('');
+      listEl.innerHTML = html;
+      showList();
+    }).catch(function(){
+      // Network/parse failure -- fall back to the empty CTA so the card still
+      // renders something useful.
+      showEmpty();
+    });
+  }
+
   function renderAnalytics(rows){
     if (!rows || !rows.length) return;
     var h = computeHealth(rows);
@@ -2519,6 +2638,8 @@ function generatePseudoSeries(target, n, intLike) {
     // Goals widget is a static placeholder (count stays 0 until backend lands).
     var gc = safeEl('goals-count');
     if (gc) gc.textContent = '0';
+    // Budgets card -- pulls /api/budgets (session-auth) and renders bars.
+    try { renderBudgets(rows); } catch (e) { /* never block the rest */ }
   }
 
   // Expose globally so kefleLiveDashboard can invoke after fetch resolves

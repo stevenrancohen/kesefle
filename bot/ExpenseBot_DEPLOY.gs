@@ -4279,6 +4279,142 @@ function _markLastExpenseAsVatDeductible_(fromPhone) {
   }
 }
 
+// ============================================================
+// 💰 BUDGETS — per-category monthly caps (talks to Vercel /api/budgets)
+// ============================================================
+//
+// Bot UX for budgets. Storage + threshold checks live on the Vercel side
+// (api/budgets.js + the daily api/cron/budget-check.js). The bot is just the
+// command surface -- same pattern as recurring expenses.
+//
+//   "תקציב"                      -> show current budgets + this-month MTD
+//   "תקציב <full category> <NIS>" -> set monthly cap
+//
+// The category MUST be the FULL group label from lib/categories.js (e.g.
+// "מזון ופארמה", "תחבורה", "דיור"). The server validates and rejects
+// unknowns with a useful list -- we surface that list back to the user.
+
+function _budgetAPI_(action, payload) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) return { ok: false, error: 'bot_secret_not_set' };
+  payload = payload || {};
+  payload.action = action;
+  payload.botSecret = secret;
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/budgets', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code < 200 || code >= 300) {
+      Logger.log('_budgetAPI_ ' + action + ' HTTP ' + code + ': ' + body.slice(0, 200));
+      try { return JSON.parse(body); } catch (_e) { return { ok: false, error: 'http_' + code }; }
+    }
+    return JSON.parse(body);
+  } catch (e) {
+    return { ok: false, error: 'fetch_threw', detail: e && e.message };
+  }
+}
+
+// Read MTD per top-category via the existing /api/sheet/stats endpoint.
+// stats.js currently returns the TOP category only, so we get a partial
+// view -- the server-side cron is the source of truth for alerts; this is
+// just a best-effort progress display for the inline "תקציב" command.
+// Returns { cat -> NIS } (often a single-entry object) or {} on any failure.
+function _budgetReadMtdByCategory_(fromPhone) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) return {};
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/stats', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify({ phone: String(fromPhone).replace(/[^0-9]/g, ''), botSecret: secret }),
+      muteHttpExceptions: true,
+    });
+    if (resp.getResponseCode() !== 200) return {};
+    var body = JSON.parse(resp.getContentText() || '{}');
+    var out = {};
+    if (body && body.thisMonth && body.thisMonth.topCategory) {
+      out[body.thisMonth.topCategory] = Number(body.thisMonth.topCategoryAmount) || 0;
+    }
+    return out;
+  } catch (e) {
+    return {};
+  }
+}
+
+function _budgetListAndProgress_(fromPhone) {
+  var r = _budgetAPI_('list', { phone: String(fromPhone).replace(/[^0-9]/g, '') });
+  if (!r || !r.ok) {
+    return '😬 שגיאה בקריאת התקציבים: ' + (r && r.error || 'unknown') +
+      '\nננסה שוב בעוד דקה?';
+  }
+  var cats = (r.budget && r.budget.categories) || {};
+  var names = Object.keys(cats);
+  if (!names.length) {
+    return '📊 *תקציבים*\n━━━━━━━━━━━━━━━━━━\n\n' +
+      'אין לך עדיין תקציבים מוגדרים.\n\n' +
+      'הגדר עם: *תקציב <קטגוריה> <NIS>*\n' +
+      'לדוגמה: *תקציב מזון ופארמה 1500*\n\n' +
+      'אחרי שתעבור 80% מהתקציב, אשלח לך התראה כאן בוואטסאפ.';
+  }
+  var mtd = _budgetReadMtdByCategory_(fromPhone);
+  var lines = ['📊 *תקציבים החודש*', '━━━━━━━━━━━━━━━━━━', ''];
+  names.forEach(function(cat) {
+    var conf = cats[cat] || {};
+    var cap = Number(conf.cap) || 0;
+    var th = Number(conf.threshold) || 80;
+    var spent = Math.round(Number(mtd[cat] || 0));
+    var pct = cap > 0 ? Math.round((spent / cap) * 100) : 0;
+    var bar;
+    if (pct >= th) bar = '🔴';
+    else if (pct >= 60) bar = '🟡';
+    else bar = '🟢';
+    lines.push(bar + ' ' + cat + ' — ₪' + spent.toLocaleString('he-IL') +
+      ' / ₪' + Math.round(cap).toLocaleString('he-IL') + ' (' + pct + '%)');
+  });
+  lines.push('');
+  lines.push('שינוי: *תקציב <קטגוריה> <NIS>*');
+  return lines.join('\n');
+}
+
+function _budgetSet_(fromPhone, category, amount) {
+  if (!category || !isFinite(amount) || amount <= 0) {
+    return '😕 פורמט: *תקציב <קטגוריה> <NIS>*\nלדוגמה: *תקציב מזון ופארמה 1500*';
+  }
+  var r = _budgetAPI_('set', {
+    phone: String(fromPhone).replace(/[^0-9]/g, ''),
+    category: category,
+    monthlyCap: Math.round(amount),
+  });
+  if (!r || !r.ok) {
+    if (r && r.error === 'invalid_category' && Array.isArray(r.allowed)) {
+      return '😕 קטגוריה לא מוכרת: "' + category + '"\n\n' +
+        'הקטגוריות הזמינות:\n' +
+        r.allowed.map(function(c) { return '• ' + c; }).join('\n') +
+        '\n\nנסה/י שוב — הקלד/י את שם הקטגוריה במדויק.';
+    }
+    if (r && r.error === 'too_many_categories') {
+      return '😕 הגעת למקסימום של ' + r.max + ' תקציבים. מחק/י אחד לפני שמוסיפים חדש.';
+    }
+    if (r && r.error === 'invalid_cap') {
+      return '😕 הסכום צריך להיות בין 1 ל-' + (r.maxCap || 100000) + ' שח.';
+    }
+    return '😬 שגיאה: ' + (r && r.error || 'unknown') + '\nננסה שוב בעוד דקה?';
+  }
+  return '✅ נקבע תקציב חודשי: ₪' + Math.round(amount).toLocaleString('he-IL') +
+    ' לקטגוריית "' + category + '"\n\n' +
+    'אשלח התראה כאן כשתעבור 80% מהתקציב החודשי.\n' +
+    'לרשימת התקציבים שלך: *תקציב*';
+}
+
 function processExpense(text, fromPhone) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
@@ -7133,6 +7269,11 @@ function getHelpMessage() {
     '  • "סנכרן הוצאות קבועות" — רישום למפרע מתחילת החודש\n' +
     '  • "מחק קבוע שכירות" / "השהה קבוע נטפליקס"\n' +
     '  • נרשמות אוטומטית בכל חודש — בלי לכתוב שוב 🎉\n\n' +
+    '💰 *תקציבים חודשיים (חדש):*\n' +
+    '  • "תקציב" — רשימת התקציבים שלך + התקדמות החודש\n' +
+    '  • "תקציב מזון ופארמה 1500" — קבע תקרה חודשית\n' +
+    '  • "תקציב תחבורה 800" / "תקציב דיור 4500"\n' +
+    '  • אתראה אוטומטית כשעוברים 80% מהתקציב — בלי לעקוב ידנית\n\n' +
     '📊 *פקודות מהירות:*\n' +
     '  • "סיכום" — סיכום החודש\n' +
     '  • "הזמנות" — סיכום הזמנות החודש (לקוחות, מחזור, רווח)\n' +
