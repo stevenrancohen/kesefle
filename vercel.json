@@ -29,7 +29,9 @@
     { "source": "/pwa", "destination": "/install", "permanent": false },
     { "source": "/download", "destination": "/install", "permanent": false },
     { "source": "/app", "destination": "/install", "permanent": false },
-    { "source": "/install-app", "destination": "/install", "permanent": false }
+    { "source": "/install-app", "destination": "/install", "permanent": false },
+    { "source": "/upgrade", "destination": "/pricing", "permanent": true },
+    { "source": "/compare", "destination": "/pricing", "permanent": true }
   ],
   "headers": [
     {
