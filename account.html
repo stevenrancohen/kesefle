@@ -1045,23 +1045,62 @@ function kesefleShowInAppBrowserHelp() {
   var body = isDark ? '#bcc4d6' : '#41506f';
   var muted = isDark ? '#8a95b3' : '#5d6b8f';
   var brand = '#16a34a';
+  var brandHover = '#15803d';
   var url = window.location.href;
+  // Strip the URL scheme so we can build x-safari-https:// / intent:// URIs.
+  var noScheme = url.replace(/^https?:\/\//, '');
+  // Platform detection so we render the right one-tap button.
+  var ua = navigator.userAgent || '';
+  var isIos = /iPhone|iPad|iPod/.test(ua);
+  var isAndroid = /Android/i.test(ua);
+  // iOS in-app: x-safari-https:// opens Safari directly (works in WhatsApp,
+  // FB, Instagram, most in-app browsers). Android in-app: intent:// scheme
+  // with Chrome package fallback.
+  var iosSafariUrl = 'x-safari-https://' + noScheme;
+  var androidChromeUrl = 'intent://' + noScheme + '#Intent;scheme=https;package=com.android.chrome;end';
+  var androidGenericUrl = 'intent://' + noScheme + '#Intent;scheme=https;end';
+
   var main = document.querySelector('main') || document.body;
   var card = document.createElement('div');
   card.style.cssText = 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;';
+
+  // Build the platform-specific primary action (one-tap open-in-browser).
+  // Falls back to a manual-instructions section if the one-tap is unlikely.
+  var primaryButton = '';
+  if (isIos) {
+    primaryButton =
+      '<a href="' + iosSafariUrl + '" style="display:block;margin-top:20px;text-decoration:none;border-radius:14px;background:' + brand + ';padding:16px;font-size:16px;font-weight:800;color:#ffffff;text-align:center;">' +
+        '🚀 פתח/י ב-Safari עכשיו' +
+      '</a>';
+  } else if (isAndroid) {
+    primaryButton =
+      '<a href="' + androidChromeUrl + '" onclick="setTimeout(function(){location.href=\'' + androidGenericUrl + '\';},800);" style="display:block;margin-top:20px;text-decoration:none;border-radius:14px;background:' + brand + ';padding:16px;font-size:16px;font-weight:800;color:#ffffff;text-align:center;">' +
+        '🚀 פתח/י ב-Chrome עכשיו' +
+      '</a>';
+  } else {
+    primaryButton =
+      '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:20px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:14px;font-size:15px;font-weight:800;color:#ffffff;cursor:pointer;">העתק/י את הקישור</button>';
+  }
+
+  // Manual fallback steps are now in a collapsible "didn\'t work?" details.
   card.innerHTML =
     '<div style="border-radius:24px;border:1px solid ' + border + ';background:' + bg + ';padding:32px;box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);text-align:center;max-width:28rem;width:100%;">' +
       '<div style="font-size:44px;line-height:1;">🔒</div>' +
-      '<h2 style="font-size:22px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:14px 0 0;">פתח/י בדפדפן כדי להתחבר</h2>' +
-      '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">מטעמי אבטחה Google חוסמת התחברות מתוך הדפדפן הפנימי של וואטסאפ. צריך לפתוח את העמוד ב-<b>Safari</b> או <b>Chrome</b> — ואז ההתחברות תעבוד.</p>' +
-      '<ol style="margin:16px 0 0;padding-inline-start:22px;text-align:right;font-size:14px;color:' + body + ';line-height:1.9;">' +
-        '<li>לחצ/י על <b>⋯</b> או על אייקון <b>השיתוף</b> למעלה</li>' +
-        '<li>בחר/י <b>"פתח ב-Safari"</b> (או "Open in Chrome")</li>' +
-        '<li>בדפדפן שייפתח, לחצ/י שוב על <b>"התחבר עם Google"</b></li>' +
-      '</ol>' +
-      '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:20px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:14px;font-size:15px;font-weight:800;color:#ffffff;cursor:pointer;">העתק/י את הקישור</button>' +
-      '<p style="margin-top:10px;font-size:12px;color:' + muted + ';word-break:break-all;direction:ltr;">' + url + '</p>' +
-      '<button type="button" onclick="(function(){var u=new URL(location.href);u.searchParams.set(\'force_signin\',\'1\');location.href=u.toString();})()" style="margin-top:16px;background:transparent;border:none;color:' + muted + ';font-size:12px;text-decoration:underline;cursor:pointer;">אני בדפדפן רגיל — המשך/י בכל זאת</button>' +
+      '<h2 style="font-size:22px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:14px 0 0;">לחצ/י כדי להמשיך</h2>' +
+      '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">Google חוסמת התחברות מתוך הדפדפן של וואטסאפ (מטעמי אבטחה). העברנו אותך לדפדפן ' + (isIos ? 'Safari' : isAndroid ? 'Chrome' : 'אחר') + ' בלחיצה אחת.</p>' +
+      primaryButton +
+      (isIos || isAndroid
+        ? '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:10px;width:100%;border-radius:14px;background:transparent;border:1px solid ' + border + ';padding:12px;font-size:13px;font-weight:600;color:' + body + ';cursor:pointer;">או העתק/י את הקישור</button>'
+        : '<p style="margin-top:10px;font-size:12px;color:' + muted + ';word-break:break-all;direction:ltr;">' + url + '</p>') +
+      '<details style="margin-top:20px;text-align:right;">' +
+        '<summary style="cursor:pointer;font-size:13px;color:' + muted + ';">הכפתור לא עבד? לחצ/י כאן</summary>' +
+        '<ol style="margin:12px 0 0;padding-inline-start:22px;font-size:13px;color:' + body + ';line-height:1.9;">' +
+          '<li>לחצ/י על <b>⋯</b> או על אייקון <b>השיתוף</b> בתחתית/למעלה</li>' +
+          '<li>בחר/י <b>"פתח ב-' + (isIos ? 'Safari' : 'Chrome') + '"</b></li>' +
+          '<li>בדפדפן שייפתח, לחצ/י שוב על <b>"התחבר עם Google"</b></li>' +
+        '</ol>' +
+      '</details>' +
+      '<button type="button" onclick="(function(){var u=new URL(location.href);u.searchParams.set(\'force_signin\',\'1\');location.href=u.toString();})()" style="margin-top:14px;background:transparent;border:none;color:' + muted + ';font-size:11px;text-decoration:underline;cursor:pointer;">אני בדפדפן רגיל — המשך/י בכל זאת</button>' +
     '</div>';
   while (main.firstChild) main.removeChild(main.firstChild);
   main.appendChild(card);
