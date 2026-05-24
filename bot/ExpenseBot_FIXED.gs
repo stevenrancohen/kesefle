@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-tabs-keywords-honesty';
+const KFL_BUILD_VERSION = '2026-05-24-create-category-kids';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -3364,6 +3364,89 @@ function _profileAPI_(action, payload) {
   }
 }
 
+// --- Add a custom row to the user's "מאזן אישי" dashboard via the Vercel
+// bridge. Used by:
+//   (1) the "צור קטגוריה X" command in processExpense,
+//   (2) the onboarding questionnaire's kids step (one row per child).
+// Accepts a comma-separated list of names so a single message like
+// "צור קטגוריה דניאל, מיכל, יואב" creates three rows.
+// Returns a Hebrew reply string the caller passes back to WhatsApp.
+function _addCategoryRows_(fromPhone, rawNames) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return 'לא הצלחתי לזהות את המספר שלך. נסה שוב.';
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) return '😬 שגיאה בהגדרות הבוט (KESEFLE_BOT_SECRET חסר).';
+
+  // Split on commas + Hebrew "ו" conjunction. Strip "ילד 1 " / "ילדה 2 "
+  // prefixes so "ילד 1 דניאל" gives just "דניאל".
+  var raw = String(rawNames || '').trim();
+  if (!raw) return 'אחרי "צור קטגוריה" צריך לכתוב את השם. לדוגמה:\n*צור קטגוריה דניאל*\nאו לכמה ילדים יחד:\n*צור קטגוריה דניאל, מיכל, יואב*';
+  var pieces = raw.split(/[,،;\n]+/).map(function (p) {
+    return String(p || '')
+      .replace(/^\s*(?:ילד(?:ה|ים|ות)?|בן|בת|תינוק(?:ת)?|child)\s*\d*\s*[:\-]?\s*/i, '')
+      .trim();
+  }).filter(function (p) { return p && p.length >= 2; });
+  if (!pieces.length) return 'לא הצלחתי לזהות שמות. תכתוב למשל: *צור קטגוריה דניאל* או *צור קטגוריה ילד 1 דניאל, ילד 2 מיכל*';
+  if (pieces.length > 6) pieces = pieces.slice(0, 6);
+
+  var ok = [], failed = [], duplicates = [], sheetUrl = '';
+  // Default emoji: 👶 for likely-kid names (short Hebrew first names).
+  // Users can always rename the row in their sheet — col A is editable.
+  var emoji = '✨';
+  if (pieces.length > 1 || pieces.some(function (p) { return p.length <= 10 && !/[A-Za-z0-9]/.test(p); })) emoji = '👶';
+
+  for (var i = 0; i < pieces.length; i++) {
+    var name = pieces[i];
+    try {
+      var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/add-category-row', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': secret },
+        payload: JSON.stringify({ phone: clean, name: name, emoji: emoji, botSecret: secret }),
+        muteHttpExceptions: true,
+      });
+      var code = resp.getResponseCode();
+      var body = resp.getContentText();
+      var j; try { j = JSON.parse(body); } catch (_pe) { j = null; }
+      if (code === 200 && j && j.ok) {
+        if (j.duplicate) duplicates.push(name); else ok.push(name);
+        if (j.sheetUrl) sheetUrl = j.sheetUrl;
+      } else if (code === 404 && j && j.error === 'no_user') {
+        return '😬 המספר הזה לא מקושר לחשבון. כנס/י ל-kesefle.com/account, התחבר/י עם Google ואז שלח/י שוב.';
+      } else if (code === 404 && j && j.error === 'no_sheet') {
+        return '😬 עדיין אין לך גיליון. כנס/י ל-kesefle.com/account להשלים את ההגדרה.';
+      } else if (code === 409 && j && j.error === 'reauth_required') {
+        return '🔑 צריך להתחבר מחדש: kesefle.com/account';
+      } else {
+        Logger.log('_addCategoryRows_ HTTP ' + code + ': ' + body.slice(0, 200));
+        failed.push(name);
+      }
+    } catch (e) {
+      Logger.log('_addCategoryRows_ threw on "' + name + '": ' + (e && e.message));
+      failed.push(name);
+    }
+  }
+
+  var lines = [];
+  if (ok.length) {
+    lines.push('✅ נוספו לגיליון *מאזן אישי*: ' + ok.map(function (n) { return emoji + ' ' + n; }).join(', '));
+  }
+  if (duplicates.length) {
+    lines.push('ℹ️ כבר קיים: ' + duplicates.join(', '));
+  }
+  if (failed.length) {
+    lines.push('😬 לא הצליח: ' + failed.join(', '));
+  }
+  if (ok.length) {
+    lines.push('');
+    lines.push('מעכשיו כל הוצאה שמזכירה את השם תיכנס לשורה הזאת אוטומטית.');
+    lines.push('דוגמה: *200 דניאל בית ספר* → נוסף לדניאל.');
+    if (sheetUrl) lines.push('📊 ' + sheetUrl);
+  }
+  return lines.join('\n');
+}
+
 // --- Survey state helpers (CacheService, 1h TTL — long enough for a user
 // to finish, short enough to self-clean if abandoned). ---
 var _SURVEY_TTL_SEC_ = 3600;
@@ -3885,6 +3968,22 @@ function _surveyHandleInteractive_(fromPhone, picked) {
   if (_SURVEY_TRACKING_.hasOwnProperty(picked)) {
     var tt = _SURVEY_TRACKING_[picked];
     _profileAPI_('set', { phone: clean, fields: { trackingType: tt } });
+    // For family / group trackers we ask about kids' names FIRST -- if they
+    // give names we'll create one dashboard row per child (real work, not
+    // fake). Anyone else jumps straight to Q2. Steven's request 2026-05-24.
+    if (tt === 'family' || tt === 'group') {
+      _surveySetState_(fromPhone, 'await_kids_freeform');
+      try {
+        sendWhatsAppMessage(
+          fromPhone,
+          'נחמד! 👨‍👩‍👧 יש לך ילדים? אם כן — מה השמות שלהם?\n' +
+          'לדוגמה: דניאל, מיכל, יואב\n' +
+          'אצור לכל ילד שורה משלו בגיליון *מאזן אישי*, כדי שתראה כמה הוצאת על כל אחד.\n\n' +
+          'אם אין, כתוב/י *דלג* או *לא*.'
+        );
+      } catch (_kqErr) { Logger.log('kids question send err: ' + (_kqErr && _kqErr.message)); }
+      return null;
+    }
     _surveySendQ2_(fromPhone);
     return null;
   }
@@ -3933,6 +4032,21 @@ function _surveyHandleText_(fromPhone, text) {
     if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
     if (!r.logged) return { handled: true, replyText: 'אין מה לאשר כרגע.' };
     return { handled: true, replyText: '✅ נרשם: ' + _money_(r.logged.amount) + ' ' + (r.logged.description || '') };
+  }
+
+  // Free-text kids capture (only while the survey is in that step). Steven's
+  // request 2026-05-24: if the family-tracker user gives names, REALLY create
+  // a row per child in מאזן אישי -- don't fake it. "דלג"/"לא"/"אין" skip.
+  if (_surveyGetState_(fromPhone) === 'await_kids_freeform') {
+    if (/^(?:דלג|לא|אין|skip|no)\s*$/i.test(t)) {
+      try { sendWhatsAppMessage(fromPhone, 'בסדר, ממשיכים. 👍'); } catch (_e) {}
+      _surveySendQ2_(fromPhone);
+      return { handled: true };
+    }
+    var reply = _addCategoryRows_(fromPhone, t);
+    try { sendWhatsAppMessage(fromPhone, reply); } catch (_e) {}
+    _surveySendQ2_(fromPhone);
+    return { handled: true };
   }
 
   // Free-text recurring capture (only while the survey is in that step).
@@ -4659,6 +4773,22 @@ function processExpense(text, fromPhone) {
   var __codeMatchEarly = text.match(/(?:קוד|code|link)\s*[:\-]?\s*(\d{6})\b/i);
   if (__codeMatchEarly) {
     return { reply: handleLinkCode_(__codeMatchEarly[1], fromPhone) };
+  }
+
+  // ── "צור קטגוריה X" / "הוסף קטגוריה X" ─────────────────────────────────
+  // Adds a custom row to the user's "מאזן אישי" dashboard sheet. Used by
+  // Steven's request (2026-05-24): "תכניס גם את האופציה שדרך הבוט אפשר
+  // לכתוב לו ליצור קטגוריה חדשה במאזן אישי/מאזן חברה של משהו נוסף למשל
+  // ילדים, ילד 1 + שם". Supports a single name or a comma-separated list
+  // ("ילד 1 דניאל, ילד 2 מיכל") -- creates one row per item.
+  //
+  // The new row in מאזן אישי gets a SUMPRODUCT formula that sums any row
+  // in 'תנועות' where the name appears in category/subcategory/description.
+  // So the very next time the user types "200 לדניאל" or "350 דניאל גן",
+  // it lights up in the dashboard. Honest behavior, no faking.
+  var __catCreate = text.match(/^\s*(?:כספלה\s+)?(?:צור|הוסף|create|add)\s+קטגור(?:יה|יות)\s+(.+)$/i);
+  if (__catCreate) {
+    return { reply: _addCategoryRows_(fromPhone, __catCreate[1]) };
   }
 
   // If the sender is NOT the script owner, route the write to that user's
@@ -10650,72 +10780,56 @@ function _handleFamilyCommand_(fromPhone, text) {
 // "הזמן 052-1234567" — admin invites a specific phone to the household.
 // ------------------------------------------------------------------
 function _familyInviteReply_(fromPhone, rawTarget) {
-  // TODO: KV — resolve fromPhone -> userId -> household, verify role in {admin, spouse}.
-  // If sender is not an admin, return a "אין הרשאה" message instead.
-  // var hh = resolveHouseholdForPhone_(fromPhone);
-  // if (!hh || !_familyIsAdmin_(hh, fromPhone)) return _familyNotAdminMsg_();
-
+  // HONESTY (2026-05-24 audit): the original implementation generated a fake
+  // invite code and a fake invite URL. Steven explicitly asked us to stop
+  // lying and only promise what the bot actually delivers. The REAL working
+  // flow is /api/group (used by "כספלה צור משפחה <name>"), which actually
+  // creates a shared sheet + dispenses a join code. Redirect there instead
+  // of returning a fake code that does nothing.
   var cleaned = String(rawTarget || '').replace(/[^\d+]/g, '');
   if (!cleaned || cleaned.length < 7) {
-    return '😬 לא הצלחתי לקרוא את המספר\n' +
-      '💡 נסה: "הזמן 052-1234567"';
+    return '😬 לא הצלחתי לקרוא את המספר. נסה: "הזמן 052-1234567"';
   }
-
-  // TODO: KV — generate invite code, store in hhinvite:<code> with TTL 600s,
-  // hit POST /api/family/invite { householdId, invitedPhone, intendedRole }.
-  var fakeCode = _familyMakeFakeCode_();
-  var inviteUrl = FAMILY_API_BASE + '/account?invite=' + fakeCode;
-
-  return '👨‍👩‍👧 *הזמנה למשפחה*\n' +
-    '━━━━━━━━━━━━━━━━━━\n\n' +
-    'הזמנתי את ' + _familyFormatPhone_(cleaned) + '.\n\n' +
-    '📩 שלח/י להם את הקישור הזה:\n' +
-    inviteUrl + '\n\n' +
-    '⏰ הקישור תקף ל-10 דקות.\n' +
-    'ברגע שילחצו ויסרקו QR — הם בפנים.\n\n' +
-    '💡 לרשימת בני הבית הנוכחיים: כתוב/י "משפחה".\n\n' +
-    '_(הערה: backend הזמנות בפיתוח — הקישור הזה הוא דמו עד שה-KV ייבנה)_';
+  return '👨‍👩‍👧 *פתיחת משפחה אמיתית*\n\n' +
+    'הפקודה היציבה לפתיחת קבוצת משפחה היא:\n' +
+    '*כספלה צור משפחה <שם>*\n' +
+    '(למשל: "כספלה צור משפחה כהן")\n\n' +
+    'אחר כך אקבל ממך קוד הזמנה אמיתי, ותוכל/י לשלוח אותו ל-' +
+    _familyFormatPhone_(cleaned) + ' עם ההוראה:\n' +
+    '*כספלה הצטרף <הקוד>*\n\n' +
+    'או שיוכלו לסרוק QR ב-' + FAMILY_API_BASE + '/family-invite';
 }
 
 // ------------------------------------------------------------------
 // "הזמן" alone — generic invite link, admin shares manually.
 // ------------------------------------------------------------------
 function _familyInviteGenericReply_(fromPhone) {
-  // TODO: KV — same as above, but with invitedPhone=null, role=member.
-  var fakeCode = _familyMakeFakeCode_();
-  var inviteUrl = FAMILY_API_BASE + '/account?invite=' + fakeCode;
-  return '🔗 *קישור הזמנה גנרי*\n' +
-    '━━━━━━━━━━━━━━━━━━\n\n' +
-    inviteUrl + '\n\n' +
-    'שלח/י את הקישור הזה למי שתרצי להוסיף.\n' +
-    '⏰ תקף ל-10 דקות. אפשר ליצור עוד בכל רגע.\n\n' +
-    '💡 *רוצה להזמין מספר ספציפי?*\n' +
-    'כתוב/י: "הזמן 052-1234567"\n\n' +
-    '_(הערה: backend הזמנות בפיתוח — דמו עד שה-KV ייבנה)_';
+  // Same honest redirect — point to the real /api/group flow + the QR page.
+  return '🔗 *הזמנה למשפחה (אמיתי)*\n\n' +
+    'הפקודה היציבה:\n' +
+    '*כספלה צור משפחה <שם>*\n\n' +
+    'תקבל/י קוד 6 ספרות אמיתי. שלח/י אותו למי שתרצי להוסיף עם:\n' +
+    '*כספלה הצטרף <הקוד>*\n\n' +
+    'או שלח/י את הקישור: ' + FAMILY_API_BASE + '/family-invite';
 }
 
 // ------------------------------------------------------------------
 // "משפחה" — list current members + roles + permissions.
 // ------------------------------------------------------------------
 function _familyListReply_(fromPhone) {
-  // TODO: KV — resolveHouseholdForPhone_(fromPhone) -> household.memberIds
-  // For each member: hhmember:<userId> + display name + permissions snapshot.
-  // var hh = resolveHouseholdForPhone_(fromPhone);
-  // if (!hh) return _familyNotInHouseholdMsg_();
-
-  return '👨‍👩‍👧 *בני הבית שלך*\n' +
-    '━━━━━━━━━━━━━━━━━━\n\n' +
-    '_(תצוגה לדוגמה — backend המשפחה בפיתוח)_\n\n' +
-    '👑 *את/ה* — מנהל/ת\n' +
-    '   ✓ רישום הוצאות\n' +
-    '   ✓ רואה הכל\n' +
-    '   ✓ מאשר/ת הוצאות גדולות\n\n' +
-    '💚 *—* — בן/בת זוג\n' +
-    '   _(הוסף/י עם "הזמן 052-XXX")_\n\n' +
-    '💡 *פקודות:*\n' +
-    '  • "הזמן 052-1234567" — הזמן בן בית\n' +
-    '  • "פרישה" — עזוב את המשפחה (לא למנהל)\n' +
-    '  • "עזרה" — כל הפקודות';
+  // HONESTY (2026-05-24): the original returned a fake demo list ("👑 את/ה..."
+  // with placeholder rows). Steven asked us to stop. The real working route
+  // is /api/group + _groupContext_. Delegate so the user sees REAL group
+  // membership, not a placeholder.
+  try {
+    var r = _groupContext_(fromPhone);
+    if (r && r.replyText) return r.replyText;
+  } catch (_e) {}
+  return '👨‍👩‍👧 *משפחה*\n\n' +
+    'לבדיקת קבוצות משפחה אמיתיות שאת/ה חבר/ה בהן:\n' +
+    '*כספלה הקשר*\n\n' +
+    'ליצירת משפחה חדשה:\n' +
+    '*כספלה צור משפחה <שם>*';
 }
 
 // ------------------------------------------------------------------
@@ -10729,16 +10843,14 @@ function _familyLeaveReply_(fromPhone) {
   // if (!hh) return _familyNotInHouseholdMsg_();
   // if (hh.member.role === 'admin') return _familyAdminCantLeaveMsg_();
 
-  return '👋 *עזיבת המשפחה*\n' +
-    '━━━━━━━━━━━━━━━━━━\n\n' +
-    'בטוח/ה שאת/ה רוצה לעזוב?\n\n' +
-    '• ההוצאות ההיסטוריות שלך נשארות בגיליון של המשפחה.\n' +
-    '• מהרגע הזה הוצאות חדשות ילכו לגיליון אישי שלך (אם יש).\n' +
-    '• מנהל/ת המשפחה יקבל/תקבל הודעה.\n\n' +
-    'לאישור — כתוב/י: "פרישה אישור"\n' +
-    'לביטול — פשוט תתעלם/י מההודעה הזו.\n\n' +
-    '_(הערה: backend המשפחה בפיתוח. כרגע הפקודה היא רק תצוגה מקדימה.)_\n\n' +
-    '⚠️ *מנהל/ת לא יכול/ה לעזוב.* בטל/י מנוי דרך /account אם זה רלוונטי.';
+  // HONESTY (2026-05-24): the real "leave a group" path is /api/group +
+  // _groupLeave_. Delegate so the user actually leaves, not just sees a
+  // demo confirmation message.
+  try {
+    var r = _groupLeave_(fromPhone);
+    if (r && r.replyText) return r.replyText;
+  } catch (_e) {}
+  return '👋 לעזיבת קבוצה פעילה השתמש/י ב:\n*כספלה אישי* (חזרה למצב אישי)\nאו:\n*כספלה עזוב* (יציאה מהקבוצה הפעילה)';
 }
 
 // ------------------------------------------------------------------
