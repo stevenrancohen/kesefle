@@ -50,6 +50,11 @@ async function refreshAccessToken(refreshToken) {
 }
 
 async function fetchSheetRange(spreadsheetId, range, accessToken) {
+  // Track per-tenant Sheets API reads (in-memory; zero KV cost).
+  try {
+    const { recordSheetCall } = await import('../../lib/sheet-quota.js');
+    recordSheetCall(spreadsheetId, 'read');
+  } catch (_e) {}
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`;
   const r = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
   if (!r.ok) {

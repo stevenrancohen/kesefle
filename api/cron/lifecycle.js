@@ -204,12 +204,44 @@ async function handlerImpl(req, res) {
           // Generate a single-use winback token (just userSub + a short
           // hash); the /win-back page will validate it server-side before
           // applying the discount.
-          const winbackVars = {
-            ...baseVars,
-            winbackToken: u.userSub.slice(0, 24),
-          };
+          const winbackToken = u.userSub.slice(0, 24);
+          const winbackVars = { ...baseVars, winbackToken };
           const r = await maybeSend(u.userSub, 'winback_30_days', winbackVars, 365 * 24 * 3600);
           if (r.ok || r.skipped) { stats.winback = (stats.winback || 0) + 1; scheduled++; }
+
+          // Also fire a WhatsApp message if we have the user's phone -- many
+          // users live in WhatsApp and don't read email. Same dedup guard
+          // (winback_30_days_wa) so a single cron run sends both channels
+          // exactly once.
+          const linkedPhone = u.linkedPhone || u.phone;
+          if (linkedPhone) {
+            const waGuardKey = `email_sent:${u.userSub}:winback_30_days_wa`;
+            const waAlready = await kvGet(waGuardKey);
+            if (!waAlready) {
+              try {
+                const waUrl = (process.env.SELF_URL || 'https://kesefle.com') + '/api/whatsapp/send';
+                const botSecret = process.env.KESEFLE_BOT_SECRET;
+                if (botSecret) {
+                  const waText =
+                    `היי ${firstName}, התגעגענו אליך 👋\n\n` +
+                    `יש לנו הצעה מיוחדת: 50% הנחה לתמיד על כספ'לה.\n` +
+                    `₪9.50 לחודש במקום ₪19, ולתמיד.\n\n` +
+                    `לחץ כאן להפעלת ההנחה: https://kesefle.com/win-back?token=${winbackToken}\n\n` +
+                    `(תוקף ההצעה: 14 יום)`;
+                  await fetch(waUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-kesefle-bot-secret': botSecret },
+                    body: JSON.stringify({ phone: linkedPhone, text: waText }),
+                  });
+                  await kvSetEx(waGuardKey, JSON.stringify({ at: new Date().toISOString(), channel: 'wa' }), 365 * 24 * 3600);
+                  stats.winback_wa = (stats.winback_wa || 0) + 1;
+                  scheduled++;
+                }
+              } catch (waErr) {
+                log.warn('cron.lifecycle.winback_wa_failed', { userSub: u.userSub, error: waErr.message });
+              }
+            }
+          }
         }
       }
     } catch (e) {
