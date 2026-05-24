@@ -41,6 +41,11 @@ async function handlerImpl(req, res) {
     // Surface a hint about whether features that depend on a real WABA are
     // available. Steven sets this env var to '1' once Meta approves.
     waba_approved: process.env.WABA_APPROVED === '1',
+    // Analytics tracking IDs. Public values -- safe to expose. Frontend uses
+    // these to lazy-init GA4 + Meta Pixel without baking the IDs into HTML.
+    ga4_id: process.env.GA4_MEASUREMENT_ID || '',
+    meta_pixel_id: process.env.META_PIXEL_ID || '',
+    tiktok_pixel_id: process.env.TIKTOK_PIXEL_ID || '',
   });
 }
 

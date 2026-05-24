@@ -5,13 +5,19 @@
 // the recurring-expense autoLog default, which sheet template to favour, and
 // what the weekly digest emphasises.
 //
-// KV: profile:<phone> = { trackingType, hasRecurring, autoLogPref, updatedAt }
+// KV: profile:<phone> = { trackingType, hasRecurring, autoLogPref, taxId, companyName, updatedAt }
 //   trackingType : 'personal' | 'family' | 'group' | 'business'
 //   hasRecurring : boolean
 //   autoLogPref  : 'auto' | 'remind'
+//   taxId        : 9-digit Israeli ת.ז. / ח.פ. (string, digits-only). Optional.
+//                  Used by lib/invoice.js when issuing a חשבונית מס to a
+//                  business customer that wants the VAT receipt to carry
+//                  their tax id for input-VAT deduction.
+//   companyName  : free-text שם חברה לחשבונית. Optional. When set, the
+//                  invoice client name uses this instead of the human name.
 //
 // POST (JSON, bot-secret via x-kesefle-bot-secret header or body.botSecret):
-//   { action:'set', phone, fields:{ trackingType?, hasRecurring?, autoLogPref? } } → { ok, profile }
+//   { action:'set', phone, fields:{ trackingType?, hasRecurring?, autoLogPref?, taxId?, companyName? } } → { ok, profile }
 //   { action:'get', phone } → { ok, profile }
 
 import { withRequestId, log } from '../lib/log.js';
@@ -81,9 +87,32 @@ async function handlerImpl(req, res) {
       profile.autoLogPref = a;
     }
     if (fields.hasRecurring != null) profile.hasRecurring = !!fields.hasRecurring;
+    // Optional VAT-invoice fields (used by lib/invoice.js). We accept null /
+    // '' to allow CLEARING the field (e.g. customer no longer wants their
+    // company name on the invoice).
+    if (fields.taxId !== undefined) {
+      if (fields.taxId == null || fields.taxId === '') {
+        delete profile.taxId;
+      } else {
+        const digits = String(fields.taxId).replace(/\D+/g, '');
+        // Israeli ת.ז. is 9 digits; ח.פ. is 9 digits. Accept 7-12 to be
+        // permissive (foreign vendors / older numbers / leading zeros).
+        if (digits.length < 7 || digits.length > 12) {
+          return res.status(400).json({ ok: false, error: 'invalid_taxId' });
+        }
+        profile.taxId = digits;
+      }
+    }
+    if (fields.companyName !== undefined) {
+      if (fields.companyName == null || fields.companyName === '') {
+        delete profile.companyName;
+      } else {
+        profile.companyName = String(fields.companyName).slice(0, 120);
+      }
+    }
     profile.updatedAt = new Date().toISOString();
     await kvSet('profile:' + phone, profile);
-    log.info('profile.set', { reqId: req.reqId, trackingType: profile.trackingType, autoLogPref: profile.autoLogPref });
+    log.info('profile.set', { reqId: req.reqId, trackingType: profile.trackingType, autoLogPref: profile.autoLogPref, hasTaxId: !!profile.taxId, hasCompanyName: !!profile.companyName });
     return res.status(200).json({ ok: true, profile });
   }
 

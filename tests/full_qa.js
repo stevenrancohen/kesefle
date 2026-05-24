@@ -236,6 +236,30 @@ ok('account.html sign-in uses full-page redirect OAuth (PKCE → google-exchange
    /\/api\/auth\/google-exchange/.test(ACCOUNT_HTML) &&
    /kesefleHandleOAuthReturn/.test(ACCOUNT_HTML));
 
+// ── 5g. VAT invoice (חשבונית מס/קבלה via Green Invoice) ─────────────────────
+// Israeli law REQUIRES a tax invoice per charge to a customer. The lib must
+// export createInvoice, the admin endpoint must be gated, and the whole path
+// must fail SOFT when env keys are missing (payment recording must not break
+// because invoicing fell over). The profile schema also has to accept the
+// optional taxId + companyName fields used on the invoice client block.
+console.log('\n══ 5g. VAT invoice (חשבונית מס) ══');
+const INVOICE_LIB = fs.readFileSync(path.join(ROOT, 'lib/invoice.js'), 'utf8');
+const INVOICE_API = fs.readFileSync(path.join(ROOT, 'api/billing/invoice.js'), 'utf8');
+const PROFILE_API = fs.readFileSync(path.join(ROOT, 'api/profile.js'), 'utf8');
+ok('lib/invoice.js exports createInvoice',
+   /export\s*\{[^}]*\bcreateInvoice\b[^}]*\}/.test(INVOICE_LIB));
+ok('api/billing/invoice.js requires admin auth',
+   /requireAdmin\(handlerImpl\)/.test(INVOICE_API) || /requireAdmin\(/.test(INVOICE_API));
+ok('createInvoice env-fail-soft when GREEN_INVOICE_KEY missing (returns skipped, never throws)',
+   /isConfigured\(\)/.test(INVOICE_LIB) &&
+   /not_configured/.test(INVOICE_LIB) &&
+   /skipped:\s*true/.test(INVOICE_LIB));
+ok('profile schema accepts taxId + companyName',
+   /fields\.taxId\s*!==\s*undefined/.test(PROFILE_API) &&
+   /fields\.companyName\s*!==\s*undefined/.test(PROFILE_API) &&
+   /profile\.taxId\s*=/.test(PROFILE_API) &&
+   /profile\.companyName\s*=/.test(PROFILE_API));
+
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
   console.log('\n══ 6. Live API health (KESEFLE_BASE) ══');

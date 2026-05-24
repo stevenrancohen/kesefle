@@ -19,6 +19,7 @@ import {
   activatePremium, deactivatePremium, priceILS,
   billingKvGet, billingKvSet,
 } from '../../lib/billing.js';
+import { createInvoice } from '../../lib/invoice.js';
 
 const GRACE_DAYS = 3;
 const SITE = process.env.PUBLIC_SITE_URL || 'https://kesefle.com';
@@ -66,6 +67,85 @@ async function getSubscription(token, subId) {
     if (!r.ok) return null;
     return await r.json();
   } catch { return null; }
+}
+
+// Fire-and-forget Israeli VAT invoice (חשבונית מס/קבלה) for a completed
+// PayPal payment. Never throws — invoicing failure must not block the
+// webhook (PayPal would retry the event and we'd risk double-activation).
+// All customer info is looked up from KV by lib/invoice's caller; we just
+// pass userSub + amount + reference here.
+async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, externalId, customerEmail, customerName }) {
+  // Look up profile (taxId / companyName) from KV via the user's phone.
+  let customerTaxId = null;
+  let companyName = null;
+  let resolvedEmail = customerEmail || null;
+  let resolvedName = customerName || null;
+  try {
+    const userRec = await billingKvGet('user:' + userSub);
+    if (userRec) {
+      resolvedEmail = resolvedEmail || userRec.email || null;
+      resolvedName = resolvedName || userRec.name || null;
+      if (userRec.phone) {
+        const profile = await billingKvGet('profile:' + userRec.phone);
+        if (profile) {
+          customerTaxId = profile.taxId || null;
+          companyName = profile.companyName || null;
+        }
+      }
+    }
+  } catch (_e) { /* best effort */ }
+
+  let result = null;
+  try {
+    result = await createInvoice({
+      userSub,
+      customerName: resolvedName,
+      customerEmail: resolvedEmail,
+      customerTaxId,
+      companyName,
+      amount: amountILS,
+      currency: 'ILS',
+      description: `מנוי כספלה ${plan === 'family' ? 'משפחה' : 'פרו'}`,
+      paymentMethod: 'paypal',
+      paymentReference: externalId,
+    });
+  } catch (e) {
+    log.warn('paypal.invoice_threw', { reqId, userSub, error: e.message });
+    return;
+  }
+
+  if (!result?.ok) {
+    log.warn('paypal.invoice_failed', { reqId, userSub, error: result?.error });
+    return;
+  }
+
+  // Persist (idempotent key) for later lookup / re-send.
+  try {
+    await billingKvSet(`invoice:${userSub}:${externalId}`, {
+      invoiceId: result.invoiceId,
+      pdfUrl: result.pdfUrl,
+      ts: result.ts,
+      paymentMethod: 'paypal',
+      amount: amountILS,
+      currency: 'ILS',
+    });
+  } catch (_e) { /* best effort */ }
+
+  // Best-effort email of the PDF link. lib/email.js doesn't exist yet —
+  // we dynamic-import to avoid a hard dependency. ANY failure here is
+  // swallowed; the customer can still pull the PDF from /account.
+  if (result.pdfUrl && resolvedEmail) {
+    try {
+      const mod = await import('../../lib/email.js').catch(() => null);
+      if (mod?.sendEmail) {
+        await mod.sendEmail({
+          to: resolvedEmail,
+          subject: 'חשבונית מס/קבלה מכספלה',
+          html: `<p dir="rtl">תודה על התשלום!</p><p dir="rtl">לקבלת החשבונית: <a href="${result.pdfUrl}">${result.pdfUrl}</a></p>`,
+        }).catch(() => {});
+      }
+    } catch (_e) { /* best effort */ }
+  }
 }
 
 // ── action=subscribe ─────────────────────────────────────────────────────────
@@ -182,9 +262,25 @@ async function webhookImpl(req, res) {
         if (map?.userSub) {
           const sub = await getSubscription(token, subId);
           const nextBilling = sub?.billing_info?.next_billing_time;
+          const plan = map.plan || 'pro';
           await activatePremium(map.userSub, {
-            plan: map.plan || 'pro', method: 'paypal', recurring: true, externalId: subId,
+            plan, method: 'paypal', recurring: true, externalId: subId,
             accessUntil: accessUntilFromNextBilling(nextBilling),
+          });
+          // Fire-and-forget Israeli VAT invoice. Use the SALE's resource.id as
+          // the paymentReference (not the subscription id) so each renewal
+          // gets a distinct invoice keyed in KV. Failure here is logged
+          // but never blocks the webhook ack (PayPal would otherwise retry
+          // and we'd double-activate the subscription).
+          const amountILS = Number(resource.amount?.total) || priceILS(plan, 'month');
+          maybeIssueInvoiceForPayment({
+            reqId: req.reqId,
+            userSub: map.userSub,
+            plan,
+            amountILS,
+            externalId: resource.id || subId,
+          }).catch((e) => {
+            log.warn('paypal.invoice_unhandled', { reqId: req.reqId, error: e.message });
           });
         }
       }

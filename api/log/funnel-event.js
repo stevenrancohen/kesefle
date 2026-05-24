@@ -35,6 +35,13 @@ const ALLOWED_EVENTS = new Set([
   'first_message_sent',
   'inapp_browser_detected',
   'dashboard_loaded',
+  'help_search',
+  'pricing_viewed',
+  'upgrade_clicked',
+  'cancel_clicked',
+  'bank_import_started',
+  'bank_import_done',
+  'bank_import_failed',
 ]);
 
 async function handlerImpl(req, res) {
@@ -56,7 +63,7 @@ async function handlerImpl(req, res) {
   const meta = body?.meta && typeof body.meta === 'object' ? body.meta : {};
   // Drop any PII from meta -- we only store anonymous funnel data.
   const safeMeta = {};
-  ['source', 'campaign', 'browser', 'page', 'error_kind', 'retry'].forEach((k) => {
+  ['source', 'campaign', 'browser', 'page', 'error_kind', 'retry', 'q', 'plan', 'bank', 'count'].forEach((k) => {
     if (meta[k] != null) safeMeta[k] = String(meta[k]).slice(0, 80);
   });
 
