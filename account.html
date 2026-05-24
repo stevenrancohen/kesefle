@@ -867,6 +867,25 @@ function kesefleReadReferralCode() {
   } catch (e) { return { code: null, name: null }; }
 }
 
+// Capture ?plan=pro|family and ?period=month|year from the pricing-page CTAs
+// into sessionStorage so they survive the OAuth redirect. The downstream
+// PayPal subscribe call (whenever the upgrade flow gets a single button)
+// reads these to mint the right (plan,period) PayPal plan_id.
+function kesefleCapturePlanSelection() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var plan = (params.get('plan') || '').trim().toLowerCase();
+    var period = (params.get('period') || '').trim().toLowerCase();
+    if (plan === 'pro' || plan === 'family' || plan === 'free') {
+      sessionStorage.setItem('kesefle_selected_plan', plan);
+    }
+    if (period === 'month' || period === 'year') {
+      sessionStorage.setItem('kesefle_selected_period', period);
+    }
+  } catch (e) { /* sessionStorage unavailable in private mode -- benign */ }
+}
+try { kesefleCapturePlanSelection(); } catch (e) {}
+
 function kesefleShowInvitedChip(ref) {
   if (!ref || !ref.code) return;
   var banner = document.getElementById('ref-banner');

@@ -45,12 +45,28 @@ async function getAccessToken() {
   return j.access_token;
 }
 
-function planIdFor(plan) {
-  return plan === 'family' ? process.env.PAYPAL_PLAN_FAMILY : process.env.PAYPAL_PLAN_PRO;
+// Plan ID resolution per (plan, period). Each (Pro|Family) x (month|year)
+// pair is a SEPARATE PayPal subscription plan. Annual env vars are optional:
+// if a yearly plan isn't configured, we fall back to the monthly plan so
+// the user can still subscribe (slightly worse UX than a hard error but
+// preserves the conversion).
+function planIdFor(plan, period) {
+  var per = period === 'year' ? 'year' : 'month';
+  if (plan === 'family') {
+    return per === 'year'
+      ? (process.env.PAYPAL_PLAN_FAMILY_YEAR || process.env.PAYPAL_PLAN_FAMILY)
+      : process.env.PAYPAL_PLAN_FAMILY;
+  }
+  return per === 'year'
+    ? (process.env.PAYPAL_PLAN_PRO_YEAR || process.env.PAYPAL_PLAN_PRO)
+    : process.env.PAYPAL_PLAN_PRO;
 }
 function planFromPlanId(planId) {
-  if (planId && planId === process.env.PAYPAL_PLAN_FAMILY) return 'family';
-  return 'pro';
+  if (!planId) return { plan: 'pro', period: 'month' };
+  if (planId === process.env.PAYPAL_PLAN_FAMILY_YEAR) return { plan: 'family', period: 'year' };
+  if (planId === process.env.PAYPAL_PLAN_FAMILY) return { plan: 'family', period: 'month' };
+  if (planId === process.env.PAYPAL_PLAN_PRO_YEAR) return { plan: 'pro', period: 'year' };
+  return { plan: 'pro', period: 'month' };
 }
 
 function accessUntilFromNextBilling(nextBillingTime) {
@@ -153,10 +169,11 @@ async function subscribeImpl(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const plan = String(body?.plan || '').toLowerCase() === 'family' ? 'family' : 'pro';
+  const period = String(body?.period || '').toLowerCase() === 'year' ? 'year' : 'month';
 
-  const planId = planIdFor(plan);
+  const planId = planIdFor(plan, period);
   if (!planId) {
-    return res.status(500).json({ ok: false, error: 'paypal_plan_not_configured', detail: plan });
+    return res.status(500).json({ ok: false, error: 'paypal_plan_not_configured', detail: `${plan}/${period}` });
   }
 
   let token;
@@ -244,12 +261,15 @@ async function webhookImpl(req, res) {
     if (type === 'BILLING.SUBSCRIPTION.ACTIVATED') {
       const subId = resource.id;
       const userSub = resource.custom_id;
-      const plan = planFromPlanId(resource.plan_id);
+      const { plan, period } = planFromPlanId(resource.plan_id);
       const nextBilling = resource.billing_info?.next_billing_time;
       if (userSub && subId) {
-        await billingKvSet(`paypalSub:${subId}`, { userSub, plan });
+        // Persist BOTH plan + period so renewal webhooks + change-plan flow
+        // know which billing cycle the user is on. activatePremium also gets
+        // the period so it can set the correct accessUntil window.
+        await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
         await activatePremium(userSub, {
-          plan, method: 'paypal', recurring: true, externalId: subId,
+          plan, period, method: 'paypal', recurring: true, externalId: subId,
           accessUntil: accessUntilFromNextBilling(nextBilling),
         });
       }
@@ -263,8 +283,9 @@ async function webhookImpl(req, res) {
           const sub = await getSubscription(token, subId);
           const nextBilling = sub?.billing_info?.next_billing_time;
           const plan = map.plan || 'pro';
+          const period = map.period === 'year' ? 'year' : 'month';
           await activatePremium(map.userSub, {
-            plan, method: 'paypal', recurring: true, externalId: subId,
+            plan, period, method: 'paypal', recurring: true, externalId: subId,
             accessUntil: accessUntilFromNextBilling(nextBilling),
           });
           // Fire-and-forget Israeli VAT invoice. Use the SALE's resource.id as
@@ -272,7 +293,7 @@ async function webhookImpl(req, res) {
           // gets a distinct invoice keyed in KV. Failure here is logged
           // but never blocks the webhook ack (PayPal would otherwise retry
           // and we'd double-activate the subscription).
-          const amountILS = Number(resource.amount?.total) || priceILS(plan, 'month');
+          const amountILS = Number(resource.amount?.total) || priceILS(plan, period);
           maybeIssueInvoiceForPayment({
             reqId: req.reqId,
             userSub: map.userSub,

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>הוסף הוצאה — כספ'לה</title>
+<meta name="description" content="הוסף הוצאה ישירות מהאתר — בלי לפתוח וואטסאפ." />
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#22c55e" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {
+    fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+    colors: {
+      ink: { 50:'#f7f8fb', 100:'#eef0f6', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+      brand: { 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' }
+    }
+  }}
+};
+</script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+  <script src="/js/analytics-loader.js" defer></script>
+</head>
+<body class="bg-ink-50 dark:bg-ink-900 text-ink-900 dark:text-white min-h-screen flex flex-col">
+
+<header class="border-b border-ink-200/40 dark:border-ink-700/40">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-lg">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">&#x20aa;</span>
+      <span>כספ'לה</span>
+    </a>
+    <a href="/dashboard" class="text-sm font-semibold text-brand-600 dark:text-brand-400">דשבורד →</a>
+  </nav>
+</header>
+
+<main class="flex-1 px-5 py-10">
+  <div class="mx-auto max-w-md">
+    <div class="text-center mb-8">
+      <p class="text-xs font-extrabold uppercase tracking-widest text-brand-600 dark:text-brand-400">קלט מהיר</p>
+      <h1 class="mt-2 text-3xl md:text-4xl font-black">הוסף הוצאה</h1>
+      <p class="mt-2 text-sm text-ink-500 dark:text-ink-400">
+        ישירות לגיליון שלך — בלי לפתוח וואטסאפ. נשמר תוך שנייה.
+      </p>
+    </div>
+
+    <form id="kfl-form" class="rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-6 shadow-soft space-y-5">
+
+      <!-- Type toggle -->
+      <div class="flex rounded-2xl border border-ink-200 dark:border-ink-700 p-1 bg-ink-50 dark:bg-ink-900">
+        <button type="button" id="type-expense" class="flex-1 rounded-xl py-2 text-sm font-bold bg-red-500 text-white" onclick="kflSetType('expense')">
+          💸 הוצאה
+        </button>
+        <button type="button" id="type-income" class="flex-1 rounded-xl py-2 text-sm font-bold text-ink-600 dark:text-ink-300" onclick="kflSetType('income')">
+          💰 הכנסה
+        </button>
+      </div>
+
+      <!-- Amount -->
+      <div>
+        <label for="kfl-amount" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">סכום (₪)</label>
+        <input id="kfl-amount" type="number" inputmode="decimal" step="0.01" min="0.01" max="100000000" required placeholder="45" autocomplete="off"
+          class="w-full text-3xl font-black bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2 dir-ltr" style="direction:ltr;text-align:left" />
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="kfl-desc" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">פירוט</label>
+        <input id="kfl-desc" type="text" required maxlength="200" placeholder="קפה / סופר רמי לוי / שכר דירה" autocomplete="off"
+          class="w-full text-base bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2" />
+      </div>
+
+      <!-- Category (datalist suggests Pa'amonim main categories) -->
+      <div>
+        <label for="kfl-cat" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">קטגוריה <span class="text-ink-400">(אופציונלי)</span></label>
+        <input id="kfl-cat" type="text" maxlength="60" list="kfl-cat-list" placeholder="מזון ופארמה" autocomplete="off"
+          class="w-full text-base bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2" />
+        <datalist id="kfl-cat-list">
+          <option value="מזון ופארמה"></option>
+          <option value="הוצאות קבועות"></option>
+          <option value="תחבורה"></option>
+          <option value="בריאות"></option>
+          <option value="חינוך וילדים"></option>
+          <option value="ביגוד והנעלה"></option>
+          <option value="פנאי ובידור"></option>
+          <option value="שונות"></option>
+          <option value="הכנסות"></option>
+        </datalist>
+      </div>
+
+      <!-- Date (default today) -->
+      <div>
+        <label for="kfl-date" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">תאריך</label>
+        <input id="kfl-date" type="date" required
+          class="w-full text-base bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2" />
+      </div>
+
+      <!-- VAT deductible toggle (for עוסק מורשה) -->
+      <label class="flex items-center gap-3 cursor-pointer rounded-xl border border-ink-200 dark:border-ink-700 px-4 py-3 hover:bg-ink-50 dark:hover:bg-ink-900/50">
+        <input id="kfl-vat" type="checkbox" class="accent-brand-600 h-5 w-5" />
+        <div class="flex-1">
+          <div class="text-sm font-bold">סמן לניכוי מע״מ</div>
+          <div class="text-xs text-ink-500 dark:text-ink-400">לעצמאים — יופיע בדוח השנתי ב-/tax-report</div>
+        </div>
+      </label>
+
+      <button type="submit" id="kfl-submit"
+        class="w-full rounded-2xl bg-brand-600 hover:bg-brand-700 transition py-4 text-lg font-black text-white shadow-glow">
+        שמור בגיליון →
+      </button>
+
+      <p id="kfl-status" class="text-center text-sm min-h-[20px]"></p>
+    </form>
+
+    <p class="mt-6 text-center text-xs text-ink-500 dark:text-ink-400">
+      💡 הוצאות הולכות לטאב <span class="font-mono font-bold">תנועות</span> בגיליון Google Sheets שלך.
+      העדפת/ה את WhatsApp? שלח/י לבוט ב-<a href="https://wa.me/15556408123" target="_blank" rel="noopener" class="font-bold text-brand-600 dark:text-brand-400 hover:underline">+1 555 640 8123</a>.
+    </p>
+  </div>
+</main>
+
+<footer class="border-t border-ink-200/40 dark:border-ink-700/40 px-5 py-6 text-center text-xs text-ink-500 dark:text-ink-400 mt-12">
+  <p>&copy; 2026 כספ'לה &middot; <a href="/trust" class="hover:underline">אבטחה</a> &middot; <a href="/privacy" class="hover:underline">פרטיות</a> &middot; <a href="/dashboard" class="hover:underline">דשבורד</a></p>
+</footer>
+
+<script>
+(function () {
+  if (localStorage.getItem('kesefle_theme') === 'dark') document.documentElement.classList.add('dark');
+
+  var isIncome = false;
+  window.kflSetType = function (t) {
+    isIncome = (t === 'income');
+    var exp = document.getElementById('type-expense');
+    var inc = document.getElementById('type-income');
+    if (isIncome) {
+      inc.className = 'flex-1 rounded-xl py-2 text-sm font-bold bg-brand-600 text-white';
+      exp.className = 'flex-1 rounded-xl py-2 text-sm font-bold text-ink-600 dark:text-ink-300';
+    } else {
+      exp.className = 'flex-1 rounded-xl py-2 text-sm font-bold bg-red-500 text-white';
+      inc.className = 'flex-1 rounded-xl py-2 text-sm font-bold text-ink-600 dark:text-ink-300';
+    }
+  };
+
+  // Default date = today (local).
+  var d = new Date();
+  var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  document.getElementById('kfl-date').value = dateStr;
+
+  document.getElementById('kfl-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var btn = document.getElementById('kfl-submit');
+    var status = document.getElementById('kfl-status');
+    var amount = parseFloat(document.getElementById('kfl-amount').value);
+    var rawText = document.getElementById('kfl-desc').value.trim();
+    var category = document.getElementById('kfl-cat').value.trim();
+    var date = document.getElementById('kfl-date').value;
+    var vatDeductible = document.getElementById('kfl-vat').checked;
+    if (!isFinite(amount) || amount <= 0) {
+      status.textContent = '✗ סכום לא תקין';
+      status.style.color = '#dc2626';
+      return;
+    }
+    if (!rawText) {
+      status.textContent = '✗ נא להזין פירוט';
+      status.style.color = '#dc2626';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'שומר...';
+    status.textContent = '';
+    try {
+      var r = await fetch('/api/sheet/web-append', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amount,
+          isIncome: isIncome,
+          category: category || (isIncome ? 'הכנסות' : 'שונות'),
+          rawText: rawText,
+          date: date,
+          vatDeductible: vatDeductible,
+        }),
+      });
+      var j = await r.json().catch(function () { return { ok: false }; });
+      if (j.ok) {
+        status.innerHTML = '<span style="color:#16a34a;font-weight:bold">✓ נשמר בגיליון!</span>';
+        // Reset for next entry (keep date, type, category for fast repeat).
+        document.getElementById('kfl-amount').value = '';
+        document.getElementById('kfl-desc').value = '';
+        document.getElementById('kfl-vat').checked = false;
+        document.getElementById('kfl-amount').focus();
+        // Fire funnel pixel for analytics.
+        try {
+          fetch('/api/log/funnel-event', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: 'first_message_sent', meta: { source: 'web_form' } }),
+            keepalive: true,
+          }).catch(function () {});
+        } catch (_e) {}
+      } else if (r.status === 401) {
+        status.innerHTML = '✗ <a href="/account" style="text-decoration:underline">יש להתחבר ראשית</a>';
+        status.style.color = '#dc2626';
+      } else if (r.status === 409 && j.error === 'no_sheet_provisioned') {
+        status.innerHTML = '✗ <a href="/account" style="text-decoration:underline">היכנס וצור גיליון</a>';
+        status.style.color = '#dc2626';
+      } else {
+        status.textContent = '✗ שגיאה: ' + (j.error || r.status) + (j.detail ? ' — ' + j.detail.slice(0, 80) : '');
+        status.style.color = '#dc2626';
+      }
+    } catch (e) {
+      status.textContent = '✗ שגיאת רשת: ' + (e.message || e);
+      status.style.color = '#dc2626';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'שמור בגיליון →';
+    }
+  });
+})();
+</script>
+<script>/* SW auto-update */
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+</body>
+</html>
