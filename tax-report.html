@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>דוח שנתי לניכוי מע״מ — כספ'לה</title>
+<meta name="description" content="דוח שנתי של הוצאות מסומנות לניכוי מע״מ — הכנת חומר לרואה החשבון." />
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#22c55e" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {
+    fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+    colors: {
+      ink: { 50:'#f7f8fb', 100:'#eef0f6', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
+      brand: { 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' }
+    }
+  }}
+};
+</script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  @media print {
+    body { background: white !important; color: black !important; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    thead { display: table-header-group; }
+    @page { margin: 1.5cm 1cm; size: A4 portrait; }
+  }
+  .print-only { display: none; }
+</style>
+  <script src="/js/analytics-loader.js" defer></script>
+</head>
+<body class="bg-ink-50 dark:bg-ink-900 text-ink-900 dark:text-white min-h-screen">
+
+<!-- Print-only header: shown when paper-rendering -->
+<div class="print-only" style="padding:0 0 16px 0;border-bottom:2px solid #16a34a;margin-bottom:24px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end">
+    <div>
+      <div style="font-size:22px;font-weight:900;color:#15803d">כספ'לה</div>
+      <div style="font-size:11px;color:#666">דוח שנתי לניכוי מע״מ</div>
+    </div>
+    <div style="font-size:10px;color:#666;text-align:left">
+      הופק ב-<span id="print-date" class="num"></span><br/>
+      kesefle.com
+    </div>
+  </div>
+</div>
+
+<header class="no-print border-b border-ink-200/40 dark:border-ink-700/40">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-extrabold text-lg">
+      <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">&#x20aa;</span>
+      <span>כספ'לה</span>
+    </a>
+    <div class="flex items-center gap-2">
+      <button id="kfl-print" class="rounded-2xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700">📄 הורד PDF</button>
+      <a href="/dashboard" class="text-sm font-semibold text-brand-600 dark:text-brand-400">חזרה לדשבורד →</a>
+    </div>
+  </nav>
+</header>
+
+<main class="px-5 py-8 max-w-5xl mx-auto">
+
+  <!-- Title + year selector -->
+  <div class="no-print mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="text-xs font-extrabold uppercase tracking-widest text-brand-600 dark:text-brand-400">דוח שנתי</p>
+      <h1 class="mt-1 text-3xl md:text-4xl font-black">סיכום ניכוי מע״מ</h1>
+      <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">כל ההוצאות שסימנת עם <span class="font-mono font-bold">/מעמ</span> במהלך השנה. שלח לרואה החשבון.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <label for="kfl-year" class="text-sm font-bold">שנה:</label>
+      <select id="kfl-year" class="rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 px-3 py-2 text-sm font-bold"></select>
+    </div>
+  </div>
+
+  <!-- Status / loading -->
+  <div id="kfl-loading" class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-8 text-center">
+    <div class="inline-block animate-spin h-8 w-8 border-2 border-brand-500 border-t-transparent rounded-full"></div>
+    <p class="mt-3 text-sm text-ink-500 dark:text-ink-400">טוען נתונים מהגיליון שלך...</p>
+  </div>
+
+  <div id="kfl-error" class="hidden rounded-2xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-6 text-center">
+    <p class="text-base font-bold text-red-700 dark:text-red-300" id="kfl-error-msg">שגיאה</p>
+    <p class="mt-2 text-sm text-red-600 dark:text-red-400" id="kfl-error-detail"></p>
+    <a href="/account" class="mt-4 inline-block text-sm font-bold text-brand-600">היכנס שוב →</a>
+  </div>
+
+  <div id="kfl-empty" class="hidden rounded-2xl border-2 border-dashed border-ink-300 dark:border-ink-700 p-12 text-center">
+    <div class="text-5xl">📋</div>
+    <h2 class="mt-3 text-xl font-black">אין הוצאות מסומנות לניכוי מע״מ</h2>
+    <p class="mt-2 text-sm text-ink-500 dark:text-ink-400 max-w-md mx-auto">
+      כדי לסמן הוצאה לניכוי, שלח/י לבוט אחרי הוצאה: <span class="font-mono font-bold bg-ink-100 dark:bg-ink-800 px-2 py-0.5 rounded">/מעמ</span><br/>
+      ההוצאה האחרונה תסומן ותופיע בדוח השנתי הזה.
+    </p>
+  </div>
+
+  <div id="kfl-content" class="hidden">
+
+    <!-- Summary cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="rounded-2xl border-2 border-brand-500 bg-brand-50 dark:bg-brand-500/10 dark:border-brand-400 p-5">
+        <div class="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300">סך הוצאות מסומנות</div>
+        <div class="mt-2 text-3xl font-black text-brand-700 dark:text-brand-300">₪<span id="kfl-total" class="num">0</span></div>
+        <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">סכום כולל לפני מע״מ</div>
+      </div>
+      <div class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-5">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">מע״מ מוערך (18%)</div>
+        <div class="mt-2 text-3xl font-black">₪<span id="kfl-vat" class="num">0</span></div>
+        <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">החזר משוער מרשות המסים</div>
+      </div>
+      <div class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-5">
+        <div class="text-xs font-bold uppercase tracking-wider text-ink-500 dark:text-ink-400">מספר רשומות</div>
+        <div class="mt-2 text-3xl font-black"><span id="kfl-count" class="num">0</span></div>
+        <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">הוצאות שסומנו לניכוי</div>
+      </div>
+    </div>
+
+    <!-- By category -->
+    <section class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-6 mb-6">
+      <h2 class="text-lg font-black mb-4">פירוט לפי קטגוריה</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-ink-200 dark:border-ink-700 text-right">
+            <th class="py-2 font-bold">קטגוריה</th>
+            <th class="py-2 font-bold text-left">סכום</th>
+            <th class="py-2 font-bold text-left">% מהסה״כ</th>
+          </tr>
+        </thead>
+        <tbody id="kfl-cat-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- By month -->
+    <section class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-6 mb-6">
+      <h2 class="text-lg font-black mb-4">פירוט לפי חודש</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-ink-200 dark:border-ink-700 text-right">
+            <th class="py-2 font-bold">חודש</th>
+            <th class="py-2 font-bold text-left">סכום</th>
+          </tr>
+        </thead>
+        <tbody id="kfl-month-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- Sample rows -->
+    <section class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-6 mb-6">
+      <h2 class="text-lg font-black mb-2">דוגמאות (5 הראשונות)</h2>
+      <p class="text-xs text-ink-500 dark:text-ink-400 mb-4">לרשימה המלאה — פתח את הגיליון שלך ב-Google Sheets וסנן בעמודה I (ניכוי מע״מ).</p>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-ink-200 dark:border-ink-700 text-right">
+            <th class="py-2 font-bold">תאריך</th>
+            <th class="py-2 font-bold">פירוט</th>
+            <th class="py-2 font-bold">קטגוריה</th>
+            <th class="py-2 font-bold text-left">סכום</th>
+          </tr>
+        </thead>
+        <tbody id="kfl-sample-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- Notes for accountant -->
+    <section class="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-6">
+      <h2 class="text-base font-black text-amber-800 dark:text-amber-200">לתשומת לב רואה החשבון</h2>
+      <ul class="mt-3 space-y-1 text-sm text-amber-900 dark:text-amber-200 list-disc list-inside">
+        <li>הסכומים שלעיל הם <strong>סכומים מלאים</strong> כולל מע״מ (אם הוקלדו ככאלה).</li>
+        <li>שיעור המע״מ נכון לתחילת 2025 הוא 18% (אם מנכים — להפחית מהסכום המופיע).</li>
+        <li>דוח זה מבוסס על סימון ידני של המשתמש בבוט (/מעמ). אין כאן בדיקת זכאות אוטומטית.</li>
+        <li>למעקב מלא יש לקרוא את העמודה I בגיליון <em>תנועות</em> (TRUE = מסומן לניכוי).</li>
+      </ul>
+    </section>
+
+  </div>
+
+</main>
+
+<footer class="no-print border-t border-ink-200/40 dark:border-ink-700/40 px-5 py-6 text-center text-xs text-ink-500 dark:text-ink-400 mt-12">
+  <p>&copy; 2026 כספ'לה &middot; <a href="/trust" class="hover:underline">אבטחה</a> &middot; <a href="/privacy" class="hover:underline">פרטיות</a> &middot; <a href="/terms" class="hover:underline">תנאים</a></p>
+</footer>
+
+<script>
+(function(){
+  if (localStorage.getItem('kesefle_theme') === 'dark') document.documentElement.classList.add('dark');
+
+  function fmtNum(n) {
+    return (Math.round(Number(n) * 100) / 100).toLocaleString('he-IL', { maximumFractionDigits: 2 });
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function show(id) { document.getElementById(id).classList.remove('hidden'); }
+  function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+  function showError(msg, detail) {
+    hide('kfl-loading'); hide('kfl-content'); hide('kfl-empty');
+    document.getElementById('kfl-error-msg').textContent = msg || 'שגיאה';
+    document.getElementById('kfl-error-detail').textContent = detail || '';
+    show('kfl-error');
+  }
+
+  function buildYearOptions(selected) {
+    var sel = document.getElementById('kfl-year');
+    var thisYear = new Date().getFullYear();
+    sel.innerHTML = '';
+    for (var y = thisYear; y >= thisYear - 3; y--) {
+      var opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      if (y === selected) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    sel.addEventListener('change', function () { loadReport(parseInt(sel.value, 10)); });
+  }
+
+  async function loadReport(year) {
+    show('kfl-loading');
+    hide('kfl-content'); hide('kfl-empty'); hide('kfl-error');
+    try {
+      var r = await fetch('/api/sheet/tax-report?year=' + year, { credentials: 'include' });
+      if (r.status === 401 || r.status === 403) {
+        showError('יש להתחבר תחילה', 'היכנס שוב מ-/account');
+        return;
+      }
+      var j = await r.json();
+      if (!j.ok) {
+        showError('שגיאה זמנית', j.error || ('HTTP ' + r.status));
+        return;
+      }
+      if (!j.rowCount) {
+        hide('kfl-loading'); show('kfl-empty');
+        return;
+      }
+      render(j);
+      hide('kfl-loading'); show('kfl-content');
+    } catch (e) {
+      showError('שגיאת רשת', e.message || String(e));
+    }
+  }
+
+  function render(j) {
+    document.getElementById('kfl-total').textContent = fmtNum(j.totalDeductible);
+    document.getElementById('kfl-vat').textContent = fmtNum(j.totalDeductible * 0.18 / 1.18); // assuming sum includes VAT, the VAT portion
+    document.getElementById('kfl-count').textContent = j.rowCount;
+
+    // Categories sorted by amount desc
+    var cats = Object.entries(j.byCategory || {}).sort(function (a, b) { return b[1] - a[1]; });
+    document.getElementById('kfl-cat-tbody').innerHTML = cats.map(function (row) {
+      var pct = j.totalDeductible > 0 ? Math.round((row[1] / j.totalDeductible) * 100) : 0;
+      return '<tr class="border-b border-ink-100 dark:border-ink-700/50">' +
+        '<td class="py-2 font-semibold">' + escapeHtml(row[0]) + '</td>' +
+        '<td class="py-2 text-left num">₪' + fmtNum(row[1]) + '</td>' +
+        '<td class="py-2 text-left text-ink-500 dark:text-ink-400 num">' + pct + '%</td>' +
+      '</tr>';
+    }).join('');
+
+    // Months chronological
+    var months = Object.entries(j.byMonth || {}).sort(function (a, b) { return a[0].localeCompare(b[0]); });
+    document.getElementById('kfl-month-tbody').innerHTML = months.map(function (row) {
+      return '<tr class="border-b border-ink-100 dark:border-ink-700/50">' +
+        '<td class="py-2 font-semibold num">' + escapeHtml(row[0]) + '</td>' +
+        '<td class="py-2 text-left num">₪' + fmtNum(row[1]) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    // Sample
+    document.getElementById('kfl-sample-tbody').innerHTML = (j.sample || []).map(function (s) {
+      return '<tr class="border-b border-ink-100 dark:border-ink-700/50">' +
+        '<td class="py-2 num">' + escapeHtml((s.date || '').slice(0, 10)) + '</td>' +
+        '<td class="py-2">' + escapeHtml(s.description || '') + '</td>' +
+        '<td class="py-2 text-ink-500 dark:text-ink-400">' + escapeHtml(s.category || '') + (s.subcategory ? ' / ' + escapeHtml(s.subcategory) : '') + '</td>' +
+        '<td class="py-2 text-left num">₪' + fmtNum(s.amount) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('kfl-print').addEventListener('click', function () {
+    document.getElementById('print-date').textContent = new Date().toLocaleDateString('he-IL');
+    window.print();
+  });
+  // Update print-date eagerly in case the user uses browser File→Print
+  document.getElementById('print-date').textContent = new Date().toLocaleDateString('he-IL');
+
+  // Init
+  var url = new URL(location.href);
+  var requestedYear = parseInt(url.searchParams.get('year'), 10) || new Date().getFullYear();
+  buildYearOptions(requestedYear);
+  loadReport(requestedYear);
+})();
+</script>
+<script>/* SW auto-update */
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+</body>
+</html>

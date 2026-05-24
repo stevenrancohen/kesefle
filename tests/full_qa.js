@@ -236,18 +236,30 @@ ok('account.html sign-in uses full-page redirect OAuth (PKCE → google-exchange
    /\/api\/auth\/google-exchange/.test(ACCOUNT_HTML) &&
    /kesefleHandleOAuthReturn/.test(ACCOUNT_HTML));
 
-// ── 5f. Bank CSV importer (Hapoalim / Leumi statement upload) ──────────────
+// ── 5f. Bank CSV importer (Hapoalim / Leumi / Discount / Mizrahi statement
+// upload) ───────────────────────────────────────────────────────────────────
 // "Upload your bank statement" is the killer-feature parity with RiseUp. The
-// parser MUST export BANK_PARSERS with both banks, the import endpoint MUST
-// require auth + a per-user rate limit, and the parser fixture MUST exist so
-// future PRs that touch the parser get caught by the same node tests/...
-// harness. Privacy: we also assert the handler does NOT log description /
-// amount text from the user's statement (only counts).
+// parser MUST export BANK_PARSERS with all supported banks, the import
+// endpoint MUST require auth + a per-user rate limit, and the parser fixture
+// MUST exist so future PRs that touch the parser get caught by the same node
+// tests/... harness. Privacy: we also assert the handler does NOT log
+// description / amount text from the user's statement (only counts).
 console.log('\n══ 5f. Bank CSV importer ══');
 const BANK_PARSERS_SRC = fs.readFileSync(path.join(ROOT, 'lib/bank-parsers.js'), 'utf8');
+const BANK_TESTS_SRC = fs.readFileSync(path.join(ROOT, 'tests/test_bank_parsers.js'), 'utf8');
 const IMPORT_API = fs.readFileSync(path.join(ROOT, 'api/import/bank-csv.js'), 'utf8');
 ok('lib/bank-parsers.js exports BANK_PARSERS with hapoalim + leumi',
    /export const BANK_PARSERS\s*=\s*\{[\s\S]*hapoalim:\s*parseHapoalimCsv[\s\S]*leumi:\s*parseLeumiCsv[\s\S]*\}/.test(BANK_PARSERS_SRC));
+ok('lib/bank-parsers.js exports BANK_PARSERS.discount (parseDiscountCsv)',
+   /export const BANK_PARSERS\s*=\s*\{[\s\S]*discount:\s*parseDiscountCsv[\s\S]*\}/.test(BANK_PARSERS_SRC) &&
+   /export function parseDiscountCsv\s*\(/.test(BANK_PARSERS_SRC));
+ok('lib/bank-parsers.js exports BANK_PARSERS.mizrahi (parseMizrahiCsv)',
+   /export const BANK_PARSERS\s*=\s*\{[\s\S]*mizrahi:\s*parseMizrahiCsv[\s\S]*\}/.test(BANK_PARSERS_SRC) &&
+   /export function parseMizrahiCsv\s*\(/.test(BANK_PARSERS_SRC));
+// Hint future contributors: when you add a 5th bank, add a fixture in the
+// test file too -- otherwise this assertion catches the omission.
+ok('tests/test_bank_parsers.js has fixtures for discount + mizrahi',
+   /parseDiscountCsv/.test(BANK_TESTS_SRC) && /parseMizrahiCsv/.test(BANK_TESTS_SRC));
 ok('api/import/bank-csv.js requires auth (requireAuth wrap)',
    /requireAuth\(handlerImpl\)/.test(IMPORT_API) && /from '\.\.\/\.\.\/lib\/auth\.js'/.test(IMPORT_API));
 ok('api/import/bank-csv.js has per-user rate limit (5/hour)',

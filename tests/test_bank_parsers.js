@@ -3,17 +3,21 @@
  *
  *   node tests/test_bank_parsers.js
  *
- * Hand-crafted Israeli bank statement fixtures (Hapoalim + Leumi). The exact
- * column layouts of Israeli bank exports vary between formats and over time;
- * the fixtures here are realistic SAMPLES based on the published header
- * names and common signed-amount / debit-credit conventions. The parser is
- * header-DRIVEN, so the same parser works as long as the headers are in the
- * known alias list (DATE_ALIASES, AMOUNT_ALIASES, DEBIT_ALIASES, etc.).
+ * Hand-crafted Israeli bank statement fixtures (Hapoalim, Leumi, Discount,
+ * Mizrahi-Tefahot). The exact column layouts of Israeli bank exports vary
+ * between formats and over time; the fixtures here are realistic SAMPLES
+ * based on the published header names and common signed-amount /
+ * debit-credit conventions. The parser is header-DRIVEN, so the same parser
+ * works as long as the headers are in the known alias list (DATE_ALIASES,
+ * AMOUNT_ALIASES, DEBIT_ALIASES, etc.).
  *
  * When Steven has a real export, paste it in as another fixture below.
  */
 
-import { parseHapoalimCsv, parseLeumiCsv, BANK_PARSERS, __test } from '../lib/bank-parsers.js';
+import {
+  parseHapoalimCsv, parseLeumiCsv, parseDiscountCsv, parseMizrahiCsv,
+  BANK_PARSERS, __test,
+} from '../lib/bank-parsers.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -97,6 +101,68 @@ ok('Leumi: row 4 = income (refund)', leuResult.rows[3].isIncome === true && leuR
 ok('Leumi: dates ISO',               leuResult.rows.every(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date)));
 ok('Leumi: descriptions captured',   leuResult.rows[1].description.includes('רמי לוי'));
 
+console.log('\n== 5b. Discount sample (5 rows, "סכום חיוב"/"סכום זיכוי", DD/MM/YYYY) ==');
+// Realistic Discount export. Columns:
+// תאריך | תאריך ערך | תיאור הפעולה | אסמכתא | סכום חיוב | סכום זיכוי | יתרה
+// Note: includes leading RTL mark + bidi marks around amounts (real exports
+// from Discount's web portal sprinkle these). The parser strips them.
+const DISCOUNT_CSV = [
+  'תאריך,תאריך ערך,תיאור הפעולה,אסמכתא,סכום חיוב,סכום זיכוי,יתרה',
+  '02/04/2026,02/04/2026,העברה בנקאית נכנסת,D101,,8200.00,8200.00',
+  '04/04/2026,04/04/2026,‏סופר רמי לוי הוד השרון‏,D102,312.40,,7887.60',
+  '06/04/2026,06/04/2026,חברת חשמל הוראת קבע,D103,540.00,,7347.60',
+  '11/04/2026,11/04/2026,החזר ביטוח לאומי,D104,,180.00,7527.60',
+  '20/04/2026,20/04/2026,חניון אזריאלי,D105,42.00,,7485.60',
+  'יתרת סגירה,,,,,,7485.60',
+].join('\n');
+
+const discResult = parseDiscountCsv(DISCOUNT_CSV);
+ok('Discount: parsed 5 rows',             discResult.rows.length === 5);
+ok('Discount: 0 unexpected skips',        discResult.skipped.length === 0);
+ok('Discount: row 1 = income (transfer)', discResult.rows[0].isIncome === true && discResult.rows[0].amount === 8200);
+ok('Discount: row 2 = expense (super)',   discResult.rows[1].isIncome === false && discResult.rows[1].amount === 312.40);
+ok('Discount: row 4 = income (refund)',   discResult.rows[3].isIncome === true && discResult.rows[3].amount === 180);
+ok('Discount: dates ISO',                 discResult.rows.every(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date)));
+ok('Discount: descriptions captured',     discResult.rows[1].description.includes('רמי לוי'));
+ok('Discount: no bidi marks in desc',     !/[‎‏‪-‮]/.test(discResult.rows.map(r => r.description).join('|')));
+
+console.log('\n== 5c. Mizrahi sample (5 rows, BOM, summary row, "סכום חובה"/"סכום זכות") ==');
+// Realistic Mizrahi-Tefahot export. Columns:
+// תאריך הפעולה | תאריך ערך | אסמכתא/מספר | תיאור הפעולה | סכום חובה | סכום זכות | יתרת חשבון
+// Starts with UTF-8 BOM and ends with a summary row -- both common in
+// Mizrahi's web export. Q-COMPANY is an intentionally generic merchant name.
+const MIZRAHI_CSV = '﻿' + [
+  'תאריך הפעולה,תאריך ערך,אסמכתא/מספר,תיאור הפעולה,סכום חובה,סכום זכות,יתרת חשבון',
+  '03/05/2026,03/05/2026,M2001,העברה ממעסיק Q-COMPANY,,14250.00,14250.00',
+  '05/05/2026,05/05/2026,M2002,יוחננוף הרצליה,387.20,,13862.80',
+  '07/05/2026,07/05/2026,M2003,פז דלק סניף 412,290.00,,13572.80',
+  '12/05/2026,12/05/2026,M2004,ביטוח לאומי החזר,,225.00,13797.80',
+  '18/05/2026,18/05/2026,M2005,ועד בית מאי,180.00,,13617.80',
+  'סך הכל,,,,1077.20,14475.00,13617.80',
+].join('\n');
+
+const mizResult = parseMizrahiCsv(MIZRAHI_CSV);
+ok('Mizrahi: parsed 5 rows',            mizResult.rows.length === 5);
+ok('Mizrahi: 0 unexpected skips',       mizResult.skipped.length === 0);
+ok('Mizrahi: row 1 = income (salary)',  mizResult.rows[0].isIncome === true && mizResult.rows[0].amount === 14250);
+ok('Mizrahi: row 2 = expense (super)',  mizResult.rows[1].isIncome === false && mizResult.rows[1].amount === 387.20);
+ok('Mizrahi: row 4 = income (refund)',  mizResult.rows[3].isIncome === true && mizResult.rows[3].amount === 225);
+ok('Mizrahi: dates ISO',                mizResult.rows.every(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date)));
+ok('Mizrahi: descriptions captured',    mizResult.rows[1].description.includes('יוחננוף'));
+ok('Mizrahi: BOM stripped',             mizResult.rows[0].description.charCodeAt(0) !== 0xFEFF);
+ok('Mizrahi: summary row silently ignored', mizResult.skipped.length === 0);
+
+console.log('\n== 5d. Cross-bank robustness (garbage in -> header_not_found) ==');
+// Feed obvious garbage to each new parser -- they MUST return header_not_found
+// in the skipped[] array instead of throwing or returning random rows. This
+// is the same contract the Hapoalim/Leumi parsers already honor.
+ok('Discount: garbage input -> header_not_found',
+   parseDiscountCsv('hello world\nfoo bar\nbaz qux').skipped.some(s => s.reason === 'header_not_found'));
+ok('Mizrahi: garbage input -> header_not_found',
+   parseMizrahiCsv('hello world\nfoo bar\nbaz qux').skipped.some(s => s.reason === 'header_not_found'));
+ok('Discount: empty input -> no rows, no throw', parseDiscountCsv('').rows.length === 0);
+ok('Mizrahi: empty input -> no rows, no throw',  parseMizrahiCsv('').rows.length === 0);
+
 console.log('\n== 6. Encoding fallback (windows-1255 buffer) ==');
 // Build a tiny windows-1255 encoded buffer of one header + one row, then
 // confirm decodeIfBuffer can read it. (Hebrew "א" = 0xE0 in 1255.)
@@ -112,6 +178,8 @@ ok('UTF-8 no BOM decoded',           __test.decodeIfBuffer(utf8NoBom).includes('
 console.log('\n== 7. BANK_PARSERS registry ==');
 ok('BANK_PARSERS.hapoalim is parseHapoalimCsv', BANK_PARSERS.hapoalim === parseHapoalimCsv);
 ok('BANK_PARSERS.leumi is parseLeumiCsv',       BANK_PARSERS.leumi === parseLeumiCsv);
+ok('BANK_PARSERS.discount is parseDiscountCsv', BANK_PARSERS.discount === parseDiscountCsv);
+ok('BANK_PARSERS.mizrahi is parseMizrahiCsv',   BANK_PARSERS.mizrahi === parseMizrahiCsv);
 
 console.log('\n== 8. Robustness ==');
 ok('empty input -> empty rows, no throw', parseHapoalimCsv('').rows.length === 0);

@@ -3043,6 +3043,121 @@ function generatePseudoSeries(target, n, intLike) {
 })();
 </script>
 
+<script>
+/* PWA install CTA. Browser fires `beforeinstallprompt` only on installable
+   devices (Chrome/Edge desktop, Chrome Android, Edge mobile). On iOS Safari
+   the prompt doesn't exist; fallback to a manual "Add to Home Screen" hint
+   shown only if the user has visited /dashboard at least 3x. Banner is
+   dismissible and remembers dismissal for 30 days. */
+(function () {
+  if (window.__kflInstallBound) return;
+  window.__kflInstallBound = true;
+
+  var STORAGE_DISMISS = 'kfl_install_dismissed_until';
+  var STORAGE_VISITS = 'kfl_dashboard_visits';
+
+  // Track dashboard visits for the iOS fallback heuristic.
+  try {
+    var visits = parseInt(localStorage.getItem(STORAGE_VISITS) || '0', 10) + 1;
+    localStorage.setItem(STORAGE_VISITS, String(visits));
+  } catch (_e) {}
+
+  function dismissed() {
+    try {
+      var until = parseInt(localStorage.getItem(STORAGE_DISMISS) || '0', 10);
+      return until && Date.now() < until;
+    } catch (_e) { return false; }
+  }
+
+  function isStandalone() {
+    return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+  }
+
+  function makeBanner(opts) {
+    if (document.getElementById('kfl-install-banner')) return;
+    var bar = document.createElement('div');
+    bar.id = 'kfl-install-banner';
+    bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#16a34a;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:9999;font:600 14px/1.4 Heebo,system-ui,sans-serif;box-shadow:0 -4px 16px rgba(0,0,0,0.2)';
+    bar.dir = 'rtl';
+    bar.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<div style="font-size:22px">📱</div>' +
+        '<div>' +
+          '<div style="font-weight:800">' + (opts.title || 'הוסף את כספ\'לה למסך הבית') + '</div>' +
+          '<div style="font-size:12px;opacity:0.92">' + (opts.subtitle || 'גישה מהירה בלחיצה אחת — בלי דפדפן.') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-shrink:0">' +
+        '<button id="kfl-install-go" style="background:#fff;color:#16a34a;border:none;padding:9px 18px;border-radius:10px;font-weight:800;cursor:pointer;font:inherit">' + (opts.action || 'התקן') + '</button>' +
+        '<button id="kfl-install-dismiss" style="background:transparent;color:#fff;border:1px solid #fff;padding:9px 14px;border-radius:10px;cursor:pointer;font:inherit;opacity:0.85">לא עכשיו</button>' +
+      '</div>';
+    document.body.appendChild(bar);
+
+    document.getElementById('kfl-install-dismiss').addEventListener('click', function () {
+      try { localStorage.setItem(STORAGE_DISMISS, String(Date.now() + 30 * 24 * 3600 * 1000)); } catch (_e) {}
+      bar.remove();
+    });
+
+    document.getElementById('kfl-install-go').addEventListener('click', function () {
+      if (opts.onAction) opts.onAction();
+    });
+  }
+
+  if (isStandalone() || dismissed()) return;
+
+  // Native install path (Chrome/Edge/Samsung).
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferred = e;
+    makeBanner({
+      onAction: function () {
+        if (!deferred) return;
+        deferred.prompt();
+        deferred.userChoice.then(function () {
+          var bar = document.getElementById('kfl-install-banner');
+          if (bar) bar.remove();
+          deferred = null;
+        });
+      },
+    });
+  });
+
+  // iOS Safari fallback: no prompt event, but on the 3rd+ dashboard visit
+  // show a banner that tells the user to use "Share -> Add to Home Screen".
+  setTimeout(function () {
+    if (deferred || dismissed() || isStandalone()) return;
+    var ua = navigator.userAgent || '';
+    var isIos = /iPhone|iPad|iPod/.test(ua) && !/CriOS|FxiOS/.test(ua);
+    var visits = 0;
+    try { visits = parseInt(localStorage.getItem(STORAGE_VISITS) || '0', 10); } catch (_e) {}
+    if (!isIos || visits < 3) return;
+    makeBanner({
+      title: 'הוסף את כספ\'לה למסך הבית',
+      subtitle: 'לחץ על כפתור השיתוף ↑ ובחר "הוסף למסך הבית"',
+      action: 'הבנתי',
+      onAction: function () {
+        try { localStorage.setItem(STORAGE_DISMISS, String(Date.now() + 30 * 24 * 3600 * 1000)); } catch (_e) {}
+        var bar = document.getElementById('kfl-install-banner');
+        if (bar) bar.remove();
+      },
+    });
+  }, 3000);
+
+  // Fire a funnel event on actual install -- success metric for Steven.
+  window.addEventListener('appinstalled', function () {
+    try {
+      fetch('/api/log/funnel-event', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'pricing_viewed', meta: { source: 'pwa_installed' } }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (_e) {}
+  });
+})();
+</script>
 <script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
 if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
 <script>
