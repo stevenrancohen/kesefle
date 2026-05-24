@@ -731,28 +731,21 @@
               </div>
             </div>
           </div>
-          <!-- live input bar — typing here works! -->
-          <form class="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-inner" onsubmit="return kfHeroSend(event)">
-            <input
-              type="text"
-              id="hero-input"
-              dir="rtl"
-              placeholder="נסי: 42 קפה"
-              aria-label="נסה הודעה לבוט — למשל 42 קפה"
-              autocomplete="off"
-              class="flex-1 rounded-full bg-ink-100 px-3 py-1.5 text-[13px] text-ink-900 placeholder-ink-400 focus:bg-white focus:ring-2 focus:ring-brand-300 focus:outline-none"
-            />
-            <button type="submit" aria-label="שלח הודעה" class="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-white transition hover:bg-brand-600 active:scale-95">
+          <!-- Hero mockup chat is decorative-only — no interactive input/chips.
+               The full auto-running interactive demo lives in #demo section
+               below per Steven's brief 2026-05-24: "no clicks, just plays".
+               Decorative typing hint preserves the WhatsApp look. -->
+          <div class="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-inner opacity-90">
+            <div class="flex-1 rounded-full bg-ink-100 px-3 py-1.5 text-[13px] text-ink-400 placeholder-ink-400">הודעה…</div>
+            <div class="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-white">
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
-            </button>
-          </form>
-          <!-- quick-try chips: click a chip → input fills + submits, lets visitors test without typing -->
-          <div class="mt-2 flex flex-wrap items-center gap-1.5 px-1 pb-1" id="kf-hero-chips">
-            <span class="text-[10px] font-semibold text-ink-500">⚡ נסי:</span>
-            <button type="button" onclick="kfHeroTry('42 קפה')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">☕ 42 קפה</button>
-            <button type="button" onclick="kfHeroTry('245 סופר')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">🛒 245 סופר</button>
-            <button type="button" onclick="kfHeroTry('60 אובר')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">🚕 60 אובר</button>
-            <button type="button" onclick="kfHeroTry('8500 משכורת')" class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-700 shadow-sm transition hover:bg-brand-50 hover:text-brand-700">💵 8500 משכורת</button>
+            </div>
+          </div>
+          <!-- Hint chips point users to scroll down for the live demo, not type here. -->
+          <div class="mt-2 flex flex-wrap items-center gap-1.5 px-1 pb-1">
+            <a href="#demo" class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20">
+              ▶ ראו את הבוט עובד בלייב
+            </a>
           </div>
         </div>
       </div>
