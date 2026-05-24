@@ -215,6 +215,21 @@ async function handlerImpl(req, res) {
   // plan tier, while leaving the bot's existing call pattern intact (the bot
   // sends the secret -- update bot to add the header on next deploy).
   if (req.method === 'GET') {
+    // Session-based lookup: ?check=1 returns whether the CURRENT authed user
+    // has any phone linked. Lets /welcome bypass the phone-entry step if the
+    // user already linked on another tab/session.
+    if (req.query.check === '1') {
+      const sessSub = getUserId(req);
+      if (!sessSub) return res.status(200).json({ ok: true, linked: false });
+      try {
+        const userRec = await kvGet(`user:${sessSub}`);
+        const phoneFromUser = userRec?.linkedPhone || userRec?.phone || null;
+        return res.status(200).json({ ok: true, linked: !!phoneFromUser, phone: phoneFromUser || null });
+      } catch (_e) {
+        return res.status(200).json({ ok: true, linked: false });
+      }
+    }
+
     const phone = normalizeE164(req.query.phone);
     if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
 

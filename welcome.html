@@ -143,31 +143,205 @@
     </div>
   </section>
 
-  <!-- ONE-CLICK first message (autonomous primary action) -->
+  <!-- ONE-CLICK phone link flow (3 sub-states: form → code → success) -->
   <section class="mt-10 max-w-3xl mx-auto">
     <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 p-5 text-white shadow-2xl sm:p-7 md:p-9">
       <div class="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
       <div class="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-accent-300/20 blur-2xl"></div>
       <div class="relative">
-        <div class="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold backdrop-blur">
-          <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span></span>
-          הצעד הבא · 10 שניות
+
+        <!-- SUB-STATE A: phone input (initial view) -->
+        <div id="kfl-link-phase-A">
+          <div class="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold backdrop-blur">
+            <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span></span>
+            הצעד הבא · 30 שניות
+          </div>
+          <h2 class="mt-3 text-2xl font-black md:text-3xl">חבר/י את המספר שלך</h2>
+          <p class="mt-2 text-sm opacity-90 md:text-base">הקלד/י את מספר הוואטסאפ שלך — נשלח לך קוד בן 6 ספרות שתשלח/י לבוט.</p>
+          <div class="mt-5 flex flex-col sm:flex-row gap-3">
+            <input id="kfl-link-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="054-1234567"
+              class="flex-1 rounded-2xl border-2 border-white/30 bg-white/20 backdrop-blur px-5 py-3.5 text-base font-bold placeholder-white/60 focus:bg-white/30 focus:border-white outline-none text-white" dir="ltr" />
+            <button onclick="kflLinkGetCode()" id="kfl-link-go" class="rounded-2xl bg-white px-7 py-3.5 text-base font-black text-brand-700 shadow-lg hover:shadow-2xl hover:-translate-y-0.5 transition disabled:opacity-50 disabled:cursor-not-allowed">
+              צור/י קוד →
+            </button>
+          </div>
+          <p id="kfl-link-err" class="mt-3 text-sm font-bold text-yellow-200 min-h-[20px]"></p>
         </div>
-        <h2 class="mt-3 text-2xl font-black md:text-3xl">הודעה אחת — וסיימת.</h2>
-        <p class="mt-2 text-sm opacity-90 md:text-base">לחץ למטה — נשלח "שלום" לבוט. הוא יחזיר הסבר קצר וכמה שאלות התאמה אישית, וזהו — אתם מחוברים.</p>
-        <a href="https://wa.me/15556408123?text=%D7%A9%D7%9C%D7%95%D7%9D%21" target="_blank" rel="noopener" onclick="onFirstClick();" class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-brand-700 shadow-lg hover:shadow-2xl hover:-translate-y-0.5 transition">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
-          פתח וואטסאפ ושלח "שלום"
-        </a>
-        <div class="mt-3 flex flex-wrap items-center gap-3 text-[11px] opacity-90">
-          <span>או נסה:</span>
-          <a href="https://wa.me/15556408123?text=42%20%D7%A7%D7%A4%D7%94" target="_blank" onclick="onFirstClick();" rel="noopener" class="rounded-full bg-white/20 inline-flex items-center min-h-[44px] px-3 py-2.5 font-semibold hover:bg-white/30">☕ 42 קפה</a>
-          <a href="https://wa.me/15556408123?text=8500%20%D7%9E%D7%A9%D7%9B%D7%95%D7%A8%D7%AA" target="_blank" onclick="onFirstClick();" rel="noopener" class="rounded-full bg-white/20 inline-flex items-center min-h-[44px] px-3 py-2.5 font-semibold hover:bg-white/30">💵 8500 משכורת</a>
-          <a href="https://wa.me/15556408123?text=60%20%D7%90%D7%95%D7%91%D7%A8" target="_blank" onclick="onFirstClick();" rel="noopener" class="rounded-full bg-white/20 inline-flex items-center min-h-[44px] px-3 py-2.5 font-semibold hover:bg-white/30">🚕 60 אובר</a>
+
+        <!-- SUB-STATE B: code displayed + WhatsApp deeplink -->
+        <div id="kfl-link-phase-B" class="hidden">
+          <p class="text-[11px] font-bold uppercase tracking-widest opacity-80">הקוד שלך</p>
+          <div id="kfl-link-code" class="mt-2 font-mono text-5xl md:text-6xl font-black tracking-[0.3em] text-white" dir="ltr">000000</div>
+          <p class="mt-3 text-sm opacity-90">לחץ/י על הכפתור — וואטסאפ ייפתח עם הקוד מוכן לשליחה.</p>
+          <a id="kfl-link-wa-btn" href="#" target="_blank" rel="noopener" onclick="kflLinkOnSend(event)" class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-brand-700 shadow-lg hover:shadow-2xl hover:-translate-y-0.5 transition">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
+            פתח/י וואטסאפ ושלח/י את הקוד
+          </a>
+          <p id="kfl-link-poll-status" class="mt-3 text-xs opacity-80">⌛ מחכים לקוד מוואטסאפ... (תוקף הקוד: <span id="kfl-link-countdown">10</span> דקות)</p>
+          <button onclick="kflLinkRestart()" class="mt-2 text-xs underline opacity-70 hover:opacity-100">לחבר מספר אחר</button>
         </div>
+
+        <!-- SUB-STATE C: success -->
+        <div id="kfl-link-phase-C" class="hidden text-center">
+          <div class="text-5xl">✅</div>
+          <h2 class="mt-3 text-2xl font-black md:text-3xl">המספר חובר!</h2>
+          <p class="mt-2 text-base opacity-90">מעכשיו כל הוצאה שתשלח/י לוואטסאפ תיכנס אוטומטית לגיליון שלך.</p>
+          <a href="/dashboard" class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-black text-brand-700 shadow-lg hover:shadow-2xl transition">
+            לדשבורד שלי →
+          </a>
+        </div>
+
       </div>
     </div>
   </section>
+
+  <script>
+  (function () {
+    var BOT_NUMBER = '15556408123'; // see /api/config for runtime override
+    var pollTimer = null;
+    var countdownTimer = null;
+    var linkedAlreadyChecked = false;
+
+    function normalizePhone(input) {
+      var s = String(input || '').replace(/\D+/g, '');
+      if (!s) return null;
+      // 0-prefix Israeli number -> add country code
+      if (s.startsWith('0') && s.length === 10) s = '972' + s.slice(1);
+      if (s.length < 9 || s.length > 15) return null;
+      return s;
+    }
+
+    function show(phase) {
+      ['A', 'B', 'C'].forEach(function (p) {
+        var el = document.getElementById('kfl-link-phase-' + p);
+        if (el) el.classList.toggle('hidden', p !== phase);
+      });
+    }
+
+    function showError(msg) {
+      var err = document.getElementById('kfl-link-err');
+      if (err) err.textContent = '⚠️ ' + msg;
+    }
+
+    window.kflLinkGetCode = async function () {
+      var input = document.getElementById('kfl-link-phone');
+      var btn = document.getElementById('kfl-link-go');
+      var phone = normalizePhone(input.value);
+      if (!phone) {
+        showError('נא להזין מספר תקין (לדוגמה: 0541234567)');
+        return;
+      }
+      btn.disabled = true; btn.textContent = '...יוצרת קוד';
+      showError('');
+      try {
+        var r = await fetch('/api/whatsapp/link', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phone }),
+        });
+        var j = await r.json().catch(function () { return { ok: false }; });
+        btn.disabled = false; btn.textContent = 'צור/י קוד →';
+        if (!j.ok) {
+          if (/session_expired|not_signed_in|invalid/i.test(j.error || '')) {
+            showError('ההתחברות פגה. הולך/ת לעמוד ההתחברות...');
+            setTimeout(function () { location.href = '/account'; }, 1500);
+            return;
+          }
+          if (/rate_limit/i.test(j.error || '')) {
+            showError('יותר מדי ניסיונות. המתן/י דקה.');
+            return;
+          }
+          if (/already_linked/i.test(j.error || '')) {
+            showError('המספר הזה כבר מחובר לחשבון אחר.');
+            return;
+          }
+          showError(j.error || 'שגיאה ביצירת קוד');
+          return;
+        }
+        if (j.alreadyLinked) {
+          show('C');
+          return;
+        }
+        // Display the code + start polling
+        var codeEl = document.getElementById('kfl-link-code');
+        var codeBtnEl = document.getElementById('kfl-link-wa-btn');
+        codeEl.textContent = j.code;
+        var msg = encodeURIComponent('קוד ' + j.code);
+        codeBtnEl.href = 'https://wa.me/' + BOT_NUMBER + '?text=' + msg;
+        show('B');
+
+        // Countdown
+        var secs = Number(j.expiresIn || 600);
+        var cd = document.getElementById('kfl-link-countdown');
+        if (countdownTimer) clearInterval(countdownTimer);
+        function tick() {
+          var m = Math.floor(secs / 60);
+          cd.textContent = m;
+          if (secs <= 0) { clearInterval(countdownTimer); kflLinkRestart(); }
+          secs--;
+        }
+        tick();
+        countdownTimer = setInterval(tick, 60000);
+
+        // Poll for completion every 4s.
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(function () {
+          fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone), { credentials: 'include' })
+            .then(function (rr) { return rr.json(); })
+            .then(function (jj) {
+              if (jj && jj.ok && jj.linked) {
+                clearInterval(pollTimer); clearInterval(countdownTimer);
+                show('C');
+              }
+            }).catch(function () {});
+        }, 4000);
+      } catch (e) {
+        btn.disabled = false; btn.textContent = 'צור/י קוד →';
+        showError('שגיאת רשת: ' + (e.message || e));
+      }
+    };
+
+    window.kflLinkOnSend = function (e) {
+      // Track that the user clicked "send to WhatsApp" -- helps signal that
+      // we should keep polling. No data sent.
+      try {
+        fetch('/api/log/funnel-event', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'phone_link_started' }),
+          keepalive: true,
+        }).catch(function () {});
+      } catch (_e) {}
+    };
+
+    window.kflLinkRestart = function () {
+      if (pollTimer) clearInterval(pollTimer);
+      if (countdownTimer) clearInterval(countdownTimer);
+      pollTimer = null; countdownTimer = null;
+      show('A');
+      var input = document.getElementById('kfl-link-phone');
+      if (input) { input.value = ''; input.focus(); }
+    };
+
+    // If user comes back to /welcome after already linking on another tab,
+    // jump straight to success.
+    try {
+      if (localStorage.getItem('kesefle_whatsapp_linked') === '1') {
+        show('C');
+      } else {
+        // Try to detect existing link via session.
+        fetch('/api/whatsapp/link?check=1', { credentials: 'include' })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j && j.ok && j.linked) {
+              try { localStorage.setItem('kesefle_whatsapp_linked', '1'); } catch (_e) {}
+              show('C');
+            }
+          }).catch(function () {});
+      }
+    } catch (_e) {}
+  })();
+  </script>
 
   <!-- First projection widget — illustrative numbers for brand new users -->
   <section class="mt-12 max-w-3xl mx-auto">
