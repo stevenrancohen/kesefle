@@ -46,7 +46,7 @@ function extractFn(src, name) {
 
 // ── 1. Existing unit suites ─────────────────────────────────────────────────
 console.log('\n══ 1. Unit suites (isolation + parser) ══');
-for (const f of ['bot/test_isolation.js', 'bot/test_parser.js', 'bot/test_classify.js', 'tests/golden_set.js', 'tests/recurring_detect.js']) {
+for (const f of ['bot/test_isolation.js', 'bot/test_parser.js', 'bot/test_classify.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js']) {
   try { execFileSync('node', [path.join(ROOT, f)], { stdio: 'pipe' }); ok(f + ' passed', true); }
   catch (e) { ok(f + ' passed', false); }
 }
@@ -235,6 +235,33 @@ ok('account.html sign-in uses full-page redirect OAuth (PKCE → google-exchange
    /code_challenge_method/.test(ACCOUNT_HTML) &&
    /\/api\/auth\/google-exchange/.test(ACCOUNT_HTML) &&
    /kesefleHandleOAuthReturn/.test(ACCOUNT_HTML));
+
+// ── 5f. Bank CSV importer (Hapoalim / Leumi statement upload) ──────────────
+// "Upload your bank statement" is the killer-feature parity with RiseUp. The
+// parser MUST export BANK_PARSERS with both banks, the import endpoint MUST
+// require auth + a per-user rate limit, and the parser fixture MUST exist so
+// future PRs that touch the parser get caught by the same node tests/...
+// harness. Privacy: we also assert the handler does NOT log description /
+// amount text from the user's statement (only counts).
+console.log('\n══ 5f. Bank CSV importer ══');
+const BANK_PARSERS_SRC = fs.readFileSync(path.join(ROOT, 'lib/bank-parsers.js'), 'utf8');
+const IMPORT_API = fs.readFileSync(path.join(ROOT, 'api/import/bank-csv.js'), 'utf8');
+ok('lib/bank-parsers.js exports BANK_PARSERS with hapoalim + leumi',
+   /export const BANK_PARSERS\s*=\s*\{[\s\S]*hapoalim:\s*parseHapoalimCsv[\s\S]*leumi:\s*parseLeumiCsv[\s\S]*\}/.test(BANK_PARSERS_SRC));
+ok('api/import/bank-csv.js requires auth (requireAuth wrap)',
+   /requireAuth\(handlerImpl\)/.test(IMPORT_API) && /from '\.\.\/\.\.\/lib\/auth\.js'/.test(IMPORT_API));
+ok('api/import/bank-csv.js has per-user rate limit (5/hour)',
+   /rateLimitId\(userSub,\s*\{\s*key:\s*'import_bank_csv'[\s\S]*limit:\s*5[\s\S]*windowSec:\s*3600/.test(IMPORT_API));
+ok('bank parser test fixture exists (tests/test_bank_parsers.js)',
+   fs.existsSync(path.join(ROOT, 'tests/test_bank_parsers.js')));
+ok('bank-csv handler does NOT log raw description / amount',
+   !/log\.[a-z]+\(.*description/.test(IMPORT_API) &&
+   !/log\.[a-z]+\(.*amount(?!Count)/.test(IMPORT_API));
+ok('bank-csv handler dedupes via KV import:hashes:{userSub} set',
+   /import:hashes:'\s*\+\s*userSub|setKey\s*=\s*'import:hashes:'/.test(IMPORT_API) &&
+   /kvSmismember|sismember/.test(IMPORT_API));
+// The functional end-to-end parser smoke is covered by tests/test_bank_parsers.js
+// (added to the unit-suite runner in section 1 above).
 
 // ── 5g. VAT invoice (חשבונית מס/קבלה via Green Invoice) ─────────────────────
 // Israeli law REQUIRES a tax invoice per charge to a customer. The lib must
