@@ -320,6 +320,246 @@
     </div>
   </section>
 
+  <!-- ============================================================
+       ANALYTICS BLOCK (Financial Health, Cash Flow, Trends, etc.)
+       Hidden until live data arrives; populated by kefleAnalytics().
+       ============================================================ -->
+  <section id="analytics-block" class="mb-8 hidden">
+    <div class="mb-4 flex items-end justify-between gap-3">
+      <div>
+        <h2 class="text-2xl font-black tracking-tight md:text-3xl">ניתוחים פיננסיים</h2>
+        <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">תובנות, מגמות והזדמנויות חיסכון — אוטומטית מהנתונים שלך.</p>
+      </div>
+    </div>
+
+    <!-- Row 1: Health Score (wide) + Cash Flow -->
+    <div class="grid gap-4 lg:grid-cols-3">
+
+      <!-- Financial Health Score -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft lg:col-span-2 dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מדד בריאות פיננסי</div>
+            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">חיסכון · גיוון קטגוריות · יציבות הוצאות</div>
+          </div>
+          <div id="health-badge" class="hidden rounded-full px-3 py-1 text-xs font-bold">—</div>
+        </div>
+
+        <div class="mt-4 flex items-center gap-6 sm:gap-8">
+          <!-- Score gauge -->
+          <div class="relative h-32 w-32 flex-shrink-0 sm:h-36 sm:w-36">
+            <svg id="health-gauge" viewBox="0 0 100 100" class="h-full w-full -rotate-90" aria-hidden="true">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="9" class="text-ink-700/60 dark:text-ink-700/60"/>
+              <circle id="health-gauge-arc" cx="50" cy="50" r="42" fill="none" stroke="#22c55e" stroke-width="9" stroke-linecap="round"
+                      stroke-dasharray="0 263.9" style="transition:stroke-dasharray .9s cubic-bezier(.22,.61,.36,1), stroke .4s ease;"/>
+            </svg>
+            <div class="absolute inset-0 grid place-items-center text-center">
+              <div>
+                <div class="num text-4xl font-black" id="health-score">—</div>
+                <div class="text-[10px] font-bold uppercase tracking-wide text-ink-400 dark:text-ink-500">מתוך 100</div>
+              </div>
+            </div>
+          </div>
+          <!-- Sub-scores -->
+          <div class="min-w-0 flex-1 space-y-2.5">
+            <div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-ink-300 dark:text-ink-300">שיעור חיסכון</span>
+                <span class="num font-bold" id="health-savings-pct">—</span>
+              </div>
+              <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700/60">
+                <div id="health-savings-bar" class="h-full bg-brand-500 transition-all duration-700" style="width:0%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-ink-300 dark:text-ink-300">גיוון קטגוריות</span>
+                <span class="num font-bold" id="health-diversity-pct">—</span>
+              </div>
+              <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700/60">
+                <div id="health-diversity-bar" class="h-full bg-accent-500 transition-all duration-700" style="width:0%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-ink-300 dark:text-ink-300">יציבות הוצאות</span>
+                <span class="num font-bold" id="health-stability-pct">—</span>
+              </div>
+              <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700/60">
+                <div id="health-stability-bar" class="h-full bg-amber-500 transition-all duration-700" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="mt-5 border-t border-ink-700/60 pt-4">
+          <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מה לשפר?</div>
+          <ul id="health-tips" class="mt-2 space-y-1.5 text-sm text-ink-200 dark:text-ink-200">
+            <li class="text-ink-400">נחשב על סמך הנתונים שלך…</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Cash Flow card -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">תזרים מזומנים החודש</div>
+        <div class="mt-3 space-y-3">
+          <div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-brand-400">הכנסות</span>
+              <span class="num font-bold text-brand-400" id="cf-income">₪0</span>
+            </div>
+            <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-ink-700/60">
+              <div id="cf-income-bar" class="h-full rounded-full bg-brand-500 transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-red-400">הוצאות</span>
+              <span class="num font-bold text-red-400" id="cf-expenses">₪0</span>
+            </div>
+            <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-ink-700/60">
+              <div id="cf-expenses-bar" class="h-full rounded-full bg-red-500 transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 rounded-2xl bg-ink-900/60 p-4 text-center">
+          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-400 dark:text-ink-500" id="cf-net-label">יתרה</div>
+          <div class="num mt-1 text-3xl font-black" id="cf-net">₪0</div>
+          <div class="mt-1 text-xs" id="cf-net-detail">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Trend chart + Donut -->
+    <div class="mt-4 grid gap-4 lg:grid-cols-3">
+
+      <!-- Monthly Spending Trend -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft lg:col-span-2 dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מגמת הוצאות (6 חודשים)</div>
+            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">קו אפור: ממוצע חודשי</div>
+          </div>
+          <div class="text-xs">
+            <span class="text-ink-400 dark:text-ink-500">ממוצע:</span>
+            <span class="num font-bold text-ink-200" id="trend-avg">—</span>
+          </div>
+        </div>
+        <div class="mt-4 overflow-hidden">
+          <svg id="trend-chart" viewBox="0 0 600 140" preserveAspectRatio="none" class="h-32 w-full" aria-label="גרף מגמת הוצאות 6 חודשים אחרונים">
+            <!-- gridlines + polyline injected by JS -->
+          </svg>
+        </div>
+        <div id="trend-labels" class="mt-2 flex justify-between text-[10px] font-bold text-ink-400 dark:text-ink-500">
+          <!-- month labels injected by JS -->
+        </div>
+      </div>
+
+      <!-- New analytical category donut -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">פילוח קטגוריות</div>
+          <span class="text-[10px] font-bold text-ink-400 dark:text-ink-500">החודש</span>
+        </div>
+        <div class="mt-4 flex items-center justify-center">
+          <div class="relative h-40 w-40">
+            <svg id="ana-donut" viewBox="0 0 100 100" class="h-full w-full -rotate-90" aria-hidden="true">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="10" class="text-ink-700/60"/>
+              <!-- segments injected by JS -->
+            </svg>
+            <div class="absolute inset-0 grid place-items-center text-center">
+              <div>
+                <div id="ana-donut-hover" class="hidden text-[10px] font-bold text-ink-300"></div>
+                <div class="num text-xl font-black" id="ana-donut-total">₪0</div>
+                <div class="text-[10px] font-bold text-ink-400">סה"כ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul id="ana-donut-legend" class="mt-4 space-y-1.5 text-xs"></ul>
+      </div>
+    </div>
+
+    <!-- Row 3: Recurring + MoM Comparison -->
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+
+      <!-- Recurring subscriptions -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מנויים קבועים</div>
+            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">תשלומים שחוזרים 3+ חודשים</div>
+          </div>
+          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-200">
+            <span class="num" id="rec-count">0</span> מנויים
+          </div>
+        </div>
+        <div class="mt-4 rounded-2xl bg-ink-900/60 p-4 text-center">
+          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-400 dark:text-ink-500">סך מנויים לחודש</div>
+          <div class="num mt-1 text-3xl font-black text-amber-400" id="rec-total">₪0</div>
+        </div>
+        <ul id="rec-list" class="mt-4 space-y-2">
+          <li class="text-xs text-ink-400">סורק…</li>
+        </ul>
+      </div>
+
+      <!-- MoM comparison -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">החודש מול הקודם</div>
+            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">השינוי בקטגוריות המובילות</div>
+          </div>
+          <div id="mom-mover" class="hidden text-[10px] font-bold"></div>
+        </div>
+        <ul id="mom-list" class="mt-4 space-y-2.5">
+          <li class="text-xs text-ink-400">מחשב הפרשים…</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Row 4: Top splurges + Goals -->
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+
+      <!-- Biggest splurges this month -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">10 ההוצאות הכי גדולות</div>
+            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">החודש בלבד</div>
+          </div>
+        </div>
+        <ol id="splurge-list" class="mt-4 space-y-1.5 text-sm">
+          <li class="text-xs text-ink-400">טוען…</li>
+        </ol>
+      </div>
+
+      <!-- Goals placeholder -->
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">יעדי חיסכון</div>
+            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">הגדר יעד וקבל מעקב חודשי</div>
+          </div>
+          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-200">
+            <span class="num" id="goals-count">0</span> פעילים
+          </div>
+        </div>
+        <div class="mt-4 rounded-2xl border border-dashed border-ink-700 bg-ink-900/40 p-6 text-center">
+          <div class="text-4xl">🎯</div>
+          <div class="mt-2 text-sm font-bold text-ink-200">עוד לא הגדרת יעד</div>
+          <p class="mt-1 text-xs text-ink-400">הגדר יעד (חופש, רכב, דירה) וקבל מסלול חודשי לחיסכון.</p>
+          <a href="/tools/savings-goal"
+             class="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
+            הגדר יעד חיסכון
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- re-auth banner (shows when API returns 401) -->
   <section id="reauth-banner" class="mb-6 hidden rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/40">
     <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1564,6 +1804,701 @@ function generatePseudoSeries(target, n, intLike) {
 }
 </script>
 
+<!-- ============================================================
+     ANALYTICS RENDERER
+     Computes 8 analytical features from the same `rows` array
+     fed by /api/sheet/getExpenses. Pure SVG, no external libs.
+     ============================================================ -->
+<script>
+(function kefleAnalyticsModule(){
+  // Number formatting helpers (own copy so this module is self-contained)
+  var ILS = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
+  function moneyShekel(n) { return '₪' + ILS.format(Math.round(Number(n) || 0)); }
+  function safeEl(id){ return document.getElementById(id); }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Hebrew month names (3-letter forms) -- short, no diacritics
+  var HE_MONTHS_SHORT = ['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
+
+  // Color palette aligned with the dashboard theme
+  // (brand-500 green, accent purple, amber, slate, sky, rose, sand)
+  var DONUT_COLORS = ['#22c55e','#a855f7','#f59e0b','#0ea5e9','#ef4444','#14b8a6','#94a3b8'];
+
+  // ---- Bucket helpers ---------------------------------------------------
+  function ym(d){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+  function monthLabel(d){
+    return HE_MONTHS_SHORT[d.getMonth()];
+  }
+  function parseDate(s){
+    if (!s) return null;
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // Normalize a description into a key for recurring detection.
+  // Lowercase, trim, strip digits and punctuation, collapse spaces.
+  function normalizeKey(s){
+    var t = String(s || '').toLowerCase();
+    t = t.replace(/[\d׳״'־–—\.,\\/()\[\]_+*=:;!?"'“”„… \-]/g,' ');
+    t = t.replace(/\s+/g,' ').trim();
+    return t;
+  }
+
+  // ---- 1. Group rows by year-month -------------------------------------
+  function buildMonthlyTotals(rows){
+    var byMonth = Object.create(null);
+    rows.forEach(function(r){
+      var d = parseDate(r.date);
+      if (!d) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return; // expenses only here
+      var k = ym(d);
+      if (!byMonth[k]) byMonth[k] = { total:0, count:0, date:new Date(d.getFullYear(), d.getMonth(), 1) };
+      byMonth[k].total += amt;
+      byMonth[k].count++;
+    });
+    return byMonth;
+  }
+
+  // Returns last N months of expense totals, oldest first
+  function lastNMonths(byMonth, n){
+    var out = [];
+    var now = new Date();
+    for (var i = n - 1; i >= 0; i--) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      var k = ym(d);
+      var entry = byMonth[k] || { total:0, count:0, date:d };
+      out.push({ date:d, total:entry.total, count:entry.count });
+    }
+    return out;
+  }
+
+  // ---- 2. Compute health score -----------------------------------------
+  function computeHealth(rows){
+    var now = new Date();
+    var curIncome = 0, curExpenses = 0;
+    var byCat = Object.create(null);
+    rows.forEach(function(r){
+      var d = parseDate(r.date);
+      if (!d) return;
+      if (d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return;
+      var amt = Number(r.amount) || 0;
+      if (amt < 0) { curIncome += -amt; }
+      else if (amt > 0) {
+        curExpenses += amt;
+        var cat = (r.category || 'אחר').trim() || 'אחר';
+        byCat[cat] = (byCat[cat] || 0) + amt;
+      }
+    });
+
+    // Sub 1: savings rate. If no income data, neutral 50.
+    var savingsRate = 0.5;
+    if (curIncome > 0) {
+      savingsRate = Math.max(0, Math.min(1, (curIncome - curExpenses) / curIncome));
+    }
+    var savingsScore = Math.round(savingsRate * 100);
+
+    // Sub 2: category diversity (1 - HHI). 100 = perfectly even, 0 = one category.
+    var diversityScore = 50;
+    var catVals = Object.values(byCat);
+    if (curExpenses > 0 && catVals.length > 0) {
+      var hhi = 0;
+      for (var i = 0; i < catVals.length; i++) {
+        var share = catVals[i] / curExpenses;
+        hhi += share * share;
+      }
+      // hhi ranges from 1/n (perfectly even) to 1 (single category)
+      // Map to 0..100 where lower hhi -> higher score
+      diversityScore = Math.round((1 - hhi) * 100);
+    }
+
+    // Sub 3: stability = how close this month's expenses are to the trailing avg
+    var byMonth = buildMonthlyTotals(rows);
+    var last6 = lastNMonths(byMonth, 6);
+    var prevTotals = last6.slice(0, 5).map(function(m){ return m.total; }).filter(function(v){ return v > 0; });
+    var stabilityScore = 50;
+    if (prevTotals.length >= 2 && curExpenses > 0) {
+      var avg = prevTotals.reduce(function(a,b){ return a+b; }, 0) / prevTotals.length;
+      var deviation = avg > 0 ? Math.abs(curExpenses - avg) / avg : 0;
+      // 0 deviation = 100, 50%+ deviation = 0
+      stabilityScore = Math.round(Math.max(0, Math.min(1, 1 - deviation / 0.5)) * 100);
+    } else if (Object.keys(byMonth).length === 1) {
+      stabilityScore = 70; // first month -- give a friendly default
+    }
+
+    // Composite: 50% savings, 30% diversity, 20% stability
+    var overall = Math.round(savingsScore * 0.5 + diversityScore * 0.3 + stabilityScore * 0.2);
+
+    // Tips (rule-based, Hebrew)
+    var tips = [];
+    if (curIncome > 0 && savingsRate < 0.1) {
+      tips.push('שיעור החיסכון נמוך מ-10% -- נסה לקבוע יעד של 15% מהמשכורת.');
+    }
+    // Find biggest category and a possible MoM jump
+    var topCat = null, topAmt = 0;
+    Object.keys(byCat).forEach(function(k){ if (byCat[k] > topAmt){ topAmt = byCat[k]; topCat = k; } });
+    if (topCat && curExpenses > 0 && (topAmt / curExpenses) > 0.4) {
+      tips.push((topCat) + ' תופס ' + Math.round(topAmt/curExpenses*100) + '% מההוצאות -- שווה לפזר.');
+    }
+    // MoM in top category
+    if (topCat) {
+      var prevByCat = Object.create(null);
+      var prevTotalCheck = 0;
+      rows.forEach(function(r){
+        var d = parseDate(r.date);
+        if (!d) return;
+        var prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+        var prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        if (d.getFullYear() !== prevYear || d.getMonth() !== prevMonth) return;
+        var amt = Number(r.amount) || 0;
+        if (amt <= 0) return;
+        var c = (r.category || 'אחר').trim() || 'אחר';
+        prevByCat[c] = (prevByCat[c] || 0) + amt;
+        prevTotalCheck += amt;
+      });
+      if (prevByCat[topCat] && prevByCat[topCat] > 0) {
+        var jump = (topAmt - prevByCat[topCat]) / prevByCat[topCat];
+        if (jump > 0.25) {
+          tips.push('הוצאות ' + topCat + ' עלו ב-' + Math.round(jump*100) + '% מהחודש שעבר -- שווה לבדוק.');
+        } else if (jump < -0.15) {
+          tips.push('כל הכבוד! ' + topCat + ' ירד ב-' + Math.round(-jump*100) + '% מהחודש שעבר.');
+        }
+      }
+    }
+    if (last6.length >= 3) {
+      var monthsWithData = last6.filter(function(m){ return m.total > 0; }).length;
+      if (monthsWithData < 3) {
+        tips.push('נסה לתעד הוצאות עוד חודש-חודשיים כדי לקבל ניתוח מדויק יותר.');
+      }
+    }
+    if (!tips.length) tips.push('מעולה -- הכל בטווח בריא. המשך לתעד כל הוצאה בוואטסאפ.');
+
+    return {
+      overall: overall,
+      savings: savingsScore,
+      diversity: diversityScore,
+      stability: stabilityScore,
+      tips: tips.slice(0, 3),
+      curIncome: curIncome,
+      curExpenses: curExpenses,
+      byCat: byCat
+    };
+  }
+
+  function renderHealth(h){
+    var scoreEl = safeEl('health-score');
+    if (scoreEl) scoreEl.textContent = String(h.overall);
+
+    // Gauge arc: full circle = 2*PI*42 = ~263.9
+    var FULL = 263.9;
+    var arc = safeEl('health-gauge-arc');
+    if (arc) {
+      var pct = Math.max(0, Math.min(100, h.overall)) / 100;
+      arc.setAttribute('stroke-dasharray', (FULL * pct).toFixed(1) + ' ' + FULL);
+      var color = h.overall >= 80 ? '#22c55e' : h.overall >= 50 ? '#f59e0b' : '#ef4444';
+      arc.setAttribute('stroke', color);
+    }
+
+    var badge = safeEl('health-badge');
+    if (badge) {
+      badge.classList.remove('hidden');
+      var label, cls;
+      if (h.overall >= 80) { label = 'מצוין'; cls = 'bg-brand-500/15 text-brand-400'; }
+      else if (h.overall >= 50) { label = 'סביר'; cls = 'bg-amber-500/15 text-amber-400'; }
+      else { label = 'דורש שיפור'; cls = 'bg-red-500/15 text-red-400'; }
+      badge.className = 'rounded-full px-3 py-1 text-xs font-bold ' + cls;
+      badge.textContent = label;
+    }
+
+    function setSub(barId, txtId, v){
+      var b = safeEl(barId);
+      var t = safeEl(txtId);
+      if (b) b.style.width = Math.max(0, Math.min(100, v)) + '%';
+      if (t) t.textContent = v + '%';
+    }
+    setSub('health-savings-bar', 'health-savings-pct', h.savings);
+    setSub('health-diversity-bar', 'health-diversity-pct', h.diversity);
+    setSub('health-stability-bar', 'health-stability-pct', h.stability);
+
+    var tipsEl = safeEl('health-tips');
+    if (tipsEl) {
+      tipsEl.innerHTML = '';
+      h.tips.forEach(function(t){
+        var li = document.createElement('li');
+        li.className = 'flex items-start gap-2';
+        var dot = document.createElement('span');
+        dot.className = 'mt-1.5 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-400';
+        var span = document.createElement('span');
+        span.textContent = t;
+        li.appendChild(dot);
+        li.appendChild(span);
+        tipsEl.appendChild(li);
+      });
+    }
+  }
+
+  // ---- 3. Cash flow card ------------------------------------------------
+  function renderCashflow(h){
+    var maxVal = Math.max(h.curIncome, h.curExpenses, 1);
+    var incEl = safeEl('cf-income');
+    var expEl = safeEl('cf-expenses');
+    var incBar = safeEl('cf-income-bar');
+    var expBar = safeEl('cf-expenses-bar');
+    if (incEl) incEl.textContent = moneyShekel(h.curIncome);
+    if (expEl) expEl.textContent = moneyShekel(h.curExpenses);
+    if (incBar) incBar.style.width = (h.curIncome / maxVal * 100).toFixed(1) + '%';
+    if (expBar) expBar.style.width = (h.curExpenses / maxVal * 100).toFixed(1) + '%';
+
+    var net = h.curIncome - h.curExpenses;
+    var netEl = safeEl('cf-net');
+    var labelEl = safeEl('cf-net-label');
+    var detailEl = safeEl('cf-net-detail');
+    if (netEl) {
+      netEl.textContent = (net >= 0 ? '+' : '-') + moneyShekel(Math.abs(net));
+      netEl.className = 'num mt-1 text-3xl font-black ' + (net >= 0 ? 'text-brand-400' : 'text-red-400');
+    }
+    if (labelEl) labelEl.textContent = h.curIncome > 0 ? (net >= 0 ? 'יתרה חיובית' : 'גירעון') : 'הוצאות נטו';
+    if (detailEl) {
+      if (h.curIncome <= 0) {
+        detailEl.textContent = 'אין הכנסות מתועדות החודש';
+        detailEl.className = 'mt-1 text-xs text-ink-500';
+      } else if (net >= 0) {
+        var rate = Math.round(net / h.curIncome * 100);
+        detailEl.textContent = 'חוסך ' + rate + '% מההכנסות';
+        detailEl.className = 'mt-1 text-xs text-brand-400';
+      } else {
+        detailEl.textContent = 'מוציא ' + Math.round(h.curExpenses/h.curIncome*100) + '% מההכנסות';
+        detailEl.className = 'mt-1 text-xs text-red-400';
+      }
+    }
+  }
+
+  // ---- 4. Monthly trend SVG chart --------------------------------------
+  function renderTrend(rows){
+    var byMonth = buildMonthlyTotals(rows);
+    var months = lastNMonths(byMonth, 6);
+    var svg = safeEl('trend-chart');
+    var labelsEl = safeEl('trend-labels');
+    var avgEl = safeEl('trend-avg');
+    if (!svg) return;
+    svg.innerHTML = '';
+
+    var W = 600, H = 140, padX = 24, padY = 16;
+    var totals = months.map(function(m){ return m.total; });
+    var maxV = Math.max.apply(null, totals.concat([1]));
+    var nonZeroSum = 0, nonZeroN = 0;
+    totals.forEach(function(t){ if (t > 0){ nonZeroSum += t; nonZeroN++; } });
+    var avg = nonZeroN ? nonZeroSum / nonZeroN : 0;
+
+    function xAt(i){ return padX + (i / (months.length - 1)) * (W - padX * 2); }
+    function yAt(v){ return H - padY - (v / maxV) * (H - padY * 2); }
+
+    // Gridlines (3 horizontal)
+    for (var g = 1; g <= 3; g++) {
+      var gy = padY + ((H - padY*2) / 3) * (g - 1);
+      var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', padX); line.setAttribute('x2', W - padX);
+      line.setAttribute('y1', gy); line.setAttribute('y2', gy);
+      line.setAttribute('stroke', 'rgba(148,163,184,0.12)');
+      line.setAttribute('stroke-width', '1');
+      svg.appendChild(line);
+    }
+
+    // Average line (dashed)
+    if (avg > 0) {
+      var avgLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+      var ay = yAt(avg);
+      avgLine.setAttribute('x1', padX); avgLine.setAttribute('x2', W - padX);
+      avgLine.setAttribute('y1', ay); avgLine.setAttribute('y2', ay);
+      avgLine.setAttribute('stroke', '#94a3b8');
+      avgLine.setAttribute('stroke-width', '1');
+      avgLine.setAttribute('stroke-dasharray', '4 4');
+      svg.appendChild(avgLine);
+    }
+
+    // Area fill (under the polyline)
+    var areaPts = [];
+    months.forEach(function(m, i){ areaPts.push(xAt(i) + ',' + yAt(m.total)); });
+    var area = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    var areaStr = padX + ',' + (H - padY) + ' ' + areaPts.join(' ') + ' ' + (W - padX) + ',' + (H - padY);
+    area.setAttribute('points', areaStr);
+    area.setAttribute('fill', 'rgba(34,197,94,0.12)');
+    svg.appendChild(area);
+
+    // Line
+    var poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    poly.setAttribute('points', areaPts.join(' '));
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', '#22c55e');
+    poly.setAttribute('stroke-width', '2.5');
+    poly.setAttribute('stroke-linecap', 'round');
+    poly.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(poly);
+
+    // Dots (with tooltip via title element)
+    months.forEach(function(m, i){
+      var c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', xAt(i));
+      c.setAttribute('cy', yAt(m.total));
+      c.setAttribute('r', i === months.length - 1 ? '5' : '3.5');
+      c.setAttribute('fill', i === months.length - 1 ? '#22c55e' : '#0f1422');
+      c.setAttribute('stroke', '#22c55e');
+      c.setAttribute('stroke-width', '2');
+      var title = document.createElementNS('http://www.w3.org/2000/svg','title');
+      title.textContent = monthLabel(m.date) + ': ' + moneyShekel(m.total);
+      c.appendChild(title);
+      svg.appendChild(c);
+    });
+
+    // Month labels
+    if (labelsEl) {
+      labelsEl.innerHTML = '';
+      months.forEach(function(m){
+        var span = document.createElement('span');
+        span.textContent = monthLabel(m.date);
+        labelsEl.appendChild(span);
+      });
+    }
+
+    if (avgEl) avgEl.textContent = avg > 0 ? moneyShekel(avg) : '-';
+  }
+
+  // ---- 5. Analytics donut (independent from existing #cat-donut) -------
+  function renderDonut(h){
+    var entries = Object.keys(h.byCat).map(function(k){ return { cat:k, val:h.byCat[k] }; });
+    entries.sort(function(a,b){ return b.val - a.val; });
+    var top = entries.slice(0, 6);
+    var rest = entries.slice(6);
+    if (rest.length) {
+      var restSum = rest.reduce(function(s, e){ return s + e.val; }, 0);
+      top.push({ cat:'אחר', val: restSum });
+    }
+    var total = h.curExpenses;
+    var svg = safeEl('ana-donut');
+    var legend = safeEl('ana-donut-legend');
+    var totalEl = safeEl('ana-donut-total');
+    var hoverEl = safeEl('ana-donut-hover');
+    if (totalEl) totalEl.textContent = moneyShekel(total);
+    if (!svg) return;
+    // Remove all child elements except the first background circle
+    while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+    if (legend) legend.innerHTML = '';
+    if (!total || !top.length) {
+      if (legend) {
+        var liE = document.createElement('li');
+        liE.className = 'text-ink-500';
+        liE.textContent = 'אין הוצאות החודש.';
+        legend.appendChild(liE);
+      }
+      return;
+    }
+
+    var circ = 2 * Math.PI * 42; // ~263.9
+    var offset = 0;
+    top.forEach(function(seg, i){
+      var color = DONUT_COLORS[i % DONUT_COLORS.length];
+      var frac = seg.val / total;
+      var dash = (frac * circ).toFixed(2);
+      var gap = (circ - parseFloat(dash)).toFixed(2);
+      var arc = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      arc.setAttribute('cx', 50); arc.setAttribute('cy', 50); arc.setAttribute('r', 42);
+      arc.setAttribute('fill', 'none');
+      arc.setAttribute('stroke', color);
+      arc.setAttribute('stroke-width', '10');
+      arc.setAttribute('stroke-dasharray', dash + ' ' + gap);
+      arc.setAttribute('stroke-dashoffset', (-offset).toFixed(2));
+      arc.style.transition = 'stroke-width .2s ease';
+      arc.style.cursor = 'pointer';
+      arc.addEventListener('mouseenter', function(){
+        arc.setAttribute('stroke-width','13');
+        if (hoverEl){
+          hoverEl.classList.remove('hidden');
+          hoverEl.textContent = seg.cat + ' ' + moneyShekel(seg.val);
+        }
+        if (totalEl) totalEl.classList.add('hidden');
+      });
+      arc.addEventListener('mouseleave', function(){
+        arc.setAttribute('stroke-width','10');
+        if (hoverEl) hoverEl.classList.add('hidden');
+        if (totalEl) totalEl.classList.remove('hidden');
+      });
+      svg.appendChild(arc);
+      offset += parseFloat(dash);
+
+      if (legend) {
+        var li = document.createElement('li');
+        li.className = 'flex items-center justify-between gap-2';
+        var left = document.createElement('span');
+        left.className = 'flex items-center gap-2 min-w-0';
+        var dot = document.createElement('span');
+        dot.style.cssText = 'background:'+color+'; width:8px; height:8px; border-radius:50%; flex-shrink:0;';
+        var name = document.createElement('span');
+        name.className = 'truncate text-ink-200';
+        name.textContent = seg.cat;
+        left.appendChild(dot);
+        left.appendChild(name);
+        var amt = document.createElement('span');
+        amt.className = 'num font-bold text-ink-200 flex-shrink-0';
+        amt.textContent = moneyShekel(seg.val) + ' (' + Math.round(frac*100) + '%)';
+        li.appendChild(left);
+        li.appendChild(amt);
+        legend.appendChild(li);
+      }
+    });
+  }
+
+  // ---- 6. Recurring subscriptions --------------------------------------
+  function renderRecurring(rows){
+    // Group rows by normalized description, tracking month-set & avg amount
+    var buckets = Object.create(null);
+    rows.forEach(function(r){
+      var d = parseDate(r.date);
+      if (!d) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return;
+      var desc = String(r.description || '').trim();
+      if (!desc) return;
+      var key = normalizeKey(desc);
+      if (!key) return;
+      if (!buckets[key]) buckets[key] = { desc:desc, amounts:[], months:Object.create(null), category:r.category||'' };
+      buckets[key].amounts.push(amt);
+      buckets[key].months[ym(d)] = true;
+      if (!buckets[key].category && r.category) buckets[key].category = r.category;
+    });
+
+    var subs = [];
+    Object.keys(buckets).forEach(function(k){
+      var b = buckets[k];
+      var monthCount = Object.keys(b.months).length;
+      if (monthCount < 3) return;
+      // Amount stability: stdev/mean < ~0.4 means similar amounts
+      var mean = b.amounts.reduce(function(a,c){return a+c;},0) / b.amounts.length;
+      var variance = b.amounts.reduce(function(a,c){return a + (c-mean)*(c-mean);},0) / b.amounts.length;
+      var stdev = Math.sqrt(variance);
+      var cv = mean > 0 ? stdev / mean : 1;
+      if (cv > 0.5) return; // too erratic to be a subscription
+      subs.push({ desc:b.desc, monthly:mean, months:monthCount, category:b.category });
+    });
+
+    subs.sort(function(a,b){ return b.monthly - a.monthly; });
+
+    var listEl = safeEl('rec-list');
+    var countEl = safeEl('rec-count');
+    var totalEl = safeEl('rec-total');
+    var total = subs.reduce(function(s,x){ return s + x.monthly; }, 0);
+    if (countEl) countEl.textContent = String(subs.length);
+    if (totalEl) totalEl.textContent = moneyShekel(total);
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (!subs.length) {
+      var li0 = document.createElement('li');
+      li0.className = 'rounded-xl bg-ink-900/60 p-3 text-center text-xs text-ink-400';
+      li0.textContent = 'לא זוהו מנויים קבועים עדיין (נדרשים 3+ חודשים של תיעוד).';
+      listEl.appendChild(li0);
+      return;
+    }
+
+    subs.slice(0, 8).forEach(function(s){
+      var li = document.createElement('li');
+      li.className = 'flex items-center justify-between gap-2 rounded-xl bg-ink-900/40 px-3 py-2 text-sm';
+      var left = document.createElement('div');
+      left.className = 'min-w-0 flex-1';
+      var name = document.createElement('div');
+      name.className = 'truncate font-bold text-ink-100';
+      name.textContent = s.desc;
+      var meta = document.createElement('div');
+      meta.className = 'text-[10px] text-ink-400';
+      meta.textContent = s.months + ' חודשים' + (s.category ? ' · ' + s.category : '');
+      left.appendChild(name);
+      left.appendChild(meta);
+      var right = document.createElement('div');
+      right.className = 'num text-right text-sm font-bold text-amber-400 flex-shrink-0';
+      right.textContent = moneyShekel(s.monthly) + '/חודש';
+      li.appendChild(left);
+      li.appendChild(right);
+      listEl.appendChild(li);
+    });
+  }
+
+  // ---- 7. MoM comparison ------------------------------------------------
+  function renderMoM(rows){
+    var now = new Date();
+    var prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    var prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+
+    var cur = Object.create(null);
+    var prev = Object.create(null);
+    rows.forEach(function(r){
+      var d = parseDate(r.date);
+      if (!d) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return;
+      var cat = (r.category || 'אחר').trim() || 'אחר';
+      if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
+        cur[cat] = (cur[cat] || 0) + amt;
+      } else if (d.getFullYear() === prevYear && d.getMonth() === prevMonth) {
+        prev[cat] = (prev[cat] || 0) + amt;
+      }
+    });
+
+    // Union of categories, pick top 5 by current spend
+    var allCats = Object.keys(cur).concat(Object.keys(prev)).filter(function(v,i,a){ return a.indexOf(v) === i; });
+    allCats.sort(function(a,b){ return (cur[b]||0) - (cur[a]||0); });
+    var top = allCats.slice(0, 5);
+
+    var listEl = safeEl('mom-list');
+    var moverEl = safeEl('mom-mover');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (!top.length) {
+      var li0 = document.createElement('li');
+      li0.className = 'text-xs text-ink-400';
+      li0.textContent = 'אין נתונים להשוואה.';
+      listEl.appendChild(li0);
+      return;
+    }
+
+    // Find biggest mover (by absolute delta in shekels)
+    var biggest = null;
+    top.forEach(function(c){
+      var c0 = cur[c] || 0;
+      var p0 = prev[c] || 0;
+      var delta = c0 - p0;
+      if (!biggest || Math.abs(delta) > Math.abs(biggest.delta)) {
+        biggest = { cat:c, delta:delta, prev:p0, cur:c0 };
+      }
+    });
+
+    if (moverEl && biggest && Math.abs(biggest.delta) > 0) {
+      moverEl.classList.remove('hidden');
+      var sign = biggest.delta > 0 ? '+' : '-';
+      var clr = biggest.delta > 0 ? 'text-red-400' : 'text-brand-400';
+      moverEl.className = 'text-[10px] font-bold ' + clr;
+      moverEl.textContent = biggest.cat + ' ' + sign + moneyShekel(Math.abs(biggest.delta));
+    }
+
+    top.forEach(function(c){
+      var c0 = cur[c] || 0;
+      var p0 = prev[c] || 0;
+      var delta = c0 - p0;
+      var pct;
+      if (p0 > 0) pct = Math.round(delta / p0 * 100);
+      else pct = c0 > 0 ? 100 : 0;
+      var up = delta > 0;
+      var arrow = delta === 0 ? '=' : (up ? '▲' : '▼');
+      var clr = delta === 0 ? 'text-ink-400' : (up ? 'text-red-400' : 'text-brand-400');
+
+      var li = document.createElement('li');
+      li.className = 'rounded-xl bg-ink-900/40 px-3 py-2';
+      var row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-2';
+      var name = document.createElement('div');
+      name.className = 'truncate text-sm font-bold text-ink-100';
+      name.textContent = c;
+      var right = document.createElement('div');
+      right.className = 'flex items-baseline gap-2 flex-shrink-0';
+      var amt = document.createElement('span');
+      amt.className = 'num text-sm font-bold text-ink-100';
+      amt.textContent = moneyShekel(c0);
+      var deltaSpan = document.createElement('span');
+      deltaSpan.className = 'num text-xs font-bold ' + clr;
+      deltaSpan.textContent = arrow + ' ' + (p0 > 0 ? Math.abs(pct) + '%' : 'חדש');
+      right.appendChild(amt);
+      right.appendChild(deltaSpan);
+      row.appendChild(name);
+      row.appendChild(right);
+      li.appendChild(row);
+
+      var sub = document.createElement('div');
+      sub.className = 'mt-1 text-[10px] text-ink-400';
+      if (p0 > 0) {
+        sub.textContent = 'בחודש שעבר: ' + moneyShekel(p0) + ' · שינוי ' + (delta >= 0 ? '+' : '-') + moneyShekel(Math.abs(delta));
+      } else {
+        sub.textContent = 'לא היה תיעוד בחודש שעבר.';
+      }
+      li.appendChild(sub);
+      listEl.appendChild(li);
+    });
+  }
+
+  // ---- 8. Top splurges -------------------------------------------------
+  function renderSplurges(rows){
+    var now = new Date();
+    var monthRows = rows.filter(function(r){
+      var d = parseDate(r.date);
+      if (!d) return false;
+      if (d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return false;
+      return (Number(r.amount) || 0) > 0;
+    });
+    monthRows.sort(function(a,b){ return (Number(b.amount)||0) - (Number(a.amount)||0); });
+
+    var top = monthRows.slice(0, 10);
+    var listEl = safeEl('splurge-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (!top.length) {
+      var li0 = document.createElement('li');
+      li0.className = 'rounded-xl bg-ink-900/60 p-3 text-center text-xs text-ink-400';
+      li0.textContent = 'אין הוצאות החודש.';
+      listEl.appendChild(li0);
+      return;
+    }
+
+    top.forEach(function(r, i){
+      var li = document.createElement('li');
+      li.className = 'flex items-center gap-3 rounded-xl bg-ink-900/40 px-3 py-2';
+      var rank = document.createElement('div');
+      rank.className = 'num grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-ink-700 text-xs font-black text-ink-200';
+      rank.textContent = String(i + 1);
+      var middle = document.createElement('div');
+      middle.className = 'min-w-0 flex-1';
+      var desc = document.createElement('div');
+      desc.className = 'truncate text-sm font-bold text-ink-100';
+      desc.textContent = (r.description || r.category || 'הוצאה');
+      var meta = document.createElement('div');
+      meta.className = 'text-[10px] text-ink-400';
+      meta.textContent = (r.category ? r.category + ' · ' : '') + (r.date || '');
+      middle.appendChild(desc);
+      middle.appendChild(meta);
+      var amt = document.createElement('div');
+      amt.className = 'num text-sm font-black text-red-400 flex-shrink-0';
+      amt.textContent = moneyShekel(Number(r.amount) || 0);
+      li.appendChild(rank);
+      li.appendChild(middle);
+      li.appendChild(amt);
+      listEl.appendChild(li);
+    });
+  }
+
+  // ---- Main entry -------------------------------------------------------
+  function renderAnalytics(rows){
+    if (!rows || !rows.length) return;
+    var h = computeHealth(rows);
+    renderHealth(h);
+    renderCashflow(h);
+    renderTrend(rows);
+    renderDonut(h);
+    renderRecurring(rows);
+    renderMoM(rows);
+    renderSplurges(rows);
+    // Goals widget is a static placeholder (count stays 0 until backend lands).
+    var gc = safeEl('goals-count');
+    if (gc) gc.textContent = '0';
+  }
+
+  // Expose globally so kefleLiveDashboard can invoke after fetch resolves
+  window.renderAnalytics = renderAnalytics;
+})();
+</script>
+
 <script>
 (function kefleLiveDashboard(){
   var ILS_FMT = new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 });
@@ -1729,7 +2664,14 @@ function generatePseudoSeries(target, n, intLike) {
       if (!resp.ok) { showError(); return; }
       var data = await resp.json();
       var rows = (data && data.rows) || [];
-      if (!rows.length) { renderSummary(computeSummary([])); showEmpty(); return; }
+      if (!rows.length) {
+        renderSummary(computeSummary([]));
+        // Hide analytics block when there is no data yet.
+        var ab0 = document.getElementById('analytics-block');
+        if (ab0) ab0.classList.add('hidden');
+        showEmpty();
+        return;
+      }
       var summary = computeSummary(rows);
       renderSummary(summary);
       renderTable(rows);
@@ -1738,6 +2680,15 @@ function generatePseudoSeries(target, n, intLike) {
       setHidden('live-empty', true);
       setHidden('live-table-wrap', false);
       setStatus(rows.length + ' תנועות');
+
+      // Reveal analytics block and render all charts/cards.
+      try {
+        var ab = document.getElementById('analytics-block');
+        if (ab) ab.classList.remove('hidden');
+        if (typeof renderAnalytics === 'function') renderAnalytics(rows);
+      } catch (anaErr) {
+        console.warn('analytics render failed', anaErr);
+      }
     } catch (e) {
       console.warn('live dashboard failed', e);
       showError();
