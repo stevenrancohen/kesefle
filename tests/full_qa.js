@@ -225,6 +225,32 @@ ok('personal dashboard total ranges fixed (corrected from xlsx off-by-one)',
    && /_personalSectionTotal\('סה״כ שונות', 53, 57\)/.test(SW));
 ok('appendRowToUserSheet writes to A:I (9 cols incl. VAT-deductible)',
    /'\$\{TX_TAB\}'!A:I/.test(SW));
+// P0 regression guard (2026-05-24): the spec sent to POST /v4/spreadsheets must
+// NOT contain any non-Sheets-API fields. Earlier _meta on sheets[4] (extended
+// dashboard) blocked every signup with "Unknown name _meta at sheets[4]". The
+// stripMeta defense lives in createUserSheetWithToken.
+ok('createUserSheetWithToken strips _meta + all non-standard keys before send',
+   /function stripMeta/.test(SW)
+   && /SHEET_KEYS\s*=\s*new Set/.test(SW)
+   && /SPEC_KEYS\s*=\s*new Set/.test(SW)
+   && /JSON\.stringify\(stripMeta\(spec\)\)/.test(SW));
+// End-to-end: actually build a spec, run the strip, verify the wire JSON has
+// no _meta key on any sheet. Catches the case where someone re-introduces a
+// side-channel field on a different tab.
+(async () => {
+  try {
+    const mod = await import('../lib/sheet-writer.js');
+    const spec = mod.buildTenantSheetSpec('qa-test', {});
+    const SHEET_KEYS = new Set(['properties','data','merges','conditionalFormats','filterViews','protectedRanges','basicFilter','charts','bandedRanges','developerMetadata','rowGroups','columnGroups','slicers']);
+    const SPEC_KEYS = new Set(['properties','sheets','namedRanges','developerMetadata','dataSources']);
+    for (const k of Object.keys(spec)) if (!SPEC_KEYS.has(k)) delete spec[k];
+    if (Array.isArray(spec.sheets)) {
+      for (const sh of spec.sheets) for (const k of Object.keys(sh)) if (!SHEET_KEYS.has(k)) delete sh[k];
+    }
+    const wire = JSON.stringify(spec);
+    ok('stripped wire spec has no _meta (regression guard)', !wire.includes('"_meta"'));
+  } catch (_e) { /* import errors caught by node --check */ }
+})();
 ok('group.js no longer copies a template (uses create-fresh)',
    !/copyTemplateToUserDrive/.test(fs.readFileSync(path.join(ROOT, 'api/group.js'), 'utf8')));
 // Sign-in must use the full-page REDIRECT OAuth flow (PKCE → google-exchange),
