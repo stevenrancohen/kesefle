@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-ask-before-default';
+const KFL_BUILD_VERSION = '2026-05-25-installments-startdate';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1734,6 +1734,13 @@ function handleInteractiveReply_(fromPhone, interactive) {
   var __pendMatch = String(picked).match(/^pending\|(.+)$/);
   if (__pendMatch && typeof _handlePendingTenantPick_ === 'function') {
     return _handlePendingTenantPick_(fromPhone, __pendMatch[1]);
+  }
+
+  // Installments first-charge day picker (Steven 2026-05-25). Format:
+  // "installday|<1|2|10|15|today>".
+  var __instDayMatch = String(picked).match(/^installday\|(.+)$/);
+  if (__instDayMatch && typeof _handleInstallmentsDayPick_ === 'function') {
+    return _handleInstallmentsDayPick_(fromPhone, __instDayMatch[1]);
   }
 
   var decoded = _decodeCategoryOptionId(picked);
@@ -4838,11 +4845,13 @@ function _extractProductName_(rawText, installmentsPhrase) {
 // /api/recurring (action=add) so the plan rides the existing daily cron
 // that writes one row per due month. We also stash the plan in
 // CacheService so "תשלומים" command can list remaining counts.
-function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subcategory, rawText) {
+function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subcategory, rawText, startISOArg) {
   var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
   var label = (inst.productName || 'הוצאה בתשלומים') + ' (' + inst.count + ' תשלומים)';
-  // Default first payment = today; user can correct via "תשלומים" later.
-  var startISO = new Date().toISOString().slice(0, 10);
+  // Use the user-picked startDate when provided (Steven 2026-05-25 — was
+  // hardcoded to today, which is wrong for credit-card charges that hit
+  // on 1/2/10/15 of the month). Fallback: today.
+  var startISO = startISOArg || new Date().toISOString().slice(0, 10);
   try {
     var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/recurring', {
       method: 'post',
@@ -4887,12 +4896,18 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
       cache.put(listKey, JSON.stringify(existing), 60 * 60 * 24 * 30);  // 30d
     } catch (_ce) {}
     var per = '₪' + Number(inst.perPayment).toLocaleString('he-IL');
+    // Pretty-print the start date for the user (DD/MM/YYYY) — startISO is ISO.
+    var startDateDisplay;
+    try {
+      var d0 = new Date(startISO);
+      startDateDisplay = d0.getDate() + '/' + (d0.getMonth() + 1) + '/' + d0.getFullYear();
+    } catch (_) { startDateDisplay = startISO; }
     return { reply:
       '💳 *תשלומים נקלטו*\n' +
       '━━━━━━━━━━━━━━━━━━\n' +
       '🛍 ' + (inst.productName || 'הוצאה') + '\n' +
       '💰 ' + inst.count + ' × ' + per + ' = ₪' + Number(inst.perPayment * inst.count).toLocaleString('he-IL') + '\n' +
-      '📅 תשלום ראשון: היום, מתחדש כל חודש\n' +
+      '📅 חיוב ראשון: ' + startDateDisplay + ', מתחדש כל חודש באותו יום\n' +
       '🔁 ייכנס לגיליון אוטומטית בכל חודש\n\n' +
       'לראות תשלומים פעילים: כתוב/י *תשלומים*\n' +
       'לבטל: כתוב/י *בטל תשלומים ' + (inst.productName || 'אחרון') + '*'
@@ -4901,6 +4916,148 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
     Logger.log('_setupInstallmentsRecurring_ threw: ' + (e && e.message));
     return { reply: '😬 בעיה זמנית בחיבור. נסה/י שוב בעוד דקה.' };
   }
+}
+
+// Steven 2026-05-25: ask the user when the credit-card charges hit BEFORE
+// setting up the recurring. Israeli credit cards typically charge on the
+// 1st, 2nd, 10th, or 15th of each month — defaulting to today produces
+// wrong dates. Cache the pending installment + send quick buttons.
+function _askInstallmentsStartDate_(fromPhone, inst, category, subcategory, rawText) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return { reply: '😬 לא הצלחתי לזהות את המספר שלך.' };
+  // Stash everything we need to complete the setup once the user answers.
+  try {
+    var cache = CacheService.getScriptCache();
+    cache.put('installPending:' + clean, JSON.stringify({
+      inst: inst, category: category, subcategory: subcategory,
+      rawText: rawText, at: Date.now(),
+    }), 1800); // 30 min TTL
+  } catch (_e) { Logger.log('_askInstallmentsStartDate_ cache err: ' + (_e && _e.message)); }
+
+  // Quick-reply buttons for the 4 most common card-charge days. WhatsApp
+  // caps reply buttons at 3, so use a list. Today = "now" escape hatch.
+  try {
+    sendWhatsAppInteractiveList(
+      fromPhone,
+      'מתי החיוב הראשון?',
+      '💳 *' + inst.count + ' תשלומים של ₪' + Number(inst.perPayment).toLocaleString('he-IL') + '*\n' +
+      'בכרטיסי אשראי בישראל החיוב יורד בדרך כלל ב-1, 2, 10 או 15 לחודש.\n\n' +
+      'בחר/י את היום של החיוב הראשון:',
+      'או הקלד/י יום (1-31) או תאריך מלא (DD/MM/YYYY)',
+      'בחר/י',
+      [{
+        title: 'יום בחודש',
+        rows: [
+          { id: 'installday|1',     title: '1 לחודש',  description: 'חיוב ב-1 של החודש הבא' },
+          { id: 'installday|2',     title: '2 לחודש',  description: 'חיוב ב-2 של החודש הבא' },
+          { id: 'installday|10',    title: '10 לחודש', description: 'חיוב ב-10 של החודש הבא' },
+          { id: 'installday|15',    title: '15 לחודש', description: 'חיוב ב-15 של החודש הבא' },
+          { id: 'installday|today', title: 'היום',     description: 'התשלום הראשון יוצא היום' },
+        ],
+      }]
+    );
+  } catch (_sErr) { Logger.log('_askInstallmentsStartDate_ send err: ' + (_sErr && _sErr.message)); }
+  return { reply: '' }; // the picker IS the reply
+}
+
+// Build the ISO startDate for next month's payment on a given day-of-month.
+// E.g. today is 25/05/2026, dayOfMonth=10 → 10/06/2026 (next 10th).
+// If the requested day already passed this month, jump to next month; if it
+// hasn't passed yet, use this month so the user doesn't wait a full cycle.
+function _computeNextChargeDate_(dayOfMonth) {
+  var n = parseInt(dayOfMonth, 10);
+  if (!n || n < 1 || n > 31) return null;
+  var now = new Date();
+  var thisMonth = new Date(now.getFullYear(), now.getMonth(), n);
+  var targetDate = (thisMonth.getDate() === n && thisMonth >= now)
+    ? thisMonth
+    : new Date(now.getFullYear(), now.getMonth() + 1, n);
+  // Clamp if day overflows (e.g. 31 → Feb has 28); JS Date already handles
+  // overflow by rolling forward but we want the user's intent — use the
+  // last day of the target month.
+  if (targetDate.getDate() !== n) {
+    targetDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 0);
+  }
+  return targetDate.toISOString().slice(0, 10);
+}
+
+// Handle the day-pick from the interactive list. Format: "installday|<day>".
+// Wired into handleInteractiveReply_.
+function _handleInstallmentsDayPick_(fromPhone, dayValue) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return { replyText: '😬 לא הצלחתי לזהות את המספר שלך.' };
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get('installPending:' + clean);
+  if (!raw) {
+    return { replyText: '🤔 לא מצאתי תשלומים שמחכים לתאריך. שלח/י שוב את ההוצאה.' };
+  }
+  var pending;
+  try { pending = JSON.parse(raw); } catch (_) { return { replyText: '😬 שגיאה בקריאה.' }; }
+  cache.remove('installPending:' + clean);
+
+  var startISO;
+  if (String(dayValue).toLowerCase() === 'today') {
+    startISO = new Date().toISOString().slice(0, 10);
+  } else {
+    startISO = _computeNextChargeDate_(dayValue);
+    if (!startISO) return { replyText: '😬 יום לא תקין (1-31). שלח/י שוב את ההוצאה.' };
+  }
+  var botSecret = '';
+  try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+  if (!botSecret) return { replyText: '😬 שגיאת קונפיגורציה.' };
+
+  // Call the underlying recurring setup with the chosen startDate. We pass
+  // a custom inst object so the existing setup function reuses its logic
+  // (single source of truth for the recurring registration + cache).
+  var r = _setupInstallmentsRecurring_(fromPhone, botSecret, pending.inst,
+    pending.category, pending.subcategory, pending.rawText, startISO);
+  return { replyText: (r && r.reply) || '✅ נרשם.' };
+}
+
+// Free-text fallback: user types a day number (1-31) or a date DD/MM/YYYY
+// instead of tapping the picker. Returns { handled, reply } or null.
+function _maybeHandleInstallmentsFreeText_(fromPhone, text) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return null;
+  var raw = null;
+  try { raw = CacheService.getScriptCache().get('installPending:' + clean); } catch (_) {}
+  if (!raw) return null;
+  var t = String(text || '').trim();
+  // Day number 1-31
+  var m = t.match(/^(\d{1,2})$/);
+  if (m) {
+    var d = parseInt(m[1], 10);
+    if (d >= 1 && d <= 31) {
+      var r = _handleInstallmentsDayPick_(fromPhone, String(d));
+      return { handled: true, reply: r.replyText };
+    }
+  }
+  // Full date DD/MM/YYYY (or D/M/YYYY)
+  m = t.match(/^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})$/);
+  if (m) {
+    var dd = parseInt(m[1], 10), mm = parseInt(m[2], 10), yy = parseInt(m[3], 10);
+    if (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yy >= 2020 && yy <= 2099) {
+      var dateObj = new Date(yy, mm - 1, dd);
+      var startISO = dateObj.toISOString().slice(0, 10);
+      var cache = CacheService.getScriptCache();
+      var pendRaw = cache.get('installPending:' + clean);
+      cache.remove('installPending:' + clean);
+      if (!pendRaw) return null;
+      var pending;
+      try { pending = JSON.parse(pendRaw); } catch (_) { return null; }
+      var botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '');
+      if (!botSecret) return { handled: true, reply: '😬 שגיאת קונפיגורציה.' };
+      var rr = _setupInstallmentsRecurring_(fromPhone, botSecret, pending.inst,
+        pending.category, pending.subcategory, pending.rawText, startISO);
+      return { handled: true, reply: (rr && rr.reply) || '✅ נרשם.' };
+    }
+  }
+  // "היום" / "today"
+  if (/^(היום|today)$/i.test(t)) {
+    var r2 = _handleInstallmentsDayPick_(fromPhone, 'today');
+    return { handled: true, reply: r2.replyText };
+  }
+  return null;
 }
 
 // "תשלומים" command — list active installment plans with remaining count.
@@ -5082,12 +5239,13 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   }
 
   // Steven 2026-05-25: installments detection. "ספה 1000 שקל 5 תשלומים" →
-  // bot should set up 5 monthly recurring payments of ₪200 each, NOT write
-  // a single ₪1,000 row. We register N recurring entries via /api/recurring.
+  // bot should set up monthly recurring payments — but FIRST ask the user
+  // when the credit-card charges hit (1st/2nd/10th/15th are common Israeli
+  // card-billing days). Otherwise the recurring lands on the wrong date.
   try {
     var inst = _detectInstallments_(rawText, first.amount);
     if (inst && inst.count >= 2) {
-      return _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subcategory, rawText);
+      return _askInstallmentsStartDate_(fromPhone, inst, category, subcategory, rawText);
     }
   } catch (_iErr) { Logger.log('installments detect err: ' + (_iErr && _iErr.message)); }
 
@@ -5774,6 +5932,18 @@ function processExpense(text, fromPhone) {
   // message. Respond with a real intro + capabilities, not "didn't understand".
   // Conservative regex: only fires for a pure greeting, not a sentence that
   // contains the word (e.g. "שלום, אכלתי בסופר ב-45" still goes to the parser).
+  // Free-text answer to the installments "when's first charge?" question.
+  // Tries to parse a day number (1-31), full date DD/MM/YYYY, or "היום".
+  // Only fires when an installPending:{phone} key exists in cache — won't
+  // hijack other replies. Steven 2026-05-25.
+  try {
+    var __instFT = (typeof _maybeHandleInstallmentsFreeText_ === 'function')
+      ? _maybeHandleInstallmentsFreeText_(fromPhone, trimmed) : null;
+    if (__instFT && __instFT.handled) {
+      return { reply: __instFT.reply };
+    }
+  } catch (_iftErr) { Logger.log('installments free-text err: ' + (_iftErr && _iftErr.message)); }
+
   // "תשלומים" / "תשלום" / "installments" — list active installment plans.
   if (/^\s*(תשלומים|תשלום|installments|payments)\s*[!.?]*\s*$/i.test(trimmed)) {
     return { reply: _listInstallments_(fromPhone) };
