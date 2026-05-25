@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-help-add-cat';
+const KFL_BUILD_VERSION = '2026-05-24-survey-onhi-relabel-mtd';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1663,11 +1663,20 @@ function handleInteractiveReply_(fromPhone, interactive) {
     return { replyText: (r2 && r2.replyText) || '✅' };
   }
 
-  // Personalization questionnaire taps (q1_*/q2_*/q3_*). The handler sends
-  // any follow-up question itself; it returns { replyText } only when a TEXT
-  // reply is the next step (Q2 "yes" → ask for recurring items), else null.
-  if (/^q[123]_/.test(String(picked)) && typeof _surveyHandleInteractive_ === 'function') {
+  // Personalization questionnaire taps (q1_*/q2_*/q3_*/q_pets_*/q_car_*).
+  // The handler sends any follow-up question itself; it returns { replyText }
+  // only when a TEXT reply is the next step (Q2 "yes" -> ask for recurring
+  // items), else null.
+  if ((/^q[123]_/.test(String(picked)) || /^q_(pets|car)_/.test(String(picked))) &&
+      typeof _surveyHandleInteractive_ === 'function') {
     return _surveyHandleInteractive_(fromPhone, picked);
+  }
+
+  // Change-category picker shown under every tenant expense confirmation
+  // (Steven 2026-05-24). Format: "relabel|<newCategory>".
+  var __relMatch = String(picked).match(/^relabel\|(.+)$/);
+  if (__relMatch && typeof _handleRelabelTap_ === 'function') {
+    return _handleRelabelTap_(fromPhone, __relMatch[1]);
   }
 
   var decoded = _decodeCategoryOptionId(picked);
@@ -3656,6 +3665,19 @@ function _surveySendQ3_(fromPhone) {
   ]);
 }
 
+// Lifestyle Q after kids: car. If yes, creates a dedicated "רכב" dashboard
+// row so the user sees their car spend (fuel + parking + maintenance) at
+// a glance. Steven 2026-05-24.
+function _surveySendCarQuestion_(fromPhone) {
+  _surveySetState_(fromPhone, 'await_car_button');
+  try {
+    sendWhatsAppQuickButtons(fromPhone, '🚗 יש לך רכב? (אם כן, אוסיף שורה ייעודית לדלק/חניה/אחזקה)', [
+      { id: 'q_car_yes', title: 'כן' },
+      { id: 'q_car_no',  title: 'אין' },
+    ]);
+  } catch (_e) { Logger.log('car question send err: ' + (_e && _e.message)); }
+}
+
 // Public entry: start the questionnaire at Q1.
 function _surveyStart_(fromPhone) {
   _surveySendQ1_(fromPhone);
@@ -4121,6 +4143,31 @@ function _surveyHandleInteractive_(fromPhone, picked) {
     _surveySetState_(fromPhone, 'await_recurring_freeform');
     return { replyText: 'אילו הוצאות קבועות יש לך? (לדוגמה: 2500 שכירות, 400 ארנונה, 99 נטפליקס)' };
   }
+  // --- Pets follow-up (after kids step) ---
+  if (picked === 'q_pets_dog' || picked === 'q_pets_cat' || picked === 'q_pets_no') {
+    if (picked !== 'q_pets_no') {
+      // Create a dedicated row for the pet so the user sees how much they
+      // spend on it per month (food, vet, grooming).
+      var petName = (picked === 'q_pets_dog') ? 'כלב' : 'חתול';
+      try {
+        var pr = _addCategoryRows_(fromPhone, petName);
+        if (pr) sendWhatsAppMessage(fromPhone, pr);
+      } catch (_pErr) { Logger.log('pets row create err: ' + (_pErr && _pErr.message)); }
+    }
+    _surveySendCarQuestion_(fromPhone);
+    return null;
+  }
+  // --- Car follow-up ---
+  if (picked === 'q_car_yes' || picked === 'q_car_no') {
+    if (picked === 'q_car_yes') {
+      try {
+        var cr = _addCategoryRows_(fromPhone, 'רכב');
+        if (cr) sendWhatsAppMessage(fromPhone, cr);
+      } catch (_cErr) { Logger.log('car row create err: ' + (_cErr && _cErr.message)); }
+    }
+    _surveySendQ2_(fromPhone);
+    return null;
+  }
   // --- Q3: auto-log preference ---
   if (picked === 'q3_auto' || picked === 'q3_remind') {
     var pref = (picked === 'q3_auto') ? 'auto' : 'remind';
@@ -4160,15 +4207,41 @@ function _surveyHandleText_(fromPhone, text) {
   // Free-text kids capture (only while the survey is in that step). Steven's
   // request 2026-05-24: if the family-tracker user gives names, REALLY create
   // a row per child in מאזן אישי -- don't fake it. "דלג"/"לא"/"אין" skip.
+  // Then chain into the pets question, which can also create real rows.
   if (_surveyGetState_(fromPhone) === 'await_kids_freeform') {
-    if (/^(?:דלג|לא|אין|skip|no)\s*$/i.test(t)) {
+    if (!/^(?:דלג|לא|אין|skip|no)\s*$/i.test(t)) {
+      var reply = _addCategoryRows_(fromPhone, t);
+      try { sendWhatsAppMessage(fromPhone, reply); } catch (_e) {}
+    } else {
       try { sendWhatsAppMessage(fromPhone, 'בסדר, ממשיכים. 👍'); } catch (_e) {}
-      _surveySendQ2_(fromPhone);
-      return { handled: true };
     }
-    var reply = _addCategoryRows_(fromPhone, t);
-    try { sendWhatsAppMessage(fromPhone, reply); } catch (_e) {}
-    _surveySendQ2_(fromPhone);
+    // Advance to pets — quick yes/no, dog/cat pickable.
+    _surveySetState_(fromPhone, 'await_pets_yesno');
+    try {
+      sendWhatsAppQuickButtons(fromPhone, '🐶 יש בבית חיית מחמד? (אם כן, אוסיף שורה ייעודית למזון/וטרינר)', [
+        { id: 'q_pets_dog',   title: 'כלב' },
+        { id: 'q_pets_cat',   title: 'חתול' },
+        { id: 'q_pets_no',    title: 'אין' },
+      ]);
+    } catch (_pqErr) { Logger.log('pets question send err: ' + (_pqErr && _pqErr.message)); }
+    return { handled: true };
+  }
+
+  // Free-text custom-row capture from pets/car follow-up steps (typed text,
+  // not button). Rare path — user might just type "כלב + שם" instead of
+  // tapping the button. Fall through to category-row creation either way.
+  if (_surveyGetState_(fromPhone) === 'await_pets_freeform' ||
+      _surveyGetState_(fromPhone) === 'await_car_freeform') {
+    if (!/^(?:דלג|לא|אין|skip|no)\s*$/i.test(t)) {
+      var reply2 = _addCategoryRows_(fromPhone, t);
+      try { sendWhatsAppMessage(fromPhone, reply2); } catch (_e) {}
+    }
+    // Move on to next step.
+    if (_surveyGetState_(fromPhone) === 'await_pets_freeform') {
+      _surveySendCarQuestion_(fromPhone);
+    } else {
+      _surveySendQ2_(fromPhone);
+    }
     return { handled: true };
   }
 
@@ -4507,6 +4580,144 @@ function _kvLookupPhone_(phoneClean) {
   }
 }
 
+// Fetch a tenant's month-to-date total for a given category. Best-effort;
+// returns '' on any failure so the caller can omit the line cleanly.
+// Calls /api/sheet/bot-query (already exists) with queryType=category,
+// caches the answer per (phone, category) for 5 min so a chatty user
+// who logs five "סופר" expenses doesn't hit the API five times.
+function _tenantCategoryMtdLine_(fromPhone, category) {
+  try {
+    if (!fromPhone || !category) return '';
+    var clean = String(fromPhone).replace(/[^0-9]/g, '');
+    if (!clean) return '';
+    var cache = CacheService.getScriptCache();
+    var cacheKey = 'catMtd:' + clean + ':' + category;
+    var cached = cache.get(cacheKey);
+    if (cached !== null) return cached === '_none_' ? '' : cached;
+    var secret = '';
+    try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!secret) return '';
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/bot-query', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify({
+        phone: clean,
+        queryType: 'category',
+        period: 'month',
+        category: category,
+        botSecret: secret,
+      }),
+      muteHttpExceptions: true,
+    });
+    if (resp.getResponseCode() !== 200) { cache.put(cacheKey, '_none_', 300); return ''; }
+    var j = JSON.parse(resp.getContentText() || '{}');
+    if (!j || !j.ok || !j.count) { cache.put(cacheKey, '_none_', 300); return ''; }
+    var line = '📊 סה"כ ' + category + ' החודש: ₪' + Number(j.total || 0).toLocaleString('he-IL');
+    cache.put(cacheKey, line, 300);
+    return line;
+  } catch (e) {
+    Logger.log('_tenantCategoryMtdLine_ err: ' + (e && e.message));
+    return '';
+  }
+}
+
+// Send the "change category" interactive list AFTER an expense was logged.
+// Steven 2026-05-24: every confirmation should expose a one-tap way to
+// re-classify if the bot got it wrong. Six top-level Pa'amonim groups +
+// "אחר" so we stay under the 10-row WhatsApp list cap.
+function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
+  try {
+    if (!fromPhone) return;
+    // Six common top-level options + "אחר" = 7 rows, well under the cap.
+    var TOP_CATEGORIES = [
+      { name: 'אוכל',     icon: '🍞' },
+      { name: 'תחבורה',   icon: '🚗' },
+      { name: 'קניות',    icon: '🛍' },
+      { name: 'בידור',    icon: '🎬' },
+      { name: 'הוצאות קבועות', icon: '🏠' },
+      { name: 'בריאות',   icon: '💊' },
+      { name: 'אחר',      icon: '✨' },
+    ];
+    var rows = [];
+    for (var i = 0; i < TOP_CATEGORIES.length; i++) {
+      var c = TOP_CATEGORIES[i];
+      // Skip the row that matches the current pick to avoid wasted taps.
+      if (c.name === currentCategory) continue;
+      rows.push({
+        id: 'relabel|' + c.name,
+        title: (c.icon + ' ' + c.name).slice(0, 24),
+        description: '',
+      });
+    }
+    if (!rows.length) return;
+    sendWhatsAppInteractiveList(
+      fromPhone,
+      'לשנות קטגוריה?',
+      'הבוט בחר *' + currentCategory + '*. אפשר לבחור אחרת:',
+      'אפשר להתעלם — הרישום נשמר',
+      'בחר/י',
+      [{ title: 'קטגוריות אחרות', rows: rows }]
+    );
+  } catch (e) { Logger.log('_sendChangeCategoryPicker_ err: ' + (e && e.message)); }
+}
+
+// Handle a tap on a row from _sendChangeCategoryPicker_. Called from
+// handleInteractiveReply_. Looks up lastTenantExp, POSTs to the new
+// /api/sheet/relabel-row endpoint, returns a reply confirming the change.
+function _handleRelabelTap_(fromPhone, newCategory) {
+  if (!fromPhone || !newCategory) return null;
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  var cache = CacheService.getScriptCache();
+  var last = null;
+  try {
+    var raw = cache.get('lastTenantExp:' + clean);
+    if (raw) last = JSON.parse(raw);
+  } catch (_e) {}
+  if (!last || !last.rowIndex) {
+    return { replyText: '🤔 לא מצאתי הוצאה אחרונה לשנות. שלח/י את ההוצאה שוב, ואז תוכל/י לבחור קטגוריה.' };
+  }
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+  if (!secret) return { replyText: '😬 שגיאת קונפיגורציה זמנית.' };
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/relabel-row', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify({
+        phone: clean,
+        rowIndex: last.rowIndex,
+        newCategory: newCategory,
+        newSubcategory: '',
+        botSecret: secret,
+      }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    if (code >= 200 && code < 300) {
+      // Invalidate the MTD cache for both old and new category so the next
+      // expense in either reflects the move.
+      try {
+        cache.remove('catMtd:' + clean + ':' + last.category);
+        cache.remove('catMtd:' + clean + ':' + newCategory);
+      } catch (_ce) {}
+      // Update lastExp so a re-tap on the picker still works.
+      try {
+        last.category = newCategory;
+        last.subcategory = '';
+        cache.put('lastTenantExp:' + clean, JSON.stringify(last), 1800);
+      } catch (_pe) {}
+      return { replyText: '✅ עברה ל-' + newCategory + '. השורה בגיליון מעודכנת.' };
+    }
+    Logger.log('_handleRelabelTap_ HTTP ' + code + ' ' + resp.getContentText().slice(0, 200));
+    return { replyText: '😬 לא הצלחתי לעדכן את השורה (' + code + '). נסה/י דרך הגיליון ישירות.' };
+  } catch (e) {
+    Logger.log('_handleRelabelTap_ threw: ' + (e && e.message));
+    return { replyText: '😬 בעיה בחיבור לשרת.' };
+  }
+}
+
 function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   // Reuse the rich Apps Script parser for amount + (cat, subcat) so
   // tenants get the same classification quality as the owner path.
@@ -4563,7 +4774,47 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     if (code >= 200 && code < 300) {
       var nice = '₪' + Number(first.amount).toLocaleString('he-IL') + ' · ' + category;
       if (subcategory) nice += ' · ' + subcategory;
-      return { reply: '✅ נרשם: ' + nice + _sheetLinkLine_(fromPhone) + _celebrateIfFirstExpense_(fromPhone) };
+      // Parse the rowIndex out of the response so the "change category"
+      // picker can address the exact row. Best-effort -- if parsing fails
+      // we just skip the picker (the user can still type "קטגוריה X").
+      var __rowIndex = 0;
+      try {
+        var __j = JSON.parse(body);
+        if (__j && __j.rowIndex) __rowIndex = Number(__j.rowIndex) || 0;
+      } catch (_pe) {}
+      // Steven 2026-05-24: stash last-expense in cache + send the change-
+      // category picker as a follow-up. Both are best-effort -- the
+      // primary confirmation message goes out either way.
+      var __twClean = String(fromPhone || '').replace(/[^0-9]/g, '');
+      try {
+        if (__rowIndex > 0 && __twClean) {
+          CacheService.getScriptCache().put(
+            'lastTenantExp:' + __twClean,
+            JSON.stringify({
+              rowIndex: __rowIndex,
+              category: category,
+              subcategory: subcategory || '',
+              amount: Number(first.amount) || 0,
+              description: String(first.description || rawText || ''),
+              at: Date.now(),
+            }),
+            1800 // 30 min — long enough to change one's mind, short enough to age out.
+          );
+        }
+      } catch (_cErr) { Logger.log('lastTenantExp cache err: ' + (_cErr && _cErr.message)); }
+      // MTD line for THIS category, fetched best-effort.
+      var __mtdLine = '';
+      try { __mtdLine = _tenantCategoryMtdLine_(fromPhone, category); } catch (_mtdErr) {}
+      // Schedule the change-category picker as a second message a moment
+      // after the confirmation. Done inline (Apps Script has no real timers)
+      // so users see ✅ → tap option to change.
+      try { _sendChangeCategoryPicker_(fromPhone, category); } catch (_pkErr) {}
+      return { reply:
+        '✅ נרשם: ' + nice +
+        (__mtdLine ? '\n' + __mtdLine : '') +
+        _sheetLinkLine_(fromPhone) +
+        _celebrateIfFirstExpense_(fromPhone)
+      };
     }
     Logger.log('_tenantWriteExpense_ HTTP ' + code + ' ' + body.slice(0, 300));
     var errCode = '';
@@ -5162,6 +5413,27 @@ function processExpense(text, fromPhone) {
   // contains the word (e.g. "שלום, אכלתי בסופר ב-45" still goes to the parser).
   var __greetMatch = trimmed.match(/^\s*(שלום|היי|hi|hey|hello|בוקר טוב|ערב טוב|שבוע טוב|מה נשמע|מה קורה|good morning|good evening)\s*[!.?]*\s*$/i);
   if (__greetMatch) {
+    // Steven 2026-05-24: every greeting should auto-launch the personalization
+    // survey for any user who hasn't completed it. The survey BUILDS the right
+    // dashboard rows for their life (kids/pets/car) -- it can't do that work
+    // if it never runs. Guarded by Script Property so repeated "שלום"
+    // messages don't re-prompt mid-flow.
+    try {
+      var __gcl = String(fromPhone || '').replace(/[^0-9]/g, '');
+      if (__gcl) {
+        var __gprops = PropertiesService.getScriptProperties();
+        var __gkey = 'surveyed:' + __gcl;
+        if (!__gprops.getProperty(__gkey) && typeof _surveyStart_ === 'function') {
+          __gprops.setProperty(__gkey, new Date().toISOString());
+          // Schedule the first survey question for ~1.5 sec after the
+          // greeting so the user reads the intro first. Apps Script has
+          // no real setTimeout — just send both synchronously, WhatsApp
+          // delivers them in order.
+          Utilities.sleep(1500);
+          _surveyStart_(fromPhone);
+        }
+      }
+    } catch (_geSurvErr) { Logger.log('greet survey kickoff err: ' + (_geSurvErr && _geSurvErr.message)); }
     return { reply:
       '👋 היי! אני כספ\'לה — הבוט שעוקב אחרי ההוצאות שלך *בלי טפסים ובלי אקסל*.\n\n' +
       '📝 *פשוט תכתוב הוצאה כמו שאתה מדבר:*\n' +
