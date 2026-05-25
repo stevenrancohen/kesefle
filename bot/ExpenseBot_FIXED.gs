@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-delete-and-gender';
+const KFL_BUILD_VERSION = '2026-05-25-tenant-sheet-link-fix';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -6618,10 +6618,23 @@ function processExpense(text, fromPhone) {
     return { reply: getEngineStatus() };
   }
   if (trimmed === 'מילון' || trimmed === 'dict' || trimmed === 'dictionary') {
-    return { reply: getDictionaryLink() };
+    return { reply: getDictionaryLink(fromPhone) };
   }
   if (trimmed === 'גיליון' || trimmed === 'sheet') {
-    return { reply: '📊 הגיליון שלך:\nhttps://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit' };
+    // Resolve the link for THIS sender -- owner gets SHEET_ID, tenant
+    // gets their own provisioned sheet, unknown sender gets a polite
+    // "not linked yet" message instead of the owner's URL.
+    var __sheetUrl = (typeof _userSheetUrl_ === 'function') ? _userSheetUrl_(fromPhone) : '';
+    if (__sheetUrl) {
+      return { reply: '📊 הגיליון שלך:\n' + __sheetUrl };
+    }
+    return { reply:
+      '😬 אין לי עדיין גיליון מקושר אליך.\n' +
+      '💡 כדי לקשר גיליון פרטי משלך:\n' +
+      '1. גש אל https://kesefle.com/account\n' +
+      '2. התחבר עם חשבון Google\n' +
+      '3. אשר יצירת גיליון חדש'
+    };
   }
   if (trimmed === 'מטבעות' || trimmed === 'currencies' || trimmed === 'fx') {
     return { reply: getCurrenciesMessage() };
@@ -9348,7 +9361,17 @@ function getCurrenciesMessage() {
     'לשינוי שערים: Script Properties → FX_RATE_USD / FX_RATE_EUR / וכו.';
 }
 
-function getDictionaryLink() {
+function getDictionaryLink(fromPhone) {
+  // The "מילון לימוד" tab is an admin feature on the OWNER sheet -- the
+  // tenant sheets don't include it. For non-owners we explain that
+  // dictionary editing is an admin feature instead of leaking the
+  // owner's URL.
+  var isOwner = (typeof _isOwnerPhone_ === 'function') && _isOwnerPhone_(fromPhone);
+  if (!isOwner) {
+    return '📖 *מילון לימוד*\n\n' +
+      'עריכת מילון היא תכונת מנהל. תוכל ללמד את הבוט מילים חדשות פשוט על ידי שליחת ' +
+      '"קטגוריה <השם הנכון>" אחרי הוצאה שסווגה לא נכון — אני אזכור לפעם הבאה.';
+  }
   return '📖 *לשונית "מילון לימוד" בגיליון שלך:*\n' +
     'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit\n\n' +
     'שם הלשונית: *מילון לימוד*\n' +
