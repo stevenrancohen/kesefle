@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "kesefle",
-      "runtimeExecutable": "/usr/bin/python3",
-      "runtimeArgs": ["/Users/stevenrancohen/Documents/Claude/Projects/kesefle/.claude/serve.py"],
-      "port": 5274
+      "name": "static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4173", "."],
+      "port": 4173
     }
   ]
 }
