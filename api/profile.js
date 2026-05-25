@@ -5,10 +5,12 @@
 // the recurring-expense autoLog default, which sheet template to favour, and
 // what the weekly digest emphasises.
 //
-// KV: profile:<phone> = { trackingType, hasRecurring, autoLogPref, taxId, companyName, updatedAt }
-//   trackingType : 'personal' | 'family' | 'group' | 'business'
-//   hasRecurring : boolean
-//   autoLogPref  : 'auto' | 'remind'
+// KV: profile:<phone> = { trackingType, hasRecurring, autoLogPref, taxId, companyName, profession, paymentDefault, updatedAt }
+//   trackingType  : 'personal' | 'family' | 'group' | 'business'
+//   hasRecurring  : boolean
+//   autoLogPref   : 'auto' | 'remind'
+//   profession    : profession id from lib/professions.js (e.g. 'general_contractor',
+//                   'taxi_driver', 'cashier'). Optional; '' / null to clear.
 //   taxId        : 9-digit Israeli ת.ז. / ח.פ. (string, digits-only). Optional.
 //                  Used by lib/invoice.js when issuing a חשבונית מס to a
 //                  business customer that wants the VAT receipt to carry
@@ -17,7 +19,7 @@
 //                  invoice client name uses this instead of the human name.
 //
 // POST (JSON, bot-secret via x-kesefle-bot-secret header or body.botSecret):
-//   { action:'set', phone, fields:{ trackingType?, hasRecurring?, autoLogPref?, taxId?, companyName? } } → { ok, profile }
+//   { action:'set', phone, fields:{ trackingType?, hasRecurring?, autoLogPref?, taxId?, companyName?, profession?, paymentDefault? } } → { ok, profile }
 //   { action:'get', phone } → { ok, profile }
 
 import { withRequestId, log } from '../lib/log.js';
@@ -110,6 +112,27 @@ async function handlerImpl(req, res) {
         profile.companyName = String(fields.companyName).slice(0, 120);
       }
     }
+    // Profession. Steven 2026-05-26: onboarding Q4 asks the user what
+    // they do for a living. The id matches one of the 119 entries in
+    // lib/professions.js. Used by lib/profession-template.js to seed
+    // profession-tailored categories + by the LLM classifier to weight
+    // domain-specific keywords. We don't validate against the catalog
+    // here because that would force this endpoint to import the
+    // catalog (adding ~80 KB to cold-start). Bot side validates
+    // before calling us. Accepts: known id string OR '' / null to clear.
+    if (fields.profession !== undefined) {
+      if (fields.profession == null || fields.profession === '') {
+        delete profile.profession;
+      } else {
+        // Allow snake_case ASCII ids up to 64 chars; ignore anything weird.
+        const pid = String(fields.profession).trim().toLowerCase();
+        if (!/^[a-z0-9_]{1,64}$/.test(pid)) {
+          return res.status(400).json({ ok: false, error: 'invalid_profession' });
+        }
+        profile.profession = pid;
+      }
+    }
+
     // Payment-method default. Steven 2026-05-25: bot detects "ביט/מזומן/
     // אשראי" in expense text; if none mentioned + paymentDefault set, it
     // stamps the row with the default. Accepts:
@@ -128,7 +151,7 @@ async function handlerImpl(req, res) {
     }
     profile.updatedAt = new Date().toISOString();
     await kvSet('profile:' + phone, profile);
-    log.info('profile.set', { reqId: req.reqId, trackingType: profile.trackingType, autoLogPref: profile.autoLogPref, hasTaxId: !!profile.taxId, hasCompanyName: !!profile.companyName });
+    log.info('profile.set', { reqId: req.reqId, trackingType: profile.trackingType, autoLogPref: profile.autoLogPref, hasTaxId: !!profile.taxId, hasCompanyName: !!profile.companyName, profession: profile.profession || null });
     return res.status(200).json({ ok: true, profile });
   }
 
