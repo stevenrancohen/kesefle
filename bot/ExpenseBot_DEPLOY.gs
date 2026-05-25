@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-broken-formula-cleaner';
+const KFL_BUILD_VERSION = '2026-05-26-q4-profession';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4071,6 +4071,169 @@ function _surveySendQ3_(fromPhone) {
   ]);
 }
 
+// --- Q4: profession picker. 9 popular Israeli professions + "other" tap.
+// Each id matches lib/professions.js so /api/profile stores the same string
+// the LLM classifier + sheet seeding will read later. Tapping "other" sets
+// state=await_profession_freetext; the user types free text and we fuzzy
+// match to the full 119-entry catalog server-side. Steven 2026-05-26.
+//
+// We embed (not import) the popular list because Apps Script has no ESM.
+// If the lib/professions.js catalog drifts, only the human labels here can
+// go stale — the ids are pure ASCII and the LLM boost still works as long
+// as the id round-trips intact through /api/profile.
+var _KESEFLE_POPULAR_PROFESSIONS_ = [
+  { id: 'general_contractor',           he: 'קבלן בניין',          desc: 'שיפוצים, בנייה, פועלים' },
+  { id: 'software_developer_freelance', he: 'מפתח/ת תוכנה',         desc: 'פרילנס, סטארטאפ, לפטופ' },
+  { id: 'lawyer',                       he: 'עורך/ת דין',           desc: 'שכר טרחה, ייעוץ משפטי' },
+  { id: 'accountant',                   he: 'רואה חשבון',           desc: 'חשבשבת, דוחות, מע״מ' },
+  { id: 'private_tutor',                he: 'מורה פרטי/ת',          desc: 'שיעורים פרטיים, חוגים' },
+  { id: 'hairstylist',                  he: 'מספרה / קוסמטיקה',     desc: 'מספרה, ציפורניים, איפור' },
+  { id: 'taxi_driver',                  he: 'נהג מונית / גט',       desc: 'דלק, ביטוח רכב, gett' },
+  { id: 'cashier',                      he: 'עובד/ת קופה',          desc: 'שכיר/ה בסופר/חנות' },
+  { id: 'office_worker',                he: 'עובד/ת משרד',          desc: 'שכיר/ה במשרד / היי-טק' },
+];
+
+// Human-readable labels keyed by profession id, used by _surveyFinish_ for
+// the closing summary so the user sees their pick spelled out in Hebrew.
+var _KESEFLE_PROFESSION_HUMAN_ = (function () {
+  var m = {};
+  _KESEFLE_POPULAR_PROFESSIONS_.forEach(function (p) { m[p.id] = p.he; });
+  // Extra labels for ids the fuzzy-matcher can return that aren't in the
+  // quick-pick list (covers the most common "other" answers).
+  m.private_tutor = 'מורה פרטי/ת';
+  m.dentist = 'רופא/ת שיניים';
+  m.doctor = 'רופא/ה';
+  m.psychologist = 'פסיכולוג/ית';
+  m.physiotherapist = 'פיזיותרפיסט/ית';
+  m.architect = 'אדריכל/ית';
+  m.electrician = 'חשמלאי/ת';
+  m.plumber = 'אינסטלטור/ית';
+  m.painter_construction = 'צבע/ית בניין';
+  m.handyman = 'הנדימן';
+  m.gardener = 'גנן/ית';
+  m.cleaner = 'מנקה';
+  m.babysitter = 'בייביסיטר/ית';
+  m.dog_walker = 'מטייל/ת כלבים';
+  m.veterinarian = 'וטרינר/ית';
+  m.real_estate_agent = 'מתווך/ת';
+  m.insurance_agent = 'סוכן/ת ביטוח';
+  m.financial_advisor = 'יועץ/ת פיננסי/ת';
+  m.translator = 'מתרגם/ת';
+  m.copywriter = 'קופירייטר/ית';
+  m.graphic_designer = 'מעצב/ת גרפי/ת';
+  m.photographer = 'צלם/ת';
+  m.videographer = 'צלם/ת וידאו';
+  m.musician = 'מוזיקאי/ת';
+  m.event_planner = 'מארגן/ת אירועים';
+  m.makeup_artist = 'מאפר/ת';
+  m.personal_trainer = 'מאמן/ת כושר';
+  m.yoga_instructor = 'מורה ליוגה';
+  m.nutritionist = 'דיאטן/ית';
+  m.chef = 'שף/ית';
+  m.caterer = 'קייטרינג';
+  m.baker = 'אופה';
+  m.restaurant_owner = 'בעל/ת מסעדה';
+  m.cafe_owner = 'בעל/ת בית קפה';
+  m.shop_owner = 'בעל/ת חנות';
+  m.online_store = 'חנות אונליין';
+  m.delivery_driver = 'שליח/ה';
+  m.truck_driver = 'נהג/ת משאית';
+  m.farmer = 'חקלאי/ת';
+  m.fisherman = 'דייג/ית';
+  m.uber_driver = 'נהג/ת אובר/יאנגו';
+  m.other_employee = 'שכיר/ה אחר/ת';
+  return m;
+})();
+
+function _surveySendQ4_(fromPhone) {
+  _surveySetState_(fromPhone, 'q4');
+  // 9 popular + 1 "other" = 10 rows, exactly at WhatsApp's interactive-list cap.
+  var rows = _KESEFLE_POPULAR_PROFESSIONS_.map(function (p) {
+    return { id: 'q4_' + p.id, title: p.he, description: p.desc };
+  });
+  rows.push({ id: 'q4_other', title: 'אחר / לא ברשימה', description: 'נכתוב את המקצוע ביד' });
+  _surveySendList_(
+    fromPhone,
+    'מה המקצוע שלך? אתאים את הקטגוריות בגיליון.',
+    'בחר מקצוע',
+    rows,
+    'שאלה אחרונה: המקצוע שלך'
+  );
+}
+
+// Very small fuzzy matcher for the free-text "other" path. Returns a known
+// profession id from lib/professions.js or null. We deliberately keep this
+// list tight + Hebrew-first — the goal isn't to identify every profession
+// in the world, it's to catch the 90% case so the user doesn't have to
+// retype. Anything we don't recognize is saved as the raw cleaned text so
+// the user at least sees their answer back; the LLM-boost path then
+// degrades gracefully (no boost) instead of mis-classifying.
+function _matchProfessionFromText_(text) {
+  var t = String(text || '').toLowerCase().trim();
+  if (!t) return null;
+  // Order matters: more specific first so "רופא שיניים" wins over "רופא".
+  var rules = [
+    { id: 'dentist',                       re: /רופא[ת]?\s*שיניים|שיניים|dentist/ },
+    { id: 'veterinarian',                  re: /וטרינר|veterinar/ },
+    { id: 'psychologist',                  re: /פסיכולוג|psycholog/ },
+    { id: 'physiotherapist',               re: /פיזיותרפ|פיזיו|physiother/ },
+    { id: 'doctor',                        re: /^רופא|רופאה|רופא\s|doctor|physician|md\b/ },
+    { id: 'architect',                     re: /אדריכל|architect/ },
+    { id: 'electrician',                   re: /חשמלאי|electrician/ },
+    { id: 'plumber',                       re: /אינסטל|plumber/ },
+    { id: 'painter_construction',          re: /צבעי|painter/ },
+    { id: 'handyman',                      re: /הנדימן|handyman/ },
+    { id: 'gardener',                      re: /גנן|gardener|landscape/ },
+    { id: 'cleaner',                       re: /מנקה|ניקיון|cleaner|cleaning/ },
+    { id: 'babysitter',                    re: /בייביסיטר|מטפל[ת]?\s*ילד|babysitter|nanny/ },
+    { id: 'dog_walker',                    re: /מטייל\s*כלב|dog\s*walk/ },
+    // Final-form Hebrew letters (ן ם ך ף ץ) only appear at word-end. When the
+    // user types a plural or feminine form ("קבלנים", "דיאטנית"), the same
+    // root letter shows up in its NON-final form (נ ם כ פ צ). Patterns that
+    // need to catch both use a char class like [ןנ] to match either form.
+    // Hebrew abbreviations use either ASCII " or the gershayim ״ (U+05F4);
+    // patterns that include them use ["״] to accept both. Steven 2026-05-26.
+    { id: 'real_estate_agent',             re: /מתווך|נדל["״]?[ןנ]|real\s*estate|realtor/ },
+    { id: 'insurance_agent',               re: /סוכן\s*ביטוח|insurance\s*agent/ },
+    { id: 'financial_advisor',             re: /יועץ\s*(פיננס|כספ|השקע)|financial\s*advisor/ },
+    { id: 'translator',                    re: /מתרגם|תרגום|translator/ },
+    { id: 'copywriter',                    re: /קופירייטר|copywriter|content\s*writer/ },
+    { id: 'graphic_designer',              re: /מעצב\s*גרפ|graphic\s*design/ },
+    { id: 'photographer',                  re: /צלם|photograph/ },
+    { id: 'videographer',                  re: /צלם\s*וידא|videograph|video\s*editor/ },
+    { id: 'musician',                      re: /מוזיקאי|נג[ןנ]|musician/ },
+    { id: 'event_planner',                 re: /אירוע|הפקת\s*אירוע|event\s*plan|wedding\s*plan/ },
+    { id: 'makeup_artist',                 re: /מאפר|makeup/ },
+    { id: 'personal_trainer',              re: /מאמ[ןנ]\s*כושר|כושר\s*אישי|personal\s*train/ },
+    { id: 'yoga_instructor',               re: /יוגה|yoga|pilates|פילאטיס/ },
+    { id: 'nutritionist',                  re: /דיאט[ןנ]|תזונאי|nutrition|dietitian/ },
+    { id: 'chef',                          re: /^שף|chef/ },
+    { id: 'caterer',                       re: /קייטרינג|cater/ },
+    { id: 'baker',                         re: /אופה|מאפי|baker|bakery/ },
+    { id: 'restaurant_owner',              re: /מסעדה|מסעד[ןנ]|restaurant/ },
+    { id: 'cafe_owner',                    re: /בית\s*קפה|בריסטה|barista|cafe|coffee\s*shop/ },
+    { id: 'shop_owner',                    re: /בעל[ת]?\s*חנות|חנות\s*קטנה|shop\s*owner/ },
+    { id: 'online_store',                  re: /חנות\s*אונליין|איקומרס|ecommerce|e-?commerce|shopify/ },
+    { id: 'delivery_driver',               re: /שליח|wolt|10bis|delivery/ },
+    { id: 'truck_driver',                  re: /נהג\s*משאית|משאית|truck\s*driver/ },
+    { id: 'taxi_driver',                   re: /מונית|gett|נהג|taxi|uber|אובר|יאנגו|yango/ },
+    { id: 'farmer',                        re: /חקלאי|חקלאות|farmer|farm/ },
+    { id: 'fisherman',                     re: /דייג|fisher/ },
+    { id: 'general_contractor',            re: /קבל[ןנ]|שיפוצ|בנייה|construction|contractor/ },
+    { id: 'software_developer_freelance',  re: /מפתח|תוכנה|software|developer|programmer|engineer|מתכנת|פולסטאק|fullstack|backend|frontend/ },
+    { id: 'lawyer',                        re: /עו["״]?ד|עורך\s*די[ןנ]|עורכת\s*די[ןנ]|lawyer|attorney|legal/ },
+    { id: 'accountant',                    re: /רו["״]?ח|רואה\s*חשבו[ןנ]|חשבונאי|accountant|cpa\b/ },
+    { id: 'private_tutor',                 re: /מורה\s*פרטי|מורה\s*פרטית|מורה|tutor|teacher/ },
+    { id: 'hairstylist',                   re: /מספרה|ספר|ספרית|hairdresser|hairstyl|barber|קוסמטיקה|cosmetic|ציפורניים|manicure/ },
+    { id: 'cashier',                       re: /קופאי|קופה|cashier/ },
+    { id: 'office_worker',                 re: /משרד|פקיד|office|admin\b|administrative/ },
+  ];
+  for (var i = 0; i < rules.length; i++) {
+    if (rules[i].re.test(t)) return rules[i].id;
+  }
+  return null;
+}
+
 // Lifestyle Q after kids: car. If yes, creates a dedicated "רכב" dashboard
 // row so the user sees their car spend (fuel + parking + maintenance) at
 // a glance. Steven 2026-05-24.
@@ -4497,12 +4660,16 @@ function _surveyFinish_(fromPhone) {
   var recurringHuman = (prof.hasRecurring === true) ? 'כן' : (prof.hasRecurring === false ? 'לא' : '—');
   var autoLog = prof.autoLogPref || pref;
   var autoLogHuman = (autoLog === 'auto') ? 'רישום אוטומטי מלא' : (autoLog === 'remind' ? 'תזכורת בלבד' : '—');
+  var professionHuman = prof.profession
+    ? (_KESEFLE_PROFESSION_HUMAN_[prof.profession] || prof.profession)
+    : '—';
   var msg =
     '✅ *סיימנו! זה הפרופיל שלך:*\n' +
     '━━━━━━━━━━━━━━━━━━\n' +
     '• סוג מעקב: ' + trackingHuman + '\n' +
     '• הוצאות קבועות: ' + recurringHuman + '\n' +
-    '• אופן הרישום: ' + autoLogHuman + '\n\n' +
+    '• אופן הרישום: ' + autoLogHuman + '\n' +
+    '• מקצוע: ' + professionHuman + '\n\n' +
     'אפשר לשנות בכל עת עם הפקודה *שאלון*';
   try { sendWhatsAppMessage(fromPhone, msg); } catch (_e) {}
   _surveyClearState_(fromPhone);
@@ -4579,6 +4746,24 @@ function _surveyHandleInteractive_(fromPhone, picked) {
     var pref = (picked === 'q3_auto') ? 'auto' : 'remind';
     _profileAPI_('set', { phone: clean, fields: { autoLogPref: pref } });
     _surveySetAutoLogPref_(fromPhone, pref);
+    // Steven 2026-05-26: Q4 added so the bot learns the user's profession --
+    // drives the LLM classifier boost + (PR #11) profession-tailored sheet rows.
+    _surveySendQ4_(fromPhone);
+    return null;
+  }
+  // --- Q4: profession picker. Quick-pick ids look like "q4_<profession_id>";
+  // "q4_other" routes to free-text capture. We persist the id (not the
+  // Hebrew label) because lib/professions.js + the LLM-boost path key on
+  // the snake_case id.
+  if (typeof picked === 'string' && picked.indexOf('q4_') === 0) {
+    if (picked === 'q4_other') {
+      _surveySetState_(fromPhone, 'await_profession_freetext');
+      return { replyText: 'איזה מקצוע? כתוב חופשי -- לדוגמה: רופא שיניים, מעצב גרפי, וטרינר. אם אין מקצוע מובהק כתוב *דלג*.' };
+    }
+    var pid = picked.slice(3); // strip "q4_"
+    if (/^[a-z0-9_]{1,64}$/.test(pid)) {
+      _profileAPI_('set', { phone: clean, fields: { profession: pid } });
+    }
     _surveyFinish_(fromPhone);
     return null;
   }
@@ -4630,6 +4815,38 @@ function _surveyHandleText_(fromPhone, text) {
         { id: 'q_pets_no',    title: 'אין' },
       ]);
     } catch (_pqErr) { Logger.log('pets question send err: ' + (_pqErr && _pqErr.message)); }
+    return { handled: true };
+  }
+
+  // Q4 free-text path: user picked "אחר / לא ברשימה" on the profession picker
+  // and is now typing the profession by hand. We fuzzy-match to a known id
+  // when possible (so the LLM-boost path can use it) and fall back to the
+  // raw cleaned text so the user at least sees their answer back. Either
+  // way we close the survey afterwards. Steven 2026-05-26.
+  if (_surveyGetState_(fromPhone) === 'await_profession_freetext') {
+    if (/^(?:דלג|לא|אין|skip|no)\s*$/i.test(t)) {
+      try { sendWhatsAppMessage(fromPhone, 'אין בעיה -- אפשר להוסיף מקצוע מאוחר יותר עם הפקודה *שאלון*.'); } catch (_e) {}
+      _surveyFinish_(fromPhone);
+      return { handled: true };
+    }
+    var matchedId = _matchProfessionFromText_(t);
+    if (matchedId) {
+      _profileAPI_('set', { phone: clean, fields: { profession: matchedId } });
+      var humanLabel = _KESEFLE_PROFESSION_HUMAN_[matchedId] || matchedId;
+      try { sendWhatsAppMessage(fromPhone, 'אוקיי, סימנתי אותך כ-*' + humanLabel + '*. 👍'); } catch (_e) {}
+    } else {
+      // Unrecognised. We still save the cleaned text under a synthetic id so
+      // /api/profile keeps a record (max 60 chars, ASCII-safe slug). The
+      // LLM-boost path won't find keywords for this id and gracefully
+      // skips the boost.
+      var slug = t.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'custom';
+      // Profile API regex is /^[a-z0-9_]{1,64}$/ -- guard against empty.
+      if (/^[a-z0-9_]{1,64}$/.test(slug)) {
+        _profileAPI_('set', { phone: clean, fields: { profession: slug } });
+      }
+      try { sendWhatsAppMessage(fromPhone, 'תודה! שמרתי את *' + t.slice(0, 60) + '* כמקצוע. 👍'); } catch (_e) {}
+    }
+    _surveyFinish_(fromPhone);
     return { handled: true };
   }
 
