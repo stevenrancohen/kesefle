@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-full-category-picker';
+const KFL_BUILD_VERSION = '2026-05-25-dashboard-self-heal';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -9398,29 +9398,76 @@ function _normalizeBizSub_(subcategory) {
   return _BIZ_DASH_SUBS[s] || null;
 }
 
+// Steven 2026-05-25: rewritten to RECOMPUTE the (sub-row x month-col) cell
+// from תנועות instead of incrementing the existing value. The old
+// increment-by-amount path drifted whenever:
+//   (a) a write was missed (e.g. routing through a tenant path that
+//       didn't call this function)
+//   (b) Steven manually edited the cell (then the bot would add to his
+//       new number, double-counting)
+//   (c) the user re-ran a daily import / recurring catch-up
+// Recompute makes it idempotent: on every write, we re-sum תנועות for
+// the same (category, subcategory bucket, month) and overwrite the cell.
+// Side effect: the cell ALWAYS matches תנועות -- no drift.
+//
+// Returns true on success, false if the dashboard row/header couldn't be
+// found (logs the reason). Preserves cells that already contain a
+// formula so SUMIFS-based layouts keep working.
 function _updateBusinessDashboard_(category, subcategory, monthKey, amount) {
-  if (!amount || amount <= 0) return false;
   if (category !== 'עסק') return false;
   var canonSub = _normalizeBizSub_(subcategory);
   if (!canonSub) {
     Logger.log('_updateBusinessDashboard_: no canon sub for "' + subcategory + '" - skip');
     return false;
   }
-  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   var monthIdx = parseInt((monthKey || '').split('-')[1], 10);
-  var monthLabel = (!isNaN(monthIdx) && monthIdx >= 1 && monthIdx <= 12) ? hebMonths[monthIdx - 1] : null;
-  if (!monthLabel) {
+  if (isNaN(monthIdx) || monthIdx < 1 || monthIdx > 12) {
     Logger.log('_updateBusinessDashboard_: bad monthKey "' + monthKey + '"');
     return false;
   }
+  var year = parseInt((monthKey || '').split('-')[0], 10);
+  if (!year) year = new Date().getFullYear();
+
   var ss = SpreadsheetApp.openById(SHEET_ID);
+
+  // --- Recompute the month's bucket total from תנועות. Single read of
+  // the whole sheet; in-memory sum. Idempotent + drift-free.
+  var fresh = _sumBusinessBucketFromTransactions_(ss, canonSub, year, monthIdx);
+  if (fresh == null) {
+    Logger.log('_updateBusinessDashboard_: could not read תנועות for recompute');
+    return false;
+  }
+
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var monthLabel = hebMonths[monthIdx - 1];
+
   var dashNames = ['מאזן חברה 2026', 'מאזן חברה'];
   for (var d = 0; d < dashNames.length; d++) {
     var ds = ss.getSheetByName(dashNames[d]);
     if (!ds) continue;
     var dvals = ds.getDataRange().getValues();
+    // For each year-section in this tab, find the row labeled canonSub
+    // whose section header (B-cell of an "X4" type row above it) === year.
+    // We pick the FIRST sub-row whose nearest year header above matches.
     for (var r = 0; r < dvals.length; r++) {
       if (String(dvals[r][0] || '').trim() !== canonSub) continue;
+      // Find the closest year header above this row. We look for a cell
+      // whose value parses to our target year (typical sheet has a
+      // "בחר שנה" + year value in row 4/16/28/40 etc).
+      var sectionYear = null;
+      for (var ny = r - 1; ny >= 0; ny--) {
+        for (var ncol = 0; ncol < dvals[ny].length; ncol++) {
+          var vAny = dvals[ny][ncol];
+          var yr = parseInt(vAny, 10);
+          if (yr >= 2000 && yr <= 2100) { sectionYear = yr; break; }
+        }
+        if (sectionYear != null) break;
+      }
+      // If we found a year header and it doesn't match, keep scanning
+      // (there may be a 2025 / 2024 row with the same label further down).
+      if (sectionYear != null && sectionYear !== year) continue;
+
+      // Find which column hosts our month label by scanning rows above.
       for (var hr = 0; hr < r; hr++) {
         for (var hc = 0; hc < dvals[hr].length; hc++) {
           if (String(dvals[hr][hc] || '').trim() !== monthLabel) continue;
@@ -9431,21 +9478,74 @@ function _updateBusinessDashboard_(category, subcategory, monthKey, amount) {
             if (f && String(f).indexOf('=') === 0) hasFormula = true;
           } catch (_fErr) {}
           if (hasFormula) {
-            Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has formula - preserved');
+            Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has formula - preserved (recompute is informational)');
             return false;
           }
-          var existingRaw = String(cell.getValue() == null ? '' : cell.getValue());
-          var existing = parseFloat(existingRaw.replace(/[₪,\s]/g, '')) || 0;
-          var next = existing + Math.abs(amount);
-          cell.setValue(next);
-          Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' ' + existing + ' + ' + amount + ' = ' + next + ' (sub=' + canonSub + ', month=' + monthLabel + ')');
+          cell.setValue(fresh);
+          Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' recomputed -> ₪' + fresh + ' (sub=' + canonSub + ', month=' + monthLabel + ', year=' + year + ')');
           return true;
         }
       }
     }
   }
-  Logger.log('_updateBusinessDashboard_: row "' + canonSub + '" not found in dashboards');
+  Logger.log('_updateBusinessDashboard_: row "' + canonSub + '" with year section ' + year + ' not found');
   return false;
+}
+
+// Sum תנועות col C where col D = "עסק", col E matches the bucket-regex
+// for canonSub, col B starts with yyyy-mm. Returns null on any read
+// failure; returns a non-negative integer otherwise.
+function _sumBusinessBucketFromTransactions_(ss, canonSub, year, monthIdx) {
+  try {
+    var tx = ss.getSheetByName(TX_TAB_NAME || 'תנועות');
+    if (!tx) tx = ss.getSheetByName('תנועות');
+    if (!tx) return null;
+    var lastRow = tx.getLastRow();
+    if (lastRow < 2) return 0;
+    var data = tx.getRange(2, 1, lastRow - 1, 6).getValues();
+    var mm = monthIdx < 10 ? ('0' + monthIdx) : ('' + monthIdx);
+    var prefix = year + '-' + mm;
+    var bucketRegex = _bucketRegexFor_(canonSub);
+    if (!bucketRegex) return null;
+    var sum = 0;
+    for (var i = 0; i < data.length; i++) {
+      var r = data[i];
+      var month = String(r[1] || '').trim();
+      if (month !== prefix && month !== (year + '-' + monthIdx)) continue;
+      var amt = Number(r[2]) || 0;
+      if (!amt) continue;
+      var cat = String(r[3] || '').trim();
+      if (cat !== 'עסק') continue;
+      var sub = String(r[4] || '').trim();
+      if (!bucketRegex.test(sub)) continue;
+      sum += Math.abs(amt);
+    }
+    return Math.round(sum);
+  } catch (e) {
+    try { Logger.log('_sumBusinessBucketFromTransactions_ err: ' + (e && e.message)); } catch (_) {}
+    return null;
+  }
+}
+
+// Mirror of personal_sheet_fix.gs _COMPANY_SUB_BUCKETS_ but for the bot.
+// Maps a canonical dashboard row label -> regex matching all subcategory
+// strings the bot might write for that bucket. Kept in sync manually.
+function _bucketRegexFor_(canonLabel) {
+  switch (canonLabel) {
+    case 'מחזור':
+    case 'מחזור ברוטו':
+      return /^(מחזור|revenue|sale|sales|gross)\s*$|מחזור/;
+    case 'עלות חומרי גלם':
+      return /חומרי\s*גלם|raw\s*material/i;
+    case 'עלות שיווק':
+      return /שיווק|פרסום|advert|adwords|facebook|instagram|tiktok|google ads|fb ads|פייסבוק|אינסטה|טיקטוק|גוגל\s*אדס/i;
+    case 'משלוחים והתקנות':
+      return /משלוח|אריזה|shipping|packaging|הובלה|התקנה/i;
+    case 'הוצאות תפעוליות':
+      return /תפעולי|operational|יועצים|תוכנות|ציוד\s*עסקי|מיסים|operations|consulting|software|equipment|taxes/i;
+    default:
+      return null;
+  }
 }
 
 // Appends a NOTE to the dashboard cell that aggregates this transaction —

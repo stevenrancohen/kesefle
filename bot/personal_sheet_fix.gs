@@ -27,8 +27,11 @@
  */
 
 // ─── CONFIGURE ──────────────────────────────────────────────────────────
-// Steven's "מאזן אישי" spreadsheet ID (from his earlier WhatsApp link).
-var SHEET_ID_TO_FIX  = '1nRR9w6kU7hPx_62gsPy7-a4_ABurtGuvfhW4XkOinXU';
+// Steven's MAIN bot sheet (1UKr...) -- this is the spreadsheet the
+// WhatsApp bot writes to + where מאזן חברה / מאזן אישי / תנועות / הזמנות
+// all live in one document. Updated 2026-05-25 after we found the earlier
+// 1nRR... ID was a different sheet entirely (no תנועות data there).
+var SHEET_ID_TO_FIX  = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
 
 var TX_TAB_NAME       = 'תנועות';
 var ORDERS_TAB_NAME   = 'הזמנות';
@@ -326,6 +329,136 @@ function RESTORE_FROM_BACKUP() {
     Logger.log('!! restore failed: ' + e.message);
     Logger.log('Manual fallback: open tab "' + newestName + '", select B6:N14, copy, paste into ' + COMPANY_TAB_NAME + ' B6.');
   }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// RECOMPUTE_COMPANY_DASHBOARD — the canonical fix for "bot wrote a row to
+// תנועות but מאזן חברה still shows the old number".
+//
+// Reads תנועות from start to finish, sums every עסק row by month +
+// canonical subcategory, then writes those sums into the 2026 block of
+// מאזן חברה. Preserves any cell that already has a formula (so the row
+// for "מסי הזמנות" with =COUNTA(...) keeps working). Idempotent —
+// running it twice produces the same answer.
+//
+// Steven 2026-05-25: this is the safety-net. Whenever the dashboard
+// drifts from תנועות (because a bot path skipped the update, or a row
+// was added manually, or _updateBusinessDashboard_ couldn't find the
+// row label), just run this and everything snaps back.
+// ════════════════════════════════════════════════════════════════════════
+
+// Canonical row labels in מאזן חברה for each business subcategory the
+// bot might write. The key is a regex matched against the תנועות row's
+// col E (subcategory); value is the dashboard label in col A.
+var _COMPANY_SUB_BUCKETS_ = [
+  { label: 'מחזור ברוטו',       regex: /^(מחזור|revenue|sale|sales|gross)\s*$|מחזור/ },
+  { label: 'עלות חומרי גלם',    regex: /חומרי\s*גלם|raw\s*material/i },
+  { label: 'עלות שיווק',        regex: /שיווק|פרסום|advert|adwords|facebook|instagram|tiktok|google ads|fb ads|פייסבוק|אינסטה|טיקטוק|גוגל\s*אדס/i },
+  { label: 'משלוחים והתקנות',   regex: /משלוח|אריזה|shipping|packaging|הובלה|התקנה/i },
+  { label: 'הוצאות תפעוליות',   regex: /תפעולי|operational|יועצים|תוכנות|ציוד\s*עסקי|מיסים|operations|consulting|software|equipment|taxes/i },
+];
+
+function _bucketForBizSub_(sub) {
+  var s = String(sub || '').trim();
+  if (!s) return null;
+  for (var i = 0; i < _COMPANY_SUB_BUCKETS_.length; i++) {
+    if (_COMPANY_SUB_BUCKETS_[i].regex.test(s)) return _COMPANY_SUB_BUCKETS_[i].label;
+  }
+  // Fallback: if the sub IS the label exactly, use it.
+  for (var j = 0; j < _COMPANY_SUB_BUCKETS_.length; j++) {
+    if (_COMPANY_SUB_BUCKETS_[j].label === s) return _COMPANY_SUB_BUCKETS_[j].label;
+  }
+  return null;
+}
+
+function RECOMPUTE_COMPANY_DASHBOARD() {
+  var ss = _openSheet_();
+  var tx = ss.getSheetByName(TX_TAB_NAME);
+  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
+  if (!tx)   { Logger.log('!! no ' + TX_TAB_NAME + ' tab'); return; }
+  if (!dash) { Logger.log('!! no ' + COMPANY_TAB_NAME + ' tab'); return; }
+
+  // Year = value in B4 of the dashboard.
+  var year = parseInt(dash.getRange('B4').getValue(), 10);
+  if (!year || year < 2000 || year > 2100) {
+    Logger.log('!! bad year in B4: ' + dash.getRange('B4').getValue());
+    return;
+  }
+  Logger.log('=== RECOMPUTE for year ' + year + ' ===');
+
+  // Sum תנועות by (bucket -> month). Skip rows with no amount or wrong year.
+  var lastRow = tx.getLastRow();
+  if (lastRow < 2) { Logger.log('!! תנועות is empty'); return; }
+  var txData = tx.getRange(2, 1, lastRow - 1, 6).getValues();
+  var totals = {}; // {label -> {1..12 -> sumAmount}}
+  var seen = 0;
+  for (var i = 0; i < txData.length; i++) {
+    var r = txData[i];
+    var monthKey = String(r[1] || '').trim();
+    var amount   = Number(r[2]) || 0;
+    var cat      = String(r[3] || '').trim();
+    var sub      = String(r[4] || '').trim();
+    if (cat !== 'עסק' || !amount) continue;
+    var m = monthKey.match(/^(\d{4})-(\d{1,2})$/);
+    if (!m) continue;
+    if (parseInt(m[1], 10) !== year) continue;
+    var monthIdx = parseInt(m[2], 10);
+    if (monthIdx < 1 || monthIdx > 12) continue;
+    var bucket = _bucketForBizSub_(sub);
+    if (!bucket) continue;
+    if (!totals[bucket]) totals[bucket] = {};
+    totals[bucket][monthIdx] = (totals[bucket][monthIdx] || 0) + Math.abs(amount);
+    seen++;
+  }
+  Logger.log('Scanned ' + txData.length + ' תנועות rows -> ' + seen + ' עסק rows summed.');
+
+  // Find dashboard rows + month-header columns.
+  var dashData = dash.getDataRange().getValues();
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+  for (var bi = 0; bi < _COMPANY_SUB_BUCKETS_.length; bi++) {
+    var label = _COMPANY_SUB_BUCKETS_[bi].label;
+    var subTotals = totals[label] || {};
+    // Find the FIRST row in dashData where col A === label (rows for 2025/
+    // 2024/2023 sections come below, this picks the 2026 row since B4=year).
+    var rowIdx = -1;
+    for (var ri = 0; ri < dashData.length; ri++) {
+      if (String(dashData[ri][0] || '').trim() === label) { rowIdx = ri; break; }
+    }
+    if (rowIdx < 0) {
+      Logger.log('  skip "' + label + '" -- row label not found in dashboard');
+      continue;
+    }
+    // Find which column each Hebrew month sits in (scan rows ABOVE rowIdx).
+    var monthCols = {};
+    for (var hr = 0; hr < rowIdx; hr++) {
+      for (var hc = 0; hc < dashData[hr].length; hc++) {
+        var idx = hebMonths.indexOf(String(dashData[hr][hc] || '').trim());
+        if (idx >= 0 && !(idx + 1 in monthCols)) monthCols[idx + 1] = hc;
+      }
+    }
+    if (!Object.keys(monthCols).length) {
+      Logger.log('  skip "' + label + '" -- no month headers above row ' + (rowIdx + 1));
+      continue;
+    }
+    // Write each monthly total. Skip cells with formulas.
+    var wrote = 0, skipped = 0, yearSum = 0;
+    for (var mn = 1; mn <= 12; mn++) {
+      var col = monthCols[mn];
+      if (col === undefined) continue;
+      var v = Math.round(subTotals[mn] || 0);
+      var cell = dash.getRange(rowIdx + 1, col + 1);
+      var hadFormula = false;
+      try { hadFormula = !!cell.getFormula(); } catch (_) {}
+      if (hadFormula) { skipped++; continue; }
+      cell.setValue(v);
+      wrote++;
+      yearSum += v;
+    }
+    Logger.log('  ✓ "' + label + '" (row ' + (rowIdx + 1) + '): wrote ' + wrote +
+               ' months, skipped ' + skipped + ' formulas, year sum=₪' + yearSum);
+  }
+  Logger.log('=== DONE — refresh the sheet (Cmd+R) to see updated totals ===');
 }
 
 // ════════════════════════════════════════════════════════════════════════
