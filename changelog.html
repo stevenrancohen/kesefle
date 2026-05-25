@@ -6,7 +6,7 @@
 <title>Changelog — מה חדש בכספ'לה | היסטוריית גרסאות מלאה</title>
 <meta name="description" content="כל מה שעדכנו בכספ'לה — שקיפות מלאה. תכונות חדשות, שיפורים, תיקונים ושינויים שוברים. הירשם לעדכונים כדי לדעת ראשון." />
 <meta name="keywords" content="לוג שינויים כספ'לה, גרסאות בוט הוצאות, עדכונים אחרונים, היסטוריית גרסאות, פיצ'רים חדשים בוט וואטסאפ" />
-<meta name="theme-color" content="#0f172a" />
+<meta name="theme-color" content="#5034ff" />
 <meta property="og:title" content="Changelog — מה חדש בכספ'לה" />
 <meta property="og:description" content="כל שינוי שאנחנו פורסים — שקיפות מלאה. תכונות חדשות, שיפורים, תיקונים ושינויים שוברים." />
 <meta property="og:type" content="website" />
@@ -42,15 +42,15 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f0fdf6', 100:'#dcfce9', 200:'#bbf7d3', 300:'#86efb1', 400:'#4ade85', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
-          accent:  { 500:'#a855f7', 600:'#9333ea' }
+          brand:   { 50:'#f3f1ff', 100:'#e5e0ff', 200:'#c9bdff', 300:'#a98fff', 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8', 800:'#2a1990', 900:'#1f126b' },
+          accent:  { 500:'#ff158a', 600:'#fcab10' }
         },
         boxShadow: {
-          glow: '0 30px 80px -20px rgb(34 197 94 / 0.35)',
+          glow: '0 30px 80px -20px rgb(80 52 255 / 0.35)',
           soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
         },
         backgroundImage: {
-          'mesh': "radial-gradient(at 20% 20%, rgba(34,197,94,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(34,197,94,0.10) 0px, transparent 50%)",
+          'mesh': "radial-gradient(at 20% 20%, rgba(80,52,255,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(80,52,255,0.10) 0px, transparent 50%)",
         },
       },
     },
@@ -65,21 +65,21 @@
   .rail::before {
     content: ''; position: absolute; top: 0; bottom: 0;
     right: 1.25rem; width: 2px;
-    background: linear-gradient(to bottom, transparent 0%, rgb(34 197 94 / 0.35) 8%, rgb(34 197 94 / 0.15) 92%, transparent 100%);
+    background: linear-gradient(to bottom, transparent 0%, rgb(80 52 255 / 0.35) 8%, rgb(80 52 255 / 0.15) 92%, transparent 100%);
   }
   .rail-dot {
     position: absolute; right: 0.75rem; top: 2.2rem;
     width: 1rem; height: 1rem; border-radius: 9999px;
-    background: #22c55e; box-shadow: 0 0 0 4px rgb(34 197 94 / 0.15), 0 0 20px rgb(34 197 94 / 0.4);
+    background: #5034ff; box-shadow: 0 0 0 4px rgb(80 52 255 / 0.15), 0 0 20px rgb(80 52 255 / 0.4);
   }
   .release-card { transition: transform .25s ease, box-shadow .25s ease; }
   .release-card:hover { transform: translateY(-2px); }
   .badge { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.01em; }
-  .badge-new      { background: rgb(34 197 94 / 0.12); color: #15803d; }
+  .badge-new      { background: rgb(80 52 255 / 0.12); color: #3520b8; }
   .badge-improved { background: rgb(59 130 246 / 0.12); color: #1d4ed8; }
   .badge-fixed    { background: rgb(249 115 22 / 0.12); color: #c2410c; }
   .badge-breaking { background: rgb(239 68 68 / 0.12); color: #b91c1c; }
-  .dark .badge-new      { background: rgb(34 197 94 / 0.18); color: #86efb1; }
+  .dark .badge-new      { background: rgb(80 52 255 / 0.18); color: #a98fff; }
   .dark .badge-improved { background: rgb(59 130 246 / 0.18); color: #93c5fd; }
   .dark .badge-fixed    { background: rgb(249 115 22 / 0.20); color: #fdba74; }
   .dark .badge-breaking { background: rgb(239 68 68 / 0.22); color: #fca5a5; }
@@ -88,7 +88,7 @@
   .dark .highlight mark { background: rgb(250 204 21 / 0.35); color: #fef3c7; }
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#22c55e">
+  <meta name="theme-color" content="#5034ff">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">

@@ -6,7 +6,7 @@
 <meta name="description" content="אין כרגע חיבור לאינטרנט — כספ'לה תחזור ברגע שתתחברו." />
 <meta name="robots" content="noindex,follow" />
 <title>אין חיבור — כספ'לה</title>
-<meta name="theme-color" content="#0f1422" />
+<meta name="theme-color" content="#5034ff" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="כספ'לה" />
 <link rel="manifest" href="/manifest.webmanifest" />
@@ -21,19 +21,19 @@
     --ink-700: #2f3b54;
     --ink-800: #1e2638;
     --ink-900: #0f1422;
-    --brand-50: #f0fdf6;
-    --brand-100: #dcfce9;
-    --brand-400: #4ade85;
-    --brand-500: #22c55e;
-    --brand-600: #16a34a;
-    --brand-700: #15803d;
+    --brand-50: #f3f1ff;
+    --brand-100: #e5e0ff;
+    --brand-400: #8a6aff;
+    --brand-500: #5034ff;
+    --brand-600: #4326e0;
+    --brand-700: #3520b8;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
   body {
     font-family: 'Heebo', system-ui, sans-serif;
     background:
-      radial-gradient(at 15% 10%, rgba(34,197,94,0.16) 0px, transparent 50%),
+      radial-gradient(at 15% 10%, rgba(80,52,255,0.16) 0px, transparent 50%),
       radial-gradient(at 85% 90%, rgba(168,85,247,0.10) 0px, transparent 50%),
       var(--ink-900);
     color: #fff;
@@ -65,7 +65,7 @@
     place-items: center;
     font-weight: 900;
     font-size: 30px;
-    box-shadow: 0 16px 40px -10px rgba(34, 197, 94, 0.55);
+    box-shadow: 0 16px 40px -10px rgba(80, 52, 255, 0.55);
   }
   h1 {
     font-size: 26px;
@@ -101,11 +101,11 @@
     animation: pulse 1.6s infinite;
   }
   .status-dot.online {
-    background: rgba(34, 197, 94, 0.16);
-    color: #86efb1;
+    background: rgba(80, 52, 255, 0.16);
+    color: #a98fff;
   }
   .status-dot.online::before {
-    background: #22c55e;
+    background: #5034ff;
     animation: none;
   }
   @keyframes pulse {
@@ -159,7 +159,7 @@
   .btn-primary {
     background: linear-gradient(135deg, var(--brand-500), var(--brand-600));
     color: white;
-    box-shadow: 0 14px 30px -10px rgba(34, 197, 94, 0.55);
+    box-shadow: 0 14px 30px -10px rgba(80, 52, 255, 0.55);
   }
   .btn-primary:hover { transform: translateY(-1px); }
   .btn-primary:active { transform: translateY(0); }
@@ -192,7 +192,7 @@
     border-radius: 10px;
     transition: background 0.15s;
   }
-  .links a:hover { background: rgba(34, 197, 94, 0.10); }
+  .links a:hover { background: rgba(80, 52, 255, 0.10); }
   .spin { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>

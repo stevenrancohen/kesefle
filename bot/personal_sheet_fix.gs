@@ -44,7 +44,7 @@ var _PSF_COMPANY_TAB_    = 'מאזן חברה';
 var _PSF_PERSONAL_TAB_   = 'מאזן אישי';
 
 // Year block for 2026 (mirrors Steven's FIX_DASHBOARD_2023_2024_2025).
-var _PSF__PSF_YEAR_2026__ = {
+var _PSF_YEAR_2026_ = {
   year: 2026, yearCell: 'B4',
   revenue: 6, orderCount: 7,
   rawMaterials: 8, marketing: 9, shipping: 10, ops: 11,
@@ -423,6 +423,115 @@ function _resolveDashboardYear_(dash) {
   return now;
 }
 
+// Heuristics for detecting BROKEN dashboard formulas left over from
+// earlier manual fix attempts. A "broken" formula returns the wrong
+// number, usually because it:
+//   1. has a hardcoded `+ N` or `- N` appended (e.g. "...,...) + 2100")
+//      from when Steven typed a manual override and the bot then wrote
+//      a SUMIFS around it without removing the addition.
+//   2. references LOCAL columns ($A$, $I$, etc.) instead of the
+//      תנועות tab -- the dashboard rows live on מאזן חברה but the
+//      transactions live on תנועות, so a SUMIFS without a sheet
+//      qualifier can't possibly find any data.
+//   3. uses a wrong-month criterion (e.g. cell is May but the formula
+//      filters "יוני" / June) -- residue from copy/paste fixes.
+// We're conservative: only flag formulas that match one of these
+// concrete patterns. Anything else is preserved (better safe than
+// sorry -- the user might have a custom formula we don't recognize).
+function _isBrokenDashFormula_(formula) {
+  var f = String(formula || '').trim();
+  if (!f) return false;
+  if (f.charAt(0) !== '=') return false;
+  // Pattern 1: SUMIFS with a hardcoded + N or - N at the end
+  // (whitespace tolerant). Catches "...) + 2100" / "...)  -  150".
+  if (/SUMIFS\([^)]*\)\s*[+\-]\s*\d+(\.\d+)?\s*$/i.test(f)) return true;
+  // Pattern 2: SUMIFS referencing local cols A/B/C/etc. WITHOUT a sheet
+  // qualifier -- looks like "$I$20:$I$500,$A$20:$A$500" with no
+  // 'תנועות'!  or 'transactions'! prefix.
+  if (/SUMIFS\(\s*\$?[A-Z]+\$?\d+\s*:\s*\$?[A-Z]+\$?\d+\s*,\s*\$?[A-Z]+\$?\d+\s*:\s*\$?[A-Z]+\$?\d+/i.test(f)
+      && !/'?[א-ת]+'?!|'תנועות'!|תנועות!|transactions!/i.test(f)) {
+    return true;
+  }
+  return false;
+}
+
+// Standalone tool -- scans the 2026 block of מאזן חברה and ONLY touches
+// cells that have a broken formula. Safer than RECOMPUTE_COMPANY_DASHBOARD
+// because it never overwrites a cell with a clean SUMIFS or a value.
+// Use this when you've spotted one suspicious cell and want to clean
+// everything similar in one shot.
+function CLEAN_BROKEN_FORMULAS() {
+  var ss = _openSheet_();
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!tx)   { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
+
+  var year = _resolveDashboardYear_(dash);
+  Logger.log('=== CLEAN_BROKEN_FORMULAS for year ' + year + ' ===');
+
+  // Recompute totals from תנועות (same source-of-truth pass).
+  var lastRow = tx.getLastRow();
+  if (lastRow < 2) { Logger.log('!! תנועות empty'); return; }
+  var txData = tx.getRange(2, 1, lastRow - 1, 6).getValues();
+  var totals = {};
+  for (var i = 0; i < txData.length; i++) {
+    var r = txData[i];
+    var monthKey = String(r[1] || '').trim();
+    var amount   = Number(r[2]) || 0;
+    var cat      = String(r[3] || '').trim();
+    var sub      = String(r[4] || '').trim();
+    if (cat !== 'עסק' || !amount) continue;
+    var m = monthKey.match(/^(\d{4})-(\d{1,2})$/);
+    if (!m || parseInt(m[1], 10) !== year) continue;
+    var monthIdx = parseInt(m[2], 10);
+    var bucket = _bucketForBizSub_(sub);
+    if (!bucket) continue;
+    if (!totals[bucket]) totals[bucket] = {};
+    totals[bucket][monthIdx] = (totals[bucket][monthIdx] || 0) + Math.abs(amount);
+  }
+
+  // For each business row, check every monthly cell. ONLY rewrite the
+  // ones with a broken formula. Leave clean formulas + raw values alone.
+  var dashData = dash.getDataRange().getValues();
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var totalCleaned = 0;
+  for (var bi = 0; bi < _COMPANY_SUB_BUCKETS_.length; bi++) {
+    var label = _COMPANY_SUB_BUCKETS_[bi].label;
+    var subTotals = totals[label] || {};
+    var rowIdx = -1;
+    for (var ri = 0; ri < dashData.length; ri++) {
+      if (String(dashData[ri][0] || '').trim() === label) { rowIdx = ri; break; }
+    }
+    if (rowIdx < 0) continue;
+    var monthCols = {};
+    for (var hr = 0; hr < rowIdx; hr++) {
+      for (var hc = 0; hc < dashData[hr].length; hc++) {
+        var idx = hebMonths.indexOf(String(dashData[hr][hc] || '').trim());
+        if (idx >= 0 && !(idx + 1 in monthCols)) monthCols[idx + 1] = hc;
+      }
+    }
+    if (!Object.keys(monthCols).length) continue;
+    for (var mn = 1; mn <= 12; mn++) {
+      var col = monthCols[mn];
+      if (col === undefined) continue;
+      var cell = dash.getRange(rowIdx + 1, col + 1);
+      var f = '';
+      try { f = String(cell.getFormula() || ''); } catch (_) {}
+      if (!f) continue; // raw value -- leave alone
+      if (!_isBrokenDashFormula_(f)) continue; // clean formula -- leave alone
+      var v = Math.round(subTotals[mn] || 0);
+      cell.setValue(v);
+      totalCleaned++;
+      Logger.log('  🧹 ' + cell.getA1Notation() + ' (' + label + ' ' + hebMonths[mn-1] + '): "' + f.slice(0, 80) + '" -> ₪' + v);
+    }
+  }
+  Logger.log('=== DONE: cleaned ' + totalCleaned + ' broken formulas ===');
+  if (totalCleaned === 0) {
+    Logger.log('No broken formulas found in the 2026 business rows. If you still see a bad total, run DEEP_DIAGNOSE to look at the cell directly.');
+  }
+}
+
 function _bucketForBizSub_(sub) {
   var s = String(sub || '').trim();
   if (!s) return null;
@@ -506,22 +615,35 @@ function RECOMPUTE_COMPANY_DASHBOARD() {
       Logger.log('  skip "' + label + '" -- no month headers above row ' + (rowIdx + 1));
       continue;
     }
-    // Write each monthly total. Skip cells with formulas.
-    var wrote = 0, skipped = 0, yearSum = 0;
+    // Write each monthly total. PRESERVE legitimate SUMIFS formulas
+    // (the ones pointing at the תנועות tab); OVERWRITE broken ones
+    // (residue from earlier manual fixes that produce wrong totals).
+    var wrote = 0, skipped = 0, cleanedBroken = 0, yearSum = 0;
     for (var mn = 1; mn <= 12; mn++) {
       var col = monthCols[mn];
       if (col === undefined) continue;
       var v = Math.round(subTotals[mn] || 0);
       var cell = dash.getRange(rowIdx + 1, col + 1);
-      var hadFormula = false;
-      try { hadFormula = !!cell.getFormula(); } catch (_) {}
-      if (hadFormula) { skipped++; continue; }
+      var existingFormula = '';
+      try { existingFormula = String(cell.getFormula() || ''); } catch (_) {}
+      if (existingFormula) {
+        if (_isBrokenDashFormula_(existingFormula)) {
+          cell.setValue(v);
+          cleanedBroken++;
+          yearSum += v;
+          Logger.log('    🧹 cleaned broken formula at ' + cell.getA1Notation() + ': "' + existingFormula.slice(0, 80) + '" -> ₪' + v);
+          continue;
+        }
+        skipped++;
+        continue;
+      }
       cell.setValue(v);
       wrote++;
       yearSum += v;
     }
     Logger.log('  ✓ "' + label + '" (row ' + (rowIdx + 1) + '): wrote ' + wrote +
-               ' months, skipped ' + skipped + ' formulas, year sum=₪' + yearSum);
+               ' months, cleaned ' + cleanedBroken + ' broken formulas, skipped ' +
+               skipped + ' good formulas, year sum=₪' + yearSum);
   }
   Logger.log('=== DONE — refresh the sheet (Cmd+R) to see updated totals ===');
 }
