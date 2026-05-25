@@ -415,9 +415,14 @@
         <div class="font-bold">צריך/ה גיליון מעודכן?</div>
         <div class="mt-1 text-sm text-slate-600 break-words">בנינו תבנית מעודכנת — "מאזן אישי" ראשון, יותר קטגוריות, פחות באגים. הגיליון הישן נשאר ב-Drive שלך לארכיון; חדש ייווצר במקומו וההוצאות החדשות יזרמו אליו.</div>
         <div id="reprovision-status" class="mt-2 hidden text-xs"></div>
-        <button id="btn-reprovision" type="button" onclick="kesefleReprovisionSheet()" class="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50 disabled:opacity-60">
-          <span>🔄</span><span>צור/י גיליון חדש (מבנה מעודכן)</span>
-        </button>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="btn-reprovision" type="button" onclick="kesefleReprovisionSheet()" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50 disabled:opacity-60">
+            <span>🔄</span><span>צור/י גיליון חדש (מבנה מעודכן)</span>
+          </button>
+          <button id="btn-fix-dashboard" type="button" onclick="kesefleFixCompanyDashboard()" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60" title="פתרון מהיר בלי ליצור גיליון חדש: מתקן רק את הנוסחאות של מאזן חברה.">
+            <span>🛠️</span><span>תקן נוסחאות מאזן חברה</span>
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -1573,6 +1578,37 @@ async function kesefleReprovisionSheet() {
   } catch (e) {
     statusEl.className = 'mt-2 text-xs text-red-600';
     statusEl.textContent = '😬 נכשל: ' + (e && e.message || 'unknown') + '. נסה/י שוב, ואם זה ממשיך — צ\'אט תמיכה למטה.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Surgical fix for the company-dashboard SUMIFS bug (existing users
+// whose sheets were created with the broken formula). One POST overwrites
+// just the 4 business-row formulas with the new wildcard versions.
+async function kesefleFixCompanyDashboard() {
+  var btn = document.getElementById('btn-fix-dashboard');
+  var statusEl = document.getElementById('reprovision-status');
+  if (!btn || !statusEl) return;
+  btn.disabled = true;
+  statusEl.classList.remove('hidden');
+  statusEl.className = 'mt-2 text-xs text-slate-600';
+  statusEl.textContent = '⏳ מתקן נוסחאות במאזן חברה...';
+  try {
+    var resp = await fetch('/api/sheet/fix-company-dashboard', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    var j = await resp.json().catch(function () { return {}; });
+    if (!resp.ok || !j.ok) {
+      throw new Error((j && (j.error || j.detail)) || ('HTTP ' + resp.status));
+    }
+    statusEl.className = 'mt-2 text-xs text-emerald-700';
+    statusEl.textContent = '✅ תיקנתי ' + (j.repaired || 4) + ' שורות. רענן/י את הגיליון בכרטיסייה ותראה/י את הסכומים הנכונים.';
+  } catch (e) {
+    statusEl.className = 'mt-2 text-xs text-red-600';
+    statusEl.textContent = '😬 נכשל: ' + (e && e.message || 'unknown') + '.';
   } finally {
     btn.disabled = false;
   }
