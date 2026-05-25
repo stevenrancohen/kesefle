@@ -363,6 +363,66 @@ var _COMPANY_SUB_BUCKETS_ = [
   { label: 'הוצאות תפעוליות',   regex: /תפעולי|operational|יועצים|תוכנות|ציוד\s*עסקי|מיסים|operations|consulting|software|equipment|taxes/i },
 ];
 
+// Robust year detection for the dashboard. Steven's sheet uses a
+// drop-down at B4, but if that cell is empty / a formula returning a
+// date / a textual "2026 ▼" with extra chars, parseInt fails. We try:
+//   1. B4 raw value parsed as int
+//   2. B4 raw value as Date -> .getFullYear()
+//   3. Scan the first 10 rows for ANY cell that parses to 2000-2100
+//   4. Fall back to current calendar year
+// Always returns a sensible year so RECOMPUTE_COMPANY_DASHBOARD never
+// aborts because of a year-cell parsing edge case.
+function _resolveDashboardYear_(dash) {
+  // Try 1: B4 direct.
+  var b4 = dash.getRange('B4').getValue();
+  var y = parseInt(b4, 10);
+  if (y >= 2000 && y <= 2100) {
+    Logger.log('  year from B4 = ' + y);
+    return y;
+  }
+  // Try 2: B4 as Date.
+  if (b4 instanceof Date) {
+    var yd = b4.getFullYear();
+    if (yd >= 2000 && yd <= 2100) {
+      Logger.log('  year from B4 (Date) = ' + yd);
+      return yd;
+    }
+  }
+  // Try 3: scan first 10 rows.
+  try {
+    var lastCol = Math.max(2, dash.getLastColumn());
+    var top = dash.getRange(1, 1, Math.min(10, dash.getLastRow()), lastCol).getValues();
+    for (var r = 0; r < top.length; r++) {
+      for (var c = 0; c < top[r].length; c++) {
+        var v = top[r][c];
+        if (v instanceof Date) {
+          var ydt = v.getFullYear();
+          if (ydt >= 2000 && ydt <= 2100) {
+            Logger.log('  year found at ' + dash.getRange(r+1, c+1).getA1Notation() + ' (Date) = ' + ydt);
+            return ydt;
+          }
+        }
+        var ys = parseInt(v, 10);
+        if (ys >= 2000 && ys <= 2100) {
+          Logger.log('  year found at ' + dash.getRange(r+1, c+1).getA1Notation() + ' = ' + ys);
+          return ys;
+        }
+        // Try extracting a 4-digit year from text (e.g. "2026 ▼", "שנת 2026")
+        var sm = String(v || '').match(/\b(20\d{2})\b/);
+        if (sm) {
+          var ysm = parseInt(sm[1], 10);
+          Logger.log('  year extracted from text at ' + dash.getRange(r+1, c+1).getA1Notation() + ' = ' + ysm);
+          return ysm;
+        }
+      }
+    }
+  } catch (_e) { Logger.log('year scan err: ' + (_e && _e.message)); }
+  // Try 4: current year fallback.
+  var now = new Date().getFullYear();
+  Logger.log('  ⚠️ no year found anywhere — falling back to current year ' + now);
+  return now;
+}
+
 function _bucketForBizSub_(sub) {
   var s = String(sub || '').trim();
   if (!s) return null;
@@ -383,12 +443,12 @@ function RECOMPUTE_COMPANY_DASHBOARD() {
   if (!tx)   { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
   if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
 
-  // Year = value in B4 of the dashboard.
-  var year = parseInt(dash.getRange('B4').getValue(), 10);
-  if (!year || year < 2000 || year > 2100) {
-    Logger.log('!! bad year in B4: ' + dash.getRange('B4').getValue());
-    return;
-  }
+  // Year detection. First try B4 (where the dropdown lives on Steven's
+  // sheet). If that's empty / non-numeric / out-of-range, scan the first
+  // 10 rows for ANY 4-digit year between 2000-2100 and use that. Last
+  // resort: current calendar year. We log what we picked so it's easy
+  // to debug from the Execution Log.
+  var year = _resolveDashboardYear_(dash);
   Logger.log('=== RECOMPUTE for year ' + year + ' ===');
 
   // Sum תנועות by (bucket -> month). Skip rows with no amount or wrong year.
