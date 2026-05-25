@@ -44,7 +44,7 @@ var _PSF_COMPANY_TAB_    = 'מאזן חברה';
 var _PSF_PERSONAL_TAB_   = 'מאזן אישי';
 
 // Year block for 2026 (mirrors Steven's FIX_DASHBOARD_2023_2024_2025).
-var _PSF__PSF_YEAR_2026__ = {
+var _PSF_YEAR_2026_ = {
   year: 2026, yearCell: 'B4',
   revenue: 6, orderCount: 7,
   rawMaterials: 8, marketing: 9, shipping: 10, ops: 11,
