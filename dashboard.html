@@ -3743,7 +3743,7 @@ window.addEventListener('load', function () {
       var host = document.querySelector('main') || document.body;
       if (!host) return;
       if ((host.innerText || '').replace(/\s+/g, '').length >= 5) return;
-      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-size:20px;font-weight:800;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#4338ca;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
+      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#4338ca;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
     } catch (_e) {}
   }, 2500);
 });
