@@ -1059,44 +1059,53 @@
   var emptyState = document.getElementById('kfl-pg-empty');
   if (!input || !send || !resultBox) return;
 
+  // Helper: Hebrew word boundary. JavaScript's \b doesn't work on Hebrew
+  // (it only knows Latin word chars), so we manually anchor with a
+  // non-Hebrew-letter lookahead/lookbehind. Without this, רגקס like
+  // /מים/ would match the suffix of "תשלומים" -- exactly the bug
+  // Steven caught (8000 income misclassified as bill water).
+  function hb(pattern) { return new RegExp('(^|[^\\u0590-\\u05FF])(?:' + pattern + ')(?=$|[^\\u0590-\\u05FF])', 'i'); }
+
   // Minimal keyword -> category map. Order matters: more specific first.
+  // FIRST: explicit income markers, so they outrank everything below.
   var RULES = [
-    // INCOME (positive)
-    { rx: /משכורת|שכר|salary|payroll/i, cat: 'הכנסה', sub: 'משכורת', emoji: '💰', income: true },
-    { rx: /החזר מס|מענק|bonus|refund/i, cat: 'הכנסה', sub: 'מענק / החזר', emoji: '💵', income: true },
-    { rx: /העברה|פייבוקס|paybox|bit\b/i, cat: 'הכנסה', sub: 'העברה נכנסת', emoji: '💸', income: true },
-    // FOOD
-    { rx: /סופר|רמי לוי|שופרסל|מגה|טיב טעם|יוחננוף|אושר עד|victory|am.?pm|tiv\s*taam/i, cat: 'אוכל', sub: 'סופר', emoji: '🛒' },
-    { rx: /קפה|ארומה|רולדין|cofix|לחמים|nespresso|נספרסו/i, cat: 'אוכל', sub: 'בית קפה', emoji: '☕' },
-    { rx: /wolt|וולט|10\s*bis|תן\s*ביס|tenbis|misto|מקדונלד|burger\s*king|דומינו|פיצה/i, cat: 'אוכל', sub: 'אוכל בחוץ', emoji: '🍔' },
-    { rx: /מסעדה|אוכל|ארוחה/i, cat: 'אוכל', sub: 'אוכל בחוץ', emoji: '🍽️' },
-    // TRANSPORT
-    { rx: /דלק|פז|סונול|דור\s*אלון|delek/i, cat: 'תחבורה', sub: 'דלק', emoji: '⛽' },
-    { rx: /מונית|gett|uber|אובר|טאקסי|taxi/i, cat: 'תחבורה', sub: 'מונית', emoji: '🚕' },
-    { rx: /רב\s*קו|אוטובוס|רכבת|metropoline|מטרופולין|דן\b|אגד/i, cat: 'תחבורה', sub: 'תחבורה ציבורית', emoji: '🚌' },
-    { rx: /חניה|חניון/i, cat: 'תחבורה', sub: 'חניה', emoji: '🅿️' },
-    { rx: /טיסה|el\s*al|אל\s*על|ארקיע|easyjet/i, cat: 'תחבורה', sub: 'טיסות', emoji: '✈️' },
-    // HOME
-    { rx: /ארנונה/i, cat: 'בית', sub: 'ארנונה', emoji: '🏛️' },
-    { rx: /שכר\s*דירה|שכירות|rent/i, cat: 'בית', sub: 'שכר דירה', emoji: '🏠' },
-    { rx: /חשמל|חברת\s*חשמל|iec/i, cat: 'בית', sub: 'חשמל', emoji: '💡' },
-    { rx: /מים|תאגיד\s*מים|מקורות/i, cat: 'בית', sub: 'מים', emoji: '💧' },
-    { rx: /גז|פז\s*גז|amisragas/i, cat: 'בית', sub: 'גז', emoji: '🔥' },
-    { rx: /ועד\s*בית|ועד/i, cat: 'בית', sub: 'ועד בית', emoji: '🏢' },
-    { rx: /אינטרנט|בזק|hot|סלקום|פרטנר|partner|cellcom|yes|כבלים|תקשורת|דאבל|triple/i, cat: 'בית', sub: 'תקשורת', emoji: '📡' },
-    // HEALTH & FAMILY
-    { rx: /בית\s*מרקחת|סופר\s*פארם|super\s*pharm|נובו|תרופה|תרופות|רופא/i, cat: 'בריאות', sub: 'תרופות / רופא', emoji: '💊' },
-    { rx: /ילד|פעוטון|גן|בייביסיטר|babysit|חוג/i, cat: 'משפחה', sub: 'ילדים', emoji: '👶' },
-    { rx: /מתנה|gift/i, cat: 'משפחה', sub: 'מתנה', emoji: '🎁' },
-    // LEISURE
-    { rx: /netflix|נטפליקס|spotify|ספוטיפיי|disney|hbo|amazon\s*prime|youtube\s*premium/i, cat: 'בילויים', sub: 'מנויים', emoji: '🎬' },
-    { rx: /בית\s*קולנוע|סינמה\s*סיטי|yes\s*planet|cinema|תיאטרון/i, cat: 'בילויים', sub: 'יציאה', emoji: '🎭' },
-    { rx: /מכון\s*כושר|חדר\s*כושר|gym|holmes\s*place|אנרגיה|הולמס/i, cat: 'בילויים', sub: 'ספורט', emoji: '🏋️' },
-    // BUSINESS
-    { rx: /שיווק|פייסבוק|אינסטה|אינסטגרם|google\s*ads|פרסום|tiktok|טיקטוק/i, cat: 'עסק', sub: 'שיווק', emoji: '📢' },
-    { rx: /חומרי\s*גלם|raw|בד|קנבס|חבית|חומר\s*גלם/i, cat: 'עסק', sub: 'חומרי גלם', emoji: '🧵' },
-    { rx: /משלוח|אריזה|דואר\s*ישראל|ups|fedex/i, cat: 'עסק', sub: 'משלוחים', emoji: '📦' },
-    // DEFAULT
+    // === INCOME (TOP PRIORITY) — phrases that explicitly mean money came IN ===
+    { rx: hb('הכנסה|מלקוח|לקוח שילם|שילם לי|תשלום מלקוח|received from'), cat: 'הכנסה', sub: 'הכנסה מלקוח', emoji: '💰', income: true },
+    { rx: hb('משכורת|שכר|salary|payroll'),                 cat: 'הכנסה', sub: 'משכורת',         emoji: '💼', income: true },
+    { rx: hb('החזר מס|מענק|bonus|refund|מילגה'),           cat: 'הכנסה', sub: 'מענק / החזר',     emoji: '💵', income: true },
+    { rx: hb('פייבוקס|paybox|העברה נכנסת'),                 cat: 'הכנסה', sub: 'העברה נכנסת',    emoji: '💸', income: true },
+    // === BUSINESS — "עסק" prefix or business-specific subs ===
+    { rx: hb('שיווק|פייסבוק|אינסטה|אינסטגרם|google\\s*ads|פרסום|tiktok|טיקטוק'), cat: 'עסק', sub: 'שיווק',       emoji: '📢' },
+    { rx: hb('חומרי\\s*גלם|raw\\s*materials|חבית|בד|קנבס|חומר\\s*גלם'),         cat: 'עסק', sub: 'חומרי גלם',   emoji: '🧵' },
+    { rx: hb('משלוח|אריזה|דואר ישראל|ups|fedex'),                              cat: 'עסק', sub: 'משלוחים',     emoji: '📦' },
+    { rx: hb('יועצים|רואה חשבון|עורך דין|עוסק מורשה'),                          cat: 'עסק', sub: 'יועצים',      emoji: '👔' },
+    // === FOOD ===
+    { rx: hb('סופר|רמי\\s*לוי|שופרסל|מגה|טיב\\s*טעם|יוחננוף|אושר\\s*עד|victory|am.?pm|tiv\\s*taam'), cat: 'אוכל', sub: 'סופר',        emoji: '🛒' },
+    { rx: hb('קפה|ארומה|רולדין|cofix|לחמים|nespresso|נספרסו'),                cat: 'אוכל', sub: 'בית קפה',     emoji: '☕' },
+    { rx: hb('wolt|וולט|10\\s*bis|תן\\s*ביס|tenbis|misto|מקדונלד|burger\\s*king|דומינו|פיצה'), cat: 'אוכל', sub: 'אוכל בחוץ', emoji: '🍔' },
+    { rx: hb('מסעדה|ארוחה'),                                                   cat: 'אוכל', sub: 'אוכל בחוץ',  emoji: '🍽️' },
+    // === TRANSPORT ===
+    { rx: hb('דלק|סונול|דור\\s*אלון|delek|פז\\s*גז'),                          cat: 'תחבורה', sub: 'דלק',      emoji: '⛽' },
+    { rx: hb('מונית|gett|uber|אובר|טאקסי|taxi'),                              cat: 'תחבורה', sub: 'מונית',    emoji: '🚕' },
+    { rx: hb('רב\\s*קו|אוטובוס|רכבת|metropoline|מטרופולין|אגד'),               cat: 'תחבורה', sub: 'תחבורה ציבורית', emoji: '🚌' },
+    { rx: hb('חניה|חניון'),                                                   cat: 'תחבורה', sub: 'חניה',      emoji: '🅿️' },
+    { rx: hb('טיסה|el\\s*al|אל\\s*על|ארקיע|easyjet'),                          cat: 'תחבורה', sub: 'טיסות',    emoji: '✈️' },
+    // === HOME ===
+    { rx: hb('ארנונה'),                                                       cat: 'בית', sub: 'ארנונה',      emoji: '🏛️' },
+    { rx: hb('שכר\\s*דירה|שכירות|rent'),                                       cat: 'בית', sub: 'שכר דירה',   emoji: '🏠' },
+    { rx: hb('חשמל|חברת\\s*חשמל|iec'),                                         cat: 'בית', sub: 'חשמל',       emoji: '💡' },
+    { rx: hb('מים|תאגיד\\s*מים|מקורות'),                                       cat: 'בית', sub: 'מים',        emoji: '💧' },
+    { rx: hb('גז|amisragas'),                                                 cat: 'בית', sub: 'גז',         emoji: '🔥' },
+    { rx: hb('ועד\\s*בית|ועד'),                                                cat: 'בית', sub: 'ועד בית',    emoji: '🏢' },
+    { rx: hb('אינטרנט|בזק|hot|סלקום|פרטנר|partner|cellcom|yes|כבלים|תקשורת'),  cat: 'בית', sub: 'תקשורת',     emoji: '📡' },
+    // === HEALTH & FAMILY ===
+    { rx: hb('בית\\s*מרקחת|סופר\\s*פארם|super\\s*pharm|נובו|תרופה|תרופות|רופא'), cat: 'בריאות', sub: 'תרופות / רופא', emoji: '💊' },
+    { rx: hb('ילד|ילדים|פעוטון|גן|בייביסיטר|babysit|חוג'),                     cat: 'משפחה', sub: 'ילדים',    emoji: '👶' },
+    { rx: hb('מתנה|gift'),                                                    cat: 'משפחה', sub: 'מתנה',     emoji: '🎁' },
+    // === LEISURE ===
+    { rx: hb('netflix|נטפליקס|spotify|ספוטיפיי|disney|hbo|amazon\\s*prime|youtube\\s*premium'), cat: 'בילויים', sub: 'מנויים', emoji: '🎬' },
+    { rx: hb('בית\\s*קולנוע|סינמה\\s*סיטי|yes\\s*planet|cinema|תיאטרון'),       cat: 'בילויים', sub: 'יציאה',   emoji: '🎭' },
+    { rx: hb('מכון\\s*כושר|חדר\\s*כושר|gym|holmes\\s*place|הולמס'),             cat: 'בילויים', sub: 'ספורט',   emoji: '🏋️' },
   ];
   var DEFAULT = { cat: 'שונות', sub: 'שונות', emoji: '🗂️' };
 
