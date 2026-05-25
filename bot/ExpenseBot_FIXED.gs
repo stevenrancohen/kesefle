@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-q4-profession';
+const KFL_BUILD_VERSION = '2026-05-26-profession-seed';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -3827,6 +3827,38 @@ function _profileAPI_(action, payload) {
   }
 }
 
+// --- Seed the user's "מאזן אישי" dashboard with profession-tailored category
+// rows from lib/professions.js via /api/profession/seed-sheet. Called after
+// Q4 of the onboarding questionnaire so a קבלן sees "בטון/גבס/פועלים" in
+// their dashboard immediately. Idempotent server-side — re-running for the
+// same profession returns the rows as "skippedDuplicates" instead of
+// duplicating them. Returns { ok, profession, addedRows, skippedDuplicates }
+// or { ok:false, error } on failure.
+function _professionSeedAPI_(phone, professionId) {
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
+  if (!secret) return { ok: false, error: 'bot_secret_not_set' };
+  var payload = { phone: phone, profession: professionId, botSecret: secret };
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/profession/seed-sheet', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code < 200 || code >= 300) {
+      Logger.log('_professionSeedAPI_ HTTP ' + code + ': ' + body.slice(0, 200));
+      try { return JSON.parse(body); } catch (_e) { return { ok: false, error: 'http_' + code }; }
+    }
+    return JSON.parse(body);
+  } catch (e) {
+    return { ok: false, error: 'fetch_threw', detail: e && e.message };
+  }
+}
+
 // --- Add a custom row to the user's "מאזן אישי" dashboard via the Vercel
 // bridge. Used by:
 //   (1) the "צור קטגוריה X" command in processExpense,
@@ -4688,6 +4720,26 @@ function _surveyHandleInteractive_(fromPhone, picked) {
     var pid = picked.slice(3); // strip "q4_"
     if (/^[a-z0-9_]{1,64}$/.test(pid)) {
       _profileAPI_('set', { phone: clean, fields: { profession: pid } });
+      // Seed dashboard rows for this profession. Best-effort: any failure
+      // (404 / 502 / timeout) is logged but never blocks the questionnaire
+      // from finishing. PR #11.
+      try {
+        var seedR = _professionSeedAPI_(clean, pid);
+        if (seedR && seedR.ok && seedR.addedRows && seedR.addedRows.length) {
+          var preview = seedR.addedRows.slice(0, 3).join(', ');
+          try {
+            sendWhatsAppMessage(
+              fromPhone,
+              'הוספתי לדשבורד שלך ' + seedR.addedRows.length + ' שורות מותאמות למקצוע: ' +
+              preview + (seedR.addedRows.length > 3 ? '...' : '')
+            );
+          } catch (_e) {}
+        } else if (seedR && !seedR.ok) {
+          Logger.log('profession_seed (q4 button) failed: ' + (seedR.error || 'unknown'));
+        }
+      } catch (_seedErr) {
+        Logger.log('profession_seed (q4 button) threw: ' + (_seedErr && _seedErr.message));
+      }
     }
     _surveyFinish_(fromPhone);
     return null;
@@ -4759,6 +4811,25 @@ function _surveyHandleText_(fromPhone, text) {
       _profileAPI_('set', { phone: clean, fields: { profession: matchedId } });
       var humanLabel = _KESEFLE_PROFESSION_HUMAN_[matchedId] || matchedId;
       try { sendWhatsAppMessage(fromPhone, 'אוקיי, סימנתי אותך כ-*' + humanLabel + '*. 👍'); } catch (_e) {}
+      // Seed dashboard rows for the matched profession (same best-effort
+      // pattern as the quick-pick path above). PR #11.
+      try {
+        var seedR2 = _professionSeedAPI_(clean, matchedId);
+        if (seedR2 && seedR2.ok && seedR2.addedRows && seedR2.addedRows.length) {
+          var preview2 = seedR2.addedRows.slice(0, 3).join(', ');
+          try {
+            sendWhatsAppMessage(
+              fromPhone,
+              'הוספתי ' + seedR2.addedRows.length + ' שורות לדשבורד שלך: ' +
+              preview2 + (seedR2.addedRows.length > 3 ? '...' : '')
+            );
+          } catch (_e) {}
+        } else if (seedR2 && !seedR2.ok) {
+          Logger.log('profession_seed (q4 freetext) failed: ' + (seedR2.error || 'unknown'));
+        }
+      } catch (_seedErr2) {
+        Logger.log('profession_seed (q4 freetext) threw: ' + (_seedErr2 && _seedErr2.message));
+      }
     } else {
       // Unrecognised. We still save the cleaned text under a synthetic id so
       // /api/profile keeps a record (max 60 chars, ASCII-safe slug). The
