@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-payment-method';
+const KFL_BUILD_VERSION = '2026-05-25-full-category-picker';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1479,6 +1479,27 @@ function doPost(e) {
             }
           } catch (_survErr) {
             Logger.log('doPost: survey text error: ' + (_survErr && _survErr.stack || _survErr));
+          }
+        }
+
+        // === PENDING CATEGORY RESPONSE ===
+        // Steven 2026-05-25: when the bot asked "which category?" via
+        // _askBeforeDefaulting_ and the user replied with text instead of
+        // tapping, route here. Matches numeric picks (1-17), exact group
+        // names, "צור קטגוריה X", or any name while pendingCreate mode is
+        // on. handled=false -> let normal routing continue.
+        if (typeof _handlePendingCategoryText_ === "function") {
+          try {
+            var __pcRes = _handlePendingCategoryText_(__from_, __text_);
+            if (__pcRes && __pcRes.handled) {
+              if (__pcRes.replyText && typeof sendWhatsAppMessage === "function") {
+                sendWhatsAppMessage(__from_, __pcRes.replyText);
+              }
+              Logger.log('doPost: pending-category text handled');
+              return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+            }
+          } catch (_pcErr) {
+            Logger.log('doPost: pending-category text error: ' + (_pcErr && _pcErr.stack || _pcErr));
           }
         }
 
@@ -5092,6 +5113,53 @@ function _listInstallments_(fromPhone) {
 // + stash the pending expense in cache. When the user taps a category,
 // _handlePendingTenantPick_ writes the row + calls _learnedSave so the
 // bot remembers (global cross-tenant learn store improves for everyone).
+//
+// Pa'amonim full taxonomy (mirrors lib/categories.js) — these labels are
+// what the sheet dashboard rows expect, so SUMIFS picks them up cleanly.
+// Order = "most common first" so the first WhatsApp list page (rows 1-9)
+// shows the categories most likely to be the right answer.
+var _CATEGORY_PICKER_GROUPS_ = [
+  // page 1 (rows 1-9)
+  { name: 'מזון ופארמה',                  icon: '🍞' },
+  { name: 'תחבורה',                       icon: '🚗' },
+  { name: 'פנאי, בילוי ותחביבים',         icon: '🎬' },
+  { name: 'דיור',                         icon: '🏘' },
+  { name: 'אחזקת בית',                    icon: '🏠' },
+  { name: 'בריאות',                       icon: '🩺' },
+  { name: 'תכולת בית',                    icon: '🛋' },
+  { name: 'חינוך',                        icon: '🎓' },
+  { name: 'תקשורת',                       icon: '📱' },
+  // page 2 (rows 10-16 + "create new")
+  { name: 'ביגוד והנעלה',                 icon: '👕' },
+  { name: 'טיפוח',                        icon: '💇' },
+  { name: 'אירועים, תרומות, צרכי דת',     icon: '🎁' },
+  { name: 'משפחה',                        icon: '👨‍👩‍👧' },
+  { name: 'התחייבויות',                   icon: '💳' },
+  { name: 'נכסים',                        icon: '💰' },
+  { name: 'פיננסים',                      icon: '🏦' },
+  { name: 'עסק',                          icon: '💼' },
+];
+var _CATEGORY_PICKER_PAGE_SIZE_ = 9;
+
+// Build the all-categories text block shown alongside the interactive
+// list, so a user who DOESN'T tap can read every available option and
+// reply with a number, the category name, or "צור קטגוריה <שם>".
+function _buildFullCategoriesTextBlock_(amount) {
+  var lines = ['📋 *כל הקטגוריות הזמינות:*'];
+  for (var i = 0; i < _CATEGORY_PICKER_GROUPS_.length; i++) {
+    var c = _CATEGORY_PICKER_GROUPS_[i];
+    lines.push((i + 1) + '. ' + c.icon + ' ' + c.name);
+  }
+  lines.push('');
+  lines.push('✍️ אין קטגוריה מתאימה?');
+  lines.push('כתוב/י: *צור קטגוריה <שם>*');
+  lines.push('לדוגמה: "צור קטגוריה אופטיקה"');
+  lines.push('');
+  lines.push('או פשוט השב/י עם מספר (1-' + _CATEGORY_PICKER_GROUPS_.length + ') או עם שם הקטגוריה.');
+  lines.push('סכום ההוצאה: ₪' + Number(amount).toLocaleString('he-IL'));
+  return lines.join('\n');
+}
+
 function _askBeforeDefaulting_(fromPhone, rawText, amount, description) {
   var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
   try {
@@ -5100,44 +5168,72 @@ function _askBeforeDefaulting_(fromPhone, rawText, amount, description) {
       rawText: rawText, amount: amount, description: description, at: Date.now(),
     }), 1800); // 30 min
   } catch (_e) {}
-  // Top 9 categories + "אחר/צור קטגוריה" = 10 row WhatsApp list (cap).
-  var CATS = [
-    { name: 'אוכל',          icon: '🍞' },
-    { name: 'תחבורה',        icon: '🚗' },
-    { name: 'קניות',         icon: '🛍' },
-    { name: 'בידור',         icon: '🎬' },
-    { name: 'הוצאות קבועות', icon: '🏠' },
-    { name: 'בריאות',        icon: '💊' },
-    { name: 'חינוך וילדים',  icon: '👨‍👩‍👧' },
-    { name: 'עסק',           icon: '💼' },
-    { name: 'מתנות',         icon: '🎁' },
-    { name: 'אחר / צור קטגוריה חדשה', icon: '✨' },
-  ];
+  _sendPendingCategoryPicker_(fromPhone, amount, description, 1);
+  // Follow up the interactive picker with the FULL text list so the user
+  // sees every option (Steven 2026-05-25). WhatsApp interactive lists cap
+  // at 10 rows total, but a text message has no such cap — this gives the
+  // user the complete map + the create-new path.
+  try {
+    if (typeof sendWhatsAppMessage === 'function') {
+      sendWhatsAppMessage(fromPhone, _buildFullCategoriesTextBlock_(amount));
+    }
+  } catch (_tErr) { Logger.log('_askBeforeDefaulting_ text follow-up err: ' + (_tErr && _tErr.message)); }
+  return { reply: '' }; // interactive picker + text IS the reply
+}
+
+// Render one page of the category picker. Page 1 = first 9 + "more".
+// Page 2 = remaining 8 + "create new" + "back".
+function _sendPendingCategoryPicker_(fromPhone, amount, description, page) {
+  var start = (page === 2) ? _CATEGORY_PICKER_PAGE_SIZE_ : 0;
+  var end = (page === 2)
+    ? _CATEGORY_PICKER_GROUPS_.length
+    : Math.min(_CATEGORY_PICKER_PAGE_SIZE_, _CATEGORY_PICKER_GROUPS_.length);
+  var slice = _CATEGORY_PICKER_GROUPS_.slice(start, end);
   var rows = [];
-  for (var i = 0; i < CATS.length; i++) {
-    var c = CATS[i];
+  for (var i = 0; i < slice.length; i++) {
+    var c = slice[i];
     rows.push({
       id: 'pending|' + c.name,
       title: (c.icon + ' ' + c.name).slice(0, 24),
       description: '',
     });
   }
+  if (page === 1) {
+    rows.push({
+      id: 'pending|__more__',
+      title: '⋯ עוד אפשרויות',
+      description: 'יש עוד ' + (_CATEGORY_PICKER_GROUPS_.length - _CATEGORY_PICKER_PAGE_SIZE_) + ' קטגוריות',
+    });
+  } else {
+    rows.push({
+      id: 'pending|__create__',
+      title: '✍️ צור קטגוריה חדשה',
+      description: 'שם חופשי, יתווסף לגיליון',
+    });
+    rows.push({
+      id: 'pending|__back__',
+      title: '🔙 חזרה לרשימה הראשית',
+      description: '',
+    });
+  }
+  var header = (page === 1) ? 'איזה קטגוריה?' : 'עוד אפשרויות';
+  var body = (page === 1)
+    ? '🤔 לא ידעתי איך לסווג: "' + String(description || '').slice(0, 80) + '" — ₪' + Number(amount).toLocaleString('he-IL') +
+        '\n\nההוצאה לא נרשמה — בחר/י קטגוריה, ואני אכניס אותה ואלמד.'
+    : 'יש עוד ' + (_CATEGORY_PICKER_GROUPS_.length - _CATEGORY_PICKER_PAGE_SIZE_) + ' קטגוריות. בחר/י אחת, או צור חדשה.';
   try {
     sendWhatsAppInteractiveList(
-      fromPhone,
-      'איזה קטגוריה?',
-      '🤔 לא ידעתי איך לסווג: "' + String(description || rawText).slice(0, 80) + '" — ₪' + Number(amount).toLocaleString('he-IL') +
-        '\n\nההוצאה לא נרשמה עדיין — בחר/י קטגוריה, ואני אכניס אותה ואלמד לפעם הבאה.',
-      'תוקף הבחירה: 30 דקות',
-      'בחר/י',
+      fromPhone, header, body, 'תוקף הבחירה: 30 דקות', 'בחר/י',
       [{ title: 'קטגוריות', rows: rows }]
     );
-  } catch (_sErr) { Logger.log('_askBeforeDefaulting_ send err: ' + (_sErr && _sErr.message)); }
-  return { reply: '' }; // interactive picker IS the reply — no text duplicate
+  } catch (_sErr) { Logger.log('_sendPendingCategoryPicker_ send err: ' + (_sErr && _sErr.message)); }
+  return { reply: '' };
 }
 
 // Handle a tap on a row from _askBeforeDefaulting_. Called from
 // handleInteractiveReply_ when the picked id matches /^pending\|/.
+// Special control-row ids: "__more__" (page 2), "__back__" (page 1),
+// "__create__" (prompt for new-category name).
 function _handlePendingTenantPick_(fromPhone, pickedCategory) {
   if (!fromPhone || !pickedCategory) return null;
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
@@ -5148,21 +5244,30 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
   }
   var pending;
   try { pending = JSON.parse(raw); } catch (_) { return { replyText: '😬 שגיאה בקריאת הבקשה. שלח/י שוב.' }; }
-  cache.remove('pendingExpense:' + clean);
 
-  // Special-case the "create new category" path — surface guidance, don't write yet.
-  if (/אחר.*צור קטגוריה|צור קטגוריה/.test(pickedCategory)) {
-    // Cache pending again so user can still send a category name in next msg.
-    try { cache.put('pendingExpense:' + clean, raw, 1800); } catch (_e) {}
+  // Control rows — DO NOT consume the cache, just navigate.
+  if (pickedCategory === '__more__') {
+    _sendPendingCategoryPicker_(fromPhone, pending.amount, pending.description, 2);
+    return { replyText: '' };
+  }
+  if (pickedCategory === '__back__') {
+    _sendPendingCategoryPicker_(fromPhone, pending.amount, pending.description, 1);
+    return { replyText: '' };
+  }
+  if (pickedCategory === '__create__' || /אחר.*צור קטגוריה|צור קטגוריה/.test(pickedCategory)) {
+    try { cache.put('pendingCreate:' + clean, '1', 1800); } catch (_e) {}
     return { replyText:
-      '✨ *צור קטגוריה חדשה*\n\n' +
-      'כתוב/י: *צור קטגוריה <שם>*\n' +
-      'לדוגמה: "צור קטגוריה כלב 1 ביסקו"\n\n' +
-      'אחר כך אכניס את ההוצאה (₪' + Number(pending.amount).toLocaleString('he-IL') + ') לקטגוריה הזו.'
+      '✍️ *צור קטגוריה חדשה*\n\n' +
+      'כתוב/י את השם של הקטגוריה (לדוגמה: "אופטיקה", "כלב", "תינוק").\n\n' +
+      'אני אוסיף אותה לגיליון *מאזן אישי* ואכניס את ההוצאה (₪' +
+      Number(pending.amount).toLocaleString('he-IL') + ') לתוכה.'
     };
   }
 
-  // Normal path — write the row via /api/sheet/append with the chosen category.
+  // Normal path — consume cache + write the row.
+  cache.remove('pendingExpense:' + clean);
+  cache.remove('pendingCreate:' + clean);
+
   var botSecret = '';
   try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
   if (!botSecret) return { replyText: '😬 שגיאת קונפיגורציה.' };
@@ -5193,6 +5298,99 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
   } catch (e) {
     return { replyText: '😬 בעיה בחיבור: ' + (e && e.message) };
   }
+}
+
+// When the user replied with a TEXT message (not a tap) while there is
+// a pending expense awaiting categorization, route here. We try:
+//   1. "צור קטגוריה <name>" or pendingCreate-mode -> add row + write
+//   2. A number 1..N -> map to picker index
+//   3. An exact category-group name (or icon+name) -> use it as category
+// Anything else returns { handled: false } so normal expense/command
+// routing continues — we don't want to swallow unrelated messages.
+function _handlePendingCategoryText_(fromPhone, text) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean || !text) return { handled: false };
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get('pendingExpense:' + clean);
+  if (!raw) return { handled: false };
+  var t = String(text).trim();
+  if (!t) return { handled: false };
+
+  // Anything starting with a digit looks like a new expense — let it through.
+  // EXCEPT a pure 1-2 digit number, which is interpreted as picker index.
+  var mNum = t.match(/^\s*(\d{1,2})\s*$/);
+  if (!mNum && /^\s*\d/.test(t)) return { handled: false };
+
+  var pending;
+  try { pending = JSON.parse(raw); } catch (_) { return { handled: false }; }
+  var pendingCreate = cache.get('pendingCreate:' + clean);
+
+  function _writePendingWith_(category) {
+    cache.remove('pendingExpense:' + clean);
+    cache.remove('pendingCreate:' + clean);
+    var botSecret = '';
+    try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!botSecret) return { handled: true, replyText: '😬 שגיאת קונפיגורציה.' };
+    try {
+      var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/append', {
+        method: 'post', contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': botSecret },
+        payload: JSON.stringify({
+          phone: clean, amount: pending.amount, currency: 'ILS', isIncome: false,
+          category: category, subcategory: '', rawText: pending.rawText, botSecret: botSecret,
+        }),
+        muteHttpExceptions: true,
+      });
+      var code = resp.getResponseCode();
+      if (code >= 200 && code < 300) {
+        try {
+          if (typeof _learnedSave === 'function' && pending.description) {
+            _learnedSave(pending.description, { category: category, subcategory: '' }, 'user-correction');
+          }
+        } catch (_lsErr) {}
+        return { handled: true, replyText:
+          '✅ נרשם: ₪' + Number(pending.amount).toLocaleString('he-IL') + ' · ' + category + _sheetLinkLine_(fromPhone)
+        };
+      }
+      return { handled: true, replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה/י שוב.' };
+    } catch (e) {
+      return { handled: true, replyText: '😬 בעיה בחיבור: ' + (e && e.message) };
+    }
+  }
+
+  // 1) Explicit create command OR pendingCreate-mode is on.
+  var mCreate = t.match(/^\s*(?:צור|הוסף|create|add)\s+קטגור(?:יה|יות)\s+(.+)$/i);
+  if (mCreate || pendingCreate) {
+    var name = mCreate ? mCreate[1].trim() : t;
+    if (name.length > 40) return { handled: true, replyText: '😬 שם הקטגוריה ארוך מדי. נסה/י קצר יותר (עד 40 תווים).' };
+    var addReply = '';
+    try {
+      if (typeof _addCategoryRows_ === 'function') {
+        addReply = _addCategoryRows_(fromPhone, name);
+      }
+    } catch (_arErr) { Logger.log('_addCategoryRows_ from pending: ' + (_arErr && _arErr.message)); }
+    var writeRes = _writePendingWith_(name);
+    return { handled: true, replyText: (addReply ? addReply + '\n\n' : '') + (writeRes.replyText || '') };
+  }
+
+  // 2) Numeric reply 1..N — pick that index in the picker.
+  if (mNum) {
+    var idx = parseInt(mNum[1], 10) - 1;
+    if (idx >= 0 && idx < _CATEGORY_PICKER_GROUPS_.length) {
+      return _writePendingWith_(_CATEGORY_PICKER_GROUPS_[idx].name);
+    }
+    return { handled: false }; // out-of-range number — let it through
+  }
+
+  // 3) Exact group-name match (with or without icon).
+  for (var i = 0; i < _CATEGORY_PICKER_GROUPS_.length; i++) {
+    var g = _CATEGORY_PICKER_GROUPS_[i];
+    if (t === g.name || t === (g.icon + ' ' + g.name) || t === g.icon) {
+      return _writePendingWith_(g.name);
+    }
+  }
+
+  return { handled: false };
 }
 
 // Payment-method detector (Steven 2026-05-25). Returns one of:
