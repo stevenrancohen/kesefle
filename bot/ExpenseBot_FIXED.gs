@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-personal-dash-wildcards';
+const KFL_BUILD_VERSION = '2026-05-25-installments-laptops';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -103,7 +103,43 @@ const CATEGORY_MAP = [
   {"keywords":["מים","חשבון המים","תאגיד מים","אגרת מים"],"category":"הוצאות קבועות","subcategory":"מים"},
   {"keywords":["נטפליקס","ספוטיפיי","דיסני פלוס","יוטיוב פרימיום","אמזון פריים","אפל מיוזיק","אפל טיוי","מנוי נטפליקס","דיסני+"],"category":"בידור","subcategory":"סטרימינג"},
   {"keywords":["זארה","קסטרו","רנואר","טרמינל איקס","אמריקן איגל","פול אנד בר","מנגו בגדים","בגדים חדשים","נעלי ספורט","חולצה חדשה"],"category":"קניות","subcategory":"ביגוד"},
-  {"keywords":["אייפון","סמסונג גלקסי","מקבוק","מחשב נייד","אוזניות בלוטות","טלוויזיה חדשה","אייפד","שעון חכם"],"category":"קניות","subcategory":"אלקטרוניקה"},
+  // ===== ELECTRONICS — expanded 2026-05-25 (laptops/phones/TVs/etc) =====
+  // Massive keyword coverage so "לפטופ" / "laptop" / "computer" / etc don't
+  // fall through to שונות. Hebrew + English + transliterations.
+  {"keywords":[
+    // Laptops — Hebrew + English + transliterations
+    "לפטופ","לפ טופ","לאפטופ","laptop","mac book","macbook","macbook air","macbook pro","מקבוק","מקבוק אייר","מקבוק פרו","ultrabook","אולטרבוק",
+    "chromebook","כרומבוק","gaming laptop","לפטופ גיימינג","מחשב נייד","נייד","מחשב נישא","פורטבל",
+    "thinkpad","lenovo","לנובו","dell","דל","hp","hp pavilion","asus","אסוס","acer","אייסר","msi","razer","ריזר",
+    "alienware","framework laptop","surface laptop","surface pro","סרפס","surface book",
+    // Desktops + workstations
+    "מחשב","מחשב נייח","desktop","desktop pc","pc","tower pc","מגדל","workstation","ווקסטיישן","gaming pc","מחשב גיימינג",
+    "imac","אייימק","mac mini","mac studio","mac pro","intel nuc","raspberry pi","רספברי פאי",
+    // Phones
+    "אייפון","iphone","iphone 15","iphone 16","iphone pro","iphone plus","iphone se","iphone mini",
+    "סמסונג","samsung","samsung galaxy","galaxy s","galaxy a","galaxy z","galaxy fold","galaxy flip","סמסונג גלקסי",
+    "פיקסל","pixel","google pixel","oneplus","ואן פלוס","שיאומי","xiaomi","mi","redmi","poco","huawei","הואווי","oppo","vivo","realme","nothing phone",
+    "טלפון","טלפון חדש","טלפון נייד","cell phone","cellphone","smartphone","סמארטפון","מכשיר","פלאפון","פלייפון",
+    // Tablets
+    "אייפד","ipad","ipad pro","ipad air","ipad mini","tablet","טאבלט","galaxy tab","surface tablet","kindle","קינדל","amazon kindle",
+    // TVs + displays
+    "טלוויזיה","טלוויזיה חדשה","tv","television","smart tv","סמארט טי וי","oled","qled","טלוויזיית oled","טלוויזיית qled",
+    "lg tv","lg oled","sony tv","sony bravia","סוני","tcl","hisense","samsung tv",
+    "מסך","monitor","מסך מחשב","מסך 27","מסך אולטרא וייד","ultrawide","gaming monitor","מסך גיימינג","4k monitor","5k monitor",
+    "projector","מקרן","epson projector","benq projector",
+    // Accessories
+    "אוזניות","headphones","אוזניות בלוטות","אוזניות אלחוטיות","wireless earbuds","אירפודס","airpods","airpods pro","airpods max",
+    "מקלדת","keyboard","mechanical keyboard","מקלדת מכאנית","עכבר","mouse","wireless mouse","עכבר אלחוטי","mouse pad","פד עכבר",
+    "מצלמת רשת","webcam","ring light","אור טבעת","microphone","מיקרופון","podcasting mic",
+    "כרטיס גרפי","gpu","rtx","rtx 4090","rtx 5090","nvidia","amd radeon","gpu חדש",
+    "ssd","hdd","דיסק קשיח","דיסק חיצוני","external drive","ram","זיכרון ram","ddr5",
+    "מטען","charger","charger usb-c","מטען מהיר","fast charger","wireless charger","מטען אלחוטי","powerbank","פאוורבנק","power bank","סוללה ניידת",
+    "כבל usb","כבל hdmi","hdmi cable","usb cable","usb-c cable","דונגל","dongle","מפצל","hub","usb hub","docking station","תחנת עגינה",
+    // Smartwatches + wearables
+    "שעון חכם","smartwatch","apple watch","apple watch ultra","אפל ווטש","garmin","גרמין","fitbit","פיטביט","whoop","וופ",
+    // Smart home
+    "אלקסה","alexa","amazon echo","google nest","נסט","smart speaker","רמקול חכם","sonos","סונוס","bose","שיאומי בית חכם","smart bulb","נורה חכמה","smart plug","שקע חכם"
+  ],"category":"קניות","subcategory":"אלקטרוניקה"},
   {"keywords":["איקאה","ביתילי","רהיט","רהיט חדש","מזרן חדש","מערכת ישיבה","שולחן אוכל"],"category":"קניות","subcategory":"רהיטים"},
   {"keywords":["פלאפל","חומוס","המבורגר","גלידה","קינוח","ארוחת בוקר עסקית","בראנץ"],"category":"אוכל","subcategory":"אוכל בחוץ"},
   {"keywords":["ירקות ופירות","בשר טרי","מאפים","מצרכי בית"],"category":"אוכל","subcategory":"אוכל לבית"},
@@ -4666,6 +4702,151 @@ function _handleRelabelTap_(fromPhone, newCategory) {
   }
 }
 
+// Installments detector (2026-05-25 Steven): match "N תשלומים [של Y]" /
+// "ב-N תשלומים" / "N payments of Y" / "split into N". Returns
+// { count, perPayment, productName } or null if no installment pattern.
+function _detectInstallments_(rawText, totalAmount) {
+  if (!rawText || !totalAmount) return null;
+  var t = String(rawText).trim();
+  // Pattern A: "5 תשלומים של 200" / "10 תשלומים של 100 ש"ח"
+  var m = t.match(/(\d{1,3})\s*תשלומים\s*של\s*(\d{1,7})/);
+  if (m) {
+    var nA = parseInt(m[1], 10);
+    var perA = parseFloat(m[2]);
+    if (nA >= 2 && nA <= 60 && perA > 0) {
+      return { count: nA, perPayment: perA, productName: _extractProductName_(t, m[0]) };
+    }
+  }
+  // Pattern B: "5 תשלומים" / "ב-10 תשלומים" / "10 תשלום" — N is the count,
+  // per-payment = total / N. Most natural Hebrew phrasing.
+  m = t.match(/(?:ב[\-\s]?)?(\d{1,3})\s*תשלומים?\b/);
+  if (m) {
+    var nB = parseInt(m[1], 10);
+    if (nB >= 2 && nB <= 60) {
+      var perB = Math.round((totalAmount / nB) * 100) / 100;
+      return { count: nB, perPayment: perB, productName: _extractProductName_(t, m[0]) };
+    }
+  }
+  // Pattern C (English): "5 payments of 200" / "split into 10 payments"
+  m = t.match(/(\d{1,3})\s*payments?\s*of\s*(\d{1,7})/i);
+  if (m) {
+    var nC = parseInt(m[1], 10);
+    var perC = parseFloat(m[2]);
+    if (nC >= 2 && nC <= 60 && perC > 0) {
+      return { count: nC, perPayment: perC, productName: _extractProductName_(t, m[0]) };
+    }
+  }
+  return null;
+}
+
+// Strip the amount + installments phrase + currency tokens so the
+// product name (e.g. "ספה", "laptop") is what remains.
+function _extractProductName_(rawText, installmentsPhrase) {
+  var s = String(rawText || '');
+  if (installmentsPhrase) s = s.replace(installmentsPhrase, ' ');
+  s = s.replace(/(?:^|\s)\d+(?:[.,]\d+)?(?:\s|$)/g, ' ');
+  s = s.replace(/(?:ש["׳']?ח|שקל|ש"ח|ils|ש)/gi, ' ');
+  s = s.replace(/(?:קניתי|שילמתי|רכשתי|הזמנתי|לקחתי|bought|paid)/gi, ' ');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s || 'הוצאה בתשלומים';
+}
+
+// Register an installments plan as a recurring monthly expense. Calls
+// /api/recurring (action=add) so the plan rides the existing daily cron
+// that writes one row per due month. We also stash the plan in
+// CacheService so "תשלומים" command can list remaining counts.
+function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subcategory, rawText) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  var label = (inst.productName || 'הוצאה בתשלומים') + ' (' + inst.count + ' תשלומים)';
+  // Default first payment = today; user can correct via "תשלומים" later.
+  var startISO = new Date().toISOString().slice(0, 10);
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/recurring', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify({
+        action: 'add',
+        botSecret: botSecret,
+        phone: clean,
+        amount: inst.perPayment,
+        description: label,
+        category: category || 'אחר',
+        subcategory: subcategory || '',
+        freq: 'monthly',
+        autoLog: true,
+        startDate: startISO,
+        installments: { total: inst.count, remaining: inst.count, productName: inst.productName },
+      }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    if (code < 200 || code >= 300) {
+      Logger.log('_setupInstallmentsRecurring_ http=' + code + ' ' + resp.getContentText().slice(0, 200));
+      return { reply:
+        '😬 לא הצלחתי לרשום את תשלומי הקבע. נסה/י שוב או הקלד/י את ההוצאה בלי "תשלומים".'
+      };
+    }
+    // Local cache so "תשלומים" command can show without hitting KV.
+    try {
+      var cache = CacheService.getScriptCache();
+      var listKey = 'installments:' + clean;
+      var existing = [];
+      var raw = cache.get(listKey);
+      if (raw) { try { existing = JSON.parse(raw); } catch (_) { existing = []; } }
+      existing.push({
+        product: inst.productName,
+        per: inst.perPayment,
+        total: inst.count,
+        remaining: inst.count,
+        startedAt: Date.now(),
+      });
+      cache.put(listKey, JSON.stringify(existing), 60 * 60 * 24 * 30);  // 30d
+    } catch (_ce) {}
+    var per = '₪' + Number(inst.perPayment).toLocaleString('he-IL');
+    return { reply:
+      '💳 *תשלומים נקלטו*\n' +
+      '━━━━━━━━━━━━━━━━━━\n' +
+      '🛍 ' + (inst.productName || 'הוצאה') + '\n' +
+      '💰 ' + inst.count + ' × ' + per + ' = ₪' + Number(inst.perPayment * inst.count).toLocaleString('he-IL') + '\n' +
+      '📅 תשלום ראשון: היום, מתחדש כל חודש\n' +
+      '🔁 ייכנס לגיליון אוטומטית בכל חודש\n\n' +
+      'לראות תשלומים פעילים: כתוב/י *תשלומים*\n' +
+      'לבטל: כתוב/י *בטל תשלומים ' + (inst.productName || 'אחרון') + '*'
+    };
+  } catch (e) {
+    Logger.log('_setupInstallmentsRecurring_ threw: ' + (e && e.message));
+    return { reply: '😬 בעיה זמנית בחיבור. נסה/י שוב בעוד דקה.' };
+  }
+}
+
+// "תשלומים" command — list active installment plans with remaining count.
+function _listInstallments_(fromPhone) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return '😬 לא הצלחתי לזהות את המספר שלך.';
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get('installments:' + clean);
+  var list = [];
+  if (raw) { try { list = JSON.parse(raw); } catch (_) { list = []; } }
+  // Filter out finished (remaining 0).
+  list = list.filter(function (p) { return p && p.remaining > 0; });
+  if (!list.length) {
+    return '📭 אין תשלומים פעילים כרגע.\n\nלפתיחת תשלומים — כתוב/י את ההוצאה עם מספר תשלומים, למשל:\n*ספה 1000 שקל 5 תשלומים*';
+  }
+  var lines = ['💳 *תשלומים פעילים*', '━━━━━━━━━━━━━━━━━━'];
+  for (var i = 0; i < list.length; i++) {
+    var p = list[i];
+    var per = '₪' + Number(p.per).toLocaleString('he-IL');
+    lines.push('');
+    lines.push((i + 1) + '. *' + (p.product || 'הוצאה') + '*');
+    lines.push('   ' + p.remaining + '/' + p.total + ' תשלומים נותרו · ' + per + ' לחודש');
+    lines.push('   נותר לשלם: ₪' + Number(p.remaining * p.per).toLocaleString('he-IL'));
+  }
+  lines.push('');
+  lines.push('לביטול תשלום: *בטל תשלומים <שם המוצר>*');
+  return lines.join('\n');
+}
+
 function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   // Reuse the rich Apps Script parser for amount + (cat, subcat) so
   // tenants get the same classification quality as the owner path.
@@ -4695,6 +4876,16 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     Logger.log('_tenantWriteExpense_: KESEFLE_BOT_SECRET not set in Script Properties');
     return { reply: '😬 הבוט עוד בקונפיגורציה. רגע.' };
   }
+
+  // Steven 2026-05-25: installments detection. "ספה 1000 שקל 5 תשלומים" →
+  // bot should set up 5 monthly recurring payments of ₪200 each, NOT write
+  // a single ₪1,000 row. We register N recurring entries via /api/recurring.
+  try {
+    var inst = _detectInstallments_(rawText, first.amount);
+    if (inst && inst.count >= 2) {
+      return _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subcategory, rawText);
+    }
+  } catch (_iErr) { Logger.log('installments detect err: ' + (_iErr && _iErr.message)); }
 
   var payload = {
     phone: String(fromPhone).replace(/[^0-9]/g, ''),
@@ -5379,6 +5570,11 @@ function processExpense(text, fromPhone) {
   // message. Respond with a real intro + capabilities, not "didn't understand".
   // Conservative regex: only fires for a pure greeting, not a sentence that
   // contains the word (e.g. "שלום, אכלתי בסופר ב-45" still goes to the parser).
+  // "תשלומים" / "תשלום" / "installments" — list active installment plans.
+  if (/^\s*(תשלומים|תשלום|installments|payments)\s*[!.?]*\s*$/i.test(trimmed)) {
+    return { reply: _listInstallments_(fromPhone) };
+  }
+
   var __greetMatch = trimmed.match(/^\s*(שלום|היי|hi|hey|hello|בוקר טוב|ערב טוב|שבוע טוב|מה נשמע|מה קורה|good morning|good evening)\s*[!.?]*\s*$/i);
   if (__greetMatch) {
     // Steven 2026-05-24: every greeting should auto-launch the personalization
