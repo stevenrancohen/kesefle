@@ -282,3 +282,128 @@ function FIX_EVERYTHING() {
   Logger.log('---');
   Logger.log('All fixes applied. Refresh the sheet (Cmd+R) — numbers should be live now.');
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// EMERGENCY: restore מאזן חברה from the most recent backup tab.
+// Use this if APPLY_RESTORE_2026 left you with all zeros (formulas
+// returning 0 because they don't match your actual data layout).
+// ════════════════════════════════════════════════════════════════════════
+function RESTORE_FROM_BACKUP() {
+  var ss = _openSheet_();
+  // Find the newest _BAK_recomp_* tab.
+  var tabs = ss.getSheets();
+  var newest = null;
+  var newestName = '';
+  for (var i = 0; i < tabs.length; i++) {
+    var name = tabs[i].getName();
+    if (name.indexOf('_BAK_recomp_') === 0) {
+      if (!newest || name > newestName) {
+        newest = tabs[i];
+        newestName = name;
+      }
+    }
+  }
+  if (!newest) {
+    Logger.log('!! No backup tab found (looked for _BAK_recomp_*).');
+    Logger.log('   Tabs in this sheet: ' + tabs.map(function(t){return t.getName();}).join(', '));
+    return;
+  }
+  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
+  if (!dash) { Logger.log('!! no ' + COMPANY_TAB_NAME); return; }
+
+  // The backup snapshotted rows 1..65 cols A..N. Copy B6:N14 back (the
+  // 2026 block we touched). Use copyTo with paste type CONTENTS_ONLY so
+  // values + formulas both restore.
+  try {
+    var src = newest.getRange('B6:N14');
+    src.copyTo(dash.getRange('B6'), SpreadsheetApp.CopyPasteType.PASTE_VALUES, false);
+    Logger.log('OK: restored rows 6-14 cols B-N from backup tab "' + newestName + '"');
+    Logger.log('Old values are back in מאזן חברה. The תנועות + הזמנות data was never touched.');
+    Logger.log('');
+    Logger.log('Next step: run diagnoseBusinessRows to see why the SUMIFS returned 0.');
+    Logger.log('Send me the log output and I will fix the formula to match your data layout.');
+  } catch (e) {
+    Logger.log('!! restore failed: ' + e.message);
+    Logger.log('Manual fallback: open tab "' + newestName + '", select B6:N14, copy, paste into ' + COMPANY_TAB_NAME + ' B6.');
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// EXTENDED diagnostic — exhaustive view of תנועות so we can see exactly
+// why SUMIFS returned 0. Dumps:
+//   - First 10 rows of תנועות with all 9 columns visible
+//   - Unique values in col B (month), col D (category), col E (subcategory)
+//   - Rows where col D = "עסק" (any subcategory)
+//   - Cell B4 of מאזן חברה (the year reference)
+// ════════════════════════════════════════════════════════════════════════
+function DEEP_DIAGNOSE() {
+  var ss = _openSheet_();
+  Logger.log('=== Sheet: ' + ss.getName() + ' ===');
+  Logger.log('');
+
+  // 1. מאזן חברה B4 + B6:G11 current state
+  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
+  if (dash) {
+    var b4 = dash.getRange('B4');
+    Logger.log('B4 of ' + COMPANY_TAB_NAME + ' — value=' + b4.getValue() + ' formula="' + b4.getFormula() + '" type=' + typeof b4.getValue());
+    Logger.log('Current state of rows 6-11 (cols B + G = May):');
+    [6,7,8,9,10,11].forEach(function(r) {
+      var label = dash.getRange(r, 1).getValue();
+      var bVal = dash.getRange(r, 2).getValue();
+      var bForm = dash.getRange(r, 2).getFormula();
+      var gVal = dash.getRange(r, 7).getValue();
+      var gForm = dash.getRange(r, 7).getFormula();
+      Logger.log('R' + r + ' A="' + label + '"  B=' + bVal + (bForm?'  bFormula='+bForm.slice(0,80):'')+'  G(May)=' + gVal + (gForm?'  gFormula='+gForm.slice(0,80):''));
+    });
+    Logger.log('');
+  }
+
+  // 2. תנועות first 10 rows, all 9 cols
+  var tx = ss.getSheetByName(TX_TAB_NAME);
+  if (!tx) { Logger.log('!! no ' + TX_TAB_NAME); return; }
+  var lastRow = tx.getLastRow();
+  Logger.log('=== ' + TX_TAB_NAME + ' has ' + (lastRow - 1) + ' data rows ===');
+  var head = tx.getRange(1, 1, 1, Math.min(9, tx.getLastColumn())).getValues()[0];
+  Logger.log('Header row: ' + JSON.stringify(head));
+  var sample = tx.getRange(2, 1, Math.min(10, lastRow - 1), Math.min(9, tx.getLastColumn())).getValues();
+  for (var i = 0; i < sample.length; i++) {
+    Logger.log('Row ' + (i+2) + ': ' + JSON.stringify(sample[i]));
+  }
+  Logger.log('');
+
+  // 3. Unique D + E values + count
+  var allData = tx.getRange(2, 1, lastRow - 1, Math.min(9, tx.getLastColumn())).getValues();
+  var seenD = {};
+  var seenE = {};
+  var seenB = {};
+  for (var k = 0; k < allData.length; k++) {
+    var rr = allData[k];
+    if (rr[3]) seenD[String(rr[3])] = (seenD[String(rr[3])] || 0) + 1;
+    if (rr[4]) seenE[String(rr[4])] = (seenE[String(rr[4])] || 0) + 1;
+    if (rr[1]) seenB[String(rr[1])] = (seenB[String(rr[1])] || 0) + 1;
+  }
+  Logger.log('=== Unique values in col D (category) ===');
+  Logger.log(JSON.stringify(seenD));
+  Logger.log('=== Unique values in col E (subcategory) ===');
+  Logger.log(JSON.stringify(seenE));
+  Logger.log('=== Unique values in col B (month) — first 15 ===');
+  var bKeys = Object.keys(seenB).slice(0, 15);
+  var bSample = {};
+  bKeys.forEach(function(k){ bSample[k] = seenB[k]; });
+  Logger.log(JSON.stringify(bSample));
+  Logger.log('');
+
+  // 4. All rows where col D = "עסק"
+  Logger.log('=== Rows where col D = "עסק" ===');
+  var biz = 0;
+  for (var j = 0; j < allData.length; j++) {
+    var d = String(allData[j][3] || '').trim();
+    if (d === 'עסק') {
+      biz++;
+      if (biz <= 20) {
+        Logger.log('  row ' + (j+2) + ': B=' + allData[j][1] + ' C=' + allData[j][2] + ' D=' + JSON.stringify(allData[j][3]) + ' E=' + JSON.stringify(allData[j][4]) + ' F=' + allData[j][5]);
+      }
+    }
+  }
+  Logger.log('Total עסק rows: ' + biz);
+}
