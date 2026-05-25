@@ -966,11 +966,286 @@
   </div>
 </section>
 
-<!-- ============== FEATURES ============== -->
-<!-- 2026-05-24: dropped bg-white + the hard top/bottom hairlines for
-     continuous-flow page. Text stays white; the ambient radial below
-     gives this section its own gentle warmth. -->
-<!-- #features section removed 2026-05-24 (Steven brief: too many overpromises + redundant with #how) -->
+<!-- ============== LIVE MAGIC PLAYGROUND ============== -->
+<!-- Steven brief 2026-05-26: build something innovative + unique that
+     shows how the system works. Decision: an INTERACTIVE in-page demo
+     where the visitor types ANY expense, watches it get classified +
+     written to a mock sheet in real time -- no signup, no network,
+     no friction. The most "show don't tell" element on the page. -->
+<section id="playground" class="relative overflow-hidden py-24 md:py-32">
+  <!-- Ambient indigo/cyan blobs that pulse softly -->
+  <div class="pointer-events-none absolute inset-0 -z-10">
+    <div class="absolute top-10 right-1/4 h-72 w-72 rounded-full bg-brand-300/30 blur-3xl animate-blob"></div>
+    <div class="absolute bottom-10 left-1/4 h-72 w-72 rounded-full bg-accent-500/25 blur-3xl animate-blob" style="animation-delay:-3s"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full bg-brand-200/20 blur-3xl"></div>
+  </div>
+
+  <div class="mx-auto max-w-5xl px-5">
+    <div class="text-center">
+      <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-brand-600">⚡ ניסיון חי</p>
+      <h2 class="mt-3 text-5xl font-black tracking-tighter md:text-7xl text-ink-900">
+        תכתוב הוצאה.
+        <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-700 bg-clip-text text-transparent">תראה את הקסם.</span>
+      </h2>
+      <p class="mt-5 text-lg text-ink-600 max-w-2xl mx-auto">
+        בלי הרשמה. בלי התקנה. נסה את האינטליגנציה של כספ'לה ישר כאן בדף.
+      </p>
+    </div>
+
+    <!-- The actual playground -->
+    <div class="mt-12 mx-auto max-w-3xl">
+      <!-- Quick-pick chips -->
+      <div class="mb-5 flex flex-wrap justify-center gap-2">
+        <span class="text-xs font-semibold text-ink-500 self-center ml-2">או נסה:</span>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="245 סופר רמי לוי">245 סופר רמי לוי</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="42 קפה ארומה">42 קפה ארומה</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="180 דלק פז">180 דלק פז</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="1200 ארנונה">1200 ארנונה</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="8500 משכורת">8500 משכורת</button>
+      </div>
+
+      <!-- The "WhatsApp" input bar -->
+      <div class="relative rounded-3xl border-2 border-ink-200 bg-white p-3 shadow-2xl ring-1 ring-brand-100/50 transition focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-200/40">
+        <div class="flex items-center gap-2">
+          <span class="grid h-11 w-11 place-items-center rounded-full bg-brand-600 text-white text-lg shadow-md">₪</span>
+          <input
+            id="kfl-pg-input"
+            type="text"
+            dir="rtl"
+            class="flex-1 bg-transparent px-3 py-3 text-lg font-medium text-ink-900 placeholder:text-ink-400 focus:outline-none"
+            placeholder="כתוב הוצאה כמו &quot;120 וולט&quot; או &quot;3500 שכר דירה&quot;..."
+            autocomplete="off"
+            maxlength="120"
+          />
+          <button id="kfl-pg-send" type="button" class="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-l from-brand-600 to-brand-700 text-white shadow-md transition hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed" disabled aria-label="שלח">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- The result area — empty until the user types + sends -->
+      <div id="kfl-pg-result" class="mt-6 min-h-[140px] transition-opacity">
+        <div id="kfl-pg-empty" class="rounded-2xl border-2 border-dashed border-ink-200 bg-white/60 p-8 text-center text-sm text-ink-500 backdrop-blur">
+          <div class="text-4xl mb-3">👆</div>
+          <div>כתוב הוצאה למעלה או לחץ על דוגמה</div>
+          <div class="mt-1 text-xs text-ink-400">התוצאה תופיע כאן — ביחד עם השורה שתיכתב לגיליון שלך</div>
+        </div>
+      </div>
+
+      <!-- Stats: live counter of recognized words (transparency for the user) -->
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-ink-500">
+        <div class="flex items-center gap-1.5">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
+          </span>
+          <span>זיהוי בזמן אמת — בלי שרת, בלי המתנה</span>
+        </div>
+        <div>•</div>
+        <div>הנתונים שלך נשארים אצלך — שום דבר לא נשמר</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pure-DOM micro-classifier for the playground. Mirrors the bot's
+     top-30 most common Hebrew + brand keywords so the demo "thinks"
+     instantly without a network round-trip. NEVER persists; pure UI. -->
+<script>
+(function () {
+  var input = document.getElementById('kfl-pg-input');
+  var send = document.getElementById('kfl-pg-send');
+  var resultBox = document.getElementById('kfl-pg-result');
+  var emptyState = document.getElementById('kfl-pg-empty');
+  if (!input || !send || !resultBox) return;
+
+  // Minimal keyword -> category map. Order matters: more specific first.
+  var RULES = [
+    // INCOME (positive)
+    { rx: /משכורת|שכר|salary|payroll/i, cat: 'הכנסה', sub: 'משכורת', emoji: '💰', income: true },
+    { rx: /החזר מס|מענק|bonus|refund/i, cat: 'הכנסה', sub: 'מענק / החזר', emoji: '💵', income: true },
+    { rx: /העברה|פייבוקס|paybox|bit\b/i, cat: 'הכנסה', sub: 'העברה נכנסת', emoji: '💸', income: true },
+    // FOOD
+    { rx: /סופר|רמי לוי|שופרסל|מגה|טיב טעם|יוחננוף|אושר עד|victory|am.?pm|tiv\s*taam/i, cat: 'אוכל', sub: 'סופר', emoji: '🛒' },
+    { rx: /קפה|ארומה|רולדין|cofix|לחמים|nespresso|נספרסו/i, cat: 'אוכל', sub: 'בית קפה', emoji: '☕' },
+    { rx: /wolt|וולט|10\s*bis|תן\s*ביס|tenbis|misto|מקדונלד|burger\s*king|דומינו|פיצה/i, cat: 'אוכל', sub: 'אוכל בחוץ', emoji: '🍔' },
+    { rx: /מסעדה|אוכל|ארוחה/i, cat: 'אוכל', sub: 'אוכל בחוץ', emoji: '🍽️' },
+    // TRANSPORT
+    { rx: /דלק|פז|סונול|דור\s*אלון|delek/i, cat: 'תחבורה', sub: 'דלק', emoji: '⛽' },
+    { rx: /מונית|gett|uber|אובר|טאקסי|taxi/i, cat: 'תחבורה', sub: 'מונית', emoji: '🚕' },
+    { rx: /רב\s*קו|אוטובוס|רכבת|metropoline|מטרופולין|דן\b|אגד/i, cat: 'תחבורה', sub: 'תחבורה ציבורית', emoji: '🚌' },
+    { rx: /חניה|חניון/i, cat: 'תחבורה', sub: 'חניה', emoji: '🅿️' },
+    { rx: /טיסה|el\s*al|אל\s*על|ארקיע|easyjet/i, cat: 'תחבורה', sub: 'טיסות', emoji: '✈️' },
+    // HOME
+    { rx: /ארנונה/i, cat: 'בית', sub: 'ארנונה', emoji: '🏛️' },
+    { rx: /שכר\s*דירה|שכירות|rent/i, cat: 'בית', sub: 'שכר דירה', emoji: '🏠' },
+    { rx: /חשמל|חברת\s*חשמל|iec/i, cat: 'בית', sub: 'חשמל', emoji: '💡' },
+    { rx: /מים|תאגיד\s*מים|מקורות/i, cat: 'בית', sub: 'מים', emoji: '💧' },
+    { rx: /גז|פז\s*גז|amisragas/i, cat: 'בית', sub: 'גז', emoji: '🔥' },
+    { rx: /ועד\s*בית|ועד/i, cat: 'בית', sub: 'ועד בית', emoji: '🏢' },
+    { rx: /אינטרנט|בזק|hot|סלקום|פרטנר|partner|cellcom|yes|כבלים|תקשורת|דאבל|triple/i, cat: 'בית', sub: 'תקשורת', emoji: '📡' },
+    // HEALTH & FAMILY
+    { rx: /בית\s*מרקחת|סופר\s*פארם|super\s*pharm|נובו|תרופה|תרופות|רופא/i, cat: 'בריאות', sub: 'תרופות / רופא', emoji: '💊' },
+    { rx: /ילד|פעוטון|גן|בייביסיטר|babysit|חוג/i, cat: 'משפחה', sub: 'ילדים', emoji: '👶' },
+    { rx: /מתנה|gift/i, cat: 'משפחה', sub: 'מתנה', emoji: '🎁' },
+    // LEISURE
+    { rx: /netflix|נטפליקס|spotify|ספוטיפיי|disney|hbo|amazon\s*prime|youtube\s*premium/i, cat: 'בילויים', sub: 'מנויים', emoji: '🎬' },
+    { rx: /בית\s*קולנוע|סינמה\s*סיטי|yes\s*planet|cinema|תיאטרון/i, cat: 'בילויים', sub: 'יציאה', emoji: '🎭' },
+    { rx: /מכון\s*כושר|חדר\s*כושר|gym|holmes\s*place|אנרגיה|הולמס/i, cat: 'בילויים', sub: 'ספורט', emoji: '🏋️' },
+    // BUSINESS
+    { rx: /שיווק|פייסבוק|אינסטה|אינסטגרם|google\s*ads|פרסום|tiktok|טיקטוק/i, cat: 'עסק', sub: 'שיווק', emoji: '📢' },
+    { rx: /חומרי\s*גלם|raw|בד|קנבס|חבית|חומר\s*גלם/i, cat: 'עסק', sub: 'חומרי גלם', emoji: '🧵' },
+    { rx: /משלוח|אריזה|דואר\s*ישראל|ups|fedex/i, cat: 'עסק', sub: 'משלוחים', emoji: '📦' },
+    // DEFAULT
+  ];
+  var DEFAULT = { cat: 'שונות', sub: 'שונות', emoji: '🗂️' };
+
+  function classify(text) {
+    var t = String(text || '').trim();
+    // Extract first number as amount
+    var m = t.match(/(\d+(?:\.\d+)?)/);
+    var amount = m ? parseFloat(m[1]) : 0;
+    // Match keyword
+    for (var i = 0; i < RULES.length; i++) {
+      if (RULES[i].rx.test(t)) {
+        return { amount: amount, ...RULES[i] };
+      }
+    }
+    return { amount: amount, ...DEFAULT, income: false };
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function render(text) {
+    if (!text.trim()) return;
+    var r = classify(text);
+    var sign = r.income ? '+' : '−';
+    var signColor = r.income ? 'text-emerald-600' : 'text-ink-900';
+    var amountFmt = r.amount ? r.amount.toLocaleString('he-IL') : '?';
+    var today = new Date();
+    var dateFmt = today.getDate() + '/' + (today.getMonth()+1).toString().padStart(2,'0');
+
+    resultBox.innerHTML =
+      '<div class="kfl-pg-anim grid gap-4 md:grid-cols-2">' +
+        // Bot reply card (left side, slides in)
+        '<div class="kfl-pg-card relative rounded-2xl border border-brand-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-lg">' +
+          '<div class="absolute -top-3 right-5 inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white shadow-md">' +
+            '<svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg>' +
+            'נשמר אצלך' +
+          '</div>' +
+          '<div class="flex items-center gap-3">' +
+            '<span class="text-4xl">' + r.emoji + '</span>' +
+            '<div>' +
+              '<div class="text-2xl font-black tracking-tight ' + signColor + '">' + sign + '₪' + escapeHtml(amountFmt) + '</div>' +
+              '<div class="text-sm font-semibold text-ink-600">' + escapeHtml(r.cat) + ' · ' + escapeHtml(r.sub) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="mt-4 text-xs text-ink-500">' +
+            (r.income
+              ? '✓ סווג כהכנסה ונכנס לטור ההכנסות' +
+              '<br>' + '✓ הצביעי על אחוז החיסכון בלוח האישי שלך'
+              : '✓ סווג ל"' + escapeHtml(r.cat) + '" — קטגוריה ' + escapeHtml(r.sub) +
+              '<br>' + '✓ נספר לתקציב החודשי, התראה אם חרגת') +
+          '</div>' +
+        '</div>' +
+        // Mock sheet row (right side, slides in)
+        '<div class="kfl-pg-card rounded-2xl border border-ink-200 bg-white p-5 shadow-lg" style="animation-delay:0.15s">' +
+          '<div class="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-500">' +
+            '<svg class="h-4 w-4 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM8 17H5v-3h3v3zm0-5H5V9h3v3zm0-5H5V5h3v2zm5 10h-3v-3h3v3zm0-5h-3V9h3v3zm0-5h-3V5h3v2zm6 10h-4v-3h4v3zm0-5h-4V9h4v3zm0-5h-4V5h4v2z"/></svg>' +
+            'הגיליון שלך' +
+          '</div>' +
+          // Header row
+          '<div class="grid grid-cols-4 gap-2 border-b border-ink-200 pb-2 text-[10px] font-bold uppercase tracking-wider text-ink-400">' +
+            '<div>תאריך</div>' +
+            '<div>סכום</div>' +
+            '<div>קטגוריה</div>' +
+            '<div>תיאור</div>' +
+          '</div>' +
+          // New row (highlighted)
+          '<div class="kfl-pg-newrow mt-2 grid grid-cols-4 gap-2 rounded-lg bg-brand-50/60 p-2 text-sm">' +
+            '<div class="font-mono text-ink-700">' + dateFmt + '</div>' +
+            '<div class="num font-bold ' + signColor + '">' + sign + '₪' + escapeHtml(amountFmt) + '</div>' +
+            '<div class="text-ink-700">' + r.emoji + ' ' + escapeHtml(r.cat) + '</div>' +
+            '<div class="truncate text-ink-600">' + escapeHtml(text) + '</div>' +
+          '</div>' +
+          // 2 faded "older" rows for context
+          '<div class="mt-1 grid grid-cols-4 gap-2 p-2 text-sm opacity-30">' +
+            '<div class="font-mono text-ink-700">' + (today.getDate()-1) + '/' + (today.getMonth()+1).toString().padStart(2,'0') + '</div>' +
+            '<div class="num">−₪64</div>' +
+            '<div>🛒 אוכל</div>' +
+            '<div class="truncate">64 שופרסל</div>' +
+          '</div>' +
+          '<div class="grid grid-cols-4 gap-2 p-2 text-sm opacity-20">' +
+            '<div class="font-mono text-ink-700">' + (today.getDate()-2) + '/' + (today.getMonth()+1).toString().padStart(2,'0') + '</div>' +
+            '<div class="num">−₪22</div>' +
+            '<div>🚌 תחבורה</div>' +
+            '<div class="truncate">22 רב קו</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="mt-5 text-center">' +
+        '<a href="#signup" class="inline-flex items-center gap-2 rounded-full bg-gradient-to-l from-brand-600 to-brand-700 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl hover:-translate-y-0.5">' +
+          'התרשמת? התחל עכשיו' +
+          '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>' +
+        '</a>' +
+      '</div>';
+  }
+
+  // Wire up the input/button.
+  input.addEventListener('input', function () {
+    send.disabled = !input.value.trim();
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && input.value.trim()) {
+      e.preventDefault();
+      render(input.value);
+    }
+  });
+  send.addEventListener('click', function () {
+    if (input.value.trim()) render(input.value);
+  });
+  // Chip click -> fill the input + auto-send.
+  document.querySelectorAll('.kfl-pg-chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var txt = chip.getAttribute('data-pg');
+      input.value = txt;
+      send.disabled = false;
+      input.focus();
+      render(txt);
+    });
+  });
+})();
+</script>
+
+<!-- Tiny animation keyframes used by the playground -->
+<style>
+  @keyframes kfl-pg-slide-in {
+    0% { opacity: 0; transform: translateY(20px) scale(0.96); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes kfl-pg-row-highlight {
+    0% { background-color: rgba(99, 102, 241, 0.4); }
+    100% { background-color: rgba(99, 102, 241, 0.1); }
+  }
+  .kfl-pg-card {
+    animation: kfl-pg-slide-in 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  }
+  .kfl-pg-newrow {
+    animation: kfl-pg-row-highlight 1.2s ease-out;
+  }
+  @keyframes kfl-blob-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  .animate-blob { animation: kfl-blob-pulse 8s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .kfl-pg-card, .kfl-pg-newrow, .animate-blob { animation: none !important; }
+  }
+</style>
 
 <!-- ============== INTERACTIVE DEMO (auto-running) ============== -->
 <!-- Steven brief 2026-05-24: replace the click-to-try demo with one that
