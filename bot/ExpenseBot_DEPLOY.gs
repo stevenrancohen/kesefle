@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-installments-laptops';
+const KFL_BUILD_VERSION = '2026-05-25-ask-before-default';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1726,6 +1726,14 @@ function handleInteractiveReply_(fromPhone, interactive) {
   var __relMatch = String(picked).match(/^relabel\|(.+)$/);
   if (__relMatch && typeof _handleRelabelTap_ === 'function') {
     return _handleRelabelTap_(fromPhone, __relMatch[1]);
+  }
+
+  // Ask-before-default picker (Steven 2026-05-25) — when classifier was
+  // uncertain we sent a category list INSTEAD of writing to שונות.
+  // Format: "pending|<category>".
+  var __pendMatch = String(picked).match(/^pending\|(.+)$/);
+  if (__pendMatch && typeof _handlePendingTenantPick_ === 'function') {
+    return _handlePendingTenantPick_(fromPhone, __pendMatch[1]);
   }
 
   var decoded = _decodeCategoryOptionId(picked);
@@ -4922,6 +4930,114 @@ function _listInstallments_(fromPhone) {
   return lines.join('\n');
 }
 
+// Steven 2026-05-25: instead of silently dumping to "שונות" when the
+// classifier+LLM are both uncertain, ASK the user. Send a category list
+// + stash the pending expense in cache. When the user taps a category,
+// _handlePendingTenantPick_ writes the row + calls _learnedSave so the
+// bot remembers (global cross-tenant learn store improves for everyone).
+function _askBeforeDefaulting_(fromPhone, rawText, amount, description) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  try {
+    var cache = CacheService.getScriptCache();
+    cache.put('pendingExpense:' + clean, JSON.stringify({
+      rawText: rawText, amount: amount, description: description, at: Date.now(),
+    }), 1800); // 30 min
+  } catch (_e) {}
+  // Top 9 categories + "אחר/צור קטגוריה" = 10 row WhatsApp list (cap).
+  var CATS = [
+    { name: 'אוכל',          icon: '🍞' },
+    { name: 'תחבורה',        icon: '🚗' },
+    { name: 'קניות',         icon: '🛍' },
+    { name: 'בידור',         icon: '🎬' },
+    { name: 'הוצאות קבועות', icon: '🏠' },
+    { name: 'בריאות',        icon: '💊' },
+    { name: 'חינוך וילדים',  icon: '👨‍👩‍👧' },
+    { name: 'עסק',           icon: '💼' },
+    { name: 'מתנות',         icon: '🎁' },
+    { name: 'אחר / צור קטגוריה חדשה', icon: '✨' },
+  ];
+  var rows = [];
+  for (var i = 0; i < CATS.length; i++) {
+    var c = CATS[i];
+    rows.push({
+      id: 'pending|' + c.name,
+      title: (c.icon + ' ' + c.name).slice(0, 24),
+      description: '',
+    });
+  }
+  try {
+    sendWhatsAppInteractiveList(
+      fromPhone,
+      'איזה קטגוריה?',
+      '🤔 לא ידעתי איך לסווג: "' + String(description || rawText).slice(0, 80) + '" — ₪' + Number(amount).toLocaleString('he-IL') +
+        '\n\nההוצאה לא נרשמה עדיין — בחר/י קטגוריה, ואני אכניס אותה ואלמד לפעם הבאה.',
+      'תוקף הבחירה: 30 דקות',
+      'בחר/י',
+      [{ title: 'קטגוריות', rows: rows }]
+    );
+  } catch (_sErr) { Logger.log('_askBeforeDefaulting_ send err: ' + (_sErr && _sErr.message)); }
+  return { reply: '' }; // interactive picker IS the reply — no text duplicate
+}
+
+// Handle a tap on a row from _askBeforeDefaulting_. Called from
+// handleInteractiveReply_ when the picked id matches /^pending\|/.
+function _handlePendingTenantPick_(fromPhone, pickedCategory) {
+  if (!fromPhone || !pickedCategory) return null;
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get('pendingExpense:' + clean);
+  if (!raw) {
+    return { replyText: '🤔 לא מצאתי הוצאה שמחכה לסיווג. שלח/י שוב את ההוצאה.' };
+  }
+  var pending;
+  try { pending = JSON.parse(raw); } catch (_) { return { replyText: '😬 שגיאה בקריאת הבקשה. שלח/י שוב.' }; }
+  cache.remove('pendingExpense:' + clean);
+
+  // Special-case the "create new category" path — surface guidance, don't write yet.
+  if (/אחר.*צור קטגוריה|צור קטגוריה/.test(pickedCategory)) {
+    // Cache pending again so user can still send a category name in next msg.
+    try { cache.put('pendingExpense:' + clean, raw, 1800); } catch (_e) {}
+    return { replyText:
+      '✨ *צור קטגוריה חדשה*\n\n' +
+      'כתוב/י: *צור קטגוריה <שם>*\n' +
+      'לדוגמה: "צור קטגוריה כלב 1 ביסקו"\n\n' +
+      'אחר כך אכניס את ההוצאה (₪' + Number(pending.amount).toLocaleString('he-IL') + ') לקטגוריה הזו.'
+    };
+  }
+
+  // Normal path — write the row via /api/sheet/append with the chosen category.
+  var botSecret = '';
+  try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+  if (!botSecret) return { replyText: '😬 שגיאת קונפיגורציה.' };
+  try {
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/append', {
+      method: 'post', contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': botSecret },
+      payload: JSON.stringify({
+        phone: clean, amount: pending.amount, currency: 'ILS', isIncome: false,
+        category: pickedCategory, subcategory: '', rawText: pending.rawText, botSecret: botSecret,
+      }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    if (code >= 200 && code < 300) {
+      // Teach the bot — next time same description routes correctly automatically.
+      try {
+        if (typeof _learnedSave === 'function' && pending.description) {
+          _learnedSave(pending.description, { category: pickedCategory, subcategory: '' }, 'user-correction');
+        }
+      } catch (_lsErr) {}
+      return { replyText:
+        '✅ נרשם: ₪' + Number(pending.amount).toLocaleString('he-IL') + ' · ' + pickedCategory +
+        ' (ולמדתי — בפעם הבאה אזהה לבד).' + _sheetLinkLine_(fromPhone)
+      };
+    }
+    return { replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה/י שוב.' };
+  } catch (e) {
+    return { replyText: '😬 בעיה בחיבור: ' + (e && e.message) };
+  }
+}
+
 function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   // Reuse the rich Apps Script parser for amount + (cat, subcat) so
   // tenants get the same classification quality as the owner path.
@@ -4950,6 +5066,19 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   if (!botSecret) {
     Logger.log('_tenantWriteExpense_: KESEFLE_BOT_SECRET not set in Script Properties');
     return { reply: '😬 הבוט עוד בקונפיגורציה. רגע.' };
+  }
+
+  // Steven 2026-05-25: when classifier returns "אחר"/"שונות" the bot was
+  // writing the row blindly into the misc bucket. He explicitly asked:
+  // ASK the user instead of guessing. We send a category picker AND
+  // suspend the write — stash the pending expense in cache; when the
+  // user taps a category, _handlePendingPick_ writes the row with the
+  // chosen classification AND teaches the bot.
+  var __isUncertain = (!matched || !matched.category ||
+                      matched.category === 'אחר' || matched.category === 'שונות' ||
+                      matched.category === 'שונות ואחרים');
+  if (__isUncertain) {
+    return _askBeforeDefaulting_(fromPhone, rawText, first.amount, first.description || rawText);
   }
 
   // Steven 2026-05-25: installments detection. "ספה 1000 שקל 5 תשלומים" →
