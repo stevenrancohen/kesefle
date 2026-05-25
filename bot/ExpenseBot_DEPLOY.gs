@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-dashboard-self-heal';
+const KFL_BUILD_VERSION = '2026-05-25-multi-business';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1522,6 +1522,44 @@ function doPost(e) {
           }
         } catch (_ctxErr) {
           Logger.log('doPost: context-routing error: ' + (_ctxErr && _ctxErr.stack || _ctxErr));
+        }
+
+        // === MULTI-BUSINESS routing (Steven 2026-05-25) ===
+        // "עסק 2 320 שיווק" -> writes to a SECOND business sheet (auto-
+        // created from the main sheet on first use). "עסק 1 ..." routes
+        // to the main bot SHEET_ID, same as today. Owner-only for now;
+        // tenants still flow through the standard /api/sheet/append path.
+        if (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(__from_)) {
+          // "עסקים שלי" lists provisioned biz sheets.
+          if (typeof _handleMyBusinessesCommand_ === "function") {
+            try {
+              var __mbRes = _handleMyBusinessesCommand_(__from_, __text_);
+              if (__mbRes && __mbRes.handled) {
+                if (__mbRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __mbRes.replyText);
+                }
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_mbErr) { Logger.log('doPost: my-biz cmd err: ' + (_mbErr && _mbErr.message)); }
+          }
+          // "עסק N <amount> <description>" -> per-business sheet.
+          if (typeof _parseBusinessNumberPrefix_ === "function") {
+            try {
+              var __bizPref = _parseBusinessNumberPrefix_(__text_);
+              if (__bizPref) {
+                var __bizRes = _writeBusinessNExpense_(__from_, __bizPref.n, __bizPref.rest);
+                if (__bizRes && __bizRes.handled) {
+                  if (__bizRes.replyText && typeof sendWhatsAppMessage === "function") {
+                    sendWhatsAppMessage(__from_, __bizRes.replyText);
+                  }
+                  Logger.log('doPost: multi-biz routed N=' + __bizPref.n);
+                  return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+                }
+              }
+            } catch (_bizErr) {
+              Logger.log('doPost: multi-biz error: ' + (_bizErr && _bizErr.stack || _bizErr));
+            }
+          }
         }
 
         // FAST PATH: any message starting with a digit goes straight to
@@ -9489,34 +9527,44 @@ function _normalizeBizSub_(subcategory) {
 // found (logs the reason). Preserves cells that already contain a
 // formula so SUMIFS-based layouts keep working.
 function _updateBusinessDashboard_(category, subcategory, monthKey, amount) {
+  // Default: write to the owner's main bot SHEET_ID. For multi-business
+  // routing (Steven "עסק 2 ..."), callers pass a different ss directly
+  // via _updateBusinessDashboardInSheet_.
+  return _updateBusinessDashboardInSheet_(SpreadsheetApp.openById(SHEET_ID), category, subcategory, monthKey, amount);
+}
+
+// Parameterized form -- pass the spreadsheet you want to update. Used by
+// both the legacy single-sheet path (above) and the multi-business path
+// (_writeBusinessNExpense_ below) so the same recompute-from-תנועות
+// logic powers every business sheet Steven owns.
+function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, amount) {
+  if (!ss) return false;
   if (category !== 'עסק') return false;
   var canonSub = _normalizeBizSub_(subcategory);
   if (!canonSub) {
-    Logger.log('_updateBusinessDashboard_: no canon sub for "' + subcategory + '" - skip');
+    Logger.log('_updateBusinessDashboardInSheet_: no canon sub for "' + subcategory + '" - skip');
     return false;
   }
   var monthIdx = parseInt((monthKey || '').split('-')[1], 10);
   if (isNaN(monthIdx) || monthIdx < 1 || monthIdx > 12) {
-    Logger.log('_updateBusinessDashboard_: bad monthKey "' + monthKey + '"');
+    Logger.log('_updateBusinessDashboardInSheet_: bad monthKey "' + monthKey + '"');
     return false;
   }
   var year = parseInt((monthKey || '').split('-')[0], 10);
   if (!year) year = new Date().getFullYear();
 
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-
   // --- Recompute the month's bucket total from תנועות. Single read of
   // the whole sheet; in-memory sum. Idempotent + drift-free.
   var fresh = _sumBusinessBucketFromTransactions_(ss, canonSub, year, monthIdx);
   if (fresh == null) {
-    Logger.log('_updateBusinessDashboard_: could not read תנועות for recompute');
+    Logger.log('_updateBusinessDashboardInSheet_: could not read תנועות for recompute');
     return false;
   }
 
   var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   var monthLabel = hebMonths[monthIdx - 1];
 
-  var dashNames = ['מאזן חברה 2026', 'מאזן חברה'];
+  var dashNames = ['מאזן חברה ' + year, 'מאזן חברה'];
   for (var d = 0; d < dashNames.length; d++) {
     var ds = ss.getSheetByName(dashNames[d]);
     if (!ds) continue;
@@ -9553,18 +9601,192 @@ function _updateBusinessDashboard_(category, subcategory, monthKey, amount) {
             if (f && String(f).indexOf('=') === 0) hasFormula = true;
           } catch (_fErr) {}
           if (hasFormula) {
-            Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has formula - preserved (recompute is informational)');
+            Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has formula - preserved');
             return false;
           }
           cell.setValue(fresh);
-          Logger.log('_updateBusinessDashboard_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' recomputed -> ₪' + fresh + ' (sub=' + canonSub + ', month=' + monthLabel + ', year=' + year + ')');
+          Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' recomputed -> ₪' + fresh + ' (sub=' + canonSub + ', month=' + monthLabel + ', year=' + year + ')');
           return true;
         }
       }
     }
   }
-  Logger.log('_updateBusinessDashboard_: row "' + canonSub + '" with year section ' + year + ' not found');
+  Logger.log('_updateBusinessDashboardInSheet_: row "' + canonSub + '" with year section ' + year + ' not found');
   return false;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// MULTI-BUSINESS routing (Steven 2026-05-25):
+//
+// Steven owns multiple businesses. He asked: "עסק 1 X" should go to the
+// default biz sheet, "עסק 2 X" to a SECOND sheet the bot creates on
+// demand, "עסק 3 X" to a third, etc.
+//
+// Storage:
+//   KV biz:{ownerPhone}:{n} = { sheetId, sheetUrl, n, createdAt }
+//   KV biz:owner:{ownerPhone}:list = [ {sheetId, sheetUrl, n, createdAt}, ... ]
+//
+// N=1 is special — always maps to the bot's main SHEET_ID. Backward
+// compatible with single-sheet users.
+//
+// For N>=2 the bot CLONES the main sheet on first use (so the new biz
+// sheet inherits Steven's tab structure + dashboards). Subsequent writes
+// to "עסק N ..." just append to the existing sheet.
+//
+// Limitation: owner-only for now. Tenants going through /api/sheet/append
+// still use their single provisioned sheet. Multi-tenant multi-biz is a
+// future enhancement (would need extending the api/sheet provisioner).
+// ════════════════════════════════════════════════════════════════════════
+
+// Match a leading "עסק <N> <rest>" prefix. Returns {n, rest} on match,
+// null otherwise. N must be 1-99 (sanity cap to avoid silly inputs).
+function _parseBusinessNumberPrefix_(text) {
+  if (!text) return null;
+  var m = String(text).trim().match(/^עסק\s+(\d{1,2})\s+(.+)$/);
+  if (!m) return null;
+  var n = parseInt(m[1], 10);
+  if (n < 1 || n > 99) return null;
+  return { n: n, rest: String(m[2] || '').trim() };
+}
+
+// Resolve or auto-create the spreadsheet for owner's business number N.
+// Returns { sheetId, sheetUrl, isNew } or null on failure.
+function _getOrCreateBusinessSheet_(ownerPhone, n) {
+  if (!n || n < 1) return null;
+  if (n === 1) {
+    return { sheetId: SHEET_ID, sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', isNew: false };
+  }
+  var clean = String(ownerPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return null;
+  var key = 'biz:' + clean + ':' + n;
+  var existing = kvGet(key);
+  if (existing && existing.sheetId) {
+    return {
+      sheetId: existing.sheetId,
+      sheetUrl: existing.sheetUrl || ('https://docs.google.com/spreadsheets/d/' + existing.sheetId + '/edit'),
+      isNew: false,
+    };
+  }
+  // Auto-create by cloning the main bot sheet so the new biz sheet
+  // inherits the same tab structure (תנועות, מאזן חברה, הזמנות, etc).
+  try {
+    var copyName = 'Kesefle עסק ' + n + ' — ' + clean;
+    var copy = DriveApp.getFileById(SHEET_ID).makeCopy(copyName);
+    var newId = copy.getId();
+    var url = 'https://docs.google.com/spreadsheets/d/' + newId + '/edit';
+    var rec = { sheetId: newId, sheetUrl: url, n: n, createdAt: Date.now() };
+    kvSet(key, rec, 0);
+    // Maintain a list so "עסקים שלי" can show them all in one place.
+    var listKey = 'biz:owner:' + clean + ':list';
+    var list = kvGet(listKey) || [];
+    var already = false;
+    for (var i = 0; i < list.length; i++) { if (list[i] && list[i].n === n) { already = true; break; } }
+    if (!already) {
+      list.push(rec);
+      kvSet(listKey, list, 0);
+    }
+    Logger.log('_getOrCreateBusinessSheet_: created sheet ' + newId + ' for owner=' + clean + ' biz=' + n);
+    return { sheetId: newId, sheetUrl: url, isNew: true };
+  } catch (e) {
+    Logger.log('_getOrCreateBusinessSheet_ err: ' + (e && e.message));
+    return null;
+  }
+}
+
+// Write an expense to business N. Parses "<amount> <description>" out
+// of `rest`, classifies subcategory, appends to the per-N תנועות, then
+// recomputes the per-N מאזן חברה. Income syntax: "+1500 <description>".
+function _writeBusinessNExpense_(fromPhone, n, rest) {
+  var target = _getOrCreateBusinessSheet_(fromPhone, n);
+  if (!target) return { handled: true, replyText: '😬 לא הצלחתי לפתוח את הגיליון של עסק ' + n };
+
+  // Accept "<amount> <description>" or "+<amount> <description>" (income).
+  var m = String(rest || '').trim().match(/^([+-]?\d+(?:\.\d+)?)\s+(.+)$/);
+  if (!m) {
+    return { handled: true, replyText:
+      '😬 פורמט: "עסק ' + n + ' <סכום> <תיאור>"\n' +
+      'לדוגמה: "עסק ' + n + ' 320 שיווק פייסבוק"\n' +
+      'או הכנסה: "עסק ' + n + ' +1500 מכירת תמונה"' };
+  }
+  var raw = m[1];
+  var amount = Math.abs(parseFloat(raw));
+  var description = String(m[2] || '').trim();
+  var isIncome = raw.charAt(0) === '+';
+  if (!amount || isNaN(amount)) return { handled: true, replyText: '😬 סכום לא חוקי.' };
+
+  // Classify subcategory using the existing matcher (prefix with "עסק"
+  // so the business keywords fire). Fall back to first word as sub.
+  var sub = '';
+  try {
+    var matched = (typeof matchCategory === 'function') ? matchCategory('עסק ' + description) : null;
+    if (matched && matched.subcategory && matched.subcategory !== matched.category) {
+      sub = matched.subcategory;
+    }
+  } catch (_) {}
+  if (!sub) {
+    // Heuristic: first word of description as the sub (Steven can re-tag later).
+    sub = description.split(/\s+/)[0] || 'שונות';
+  }
+
+  try {
+    var ss = SpreadsheetApp.openById(target.sheetId);
+    var tx = ss.getSheetByName(TRANSACTIONS_SHEET) || ss.getSheetByName('תנועות');
+    if (!tx) {
+      return { handled: true, replyText:
+        '😬 לא מצאתי לשונית תנועות בגיליון של עסק ' + n + '.\n📊 ' + target.sheetUrl +
+        '\n💡 פתח את הגיליון, ודא שיש לשונית "תנועות".' };
+    }
+    var now = new Date();
+    var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    tx.appendRow([now, monthKey, amount, 'עסק', sub, description, 'WhatsApp', !isIncome]);
+
+    // Recompute the per-N dashboard so the total reflects this write.
+    try { _updateBusinessDashboardInSheet_(ss, 'עסק', sub, monthKey, amount); }
+    catch (_dErr) { Logger.log('biz-N dash err: ' + (_dErr && _dErr.message)); }
+
+    var emoji = isIncome ? '💵' : '💸';
+    var lines = [emoji + ' עסק ' + n + ': ₪' + amount.toLocaleString('he-IL') + ' · ' + sub];
+    if (target.isNew) {
+      lines.push('');
+      lines.push('🆕 יצרתי גיליון חדש בשבילך לעסק ' + n + ':');
+      lines.push('📊 ' + target.sheetUrl);
+      lines.push('');
+      lines.push('הוא משוכפל מהגיליון הראשי שלך עם אותו מבנה (תנועות, מאזן חברה, הזמנות).');
+    } else {
+      lines.push('📊 ' + target.sheetUrl);
+    }
+    return { handled: true, replyText: lines.join('\n') };
+  } catch (e) {
+    return { handled: true, replyText: '😬 שגיאה בכתיבה לגיליון של עסק ' + n + ': ' + (e && e.message) };
+  }
+}
+
+// "עסקים שלי" -- list all business sheets the owner has provisioned via
+// the multi-business routing. Always includes #1 (the main sheet) even
+// if it isn't in KV, since N=1 is implicit.
+function _handleMyBusinessesCommand_(fromPhone, text) {
+  var t = String(text || '').trim();
+  if (!/^עסקים\s*שלי$|^my\s+businesses$|^עסקים$/i.test(t)) return { handled: false };
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return { handled: true, replyText: '😬 לא הצלחתי לזהות את המספר שלך.' };
+  var list = kvGet('biz:owner:' + clean + ':list') || [];
+  var lines = ['📋 *העסקים שלך:*', ''];
+  lines.push('1. *עסק 1* (הגיליון הראשי)');
+  lines.push('   📊 https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit');
+  for (var i = 0; i < list.length; i++) {
+    var r = list[i];
+    if (!r || !r.n || r.n === 1) continue;
+    lines.push('');
+    lines.push(r.n + '. *עסק ' + r.n + '*');
+    lines.push('   📊 ' + (r.sheetUrl || 'https://docs.google.com/spreadsheets/d/' + r.sheetId + '/edit'));
+  }
+  if (list.length <= 1) {
+    lines.push('');
+    lines.push('💡 רוצה להוסיף עסק שני? פשוט שלח/י:');
+    lines.push('   "עסק 2 320 שיווק"');
+    lines.push('ואני אצור לך גיליון חדש אוטומטית.');
+  }
+  return { handled: true, replyText: lines.join('\n') };
 }
 
 // Sum תנועות col C where col D = "עסק", col E matches the bucket-regex
