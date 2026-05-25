@@ -1478,7 +1478,7 @@ function kesefleShowSigninPrompt() {
   main.appendChild(card);
 }
 
-(function init() {
+(async function init() {
   // Fire the funnel landing event ONCE per pageview (not on OAuth-return,
   // which is the same page reloaded). Detect OAuth-return by ?code= param.
   var _q = new URLSearchParams(window.location.search);
@@ -1487,6 +1487,29 @@ function kesefleShowSigninPrompt() {
   }
   // Returning from the Google redirect? Finish the exchange + provisioning.
   if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
+
+  // RETURNING-USER FAST PATH (Steven 2026-05-25):
+  // If the user already has a valid kefle_session cookie AND a provisioned
+  // sheet, send them straight to their dashboard. The previous behaviour
+  // left returning users staring at the onboarding card with a manual
+  // "לדשבורד שלי" link they had to click. Now the click is implicit.
+  // Skipped when ?force=signin is on the URL (lets us re-link a sheet
+  // intentionally from elsewhere in the app).
+  if (!_q.get('force')) {
+    try {
+      var meResp = await fetch('/api/me', { credentials: 'include' });
+      if (meResp.ok) {
+        var meJson = await meResp.json();
+        if (meJson && meJson.ok && meJson.user && meJson.sheet && meJson.sheet.spreadsheetUrl) {
+          // Hydrate localStorage in case the dashboard reads it on first paint.
+          try { localStorage.setItem('kesefle_user', JSON.stringify(meJson.user)); } catch (_) {}
+          try { localStorage.setItem('kesefle_sheet', JSON.stringify(meJson.sheet)); } catch (_) {}
+          window.location.href = '/dashboard';
+          return;
+        }
+      }
+    } catch (_meErr) { /* network blip -> fall through to normal flow */ }
+  }
   if (_q.get('error')) {
     var errCode = _q.get('error');
     try { _kflFunnel('oauth_failed', { error_kind: errCode }); } catch (e) {}
