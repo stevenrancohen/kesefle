@@ -1,29 +1,55 @@
 /**
- * Steven's personal "מאזן אישי" sheet fixer
- * --------------------------------------------------
- * Standalone Apps Script. Paste into your personal sheet's
- * script editor (Extensions -> Apps Script), then run
- * `fixCompanyDashboardFormulas` from the runner dropdown.
+ * Standalone dashboard fixer — works in EITHER:
+ *   (A) a script bound to a Google Sheet (Extensions -> Apps Script
+ *       opened from inside the sheet) — auto-detects the active sheet.
+ *   (B) a STANDALONE script project (like Steven's "importjason"
+ *       project that hosts the bot) — set SHEET_ID_TO_FIX below.
  *
- * What it does
- *   Overwrites the four "business expense" formula rows in the
- *   'מאזן חברה' tab (rows 8..11, columns B..N) with the same
- *   wildcard + multi-criteria SUMIFS the Kesefle template uses.
- *   The classifier writes long subcategory strings ("עלות שיווק",
- *   "עלות חומרי גלם", "הוצאות תפעוליות", "יועצים", ...) — the
- *   formulas now match all of them via *X* wildcards + additive
- *   SUMIFS, so nothing falls through the cracks.
+ * What each function does
+ *   fixCompanyDashboardFormulas()  → rewrites rows 8..11 of
+ *       'מאזן חברה' with the wildcard + multi-criteria SUMIFS that
+ *       catches every business-subcategory string the bot writes.
+ *   fixPersonalDashboardFormulas() → wildcard-wraps every data row
+ *       of 'מאזן אישי' so any classifier write CONTAINING the row
+ *       label rolls in (e.g. "מוצרי טיפוח ויופי" → "טיפוח" row).
  *
- * What it does NOT touch
- *   Your data, your other tabs, your menu, or any other formula.
- *   Only the 4 rows of business-expense SUMIFS in 'מאזן חברה'.
+ * Safe to run repeatedly. Idempotent. Touches only formula cells of
+ * the dashboard tabs; no data is modified.
  *
- * Safe to run multiple times — purely idempotent.
+ * NO menu, NO getUi() — runs cleanly from a standalone script editor.
+ * Watch the Execution Log (יומן ביצוע) for results.
  */
 
-// Must mirror lib/sheet-writer.js COMPANY_EXPENSE_ROWS in the Kesefle repo.
-// Each entry's `criteria` array becomes one SUMIFS per criterion, all
-// summed together. Wildcards (*X*) work in Sheets SUMIFS text criteria.
+// ─── CONFIGURE ME ─────────────────────────────────────────────────────────
+// Paste the spreadsheet ID of YOUR sheet here. To find it: open the sheet
+// in your browser; the URL looks like
+//   https://docs.google.com/spreadsheets/d/<THIS_PART>/edit
+// Steven's personal "מאזן אישי" sheet ID (extracted from his earlier link).
+var SHEET_ID_TO_FIX = '1nRR9w6kU7hPx_62gsPy7-a4_ABurtGuvfhW4XkOinXU';
+
+// Tab names — change only if your sheet uses different names.
+var TX_TAB_NAME      = 'תנועות';
+var COMPANY_TAB_NAME = 'מאזן חברה';
+var PERSONAL_TAB_NAME = 'מאזן אישי';
+
+// ─── No need to edit below this line ──────────────────────────────────────
+
+// Resolve the target spreadsheet. Prefer the active spreadsheet if the
+// script is sheet-bound; otherwise open by SHEET_ID_TO_FIX.
+function _openSheet_() {
+  try {
+    var act = SpreadsheetApp.getActiveSpreadsheet();
+    if (act) return act;
+  } catch (_) { /* getActiveSpreadsheet throws in standalone context */ }
+  if (!SHEET_ID_TO_FIX || SHEET_ID_TO_FIX.indexOf('<') >= 0) {
+    throw new Error('SHEET_ID_TO_FIX is not set. Paste your sheet ID at the top of this file.');
+  }
+  return SpreadsheetApp.openById(SHEET_ID_TO_FIX);
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// COMPANY dashboard — fix rows 8..11 with multi-criteria + wildcard SUMIFS
+// ────────────────────────────────────────────────────────────────────────
 var COMPANY_EXPENSE_ROWS_FIX = [
   { rowNum: 8,  label: 'עלות חומרי גלם',  criteria: ['*חומרי גלם*'] },
   { rowNum: 9,  label: 'עלות שיווק',      criteria: ['*שיווק*'] },
@@ -31,25 +57,21 @@ var COMPANY_EXPENSE_ROWS_FIX = [
   { rowNum: 11, label: 'הוצאות תפעוליות', criteria: ['*תפעולי*', 'יועצים', 'תוכנות', 'ציוד עסקי', 'מיסים'] },
 ];
 
-var TX_TAB_NAME = 'תנועות';
-var COMPANY_TAB_NAME = 'מאזן חברה';
-
 function fixCompanyDashboardFormulas() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = _openSheet_();
   var sheet = ss.getSheetByName(COMPANY_TAB_NAME);
   if (!sheet) {
-    SpreadsheetApp.getUi().alert('Did not find a "' + COMPANY_TAB_NAME + '" tab. Make sure the tab name matches exactly.');
+    Logger.log('FAIL: no "' + COMPANY_TAB_NAME + '" tab in ' + ss.getName());
     return;
   }
 
-  // Build a 4x13 matrix: col B (annual SUM) + cols C..N (Jan..Dec).
   var matrix = [];
   for (var i = 0; i < COMPANY_EXPENSE_ROWS_FIX.length; i++) {
     var item = COMPANY_EXPENSE_ROWS_FIX[i];
     var rowCells = [];
     // Col B: annual sum across the row.
     rowCells.push('=SUM(C' + item.rowNum + ':N' + item.rowNum + ')');
-    // Cols C..N: one SUMIFS per criterion, summed.
+    // Cols C..N (Jan..Dec): one SUMIFS per criterion, summed.
     for (var m = 1; m <= 12; m++) {
       var mm = m < 10 ? ('0' + m) : ('' + m);
       var parts = item.criteria.map(function (cr) {
@@ -62,35 +84,21 @@ function fixCompanyDashboardFormulas() {
     matrix.push(rowCells);
   }
 
-  // Write to B8:N11 in one shot. setFormulas treats every cell as a
-  // formula, so the '=' prefix in our strings is honored.
   sheet.getRange('B8:N11').setFormulas(matrix);
-
-  SpreadsheetApp.getUi().alert(
-    'Fixed ' + matrix.length + ' rows.\n\n' +
-    'Recompute is automatic. If you do not see the new sums right away,\n' +
-    'press Ctrl/Cmd + R to refresh, or close + reopen the tab.'
-  );
+  Logger.log('OK: company dashboard — wrote ' + matrix.length + ' rows of formulas in ' + ss.getName() + ' / ' + COMPANY_TAB_NAME);
 }
 
-/**
- * Optional: install a menu item so you can re-run the fix anytime.
- * Call this once from the editor; it adds "תקן מאזן חברה" to the
- * top menu bar of your sheet. After that, any future fix is one click.
- */
-/**
- * Same class of bug for the PERSONAL dashboard. Exact-match SUMIFS
- * misses long subcategories ("מוצרי טיפוח ויופי" never matches the
- * "טיפוח" row). Wraps every data row's SUMIFS criterion with `*X*`
- * so any subcategory CONTAINING the row label rolls in.
- * Auto-detects which rows are data rows (col A non-blank, no emoji,
- * not a total row). Safe to run multiple times.
- */
-var PERSONAL_TAB_NAME = 'מאזן אישי';
+// ────────────────────────────────────────────────────────────────────────
+// PERSONAL dashboard — wildcard-wrap every data row's monthly SUMIFS so any
+// subcategory CONTAINING the row label rolls in.
+// ────────────────────────────────────────────────────────────────────────
 function fixPersonalDashboardFormulas() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = _openSheet_();
   var sheet = ss.getSheetByName(PERSONAL_TAB_NAME);
-  if (!sheet) { Logger.log('No מאזן אישי tab found.'); return; }
+  if (!sheet) {
+    Logger.log('FAIL: no "' + PERSONAL_TAB_NAME + '" tab in ' + ss.getName());
+    return;
+  }
   var lastRow = Math.min(sheet.getLastRow(), 60);
   var labels = sheet.getRange('A1:A' + lastRow).getValues();
   var updates = 0;
@@ -98,32 +106,24 @@ function fixPersonalDashboardFormulas() {
     var rowNum = r + 1;
     var label = String(labels[r][0] || '').trim();
     if (!label) continue;
-    if (/^סה/.test(label)) continue;
-    if (/[\u{1F300}-\u{1FAFF}]/u.test(label)) continue;
-    if (rowNum < 5) continue;
+    if (/^סה/.test(label)) continue;                          // totals row
+    if (/[\u{1F300}-\u{1FAFF}]/u.test(label)) continue;       // section header w/ emoji
+    if (rowNum < 5) continue;                                  // title + year cell area
     var newRow = [];
     for (var m = 1; m <= 12; m++) {
       var mm = m < 10 ? ('0' + m) : ('' + m);
-      newRow.push("=IFERROR(SUMIFS('תנועות'!C:C, 'תנועות'!B:B, $B$2&\"-" + mm + "\", 'תנועות'!E:E, \"*\"&$A" + rowNum + "&\"*\"), 0)");
+      newRow.push("=IFERROR(SUMIFS('" + TX_TAB_NAME + "'!C:C, '" + TX_TAB_NAME + "'!B:B, $B$2&\"-" + mm + "\", '" + TX_TAB_NAME + "'!E:E, \"*\"&$A" + rowNum + "&\"*\"), 0)");
     }
     try { sheet.getRange('C' + rowNum + ':N' + rowNum).setFormulas([newRow]); updates++; } catch (_e) {}
   }
-  Logger.log('Personal dashboard wildcard-wrap: updated ' + updates + ' rows.');
+  Logger.log('OK: personal dashboard — wildcard-wrap on ' + updates + ' rows in ' + ss.getName() + ' / ' + PERSONAL_TAB_NAME);
 }
 
-function installMenu() {
-  SpreadsheetApp.getUi()
-    .createMenu('🛠️ Kesefle Fix')
-    .addItem('תקן נוסחאות מאזן חברה', 'fixCompanyDashboardFormulas')
-    .addItem('תקן נוסחאות מאזן אישי', 'fixPersonalDashboardFormulas')
-    .addToUi();
-}
-
-/**
- * Auto-install the menu when the sheet is opened. Apps Script will call
- * onOpen() automatically. If you already have an onOpen() in your sheet,
- * just call installMenu() from there.
- */
-function onOpen() {
-  try { installMenu(); } catch (_e) {}
+// Convenience: run both fixes at once. Pick this in the runner dropdown
+// if you want one click that does it all.
+function fixBothDashboards() {
+  try { fixCompanyDashboardFormulas(); } catch (e) { Logger.log('company fix err: ' + e.message); }
+  try { fixPersonalDashboardFormulas(); } catch (e) { Logger.log('personal fix err: ' + e.message); }
+  Logger.log('---');
+  Logger.log('Both fixes done. Open the sheet, refresh (Cmd+R), check מאזן אישי + מאזן חברה.');
 }
