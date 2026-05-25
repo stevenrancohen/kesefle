@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-relabel-teaches-bot';
+const KFL_BUILD_VERSION = '2026-05-25-personal-dash-wildcards';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -205,8 +205,8 @@ const CATEGORY_MAP = [
   {"keywords":["מתנה ליום הולדת","מתנה לחתונה","מתנה לחבר","מתנה לחברה","שי לחג","מתנת יום נישואין"],"category":"מתנות","subcategory":"מתנות"},
   {"keywords":["אוכל לכלב","אוכל לחתול","מזון לכלב","מזון לחתול","ביקור אצל וטרינר","חיסון לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
   {"keywords":["משכורת","שכר חודש","שכר עבודה"],"category":"הכנסות","subcategory":"הכנסה 1 — משכורת","isIncome":true},
-  {"keywords":["income 2","הכנסה 2","הכנסה עסקית","תשלום מלקוח"],"category":"הכנסות","subcategory":"הכנסה 2 — עסק SRC","isIncome":true},
-  {"keywords":["הכנסה - טלפוניה","טלפונים","מכירת טלפון"],"category":"הכנסות","subcategory":"הכנסה 3 — טלפוניה","isIncome":true},
+  {"keywords":["income 2","הכנסה 2","הכנסה עסקית","תשלום מלקוח"],"category":"הכנסות","subcategory":"הכנסה 2 — עסק","isIncome":true},
+  {"keywords":["הכנסה - טלפוניה","טלפונים","מכירת טלפון","income 3","הכנסה 3","הכנסה נוספת"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   {"keywords":["בונוס","תקבול"],"category":"הכנסות","subcategory":"שונות (הכנסות)","isIncome":true},
   {"keywords":["am pm","ampm","אוכל בבית","אוכל לבית","אושר עד","אם המושבות","אם פי אם","בשר","גבינות","דגים","ויקטורי","חצי חינם","טיב טעם","יוחננוף","יינות ביתן","ירקות","מאפיה","מגה","מחסני השוק","מעיין 2000","סופר","פירות","קינג סטור","קרפור","רמי לוי","שופרסל","שופרסל אקספרס"],"category":"אוכל","subcategory":"אוכל לבית"},
   {"keywords":["aroma","bbb","cibus","cofix","kfc","mcdonald","nespresso","starbucks","ten bis","wolt","אוכל בחוץ","אוכל חוץ","אספרסו","ארומה","בורגר","בורגר קינג","בית קפה","גרג","גרג קפה","דומינוס","המבורגר","וולט","לחם ארז","מוזס","מסעדה","מסעדות","מקדונלדס","משלוח","משלוח אוכל","נספרסו","סושי","סיבוס","פיצה","פיצה האט","קופיקס","קפה","רולדין","שווארמה","שטראוס","תן ביס"],"category":"אוכל","subcategory":"אוכל בחוץ"},

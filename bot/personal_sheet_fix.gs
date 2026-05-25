@@ -78,10 +78,44 @@ function fixCompanyDashboardFormulas() {
  * Call this once from the editor; it adds "תקן מאזן חברה" to the
  * top menu bar of your sheet. After that, any future fix is one click.
  */
+/**
+ * Same class of bug for the PERSONAL dashboard. Exact-match SUMIFS
+ * misses long subcategories ("מוצרי טיפוח ויופי" never matches the
+ * "טיפוח" row). Wraps every data row's SUMIFS criterion with `*X*`
+ * so any subcategory CONTAINING the row label rolls in.
+ * Auto-detects which rows are data rows (col A non-blank, no emoji,
+ * not a total row). Safe to run multiple times.
+ */
+var PERSONAL_TAB_NAME = 'מאזן אישי';
+function fixPersonalDashboardFormulas() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(PERSONAL_TAB_NAME);
+  if (!sheet) { Logger.log('No מאזן אישי tab found.'); return; }
+  var lastRow = Math.min(sheet.getLastRow(), 60);
+  var labels = sheet.getRange('A1:A' + lastRow).getValues();
+  var updates = 0;
+  for (var r = 0; r < labels.length; r++) {
+    var rowNum = r + 1;
+    var label = String(labels[r][0] || '').trim();
+    if (!label) continue;
+    if (/^סה/.test(label)) continue;
+    if (/[\u{1F300}-\u{1FAFF}]/u.test(label)) continue;
+    if (rowNum < 5) continue;
+    var newRow = [];
+    for (var m = 1; m <= 12; m++) {
+      var mm = m < 10 ? ('0' + m) : ('' + m);
+      newRow.push("=IFERROR(SUMIFS('תנועות'!C:C, 'תנועות'!B:B, $B$2&\"-" + mm + "\", 'תנועות'!E:E, \"*\"&$A" + rowNum + "&\"*\"), 0)");
+    }
+    try { sheet.getRange('C' + rowNum + ':N' + rowNum).setFormulas([newRow]); updates++; } catch (_e) {}
+  }
+  Logger.log('Personal dashboard wildcard-wrap: updated ' + updates + ' rows.');
+}
+
 function installMenu() {
   SpreadsheetApp.getUi()
     .createMenu('🛠️ Kesefle Fix')
     .addItem('תקן נוסחאות מאזן חברה', 'fixCompanyDashboardFormulas')
+    .addItem('תקן נוסחאות מאזן אישי', 'fixPersonalDashboardFormulas')
     .addToUi();
 }
 
