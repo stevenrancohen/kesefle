@@ -727,3 +727,201 @@ function DEEP_DIAGNOSE() {
   }
   Logger.log('Total עסק rows: ' + biz);
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// FIX_MARKETING_ALL_YEARS — fix the "עלות שיווק" row across EVERY year
+// block in מאזן חברה (2023, 2024, 2025, 2026, ...).
+//
+// Why this exists: RECOMPUTE_COMPANY_DASHBOARD only touches ONE year (the
+// year at B4). When Steven reports "the marketing row shows 0 for all
+// months in 2026" (2026-05-26 screenshot), the existing tools don't help
+// because the broken cells live in a different year block than the one
+// B4 points to.
+//
+// What it does:
+//   1. Scans col A of מאזן חברה for every "שנת YYYY" header
+//   2. For each year block, locates the month columns (Hebrew month names)
+//      and the row labelled "עלות שיווק"
+//   3. Writes a canonical SUMPRODUCT + REGEXMATCH formula in every month
+//      cell. The formula:
+//         - filters תנועות by month key (e.g. "2026-05")
+//         - filters by category = "עסק"
+//         - matches a wide set of marketing keywords (Hebrew + English)
+//           against subcategory AND description (any match counts once)
+//   4. SPECIAL CASE: 2026-05 gets `+ 2100` appended for the manual cash
+//      marketing payment Steven made that didn't go through the bot.
+//
+// Each cell is logged so you can audit what changed. Safe to re-run; idempotent.
+//
+// Steven 2026-05-26: this is the FIRST fix function in the file that
+// covers ALL year blocks instead of just the current one.
+// ════════════════════════════════════════════════════════════════════════
+
+// Marketing keyword regex — what counts as a marketing expense. Mirrors
+// _COMPANY_SUB_BUCKETS_[2].regex but compiled as a string for the Sheets
+// REGEXMATCH formula. Case-insensitive via (?i). Add new vendors here.
+var _PSF_MARKETING_PATTERN_ =
+  '(?i)שיווק|פרסום|advert|adwords|facebook|instagram|tiktok|google|fb|' +
+  'פייסבוק|אינסטה|אינסטגרם|טיקטוק|גוגל|linkedin|לינקדאין|youtube|יוטיוב|' +
+  'mailchimp|hubspot|semrush|ahrefs|seo|sem|ppc|cpc|cpm|retargeting|' +
+  'meta|מטה|influencer|אינפלואנסר|sponsored|ממומן|קמפיין|campaign|' +
+  'banner|באנר|leads|לידים';
+
+function FIX_MARKETING_ALL_YEARS() {
+  var ss = _openSheet_();
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  if (!tx) { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
+
+  Logger.log('=== FIX_MARKETING_ALL_YEARS ===');
+  Logger.log('Sheet: ' + ss.getName());
+  Logger.log('Pattern: ' + _PSF_MARKETING_PATTERN_.slice(0, 80) + '...');
+
+  var data = dash.getDataRange().getValues();
+  var hebMonthIdx = {
+    'ינואר': 1, 'פברואר': 2, 'מרץ': 3, 'אפריל': 4, 'מאי': 5, 'יוני': 6,
+    'יולי': 7, 'אוגוסט': 8, 'ספטמבר': 9, 'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12,
+  };
+
+  // ── Pass 1: find every "שנת YYYY" year header ──
+  // Scan column A first (most common), then any other column as fallback.
+  var yearBlocks = []; // [{ year, headerRow }]
+  for (var r = 0; r < data.length; r++) {
+    for (var c = 0; c < data[r].length; c++) {
+      var m = String(data[r][c] || '').match(/שנת\s+(20\d{2})/);
+      if (m) {
+        yearBlocks.push({ year: parseInt(m[1], 10), headerRow: r });
+        break;
+      }
+    }
+  }
+  if (yearBlocks.length === 0) {
+    Logger.log('!! no "שנת YYYY" headers found anywhere in ' + _PSF_COMPANY_TAB_);
+    return;
+  }
+  Logger.log('Found ' + yearBlocks.length + ' year blocks: ' +
+    yearBlocks.map(function (b) { return b.year + '@row' + (b.headerRow + 1); }).join(', '));
+
+  // ── Pass 2: for each block, find month cols + עלות שיווק row + write ──
+  var totalWritten = 0;
+  for (var bi = 0; bi < yearBlocks.length; bi++) {
+    var blk = yearBlocks[bi];
+    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length;
+
+    // Month columns live in the next 3 rows after the year header
+    // (usually exactly 1 row down, but be forgiving).
+    var monthCols = {};
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
+      for (var cc = 0; cc < data[rr].length; cc++) {
+        var name = String(data[rr][cc] || '').trim();
+        if (hebMonthIdx[name] && monthCols[hebMonthIdx[name]] === undefined) {
+          monthCols[hebMonthIdx[name]] = cc;
+        }
+      }
+      if (Object.keys(monthCols).length >= 12) break;
+    }
+    if (Object.keys(monthCols).length === 0) {
+      Logger.log('  ⚠️ year ' + blk.year + ': no month headers found, skipping');
+      continue;
+    }
+
+    // Find the "עלות שיווק" row within this block.
+    var marketingRow = -1;
+    for (var sr = blk.headerRow; sr < blockEnd; sr++) {
+      if (String(data[sr][0] || '').trim() === 'עלות שיווק') {
+        marketingRow = sr;
+        break;
+      }
+    }
+    if (marketingRow < 0) {
+      Logger.log('  ⚠️ year ' + blk.year + ': no "עלות שיווק" row found, skipping');
+      continue;
+    }
+
+    Logger.log('-- year ' + blk.year + ' / marketing row ' + (marketingRow + 1) + ' --');
+
+    // Write canonical formula for each month col.
+    for (var mi = 1; mi <= 12; mi++) {
+      var col = monthCols[mi];
+      if (col === undefined) continue;
+      var mm = mi < 10 ? '0' + mi : '' + mi;
+      var monthKey = blk.year + '-' + mm;
+      // SUMPRODUCT + REGEXMATCH so we count a row once even if it matches
+      // both the subcategory AND description patterns. Filter by category
+      // = "עסק" so we don't pull personal expenses.
+      var formula =
+        '=IFERROR(SUMPRODUCT(' +
+        "('" + _PSF_TX_TAB_ + "'!C2:C5000)*" +
+        "('" + _PSF_TX_TAB_ + "'!B2:B5000=\"" + monthKey + "\")*" +
+        "('" + _PSF_TX_TAB_ + "'!D2:D5000=\"עסק\")*" +
+        '((IFERROR(REGEXMATCH(' + "'" + _PSF_TX_TAB_ + "'!E2:E5000," + '"' + _PSF_MARKETING_PATTERN_ + '"),FALSE)+' +
+        'IFERROR(REGEXMATCH(' + "'" + _PSF_TX_TAB_ + "'!F2:F5000," + '"' + _PSF_MARKETING_PATTERN_ + '"),FALSE))>0)' +
+        '),0)';
+      // SPECIAL: 2026 May gets a +2100 manual adjustment for the cash
+      // marketing payment that didn't go through the bot. Steven 2026-05-26.
+      var note = '';
+      if (blk.year === 2026 && mi === 5) {
+        formula = formula + '+2100';
+        note = ' [+2100 manual]';
+      }
+      var cell = dash.getRange(marketingRow + 1, col + 1);
+      cell.setFormula(formula);
+      totalWritten++;
+      Logger.log('  ✏️ ' + cell.getA1Notation() + '  ' + monthKey + note);
+    }
+  }
+
+  Logger.log('=== DONE: wrote ' + totalWritten + ' marketing formulas across ' + yearBlocks.length + ' year blocks ===');
+  Logger.log('Refresh the sheet (Cmd+R) to see the live totals.');
+}
+
+// Read-only companion: lists each year block + marketing row + what each
+// month cell currently contains. Run this first to see WHAT IS THERE
+// before FIX_MARKETING_ALL_YEARS overwrites it.
+function DRY_RUN_MARKETING_ALL_YEARS() {
+  var ss = _openSheet_();
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_); return; }
+
+  Logger.log('=== DRY_RUN_MARKETING_ALL_YEARS (read-only) ===');
+  var data = dash.getDataRange().getValues();
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+  var yearBlocks = [];
+  for (var r = 0; r < data.length; r++) {
+    for (var c = 0; c < data[r].length; c++) {
+      var m = String(data[r][c] || '').match(/שנת\s+(20\d{2})/);
+      if (m) { yearBlocks.push({ year: parseInt(m[1], 10), headerRow: r }); break; }
+    }
+  }
+  Logger.log('Year blocks: ' + yearBlocks.length);
+
+  for (var bi = 0; bi < yearBlocks.length; bi++) {
+    var blk = yearBlocks[bi];
+    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length;
+    var monthCols = {};
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
+      for (var cc = 0; cc < data[rr].length; cc++) {
+        var name = String(data[rr][cc] || '').trim();
+        var idx = hebMonths.indexOf(name);
+        if (idx >= 0 && monthCols[idx + 1] === undefined) monthCols[idx + 1] = cc;
+      }
+    }
+    var marketingRow = -1;
+    for (var sr = blk.headerRow; sr < blockEnd; sr++) {
+      if (String(data[sr][0] || '').trim() === 'עלות שיווק') { marketingRow = sr; break; }
+    }
+    Logger.log('-- year ' + blk.year + ' (header row ' + (blk.headerRow + 1) + ') marketing row=' + (marketingRow < 0 ? 'NOT FOUND' : marketingRow + 1) + ' --');
+    if (marketingRow < 0) continue;
+    for (var mi = 1; mi <= 12; mi++) {
+      var col = monthCols[mi];
+      if (col === undefined) { Logger.log('  ' + hebMonths[mi - 1] + ': no column'); continue; }
+      var cell = dash.getRange(marketingRow + 1, col + 1);
+      var formula = '';
+      try { formula = String(cell.getFormula() || ''); } catch (_) {}
+      var value = cell.getValue();
+      Logger.log('  ' + hebMonths[mi - 1] + ' (' + cell.getA1Notation() + ')  value=' + value + (formula ? '  formula=' + formula.slice(0, 90) : '  [no formula]'));
+    }
+  }
+}
