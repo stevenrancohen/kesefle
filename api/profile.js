@@ -110,6 +110,22 @@ async function handlerImpl(req, res) {
         profile.companyName = String(fields.companyName).slice(0, 120);
       }
     }
+    // Payment-method default. Steven 2026-05-25: bot detects "ביט/מזומן/
+    // אשראי" in expense text; if none mentioned + paymentDefault set, it
+    // stamps the row with the default. Accepts:
+    //   'credit' | 'cash' | 'bit' | 'transfer' | '' (clear) | null (clear)
+    if (fields.paymentDefault !== undefined) {
+      if (fields.paymentDefault == null || fields.paymentDefault === '') {
+        delete profile.paymentDefault;
+      } else {
+        const pm = String(fields.paymentDefault).toLowerCase().trim();
+        const ALLOWED_PM = ['credit', 'cash', 'bit', 'transfer'];
+        if (!ALLOWED_PM.includes(pm)) {
+          return res.status(400).json({ ok: false, error: 'invalid_paymentDefault', allowed: ALLOWED_PM });
+        }
+        profile.paymentDefault = pm;
+      }
+    }
     profile.updatedAt = new Date().toISOString();
     await kvSet('profile:' + phone, profile);
     log.info('profile.set', { reqId: req.reqId, trackingType: profile.trackingType, autoLogPref: profile.autoLogPref, hasTaxId: !!profile.taxId, hasCompanyName: !!profile.companyName });

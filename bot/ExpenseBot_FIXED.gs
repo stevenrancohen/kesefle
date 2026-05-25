@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-installments-startdate';
+const KFL_BUILD_VERSION = '2026-05-25-payment-method';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -5120,6 +5120,57 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
   }
 }
 
+// Payment-method detector (Steven 2026-05-25). Returns one of:
+//   'credit' | 'cash' | 'bit' | 'transfer' | null
+// Hebrew + English variants. Conservative: only matches whole words so
+// "מזומנים שונים" doesn't false-positive into 'cash'.
+function _detectPaymentMethod_(rawText) {
+  if (!rawText) return null;
+  var t = String(rawText).toLowerCase();
+  if (/\b(אשראי|כרטיס אשראי|אשראי שלי|credit|credit card|card)\b/.test(t)) return 'credit';
+  if (/\b(מזומן|cash|בלי כרטיס|in cash)\b/.test(t)) return 'cash';
+  if (/\b(ביט|bit|בביט|via bit|paid bit)\b/.test(t)) return 'bit';
+  if (/\b(העברה בנקאית|העברה|wire|bank transfer|transfer)\b/.test(t)) return 'transfer';
+  return null;
+}
+
+// Display label for a payment method code. Used both in row prefix + bot
+// reply text. ASCII tag preserves grepability + reads naturally in Hebrew.
+function _paymentMethodLabel_(code) {
+  switch (code) {
+    case 'credit':   return 'אשראי';
+    case 'cash':     return 'מזומן';
+    case 'bit':      return 'ביט';
+    case 'transfer': return 'העברה';
+    default:         return '';
+  }
+}
+
+// Look up the user's default payment method from their profile (cached
+// 1h per phone). Returns null on any failure / no default set.
+var _PMT_CACHE_TTL_SEC = 3600;
+function _profilePaymentDefault_(fromPhone) {
+  if (!fromPhone) return null;
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return null;
+  try {
+    var cache = CacheService.getScriptCache();
+    var key = 'pmtDef:' + clean;
+    var hit = cache.get(key);
+    if (hit !== null) return hit === '_none_' ? null : hit;
+    var got = '';
+    if (typeof _profileAPI_ === 'function') {
+      var g = _profileAPI_('get', { phone: clean });
+      if (g && g.ok && g.profile && g.profile.paymentDefault) got = String(g.profile.paymentDefault);
+    }
+    cache.put(key, got || '_none_', _PMT_CACHE_TTL_SEC);
+    return got || null;
+  } catch (e) {
+    Logger.log('_profilePaymentDefault_ err: ' + (e && e.message));
+    return null;
+  }
+}
+
 function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   // Reuse the rich Apps Script parser for amount + (cat, subcat) so
   // tenants get the same classification quality as the owner path.
@@ -5174,6 +5225,15 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     }
   } catch (_iErr) { Logger.log('installments detect err: ' + (_iErr && _iErr.message)); }
 
+  // Payment method (Steven 2026-05-25). Detect from the user's text;
+  // fall back to their profile default if any. Prefix the description so
+  // it's visible in the sheet AND searchable. Sheet schema stays the
+  // same (no new column) — works on every user's existing sheet.
+  var __pm = _detectPaymentMethod_(rawText);
+  if (!__pm) __pm = _profilePaymentDefault_(fromPhone);
+  var __pmLabel = __pm ? _paymentMethodLabel_(__pm) : '';
+  var __rawTextWithPM = __pmLabel ? ('[' + __pmLabel + '] ' + String(rawText || '')) : rawText;
+
   var payload = {
     phone: String(fromPhone).replace(/[^0-9]/g, ''),
     amount: first.amount,
@@ -5181,7 +5241,7 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     isIncome: false,
     category: category,
     subcategory: subcategory,
-    rawText: rawText,
+    rawText: __rawTextWithPM,
     messageId: '',
     botSecret: botSecret,
   };
@@ -5872,6 +5932,42 @@ function processExpense(text, fromPhone) {
   // "תשלומים" / "תשלום" / "installments" — list active installment plans.
   if (/^\s*(תשלומים|תשלום|installments|payments)\s*[!.?]*\s*$/i.test(trimmed)) {
     return { reply: _listInstallments_(fromPhone) };
+  }
+
+  // Steven 2026-05-25: payment-method default commands. Sets per-user
+  // paymentDefault that stamps every future expense with [METHOD] prefix.
+  // "תמיד אשראי" / "תמיד מזומן" / "תמיד ביט" / "תמיד העברה"
+  // + reset: "בטל ברירת מחדל" / "שכח אמצעי תשלום"
+  var __pmCmd = trimmed.match(/^\s*(?:תמיד|always)\s+(אשראי|מזומן|ביט|העברה|credit|cash|bit|transfer)\s*[!.?]*\s*$/i);
+  if (__pmCmd) {
+    var __pmRaw = __pmCmd[1].toLowerCase();
+    var __pmCode = ({
+      'אשראי':'credit','credit':'credit',
+      'מזומן':'cash','cash':'cash',
+      'ביט':'bit','bit':'bit',
+      'העברה':'transfer','transfer':'transfer'
+    })[__pmRaw];
+    if (__pmCode) {
+      try {
+        var __cleanPm = String(fromPhone).replace(/[^0-9]/g, '');
+        _profileAPI_('set', { phone: __cleanPm, fields: { paymentDefault: __pmCode } });
+        try { CacheService.getScriptCache().remove('pmtDef:' + __cleanPm); } catch (_e) {}
+      } catch (_pmErr) { Logger.log('paymentDefault set err: ' + (_pmErr && _pmErr.message)); }
+      return { reply:
+        '✅ ברירת מחדל נשמרה: *' + _paymentMethodLabel_(__pmCode) + '*\n\n' +
+        'מעכשיו כל הוצאה שתשלח/י תסומן ב-[' + _paymentMethodLabel_(__pmCode) + '] אוטומטית.\n' +
+        'אם תרצה/י לרשום במזומן/ביט פעם אחת בלבד — פשוט כתוב/י את זה בהודעה (למשל "50 קפה במזומן").\n\n' +
+        'לבטל את ברירת המחדל: *בטל ברירת מחדל*'
+      };
+    }
+  }
+  if (/^\s*(?:בטל\s+ברירת\s+מחדל|שכח\s+אמצעי\s+תשלום|reset\s+payment\s+default)\s*[!.?]*\s*$/i.test(trimmed)) {
+    try {
+      var __cleanReset = String(fromPhone).replace(/[^0-9]/g, '');
+      _profileAPI_('set', { phone: __cleanReset, fields: { paymentDefault: null } });
+      try { CacheService.getScriptCache().remove('pmtDef:' + __cleanReset); } catch (_e) {}
+    } catch (_) {}
+    return { reply: '✓ ברירת המחדל בוטלה. מעכשיו אזהה אמצעי תשלום רק אם תכתוב/י אותו בהודעה.' };
   }
 
   var __greetMatch = trimmed.match(/^\s*(שלום|היי|hi|hey|hello|בוקר טוב|ערב טוב|שבוע טוב|מה נשמע|מה קורה|good morning|good evening)\s*[!.?]*\s*$/i);
