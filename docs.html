@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Kesefle API Docs — for developers</title>
 <meta name="description" content="Reference documentation for the Kesefle public API: authentication, rate limits, HMAC signatures, and every endpoint with request and response examples." />
-<meta name="theme-color" content="#0f172a" />
+<meta name="theme-color" content="#5034ff" />
 <meta name="color-scheme" content="dark light" />
 <meta name="robots" content="index,follow" />
 <link rel="canonical" href="https://kesefle.com/docs" />
@@ -30,7 +30,7 @@
         },
         colors: {
           ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:  { 300:'#86efac', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' },
+          brand:  { 300:'#86efac', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8' },
           accent: { 300:'#7dd3fc', 500:'#0ea5e9', 600:'#0284c7' },
           warn:   { 500:'#f59e0b', 600:'#d97706' },
           danger: { 500:'#dc2626', 600:'#b91c1c' }
@@ -69,21 +69,21 @@
 
   /* Inline code in prose */
   .prose-doc code:not(pre code) {
-    background: rgba(34,197,94,0.10);
-    color: #15803d;
+    background: rgba(80,52,255,0.10);
+    color: #3520b8;
     padding: 2px 6px;
     border-radius: 6px;
     font-size: 0.9em;
   }
   .dark .prose-doc code:not(pre code) {
-    background: rgba(34,197,94,0.18);
+    background: rgba(80,52,255,0.18);
     color: #86efac;
   }
 
   /* Method badges */
   .method { display:inline-block; padding:2px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
   .method-GET    { background:#0ea5e9; color:white; }
-  .method-POST   { background:#22c55e; color:white; }
+  .method-POST   { background:#5034ff; color:white; }
   .method-PUT    { background:#f59e0b; color:white; }
   .method-DELETE { background:#dc2626; color:white; }
 
@@ -91,17 +91,17 @@
   .status-pill {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 10px; border-radius: 9999px;
-    background: rgba(34,197,94,0.15);
-    color: #15803d; font-size: 12px; font-weight: 700;
-    border: 1px solid rgba(34,197,94,0.3);
+    background: rgba(80,52,255,0.15);
+    color: #3520b8; font-size: 12px; font-weight: 700;
+    border: 1px solid rgba(80,52,255,0.3);
   }
   .dark .status-pill { color:#86efac; }
   .status-pill::before {
-    content:''; width:6px; height:6px; border-radius:50%; background:#22c55e;
-    box-shadow: 0 0 0 0 rgba(34,197,94,.5);
+    content:''; width:6px; height:6px; border-radius:50%; background:#5034ff;
+    box-shadow: 0 0 0 0 rgba(80,52,255,.5);
     animation: live-pulse 2s ease-out infinite;
   }
-  @keyframes live-pulse { 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+  @keyframes live-pulse { 50% { box-shadow: 0 0 0 6px rgba(80,52,255,0); } }
 
   /* Copy button */
   .code-wrap { position: relative; }
@@ -114,8 +114,8 @@
     cursor: pointer; transition: all .15s;
     font-family: 'JetBrains Mono', monospace;
   }
-  .copy-btn:hover { background: rgba(34,197,94,0.2); color: #86efac; border-color: rgba(34,197,94,0.4); }
-  .copy-btn.copied { background: rgba(34,197,94,0.3); color: #fff; }
+  .copy-btn:hover { background: rgba(80,52,255,0.2); color: #86efac; border-color: rgba(80,52,255,0.4); }
+  .copy-btn.copied { background: rgba(80,52,255,0.3); color: #fff; }
 
   /* TOC */
   .toc-link {
@@ -123,11 +123,11 @@
     font-size: 13px; color: #5d6b8f; text-decoration: none;
     border-right: 2px solid transparent; transition: all .12s;
   }
-  .toc-link:hover { background: rgba(34,197,94,0.08); color: #15803d; }
-  .toc-link.active { background: rgba(34,197,94,0.12); color: #15803d; border-right-color: #22c55e; font-weight: 600; }
+  .toc-link:hover { background: rgba(80,52,255,0.08); color: #3520b8; }
+  .toc-link.active { background: rgba(80,52,255,0.12); color: #3520b8; border-right-color: #5034ff; font-weight: 600; }
   .dark .toc-link { color: #8a95b3; }
-  .dark .toc-link:hover { background: rgba(34,197,94,0.12); color: #86efac; }
-  .dark .toc-link.active { color: #86efac; border-right-color: #22c55e; }
+  .dark .toc-link:hover { background: rgba(80,52,255,0.12); color: #86efac; }
+  .dark .toc-link.active { color: #86efac; border-right-color: #5034ff; }
   .toc-group-title { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8a95b3; padding: 12px 10px 4px; }
 
   /* Endpoint card */
@@ -144,14 +144,14 @@
   .endpoint .ep-url { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #0f1422; word-break: break-all; }
   .dark .endpoint .ep-url { color: #e2e8f0; }
   .endpoint h3 a { color: inherit; text-decoration: none; }
-  .endpoint h3 a:hover { color: #22c55e; }
+  .endpoint h3 a:hover { color: #5034ff; }
 
   .pill {
     display:inline-block; padding: 2px 8px; border-radius: 6px;
     font-size: 11px; font-weight: 600; letter-spacing: .02em;
   }
   .pill-public { background: rgba(14,165,233,0.12); color: #0284c7; border: 1px solid rgba(14,165,233,0.25); }
-  .pill-auth   { background: rgba(34,197,94,0.12); color: #15803d; border: 1px solid rgba(34,197,94,0.25); }
+  .pill-auth   { background: rgba(80,52,255,0.12); color: #3520b8; border: 1px solid rgba(80,52,255,0.25); }
   .pill-admin  { background: rgba(245,158,11,0.12); color: #d97706; border: 1px solid rgba(245,158,11,0.25); }
   .pill-hmac   { background: rgba(139,92,246,0.12); color: #7c3aed; border: 1px solid rgba(139,92,246,0.25); }
   .dark .pill-public { color:#7dd3fc; }
@@ -161,7 +161,7 @@
 
   /* Tabs */
   .tab-btn { padding: 6px 12px; border-radius: 8px 8px 0 0; font-size: 12px; cursor: pointer; color: #5d6b8f; border-bottom: 2px solid transparent; }
-  .tab-btn.active { color: #15803d; border-bottom-color: #22c55e; font-weight: 600; }
+  .tab-btn.active { color: #3520b8; border-bottom-color: #5034ff; font-weight: 600; }
   .dark .tab-btn { color: #8a95b3; }
   .dark .tab-btn.active { color: #86efac; }
 
