@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-business-shortform-en-picker';
+const KFL_BUILD_VERSION = '2026-05-25-relabel-teaches-bot';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4646,7 +4646,17 @@ function _handleRelabelTap_(fromPhone, newCategory) {
         last.subcategory = '';
         cache.put('lastTenantExp:' + clean, JSON.stringify(last), 1800);
       } catch (_pe) {}
-      return { replyText: '✅ עברה ל-' + newCategory + '. השורה בגיליון מעודכנת.' };
+      // Steven 2026-05-25: TEACH the bot from every tap. Without this the
+      // user retags the same expense over and over and the bot never learns.
+      // _learnedSave with 'user-correction' source auto-publishes to the
+      // global cross-tenant store too, so EVERY tenant tap improves the
+      // classifier for EVERY future user typing the same description.
+      try {
+        if (typeof _learnedSave === 'function' && last.description) {
+          _learnedSave(last.description, { category: newCategory, subcategory: '' }, 'user-correction');
+        }
+      } catch (_lsErr) { Logger.log('_handleRelabelTap_ learnedSave err: ' + (_lsErr && _lsErr.message)); }
+      return { replyText: '✅ עברה ל-' + newCategory + ' (ולמדתי — בפעם הבאה אזהה לבד). השורה בגיליון מעודכנת.' };
     }
     Logger.log('_handleRelabelTap_ HTTP ' + code + ' ' + resp.getContentText().slice(0, 200));
     return { replyText: '😬 לא הצלחתי לעדכן את השורה (' + code + '). נסה/י דרך הגיליון ישירות.' };
