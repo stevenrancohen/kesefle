@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-tenant-sheet-link-fix';
+const KFL_BUILD_VERSION = '2026-05-25-broken-formula-cleaner';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -9826,13 +9826,22 @@ function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, a
         for (var hc = 0; hc < dvals[hr].length; hc++) {
           if (String(dvals[hr][hc] || '').trim() !== monthLabel) continue;
           var cell = ds.getRange(r + 1, hc + 1);
-          var hasFormula = false;
-          try {
-            var f = cell.getFormula();
-            if (f && String(f).indexOf('=') === 0) hasFormula = true;
-          } catch (_fErr) {}
-          if (hasFormula) {
-            Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has formula - preserved');
+          var existingFormula = '';
+          try { existingFormula = String(cell.getFormula() || ''); } catch (_fErr) {}
+          if (existingFormula) {
+            // Preserve LEGITIMATE formulas (e.g. clean SUMIFS pointing
+            // at the תנועות tab). OVERWRITE broken ones (residue from
+            // earlier manual fixes: hardcoded "+ N" tail, or SUMIFS
+            // referencing local columns without a tab qualifier).
+            // _isBrokenBotDashFormula_ mirrors personal_sheet_fix.gs's
+            // _isBrokenDashFormula_ so manual + auto paths agree on
+            // what counts as broken.
+            if (_isBrokenBotDashFormula_(existingFormula)) {
+              cell.setValue(fresh);
+              Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' had BROKEN formula -- cleaned to ₪' + fresh);
+              return true;
+            }
+            Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has clean formula - preserved');
             return false;
           }
           cell.setValue(fresh);
@@ -10053,6 +10062,22 @@ function _sumBusinessBucketFromTransactions_(ss, canonSub, year, monthIdx) {
     try { Logger.log('_sumBusinessBucketFromTransactions_ err: ' + (e && e.message)); } catch (_) {}
     return null;
   }
+}
+
+// Mirrors personal_sheet_fix.gs _isBrokenDashFormula_. Keep these two
+// in sync or the auto-self-heal will disagree with Steven's manual
+// CLEAN_BROKEN_FORMULAS run -- a cell would oscillate. Pattern 1:
+// SUMIFS with hardcoded "+ N" / "- N" tail. Pattern 2: SUMIFS that
+// references local A/I columns without a 'תנועות'! qualifier.
+function _isBrokenBotDashFormula_(formula) {
+  var f = String(formula || '').trim();
+  if (!f || f.charAt(0) !== '=') return false;
+  if (/SUMIFS\([^)]*\)\s*[+\-]\s*\d+(\.\d+)?\s*$/i.test(f)) return true;
+  if (/SUMIFS\(\s*\$?[A-Z]+\$?\d+\s*:\s*\$?[A-Z]+\$?\d+\s*,\s*\$?[A-Z]+\$?\d+\s*:\s*\$?[A-Z]+\$?\d+/i.test(f)
+      && !/'?[֐-׿]+'?!|'תנועות'!|תנועות!|transactions!/i.test(f)) {
+    return true;
+  }
+  return false;
 }
 
 // Mirror of personal_sheet_fix.gs _COMPANY_SUB_BUCKETS_ but for the bot.
