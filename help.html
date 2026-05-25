@@ -6,7 +6,7 @@
 <title>מרכז עזרה — כספ'לה</title>
 <meta name="description" content="מרכז העזרה של כספ'לה: מדריכים, פתרון בעיות, תשלומים, פרטיות והבוט בוואטסאפ. תשובות מהירות לכל מה שצריך." />
 <meta name="keywords" content="עזרה בוט וואטסאפ הוצאות, פתרון בעיות כספ'לה, מדריך מעקב הוצאות עברית, איך לחבר וואטסאפ לגוגל שיטס, שאלות נפוצות בוט הוצאות, FAQ ניהול תקציב" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <link rel="canonical" href="https://kesefle.com/help" />
 <link rel="alternate" hreflang="he-IL" href="https://kesefle.com/help" />
 <link rel="alternate" hreflang="x-default" href="https://kesefle.com/help" />
@@ -23,7 +23,7 @@
 <link rel="stylesheet" href="/assets/futuristic.css">
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
 
 <script>
   tailwind.config = {
@@ -33,11 +33,11 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f3f1ff', 100:'#e5e0ff', 200:'#c9bdff', 300:'#a98fff', 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8', 800:'#2a1990', 900:'#1f126b' },
-          accent:  { 500:'#ff158a', 600:'#fcab10' }
+          brand:   { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
+          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
         },
         boxShadow: {
-          glow: '0 30px 80px -20px rgb(80 52 255 / 0.35)',
+          glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
           soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
         }
       },
@@ -47,6 +47,18 @@
 <style>
   html { scroll-behavior: smooth; }
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   /* highlight matches in search */
   mark.hl { background: #fef08a; color: #422006; padding: 0 2px; border-radius: 3px; }
@@ -58,9 +70,9 @@
   .prose-he ul { list-style: disc; padding-inline-start: 1.5rem; margin: 0.7em 0; }
   .prose-he ul li { margin: 0.35em 0; line-height: 1.75; }
   .prose-he code { background: #eef0f6; padding: 0.15em 0.45em; border-radius: 6px; font-size: 0.9em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; direction: ltr; display: inline-block; }
-  html.dark .prose-he code { background: #1e2638; color: #c9bdff; }
-  .prose-he blockquote { border-inline-start: 4px solid #5034ff; background: #f3f1ff; padding: 0.6em 1em; border-radius: 0 12px 12px 0; margin: 1em 0; }
-  html.dark .prose-he blockquote { background: rgba(80,52,255,0.08); border-color: #8a6aff; }
+  html.dark .prose-he code { background: #1e2638; color: #c7d2fe; }
+  .prose-he blockquote { border-inline-start: 4px solid #4f46e5; background: #eef2ff; padding: 0.6em 1em; border-radius: 0 12px 12px 0; margin: 1em 0; }
+  html.dark .prose-he blockquote { background: rgba(79,70,229,0.08); border-color: #818cf8; }
   /* sidebar transition */
   @media (max-width: 767px) {
     #sidebar { transform: translateX(110%); transition: transform 0.25s ease-out; }
@@ -73,7 +85,7 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   .fade-in { animation: fadeIn 0.25s ease-out both; }
   /* focus ring */
-  *:focus-visible { outline: 2px solid #5034ff; outline-offset: 2px; border-radius: 8px; }
+  *:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; border-radius: 8px; }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
 <style>
@@ -105,7 +117,7 @@
   .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
   .kfl-curtain-logo {
     width: 64px; height: 64px; border-radius: 16px;
-    background: linear-gradient(135deg, #5034ff, #4326e0);
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
     display: grid; place-items: center;
     color: white; font-size: 28px; font-weight: 900;
     transform: scale(0.9); opacity: 0;
@@ -607,7 +619,7 @@ var CATEGORIES = [
           <h2>🥇 שכבה 1 — Cache (לשונית <code>מילון לימוד</code>)</h2>
           <p><strong>~30% מההודעות. ~50ms. חינם.</strong></p>
           <p>בלשונית <code>מילון לימוד</code> שנוצרת אוטומטית בגיליון שלך, נשמרת כל תשובה שהבוט נתן בעבר. בפעם הבאה שאותו ספק חוזר — נקרא מיד מהגיליון בלי לחשב מחדש.</p>
-          <pre style="background:#ffffff;color:#5034ff;padding:12px;border-radius:8px;direction:ltr;text-align:left;font-size:12px;overflow:auto"><code>keyword                 | category | subcategory | source | updated_at
+          <pre style="background:#ffffff;color:#4f46e5;padding:12px;border-radius:8px;direction:ltr;text-align:left;font-size:12px;overflow:auto"><code>keyword                 | category | subcategory | source | updated_at
 גלידריה של אבי         | אוכל      | אוכל בחוץ   | ai     | 2026-05-17
 חתונה של רוני          | אירועים  | אירועים     | ai     | 2026-05-17</code></pre>
           <p>אתה גם יכול לערוך את הלשונית הזו ידנית כדי "ללמד" את הבוט מילה חדשה — בפעם הבאה זה יעבוד.</p>
@@ -635,7 +647,7 @@ var CATEGORIES = [
 
           <h2>📊 פילוח לכל <span class="num">1,000</span> הודעות</h2>
           <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px">
-            <thead><tr style="border-bottom:2px solid #5034ff"><th style="text-align:right;padding:8px">שכבה</th><th style="text-align:right;padding:8px">אחוז</th><th style="text-align:right;padding:8px">עלות</th></tr></thead>
+            <thead><tr style="border-bottom:2px solid #4f46e5"><th style="text-align:right;padding:8px">שכבה</th><th style="text-align:right;padding:8px">אחוז</th><th style="text-align:right;padding:8px">עלות</th></tr></thead>
             <tbody>
               <tr><td style="padding:8px">Cache (T1)</td><td style="padding:8px"><span class="num">30</span>%</td><td style="padding:8px">$<span class="num">0.00</span></td></tr>
               <tr><td style="padding:8px">Keywords (T2)</td><td style="padding:8px"><span class="num">65</span>%</td><td style="padding:8px">$<span class="num">0.00</span></td></tr>

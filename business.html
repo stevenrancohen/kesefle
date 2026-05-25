@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>כספ'לה לעסקים — ניהול הוצאות והזמנות בוואטסאפ</title>
 <meta name="description" content="עוסקים פטורים, חנויות אונליין, ופרילנסרים — נהלו הוצאות עסקיות, הזמנות לקוחות, ורווח בזמן אמת ישירות מוואטסאפ. הנתונים שלכם, ב-Google Drive שלכם, מוכנים לרואה החשבון." />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <link rel="canonical" href="https://kesefle.com/business" />
 <meta property="og:title" content="כספ'לה לעסקים — ניהול הוצאות והזמנות בוואטסאפ" />
 <meta property="og:description" content="עוסקים פטורים, חנויות אונליין, ופרילנסרים — נהלו את העסק מוואטסאפ." />
@@ -19,7 +19,7 @@
 <meta name="twitter:image" content="https://kesefle.com/og-image.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script>
   tailwind.config = {
@@ -29,10 +29,10 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], mono: ['Inter', 'ui-monospace', 'monospace'] },
         colors: {
           ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f3f1ff', 100:'#e5e0ff', 200:'#c9bdff', 300:'#a98fff', 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8', 800:'#2a1990', 900:'#1f126b' },
+          brand:   { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
           accent:  { 400:'#c084fc', 500:'#a855f7', 600:'#9333ea' }
         },
-        boxShadow: { glow: '0 30px 80px -20px rgb(80 52 255 / 0.35)' },
+        boxShadow: { glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)' },
       },
     },
   };
@@ -40,6 +40,18 @@
 <style>
   html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   h1, h2, h3 { letter-spacing: -0.025em; }
   .num { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; font-family: 'Inter', monospace; }
   @keyframes blob-drift {
@@ -49,7 +61,7 @@
   }
   .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
   .chat-bubble { background: #1e2638; border-radius: 1rem; padding: 0.75rem 1rem; max-width: 80%; }
-  .chat-user { background: #2a1990; align-self: flex-start; }
+  .chat-user { background: #312e81; align-self: flex-start; }
   @media (prefers-reduced-motion: reduce) { .animate-blob { animation: none; } }
 </style>
 <script type="application/ld+json">

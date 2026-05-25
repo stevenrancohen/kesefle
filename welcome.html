@@ -16,7 +16,7 @@
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="https://kesefle.com/og-image.png" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="כספ'לה" />
@@ -36,7 +36,7 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand: { 50:'#f3f1ff', 100:'#e5e0ff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8' }
+          brand: { 50:'#eef2ff', 100:'#e0e7ff', 500:'#4f46e5', 600:'#4338ca', 700:'#3730a3' }
         }
       }
     }
@@ -44,6 +44,18 @@
 </script>
 <style>
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   .num { direction: ltr; unicode-bidi: isolate; }
   .step-card { transition: transform 0.2s, box-shadow 0.2s; }
   .step-card:hover { transform: translateY(-2px); box-shadow: 0 14px 36px -18px rgba(15, 20, 34, 0.16); }
@@ -51,11 +63,11 @@
   .confetti { position: fixed; top: 0; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; animation: confetti-fall 3s ease-out forwards; z-index: 50; }
   .step-num { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; font-weight: 800; font-size: 18px; }
   .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
-  .pulse-dot::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #5034ff; margin-left: 6px; animation: pulse-dot 1.4s ease-in-out infinite; }
+  .pulse-dot::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4f46e5; margin-left: 6px; animation: pulse-dot 1.4s ease-in-out infinite; }
   @keyframes pulse-dot { 0%, 100% { opacity: 0.5; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.2); } }
   .cmd-card { transition: background 0.2s; cursor: pointer; }
-  .cmd-card:hover { background: #f3f1ff; }
-  .cmd-card:active { background: #e5e0ff; }
+  .cmd-card:hover { background: #eef2ff; }
+  .cmd-card:active { background: #e0e7ff; }
   @media (prefers-reduced-motion: reduce) {
     .confetti, .pulse-dot::before, [class*="animate-"] { animation: none !important; }
     .step-card, .cmd-card { transition-duration: 0.01ms !important; }
@@ -542,7 +554,7 @@ function copyText(e, text) {
   navigator.clipboard.writeText(text).then(function() {
     var card = e.currentTarget;
     var prev = card.style.background;
-    card.style.background = '#e5e0ff';
+    card.style.background = '#e0e7ff';
     setTimeout(function() { card.style.background = prev; }, 600);
     showToast('הועתק: "' + text + '"');
   }).catch(function() {
@@ -561,7 +573,7 @@ function showToast(msg) {
 
 function confettiBurst(e) {
   if (e) e.preventDefault();
-  var colors = ['#5034ff', '#4326e0', '#f59e0b', '#a855f7', '#3b82f6', '#ef4444'];
+  var colors = ['#4f46e5', '#4338ca', '#f59e0b', '#a855f7', '#3b82f6', '#ef4444'];
   for (var i = 0; i < 50; i++) {
     var c = document.createElement('div');
     c.className = 'confetti';
@@ -708,7 +720,7 @@ window.addEventListener('load', function () {
       var host = document.querySelector('main') || document.body;
       if (!host) return;
       if ((host.innerText || '').replace(/\s+/g, '').length >= 5) return;
-      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-size:20px;font-weight:800;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#4326e0;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
+      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-size:20px;font-weight:800;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#4338ca;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
     } catch (_e) {}
   }, 2500);
 });

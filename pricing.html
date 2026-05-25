@@ -6,7 +6,7 @@
 <title>מחירים — כספ'לה | מסלולים, השוואת תכונות והשוואה לחלופות</title>
 <meta name="description" content="מחירי כספ'לה: חינם, Pro ב-19₪/חודש, משפחה ב-39₪/חודש. השוואת תכונות, שאלות נפוצות, השוואה ל-Splitwise/Toshen/Sheets, ואמצעי תשלום: PayPal, קריפטו, ביט והעברה בנקאית." />
 <meta name="keywords" content="מחיר כספ'לה, בוט הוצאות מחיר, אפליקציית הוצאות חינם, ניהול תקציב משפחתי מחיר, אלטרנטיבה ל-Splitwise, מעקב הוצאות עברית חינם, ניסיון חינם בוט וואטסאפ" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <meta property="og:title" content="מחירים — כספ'לה" />
 <meta property="og:description" content="תוכנית לכל עסק. בלי הפתעות בחיוב. התחל בחינם, שדרג רק כשתצטרך." />
 <meta property="og:type" content="website" />
@@ -37,7 +37,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <link rel="stylesheet" href="/assets/futuristic.css">
@@ -49,15 +49,15 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f3f1ff', 100:'#e5e0ff', 200:'#c9bdff', 300:'#a98fff', 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8', 800:'#2a1990', 900:'#1f126b' },
+          brand:   { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
           accent:  { 400:'#c084fc', 500:'#a855f7', 600:'#9333ea' }
         },
         boxShadow: {
-          glow: '0 30px 80px -20px rgb(80 52 255 / 0.35)',
+          glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
           soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
         },
         backgroundImage: {
-          'mesh': "radial-gradient(at 20% 20%, rgba(80,52,255,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(80,52,255,0.10) 0px, transparent 50%)",
+          'mesh': "radial-gradient(at 20% 20%, rgba(79,70,229,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(79,70,229,0.10) 0px, transparent 50%)",
         },
       },
     },
@@ -66,6 +66,18 @@
 <style>
   html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
   body { font-family: 'Heebo', system-ui, sans-serif; font-feature-settings: "kern" 1, "liga" 1, "calt" 1; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   h1, h2 { letter-spacing: -0.025em; }
   h3, h4 { letter-spacing: -0.015em; }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; font-variant-numeric: tabular-nums; }
@@ -73,10 +85,10 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   /* compare-table pill colors */
-  .pill-yes { color: #4326e0; font-weight: 600; }
+  .pill-yes { color: #4338ca; font-weight: 600; }
   .pill-no  { color: #b91c1c; font-weight: 600; }
   .pill-mid { color: #b45309; font-weight: 600; }
-  .dark .pill-yes { color: #8a6aff; }
+  .dark .pill-yes { color: #818cf8; }
   .dark .pill-no  { color: #f87171; }
   .dark .pill-mid { color: #fbbf24; }
 
@@ -102,7 +114,7 @@
   .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
   .kfl-curtain-logo {
     width: 64px; height: 64px; border-radius: 16px;
-    background: linear-gradient(135deg, #5034ff, #4326e0);
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
     display: grid; place-items: center;
     color: white; font-size: 28px; font-weight: 900;
     transform: scale(0.9); opacity: 0;
@@ -129,8 +141,8 @@
 
   /* Pro tier glow */
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(80, 52, 255, 0.3); }
-    50%      { box-shadow: 0 0 0 12px rgba(80, 52, 255, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3); }
+    50%      { box-shadow: 0 0 0 12px rgba(79, 70, 229, 0); }
   }
   .pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
 
@@ -141,7 +153,7 @@
   }
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#5034ff">
+  <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/icon-192.png">
   <script src="/js/analytics-loader.js" defer></script>
 </head>

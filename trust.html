@@ -6,7 +6,7 @@
 <title>אבטחה ופרטיות — כספ'לה</title>
 <meta name="description" content="כל מה שאנחנו עושים כדי שהנתונים הפיננסיים שלך יישארו רק אצלך — הצפנה AES-256-GCM, scope מצומצם, ציות לתיקון 13, ופלייבוק תגובה לאירועי אבטחה." />
 <meta name="keywords" content="אבטחת מידע פיננסי, פרטיות בוט וואטסאפ, חוק הגנת הפרטיות תיקון 13, OAuth Google Sheets אבטחה, AES-256 הצפנה, GDPR ישראל, מעקב הוצאות מאובטח" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <meta property="og:title" content="האבטחה שלך — לא חזון, מעשה • כספ'לה" />
 <meta property="og:description" content="הצפנה AES-256-GCM, drive.file scope מצומצם, ציות לחוק הגנת הפרטיות תיקון 13 ו-GDPR, ופלייבוק תגובה לאירועי אבטחה תוך 72 שעות." />
 <meta property="og:type" content="website" />
@@ -20,7 +20,7 @@
 <link rel="alternate" hreflang="x-default" href="https://kesefle.com/trust" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
 <link rel="stylesheet" href="/assets/futuristic.css">
 <script>
@@ -31,16 +31,16 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f3f1ff', 100:'#e5e0ff', 200:'#c9bdff', 300:'#a98fff', 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8', 800:'#2a1990', 900:'#1f126b' },
-          accent:  { 500:'#ff158a', 600:'#fcab10' },
+          brand:   { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
+          accent:  { 500:'#06b6d4', 600:'#14b8a6' },
           rose:   { 50:'#fff1f2', 100:'#ffe4e6', 200:'#fecdd3', 500:'#f43f5e', 600:'#e11d48', 700:'#be123c' },
         },
         boxShadow: {
-          glow: '0 30px 80px -20px rgb(80 52 255 / 0.35)',
+          glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
           soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
         },
         backgroundImage: {
-          'mesh': "radial-gradient(at 20% 20%, rgba(80,52,255,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.10) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(80,52,255,0.10) 0px, transparent 50%)",
+          'mesh': "radial-gradient(at 20% 20%, rgba(79,70,229,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.10) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(79,70,229,0.10) 0px, transparent 50%)",
         },
       },
     },
@@ -49,12 +49,24 @@
 <style>
   html { scroll-behavior: smooth; }
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; direction: ltr; unicode-bidi: isolate; }
   details[open] > summary > .chev { transform: rotate(-90deg); }
   .chev { transition: transform .2s ease; }
   /* tiny pulse for the "0 breaches" badge */
-  @keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(80 52 255 / 0.4); } 50% { box-shadow: 0 0 0 8px rgb(80 52 255 / 0); } }
+  @keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(79 70 229 / 0.4); } 50% { box-shadow: 0 0 0 8px rgb(79 70 229 / 0); } }
   .glow-dot { animation: glow-pulse 2.4s ease-in-out infinite; }
 </style>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"אבטחה ופרטיות — כספ'לה","description":"כל מה שאנחנו עושים כדי שהנתונים הפיננסיים שלך יישארו רק אצלך — הצפנה AES-256-GCM, scope מצומצם, ציות לתיקון 13, ופלייבוק תגובה לאירועי אבטחה.","url":"https://kesefle.com/trust","inLanguage":"he","isPartOf":{"@type":"WebSite","name":"כספ'לה","url":"https://kesefle.com/"}}</script>
@@ -305,11 +317,11 @@
         <!-- defs -->
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5034ff"/>
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#4f46e5"/>
           </marker>
           <linearGradient id="userBox" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stop-color="#e5e0ff"/>
-            <stop offset="100%" stop-color="#c9bdff"/>
+            <stop offset="0%" stop-color="#e0e7ff"/>
+            <stop offset="100%" stop-color="#c7d2fe"/>
           </linearGradient>
           <linearGradient id="kesefleBox" x1="0" x2="1" y1="0" y2="1">
             <stop offset="0%" stop-color="#eef0f6"/>
@@ -318,14 +330,14 @@
         </defs>
 
         <!-- YOUR DRIVE box -->
-        <rect x="40" y="60" width="320" height="240" rx="20" fill="url(#userBox)" stroke="#4326e0" stroke-width="2"/>
-        <text x="200" y="95" text-anchor="middle" font-family="Heebo,sans-serif" font-weight="800" font-size="18" fill="#1f126b">Google Drive שלך</text>
-        <text x="200" y="115" text-anchor="middle" font-family="Heebo,sans-serif" font-size="11" fill="#3520b8">בבעלותך, באחריותך</text>
+        <rect x="40" y="60" width="320" height="240" rx="20" fill="url(#userBox)" stroke="#4338ca" stroke-width="2"/>
+        <text x="200" y="95" text-anchor="middle" font-family="Heebo,sans-serif" font-weight="800" font-size="18" fill="#1e1b4b">Google Drive שלך</text>
+        <text x="200" y="115" text-anchor="middle" font-family="Heebo,sans-serif" font-size="11" fill="#3730a3">בבעלותך, באחריותך</text>
 
         <!-- sheet icon -->
         <g transform="translate(120,140)">
-          <rect width="160" height="120" rx="8" fill="#fff" stroke="#4326e0" stroke-width="2"/>
-          <rect x="0" y="0" width="160" height="22" fill="#4326e0"/>
+          <rect width="160" height="120" rx="8" fill="#fff" stroke="#4338ca" stroke-width="2"/>
+          <rect x="0" y="0" width="160" height="22" fill="#4338ca"/>
           <text x="80" y="16" text-anchor="middle" font-family="Heebo,sans-serif" font-weight="700" font-size="11" fill="#fff">כספ'לה — מאזן חברה</text>
           <line x1="0" y1="46" x2="160" y2="46" stroke="#dde1ec"/>
           <line x1="0" y1="68" x2="160" y2="68" stroke="#dde1ec"/>
@@ -336,8 +348,8 @@
         </g>
 
         <!-- arrow between boxes -->
-        <line x1="370" y1="180" x2="430" y2="180" stroke="#5034ff" stroke-width="3" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
-        <text x="400" y="170" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#3520b8">drive.file</text>
+        <line x1="370" y1="180" x2="430" y2="180" stroke="#4f46e5" stroke-width="3" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+        <text x="400" y="170" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#3730a3">drive.file</text>
         <text x="400" y="200" text-anchor="middle" font-family="Heebo,sans-serif" font-size="10" fill="#5d6b8f">scope מצומצם</text>
 
         <!-- KESEFLE box -->
@@ -348,10 +360,10 @@
         <!-- stored items list -->
         <g transform="translate(460,135)">
           <text x="0" y="0" font-family="Heebo,sans-serif" font-weight="700" font-size="12" fill="#0f1422">שומרים:</text>
-          <text x="0" y="20" font-family="ui-monospace,monospace" font-size="11" fill="#4326e0">✓ user.sub, email, picture</text>
-          <text x="0" y="38" font-family="ui-monospace,monospace" font-size="11" fill="#4326e0">✓ encrypted refresh_token</text>
-          <text x="0" y="56" font-family="ui-monospace,monospace" font-size="11" fill="#4326e0">✓ sheet_id</text>
-          <text x="0" y="74" font-family="ui-monospace,monospace" font-size="11" fill="#4326e0">✓ plan, phone (hashed)</text>
+          <text x="0" y="20" font-family="ui-monospace,monospace" font-size="11" fill="#4338ca">✓ user.sub, email, picture</text>
+          <text x="0" y="38" font-family="ui-monospace,monospace" font-size="11" fill="#4338ca">✓ encrypted refresh_token</text>
+          <text x="0" y="56" font-family="ui-monospace,monospace" font-size="11" fill="#4338ca">✓ sheet_id</text>
+          <text x="0" y="74" font-family="ui-monospace,monospace" font-size="11" fill="#4338ca">✓ plan, phone (hashed)</text>
           <text x="0" y="100" font-family="Heebo,sans-serif" font-weight="700" font-size="12" fill="#be123c">לא שומרים:</text>
           <text x="0" y="120" font-family="ui-monospace,monospace" font-size="11" fill="#e11d48">✗ raw WhatsApp text</text>
           <text x="0" y="138" font-family="ui-monospace,monospace" font-size="11" fill="#e11d48">✗ bank details / card #</text>
@@ -359,7 +371,7 @@
         </g>
 
         <!-- "you" + "us" labels -->
-        <text x="200" y="335" text-anchor="middle" font-family="Heebo,sans-serif" font-weight="800" font-size="14" fill="#1f126b">אתה</text>
+        <text x="200" y="335" text-anchor="middle" font-family="Heebo,sans-serif" font-weight="800" font-size="14" fill="#1e1b4b">אתה</text>
         <text x="600" y="335" text-anchor="middle" font-family="Heebo,sans-serif" font-weight="800" font-size="14" fill="#0f1422">אנחנו</text>
       </svg>
     </div>

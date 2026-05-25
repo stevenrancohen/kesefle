@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="https://kesefle.com/og-image.png?v=2026-05-24" />
 <link rel="manifest" href="/manifest.webmanifest" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,13 +32,25 @@ tailwind.config = {
     fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
     colors: {
       ink: { 50:'#f7f8fb', 100:'#eef0f6', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-      brand: { 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8' }
+      brand: { 400:'#818cf8', 500:'#4f46e5', 600:'#4338ca', 700:'#3730a3' }
     }
   }}
 };
 </script>
 <style>
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   .glitch {
     position: relative;
     color: #0f1422;
