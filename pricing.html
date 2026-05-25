@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl" class="dark">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -94,7 +94,7 @@
 
   .kfl-curtain {
     position: fixed; inset: 0; z-index: 9999;
-    background: #0f1422;
+    background: #ffffff;
     display: flex; align-items: center; justify-content: center;
     pointer-events: none;
     transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s 0.8s;
@@ -178,7 +178,7 @@
     <div class="hidden items-center gap-0.5 md:flex">
       <!-- 1. המוצר -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">המוצר<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-white dark:hover:text-white">המוצר<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
             <a href="/#how" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">איך זה עובד</a>
@@ -188,7 +188,7 @@
       </div>
       <!-- 2. למי זה מתאים -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">למי זה מתאים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-white dark:hover:text-white">למי זה מתאים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
             <a href="/business" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">עצמאים ובעלי עסק</a>
@@ -199,7 +199,7 @@
       </div>
       <!-- 3. מחירים -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">מחירים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-white dark:hover:text-white">מחירים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
             <a href="/pricing#tiers" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">מסלולים</a>
@@ -211,7 +211,7 @@
       </div>
       <!-- 4. מדריכים -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">מדריכים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-white dark:hover:text-white">מדריכים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
             <a href="/help" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">מרכז עזרה</a>
@@ -222,7 +222,7 @@
       </div>
       <!-- 5. החברה -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">החברה<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-white dark:hover:text-white">החברה<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
             <a href="/about" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">אודות</a>
@@ -234,7 +234,7 @@
       </div>
       <!-- 6. צור קשר -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">צור קשר<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-white dark:hover:text-white">צור קשר<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
             <a href="/contact" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">דברו איתנו</a>
@@ -255,12 +255,12 @@
 
   <!-- Mobile menu (native accordion) -->
   <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-200/60 bg-white/95 px-5 py-3 backdrop-blur dark:border-ink-700/60 dark:bg-ink-900/95 md:hidden">
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">המוצר<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/#how" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">איך זה עובד</a><a href="/demo" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הדגמה חיה</a></div></details>
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">למי זה מתאים<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/business" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">עצמאים ובעלי עסק</a><a href="/family" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">משפחות</a><a href="/group" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">קבוצות ושותפים</a></div></details>
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מחירים<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/pricing#tiers" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מסלולים</a><a href="/pricing#compare" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואת תכונות</a><a href="/pricing#alternatives" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואה לחלופות</a><a href="/pricing#billing-faq" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">שאלות נפוצות</a></div></details>
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מדריכים<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/help" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מרכז עזרה</a><a href="/blog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">בלוג</a><a href="/start" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">התחלה מהירה</a></div></details>
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">החברה<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/about" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">אודות</a><a href="/roadmap" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מפת דרכים</a><a href="/trust" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">אמון ואבטחה</a><a href="/changelog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">עדכונים</a></div></details>
-    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">צור קשר<span class="text-ink-400">+</span></summary><div class="pb-2"><a href="/contact" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">דברו איתנו</a><a href="/status" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">סטטוס מערכת</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">המוצר<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/#how" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">איך זה עובד</a><a href="/demo" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הדגמה חיה</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">למי זה מתאים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/business" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">עצמאים ובעלי עסק</a><a href="/family" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">משפחות</a><a href="/group" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">קבוצות ושותפים</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מחירים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/pricing#tiers" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מסלולים</a><a href="/pricing#compare" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואת תכונות</a><a href="/pricing#alternatives" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואה לחלופות</a><a href="/pricing#billing-faq" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">שאלות נפוצות</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מדריכים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/help" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מרכז עזרה</a><a href="/blog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">בלוג</a><a href="/start" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">התחלה מהירה</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">החברה<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/about" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">אודות</a><a href="/roadmap" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מפת דרכים</a><a href="/trust" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">אמון ואבטחה</a><a href="/changelog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">עדכונים</a></div></details>
+    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">צור קשר<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/contact" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">דברו איתנו</a><a href="/status" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">סטטוס מערכת</a></div></details>
     <a href="/account" class="mt-3 block rounded-xl bg-brand-600 px-4 py-2.5 text-center text-sm font-bold text-white">התחל חינם</a>
   </div>
 </header>
@@ -353,7 +353,7 @@
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num">0</span></span>
-          <span class="text-2xl font-bold text-ink-400">&#8362;</span>
+          <span class="text-2xl font-bold text-ink-500">&#8362;</span>
           <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
         </div>
         <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">לתמיד. בלי תאריך תפוגה.</p>
@@ -363,9 +363,9 @@
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> גיליון פרטי בגוגל דרייב שלך &mdash; תבנית פעמונים מלאה</li>
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> דשבורד אינטרנטי (מאזן, מגמה חודשית, פירוט קטגוריות)</li>
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> פנקס משותף לקבוצה אחת</li>
-          <li class="flex items-start gap-2 text-ink-400"><svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M6 18L18 6"/></svg> בלי OCR לקבלות, בלי סיווג AI</li>
+          <li class="flex items-start gap-2 text-ink-500"><svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M6 18L18 6"/></svg> בלי OCR לקבלות, בלי סיווג AI</li>
         </ul>
-        <a href="/account?plan=free" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">התחל בחינם</a>
+        <a href="/account?plan=free" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-white hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">התחל בחינם</a>
       </div>
 
       <!-- pro plan (highlighted) -->
@@ -377,7 +377,7 @@
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num kfl-price" data-plan="pro" data-month="19" data-year="190">19</span></span>
-          <span class="text-2xl font-bold text-ink-400">&#8362;</span>
+          <span class="text-2xl font-bold text-ink-500">&#8362;</span>
           <span class="text-ink-500 dark:text-ink-300 kfl-period">/לחודש</span>
         </div>
         <p class="mt-2 text-xs text-brand-600 dark:text-brand-400 kfl-savings hidden" data-plan="pro">חיסכון <span class="num">38</span>&#8362; בשנה</p>
@@ -403,7 +403,7 @@
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num kfl-price" data-plan="family" data-month="39" data-year="390">39</span></span>
-          <span class="text-2xl font-bold text-ink-400">&#8362;</span>
+          <span class="text-2xl font-bold text-ink-500">&#8362;</span>
           <span class="text-ink-500 dark:text-ink-300 kfl-period">/לחודש</span>
         </div>
         <p class="mt-2 text-xs text-accent-600 dark:text-accent-500 kfl-savings hidden" data-plan="family">חיסכון <span class="num">78</span>&#8362; בשנה</p>
@@ -469,19 +469,19 @@
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">סיווג AI (Gemini) להוצאות שהמילון לא זיהה</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">&#10003;</td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">קלט קולי (הקלטה &rarr; הוצאה)</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">&#10003;</td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">OCR לקבלות (צילום &rarr; הוצאה)</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">&#10003;</td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
@@ -515,13 +515,13 @@
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">השוואת חודש-לחודש (MoM)</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">&#10003;</td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">ציון בריאות פיננסית</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">&#10003;</td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
@@ -531,13 +531,13 @@
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">זיהוי אוטומטי של הוצאות חוזרות (מנויים)</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">&#10003;</td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">שיחה חופשית עם הבוט (Concierge)</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-brand-600 dark:text-brand-400">&#10003;</td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
@@ -553,8 +553,8 @@
             </tr>
             <tr class="border-t border-ink-100 dark:border-ink-700">
               <td class="px-5 py-3.5">פיצול הוצאות בין משתתפים</td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
-              <td class="px-5 py-3.5 text-center"><span class="text-ink-300">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
+              <td class="px-5 py-3.5 text-center"><span class="text-ink-600">&mdash;</span></td>
               <td class="px-5 py-3.5 text-center text-accent-600 dark:text-accent-500">&#10003;</td>
             </tr>
 
@@ -576,56 +576,56 @@
 </section>
 
 <!-- ============== UNIVERSAL FEATURES ============== -->
-<section id="universal" class="bg-ink-900 py-20 text-white md:py-28">
+<section id="universal" class="bg-white py-20 text-ink-900 md:py-28">
   <div class="mx-auto max-w-6xl px-5">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-sm font-bold text-brand-400">לכולם, תמיד</p>
       <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl">מה כלול בכל הגרסאות?</h2>
-      <p class="mt-4 text-lg text-ink-200">הדברים האלה הם הבסיס. גם אם בחרת בחינם.</p>
+      <p class="mt-4 text-lg text-ink-700">הדברים האלה הם הבסיס. גם אם בחרת בחינם.</p>
     </div>
 
     <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+      <div class="rounded-2xl border border-ink-200 bg-white p-6">
         <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24z"/></svg>
         </div>
         <h3 class="mt-4 text-lg font-bold">בוט WhatsApp בעברית</h3>
-        <p class="mt-2 text-sm text-ink-300">בלי אפליקציה להוריד. בלי טפסים. כתוב "<span class="num">42</span> קפה" &mdash; וזה רשום.</p>
+        <p class="mt-2 text-sm text-ink-600">בלי אפליקציה להוריד. בלי טפסים. כתוב "<span class="num">42</span> קפה" &mdash; וזה רשום.</p>
       </div>
-      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+      <div class="rounded-2xl border border-ink-200 bg-white p-6">
         <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <h3 class="mt-4 text-lg font-bold">הגיליון בבעלות שלך</h3>
-        <p class="mt-2 text-sm text-ink-300">בגוגל דרייב שלך, בחשבון שלך. גם אם תעזוב &mdash; הוא נשאר אצלך.</p>
+        <p class="mt-2 text-sm text-ink-600">בגוגל דרייב שלך, בחשבון שלך. גם אם תעזוב &mdash; הוא נשאר אצלך.</p>
       </div>
-      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+      <div class="rounded-2xl border border-ink-200 bg-white p-6">
         <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
         <h3 class="mt-4 text-lg font-bold">פרטיות מובנית</h3>
-        <p class="mt-2 text-sm text-ink-300">אין חיבור לבנק. אין שותפים פרסומיים. הנתונים שלך לא משותפים ולא נמכרים.</p>
+        <p class="mt-2 text-sm text-ink-600">אין חיבור לבנק. אין שותפים פרסומיים. הנתונים שלך לא משותפים ולא נמכרים.</p>
       </div>
-      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+      <div class="rounded-2xl border border-ink-200 bg-white p-6">
         <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         </div>
         <h3 class="mt-4 text-lg font-bold">טקסונומיית פעמונים</h3>
-        <p class="mt-2 text-sm text-ink-300"><span class="num">16</span> קטגוריות מתודולוגיות פעמונים &mdash; אותה שיטה שעוזרת לאלפי משפחות בישראל לאזן תקציב.</p>
+        <p class="mt-2 text-sm text-ink-600"><span class="num">16</span> קטגוריות מתודולוגיות פעמונים &mdash; אותה שיטה שעוזרת לאלפי משפחות בישראל לאזן תקציב.</p>
       </div>
-      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+      <div class="rounded-2xl border border-ink-200 bg-white p-6">
         <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg>
         </div>
         <h3 class="mt-4 text-lg font-bold">גישה לגיליון בכל מכשיר</h3>
-        <p class="mt-2 text-sm text-ink-300">לפתוח, לערוך, לייצא &mdash; מכל מקום, גם בלי כספ'לה. זה הגיליון שלך.</p>
+        <p class="mt-2 text-sm text-ink-600">לפתוח, לערוך, לייצא &mdash; מכל מקום, גם בלי כספ'לה. זה הגיליון שלך.</p>
       </div>
-      <div class="rounded-2xl border border-ink-700 bg-ink-800 p-6">
+      <div class="rounded-2xl border border-ink-200 bg-white p-6">
         <div class="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         </div>
         <h3 class="mt-4 text-lg font-bold">ביטול בלחיצה</h3>
-        <p class="mt-2 text-sm text-ink-300">בעמוד החשבון או דרך הבוט. בלי שיחות שכנוע, בלי קנסות.</p>
+        <p class="mt-2 text-sm text-ink-600">בעמוד החשבון או דרך הבוט. בלי שיחות שכנוע, בלי קנסות.</p>
       </div>
     </div>
   </div>
@@ -843,7 +843,7 @@
     </div>
 
     <div class="mt-12 divide-y divide-ink-200 rounded-3xl border border-ink-200 bg-ink-50 dark:divide-ink-700 dark:border-ink-700 dark:bg-ink-900/40">
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60" open>
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50" open>
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>איך עובד הניסיון של <span class="num">14</span> ימים?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -852,7 +852,7 @@
           נרשמים, מקבלים <span class="num">14</span> ימים גישה מלאה לכל תכונות Pro או משפחה &mdash; בחינם, בלי חיוב מראש ובלי צורך בכרטיס אשראי. החיוב הראשון מתחיל רק ביום ה-<span class="num">15</span>. אפשר לבטל בכל רגע לפני זה &mdash; לא יורד שקל.
         </p>
       </details>
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60">
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>למה לשלם אם הגרסה החינמית כל כך טובה?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -861,7 +861,7 @@
           הגרסה החינמית מקטלגת לפי מילון של <span class="num">18,725</span> מילים &mdash; מצוין לרוב ההוצאות הסטנדרטיות. אבל כשכותבים שם ספק חריג, סלנג מקצועי או "חיוב יום ב.מ.ת", Pro קוראת ל-AI להבין למה התכוונתם. בנוסף Pro מוסיף OCR לקבלות, תמלול קולי, ושיחה חופשית עם הבוט.
         </p>
       </details>
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60">
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>מה קורה אם אני מבטל?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -870,7 +870,7 @@
           חוזרים לגרסה החינמית באופן מיידי. כל הנתונים נשארים אצלכם &mdash; הם בגיליון Google שלכם, לא אצלנו. רק תפסיקו לקבל את תכונות ה-Pro (סיווג AI, OCR, תמלול קולי, וכו'). אפשר לחזור ל-Pro מתי שתרצו.
         </p>
       </details>
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60">
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>אפשר לבטל בכל רגע?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -879,7 +879,7 @@
           כן. בלחיצה אחת בעמוד החשבון, או פשוט שולחים "ביטול" לבוט. אין התחייבות, אין קנסות, אין שיחות שכנוע. הגיליון שלכם נשאר אצלכם בגוגל דרייב גם אחרי ביטול.
         </p>
       </details>
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60">
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>מה מדיניות ההחזר הכספי?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -888,7 +888,7 @@
           <span class="num">30</span> יום החזר מלא &mdash; בלי שאלות. גם אם השתמשת בכל התכונות, גם אם זה היום ה-<span class="num">29</span>. כתוב "החזר" לבוט או שלח אימייל ל-<a href="mailto:info@kesefle.com" class="font-semibold text-brand-600 hover:underline dark:text-brand-400">info@kesefle.com</a>, ותוך <span class="num">3</span> ימי עסקים הכסף חוזר.
         </p>
       </details>
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60">
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>אפשר לשדרג / להוריד דרגה באמצע?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -897,7 +897,7 @@
           כן, בכל רגע. שדרוג מ-Pro למשפחה מחויב פרופורציונלית לימים שנשארו. הורדת דרגה (למשל ממשפחה ל-Pro או מ-Pro לחינם) נכנסת לתוקף בסוף תקופת החיוב &mdash; ממשיכים עם התכונות הגבוהות עד אז, בלי לאבד שקל.
         </p>
       </details>
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60">
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>אילו אמצעי תשלום אתם מקבלים?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -906,7 +906,7 @@
           <strong>PayPal</strong> &mdash; מתחדש אוטומטית כל חודש, ביטול בכל עת. <strong>קריפטו</strong> (USDC/USDT/ETH/BTC דרך Coinbase Commerce). <strong>ביט</strong> או <strong>העברה בנקאית</strong> &mdash; תשלום ישיר, וההפעלה תוך כמה שעות לאחר אישור. חשבונית מס נשלחת אוטומטית לאימייל אחרי כל חיוב.
         </p>
       </details>
-      <details class="group p-6 transition open:bg-white dark:open:bg-ink-800/60">
+      <details class="group p-6 transition open:bg-white dark:open:bg-ink-50">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
           <span>למה אין מסלול שנתי בהנחה?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -925,17 +925,17 @@
   <div class="absolute inset-0 -z-10 bg-mesh opacity-60"></div>
   <div class="mx-auto max-w-3xl px-5 text-center text-white">
     <h2 class="text-4xl font-black tracking-tight md:text-5xl">מוכן/ה להפסיק לאבד את החשבון?</h2>
-    <p class="mt-5 text-lg text-ink-200"><span class="num">14</span> ימי ניסיון Pro בחינם. <span class="num">30</span> יום החזר מלא. ביטול בלחיצה.</p>
+    <p class="mt-5 text-lg text-ink-700"><span class="num">14</span> ימי ניסיון Pro בחינם. <span class="num">30</span> יום החזר מלא. ביטול בלחיצה.</p>
     <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
       <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-8 py-4 text-base font-black text-white shadow-glow transition hover:bg-brand-400 sm:w-auto">
         התחל ניסיון Pro &mdash; <span class="num">14</span> ימים
         <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
       </a>
-      <a href="/account?plan=free" onclick="kesefleSelectPlan('free')" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-8 py-4 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto">
+      <a href="/account?plan=free" onclick="kesefleSelectPlan('free')" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white/5 px-8 py-4 text-base font-semibold text-ink-900 backdrop-blur transition hover:bg-white/10 sm:w-auto">
         או התחל בחינם &larr;
       </a>
     </div>
-    <p class="mt-6 text-sm text-ink-300">בלי כרטיס אשראי לחינם. הנתונים שלך נשארים אצלך, בגוגל דרייב.</p>
+    <p class="mt-6 text-sm text-ink-600">בלי כרטיס אשראי לחינם. הנתונים שלך נשארים אצלך, בגוגל דרייב.</p>
   </div>
 </section>
 

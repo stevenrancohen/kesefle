@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl" class="dark">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -65,7 +65,7 @@
 
   .kfl-curtain {
     position: fixed; inset: 0; z-index: 9999;
-    background: #0f1422;
+    background: #ffffff;
     display: flex; align-items: center; justify-content: center;
     pointer-events: none;
     transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s 0.8s;
@@ -199,10 +199,10 @@
       <span class="truncate">כספ'לה</span>
     </a>
     <div class="flex min-w-0 items-center gap-2 sm:gap-3">
-      <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden min-h-[44px] items-center rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 sm:inline-flex dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">📊 פתח גיליון</a>
+      <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden min-h-[44px] items-center rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 sm:inline-flex dark:border-ink-700 dark:text-ink-200 dark:hover:bg-white">📊 פתח גיליון</a>
       <img id="user-picture" class="hidden h-9 w-9 rounded-full ring-2 ring-brand-200" alt="" />
       <span id="user-name" class="hidden truncate text-sm font-semibold sm:inline">טוען...</span>
-      <button onclick="kesefleLogout()" class="min-h-[44px] rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-ink-800">התנתק</button>
+      <button onclick="kesefleLogout()" class="min-h-[44px] rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-white">התנתק</button>
     </div>
   </nav>
 </header>
@@ -221,7 +221,7 @@
        Mobile: pinned higher (bottom-24) so it doesn't sit on top of the FAB.
        The FAB also dims when this bar is visible (see kflShowBulkBar). -->
   <div id="kfl-bulk-bar" class="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-auto sm:max-w-md z-40 hidden">
-    <div class="rounded-2xl bg-ink-900 dark:bg-white text-white dark:text-ink-900 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
+    <div class="rounded-2xl bg-white dark:bg-white text-ink-900 dark:text-ink-900 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500 text-white text-sm font-black" id="kfl-bulk-count">0</span>
         <span class="text-sm font-bold">נבחרו</span>
@@ -230,7 +230,7 @@
         <button onclick="kflBulkDelete()" class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-xs font-bold text-white transition" id="kfl-bulk-delete">
           🗑 מחק/י
         </button>
-        <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-ink-800 dark:hover:bg-ink-100">
+        <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-white dark:hover:bg-ink-100">
           ביטול
         </button>
       </div>
@@ -244,7 +244,7 @@
         <p class="text-xs font-extrabold uppercase tracking-widest text-brand-700 dark:text-brand-300">צ'קליסט התחלה</p>
         <h2 class="mt-1 text-lg md:text-xl font-black dark:text-white">סיים את 4 הצעדים כדי לנצל את כספ'לה במלואה</h2>
       </div>
-      <button onclick="kflDismissOnboarding()" class="text-xs text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-200">דלג</button>
+      <button onclick="kflDismissOnboarding()" class="text-xs text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-700">דלג</button>
     </div>
     <ul class="space-y-2" id="kfl-onboarding-list"></ul>
     <div class="mt-4 text-xs text-ink-500 dark:text-ink-400">
@@ -336,11 +336,11 @@
     <div class="grid gap-4 lg:grid-cols-3">
 
       <!-- Financial Health Score -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft lg:col-span-2 dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft lg:col-span-2 dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מדד בריאות פיננסי</div>
-            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">חיסכון · גיוון קטגוריות · יציבות הוצאות</div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מדד בריאות פיננסי</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">חיסכון · גיוון קטגוריות · יציבות הוצאות</div>
           </div>
           <div id="health-badge" class="hidden rounded-full px-3 py-1 text-xs font-bold">—</div>
         </div>
@@ -356,7 +356,7 @@
             <div class="absolute inset-0 grid place-items-center text-center">
               <div>
                 <div class="num text-4xl font-black" id="health-score">—</div>
-                <div class="text-[10px] font-bold uppercase tracking-wide text-ink-400 dark:text-ink-500">מתוך 100</div>
+                <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">מתוך 100</div>
               </div>
             </div>
           </div>
@@ -364,7 +364,7 @@
           <div class="min-w-0 flex-1 space-y-2.5">
             <div>
               <div class="flex items-center justify-between text-xs">
-                <span class="font-semibold text-ink-300 dark:text-ink-300">שיעור חיסכון</span>
+                <span class="font-semibold text-ink-600 dark:text-ink-300">שיעור חיסכון</span>
                 <span class="num font-bold" id="health-savings-pct">—</span>
               </div>
               <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700/60">
@@ -373,7 +373,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between text-xs">
-                <span class="font-semibold text-ink-300 dark:text-ink-300">גיוון קטגוריות</span>
+                <span class="font-semibold text-ink-600 dark:text-ink-300">גיוון קטגוריות</span>
                 <span class="num font-bold" id="health-diversity-pct">—</span>
               </div>
               <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700/60">
@@ -382,7 +382,7 @@
             </div>
             <div>
               <div class="flex items-center justify-between text-xs">
-                <span class="font-semibold text-ink-300 dark:text-ink-300">יציבות הוצאות</span>
+                <span class="font-semibold text-ink-600 dark:text-ink-300">יציבות הוצאות</span>
                 <span class="num font-bold" id="health-stability-pct">—</span>
               </div>
               <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700/60">
@@ -393,17 +393,17 @@
         </div>
 
         <!-- Tips -->
-        <div class="mt-5 border-t border-ink-700/60 pt-4">
-          <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מה לשפר?</div>
-          <ul id="health-tips" class="mt-2 space-y-1.5 text-sm text-ink-200 dark:text-ink-200">
-            <li class="text-ink-400">נחשב על סמך הנתונים שלך…</li>
+        <div class="mt-5 border-t border-ink-200/60 pt-4">
+          <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מה לשפר?</div>
+          <ul id="health-tips" class="mt-2 space-y-1.5 text-sm text-ink-700 dark:text-ink-200">
+            <li class="text-ink-500">נחשב על סמך הנתונים שלך…</li>
           </ul>
         </div>
       </div>
 
       <!-- Cash Flow card -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
-        <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">תזרים מזומנים החודש</div>
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">תזרים מזומנים החודש</div>
         <div class="mt-3 space-y-3">
           <div>
             <div class="flex items-center justify-between text-xs">
@@ -424,8 +424,8 @@
             </div>
           </div>
         </div>
-        <div class="mt-5 rounded-2xl bg-ink-900/60 p-4 text-center">
-          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-400 dark:text-ink-500" id="cf-net-label">יתרה</div>
+        <div class="mt-5 rounded-2xl bg-ink-50 p-4 text-center">
+          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500" id="cf-net-label">יתרה</div>
           <div class="num mt-1 text-3xl font-black" id="cf-net">₪0</div>
           <div class="mt-1 text-xs" id="cf-net-detail">—</div>
         </div>
@@ -436,15 +436,15 @@
     <div class="mt-4 grid gap-4 lg:grid-cols-3">
 
       <!-- Monthly Spending Trend -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft lg:col-span-2 dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft lg:col-span-2 dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מגמת הוצאות (6 חודשים)</div>
-            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">קו אפור: ממוצע חודשי</div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מגמת הוצאות (6 חודשים)</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">קו אפור: ממוצע חודשי</div>
           </div>
           <div class="text-xs">
-            <span class="text-ink-400 dark:text-ink-500">ממוצע:</span>
-            <span class="num font-bold text-ink-200" id="trend-avg">—</span>
+            <span class="text-ink-500 dark:text-ink-500">ממוצע:</span>
+            <span class="num font-bold text-ink-700" id="trend-avg">—</span>
           </div>
         </div>
         <div class="mt-4 overflow-hidden">
@@ -452,16 +452,16 @@
             <!-- gridlines + polyline injected by JS -->
           </svg>
         </div>
-        <div id="trend-labels" class="mt-2 flex justify-between text-[10px] font-bold text-ink-400 dark:text-ink-500">
+        <div id="trend-labels" class="mt-2 flex justify-between text-[10px] font-bold text-ink-500 dark:text-ink-500">
           <!-- month labels injected by JS -->
         </div>
       </div>
 
       <!-- New analytical category donut -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
-          <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">פילוח קטגוריות</div>
-          <span class="text-[10px] font-bold text-ink-400 dark:text-ink-500">החודש</span>
+          <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">פילוח קטגוריות</div>
+          <span class="text-[10px] font-bold text-ink-500 dark:text-ink-500">החודש</span>
         </div>
         <div class="mt-4 flex items-center justify-center">
           <div class="relative h-40 w-40">
@@ -471,9 +471,9 @@
             </svg>
             <div class="absolute inset-0 grid place-items-center text-center">
               <div>
-                <div id="ana-donut-hover" class="hidden text-[10px] font-bold text-ink-300"></div>
+                <div id="ana-donut-hover" class="hidden text-[10px] font-bold text-ink-600"></div>
                 <div class="num text-xl font-black" id="ana-donut-total">₪0</div>
-                <div class="text-[10px] font-bold text-ink-400">סה"כ</div>
+                <div class="text-[10px] font-bold text-ink-500">סה"כ</div>
               </div>
             </div>
           </div>
@@ -486,36 +486,36 @@
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
 
       <!-- Recurring subscriptions -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">מנויים קבועים</div>
-            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">תשלומים שחוזרים 3+ חודשים</div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מנויים קבועים</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">תשלומים שחוזרים 3+ חודשים</div>
           </div>
-          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-200">
+          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-700">
             <span class="num" id="rec-count">0</span> מנויים
           </div>
         </div>
-        <div class="mt-4 rounded-2xl bg-ink-900/60 p-4 text-center">
-          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-400 dark:text-ink-500">סך מנויים לחודש</div>
+        <div class="mt-4 rounded-2xl bg-ink-50 p-4 text-center">
+          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">סך מנויים לחודש</div>
           <div class="num mt-1 text-3xl font-black text-amber-400" id="rec-total">₪0</div>
         </div>
         <ul id="rec-list" class="mt-4 space-y-2">
-          <li class="text-xs text-ink-400">סורק…</li>
+          <li class="text-xs text-ink-500">סורק…</li>
         </ul>
       </div>
 
       <!-- MoM comparison -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">החודש מול הקודם</div>
-            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">השינוי בקטגוריות המובילות</div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">החודש מול הקודם</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">השינוי בקטגוריות המובילות</div>
           </div>
           <div id="mom-mover" class="hidden text-[10px] font-bold"></div>
         </div>
         <ul id="mom-list" class="mt-4 space-y-2.5">
-          <li class="text-xs text-ink-400">מחשב הפרשים…</li>
+          <li class="text-xs text-ink-500">מחשב הפרשים…</li>
         </ul>
       </div>
     </div>
@@ -524,33 +524,33 @@
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
 
       <!-- Biggest splurges this month -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">10 ההוצאות הכי גדולות</div>
-            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">החודש בלבד</div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">10 ההוצאות הכי גדולות</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">החודש בלבד</div>
           </div>
         </div>
         <ol id="splurge-list" class="mt-4 space-y-1.5 text-sm">
-          <li class="text-xs text-ink-400">טוען…</li>
+          <li class="text-xs text-ink-500">טוען…</li>
         </ol>
       </div>
 
       <!-- Goals placeholder -->
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">יעדי חיסכון</div>
-            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">הגדר יעד וקבל מעקב חודשי</div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">יעדי חיסכון</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">הגדר יעד וקבל מעקב חודשי</div>
           </div>
-          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-200">
+          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-700">
             <span class="num" id="goals-count">0</span> פעילים
           </div>
         </div>
-        <div class="mt-4 rounded-2xl border border-dashed border-ink-700 bg-ink-900/40 p-6 text-center">
+        <div class="mt-4 rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center">
           <div class="text-4xl">🎯</div>
-          <div class="mt-2 text-sm font-bold text-ink-200">עוד לא הגדרת יעד</div>
-          <p class="mt-1 text-xs text-ink-400">הגדר יעד (חופש, רכב, דירה) וקבל מסלול חודשי לחיסכון.</p>
+          <div class="mt-2 text-sm font-bold text-ink-700">עוד לא הגדרת יעד</div>
+          <p class="mt-1 text-xs text-ink-500">הגדר יעד (חופש, רכב, דירה) וקבל מסלול חודשי לחיסכון.</p>
           <a href="https://wa.me/15556408123?text=%D7%99%D7%A2%D7%93%20%D7%97%D7%99%D7%A1%D7%9B%D7%95%D7%9F" target="_blank" rel="noopener"
              class="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
             הגדר יעד עם הבוט
@@ -561,23 +561,23 @@
 
     <!-- Row 5: Budgets per category -->
     <div class="mt-4 grid gap-4 lg:grid-cols-1">
-      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-700 bg-ink-800 p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wide text-ink-400 dark:text-ink-400">תקציבים</div>
-            <div class="mt-1 text-xs text-ink-400 dark:text-ink-500">מעקב חודשי לפי קטגוריה — התראה אוטומטית מעל 80%</div>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">תקציבים</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">מעקב חודשי לפי קטגוריה — התראה אוטומטית מעל 80%</div>
           </div>
-          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-200">
+          <div class="rounded-full bg-ink-700/60 px-3 py-1 text-xs font-bold text-ink-700">
             <span class="num" id="budget-active-count">0</span> פעילים
           </div>
         </div>
         <!-- Loading state -->
-        <div id="budget-loading" class="mt-4 text-xs text-ink-400">טוען תקציבים…</div>
+        <div id="budget-loading" class="mt-4 text-xs text-ink-500">טוען תקציבים…</div>
         <!-- Empty state -->
-        <div id="budget-empty" class="mt-4 hidden rounded-2xl border border-dashed border-ink-700 bg-ink-900/40 p-6 text-center">
+        <div id="budget-empty" class="mt-4 hidden rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center">
           <div class="text-4xl">💰</div>
-          <div class="mt-2 text-sm font-bold text-ink-200">אין תקציבים?</div>
-          <p class="mt-1 text-xs text-ink-400">הגדר אחד בוואטסאפ: <span class="font-bold">/תקציב מזון ופארמה 1500</span></p>
+          <div class="mt-2 text-sm font-bold text-ink-700">אין תקציבים?</div>
+          <p class="mt-1 text-xs text-ink-500">הגדר אחד בוואטסאפ: <span class="font-bold">/תקציב מזון ופארמה 1500</span></p>
           <a href="https://wa.me/15556408123?text=%D7%AA%D7%A7%D7%A6%D7%99%D7%91%20%D7%9E%D7%96%D7%95%D7%9F%20%D7%95%D7%A4%D7%90%D7%A8%D7%9E%D7%94%201500" target="_blank" rel="noopener"
              class="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
             הגדר תקציב עם הבוט
@@ -610,7 +610,7 @@
         <button id="kfl-push-enable" type="button" class="min-h-[44px] rounded-2xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-700">
           הפעל התראות
         </button>
-        <button id="kfl-push-dismiss" type="button" class="min-h-[44px] rounded-2xl border border-ink-300 px-3 py-2 text-sm text-ink-600 hover:bg-white dark:border-ink-600 dark:text-ink-300 dark:hover:bg-ink-800">
+        <button id="kfl-push-dismiss" type="button" class="min-h-[44px] rounded-2xl border border-ink-300 px-3 py-2 text-sm text-ink-600 hover:bg-white dark:border-ink-600 dark:text-ink-300 dark:hover:bg-white">
           לא עכשיו
         </button>
       </div>
@@ -642,7 +642,7 @@
         <span class="grid h-5 w-5 place-items-center rounded-md bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">i</span>
         אין עדיין נתונים — אבל הנה איך הדשבורד שלך ייראה בעוד דקה
       </span>
-      <button type="button" id="demo-preview-btn" onclick="kesefleToggleDemoPreview()" class="min-h-[36px] rounded-2xl bg-ink-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-ink-800 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
+      <button type="button" id="demo-preview-btn" onclick="kesefleToggleDemoPreview()" class="min-h-[36px] rounded-2xl bg-white px-3 py-1 text-[11px] font-bold text-ink-900 hover:bg-white dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
         ✨ הראה לי תצוגת הדגמה
       </button>
     </div>
@@ -718,10 +718,10 @@
           </div>
           <!-- placeholder rows -->
           <div dir="ltr" class="grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px text-xs">
-            <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
-            <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
-            <div class="px-1.5 py-2.5 sm:px-2 text-right text-ink-300 dark:text-ink-600">—</div>
-            <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-ink-600 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-ink-600 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-right text-ink-600 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-ink-600 dark:text-ink-600">—</div>
           </div>
           <!-- THE row that will land -->
           <div dir="ltr" class="relative grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-y-2 border-brand-500 bg-brand-50 text-xs font-semibold text-ink-900 dark:bg-brand-500/10 dark:text-white">
@@ -733,13 +733,13 @@
             <span class="absolute -right-2 top-1/2 hidden h-4 w-4 -translate-y-1/2 rounded-full bg-brand-500 md:block"></span>
           </div>
           <div dir="ltr" class="grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-t border-ink-200 text-xs dark:border-ink-700">
-            <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
-            <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
-            <div class="px-1.5 py-2.5 sm:px-2 text-right text-ink-300 dark:text-ink-600">—</div>
-            <div class="px-1.5 py-2.5 sm:px-2 text-ink-300 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-ink-600 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-ink-600 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-right text-ink-600 dark:text-ink-600">—</div>
+            <div class="px-1.5 py-2.5 sm:px-2 text-ink-600 dark:text-ink-600">—</div>
           </div>
         </div>
-        <div class="mt-3 text-center text-[11px] text-ink-400 dark:text-ink-500">השורה תופיע בגיליון שלך מיד כשתשלח את ההודעה</div>
+        <div class="mt-3 text-center text-[11px] text-ink-500 dark:text-ink-500">השורה תופיע בגיליון שלך מיד כשתשלח את ההודעה</div>
       </div>
     </div>
   </section>
@@ -753,7 +753,7 @@
       </div>
       <div class="mt-2 text-3xl font-black"><span class="num stat-num text-red-600 dark:text-red-400" id="month-expenses" data-target="0">₪0</span></div>
       <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="month-expenses-delta">—</div>
-      <div class="text-[10px] font-medium text-ink-400 dark:text-ink-500" id="month-expenses-yoy"></div>
+      <div class="text-[10px] font-medium text-ink-500 dark:text-ink-500" id="month-expenses-yoy"></div>
       <svg class="sparkline" id="spark-expenses" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="grad-expenses" x1="0" x2="0" y1="0" y2="1">
@@ -814,7 +814,7 @@
         🏷️ קטגוריות מותאמות אישית
         <span id="kfl-cats-badge" class="text-[10px] font-bold rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-700 dark:text-brand-300 px-2 py-0.5"></span>
       </h3>
-      <button onclick="document.getElementById('kfl-cats-body').classList.toggle('hidden')" class="text-xs font-semibold text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-200">פתח/סגור</button>
+      <button onclick="document.getElementById('kfl-cats-body').classList.toggle('hidden')" class="text-xs font-semibold text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-700">פתח/סגור</button>
     </div>
     <div id="kfl-cats-body" class="hidden">
       <p id="kfl-cats-locked" class="hidden text-sm text-ink-500 dark:text-ink-400 mb-3">
@@ -856,7 +856,7 @@
       <!-- Search box (client-side filter of the visible recent list) -->
       <div class="mt-3 relative">
         <input id="kfl-recent-search" type="search" placeholder="🔍 חפש הוצאה (לפי תיאור / קטגוריה)..."
-          class="w-full rounded-xl border border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-900 px-3 py-2 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-ink-800 outline-none" />
+          class="w-full rounded-xl border border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-900 px-3 py-2 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-white outline-none" />
       </div>
       <div id="recent-list" class="mt-3 space-y-2">
         <div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">
@@ -869,18 +869,18 @@
     <div class="min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-6 dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-bold">קטגוריות מובילות</h3>
-        <span class="text-[10px] font-bold text-ink-400 dark:text-ink-500">החודש</span>
+        <span class="text-[10px] font-bold text-ink-500 dark:text-ink-500">החודש</span>
       </div>
       <!-- donut chart -->
       <div class="mt-5 flex items-center justify-center">
         <div class="relative h-44 w-44">
           <svg id="cat-donut" class="donut-ring h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
-            <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="10" class="text-ink-100 dark:text-ink-900"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="10" class="text-ink-700 dark:text-ink-900"/>
             <!-- segments injected by JS -->
           </svg>
           <div class="absolute inset-0 grid place-items-center text-center">
             <div>
-              <div class="text-[10px] font-bold text-ink-400 dark:text-ink-500">סה"כ</div>
+              <div class="text-[10px] font-bold text-ink-500 dark:text-ink-500">סה"כ</div>
               <div class="num text-xl font-black" id="cat-donut-total">₪0</div>
             </div>
           </div>
@@ -976,15 +976,15 @@
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
             WhatsApp
           </a>
-          <a id="ref-share-email" href="#" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-ink-700 px-3 py-2 text-xs font-bold text-white hover:bg-ink-800 dark:bg-ink-200 dark:text-ink-900 dark:hover:bg-white">
+          <a id="ref-share-email" href="#" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-ink-700 px-3 py-2 text-xs font-bold text-white hover:bg-white dark:bg-ink-200 dark:text-ink-900 dark:hover:bg-white">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             Email
           </a>
-          <a id="ref-share-twitter" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-ink-900 px-3 py-2 text-xs font-bold text-white hover:opacity-90 dark:bg-ink-100 dark:text-ink-900">
+          <a id="ref-share-twitter" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-white px-3 py-2 text-xs font-bold text-ink-900 hover:opacity-90 dark:bg-ink-100 dark:text-ink-900">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             X / טוויטר
           </a>
-          <button type="button" onclick="kesefleRegenerateReferralCode()" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-ink-800">
+          <button type="button" onclick="kesefleRegenerateReferralCode()" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-white">
             ↺ קוד חדש
           </button>
         </div>
@@ -1001,7 +1001,7 @@
 </main>
 
 <!-- transaction action modal (edit/delete) -->
-<div id="tx-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink-900/60 px-4 backdrop-blur-sm" onclick="kesefleCloseTxModal(event)">
+<div id="tx-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink-50 px-4 backdrop-blur-sm" onclick="kesefleCloseTxModal(event)">
   <div class="w-full max-w-md rounded-2xl border border-ink-200 bg-white p-6 shadow-glow dark:border-ink-700 dark:bg-ink-800" onclick="event.stopPropagation()">
     <div class="flex items-start justify-between gap-3">
       <div class="flex items-center gap-3">
@@ -1011,10 +1011,10 @@
           <div id="tx-modal-meta" class="text-xs text-ink-500 dark:text-ink-400">—</div>
         </div>
       </div>
-      <button type="button" onclick="kesefleCloseTxModal()" class="grid h-8 w-8 place-items-center rounded-full text-ink-400 hover:bg-ink-100 dark:hover:bg-ink-700" aria-label="סגור">✕</button>
+      <button type="button" onclick="kesefleCloseTxModal()" class="grid h-8 w-8 place-items-center rounded-full text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-700" aria-label="סגור">✕</button>
     </div>
     <div class="mt-5 rounded-2xl bg-ink-50 p-4 dark:bg-ink-900">
-      <div class="text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-ink-500">סכום</div>
+      <div class="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-500">סכום</div>
       <div id="tx-modal-amount" class="num mt-1 text-2xl font-black">₪0</div>
       <div id="tx-modal-raw" class="mt-3 break-words text-sm text-ink-600 dark:text-ink-300"></div>
     </div>
@@ -2271,12 +2271,12 @@ function generatePseudoSeries(target, n, intLike) {
         var dot = document.createElement('span');
         dot.style.cssText = 'background:'+color+'; width:8px; height:8px; border-radius:50%; flex-shrink:0;';
         var name = document.createElement('span');
-        name.className = 'truncate text-ink-200';
+        name.className = 'truncate text-ink-700';
         name.textContent = seg.cat;
         left.appendChild(dot);
         left.appendChild(name);
         var amt = document.createElement('span');
-        amt.className = 'num font-bold text-ink-200 flex-shrink-0';
+        amt.className = 'num font-bold text-ink-700 flex-shrink-0';
         amt.textContent = moneyShekel(seg.val) + ' (' + Math.round(frac*100) + '%)';
         li.appendChild(left);
         li.appendChild(amt);
@@ -2331,7 +2331,7 @@ function generatePseudoSeries(target, n, intLike) {
 
     if (!subs.length) {
       var li0 = document.createElement('li');
-      li0.className = 'rounded-xl bg-ink-900/60 p-3 text-center text-xs text-ink-400';
+      li0.className = 'rounded-xl bg-ink-50 p-3 text-center text-xs text-ink-500';
       li0.textContent = 'לא זוהו מנויים קבועים עדיין (נדרשים 3+ חודשים של תיעוד).';
       listEl.appendChild(li0);
       return;
@@ -2339,14 +2339,14 @@ function generatePseudoSeries(target, n, intLike) {
 
     subs.slice(0, 8).forEach(function(s){
       var li = document.createElement('li');
-      li.className = 'flex items-center justify-between gap-2 rounded-xl bg-ink-900/40 px-3 py-2 text-sm';
+      li.className = 'flex items-center justify-between gap-2 rounded-xl bg-ink-50 px-3 py-2 text-sm';
       var left = document.createElement('div');
       left.className = 'min-w-0 flex-1';
       var name = document.createElement('div');
-      name.className = 'truncate font-bold text-ink-100';
+      name.className = 'truncate font-bold text-ink-700';
       name.textContent = s.desc;
       var meta = document.createElement('div');
-      meta.className = 'text-[10px] text-ink-400';
+      meta.className = 'text-[10px] text-ink-500';
       meta.textContent = s.months + ' חודשים' + (s.category ? ' · ' + s.category : '');
       left.appendChild(name);
       left.appendChild(meta);
@@ -2392,7 +2392,7 @@ function generatePseudoSeries(target, n, intLike) {
 
     if (!top.length) {
       var li0 = document.createElement('li');
-      li0.className = 'text-xs text-ink-400';
+      li0.className = 'text-xs text-ink-500';
       li0.textContent = 'אין נתונים להשוואה.';
       listEl.appendChild(li0);
       return;
@@ -2426,19 +2426,19 @@ function generatePseudoSeries(target, n, intLike) {
       else pct = c0 > 0 ? 100 : 0;
       var up = delta > 0;
       var arrow = delta === 0 ? '=' : (up ? '▲' : '▼');
-      var clr = delta === 0 ? 'text-ink-400' : (up ? 'text-red-400' : 'text-brand-400');
+      var clr = delta === 0 ? 'text-ink-500' : (up ? 'text-red-400' : 'text-brand-400');
 
       var li = document.createElement('li');
-      li.className = 'rounded-xl bg-ink-900/40 px-3 py-2';
+      li.className = 'rounded-xl bg-ink-50 px-3 py-2';
       var row = document.createElement('div');
       row.className = 'flex items-center justify-between gap-2';
       var name = document.createElement('div');
-      name.className = 'truncate text-sm font-bold text-ink-100';
+      name.className = 'truncate text-sm font-bold text-ink-700';
       name.textContent = c;
       var right = document.createElement('div');
       right.className = 'flex items-baseline gap-2 flex-shrink-0';
       var amt = document.createElement('span');
-      amt.className = 'num text-sm font-bold text-ink-100';
+      amt.className = 'num text-sm font-bold text-ink-700';
       amt.textContent = moneyShekel(c0);
       var deltaSpan = document.createElement('span');
       deltaSpan.className = 'num text-xs font-bold ' + clr;
@@ -2450,7 +2450,7 @@ function generatePseudoSeries(target, n, intLike) {
       li.appendChild(row);
 
       var sub = document.createElement('div');
-      sub.className = 'mt-1 text-[10px] text-ink-400';
+      sub.className = 'mt-1 text-[10px] text-ink-500';
       if (p0 > 0) {
         sub.textContent = 'בחודש שעבר: ' + moneyShekel(p0) + ' · שינוי ' + (delta >= 0 ? '+' : '-') + moneyShekel(Math.abs(delta));
       } else {
@@ -2479,7 +2479,7 @@ function generatePseudoSeries(target, n, intLike) {
 
     if (!top.length) {
       var li0 = document.createElement('li');
-      li0.className = 'rounded-xl bg-ink-900/60 p-3 text-center text-xs text-ink-400';
+      li0.className = 'rounded-xl bg-ink-50 p-3 text-center text-xs text-ink-500';
       li0.textContent = 'אין הוצאות החודש.';
       listEl.appendChild(li0);
       return;
@@ -2487,17 +2487,17 @@ function generatePseudoSeries(target, n, intLike) {
 
     top.forEach(function(r, i){
       var li = document.createElement('li');
-      li.className = 'flex items-center gap-3 rounded-xl bg-ink-900/40 px-3 py-2';
+      li.className = 'flex items-center gap-3 rounded-xl bg-ink-50 px-3 py-2';
       var rank = document.createElement('div');
-      rank.className = 'num grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-ink-700 text-xs font-black text-ink-200';
+      rank.className = 'num grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-ink-700 text-xs font-black text-ink-700';
       rank.textContent = String(i + 1);
       var middle = document.createElement('div');
       middle.className = 'min-w-0 flex-1';
       var desc = document.createElement('div');
-      desc.className = 'truncate text-sm font-bold text-ink-100';
+      desc.className = 'truncate text-sm font-bold text-ink-700';
       desc.textContent = (r.description || r.category || 'הוצאה');
       var meta = document.createElement('div');
-      meta.className = 'text-[10px] text-ink-400';
+      meta.className = 'text-[10px] text-ink-500';
       meta.textContent = (r.category ? r.category + ' · ' : '') + (r.date || '');
       middle.appendChild(desc);
       middle.appendChild(meta);
@@ -2581,9 +2581,9 @@ function generatePseudoSeries(target, n, intLike) {
         return (
           '<li>' +
             '<div class="flex items-center justify-between text-xs">' +
-              '<span class="font-semibold text-ink-200">' + escapeHtml(cat) + '</span>' +
-              '<span class="num font-bold text-ink-100">' + moneyShekel(spent) + ' / ' + moneyShekel(cap) +
-                ' <span class="text-ink-400">(' + pct + '%)</span></span>' +
+              '<span class="font-semibold text-ink-700">' + escapeHtml(cat) + '</span>' +
+              '<span class="num font-bold text-ink-700">' + moneyShekel(spent) + ' / ' + moneyShekel(cap) +
+                ' <span class="text-ink-500">(' + pct + '%)</span></span>' +
             '</div>' +
             '<div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-ink-700/60">' +
               // Inline SVG-equivalent: a flat div with width:%; same visual as
@@ -2640,7 +2640,7 @@ function generatePseudoSeries(target, n, intLike) {
     var pct = Math.round(((thisTotal - lyTotal) / lyTotal) * 100);
     var sign = pct >= 0 ? '+' : '';
     el.textContent = 'vs לפני שנה: ' + sign + pct + '% (₪' + Math.round(lyTotal).toLocaleString('he-IL') + ')';
-    el.className = 'text-[10px] font-medium ' + (pct > 10 ? 'text-red-500' : pct < -10 ? 'text-brand-600 dark:text-brand-400' : 'text-ink-400 dark:text-ink-500');
+    el.className = 'text-[10px] font-medium ' + (pct > 10 ? 'text-red-500' : pct < -10 ? 'text-brand-600 dark:text-brand-400' : 'text-ink-500 dark:text-ink-500');
   }
 
   // Expose globally so kefleLiveDashboard can invoke after fetch resolves
@@ -2778,7 +2778,7 @@ function generatePseudoSeries(target, n, intLike) {
     var frag = document.createDocumentFragment();
     rows.forEach(function(r){
       var tr = document.createElement('tr');
-      tr.className = 'border-t border-ink-100 dark:border-ink-700/60 hover:bg-ink-50/60 dark:hover:bg-ink-900/40';
+      tr.className = 'border-t border-ink-100 dark:border-ink-700/60 hover:bg-ink-50/60 dark:hover:bg-ink-50';
       var dateCell = '<td class="num-cell px-4 py-2.5 whitespace-nowrap text-ink-600 dark:text-ink-300">' + escapeHtml(r.date || '') + '</td>';
       var amt = Number(r.amount) || 0;
       var amtClass = amt < 0 ? 'text-brand-600 dark:text-brand-400' : 'text-ink-900 dark:text-white';
@@ -3359,7 +3359,7 @@ function generatePseudoSeries(target, n, intLike) {
       list.innerHTML = (data.items || []).map(function (item) {
         return '<li class="flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg bg-ink-50 dark:bg-ink-900/40 text-sm">' +
           '<span>' + escapeHtml(item.name) + '</span>' +
-          '<button onclick="kflCatRemove(\'' + escapeHtml(item.name).replace(/'/g, '\\\'') + '\')" class="text-xs text-ink-400 dark:text-ink-500 hover:text-red-500" title="הסר">×</button>' +
+          '<button onclick="kflCatRemove(\'' + escapeHtml(item.name).replace(/'/g, '\\\'') + '\')" class="text-xs text-ink-500 dark:text-ink-500 hover:text-red-500" title="הסר">×</button>' +
         '</li>';
       }).join('') || '<li class="text-xs text-ink-500 dark:text-ink-400 italic py-2">אין עדיין קטגוריות מותאמות.</li>';
     } else {
