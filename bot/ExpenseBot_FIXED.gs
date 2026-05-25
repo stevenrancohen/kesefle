@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-25-botloop-guards';
+const KFL_BUILD_VERSION = '2026-05-25-delete-and-gender';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -943,7 +943,7 @@ function _handleAccountDeletion_(phone, confirmed) {
   }
   if (!delOk) {
     return '😬 לא הצלחתי למחוק את החשבון עכשיו. הקישור והאסימונים עדיין על השרת.\n' +
-      'נסה/י שוב בעוד דקה. אם החיוב הזה חוזר — כתוב/י לתמיכה ב-support@kesefle.com.\n\n' +
+      'נסה/י שוב בעוד דקה. אם החיוב הזה חוזר — כתוב לתמיכה ב-support@kesefle.com.\n\n' +
       '(שגיאה: ' + delDetail.slice(0, 60) + ')';
   }
   return '✅ החשבון נמחק. הקישור והאסימונים הוסרו.\n' +
@@ -1279,6 +1279,110 @@ function _maintenanceReply_(fromPhone) {
   } catch (_) {}
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// DELETE-LAST-ROW (Steven 2026-05-25)
+//
+// User says "מחק" / "תמחק" / "בטל" / "מחק אחרון" / "תמחק את האחרון" /
+// "undo" / "cancel" -> bot deletes the most recent expense row from
+// their OWN sheet (not Steven's). Routes:
+//   - Owner phone -> local deleteLastTransaction() on SHEET_ID
+//   - Tenant phone -> POST /api/sheet/delete-last (drive.file scoped)
+//
+// After a successful delete we also recompute the per-business
+// dashboard cell if the deleted row was a עסק row -- so the running
+// total drops back to match the actual transactions.
+// ════════════════════════════════════════════════════════════════════════
+
+// Strict regex: accept ONLY phrases that are unambiguously a delete
+// request. We deliberately do NOT match "מחק" anywhere in a longer
+// sentence -- that would catch real expense descriptions like
+// "מחק לילד" (eraser for kid) and silently nuke a row.
+var _DELETE_LAST_RE_ = /^(?:\s*\/?\s*)(?:תמחק|מחק|בטל|undo|cancel)(?:\s+(?:את\s+)?(?:ה?אחרון|הוצאה|זה|שורה|רשומה|last))?[\s.!?]*$/i;
+
+function _handleDeleteRowCommand_(fromPhone, text) {
+  if (!text) return { handled: false };
+  var t = String(text).trim();
+  if (!_DELETE_LAST_RE_.test(t)) return { handled: false };
+
+  var isOwner = (typeof _isOwnerPhone_ === 'function') && _isOwnerPhone_(fromPhone);
+
+  if (isOwner) {
+    try {
+      // Capture the row BEFORE deletion so we know whether to recompute
+      // the business dashboard. deleteLastTransaction itself returns a
+      // confirmation string but doesn't expose the deleted row, so we
+      // peek at תנועות one row above the new lastRow afterwards isn't
+      // useful; instead read the row first, then delete.
+      var ss = SpreadsheetApp.openById(SHEET_ID);
+      var sh = ss.getSheetByName(TRANSACTIONS_SHEET);
+      if (!sh) return { handled: true, replyText: '😬 לא מצאתי לשונית תנועות.' };
+      var lastRow = sh.getLastRow();
+      if (lastRow < 2) return { handled: true, replyText: '🤔 אין מה למחוק — הלשונית ריקה.\nשלח הוצאה ראשונה למשל "85 סופר".' };
+      var data = sh.getRange(lastRow, 1, 1, 7).getValues()[0];
+      sh.deleteRow(lastRow);
+      var amount = Number(data[2]) || 0;
+      var cat = String(data[3] || '').trim();
+      var sub = String(data[4] || '').trim();
+      var desc = String(data[5] || '').trim();
+      var month = String(data[1] || '').trim();
+      // If this was a business row, refresh the matching dashboard cell
+      // so the company total drops by the deleted amount.
+      try {
+        if (cat === 'עסק' && month) {
+          if (typeof _updateBusinessDashboard_ === 'function') {
+            _updateBusinessDashboard_('עסק', sub, month, amount);
+          }
+        }
+      } catch (_dErr) { Logger.log('delete recompute err: ' + (_dErr && _dErr.message)); }
+      return { handled: true, replyText:
+        '🗑️ נמחק:\n' +
+        '  סכום: ₪' + amount.toLocaleString('he-IL') + '\n' +
+        '  קטגוריה: ' + (sub || cat || '—') + '\n' +
+        '  פירוט: ' + (desc || '—')
+      };
+    } catch (e) {
+      return { handled: true, replyText: '😬 משהו השתבש במחיקה: ' + (e && e.message || '') };
+    }
+  }
+
+  // Tenant: call the Vercel bridge so the delete happens with THEIR
+  // OAuth token against THEIR sheet -- never ours.
+  try {
+    var secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '');
+    if (!secret) return { handled: true, replyText: '😬 התצורה לא הוגדרה לבוט. צור קשר עם התמיכה.' };
+    var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/delete-last', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-kesefle-bot-secret': secret },
+      payload: JSON.stringify({ phone: String(fromPhone).replace(/[^0-9]/g, ''), botSecret: secret }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = {};
+    try { body = JSON.parse(resp.getContentText() || '{}'); } catch (_) {}
+    if (code === 200 && body && body.ok && body.deleted) {
+      var d = body.deleted;
+      return { handled: true, replyText:
+        '🗑️ נמחק מהגיליון שלך:\n' +
+        '  סכום: ₪' + (Number(d.amount) || 0).toLocaleString('he-IL') + '\n' +
+        '  קטגוריה: ' + (d.subcategory || d.category || '—') + '\n' +
+        '  פירוט: ' + (d.description || '—')
+      };
+    }
+    if (code === 404 && body && body.error === 'empty_sheet') {
+      return { handled: true, replyText: '🤔 אין מה למחוק — הגיליון ריק.' };
+    }
+    if (code === 404 && body && body.error === 'no_user_for_phone') {
+      return { handled: true, replyText: '🤔 לא מצאתי גיליון מקושר למספר שלך. שלח "התחבר" כדי לקשר.' };
+    }
+    Logger.log('_handleDeleteRowCommand_ tenant fail code=' + code + ' body=' + JSON.stringify(body).slice(0, 200));
+    return { handled: true, replyText: '😬 משהו השתבש במחיקה. נסה שוב בעוד דקה.' };
+  } catch (e) {
+    Logger.log('_handleDeleteRowCommand_ exception: ' + (e && e.message));
+    return { handled: true, replyText: '😬 שגיאת רשת. נסה שוב.' };
+  }
+}
+
 function _isRateLimited_(fromPhone) {
   if (!fromPhone) return false;
   var WINDOW_SECONDS = 60;
@@ -1611,6 +1715,23 @@ function doPost(e) {
           Logger.log('doPost: context-routing error: ' + (_ctxErr && _ctxErr.stack || _ctxErr));
         }
 
+        // === DELETE LAST ROW (Steven 2026-05-25) ===
+        // Owner OR tenant -- whoever says "מחק" / "תמחק" / "בטל" gets
+        // their last row deleted from their OWN sheet. Tenant path
+        // goes through /api/sheet/delete-last via the bot bridge.
+        try {
+          if (typeof _handleDeleteRowCommand_ === "function") {
+            var __delRes = _handleDeleteRowCommand_(__from_, __text_);
+            if (__delRes && __delRes.handled) {
+              if (__delRes.replyText && typeof sendWhatsAppMessage === "function") {
+                sendWhatsAppMessage(__from_, __delRes.replyText);
+              }
+              Logger.log('doPost: delete-row routed');
+              return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+            }
+          }
+        } catch (_delErr) { Logger.log('doPost: delete-row err: ' + (_delErr && _delErr.message)); }
+
         // === MULTI-BUSINESS routing (Steven 2026-05-25) ===
         // "עסק 2 320 שיווק" -> writes to a SECOND business sheet (auto-
         // created from the main sheet on first use). "עסק 1 ..." routes
@@ -1892,7 +2013,7 @@ function handleInteractiveReply_(fromPhone, interactive) {
   var decoded = _decodeCategoryOptionId(picked);
   if (!decoded) {
     Logger.log('handleInteractiveReply_: could not decode id="' + picked + '"');
-    return { replyText: '😬 לא הצלחתי להבין את הבחירה\n💡 שלח שוב את ההוצאה ובחר/י קטגוריה' };
+    return { replyText: '😬 לא הצלחתי להבין את הבחירה\n💡 שלח שוב את ההוצאה ובחר קטגוריה' };
   }
 
   // Look up pending state — should match the most recent ambiguous message from this phone.
@@ -2698,8 +2819,8 @@ function _groupCreate_(fromPhone, name) {
     ? '📊 גיליון משותף נוצר ב-Drive שלך:\n' + (r.group.sheetUrl || ('https://docs.google.com/spreadsheets/d/' + r.group.sheetId)) + '\n\n'
     : '⚠️  *הקבוצה רשומה אבל בלי גיליון משותף עדיין.* כדי שאני אוכל ליצור את הגיליון:\n' +
       '1. כנס/י ל-kesefle.com/account עם המספר הזה\n' +
-      '2. התחבר/י עם Google\n' +
-      '3. שלח/י שוב "כספלה צור משפחה ' + groupName + '"\n\n';
+      '2. התחבר עם Google\n' +
+      '3. שלח שוב "כספלה צור משפחה ' + groupName + '"\n\n';
   return { handled: true, replyText:
     '✅ נוצרה קבוצה: *' + groupName + '*\n' +
     '🔑 קוד הזמנה: *' + r.code + '*\n\n' +
@@ -2862,7 +2983,7 @@ function _groupExport_(fromPhone) {
       return { handled: true, replyText:
         '📥 ייצוא CSV של הקבוצה:\n' +
         '1. כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/dashboard\n' +
-        '2. התחבר/י עם Google\n' +
+        '2. התחבר עם Google\n' +
         '3. לחצ/י על "ייצוא" → CSV\n\n' +
         'הקובץ ירד ישירות אליך באופן מאובטח (' + (group.expenses || []).length + ' הוצאות בקבוצה).' };
     }
@@ -3755,7 +3876,7 @@ function _addCategoryRows_(fromPhone, rawNames) {
         if (j.duplicate) duplicates.push(name); else ok.push(name);
         if (j.sheetUrl) sheetUrl = j.sheetUrl;
       } else if (code === 404 && j && j.error === 'no_user') {
-        return '😬 המספר הזה לא מקושר לחשבון. כנס/י ל-kesefle.com/account, התחבר/י עם Google ואז שלח/י שוב.';
+        return '😬 המספר הזה לא מקושר לחשבון. כנס/י ל-kesefle.com/account, התחבר עם Google ואז שלח שוב.';
       } else if (code === 404 && j && j.error === 'no_sheet') {
         return '😬 עדיין אין לך גיליון. כנס/י ל-kesefle.com/account להשלים את ההגדרה.';
       } else if (code === 409 && j && j.error === 'reauth_required') {
@@ -3839,7 +3960,7 @@ function _surveySendList_(fromPhone, bodyText, buttonText, rows, headerText) {
     headerText || 'שאלון התאמה אישית',
     bodyText,
     'אפשר לשנות בכל עת עם *שאלון*',
-    buttonText || 'בחר/י',
+    buttonText || 'בחר',
     sections
   );
 }
@@ -3850,7 +3971,7 @@ function _surveySendQ1_(fromPhone) {
   _surveySendList_(
     fromPhone,
     'מהו סוג המעקב העיקרי שלך?',
-    'בחר/י סוג',
+    'בחר סוג',
     [
       { id: 'q1_personal', title: 'אישי בלבד', description: 'מעקב על ההוצאות שלך' },
       { id: 'q1_family', title: 'משפחתי', description: 'הוצאות משק הבית' },
@@ -4334,7 +4455,7 @@ function _surveyHandleInteractive_(fromPhone, picked) {
           'נחמד! 👨‍👩‍👧 יש לך ילדים? אם כן — מה השמות שלהם?\n' +
           'לדוגמה: דניאל, מיכל, יואב\n' +
           'אצור לכל ילד שורה משלו בגיליון *מאזן אישי*, כדי שתראה כמה הוצאת על כל אחד.\n\n' +
-          'אם אין, כתוב/י *דלג* או *לא*.'
+          'אם אין, כתוב *דלג* או *לא*.'
         );
       } catch (_kqErr) { Logger.log('kids question send err: ' + (_kqErr && _kqErr.message)); }
       return null;
@@ -4866,7 +4987,7 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
       'לשנות קטגוריה?',
       'הבוט בחר *' + currentCategory + '*. אפשר לבחור אחרת:',
       'אפשר להתעלם — הרישום נשמר',
-      'בחר/י',
+      'בחר',
       [{ title: 'קטגוריות אחרות', rows: rows }]
     );
   } catch (e) { Logger.log('_sendChangeCategoryPicker_ err: ' + (e && e.message)); }
@@ -4885,7 +5006,7 @@ function _handleRelabelTap_(fromPhone, newCategory) {
     if (raw) last = JSON.parse(raw);
   } catch (_e) {}
   if (!last || !last.rowIndex) {
-    return { replyText: '🤔 לא מצאתי הוצאה אחרונה לשנות. שלח/י את ההוצאה שוב, ואז תוכל/י לבחור קטגוריה.' };
+    return { replyText: '🤔 לא מצאתי הוצאה אחרונה לשנות. שלח את ההוצאה שוב, ואז תוכל לבחור קטגוריה.' };
   }
   var secret = '';
   try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
@@ -5022,7 +5143,7 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
     if (code < 200 || code >= 300) {
       Logger.log('_setupInstallmentsRecurring_ http=' + code + ' ' + resp.getContentText().slice(0, 200));
       return { reply:
-        '😬 לא הצלחתי לרשום את תשלומי הקבע. נסה/י שוב או הקלד/י את ההוצאה בלי "תשלומים".'
+        '😬 לא הצלחתי לרשום את תשלומי הקבע. נסה/י שוב או הקלד את ההוצאה בלי "תשלומים".'
       };
     }
     // Local cache so "תשלומים" command can show without hitting KV.
@@ -5055,8 +5176,8 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
       '💰 ' + inst.count + ' × ' + per + ' = ₪' + Number(inst.perPayment * inst.count).toLocaleString('he-IL') + '\n' +
       '📅 חיוב ראשון: ' + startDateDisplay + ', מתחדש כל חודש באותו יום\n' +
       '🔁 ייכנס לגיליון אוטומטית בכל חודש\n\n' +
-      'לראות תשלומים פעילים: כתוב/י *תשלומים*\n' +
-      'לבטל: כתוב/י *בטל תשלומים ' + (inst.productName || 'אחרון') + '*'
+      'לראות תשלומים פעילים: כתוב *תשלומים*\n' +
+      'לבטל: כתוב *בטל תשלומים ' + (inst.productName || 'אחרון') + '*'
     };
   } catch (e) {
     Logger.log('_setupInstallmentsRecurring_ threw: ' + (e && e.message));
@@ -5088,9 +5209,9 @@ function _askInstallmentsStartDate_(fromPhone, inst, category, subcategory, rawT
       'מתי החיוב הראשון?',
       '💳 *' + inst.count + ' תשלומים של ₪' + Number(inst.perPayment).toLocaleString('he-IL') + '*\n' +
       'בכרטיסי אשראי בישראל החיוב יורד בדרך כלל ב-1, 2, 10 או 15 לחודש.\n\n' +
-      'בחר/י את היום של החיוב הראשון:',
-      'או הקלד/י יום (1-31) או תאריך מלא (DD/MM/YYYY)',
-      'בחר/י',
+      'בחר את היום של החיוב הראשון:',
+      'או הקלד יום (1-31) או תאריך מלא (DD/MM/YYYY)',
+      'בחר',
       [{
         title: 'יום בחודש',
         rows: [
@@ -5135,7 +5256,7 @@ function _handleInstallmentsDayPick_(fromPhone, dayValue) {
   var cache = CacheService.getScriptCache();
   var raw = cache.get('installPending:' + clean);
   if (!raw) {
-    return { replyText: '🤔 לא מצאתי תשלומים שמחכים לתאריך. שלח/י שוב את ההוצאה.' };
+    return { replyText: '🤔 לא מצאתי תשלומים שמחכים לתאריך. שלח שוב את ההוצאה.' };
   }
   var pending;
   try { pending = JSON.parse(raw); } catch (_) { return { replyText: '😬 שגיאה בקריאה.' }; }
@@ -5146,7 +5267,7 @@ function _handleInstallmentsDayPick_(fromPhone, dayValue) {
     startISO = new Date().toISOString().slice(0, 10);
   } else {
     startISO = _computeNextChargeDate_(dayValue);
-    if (!startISO) return { replyText: '😬 יום לא תקין (1-31). שלח/י שוב את ההוצאה.' };
+    if (!startISO) return { replyText: '😬 יום לא תקין (1-31). שלח שוב את ההוצאה.' };
   }
   var botSecret = '';
   try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
@@ -5217,7 +5338,7 @@ function _listInstallments_(fromPhone) {
   // Filter out finished (remaining 0).
   list = list.filter(function (p) { return p && p.remaining > 0; });
   if (!list.length) {
-    return '📭 אין תשלומים פעילים כרגע.\n\nלפתיחת תשלומים — כתוב/י את ההוצאה עם מספר תשלומים, למשל:\n*ספה 1000 שקל 5 תשלומים*';
+    return '📭 אין תשלומים פעילים כרגע.\n\nלפתיחת תשלומים — כתוב את ההוצאה עם מספר תשלומים, למשל:\n*ספה 1000 שקל 5 תשלומים*';
   }
   var lines = ['💳 *תשלומים פעילים*', '━━━━━━━━━━━━━━━━━━'];
   for (var i = 0; i < list.length; i++) {
@@ -5277,7 +5398,7 @@ function _buildFullCategoriesTextBlock_(amount) {
   }
   lines.push('');
   lines.push('✍️ אין קטגוריה מתאימה?');
-  lines.push('כתוב/י: *צור קטגוריה <שם>*');
+  lines.push('כתוב: *צור קטגוריה <שם>*');
   lines.push('לדוגמה: "צור קטגוריה אופטיקה"');
   lines.push('');
   lines.push('או פשוט השב/י עם מספר (1-' + _CATEGORY_PICKER_GROUPS_.length + ') או עם שם הקטגוריה.');
@@ -5344,11 +5465,11 @@ function _sendPendingCategoryPicker_(fromPhone, amount, description, page) {
   var header = (page === 1) ? 'איזה קטגוריה?' : 'עוד אפשרויות';
   var body = (page === 1)
     ? '🤔 לא ידעתי איך לסווג: "' + String(description || '').slice(0, 80) + '" — ₪' + Number(amount).toLocaleString('he-IL') +
-        '\n\nההוצאה לא נרשמה — בחר/י קטגוריה, ואני אכניס אותה ואלמד.'
-    : 'יש עוד ' + (_CATEGORY_PICKER_GROUPS_.length - _CATEGORY_PICKER_PAGE_SIZE_) + ' קטגוריות. בחר/י אחת, או צור חדשה.';
+        '\n\nההוצאה לא נרשמה — בחר קטגוריה, ואני אכניס אותה ואלמד.'
+    : 'יש עוד ' + (_CATEGORY_PICKER_GROUPS_.length - _CATEGORY_PICKER_PAGE_SIZE_) + ' קטגוריות. בחר אחת, או צור חדשה.';
   try {
     sendWhatsAppInteractiveList(
-      fromPhone, header, body, 'תוקף הבחירה: 30 דקות', 'בחר/י',
+      fromPhone, header, body, 'תוקף הבחירה: 30 דקות', 'בחר',
       [{ title: 'קטגוריות', rows: rows }]
     );
   } catch (_sErr) { Logger.log('_sendPendingCategoryPicker_ send err: ' + (_sErr && _sErr.message)); }
@@ -5365,10 +5486,10 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
   var cache = CacheService.getScriptCache();
   var raw = cache.get('pendingExpense:' + clean);
   if (!raw) {
-    return { replyText: '🤔 לא מצאתי הוצאה שמחכה לסיווג. שלח/י שוב את ההוצאה.' };
+    return { replyText: '🤔 לא מצאתי הוצאה שמחכה לסיווג. שלח שוב את ההוצאה.' };
   }
   var pending;
-  try { pending = JSON.parse(raw); } catch (_) { return { replyText: '😬 שגיאה בקריאת הבקשה. שלח/י שוב.' }; }
+  try { pending = JSON.parse(raw); } catch (_) { return { replyText: '😬 שגיאה בקריאת הבקשה. שלח שוב.' }; }
 
   // Control rows — DO NOT consume the cache, just navigate.
   if (pickedCategory === '__more__') {
@@ -5383,7 +5504,7 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
     try { cache.put('pendingCreate:' + clean, '1', 1800); } catch (_e) {}
     return { replyText:
       '✍️ *צור קטגוריה חדשה*\n\n' +
-      'כתוב/י את השם של הקטגוריה (לדוגמה: "אופטיקה", "כלב", "תינוק").\n\n' +
+      'כתוב את השם של הקטגוריה (לדוגמה: "אופטיקה", "כלב", "תינוק").\n\n' +
       'אני אוסיף אותה לגיליון *מאזן אישי* ואכניס את ההוצאה (₪' +
       Number(pending.amount).toLocaleString('he-IL') + ') לתוכה.'
     };
@@ -5714,14 +5835,14 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
         '👋 כמעט שם!\n\n' +
         'החשבון שלך באתר מוכן ✓ — אבל המספר הזה עדיין לא מחובר אליו.\n\n' +
         '*כדי לחבר אותו (30 שניות):*\n' +
-        '1. פתח/י בטלפון: ' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/welcome\n' +
+        '1. פתח בטלפון: ' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/welcome\n' +
         '2. לחץ/י על "חבר/י את המספר הזה"\n' +
-        '3. תקבל/י קוד בן 6 ספרות — שלח/י לי אותו (לדוגמה: "קוד 123456")\n\n' +
+        '3. תקבל קוד בן 6 ספרות — שלח לי אותו (לדוגמה: "קוד 123456")\n\n' +
         'אחרי זה — כל הוצאה תיכנס אוטומטית לגיליון שלך 📊'
       };
     }
     if (errCode === 'no_sheet_provisioned' || errCode === 'incomplete_user_record' || errCode === 'reauth_required') {
-      return { reply: '😬 נראה שעוד לא סיימת את ההרשמה — אין עדיין גיליון מחובר למספר הזה.\n👉 כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/account כדי לסיים את החיבור, ואז שלח/י שוב את ההוצאה.' };
+      return { reply: '😬 נראה שעוד לא סיימת את ההרשמה — אין עדיין גיליון מחובר למספר הזה.\n👉 כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/account כדי לסיים את החיבור, ואז שלח שוב את ההוצאה.' };
     }
     if (errCode === 'sheet_ownership_mismatch') {
       try { _adminAlertOnce_('🚨 sheet_ownership_mismatch לטלפון ' + String(fromPhone).replace(/[^0-9]/g, ''), fromPhone); } catch (_ae) {}
@@ -5795,7 +5916,7 @@ function _markLastExpenseAsVatDeductible_(fromPhone) {
   if (_isOwnerPhone_(fromPhone)) {
     try {
       var sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
-      if (!sh) return '😬 אין לשונית תנועות עדיין. שלח/י הוצאה ראשונה.';
+      if (!sh) return '😬 אין לשונית תנועות עדיין. שלח הוצאה ראשונה.';
       var last = sh.getLastRow();
       if (last < 2) return '🤔 אין הוצאה אחרונה לסמן. תרשום/תרשמי קודם הוצאה.';
       // Make sure the row is from the last 24h -- otherwise the user probably
@@ -5846,7 +5967,7 @@ function _markLastExpenseAsVatDeductible_(fromPhone) {
       return '✅ סומן לניכוי מע״מ. לסיכום בסוף השנה: /מעמ-סיכום';
     }
     Logger.log('_markLastExpenseAsVatDeductible_ HTTP ' + code + ' ' + body.slice(0, 200));
-    if (code === 404) return '🤔 אין הוצאה אחרונה לסמן. תרשום/תרשמי קודם הוצאה ואז שלח/י "מעמ".';
+    if (code === 404) return '🤔 אין הוצאה אחרונה לסמן. תרשום/תרשמי קודם הוצאה ואז שלח "מעמ".';
     if (code === 409) return '⚠️ ההוצאה האחרונה בת יותר מ-24 שעות. סמן/י ידנית בעמודה ניכוי מע״מ בגיליון.';
     return '😬 שגיאה בסימון. נסה/י שוב בעוד רגע.';
   } catch (e) {
@@ -5975,10 +6096,10 @@ function _budgetSet_(fromPhone, category, amount) {
       return '😕 קטגוריה לא מוכרת: "' + category + '"\n\n' +
         'הקטגוריות הזמינות:\n' +
         r.allowed.map(function(c) { return '• ' + c; }).join('\n') +
-        '\n\nנסה/י שוב — הקלד/י את שם הקטגוריה במדויק.';
+        '\n\nנסה/י שוב — הקלד את שם הקטגוריה במדויק.';
     }
     if (r && r.error === 'too_many_categories') {
-      return '😕 הגעת למקסימום של ' + r.max + ' תקציבים. מחק/י אחד לפני שמוסיפים חדש.';
+      return '😕 הגעת למקסימום של ' + r.max + ' תקציבים. מחק אחד לפני שמוסיפים חדש.';
     }
     if (r && r.error === 'invalid_cap') {
       return '😕 הסכום צריך להיות בין 1 ל-' + (r.maxCap || 100000) + ' שח.';
@@ -6245,13 +6366,13 @@ function processExpense(text, fromPhone) {
           var __hLn = [];
           __hLn.push('🏢 עסק — ₪' + __hA);
           __hLn.push('');
-          __hLn.push('בחר/י קטגוריה:');
+          __hLn.push('בחר קטגוריה:');
           __hLn.push('');
           for (var __hK = 0; __hK < __hOpts.length; __hK++) {
             __hLn.push((__hK + 1) + '. ' + __hOpts[__hK].label);
           }
           __hLn.push('');
-          __hLn.push('או הקלד/י שם קטגוריה / בטל');
+          __hLn.push('או הקלד שם קטגוריה / בטל');
           return { reply: __hLn.join('\n') };
         }
       } else {
@@ -6274,13 +6395,13 @@ function processExpense(text, fromPhone) {
         var __hLnBare = [];
         __hLnBare.push('🏢 עסק — ₪' + __hA);
         __hLnBare.push('');
-        __hLnBare.push('בחר/י קטגוריה:');
+        __hLnBare.push('בחר קטגוריה:');
         __hLnBare.push('');
         for (var __hKB = 0; __hKB < __hOptsBare.length; __hKB++) {
           __hLnBare.push((__hKB + 1) + '. ' + __hOptsBare[__hKB].label);
         }
         __hLnBare.push('');
-        __hLnBare.push('או הקלד/י שם קטגוריה / בטל');
+        __hLnBare.push('או הקלד שם קטגוריה / בטל');
         return { reply: __hLnBare.join('\n') };
       }
     }
@@ -6353,8 +6474,8 @@ function processExpense(text, fromPhone) {
       } catch (_pmErr) { Logger.log('paymentDefault set err: ' + (_pmErr && _pmErr.message)); }
       return { reply:
         '✅ ברירת מחדל נשמרה: *' + _paymentMethodLabel_(__pmCode) + '*\n\n' +
-        'מעכשיו כל הוצאה שתשלח/י תסומן ב-[' + _paymentMethodLabel_(__pmCode) + '] אוטומטית.\n' +
-        'אם תרצה/י לרשום במזומן/ביט פעם אחת בלבד — פשוט כתוב/י את זה בהודעה (למשל "50 קפה במזומן").\n\n' +
+        'מעכשיו כל הוצאה שתשלח תסומן ב-[' + _paymentMethodLabel_(__pmCode) + '] אוטומטית.\n' +
+        'אם תרצה לרשום במזומן/ביט פעם אחת בלבד — פשוט כתוב את זה בהודעה (למשל "50 קפה במזומן").\n\n' +
         'לבטל את ברירת המחדל: *בטל ברירת מחדל*'
       };
     }
@@ -6365,7 +6486,7 @@ function processExpense(text, fromPhone) {
       _profileAPI_('set', { phone: __cleanReset, fields: { paymentDefault: null } });
       try { CacheService.getScriptCache().remove('pmtDef:' + __cleanReset); } catch (_e) {}
     } catch (_) {}
-    return { reply: '✓ ברירת המחדל בוטלה. מעכשיו אזהה אמצעי תשלום רק אם תכתוב/י אותו בהודעה.' };
+    return { reply: '✓ ברירת המחדל בוטלה. מעכשיו אזהה אמצעי תשלום רק אם תכתוב אותו בהודעה.' };
   }
 
   var __greetMatch = trimmed.match(/^\s*(שלום|היי|hi|hey|hello|בוקר טוב|ערב טוב|שבוע טוב|מה נשמע|מה קורה|good morning|good evening)\s*[!.?]*\s*$/i);
@@ -6430,7 +6551,7 @@ function processExpense(text, fromPhone) {
         ? 'תודה רבה! 🙏 שמחים שאתה ממליץ. אם מתחשק לך לעזור לחבר/ה — ' + 'wa.me/15556408123?text=שלום'
         : __npsScore >= 7
         ? 'תודה על המשוב! 🙏 איפה אנחנו יכולים להשתפר?'
-        : 'תודה על הכנות. 🙏 נשמח שתשלח/י לנו הצעות שיפור ל-info@kesefle.com';
+        : 'תודה על הכנות. 🙏 נשמח שתשלח לנו הצעות שיפור ל-info@kesefle.com';
       return { reply: __npsThanks };
     }
   }
@@ -6483,7 +6604,7 @@ function processExpense(text, fromPhone) {
     catch (e) { return { reply: '😬 משהו השתבש במיגרציה: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' }; }
   }
   if (trimmed === 'מרווחים' || trimmed === 'margins') {
-    try { addRowMargins(); return { reply: '✅ הוספתי מרווחים בלוח האישי. רענני את השיט כדי לראות.' }; }
+    try { addRowMargins(); return { reply: '✅ הוספתי מרווחים בלוח האישי. רענן את השיט כדי לראות.' }; }
     catch (e) { return { reply: '😬 משהו השתבש בהוספת מרווחים: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' }; }
   }
   if (trimmed === 'בנה מחדש' || trimmed === 'rebuild') {
@@ -6877,13 +6998,13 @@ function processExpense(text, fromPhone) {
               bodyText += '\n\n🤖 ניחוש: ' + aiRich.category + ' / ' + aiRich.subcategory +
                           ' (' + Math.round((aiRich.confidence || 0) * 100) + '%)';
             }
-            bodyText += '\n\nבחר/י את הקטגוריה הנכונה:';
+            bodyText += '\n\nבחר את הקטגוריה הנכונה:';
             sendWhatsAppInteractiveList(
               fromPhone,
               aiRich ? 'צריך אישור' : 'לא בטוח בקטגוריה',
               bodyText,
               'הבחירה תילמד אוטומטית',
-              'בחר/י',
+              'בחר',
               sections
             );
             try {
@@ -8212,7 +8333,7 @@ function _recurringSuggestionLine_(fromPhone, history, current) {
     props.setProperty(markerKey, '1');
     return '\n\n🔁 שמתי לב ש"' + cand.desc + '" חוזר כבר ' + cand.count +
            ' חודשים (~' + _money_(cand.amount) + '). רוצה שאוסיף אותו כהוצאה קבועה?\n' +
-           '👉 שלח/י: קבוע ' + cand.desc + ' ' + cand.amount;
+           '👉 שלח: קבוע ' + cand.desc + ' ' + cand.amount;
   } catch (e) {
     Logger.log('_recurringSuggestionLine_: ' + e.message);
     return '';
@@ -8917,7 +9038,7 @@ function _learningDelete_(fromPhone, idx) {
     if (!rowNumber) return '🤔 אין פריט ' + idx + ' ברשימה\n💡 שלח "לימוד" לראות את הרשימה המעודכנת';
     var ss = SpreadsheetApp.openById(SHEET_ID);
     var sh = ss.getSheetByName(_LEARNED_TAB_NAME);
-    if (!sh) return '😬 אין גיליון זיכרון\n💡 שלח/י "לימוד" כדי שנייצר אחד';
+    if (!sh) return '😬 אין גיליון זיכרון\n💡 שלח "לימוד" כדי שנייצר אחד';
     var deletedTerm = sh.getRange(rowNumber, 1).getValue();
     sh.deleteRow(rowNumber);
     _learnedCacheLoadedAt = 0;
@@ -9001,7 +9122,7 @@ function deleteLastTransaction() {
   if (!sheet) return '😬 אין לשונית תנועות\n💡 הרץ פעם אחת את setupTransactionsSheet בעורך הסקריפט';
 
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return '🤔 אין מה למחוק — הלשונית ריקה\n💡 שלח/י הוצאה ראשונה למשל "85 סופר"';
+  if (lastRow < 2) return '🤔 אין מה למחוק — הלשונית ריקה\n💡 שלח הוצאה ראשונה למשל "85 סופר"';
 
   const data = sheet.getRange(lastRow, 1, 1, 7).getValues()[0];
   sheet.deleteRow(lastRow);
@@ -9158,7 +9279,7 @@ function handleLinkCode_(code, fromPhone) {
         return '✅ *אתה כבר מחובר!*\n' +
           '━━━━━━━━━━━━━━━━━━\n\n' +
           'אין צורך בקוד — המספר הזה כבר מקושר לחשבון שלך.\n' +
-          'פשוט שלח/י הוצאה — למשל "45 קפה" או "245 סופר" — ואני אכניס אותה לגיליון. 📊';
+          'פשוט שלח הוצאה — למשל "45 קפה" או "245 סופר" — ואני אכניס אותה לגיליון. 📊';
       }
     }
   } catch (_statusErr) { /* best-effort — fall through to the normal confirm */ }
@@ -9180,18 +9301,18 @@ function handleLinkCode_(code, fromPhone) {
     if (status === 200 && body.ok) {
       return '✅ *הקישור הושלם!*\n' +
         '━━━━━━━━━━━━━━━━━━\n\n' +
-        'מהרגע הזה, כל הוצאה שתשלח/י תיכתב אוטומטית לגיליון שלך.\n\n' +
+        'מהרגע הזה, כל הוצאה שתשלח תיכתב אוטומטית לגיליון שלך.\n\n' +
         '💡 *לדוגמה — נסה/י:*\n' +
         '  • "245 סופר"\n' +
         '  • "42 קפה"\n' +
         '  • "8500 משכורת"\n\n' +
-        'כתבי "עזרה" לרשימת הפקודות המלאה.';
+        'כתוב "עזרה" לרשימת הפקודות המלאה.';
     }
     if (status === 404) {
       return '😬 הקוד פג תוקף או לא תקין\n💡 חזרי ל-https://kesefle.com/account וצרי קוד חדש (תקף ל-10 דק׳)';
     }
     if (status === 409) {
-      return '⚠️ המספר הזה כבר מחובר לחשבון אחר.\n💡 אם זה החשבון שלך — התחבר/י לאותו חשבון Google שאיתו נרשמת.';
+      return '⚠️ המספר הזה כבר מחובר לחשבון אחר.\n💡 אם זה החשבון שלך — התחבר לאותו חשבון Google שאיתו נרשמת.';
     }
     if (status === 401) {
       return '😬 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי)\n💡 פנה לתמיכה דרך https://kesefle.com';
@@ -9320,7 +9441,7 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
       type: 'list',
       body: { text: String(bodyText || '').slice(0, 1024) },
       action: {
-        button: String(buttonText || 'בחר/י').slice(0, 20),
+        button: String(buttonText || 'בחר').slice(0, 20),
         sections: sections
       }
     }
@@ -9869,7 +9990,7 @@ function _handleMyBusinessesCommand_(fromPhone, text) {
   }
   if (list.length <= 1) {
     lines.push('');
-    lines.push('💡 רוצה להוסיף עסק שני? פשוט שלח/י:');
+    lines.push('💡 רוצה להוסיף עסק שני? פשוט שלח:');
     lines.push('   "עסק 2 320 שיווק"');
     lines.push('ואני אצור לך גיליון חדש אוטומטית.');
   }
@@ -10097,7 +10218,7 @@ function _buildWeeklySummary() {
   lines.push('');
   lines.push('💡 *תובנה:* ' + _generateInsight(catList, weekTotal, prevWeekTotal, transactions));
   lines.push('');
-  lines.push('📊 לוח מלא: כתבי "סיכום" לסיכום החודש');
+  lines.push('📊 לוח מלא: כתוב "סיכום" לסיכום החודש');
 
   return { text: lines.join('\n'), weekTotal: weekTotal, weekIncome: weekIncome, transactions: transactions };
 }
@@ -12233,7 +12354,7 @@ function getGoalsMessage() {
       if (g.deadline) lines.push('   📅 עד: ' + g.deadline);
       lines.push('');
     }
-    lines.push('💡 כתבי "מחק מטרה X" כדי להסיר');
+    lines.push('💡 כתוב "מחק מטרה X" כדי להסיר');
     return lines.join('\n');
   } catch (e) {
     Logger.log('getGoalsMessage error: ' + e);
@@ -12323,7 +12444,7 @@ function addGoal(parsed) {
   var goals = _loadGoals_();
   // Limit: 5 active goals
   if (goals.length >= 5) {
-    return '😬 הגעת לתקרת 5 מטרות\n💡 שלחי "מטרות" לראות את הרשימה ומחקי אחת לפני שתוסיפי חדשה';
+    return '😬 הגעת לתקרת 5 מטרות\n💡 שלח "מטרות" לראות את הרשימה ומחק אחת לפני שתוסיף חדשה';
   }
   parsed.createdAt = new Date().toISOString();
   parsed.startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
@@ -12338,7 +12459,7 @@ function addGoal(parsed) {
     (parsed.deadline ? 'תאריך יעד: ' + parsed.deadline + '\n' : '') +
     // HONESTY (2026-05-24): there's no cron that nudges goal progress —
     // the user has to ask. Don't promise updates we don't send.
-    '\nשלח/י *"מטרות"* בכל עת כדי לראות התקדמות.';
+    '\nשלח *"מטרות"* בכל עת כדי לראות התקדמות.';
 }
 
 function deleteGoal(idOrIndex) {
@@ -12354,7 +12475,7 @@ function deleteGoal(idOrIndex) {
       if (goals[i].id === idOrIndex) { idx = i; break; }
     }
   }
-  if (idx < 0) return '😬 לא מצאתי את המטרה\n💡 שלחי "מטרות" לראות את הרשימה';
+  if (idx < 0) return '😬 לא מצאתי את המטרה\n💡 שלח "מטרות" לראות את הרשימה';
   var removed = goals.splice(idx, 1)[0];
   _saveGoals_(goals);
   return '🗑️ נמחקה מטרה: "' + removed.title + '"';
@@ -12435,7 +12556,7 @@ function _familyInviteReply_(fromPhone, rawTarget) {
     'הפקודה היציבה לפתיחת קבוצת משפחה היא:\n' +
     '*כספלה צור משפחה <שם>*\n' +
     '(למשל: "כספלה צור משפחה כהן")\n\n' +
-    'אחר כך אקבל ממך קוד הזמנה אמיתי, ותוכל/י לשלוח אותו ל-' +
+    'אחר כך אקבל ממך קוד הזמנה אמיתי, ותוכל לשלוח אותו ל-' +
     _familyFormatPhone_(cleaned) + ' עם ההוראה:\n' +
     '*כספלה הצטרף <הקוד>*\n\n' +
     'או שיוכלו לסרוק QR ב-' + FAMILY_API_BASE + '/family-invite';
@@ -12449,9 +12570,9 @@ function _familyInviteGenericReply_(fromPhone) {
   return '🔗 *הזמנה למשפחה (אמיתי)*\n\n' +
     'הפקודה היציבה:\n' +
     '*כספלה צור משפחה <שם>*\n\n' +
-    'תקבל/י קוד 6 ספרות אמיתי. שלח/י אותו למי שתרצי להוסיף עם:\n' +
+    'תקבל קוד 6 ספרות אמיתי. שלח אותו למי שתרצה להוסיף עם:\n' +
     '*כספלה הצטרף <הקוד>*\n\n' +
-    'או שלח/י את הקישור: ' + FAMILY_API_BASE + '/family-invite';
+    'או שלח את הקישור: ' + FAMILY_API_BASE + '/family-invite';
 }
 
 // ------------------------------------------------------------------
@@ -12814,7 +12935,7 @@ function _familyApprove_(adminPhone, requesterPhone) {
   }
   var pending = kvGet('family:pending:' + familyId + ':' + requesterPhone);
   if (!pending) {
-    return { handled: true, replyText: '😬 אין בקשה ממתינה ממספר זה (או פג תוקף)\n💡 שלח/י את בקשת ההצטרפות מחדש' };
+    return { handled: true, replyText: '😬 אין בקשה ממתינה ממספר זה (או פג תוקף)\n💡 שלח את בקשת ההצטרפות מחדש' };
   }
   if (!rec.members) rec.members = [];
   if (rec.members.indexOf(String(requesterPhone)) < 0) rec.members.push(String(requesterPhone));
@@ -12823,7 +12944,7 @@ function _familyApprove_(adminPhone, requesterPhone) {
   var aw2 = kvSet('family:of:' + requesterPhone, familyId, 0);
   if (!aw1 || !aw2) {
     Logger.log('_familyApprove_: KV write failed (aw1=' + aw1 + ' aw2=' + aw2 + ')');
-    return { handled: true, replyText: '😬 לא הצלחתי לעדכן את הרישום (תקלת רשת). אשר/י שוב בעוד רגע.' };
+    return { handled: true, replyText: '😬 לא הצלחתי לעדכן את הרישום (תקלת רשת). אשר שוב בעוד רגע.' };
   }
   kvDel('family:pending:' + familyId + ':' + requesterPhone);
 
@@ -13230,7 +13351,7 @@ function _celebrateIfFirstExpense_(fromPhone) {
     var key = 'fxcel:' + p;
     if (props.getProperty(key)) return '';
     props.setProperty(key, new Date().toISOString());
-    return '\n\n🎉 זאת ההוצאה הראשונה שלך! מעכשיו כל הוצאה שתשלח/י תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב/י "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
+    return '\n\n🎉 זאת ההוצאה הראשונה שלך! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
   } catch (_e) { return ''; }
 }
 
