@@ -16,3 +16,7 @@ node_modules/
 admin.html.bak.*
 .DS_Store
 bot/ExpenseBot_FIXED.gs.bak.*
+
+# Exports from scripts/export-for-deepseek.mjs — too large to track
+kesefle_export_*
+
