@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-24-survey-onhi-relabel-mtd';
+const KFL_BUILD_VERSION = '2026-05-25-business-shortform-en-picker';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -67,6 +67,19 @@ const ALLOWED_PHONE = '';
 // ============================================================
 
 const CATEGORY_MAP = [
+  // ===== BUSINESS (עסק) — English + Hebrew aliases, top of list so they
+  // win priority. Subcategories match the short forms the dashboard
+  // SUMIFS literally expects ("שיווק", "תפעוליות", etc.). =====
+  {"keywords":["marketing","advertising","ads","promotion","promo","branding","campaign","sponsored","influencer","social media ads","content marketing","email marketing","seo","sem","ppc","pr","press release","יחסי ציבור","קמפיין","פרסומת","קידום","שיווק","פרסום"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["operations","operational","ops","admin","administrative","admin fee","running cost","overhead","operating expense","תפעול","תפעולי","הוצאות תפעוליות"],"category":"עסק","subcategory":"תפעוליות"},
+  {"keywords":["raw materials","materials","material","supplies","supply","inventory","stock","wholesale","ingredients","components","parts","חומרי גלם","חומר גלם","סחורה","מלאי","חומרים","רכש"],"category":"עסק","subcategory":"חומרי גלם"},
+  {"keywords":["shipping","delivery","courier","freight","logistics","packaging","packing","postage","fulfillment","משלוח","משלוחים","הובלה","אריזה","שילוח","אריזה ומשלוח"],"category":"עסק","subcategory":"משלוח"},
+  {"keywords":["consultant","consulting","consultancy","advisor","advisory","freelancer","contractor","attorney","lawyer","accountant","cpa","bookkeeper","יועץ","יועצים","ייעוץ","רואה חשבון","עו\"ד","עורך דין","עורכי דין","מנהלת חשבונות","פרילנסר","ספק שירות"],"category":"עסק","subcategory":"יועצים"},
+  {"keywords":["software","saas","subscription tool","tool","app","application","license","software license","cloud service","אופיס","תוכנה","תוכנת חשבוניות","סאאס","רישיון","כלי עבודה"],"category":"עסק","subcategory":"תוכנות"},
+  {"keywords":["business equipment","office equipment","equipment","printer","scanner","laptop","monitor","desk","office chair","ציוד עסקי","ציוד למשרד","מדפסת","סורק","ציוד משרד"],"category":"עסק","subcategory":"ציוד עסקי"},
+  {"keywords":["business tax","corporate tax","vat","vat payment","income tax","tax payment","sales tax","מע\"מ","מעמ","תשלום מעמ","מס הכנסה עסקי","מסי עסק","ביטוח לאומי עצמאי"],"category":"עסק","subcategory":"מיסים"},
+  {"keywords":["revenue","sale","sales","income payment","customer payment","invoice paid","order received","קבלת תשלום","תשלום לקוח","הזמנה","מחזור","מכירה","מכירות","ssayhe"],"category":"עסק","subcategory":"מחזור","isIncome":true},
+
   // ===== FAMILY + KIDS + BABY (expanded 2026-05-24 per Steven's request) =====
   {"keywords":["טיטול","טיטולים","האגיס","פמפרס","ליברה","מוליקס","מגבונים לחים","מגבונים לתינוק","חיתולים","חיתול","דיאפר","פמפרסים","חיתולי לילה","חיתולי בריכה","חיתול בריכה","תחתוני אימון","פולים","טיטולי גמילה"],"category":"חינוך וילדים","subcategory":"חיתולים ותינוקות"},
   {"keywords":["מטרנה","סימילק","אפטמיל","אנפמיל","ננק","תרכובת חלב","דייסת תינוקות","דייסת אורז","דייסת תירס","מחית","מחית גזר","מחית בננה","מחית תפוח","מטרנה גולד","מטרנה אקסטרה","חליטות לתינוק","דייסה לתינוק","אבקת חלב","ביסקוויט תינוק","וופל תינוק","יוגורט תינוק"],"category":"חינוך וילדים","subcategory":"מזון תינוקות ופעוטות"},
@@ -155,9 +168,9 @@ const CATEGORY_MAP = [
   {"keywords":["cinema city","cinematheque","בית קולנוע","הופעה","יס פלאנט","יספלאנט","מופע","סינמה","תיאטרון"],"category":"שונות ואחרים","subcategory":"בילויים"},
   {"keywords":["audible","kindle","tzomet sfarim","סטימצקי","ספר","ספרים","צומת ספרים"],"category":"שונות ואחרים","subcategory":"ספרים"},
   {"keywords":["pet shop","דיוטי כלב","וטרינר","חיות","מזון לחתול","מזון לכלב"],"category":"שונות ואחרים","subcategory":"חיות מחמד"},
-  {"keywords":["עסק facebook","עסק פייסבוק","עסק פרסום","עסק שיווק","פייסבוק עסק","שיווק facebook","שיווק עסק","שיווק פייסבוק","שיווק פייסביוק"],"category":"עסק","subcategory":"עלות שיווק"},
+  {"keywords":["עסק facebook","עסק פייסבוק","עסק פרסום","עסק שיווק","פייסבוק עסק","שיווק facebook","שיווק עסק","שיווק פייסבוק","שיווק פייסביוק"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["עסק יועץ מס","עסק רואה חשבון"],"category":"עסק","subcategory":"יועצים"},
-  {"keywords":["עסק"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["עסק"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["avis","hertz","אביס","באדג\\\\","הרץ"],"category":"תחבורה","subcategory":"רכב שכור"},
   {"keywords":["bank discount","bank leumi","beinleumi","discount","fibi","hapoalim","igud","leumi","massad","mercantile","mizrahi","otsar hahayal","poalim","tefahot","union bank","yahav","אוצר החייל","איגוד","בנק איגוד","בנק דיסקונט","בנק הבינלאומי","בנק הפועלים","בנק יהב","בנק לאומי","בנק מזרחי","בנק מסד","דיסקונט","הבינלאומי","הפועלים","יהב","לאומי","מזרחי טפחות","מסד","מרכנתיל","מרכנתיל דיסקונט","פאג"],"category":"הוצאות קבועות","subcategory":"בנקאות"},
   {"keywords":["altshuler","altshuler shaham","analyst","bitcoin","blender","clal finance","crypto","etf","excellence","ibi","interactive brokers","meitav","meitav dash","more investments","psagot","yelin lapidot","איי.בי.איי","אלטשולר","אנליסט","אקסלנס","ביטקוין","בלנדר","השקעה","ילין לפידות","כלל פיננסים","מור","מיטב דש","מניה","מניות","פסגות","קריפטו"],"category":"שונות ואחרים","subcategory":"השקעות"},
@@ -321,22 +334,22 @@ const CATEGORY_MAP = [
   {"keywords":["ezer mizion","latet","latet ישראל","mda תרומה","sela","yad sarah","zichron menachem","אגודת ניצולי השואה","ארגון יד שרה","ארגון לרווחה","גמ\"ח","גמח","הלוואה גמ\"ח","זכרון מנחם","יד אליעזר","יד שרה","להב\"ה תרומות","מטה לישראל","מטריה תפילה","סלע","סלע ארגון","עזר מציון","פתחון לב","קופת גמ\"ח","תרומה לחיילים","תרומה למלאכי השמיים"],"category":"ממשלה ומיסים","subcategory":"שירותי דת והלכה - גמ\"חים"},
   {"keywords":["aegean israel","aero israel","aeroflot israel","air europa israel","arkia פנים ארצי","border tax","brussels airlines","cyprus airways","departure tax","elal cargo","emirates","etihad","iberia israel","israir פנים ארצי","qatar airways","royal jordanian","singapore airlines","sun dor","tarom","אגרת עזיבה ישראל","אגרת שדה תעופה","אגרת תעופה","אל על פנים ארצי","טיסה פנים ארצית","טיסת פנים"],"category":"תחבורה / תחבורה ציבורית","subcategory":"תחבורה - נסיעות לחו\"ל וטיסות פנים ארץ"},
   {"keywords":["heital hashbacha","heter bniyah","moded musmach","tatsa\"r","אגרת בנייה","אגרת בקשה","אגרת השפעה סביבתית","אגרת חיבור חשמל","אגרת חיבור מים לאתר","אגרת תוכנית מתאר","אגרת תוכנית עירונית","אישור בנייה","אישור גמר בנייה","היטל השבחה","היתר בנייה","התנגדות תוכנית","ועדה מחוזית","ועדה מקומית לתכנון ובנייה","חיבור חשמל לאתר בנייה","טופס 4","טופס 5","טופס תיק עבודה","מודד מוסמך","מודד מקצועי","מס השבחה","מס מכירה","תוכנית בנייה","תוכנית מדידה","תעודת גמר","תצ\"ר"],"category":"הוצאות קבועות / בית","subcategory":"נדל\"ן - אגרות בנייה והיתרים"},
-  {"keywords":["facebook ads","fb ads","fbads","meta ads","meta business","meta business suite","meta marketing","meta pixel","pixel facebook","instagram ads","ig ads","igads","reels ads","instagram promote","אינסטה אדס","אינסטה ads","אינסטגרם פרסום","אינסטה ממומן","אינסטה קמפיין","מטא אדס","מטא ads","מטא פרסום","מטא ביזנס","מטא ביזנס סוויט","פיקסל פייסבוק","פיקסל מטא","פייסבוק אדס","פייסבוק ads","פייסבוק קמפיין","פייסבוק ממומן","פייסבוק פרסום","פייסביוק אדס","פייסבוק'ק","פייסבוק business","פייסבוק שיווק","פייסבוק מנהל מודעות","מנהל מודעות פייסבוק","מודעות פייסבוק","בוסט פוסט","boost post","boosted post","reels promotion"],"category":"עסק","subcategory":"עלות שיווק"},
-  {"keywords":["google ads","googleads","google adwords","adwords","google ad words","google ad","google promote","youtube ads","youtube promote","youtube ad","youtube ammumemen","youtube ממומן","יוטיוב אדס","יוטיוב ads","יוטיוב פרסום","יוטיוב קמפיין","יוטיוב ממומן","גוגל אדס","גוגל ads","גוגל אדוורדס","גוגל פרסום","גוגל ממומן","גוגל קמפיין","גוגל מודעות","גוגל מודעה","גוגל'ל","google pixel ad","gads","דיספליי גוגל","display google","google display"],"category":"עסק","subcategory":"עלות שיווק"},
-  {"keywords":["tiktok ads","tiktok promote","tiktok shop ads","tiktok business","tiktok marketing","טיקטוק אדס","טיקטוק ads","טיקטוק פרסום","טיקטוק קמפיין","טיקטוק ממומן","טיקטוק שיווק","tik tok ads","tiktok ad","spark ad tiktok"],"category":"עסק","subcategory":"עלות שיווק"},
-  {"keywords":["linkedin ads","linkedin promote","linkedin marketing","linkedin business","sponsored content linkedin","לינקדאין אדס","לינקדאין ads","לינקדאין פרסום","לינקדאין קמפיין","לינקדאין ממומן","לינקדאין שיווק"],"category":"עסק","subcategory":"עלות שיווק"},
-  {"keywords":["twitter ads","x ads","x promote","twitter promote","twitter business","snapchat ads","pinterest ads","pinterest promote","reddit ads","spotify ads","discord ads","טוויטר אדס","טוויטר פרסום","איקס אדס","אקס אדס","אקס פרסום","סנאפצ'אט אדס","סנאפצ'אט פרסום","פינטרסט אדס","פינטרסט פרסום","רדיט אדס","רדיט פרסום","דיסקורד אדס"],"category":"עסק","subcategory":"עלות שיווק"},
-  {"keywords":["שיווק דיגיטלי","פרסום ממומן","קמפיין שיווק","קמפיין ממומן","קמפיין פרסום","פרומו","prom","promo","ads","advert","advertising","advertise","advertisement","sponsored","sponsored post","sponsor","ממומן","מקדם מכירות","יח\"צ","יחצן","יחסי ציבור","pr agency","agency פרסום","משרד פרסום","משרד יח\"צ","גרילה מרקטינג","גרילה שיווק","אינפלואנסר","influencer","influencer marketing","שיווק משפיענים","משפיענים","אפיליאט","affiliate","affiliate marketing","newsletter ads","email marketing","דיוור","דיוור שיווקי","mailchimp","klaviyo","sendgrid","constant contact","hubspot marketing","salesforce marketing","מיילצימפ","קלוויו","הבספוט"],"category":"עסק","subcategory":"עלות שיווק"},
-  {"keywords":["seo","sem","ppc","cpc","cpm","אופטימיזציה למנועי חיפוש","מיקום בגוגל","דירוג בגוגל","קידום אורגני","קידום ממומן","sem rush","semrush","ahrefs","moz","ubersuggest","serpstat","screaming frog","similarweb","simple analytics","plausible","fathom analytics","google analytics","google tag manager","gtm","mixpanel","amplitude","heap analytics","hotjar","fullstory","crazy egg","optimizely","vwo","google search console","bing webmaster"],"category":"עסק","subcategory":"עלות שיווק"},
-  {"keywords":["canva","canva pro","figma","figma pro","adobe creative cloud","adobe cc","photoshop","illustrator","after effects","premiere pro","lightroom","indesign","sketch","invision","webflow","wordpress","squarespace","wix","shopify","shopify plus","bigcommerce","magento","wordpress hosting","wp engine","cloudflare","siteground","bluehost","godaddy hosting","namecheap hosting","aws","amazon web services","gcp","google cloud","azure","digital ocean","linode","vultr","netlify","vercel","heroku","render","fly.io","railway","firebase","supabase","mongodb atlas","planetscale","neon","github","github copilot","gitlab","bitbucket","jira","confluence","trello","asana","monday.com","monday","clickup","notion business","slack pro","slack business","discord nitro","zoom pro","loom","loom pro","cal.com","calendly","doodle","typeform","tally","jotform","airtable pro","airtable business","zapier","make.com","integromat","n8n","pipedream","תוכנת עיצוב","תוכנת עריכה","תוכנה עסקית","שירות ענן עסקי","אחסון אתר","דומיין","דומיין עסקי","אחסון אתר עסקי","cms","cms עסקי","crm","crm עסקי","erp","erp עסקי"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
-  {"keywords":["stripe","paypal business","square","tranzila","pelecard","pelekard","icount","green invoice","greeninvoice","rivhit","priority","sap business one","quickbooks","xero","wave","freshbooks","icount חשבונית","יבשבונית ירוקה","חשבונית ירוקה","גרין אינווייס","ריבחית","איקאונט","תרנזילה","פלאקארד","פלקארד","פלאסקארד","בית עסק stripe","בית עסק paypal","בית עסק tranzila","סליקה","תוכנת הנהלת חשבונות","הנה\"ח"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
-  {"keywords":["anglo saxon market","דוכן מכירה","דמי כניסה ירידי שיווק","יריד עסקי","יריד מסחר","תערוכה","תערוכה עסקית","kenes","expo","tlv expo","tlv international expo","expo tlv","big expo","congress","wifi בכנס","business conference","business event","b2b event","הרצאה עסקית","סדנה עסקית","workshop business","business workshop","training session","הכשרה עסקית"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["facebook ads","fb ads","fbads","meta ads","meta business","meta business suite","meta marketing","meta pixel","pixel facebook","instagram ads","ig ads","igads","reels ads","instagram promote","אינסטה אדס","אינסטה ads","אינסטגרם פרסום","אינסטה ממומן","אינסטה קמפיין","מטא אדס","מטא ads","מטא פרסום","מטא ביזנס","מטא ביזנס סוויט","פיקסל פייסבוק","פיקסל מטא","פייסבוק אדס","פייסבוק ads","פייסבוק קמפיין","פייסבוק ממומן","פייסבוק פרסום","פייסביוק אדס","פייסבוק'ק","פייסבוק business","פייסבוק שיווק","פייסבוק מנהל מודעות","מנהל מודעות פייסבוק","מודעות פייסבוק","בוסט פוסט","boost post","boosted post","reels promotion"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["google ads","googleads","google adwords","adwords","google ad words","google ad","google promote","youtube ads","youtube promote","youtube ad","youtube ammumemen","youtube ממומן","יוטיוב אדס","יוטיוב ads","יוטיוב פרסום","יוטיוב קמפיין","יוטיוב ממומן","גוגל אדס","גוגל ads","גוגל אדוורדס","גוגל פרסום","גוגל ממומן","גוגל קמפיין","גוגל מודעות","גוגל מודעה","גוגל'ל","google pixel ad","gads","דיספליי גוגל","display google","google display"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["tiktok ads","tiktok promote","tiktok shop ads","tiktok business","tiktok marketing","טיקטוק אדס","טיקטוק ads","טיקטוק פרסום","טיקטוק קמפיין","טיקטוק ממומן","טיקטוק שיווק","tik tok ads","tiktok ad","spark ad tiktok"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["linkedin ads","linkedin promote","linkedin marketing","linkedin business","sponsored content linkedin","לינקדאין אדס","לינקדאין ads","לינקדאין פרסום","לינקדאין קמפיין","לינקדאין ממומן","לינקדאין שיווק"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["twitter ads","x ads","x promote","twitter promote","twitter business","snapchat ads","pinterest ads","pinterest promote","reddit ads","spotify ads","discord ads","טוויטר אדס","טוויטר פרסום","איקס אדס","אקס אדס","אקס פרסום","סנאפצ'אט אדס","סנאפצ'אט פרסום","פינטרסט אדס","פינטרסט פרסום","רדיט אדס","רדיט פרסום","דיסקורד אדס"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["שיווק דיגיטלי","פרסום ממומן","קמפיין שיווק","קמפיין ממומן","קמפיין פרסום","פרומו","prom","promo","ads","advert","advertising","advertise","advertisement","sponsored","sponsored post","sponsor","ממומן","מקדם מכירות","יח\"צ","יחצן","יחסי ציבור","pr agency","agency פרסום","משרד פרסום","משרד יח\"צ","גרילה מרקטינג","גרילה שיווק","אינפלואנסר","influencer","influencer marketing","שיווק משפיענים","משפיענים","אפיליאט","affiliate","affiliate marketing","newsletter ads","email marketing","דיוור","דיוור שיווקי","mailchimp","klaviyo","sendgrid","constant contact","hubspot marketing","salesforce marketing","מיילצימפ","קלוויו","הבספוט"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["seo","sem","ppc","cpc","cpm","אופטימיזציה למנועי חיפוש","מיקום בגוגל","דירוג בגוגל","קידום אורגני","קידום ממומן","sem rush","semrush","ahrefs","moz","ubersuggest","serpstat","screaming frog","similarweb","simple analytics","plausible","fathom analytics","google analytics","google tag manager","gtm","mixpanel","amplitude","heap analytics","hotjar","fullstory","crazy egg","optimizely","vwo","google search console","bing webmaster"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["canva","canva pro","figma","figma pro","adobe creative cloud","adobe cc","photoshop","illustrator","after effects","premiere pro","lightroom","indesign","sketch","invision","webflow","wordpress","squarespace","wix","shopify","shopify plus","bigcommerce","magento","wordpress hosting","wp engine","cloudflare","siteground","bluehost","godaddy hosting","namecheap hosting","aws","amazon web services","gcp","google cloud","azure","digital ocean","linode","vultr","netlify","vercel","heroku","render","fly.io","railway","firebase","supabase","mongodb atlas","planetscale","neon","github","github copilot","gitlab","bitbucket","jira","confluence","trello","asana","monday.com","monday","clickup","notion business","slack pro","slack business","discord nitro","zoom pro","loom","loom pro","cal.com","calendly","doodle","typeform","tally","jotform","airtable pro","airtable business","zapier","make.com","integromat","n8n","pipedream","תוכנת עיצוב","תוכנת עריכה","תוכנה עסקית","שירות ענן עסקי","אחסון אתר","דומיין","דומיין עסקי","אחסון אתר עסקי","cms","cms עסקי","crm","crm עסקי","erp","erp עסקי"],"category":"עסק","subcategory":"תפעוליות"},
+  {"keywords":["stripe","paypal business","square","tranzila","pelecard","pelekard","icount","green invoice","greeninvoice","rivhit","priority","sap business one","quickbooks","xero","wave","freshbooks","icount חשבונית","יבשבונית ירוקה","חשבונית ירוקה","גרין אינווייס","ריבחית","איקאונט","תרנזילה","פלאקארד","פלקארד","פלאסקארד","בית עסק stripe","בית עסק paypal","בית עסק tranzila","סליקה","תוכנת הנהלת חשבונות","הנה\"ח"],"category":"עסק","subcategory":"תפעוליות"},
+  {"keywords":["anglo saxon market","דוכן מכירה","דמי כניסה ירידי שיווק","יריד עסקי","יריד מסחר","תערוכה","תערוכה עסקית","kenes","expo","tlv expo","tlv international expo","expo tlv","big expo","congress","wifi בכנס","business conference","business event","b2b event","הרצאה עסקית","סדנה עסקית","workshop business","business workshop","training session","הכשרה עסקית"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["accountant","cpa","bookkeeper","bookkeeping","יועץ עסקי","יועץ עסקים","יועץ שיווק","יועץ פיננסי עסקי","business consultant","business advisor","business coach","startup advisor","mentor עסקי","מנטור עסקי","מאמן עסקי","יועץ משפטי","עו\"ד","עו״ד","עורך דין עסקים","חוזה עסקי","עורך דין חוזים","עורך דין קניין רוחני","עורך דין מסחרי","יועץ מס נוסף","מורשה חתימה","רואה חשבון נוסף","הנה\"ח חיצונית","בודק שכר","בדיקת שכר עסקית","consultant fee","consultancy fee","legal fee","lawyer fee"],"category":"עסק","subcategory":"יועצים"},
-  {"keywords":["shipping label","usps","fedex","dhl","dhl express","ups","tnt","aramex","doar","doar 24","doar shaliach","shaliach 24","shipping carrier","fulfillment","fulfillment service","shipbob","shipstation","pirate ship","pirateship","דואר 24","דואר ישראל עסקי","דואר שליחים","דואר שליח","שליח ישראל","שליחויות עסקיות","דאצ'ה","דצ'ה","דצה","משלוח עסקי","משלוחים עסקיים","התקנת מוצר","התקנה לקוח","אריזה ומשלוח","אריזה לעסק","חומרי אריזה","נייר אריזה","קרטונים","קרטוני אריזה","מדבקות משלוח","בועות אריזה","נייר בועות","bubble wrap","tape","אריזת מתנה"],"category":"עסק","subcategory":"משלוחים והתקנות"},
-  {"keywords":["raw material","raw materials","wholesale","wholesaler","b2b supplier","supplier invoice","ספק חומרי גלם","ספק עסקי","ספקים עסקיים","מחסן ספקים","אתר ספקים","alibaba","alibaba.com","1688","1688.com","made in china","taobao","aliexpress עסקי","מנעולנים עסקי","נחושת","פלדה","מתכת","גומי","בדים","חוטים","יריעות","יריעות גומי","יריעות פלסטיק","דבק תעשייתי","מוטות","מסמרים תעשייה","ברגים תעשייה","אנקרים","תפסים","פינות מסגרת","זוויות מתכת","פרזול","חומרי דפוס","חומרי הדפסה","דיו הדפסה","דיו פלוטר","יריעות הדפסה","נייר אומנותי","נייר זהב","נייר צילום","נייר מאט","נייר ברק","glossy paper","matte paper","canvas roll","גליל קנבס","גלילי קנבס","דבק תרסיס","spray adhesive"],"category":"עסק","subcategory":"עלות חומרי גלם"},
+  {"keywords":["shipping label","usps","fedex","dhl","dhl express","ups","tnt","aramex","doar","doar 24","doar shaliach","shaliach 24","shipping carrier","fulfillment","fulfillment service","shipbob","shipstation","pirate ship","pirateship","דואר 24","דואר ישראל עסקי","דואר שליחים","דואר שליח","שליח ישראל","שליחויות עסקיות","דאצ'ה","דצ'ה","דצה","משלוח עסקי","משלוחים עסקיים","התקנת מוצר","התקנה לקוח","אריזה ומשלוח","אריזה לעסק","חומרי אריזה","נייר אריזה","קרטונים","קרטוני אריזה","מדבקות משלוח","בועות אריזה","נייר בועות","bubble wrap","tape","אריזת מתנה"],"category":"עסק","subcategory":"משלוח"},
+  {"keywords":["raw material","raw materials","wholesale","wholesaler","b2b supplier","supplier invoice","ספק חומרי גלם","ספק עסקי","ספקים עסקיים","מחסן ספקים","אתר ספקים","alibaba","alibaba.com","1688","1688.com","made in china","taobao","aliexpress עסקי","מנעולנים עסקי","נחושת","פלדה","מתכת","גומי","בדים","חוטים","יריעות","יריעות גומי","יריעות פלסטיק","דבק תעשייתי","מוטות","מסמרים תעשייה","ברגים תעשייה","אנקרים","תפסים","פינות מסגרת","זוויות מתכת","פרזול","חומרי דפוס","חומרי הדפסה","דיו הדפסה","דיו פלוטר","יריעות הדפסה","נייר אומנותי","נייר זהב","נייר צילום","נייר מאט","נייר ברק","glossy paper","matte paper","canvas roll","גליל קנבס","גלילי קנבס","דבק תרסיס","spray adhesive"],"category":"עסק","subcategory":"חומרי גלם"},
   {"keywords":["invoice paid","payment received","customer payment","client payment","תקבול לקוח","תקבול עסקי","הוראת קבע מלקוח","קבלה ללקוח","תשלום מלקוח עסקי","מקדמה לקוח","מקדמה עסקית","מקדמת עבודה","מקדמת לקוח","order online","order placed","הזמנה אונליין","הזמנת לקוח","הזמנה אתר","הזמנת אתר","הזמנה עסקית","מכירה אונליין","מכירה אתר","מכירת מוצר","מכירת שירות","sale online","sale website","product sale","service sale","rebate","מע\"מ החזר","החזר מע\"מ","מע״מ החזר","vat refund","tax refund"],"category":"עסק","subcategory":"מחזור","isIncome":true},
-  {"keywords":["mac mini","mac studio","macbook pro","macbook air","imac","mac pro","monitor 27","monitor 4k","monitor 5k","lg ultrafine","dell ultrasharp","asus prophet","logitech mx","magic keyboard","magic mouse","magic trackpad","wacom","cintiq","huion","xp pen","מחשב לעבודה","מחשב משרדי","מחשב עסקי","מסך עבודה","מסך 4k","מסך עסקי","מקלדת מקצועית","עכבר עיצוב","טבלט עיצוב","טאבלט עיצוב","wacom intuos","wacom cintiq","מסך מגע גרפי","גרפיקת אומנים","ipad pro","ipad pro 12.9","apple pencil","apple pencil 2","מקרן עבודה","מקרן פגישות","מקרן עסקי","מצלמה מקצועית","מצלמת מקצוע","מצלמת dslr","מצלמת mirrorless","sony a7","canon 5d","lumix s5","sigma art","tamron art","tripod","gimbal","dji ronin","dji rs2","dji rs3","rode mic","rode microphone","shure sm7b","shure mv7","audio interface","focusrite scarlett","softlight","ring light","softbox","תאורת סטודיו"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
-  {"keywords":["workspace google","google workspace","gsuite","g suite","microsoft 365 business","microsoft 365 enterprise","office 365 business","דומיין עסקי","מייל עסקי","g suite business","workspace business","starter workspace","workspace starter","workspace standard","workspace plus"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["mac mini","mac studio","macbook pro","macbook air","imac","mac pro","monitor 27","monitor 4k","monitor 5k","lg ultrafine","dell ultrasharp","asus prophet","logitech mx","magic keyboard","magic mouse","magic trackpad","wacom","cintiq","huion","xp pen","מחשב לעבודה","מחשב משרדי","מחשב עסקי","מסך עבודה","מסך 4k","מסך עסקי","מקלדת מקצועית","עכבר עיצוב","טבלט עיצוב","טאבלט עיצוב","wacom intuos","wacom cintiq","מסך מגע גרפי","גרפיקת אומנים","ipad pro","ipad pro 12.9","apple pencil","apple pencil 2","מקרן עבודה","מקרן פגישות","מקרן עסקי","מצלמה מקצועית","מצלמת מקצוע","מצלמת dslr","מצלמת mirrorless","sony a7","canon 5d","lumix s5","sigma art","tamron art","tripod","gimbal","dji ronin","dji rs2","dji rs3","rode mic","rode microphone","shure sm7b","shure mv7","audio interface","focusrite scarlett","softlight","ring light","softbox","תאורת סטודיו"],"category":"עסק","subcategory":"תפעוליות"},
+  {"keywords":["workspace google","google workspace","gsuite","g suite","microsoft 365 business","microsoft 365 enterprise","office 365 business","דומיין עסקי","מייל עסקי","g suite business","workspace business","starter workspace","workspace starter","workspace standard","workspace plus"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["שופרסל דיל","שופרסל אקספרס","שופרסל אונליין","שופרסל סופר","שופרסל איתי","שופרסל יחיאל","shufersal big","shufersal sheli","shufersal yesh","shufersal exists","מגה בעיר","מגה בעיר אונליין","מגה ברמת השרון","יוחננוף סופר","יוחננוף מאיר","יוחננוף און ליין","יוחננוף אונליין","יוחננוף שוקי","מחסני השוק חיפה","מחסני השוק ראשון","מחסני השוק רמת גן","מחסני השוק אזור","מחסני השוק רחובות","מחסני השוק קניון","מחסני להב","רמי לוי שוקי המזון","רמי לוי שיווק השקמה","רמי לוי קמפוס","רמי לוי אונליין","רמי לוי קמפוס און ליין","ויקטורי אונליין","ויקטורי שיווק","ויקטורי בעיר","ויקטורי אילת","ויקטורי באר שבע","כוורת שיווק","כוורת השרון","כוורת אונליין","חצי חינם אונליין","חצי חינם רעננה","חצי חינם שיווק","אושר עד אונליין","אושר עד בנימינה","אושר עד חיפה","סופר ביצ' צ'יפ","ביצ'יפ","ביצ'ה צ'יפ","super pharm market","סופר פארם מרקט","סופר פארם קמפוס","super yuda online","יודה אונליין","super deal online","סופר דיל אונליין","tiv taam","טיב טעם אונליין","טיב טעם רמת השרון","טיב טעם תל אביב","טיב טעם תל-אביב","יינות ביתן אונליין","יינות ביתן רחוב","יינות ביתן רב חן"],"category":"אוכל","subcategory":"אוכל לבית"},
   {"keywords":["mcdonalds","mcdonald's","mc donalds","mcd","macdonald","מקדונלד","מקדונלדס תל אביב","מקדונלד'ס","burger king","burger-king","burgerking","בורגר קינג רעננה","בורגר קינג אזור","kfc israel","kfc תל אביב","kentucky","קנטאקי פרייד צ'יקן","קנטאקי","pizza hut","pizza-hut","pizzahut","פיצה האט אונליין","פיצה האט תל אביב","dominos","domino's","דומינוס תל אביב","דומינוס אונליין","דומינוס פיצה","דומינו'ס","jumbo","jumbo tor","ג'מבו","ג'מבו תור","jumbo grill","aroma cafe","aroma espresso bar","ארומה אספרסו בר","ארומה אונליין","ארומה תל אביב","roladin","רולדין תל אביב","רולדין אונליין","נמירה ירושלים","יורם בוקר","אגדה הודית","איתי מזרחי","אבו גוש","הומוס אבו גוש","אבו חסן","הומוס אבו חסן","shawarma hapinati","שווארמה הפינתי","שווארמה הגלעד","שווארמה רביב","falafel hakosem","הקוסם","פלאפל הקוסם","בורגרס בר","burgers bar","אסקימו לימון","eskimo limon","פינוקיו פיצה","פיצה פינוקיו","pizza pinokio","big apple pizza","גוצ'י פיצה","pizza gucci","גודיז","goodies","goodee","cafe joe","קפה ג'ו","cafe greg","קפה גרג","cafe louise","קפה לואיס","café roma","גרינלף","green leaf","agadir","אגדיר","shipudei tsipora","שיפודי ציפורה","דאחר","דאחר חיפה"],"category":"אוכל","subcategory":"אוכל בחוץ"},
   {"keywords":["חברת חשמל לישראל","חח\"י","חחי","iec israel","electric company israel","גוביינא חשמל","חשבון חשמל","חשמל דו חודשי","חשמל חודשי","תאגיד חשמל","תשלום חשמל אונליין"],"category":"הוצאות קבועות","subcategory":"חשמל"},
@@ -5153,6 +5166,24 @@ function processExpense(text, fromPhone) {
             __hPicked = __hP.options[__hIdx];
           }
         }
+        // Steven 2026-05-25: also accept the CATEGORY NAME as free text.
+        // Users instinctively type "הוצאות תפעוליות" rather than the row
+        // number, and the old code only matched numbers — leaving the
+        // smart_pending stuck until it expired. Match by:
+        //  (1) exact label, then (2) bidirectional substring on label
+        //      OR subcategory (so "תפעוליות" matches "הוצאות תפעוליות"
+        //      option AND a "תפעוליות" subcategory).
+        if (!__hPicked && __hT && !/^[0-9]+$/.test(__hT)) {
+          var __hNorm = __hT.toLowerCase().trim();
+          for (var __pi = 0; __pi < __hP.options.length; __pi++) {
+            var __opt = __hP.options[__pi];
+            var __lab = String(__opt.label || '').toLowerCase();
+            var __sub = String(__opt.subcategory || '').toLowerCase();
+            if (__lab === __hNorm || __sub === __hNorm) { __hPicked = __opt; break; }
+            if (__lab && (__lab.indexOf(__hNorm) >= 0 || __hNorm.indexOf(__lab) >= 0)) { __hPicked = __opt; break; }
+            if (__sub && (__sub.indexOf(__hNorm) >= 0 || __hNorm.indexOf(__sub) >= 0)) { __hPicked = __opt; break; }
+          }
+        }
         if (__hPicked) {
           __hProps.deleteProperty('smart_pending');
           try {
@@ -5161,7 +5192,7 @@ function processExpense(text, fromPhone) {
               var __hPNow = new Date();
               var __hPMonth = Utilities.formatDate(__hPNow, 'Asia/Jerusalem', 'yyyy-MM');
               var __hPCategory = 'עסק';
-              var __hPSubcategory = __hPicked.subcategory || 'הוצאות תפעוליות';
+              var __hPSubcategory = __hPicked.subcategory || 'תפעוליות';
               var __hPDesc = __hPicked.label || __hPSubcategory;
               __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', true]);
               // Original-text cell note — preserves the business amount input + picked category.
@@ -5250,17 +5281,18 @@ function processExpense(text, fromPhone) {
           text = __hT;
         } else {
           var __hOpts = [
-            { label: 'שיווק', subcategory: 'עלות שיווק' },
-            { label: 'יועצים', subcategory: 'יועצים' },
-            { label: 'אריזה ומשלוח', subcategory: 'משלוחים והתקנות' },
-            { label: 'חומרי גלם', subcategory: 'עלות חומרי גלם' },
-            { label: 'תוכנות / SaaS', subcategory: 'הוצאות תפעוליות' },
-            { label: 'ציוד עסקי', subcategory: 'הוצאות תפעוליות' },
-            { label: 'מיסים', subcategory: 'הוצאות תפעוליות' },
-            { label: 'שונות עסק', subcategory: 'הוצאות תפעוליות' },
-            { label: 'הזמנה לקוח', subcategory: 'מחזור' },
-            { label: 'תשלום מלקוח', subcategory: 'מחזור' },
-            { label: 'החזר מס', subcategory: 'מחזור' }
+            { label: 'שיווק',           subcategory: 'שיווק' },
+            { label: 'הוצאות תפעוליות', subcategory: 'תפעוליות' },
+            { label: 'חומרי גלם',       subcategory: 'חומרי גלם' },
+            { label: 'אריזה ומשלוח',    subcategory: 'משלוח' },
+            { label: 'יועצים',          subcategory: 'יועצים' },
+            { label: 'תוכנות / SaaS',   subcategory: 'תפעוליות' },
+            { label: 'ציוד עסקי',       subcategory: 'תפעוליות' },
+            { label: 'מיסים',           subcategory: 'תפעוליות' },
+            { label: 'שונות עסק',       subcategory: 'תפעוליות' },
+            { label: 'הזמנה לקוח',      subcategory: 'מחזור' },
+            { label: 'תשלום מלקוח',     subcategory: 'מחזור' },
+            { label: 'החזר מס',         subcategory: 'מחזור' }
           ];
           var __payload = JSON.stringify({ amount: __hA, options: __hOpts, rawText: text, expiresAt: Math.floor(Date.now()/1000) + 900 });
           __hProps.setProperty('smart_pending', __payload);
@@ -5278,17 +5310,18 @@ function processExpense(text, fromPhone) {
         }
       } else {
         var __hOptsBare = [
-          { label: 'שיווק', subcategory: 'עלות שיווק' },
-          { label: 'יועצים', subcategory: 'יועצים' },
-          { label: 'אריזה ומשלוח', subcategory: 'משלוחים והתקנות' },
-          { label: 'חומרי גלם', subcategory: 'עלות חומרי גלם' },
-          { label: 'תוכנות / SaaS', subcategory: 'הוצאות תפעוליות' },
-          { label: 'ציוד עסקי', subcategory: 'הוצאות תפעוליות' },
-          { label: 'מיסים', subcategory: 'הוצאות תפעוליות' },
-          { label: 'שונות עסק', subcategory: 'הוצאות תפעוליות' },
-          { label: 'הזמנה לקוח', subcategory: 'מחזור' },
-          { label: 'תשלום מלקוח', subcategory: 'מחזור' },
-          { label: 'החזר מס', subcategory: 'מחזור' }
+          { label: 'שיווק',           subcategory: 'שיווק' },
+          { label: 'הוצאות תפעוליות', subcategory: 'תפעוליות' },
+          { label: 'חומרי גלם',       subcategory: 'חומרי גלם' },
+          { label: 'אריזה ומשלוח',    subcategory: 'משלוח' },
+          { label: 'יועצים',          subcategory: 'יועצים' },
+          { label: 'תוכנות / SaaS',   subcategory: 'תפעוליות' },
+          { label: 'ציוד עסקי',       subcategory: 'תפעוליות' },
+          { label: 'מיסים',           subcategory: 'תפעוליות' },
+          { label: 'שונות עסק',       subcategory: 'תפעוליות' },
+          { label: 'הזמנה לקוח',      subcategory: 'מחזור' },
+          { label: 'תשלום מלקוח',     subcategory: 'מחזור' },
+          { label: 'החזר מס',         subcategory: 'מחזור' }
         ];
         var __payloadBare = JSON.stringify({ amount: __hA, options: __hOptsBare, rawText: text, expiresAt: Math.floor(Date.now()/1000) + 900 });
         __hProps.setProperty('smart_pending', __payloadBare);
