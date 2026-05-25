@@ -31,15 +31,20 @@
 // WhatsApp bot writes to + where מאזן חברה / מאזן אישי / תנועות / הזמנות
 // all live in one document. Updated 2026-05-25 after we found the earlier
 // 1nRR... ID was a different sheet entirely (no תנועות data there).
-var SHEET_ID_TO_FIX  = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
+//
+// ALL top-level identifiers in this file are PREFIXED with _PSF_ so they
+// don't collide with the bot's own globals when Steven pastes this file
+// into the bot's Apps Script project. (The bot already declares
+// `const _PSF_ORDERS_TAB_`, which used to cause a SyntaxError on load.)
+var _PSF_SHEET_ID_       = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
 
-var TX_TAB_NAME       = 'תנועות';
-var ORDERS_TAB_NAME   = 'הזמנות';
-var COMPANY_TAB_NAME  = 'מאזן חברה';
-var PERSONAL_TAB_NAME = 'מאזן אישי';
+var _PSF_TX_TAB_         = 'תנועות';
+var _PSF_ORDERS_TAB_     = 'הזמנות';
+var _PSF_COMPANY_TAB_    = 'מאזן חברה';
+var _PSF_PERSONAL_TAB_   = 'מאזן אישי';
 
 // Year block for 2026 (mirrors Steven's FIX_DASHBOARD_2023_2024_2025).
-var YEAR_2026 = {
+var _PSF__PSF_YEAR_2026__ = {
   year: 2026, yearCell: 'B4',
   revenue: 6, orderCount: 7,
   rawMaterials: 8, marketing: 9, shipping: 10, ops: 11,
@@ -53,10 +58,10 @@ function _openSheet_() {
     var act = SpreadsheetApp.getActiveSpreadsheet();
     if (act) return act;
   } catch (_) {}
-  if (!SHEET_ID_TO_FIX || SHEET_ID_TO_FIX.indexOf('<') >= 0) {
-    throw new Error('SHEET_ID_TO_FIX is not set at top of file.');
+  if (!_PSF_SHEET_ID_ || _PSF_SHEET_ID_.indexOf('<') >= 0) {
+    throw new Error('_PSF_SHEET_ID_ is not set at top of file.');
   }
-  return SpreadsheetApp.openById(SHEET_ID_TO_FIX);
+  return SpreadsheetApp.openById(_PSF_SHEET_ID_);
 }
 
 // Build the 13-cell row [annual, jan, ..., dec] of FORMULA strings for
@@ -78,7 +83,7 @@ function _buildBusinessRowFormulas_(rowNum, bucket) {
     else criteria = [];
     for (var k = 0; k < criteria.length; k++) {
       var safe = String(criteria[k]).replace(/"/g, '""');
-      parts.push("SUMIFS('" + TX_TAB_NAME + "'!C:C, '" + TX_TAB_NAME + "'!B:B, $B$4&\"-" + mm + "\", '" + TX_TAB_NAME + "'!D:D, \"עסק\", '" + TX_TAB_NAME + "'!E:E, \"" + safe + "\")");
+      parts.push("SUMIFS('" + _PSF_TX_TAB_ + "'!C:C, '" + _PSF_TX_TAB_ + "'!B:B, $B$4&\"-" + mm + "\", '" + _PSF_TX_TAB_ + "'!D:D, \"עסק\", '" + _PSF_TX_TAB_ + "'!E:E, \"" + safe + "\")");
     }
     var expr = parts.length ? parts.join(' + ') : '0';
     cells.push('=IFERROR(' + expr + ', 0)');
@@ -90,7 +95,7 @@ function _buildBusinessRowFormulas_(rowNum, bucket) {
 function _buildRevenueFormulas_() {
   var cells = ['=SUM(C6:N6)'];
   for (var m = 1; m <= 12; m++) {
-    cells.push("=IFERROR(SUMIFS('" + ORDERS_TAB_NAME + "'!D:D, '" + ORDERS_TAB_NAME + "'!A:A, \">=\"&DATE($B$4," + m + ",1), '" + ORDERS_TAB_NAME + "'!A:A, \"<\"&DATE($B$4," + (m + 1) + ",1)), 0)");
+    cells.push("=IFERROR(SUMIFS('" + _PSF_ORDERS_TAB_ + "'!D:D, '" + _PSF_ORDERS_TAB_ + "'!A:A, \">=\"&DATE($B$4," + m + ",1), '" + _PSF_ORDERS_TAB_ + "'!A:A, \"<\"&DATE($B$4," + (m + 1) + ",1)), 0)");
   }
   return cells;
 }
@@ -99,7 +104,7 @@ function _buildRevenueFormulas_() {
 function _buildOrderCountFormulas_() {
   var cells = ['=SUM(C7:N7)'];
   for (var m = 1; m <= 12; m++) {
-    cells.push("=COUNTIFS('" + ORDERS_TAB_NAME + "'!A:A, \">=\"&DATE($B$4," + m + ",1), '" + ORDERS_TAB_NAME + "'!A:A, \"<\"&DATE($B$4," + (m + 1) + ",1))");
+    cells.push("=COUNTIFS('" + _PSF_ORDERS_TAB_ + "'!A:A, \">=\"&DATE($B$4," + m + ",1), '" + _PSF_ORDERS_TAB_ + "'!A:A, \"<\"&DATE($B$4," + (m + 1) + ",1))");
   }
   return cells;
 }
@@ -122,7 +127,7 @@ function _buildTotalsFormulas_(blk) {
 // Backup: snapshot rows 1..65 cols A..N of מאזן חברה into a new tab.
 // Steven's hard rule: backup before any write.
 function _backupCompanyDashboard_(ss) {
-  var src = ss.getSheetByName(COMPANY_TAB_NAME);
+  var src = ss.getSheetByName(_PSF_COMPANY_TAB_);
   if (!src) return null;
   var ts = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyyMMdd_HHmmss');
   var bakName = '_BAK_recomp_' + ts;
@@ -136,17 +141,17 @@ function _backupCompanyDashboard_(ss) {
 // Phase 1: read-only. Print what would change, no writes.
 function DRY_RUN_RESTORE_2026() {
   var ss = _openSheet_();
-  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
-  if (!dash) { Logger.log('FAIL: no ' + COMPANY_TAB_NAME); return; }
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('FAIL: no ' + _PSF_COMPANY_TAB_); return; }
 
   Logger.log('===== DRY RUN: RESTORE 2026 SUMIFS FORMULAS =====');
-  Logger.log('Sheet: ' + ss.getName() + '  /  tab: ' + COMPANY_TAB_NAME);
+  Logger.log('Sheet: ' + ss.getName() + '  /  tab: ' + _PSF_COMPANY_TAB_);
   Logger.log('Year cell B4 = ' + dash.getRange('B4').getValue());
   Logger.log('');
-  Logger.log('Will rewrite rows ' + YEAR_2026.revenue + '..' + YEAR_2026.marginPct + ' cols B..N (13 cols).');
+  Logger.log('Will rewrite rows ' + _PSF_YEAR_2026_.revenue + '..' + _PSF_YEAR_2026_.marginPct + ' cols B..N (13 cols).');
   Logger.log('');
   Logger.log('CURRENT state of those rows (col B + col G=May):');
-  var rows = [YEAR_2026.revenue, YEAR_2026.orderCount, YEAR_2026.rawMaterials, YEAR_2026.marketing, YEAR_2026.shipping, YEAR_2026.ops];
+  var rows = [_PSF_YEAR_2026_.revenue, _PSF_YEAR_2026_.orderCount, _PSF_YEAR_2026_.rawMaterials, _PSF_YEAR_2026_.marketing, _PSF_YEAR_2026_.shipping, _PSF_YEAR_2026_.ops];
   var labels = ['revenue','orders','rawMat','marketing','shipping','ops'];
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
@@ -159,7 +164,7 @@ function DRY_RUN_RESTORE_2026() {
   }
   Logger.log('');
   Logger.log('SAMPLE formula to be written for row 9 May:');
-  var sampleRow = _buildBusinessRowFormulas_(YEAR_2026.marketing, 'marketing');
+  var sampleRow = _buildBusinessRowFormulas_(_PSF_YEAR_2026_.marketing, 'marketing');
   Logger.log('  ' + sampleRow[5]);  // col G = May = index 6 in array? Actually cells[0]=annual, cells[1..12]=Jan..Dec, so May=cells[5]
   Logger.log('');
   Logger.log('To execute the rewrite, run: APPLY_RESTORE_2026');
@@ -168,13 +173,13 @@ function DRY_RUN_RESTORE_2026() {
 // Phase 2: actually rewrite. Creates a backup first.
 function APPLY_RESTORE_2026() {
   var ss = _openSheet_();
-  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
-  if (!dash) { Logger.log('FAIL: no ' + COMPANY_TAB_NAME); return; }
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('FAIL: no ' + _PSF_COMPANY_TAB_); return; }
 
   var bakName = _backupCompanyDashboard_(ss);
   Logger.log('===== APPLY_RESTORE_2026 (backup: ' + bakName + ') =====');
 
-  var blk = YEAR_2026;
+  var blk = _PSF_YEAR_2026_;
 
   // Row 6: revenue.
   var revRow = _buildRevenueFormulas_();
@@ -220,8 +225,8 @@ function APPLY_RESTORE_2026() {
 // ────────────────────────────────────────────────────────────────────────
 function fixPersonalDashboardFormulas() {
   var ss = _openSheet_();
-  var sheet = ss.getSheetByName(PERSONAL_TAB_NAME);
-  if (!sheet) { Logger.log('FAIL: no ' + PERSONAL_TAB_NAME); return; }
+  var sheet = ss.getSheetByName(_PSF_PERSONAL_TAB_);
+  if (!sheet) { Logger.log('FAIL: no ' + _PSF_PERSONAL_TAB_); return; }
   var lastRow = Math.min(sheet.getLastRow(), 60);
   var labels = sheet.getRange('A1:A' + lastRow).getValues();
   var updates = 0;
@@ -235,7 +240,7 @@ function fixPersonalDashboardFormulas() {
     var newRow = [];
     for (var m = 1; m <= 12; m++) {
       var mm = m < 10 ? ('0' + m) : ('' + m);
-      newRow.push("=IFERROR(SUMIFS('" + TX_TAB_NAME + "'!C:C, '" + TX_TAB_NAME + "'!B:B, $B$2&\"-" + mm + "\", '" + TX_TAB_NAME + "'!E:E, \"*\"&$A" + rowNum + "&\"*\"), 0)");
+      newRow.push("=IFERROR(SUMIFS('" + _PSF_TX_TAB_ + "'!C:C, '" + _PSF_TX_TAB_ + "'!B:B, $B$2&\"-" + mm + "\", '" + _PSF_TX_TAB_ + "'!E:E, \"*\"&$A" + rowNum + "&\"*\"), 0)");
     }
     try { sheet.getRange('C' + rowNum + ':N' + rowNum + '').setFormulas([newRow]); updates++; } catch (_e) {}
   }
@@ -248,8 +253,8 @@ function fixPersonalDashboardFormulas() {
 // ────────────────────────────────────────────────────────────────────────
 function diagnoseBusinessRows() {
   var ss = _openSheet_();
-  var sheet = ss.getSheetByName(TX_TAB_NAME);
-  if (!sheet) { Logger.log('no ' + TX_TAB_NAME); return; }
+  var sheet = ss.getSheetByName(_PSF_TX_TAB_);
+  if (!sheet) { Logger.log('no ' + _PSF_TX_TAB_); return; }
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) { Logger.log('empty'); return; }
   var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
@@ -311,8 +316,8 @@ function RESTORE_FROM_BACKUP() {
     Logger.log('   Tabs in this sheet: ' + tabs.map(function(t){return t.getName();}).join(', '));
     return;
   }
-  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
-  if (!dash) { Logger.log('!! no ' + COMPANY_TAB_NAME); return; }
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_); return; }
 
   // The backup snapshotted rows 1..65 cols A..N. Copy B6:N14 back (the
   // 2026 block we touched). Use copyTo with paste type CONTENTS_ONLY so
@@ -327,7 +332,7 @@ function RESTORE_FROM_BACKUP() {
     Logger.log('Send me the log output and I will fix the formula to match your data layout.');
   } catch (e) {
     Logger.log('!! restore failed: ' + e.message);
-    Logger.log('Manual fallback: open tab "' + newestName + '", select B6:N14, copy, paste into ' + COMPANY_TAB_NAME + ' B6.');
+    Logger.log('Manual fallback: open tab "' + newestName + '", select B6:N14, copy, paste into ' + _PSF_COMPANY_TAB_ + ' B6.');
   }
 }
 
@@ -373,10 +378,10 @@ function _bucketForBizSub_(sub) {
 
 function RECOMPUTE_COMPANY_DASHBOARD() {
   var ss = _openSheet_();
-  var tx = ss.getSheetByName(TX_TAB_NAME);
-  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
-  if (!tx)   { Logger.log('!! no ' + TX_TAB_NAME + ' tab'); return; }
-  if (!dash) { Logger.log('!! no ' + COMPANY_TAB_NAME + ' tab'); return; }
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!tx)   { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
 
   // Year = value in B4 of the dashboard.
   var year = parseInt(dash.getRange('B4').getValue(), 10);
@@ -475,10 +480,10 @@ function DEEP_DIAGNOSE() {
   Logger.log('');
 
   // 1. מאזן חברה B4 + B6:G11 current state
-  var dash = ss.getSheetByName(COMPANY_TAB_NAME);
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
   if (dash) {
     var b4 = dash.getRange('B4');
-    Logger.log('B4 of ' + COMPANY_TAB_NAME + ' — value=' + b4.getValue() + ' formula="' + b4.getFormula() + '" type=' + typeof b4.getValue());
+    Logger.log('B4 of ' + _PSF_COMPANY_TAB_ + ' — value=' + b4.getValue() + ' formula="' + b4.getFormula() + '" type=' + typeof b4.getValue());
     Logger.log('Current state of rows 6-11 (cols B + G = May):');
     [6,7,8,9,10,11].forEach(function(r) {
       var label = dash.getRange(r, 1).getValue();
@@ -492,10 +497,10 @@ function DEEP_DIAGNOSE() {
   }
 
   // 2. תנועות first 10 rows, all 9 cols
-  var tx = ss.getSheetByName(TX_TAB_NAME);
-  if (!tx) { Logger.log('!! no ' + TX_TAB_NAME); return; }
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  if (!tx) { Logger.log('!! no ' + _PSF_TX_TAB_); return; }
   var lastRow = tx.getLastRow();
-  Logger.log('=== ' + TX_TAB_NAME + ' has ' + (lastRow - 1) + ' data rows ===');
+  Logger.log('=== ' + _PSF_TX_TAB_ + ' has ' + (lastRow - 1) + ' data rows ===');
   var head = tx.getRange(1, 1, 1, Math.min(9, tx.getLastColumn())).getValues()[0];
   Logger.log('Header row: ' + JSON.stringify(head));
   var sample = tx.getRange(2, 1, Math.min(10, lastRow - 1), Math.min(9, tx.getLastColumn())).getValues();

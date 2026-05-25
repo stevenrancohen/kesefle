@@ -9572,7 +9572,7 @@ function _updateBusinessDashboard_(category, subcategory, monthKey, amount) {
 // failure; returns a non-negative integer otherwise.
 function _sumBusinessBucketFromTransactions_(ss, canonSub, year, monthIdx) {
   try {
-    var tx = ss.getSheetByName(TX_TAB_NAME || 'תנועות');
+    var tx = ss.getSheetByName(TRANSACTIONS_SHEET || 'תנועות');
     if (!tx) tx = ss.getSheetByName('תנועות');
     if (!tx) return null;
     var lastRow = tx.getLastRow();
