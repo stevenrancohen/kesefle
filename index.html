@@ -6,7 +6,7 @@
 <title>כספ'לה — הכסף שלך, על אוטומט</title>
 <meta name="description" content="שלח הודעה בוואטסאפ, וההוצאה כבר רשומה בגוגל שיטס שלך. בוט מעקב הוצאות בעברית — בלי אפליקציות, בלי טפסים, בלי לזכור." />
 <meta name="keywords" content="מעקב הוצאות, בוט וואטסאפ הוצאות, אפליקציה למעקב הוצאות, ניהול תקציב משפחתי, גוגל שיטס הוצאות, אקסל הוצאות חודשי, מעקב הוצאות עברית, ניהול הוצאות חינם, אלטרנטיבה לרייזאפ, בוט וואטסאפ תקציב, תזרים מזומנים פרילנסר" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="כספ'לה" />
@@ -155,7 +155,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://cdn.tailwindcss.com" />
 <link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+<!-- Typography (Steven 2026-05-26): Heebo for body + Rubik 800/900 for
+     display headings -- closest Hebrew-supporting match for the bold,
+     tight Behance-style display type. Inter kept for English fallback. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
 <link rel="stylesheet" href="/assets/futuristic.css" />
 
 <!-- Premium scroll-reveal + typography polish -->
@@ -213,7 +216,7 @@
   }
   .kfl-curtain-logo {
     width: 64px; height: 64px; border-radius: 16px;
-    background: linear-gradient(135deg, #5034ff, #4326e0);
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
     display: grid; place-items: center;
     color: white; font-size: 28px; font-weight: 900;
     transform: scale(0.9);
@@ -278,18 +281,21 @@
     darkMode: 'class',
     theme: {
       extend: {
-        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+        fontFamily: {
+          sans: ['Heebo', 'system-ui', 'sans-serif'],
+          display: ['Rubik', 'Heebo', 'system-ui', 'sans-serif'],
+        },
         colors: {
           ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f3f1ff', 100:'#e5e0ff', 200:'#c9bdff', 300:'#a98fff', 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8', 800:'#2a1990', 900:'#1f126b' },
-          accent:  { 500:'#ff158a', 600:'#fcab10' }
+          brand:   { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
+          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
         },
         boxShadow: {
-          glow: '0 30px 80px -20px rgb(80 52 255 / 0.35)',
+          glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
           soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
         },
         backgroundImage: {
-          'mesh': "radial-gradient(at 20% 20%, rgba(80,52,255,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(80,52,255,0.10) 0px, transparent 50%)",
+          'mesh': "radial-gradient(at 20% 20%, rgba(79,70,229,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(79,70,229,0.10) 0px, transparent 50%)",
         },
       },
     },
@@ -298,6 +304,32 @@
 <style>
   html { scroll-behavior: smooth; }
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  /* Display font for all headings — Rubik 900 is the closest Hebrew
+     match for that bold, tight, Behance-style display look. Tighter
+     letter-spacing gives the same dense, premium feel. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   /* numbers stay LTR even inside RTL */
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   /* chat bubble animation */
@@ -325,7 +357,7 @@
   /* aurora gradient mesh — premium depth */
   .aurora {
     background-image:
-      radial-gradient(at 18% 22%, rgba(80,52,255,0.22) 0px, transparent 50%),
+      radial-gradient(at 18% 22%, rgba(79,70,229,0.22) 0px, transparent 50%),
       radial-gradient(at 82% 18%, rgba(99,102,241,0.20) 0px, transparent 55%),
       radial-gradient(at 55% 90%, rgba(244,114,182,0.18) 0px, transparent 55%),
       radial-gradient(at 12% 78%, rgba(56,189,248,0.20) 0px, transparent 55%);
@@ -355,7 +387,7 @@
   /* holographic gradient sweep */
   @keyframes holo-sweep { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
   .holo-text {
-    background-image: linear-gradient(110deg, #5034ff 0%, #a855f7 25%, #06b6d4 50%, #a855f7 75%, #5034ff 100%);
+    background-image: linear-gradient(110deg, #4f46e5 0%, #a855f7 25%, #06b6d4 50%, #a855f7 75%, #4f46e5 100%);
     background-size: 200% 100%;
     -webkit-background-clip: text; background-clip: text; color: transparent;
     animation: holo-sweep 5s linear infinite;
@@ -367,15 +399,15 @@
   }
   .matrix-grid {
     background-image:
-      linear-gradient(rgba(80,52,255,0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(80,52,255,0.08) 1px, transparent 1px);
+      linear-gradient(rgba(79,70,229,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,70,229,0.08) 1px, transparent 1px);
     background-size: 60px 60px;
     animation: grid-shift 24s linear infinite;
   }
   /* neon border pulse */
   @keyframes neon-pulse {
-    0%,100% { box-shadow: 0 0 20px rgba(80,52,255,0.25), 0 0 40px rgba(80,52,255,0.10), inset 0 0 20px rgba(80,52,255,0.04); }
-    50%     { box-shadow: 0 0 40px rgba(80,52,255,0.45), 0 0 80px rgba(80,52,255,0.20), inset 0 0 30px rgba(80,52,255,0.08); }
+    0%,100% { box-shadow: 0 0 20px rgba(79,70,229,0.25), 0 0 40px rgba(79,70,229,0.10), inset 0 0 20px rgba(79,70,229,0.04); }
+    50%     { box-shadow: 0 0 40px rgba(79,70,229,0.45), 0 0 80px rgba(79,70,229,0.20), inset 0 0 30px rgba(79,70,229,0.08); }
   }
   .neon-card { animation: neon-pulse 3.5s ease-in-out infinite; }
   /* scan-line sweep */
@@ -383,7 +415,7 @@
   .scan-line { position: relative; }
   .scan-line::before {
     content:""; position:absolute; left:0; right:0; height:2px;
-    background: linear-gradient(90deg, transparent, rgba(80,52,255,0.7), transparent);
+    background: linear-gradient(90deg, transparent, rgba(79,70,229,0.7), transparent);
     animation: scan-line 5s linear infinite; pointer-events: none;
   }
   /* live blink dot */
@@ -391,7 +423,7 @@
   .live-dot { animation: live-blink 1.3s ease-in-out infinite; }
   /* typing cursor */
   @keyframes type-cursor { 0%,100% { opacity:1 } 50% { opacity:0 } }
-  .type-cursor::after { content:"▌"; margin-right:2px; animation: type-cursor 0.9s steps(2) infinite; color:#5034ff; }
+  .type-cursor::after { content:"▌"; margin-right:2px; animation: type-cursor 0.9s steps(2) infinite; color:#4f46e5; }
   /* tilt 3d on hover (smaller cards) */
   .tilt-soft { transition: transform 0.3s cubic-bezier(0.22,0.61,0.36,1); }
   .tilt-soft:hover { transform: perspective(900px) rotateX(2deg) rotateY(-2deg) translateY(-4px); }
@@ -399,7 +431,7 @@
   .btn-neon { position: relative; overflow: hidden; }
   .btn-neon::after {
     content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px;
-    background: linear-gradient(110deg, #5034ff, #a855f7, #06b6d4, #5034ff);
+    background: linear-gradient(110deg, #4f46e5, #a855f7, #06b6d4, #4f46e5);
     background-size: 200% 100%; animation: holo-sweep 4s linear infinite;
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor; mask-composite: exclude;
@@ -431,9 +463,9 @@
   .dark .kfl-continuous-body {
     background-color: #0a0e1a;
     background-image:
-      radial-gradient(ellipse 1200px 800px at 15% 5%, rgba(80,52,255,0.10) 0px, transparent 60%),
+      radial-gradient(ellipse 1200px 800px at 15% 5%, rgba(79,70,229,0.10) 0px, transparent 60%),
       radial-gradient(ellipse 1000px 700px at 85% 22%, rgba(168,85,247,0.09) 0px, transparent 60%),
-      radial-gradient(ellipse 900px 600px at 50% 50%, rgba(80,52,255,0.06) 0px, transparent 65%),
+      radial-gradient(ellipse 900px 600px at 50% 50%, rgba(79,70,229,0.06) 0px, transparent 65%),
       radial-gradient(ellipse 1100px 700px at 10% 78%, rgba(99,102,241,0.07) 0px, transparent 60%),
       radial-gradient(ellipse 900px 600px at 90% 100%, rgba(168,85,247,0.06) 0px, transparent 65%);
     background-attachment: fixed;
@@ -614,7 +646,7 @@
 <!-- ============== HERO ============== -->
 <section id="kfl-hero" class="relative overflow-hidden pt-20 pb-14 sm:pt-28 sm:pb-20 md:pt-36 md:pb-28">
   <!-- cursor-following spotlight (Vercel-style) -->
-  <div id="kfl-spotlight" class="pointer-events-none absolute inset-0 -z-[5] opacity-0 transition-opacity duration-500" style="background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%), rgba(80,52,255,0.18), transparent 60%); mix-blend-mode: screen;"></div>
+  <div id="kfl-spotlight" class="pointer-events-none absolute inset-0 -z-[5] opacity-0 transition-opacity duration-500" style="background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%), rgba(79,70,229,0.18), transparent 60%); mix-blend-mode: screen;"></div>
   <!-- aurora gradient mesh background (premium) -->
   <div class="absolute inset-0 -z-10 aurora opacity-90"></div>
   <!-- 2026-05-24: lightened the wash + removed the hard bottom band so the
@@ -1111,51 +1143,10 @@
 </section>
 
 
-<!-- ============== TESTIMONIALS ============== -->
-<section id="testimonials" class="relative py-20 md:py-24 bg-ink-100/40 dark:bg-ink-800/20">
-  <div class="mx-auto max-w-5xl px-5">
-    <div class="mx-auto max-w-2xl text-center">
-      <p class="text-xs font-extrabold uppercase tracking-widest bg-gradient-to-l from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-300">לקוחות אמיתיים</p>
-      <h2 class="mt-2 text-3xl font-black tracking-tight md:text-4xl dark:text-white">מה אומרים עלינו</h2>
-    </div>
-    <div id="kfl-testimonials-grid" class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5"></div>
-    <div id="kfl-testimonials-empty" class="mt-10 text-center text-sm text-ink-500 dark:text-ink-400 hidden">
-      <p>טוענים את ההמלצות הראשונות... 🌱</p>
-    </div>
-  </div>
-  <script>
-    (function () {
-      var grid = document.getElementById('kfl-testimonials-grid');
-      var empty = document.getElementById('kfl-testimonials-empty');
-      if (!grid) return;
-      function escapeHtml(s) {
-        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-        });
-      }
-      function render(items) {
-        if (!items.length) {
-          grid.style.display = 'none';
-          empty.classList.remove('hidden');
-          return;
-        }
-        grid.innerHTML = items.slice(0, 3).map(function (t) {
-          var safeText = escapeHtml(t.text);
-          var safeName = escapeHtml(t.name || 'משתמש/ת');
-          return '<figure class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-6 shadow-soft">' +
-            '<div class="text-brand-500 text-2xl leading-none">&ldquo;</div>' +
-            '<blockquote class="mt-2 text-base text-ink-700 dark:text-ink-200 leading-relaxed">' + safeText + '</blockquote>' +
-            '<figcaption class="mt-4 text-sm font-semibold text-ink-900 dark:text-white">&mdash; ' + safeName + '</figcaption>' +
-          '</figure>';
-        }).join('');
-      }
-      fetch('/api/testimonials', { cache: 'force-cache' })
-        .then(function (r) { return r.json(); })
-        .then(function (j) { if (j.ok) render(j.testimonials || []); else render([]); })
-        .catch(function () { render([]); });
-    })();
-  </script>
-</section>
+<!-- Testimonials section removed 2026-05-26 (Steven). When we have real
+     customer quotes we'll bring it back, ideally with photos + verified
+     LinkedIn handles for credibility. -->
+
 
 <!-- ============== PRICING ============== -->
 <section id="pricing" class="relative py-24 md:py-32">
@@ -1254,9 +1245,9 @@
       <span class="h-1 w-1 rounded-full bg-brand-400/60"></span>
       <span>חודש ראשון חינם • ביטול בקליק • ההצטרפות תוך 60 שניות</span>
     </div>
-    <h2 class="text-4xl font-black tracking-tight md:text-6xl">
+    <h2 class="text-4xl font-black tracking-tighter text-ink-900 md:text-6xl">
       מוכן לעבור
-      <span class="block bg-gradient-to-l from-brand-400 via-accent-400 to-brand-300 bg-clip-text text-transparent animate-gradient">על אוטומט?</span>
+      <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-700 bg-clip-text text-transparent">על אוטומט?</span>
     </h2>
     <p class="mt-5 text-lg text-ink-700">חבר את החשבון תוך דקה. תכתוב הוצאה ראשונה תוך שתיים.</p>
 
@@ -1926,14 +1917,14 @@ function kesefleToggleDark() { /* no-op: dark only */ }
     align-items: center;
     gap: 10px;
     padding: 11px 16px 11px 14px;
-    background: linear-gradient(135deg, #5034ff, #4326e0);
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
     color: #fff;
     border: 0;
     border-radius: 9999px;
     font-family: 'Heebo', system-ui, sans-serif;
     font-size: 14px;
     font-weight: 700;
-    box-shadow: 0 14px 36px -10px rgba(80, 52, 255, 0.6), 0 4px 14px -4px rgba(0,0,0,0.25);
+    box-shadow: 0 14px 36px -10px rgba(79, 70, 229, 0.6), 0 4px 14px -4px rgba(0,0,0,0.25);
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
     opacity: 0;
@@ -2061,19 +2052,19 @@ function kesefleToggleDark() { /* no-op: dark only */ }
 
 <!-- Scroll progress bar (continuous visual flow across sections) -->
 <div id="kfl-scroll-bar" style="position:fixed;top:0;left:0;right:0;height:2px;z-index:100;pointer-events:none">
-  <div id="kfl-scroll-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#5034ff 0%,#4326e0 50%,#84cc16 100%);transition:width 60ms linear;box-shadow:0 0 8px rgba(80,52,255,0.5)"></div>
+  <div id="kfl-scroll-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#4f46e5 0%,#4338ca 50%,#84cc16 100%);transition:width 60ms linear;box-shadow:0 0 8px rgba(79,70,229,0.5)"></div>
 </div>
 
 <!-- Sticky mobile bottom CTA with live heartbeat (mobile only, after hero) -->
-<div id="kfl-mobile-cta" style="display:none;position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:12px;right:12px;z-index:60;padding:10px 14px;background:rgba(15,20,34,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(80,52,255,0.3);border-radius:18px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.5);align-items:center;justify-content:space-between;gap:10px;font-family:'Heebo',sans-serif">
+<div id="kfl-mobile-cta" style="display:none;position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:12px;right:12px;z-index:60;padding:10px 14px;background:rgba(15,20,34,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(79,70,229,0.3);border-radius:18px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.5);align-items:center;justify-content:space-between;gap:10px;font-family:'Heebo',sans-serif">
   <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:#cbd5e1;flex:1;min-width:0">
     <span style="position:relative;display:inline-flex;width:8px;height:8px;flex-shrink:0">
       <span style="position:absolute;inset:0;background:#4ade80;border-radius:9999px;opacity:0.7;animation:kflPing 1.5s cubic-bezier(0,0,0.2,1) infinite"></span>
-      <span style="position:relative;width:8px;height:8px;background:#5034ff;border-radius:9999px"></span>
+      <span style="position:relative;width:8px;height:8px;background:#4f46e5;border-radius:9999px"></span>
     </span>
     <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">הבוט פעיל • זמן תגובה ~<span class="num">2</span>s</span>
   </div>
-  <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'mobile_sticky' });" style="display:inline-flex;align-items:center;gap:6px;background:#5034ff;color:white;padding:9px 14px;border-radius:12px;font-weight:800;font-size:13.5px;text-decoration:none;flex-shrink:0">
+  <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'mobile_sticky' });" style="display:inline-flex;align-items:center;gap:6px;background:#4f46e5;color:white;padding:9px 14px;border-radius:12px;font-weight:800;font-size:13.5px;text-decoration:none;flex-shrink:0">
     התחל
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
   </a>

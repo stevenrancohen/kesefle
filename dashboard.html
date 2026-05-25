@@ -6,7 +6,7 @@
 <title>הדשבורד שלי — כספ'לה</title>
 <meta name="description" content="הדשבורד האישי שלך בכספ'לה — תנועות אחרונות, סיכום חודשי וניתוחים מהגוגל שיט שלך." />
 <meta name="robots" content="noindex,follow" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="כספ'לה" />
@@ -34,15 +34,15 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#f3f1ff', 100:'#e5e0ff', 200:'#c9bdff', 300:'#a98fff', 400:'#8a6aff', 500:'#5034ff', 600:'#4326e0', 700:'#3520b8', 800:'#2a1990', 900:'#1f126b' },
-          accent:  { 500:'#ff158a', 600:'#fcab10' }
+          brand:   { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
+          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
         },
         boxShadow: {
-          glow: '0 30px 80px -20px rgb(80 52 255 / 0.35)',
+          glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
           soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)',
         },
         backgroundImage: {
-          'mesh': "radial-gradient(at 20% 20%, rgba(80,52,255,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(80,52,255,0.10) 0px, transparent 50%)",
+          'mesh': "radial-gradient(at 20% 20%, rgba(79,70,229,0.15) 0px, transparent 50%), radial-gradient(at 80% 10%, rgba(168,85,247,0.15) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(79,70,229,0.10) 0px, transparent 50%)",
         },
       }
     }
@@ -50,6 +50,18 @@
 </script>
 <style>
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   .num { direction: ltr; unicode-bidi: isolate; font-family: 'Inter', system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 
   .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
@@ -73,7 +85,7 @@
   .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
   .kfl-curtain-logo {
     width: 64px; height: 64px; border-radius: 16px;
-    background: linear-gradient(135deg, #5034ff, #4326e0);
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
     display: grid; place-items: center;
     color: white; font-size: 28px; font-weight: 900;
     transform: scale(0.9); opacity: 0;
@@ -164,7 +176,7 @@
 
   /* Clickable tx rows */
   .tx-row { cursor: pointer; }
-  .tx-row:focus-visible { outline: 2px solid #5034ff; outline-offset: 2px; }
+  .tx-row:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
   /* Dashboard tour CSS removed 2026-05-24 per Steven's request. */
 </style>
 <script src="/lib/analytics.js" defer></script>
@@ -350,7 +362,7 @@
           <div class="relative h-32 w-32 flex-shrink-0 sm:h-36 sm:w-36">
             <svg id="health-gauge" viewBox="0 0 100 100" class="h-full w-full -rotate-90" aria-hidden="true">
               <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="9" class="text-ink-700/60 dark:text-ink-700/60"/>
-              <circle id="health-gauge-arc" cx="50" cy="50" r="42" fill="none" stroke="#5034ff" stroke-width="9" stroke-linecap="round"
+              <circle id="health-gauge-arc" cx="50" cy="50" r="42" fill="none" stroke="#4f46e5" stroke-width="9" stroke-linecap="round"
                       stroke-dasharray="0 263.9" style="transition:stroke-dasharray .9s cubic-bezier(.22,.61,.36,1), stroke .4s ease;"/>
             </svg>
             <div class="absolute inset-0 grid place-items-center text-center">
@@ -775,12 +787,12 @@
       <svg class="sparkline" id="spark-income" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="grad-income" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#5034ff" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="#5034ff" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
           </linearGradient>
         </defs>
         <path d="" id="spark-income-fill" fill="url(#grad-income)"/>
-        <path d="" id="spark-income-line" stroke="#5034ff" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="" id="spark-income-line" stroke="#4f46e5" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
     </div>
     <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800" id="card-balance">
@@ -1306,14 +1318,14 @@ var CATEGORY_META = {
   'בריאות':     { icon: '⚕️', color: '#ef4444' },
   'בידור':      { icon: '🎬', color: '#ec4899' },
   'קניות':      { icon: '🛍️', color: '#a855f7' },
-  'משכורת':     { icon: '💰', color: '#5034ff' },
-  'הכנסה':      { icon: '💰', color: '#5034ff' },
+  'משכורת':     { icon: '💰', color: '#4f46e5' },
+  'הכנסה':      { icon: '💰', color: '#4f46e5' },
   'חיות מחמד':  { icon: '🐾', color: '#f97316' },
   'ילדים':      { icon: '🧒', color: '#fb7185' },
   'חינוך':      { icon: '📚', color: '#6366f1' },
   'ביטוח':      { icon: '🛡️', color: '#475569' },
 };
-var DONUT_PALETTE = ['#5034ff', '#a855f7', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4', '#64748b'];
+var DONUT_PALETTE = ['#4f46e5', '#a855f7', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4', '#64748b'];
 
 function categoryMeta(name) {
   if (!name) return { icon: '💸', color: '#64748b' };
@@ -1900,7 +1912,7 @@ function generatePseudoSeries(target, n, intLike) {
 
   // Color palette aligned with the dashboard theme
   // (brand-500 green, accent purple, amber, slate, sky, rose, sand)
-  var DONUT_COLORS = ['#5034ff','#a855f7','#f59e0b','#0ea5e9','#ef4444','#14b8a6','#94a3b8'];
+  var DONUT_COLORS = ['#4f46e5','#a855f7','#f59e0b','#0ea5e9','#ef4444','#14b8a6','#94a3b8'];
 
   // ---- Bucket helpers ---------------------------------------------------
   function ym(d){
@@ -2074,7 +2086,7 @@ function generatePseudoSeries(target, n, intLike) {
     if (arc) {
       var pct = Math.max(0, Math.min(100, h.overall)) / 100;
       arc.setAttribute('stroke-dasharray', (FULL * pct).toFixed(1) + ' ' + FULL);
-      var color = h.overall >= 80 ? '#5034ff' : h.overall >= 50 ? '#f59e0b' : '#ef4444';
+      var color = h.overall >= 80 ? '#4f46e5' : h.overall >= 50 ? '#f59e0b' : '#ef4444';
       arc.setAttribute('stroke', color);
     }
 
@@ -2201,14 +2213,14 @@ function generatePseudoSeries(target, n, intLike) {
     var area = document.createElementNS('http://www.w3.org/2000/svg','polygon');
     var areaStr = padX + ',' + (H - padY) + ' ' + areaPts.join(' ') + ' ' + (W - padX) + ',' + (H - padY);
     area.setAttribute('points', areaStr);
-    area.setAttribute('fill', 'rgba(80,52,255,0.12)');
+    area.setAttribute('fill', 'rgba(79,70,229,0.12)');
     svg.appendChild(area);
 
     // Line
     var poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
     poly.setAttribute('points', areaPts.join(' '));
     poly.setAttribute('fill', 'none');
-    poly.setAttribute('stroke', '#5034ff');
+    poly.setAttribute('stroke', '#4f46e5');
     poly.setAttribute('stroke-width', '2.5');
     poly.setAttribute('stroke-linecap', 'round');
     poly.setAttribute('stroke-linejoin', 'round');
@@ -2220,8 +2232,8 @@ function generatePseudoSeries(target, n, intLike) {
       c.setAttribute('cx', xAt(i));
       c.setAttribute('cy', yAt(m.total));
       c.setAttribute('r', i === months.length - 1 ? '5' : '3.5');
-      c.setAttribute('fill', i === months.length - 1 ? '#5034ff' : '#0f1422');
-      c.setAttribute('stroke', '#5034ff');
+      c.setAttribute('fill', i === months.length - 1 ? '#4f46e5' : '#0f1422');
+      c.setAttribute('stroke', '#4f46e5');
       c.setAttribute('stroke-width', '2');
       var title = document.createElementNS('http://www.w3.org/2000/svg','title');
       title.textContent = monthLabel(m.date) + ': ' + moneyShekel(m.total);
@@ -2577,7 +2589,7 @@ function generatePseudoSeries(target, n, intLike) {
     // <60% green, 60-threshold yellow, >=threshold red.
     if (pct >= threshold) return '#ef4444';
     if (pct >= 60) return '#f59e0b';
-    return '#5034ff';
+    return '#4f46e5';
   }
   function renderBudgets(rows){
     var listEl = safeEl('budget-list');
@@ -3016,7 +3028,7 @@ function generatePseudoSeries(target, n, intLike) {
   function setStatus(msg, isError) {
     var s = getStatus(); if (!s) return;
     s.textContent = msg; s.classList.remove('hidden');
-    s.style.color = isError ? '#b91c1c' : '#3520b8';
+    s.style.color = isError ? '#b91c1c' : '#3730a3';
   }
 
   function hideCardForever() {
@@ -3163,7 +3175,7 @@ function generatePseudoSeries(target, n, intLike) {
     <textarea id="kflNpsComment" placeholder="מה הסיבה לציון? איך נוכל להשתפר?" rows="3" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;color:#e6f6ec;font-family:inherit;font-size:13px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button id="kflNpsSkip" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(230,246,236,0.65);font-family:inherit;font-size:13px;cursor:pointer">דלג</button>
-      <button id="kflNpsSubmit" style="flex:2;padding:10px;border-radius:8px;border:0;background:#5034ff;color:#062a13;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer">שלח משוב</button>
+      <button id="kflNpsSubmit" style="flex:2;padding:10px;border-radius:8px;border:0;background:#4f46e5;color:#062a13;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer">שלח משוב</button>
     </div>
   </div>
   <div id="kflNpsStep3" style="display:none;text-align:center;padding:18px 4px">
@@ -3202,7 +3214,7 @@ function generatePseudoSeries(target, n, intLike) {
     btn.type = 'button';
     btn.textContent = String(i);
     btn.dataset.score = String(i);
-    var color = i <= 6 ? '#ef4444' : i <= 8 ? '#f59e0b' : '#5034ff';
+    var color = i <= 6 ? '#ef4444' : i <= 8 ? '#f59e0b' : '#4f46e5';
     btn.style.cssText = 'padding:9px 0;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);color:'+color+';border-radius:6px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:transform 0.1s';
     btn.addEventListener('mouseenter', function(){this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.07)';});
     btn.addEventListener('mouseleave', function(){this.style.transform='';this.style.background='rgba(255,255,255,0.03)';});
@@ -3278,7 +3290,7 @@ function generatePseudoSeries(target, n, intLike) {
     if (document.getElementById('kfl-install-banner')) return;
     var bar = document.createElement('div');
     bar.id = 'kfl-install-banner';
-    bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#4326e0;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:9999;font:600 14px/1.4 Heebo,system-ui,sans-serif;box-shadow:0 -4px 16px rgba(0,0,0,0.2)';
+    bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#4338ca;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:9999;font:600 14px/1.4 Heebo,system-ui,sans-serif;box-shadow:0 -4px 16px rgba(0,0,0,0.2)';
     bar.dir = 'rtl';
     bar.innerHTML =
       '<div style="display:flex;align-items:center;gap:10px">' +
@@ -3289,7 +3301,7 @@ function generatePseudoSeries(target, n, intLike) {
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-shrink:0">' +
-        '<button id="kfl-install-go" style="background:#fff;color:#4326e0;border:none;padding:9px 18px;border-radius:10px;font-weight:800;cursor:pointer;font:inherit">' + (opts.action || 'התקן') + '</button>' +
+        '<button id="kfl-install-go" style="background:#fff;color:#4338ca;border:none;padding:9px 18px;border-radius:10px;font-weight:800;cursor:pointer;font:inherit">' + (opts.action || 'התקן') + '</button>' +
         '<button id="kfl-install-dismiss" style="background:transparent;color:#fff;border:1px solid #fff;padding:9px 14px;border-radius:10px;cursor:pointer;font:inherit;opacity:0.85">לא עכשיו</button>' +
       '</div>';
     document.body.appendChild(bar);
@@ -3547,7 +3559,7 @@ function generatePseudoSeries(target, n, intLike) {
     list.innerHTML = STEPS.map(function (s) {
       var done = !!state[s.id];
       var checkbox = done
-        ? '<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:#4326e0;color:white;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✓</span>'
+        ? '<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:#4338ca;color:white;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✓</span>'
         : '<button data-step="' + s.id + '" class="kfl-onb-mark" style="display:inline-flex;width:24px;height:24px;border-radius:50%;border:2px solid #bcc4d6;background:white;cursor:pointer;flex-shrink:0" title="סמן כבוצע"></button>';
       var titleStyle = done ? 'text-decoration:line-through;opacity:0.6' : '';
       return '<li style="display:flex;align-items:flex-start;gap:10px;padding:8px 0">' +
@@ -3556,7 +3568,7 @@ function generatePseudoSeries(target, n, intLike) {
           '<div style="font-weight:700;font-size:14px;' + titleStyle + '">' + s.title + '</div>' +
           (done ? '' : '<div style="font-size:12px;color:#5d6b8f;margin-top:2px">' + s.hint + '</div>') +
         '</div>' +
-        (done ? '' : '<a href="' + s.cta_url + '" target="_blank" rel="noopener" style="font-size:12px;color:#4326e0;font-weight:700;text-decoration:none;border:1px solid #4326e0;padding:6px 12px;border-radius:8px;flex-shrink:0">' + s.cta_label + '</a>') +
+        (done ? '' : '<a href="' + s.cta_url + '" target="_blank" rel="noopener" style="font-size:12px;color:#4338ca;font-weight:700;text-decoration:none;border:1px solid #4338ca;padding:6px 12px;border-radius:8px;flex-shrink:0">' + s.cta_label + '</a>') +
       '</li>';
     }).join('');
     section.classList.remove('hidden');
@@ -3731,7 +3743,7 @@ window.addEventListener('load', function () {
       var host = document.querySelector('main') || document.body;
       if (!host) return;
       if ((host.innerText || '').replace(/\s+/g, '').length >= 5) return;
-      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-size:20px;font-weight:800;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#4326e0;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
+      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-size:20px;font-weight:800;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#4338ca;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
     } catch (_e) {}
   }, 2500);
 });

@@ -6,7 +6,7 @@
 <title>מפת דרכים — כספ'לה</title>
 <meta name="description" content="מה כבר שיגרנו, מה בעבודה, ומה בתכנון — מפת הדרכים הציבורית של כספ'לה. הצביעו על מה שאתם רוצים שייבנה הבא." />
 <meta name="keywords" content="מפת דרכים כספ'לה, פיצ'רים חדשים בוט הוצאות, רואדמאפ ציבורי, הצבעה על פיצ'רים, מה הבא בכספ'לה" />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <meta name="robots" content="index,follow" />
 <link rel="canonical" href="https://kesefle.com/roadmap" />
 <link rel="alternate" hreflang="he-IL" href="https://kesefle.com/roadmap" />
@@ -20,7 +20,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/assets/futuristic.css">
 <script>
@@ -31,7 +31,7 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:  { 500:'#5034ff', 600:'#4326e0', 700:'#3520b8' },
+          brand:  { 500:'#4f46e5', 600:'#4338ca', 700:'#3730a3' },
           warn:   { 500:'#f59e0b', 600:'#d97706' },
           danger: { 500:'#dc2626', 600:'#b91c1c' }
         }
@@ -50,20 +50,32 @@
 </script>
 <style>
   html, body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   .card { transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgb(15 20 34 / 0.15); }
   .chip { transition: background-color .12s ease, color .12s ease, border-color .12s ease; }
   .chip.active {
-    background: #4326e0; color: white; border-color: #4326e0;
+    background: #4338ca; color: white; border-color: #4338ca;
   }
-  .dark .chip.active { background: #5034ff; color: #0f1422; border-color: #5034ff; }
-  .col-shipped   { border-top: 3px solid #5034ff; }
+  .dark .chip.active { background: #4f46e5; color: #0f1422; border-color: #4f46e5; }
+  .col-shipped   { border-top: 3px solid #4f46e5; }
   .col-progress  { border-top: 3px solid #f59e0b; }
   .col-planned   { border-top: 3px solid #8a95b3; }
   .vote-btn.voted {
-    background: #4326e0 !important; color: white !important; border-color: #4326e0 !important;
+    background: #4338ca !important; color: white !important; border-color: #4338ca !important;
   }
-  .dark .vote-btn.voted { background: #5034ff !important; color: #0f1422 !important; border-color: #5034ff !important; }
+  .dark .vote-btn.voted { background: #4f46e5 !important; color: #0f1422 !important; border-color: #4f46e5 !important; }
   .sub-btn.subscribed { background: #ffffff; color: white; }
   .dark .sub-btn.subscribed { background: #f7f8fb; color: #0f1422; }
   .toast {
@@ -78,7 +90,7 @@
   details > summary::-webkit-details-marker { display: none; }
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#5034ff">
+  <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/icon-192.png">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"מפת דרכים — כספ'לה","description":"מה כבר שיגרנו, מה בעבודה, ומה בתכנון — מפת הדרכים הציבורית של כספ'לה. הצביעו על מה שאתם רוצים שייבנה הבא.","url":"https://kesefle.com/roadmap","inLanguage":"he","isPartOf":{"@type":"WebSite","name":"כספ'לה","url":"https://kesefle.com/"}}</script>
 </head>

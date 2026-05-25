@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>מצב המערכת — כספ'לה</title>
 <meta name="description" content="מצב המערכת של כספ'לה — דף סטטוס בזמן אמת לכל השירותים." />
-<meta name="theme-color" content="#5034ff" />
+<meta name="theme-color" content="#4f46e5" />
 <meta name="robots" content="index,follow" />
 <link rel="canonical" href="https://kesefle.com/status" />
 <meta property="og:title" content="מצב המערכת — כספ'לה" />
@@ -20,7 +20,7 @@
 <meta name="twitter:image" content="https://kesefle.com/og-image.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/assets/futuristic.css">
 <script>
@@ -31,14 +31,14 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:  { 500:'#5034ff', 600:'#4326e0', 700:'#3520b8' },
+          brand:  { 500:'#4f46e5', 600:'#4338ca', 700:'#3730a3' },
           warn:   { 500:'#f59e0b', 600:'#d97706' },
           danger: { 500:'#dc2626', 600:'#b91c1c' }
         },
         keyframes: {
           'soft-pulse': {
-            '0%, 100%': { boxShadow: '0 0 0 0 rgb(80 52 255 / 0.55)' },
-            '50%':       { boxShadow: '0 0 0 10px rgb(80 52 255 / 0)' }
+            '0%, 100%': { boxShadow: '0 0 0 0 rgb(79 70 229 / 0.55)' },
+            '50%':       { boxShadow: '0 0 0 10px rgb(79 70 229 / 0)' }
           },
           'warn-pulse': {
             '0%, 100%': { boxShadow: '0 0 0 0 rgb(245 158 11 / 0.55)' },
@@ -60,8 +60,20 @@
 </script>
 <style>
   html, body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
   .status-dot { width: 10px; height: 10px; border-radius: 9999px; display: inline-block; }
-  .dot-op    { background: #5034ff; }
+  .dot-op    { background: #4f46e5; }
   .dot-deg   { background: #f59e0b; }
   .dot-down  { background: #dc2626; }
   .dot-unknown { background: #8a95b3; }
@@ -70,7 +82,7 @@
     transition: transform .15s ease;
   }
   .uptime-square:hover { transform: scaleY(1.15); }
-  .uptime-op    { background: #5034ff; }
+  .uptime-op    { background: #4f46e5; }
   .uptime-deg   { background: #f59e0b; }
   .uptime-down  { background: #dc2626; }
   .uptime-na    { background: #dde1ec; }
@@ -102,7 +114,7 @@
   }
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#5034ff">
+  <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/icon-192.png">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"מצב המערכת — כספ'לה","description":"מצב המערכת של כספ'לה — דף סטטוס בזמן אמת לכל השירותים.","url":"https://kesefle.com/status","inLanguage":"he","isPartOf":{"@type":"WebSite","name":"כספ'לה","url":"https://kesefle.com/"}}</script>
 </head>
