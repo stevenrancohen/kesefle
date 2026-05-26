@@ -1945,6 +1945,25 @@ function doPost(e) {
             }
           }
 
+          // Smart Budget Goals — "קבע יעד / יעדים / מחק יעד". Available to
+          // all tenants. Routes through the API endpoint for tenant isolation
+          // (see api/goals/*). Checked BEFORE the category-correction router
+          // so "מחק יעד אוכל" doesn't get mistaken for a category command.
+          if (typeof _handleGoalCommand_ === "function") {
+            try {
+              var __goalRes = _handleGoalCommand_(__from_, __text_);
+              if (__goalRes && __goalRes.handled) {
+                if (__goalRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __goalRes.replyText);
+                }
+                Logger.log('doPost: goal command handled');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_goalErr) {
+              Logger.log('doPost: goal command error: ' + (_goalErr && _goalErr.stack || _goalErr));
+            }
+          }
+
           // Category correction flow — "קטגוריה X" then "כן/לא". Must be
           // checked early so כן/לא tokens don't get caught by other routers.
           if (typeof _handleCategoryCorrection_ === "function" && _isOwnerPhone_(__from_)) {
@@ -9260,6 +9279,161 @@ function _resolveCorrectionPair_(raw) {
   return { category: 'אחר', subcategory: s };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SMART BUDGET GOALS — PR-1 (data + commands only, no alerts yet)
+// See docs/SMART_BUDGET_GOALS_DESIGN.md. PR-2 wires post-write alerts,
+// PR-3 wires the pre-write block + dashboard widget.
+//
+// Commands recognized:
+//   "קבע יעד <category> <amount>"  -> POST /api/goals/upsert (spend_cap)
+//   "קבע יעד <amount>"              -> POST /api/goals/upsert (savings)
+//   "יעדים"                         -> GET  /api/goals/list
+//   "מחק יעד <category>"            -> POST /api/goals/delete
+//   "יעדים כבוי"                    -> placeholder for PR-2 alert mute
+//
+// Always returns {handled:false} for non-matches so other routers run.
+// All calls go through KESEFLE_API_BASE + KESEFLE_BOT_SECRET (same pattern
+// as _tenantWriteExpense_), so the tenant-isolation invariant is preserved
+// by the API endpoint, not by the bot.
+function _handleGoalCommand_(fromPhone, text) {
+  if (!fromPhone || !text) return { handled: false };
+  var t = String(text).trim();
+
+  // Quick reject — must contain "יעד" or "יעדים" to be worth parsing.
+  if (t.indexOf('יעד') === -1) return { handled: false };
+
+  // Match shape. Same grammar as lib/goals.js parseGoalCommand.
+  var mDel  = t.match(/^מחק\s+יעד\s+(.+)$/i);
+  var mList = /^יעדים$/i.test(t);
+  var mMute = /^יעדים\s*כבוי$/i.test(t);
+  var mSet  = t.match(/^(?:קבע|הגדר)\s+יעד\s+(.+)$/i);
+  if (!mDel && !mList && !mMute && !mSet) return { handled: false };
+
+  var base = (typeof KESEFLE_API_BASE !== 'undefined') ? KESEFLE_API_BASE : '';
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+  if (!base || !secret) {
+    return { handled: true, replyText: '😬 שגיאת קונפיגורציה (יעדים).' };
+  }
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  var commonHeaders = { 'x-kesefle-bot-secret': secret };
+
+  // ── LIST ─────────────────────────────────────────────────────────────
+  if (mList) {
+    try {
+      var resp = UrlFetchApp.fetch(base + '/api/goals/list?phone=' + encodeURIComponent(clean), {
+        method: 'get', headers: commonHeaders, muteHttpExceptions: true,
+      });
+      var code = resp.getResponseCode();
+      if (code === 404) return { handled: true, replyText: '🤔 לא מצאתי את החשבון שלך. ודא/י שמספר הטלפון מקושר.' };
+      if (code < 200 || code >= 300) return { handled: true, replyText: '😬 שגיאת רשת (יעדים). נסה/י שוב בעוד דקה.' };
+      var j = JSON.parse(resp.getContentText() || '{}');
+      var goals = (j && j.goals) || [];
+      if (!goals.length) {
+        return { handled: true, replyText:
+          '🎯 אין יעדים פעילים.\n\nלהוסיף יעד:\n• "קבע יעד <קטגוריה> <סכום>" — למשל "קבע יעד אוכל 3000"\n• "קבע יעד <סכום>" — יעד חיסכון חודשי'
+        };
+      }
+      var lines = ['🎯 *היעדים שלך:*', ''];
+      for (var i = 0; i < goals.length; i++) {
+        var g = goals[i];
+        var amt = '₪' + Number(g.amountILS).toLocaleString('he-IL');
+        if (g.type === 'savings') lines.push('💰 חיסכון חודשי — ' + amt);
+        else lines.push('📊 ' + g.category + ' — ' + amt + '/חודש');
+      }
+      lines.push('');
+      lines.push('💡 למחוק: "מחק יעד <קטגוריה>"');
+      return { handled: true, replyText: lines.join('\n') };
+    } catch (e) {
+      Logger.log('_handleGoalCommand_ list err: ' + (e && e.message));
+      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה/י שוב.' };
+    }
+  }
+
+  // ── MUTE (placeholder until PR-2) ────────────────────────────────────
+  if (mMute) {
+    return { handled: true, replyText: '🔕 התראות יעדים יופעלו ב-PR הבא. בינתיים יעדים נשמרים אבל לא שולחים התראות.' };
+  }
+
+  // ── DELETE ───────────────────────────────────────────────────────────
+  if (mDel) {
+    var delCat = mDel[1].trim().slice(0, 60);
+    try {
+      var dresp = UrlFetchApp.fetch(base + '/api/goals/delete', {
+        method: 'post', contentType: 'application/json', headers: commonHeaders,
+        payload: JSON.stringify({ phone: clean, category: delCat }),
+        muteHttpExceptions: true,
+      });
+      var dcode = dresp.getResponseCode();
+      if (dcode === 404) return { handled: true, replyText: '🤔 לא מצאתי את החשבון.' };
+      if (dcode < 200 || dcode >= 300) return { handled: true, replyText: '😬 לא הצלחתי למחוק (' + dcode + ').' };
+      var dj = JSON.parse(dresp.getContentText() || '{}');
+      if (dj && dj.deleted) return { handled: true, replyText: '✅ נמחק יעד: ' + delCat };
+      return { handled: true, replyText: '🤔 לא מצאתי יעד פעיל בקטגוריה "' + delCat + '".\nשלח "יעדים" לראות מה פעיל.' };
+    } catch (e) {
+      Logger.log('_handleGoalCommand_ delete err: ' + (e && e.message));
+      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה/י שוב.' };
+    }
+  }
+
+  // ── SET (the spend_cap / savings command) ───────────────────────────
+  if (mSet) {
+    var tail = mSet[1].trim();
+    // Pull the LAST number off the tail. Anything before it is the category.
+    var amtMatch = tail.match(/^(.*?)\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*₪?\s*$/);
+    if (!amtMatch) {
+      return { handled: true, replyText:
+        '🤔 לא הבנתי. נסה:\n• "קבע יעד אוכל 3000"\n• "קבע יעד 2000" (חיסכון חודשי)'
+      };
+    }
+    var amount = Number(String(amtMatch[2]).replace(/,/g, ''));
+    if (!isFinite(amount) || amount < 1 || amount > 10000000) {
+      return { handled: true, replyText: '🤔 הסכום חייב להיות בין ₪1 ל-₪10,000,000.' };
+    }
+    var sCategory = (amtMatch[1] || '').trim();
+    var stype = sCategory ? 'spend_cap' : 'savings';
+    var payload = {
+      phone: clean,
+      type: stype,
+      amountILS: amount,
+    };
+    if (sCategory) payload.category = sCategory.slice(0, 60);
+
+    try {
+      var sresp = UrlFetchApp.fetch(base + '/api/goals/upsert', {
+        method: 'post', contentType: 'application/json', headers: commonHeaders,
+        payload: JSON.stringify(payload), muteHttpExceptions: true,
+      });
+      var scode = sresp.getResponseCode();
+      if (scode === 404) return { handled: true, replyText: '🤔 לא מצאתי את החשבון שלך.' };
+      if (scode === 400) {
+        var berr = JSON.parse(sresp.getContentText() || '{}');
+        return { handled: true, replyText: '🤔 ' + (berr.detail || berr.error || 'קלט לא תקין') };
+      }
+      if (scode < 200 || scode >= 300) return { handled: true, replyText: '😬 שגיאה זמנית (' + scode + ').' };
+      var sj = JSON.parse(sresp.getContentText() || '{}');
+      var savedGoal = sj && sj.goal;
+      if (!savedGoal) return { handled: true, replyText: '😬 שגיאה זמנית.' };
+      var sav_amt = '₪' + Number(savedGoal.amountILS).toLocaleString('he-IL');
+      var reply;
+      if (savedGoal.type === 'savings') {
+        reply = '✅ יעד חיסכון חודשי נקבע: ' + sav_amt +
+          '\n💡 שלח "סיכום" כדי לראות את ההתקדמות.';
+      } else {
+        reply = '✅ יעד נקבע: ' + savedGoal.category + ' — ' + sav_amt + '/חודש' +
+          '\n💡 התראות יישלחו אוטומטית ב-50%, 80% ו-100% (נדלק ב-PR-2).';
+      }
+      return { handled: true, replyText: reply };
+    } catch (e) {
+      Logger.log('_handleGoalCommand_ set err: ' + (e && e.message));
+      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה/י שוב.' };
+    }
+  }
+
+  return { handled: false };
+}
+// ═══════════════════════════════════════════════════════════════════════════
+
 function _handleCategoryCorrection_(fromPhone, text) {
   if (!fromPhone || !text) return null;
   var trimmed = String(text).trim();
@@ -11246,6 +11420,10 @@ function _getStreakCount_(fromPhone) {
 
 // Returns "החודש הוצאת ₪X על Y — בדרך לממוצע שלך." or empty if not applicable.
 // Skipped silently for income categories or when month-to-date is small.
+//
+// Fix 2026-05-26: only sum EXPENSE rows (H column = TRUE). Old code summed
+// ALL rows matching the category, including incoming refunds, which inflated
+// the figure and caused the bot to lie ("4,600 when actual was 4,478").
 function _categoryMonthToDateLine_(category, isIncome) {
   if (isIncome) return '';
   if (!category) return '';
@@ -11261,9 +11439,14 @@ function _categoryMonthToDateLine_(category, isIncome) {
       var d = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
       if (isNaN(d.getTime()) || d < monthStart) continue;
       if (String(data[i][3] || '') !== category) continue;
+      // EXCLUDE income rows. H col (index 7) = isExpense; only count TRUE.
+      var hCol = data[i][7];
+      var isExp = hCol === true || String(hCol).toUpperCase() === 'TRUE';
+      if (!isExp) continue;
       sum += Number(data[i][2]) || 0;
     }
     if (sum < 50) return ''; // too early in month to be insightful
+    Logger.log('_categoryMonthToDateLine_ ' + category + ' sum=' + sum);
     return 'החודש הוצאת ₪' + sum.toLocaleString('he-IL') + ' על ' + category + '.';
   } catch (e) { return ''; }
 }
@@ -11321,6 +11504,10 @@ function _budgetStatsForCategory_(category) {
       if (String(row[3] || '') !== category) continue;
       var amount = Number(row[2]) || 0;
       if (amount <= 0) continue;
+      // EXCLUDE income rows. Same fix as _categoryMonthToDateLine_ above.
+      var hCol = row[7];
+      var isExp = hCol === true || String(hCol).toUpperCase() === 'TRUE';
+      if (!isExp) continue;
 
       if (d >= monthStart && d <= now) {
         thisMonthSpent += amount;
@@ -11400,9 +11587,12 @@ function _budgetAlertTail_(category, fromPhone) {
 
   var fmt = function(n) { return Math.round(n).toLocaleString('he-IL'); };
 
-  // Tier 3 — already exceeded
-  if (thisMonth > baseline) {
+  // Tier 3 — already exceeded. ANTI-LIE GUARD: require at least 5% over so
+  // we don't claim "we crossed last month!" when this month is 4,478 and
+  // last month was 4,485 (off by 7 ILS — basically equal).
+  if (thisMonth > baseline * 1.05) {
     if (!_budgetAlertThrottle_(fromPhone, category, 3)) return '';
+    Logger.log('budget tier-3 ' + category + ' thisMonth=' + Math.round(thisMonth) + ' baseline=' + Math.round(baseline));
     return '\n🔥 חצינו את הוצאת ' + category + ' של חודש שעבר (₪' +
            fmt(thisMonth) + ' מ-₪' + fmt(baseline) + ').';
   }
@@ -11411,6 +11601,7 @@ function _budgetAlertTail_(category, fromPhone) {
   if (thisMonth > baseline * 0.8 && daysElapsed < daysInMonth * 0.66) {
     if (!_budgetAlertThrottle_(fromPhone, category, 2)) return '';
     var pct = Math.round(paceRatio * 100);
+    Logger.log('budget tier-2 ' + category + ' thisMonth=' + Math.round(thisMonth) + ' baseline=' + Math.round(baseline) + ' pct=' + pct);
     return '\n🚨 כבר ' + pct + '% מההוצאה של ' + category +
            ' בחודש שעבר, ועדיין ' + daysLeft + ' ימים בחודש.';
   }
@@ -12082,17 +12273,26 @@ function detectAnomalies(newAmount, newCategory, newDescription) {
   }
 
   // ----- 3. Category MTD grew >X% vs same period last month -----------------
+  // ANTI-LIE GUARD 2026-05-26: also require that mtdNow exceeds the FULL
+  // previous month, not just the partial same-period. The old code fired
+  // "360% יותר" when prev-same-period was tiny (e.g. 970 in first 26 days)
+  // even though the full prev month total (4,485) was actually GREATER
+  // than this month's MTD (4,478). That's misleading — kill it.
   var mtdGrowth = _anomalyProp_('ANOMALY_MTD_GROWTH_PCT');
   var mtdNow = idx.mtdByCat[newCategory] || 0;
   var mtdPrev = idx.prevMtdByCat[newCategory] || 0;
-  if (mtdPrev > 100 && mtdNow > mtdPrev * (1 + mtdGrowth / 100)) {
+  var mtdPrevFull = (idx.prevFullByCat && idx.prevFullByCat[newCategory]) || 0;
+  if (mtdPrev > 100 && mtdNow > mtdPrev * (1 + mtdGrowth / 100) &&
+      // New guard: this-month MTD must actually exceed last-month FULL total,
+      // OR last-month-full must be zero (genuinely new category for user).
+      (mtdPrevFull === 0 || mtdNow > mtdPrevFull * 1.05)) {
     var pct = Math.round(((mtdNow - mtdPrev) / mtdPrev) * 100);
     candidates.push({
       type: 'MTD_GROWTH',
       severity: pct >= 100 ? 5 : 3,
       ratio: pct / 100,
       message: '📈 בקטגוריה ' + newCategory + ' הוצאת ' + pct + '% יותר החודש לעומת אותה תקופה בחודש שעבר',
-      context: { category: newCategory, mtdNow: Math.round(mtdNow), mtdPrev: Math.round(mtdPrev), pct: pct }
+      context: { category: newCategory, mtdNow: Math.round(mtdNow), mtdPrev: Math.round(mtdPrev), mtdPrevFull: Math.round(mtdPrevFull), pct: pct }
     });
   }
 
