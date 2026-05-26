@@ -17,6 +17,7 @@
 
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
+import { constantTimeEqual } from '../lib/crypto.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -55,7 +56,7 @@ async function handlerImpl(req, res) {
   // ── GET: look up a learned category by hash ──────────────────────────────
   if (req.method === 'GET') {
     const got = req.headers['x-kesefle-bot-secret'] || req.query.botSecret;
-    if (got !== expected) return res.status(401).json({ ok: false, error: 'unauthorized' });
+    if (!constantTimeEqual(got, expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
     const h = String(req.query.h || '').trim().toLowerCase();
     if (!HASH_RE.test(h)) return res.status(400).json({ ok: false, error: 'invalid_hash' });
     const rec = await kvGet('global_learn:' + h);
@@ -68,7 +69,7 @@ async function handlerImpl(req, res) {
     let body = req.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
     const got = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-    if (got !== expected) return res.status(401).json({ ok: false, error: 'unauthorized' });
+    if (!constantTimeEqual(got, expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
     const h = String(body?.hash || '').trim().toLowerCase();
     if (!HASH_RE.test(h)) return res.status(400).json({ ok: false, error: 'invalid_hash' });
