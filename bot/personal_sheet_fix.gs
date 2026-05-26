@@ -1093,16 +1093,25 @@ function FIX_ALL_BUCKETS_ALL_YEARS() {
     var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length;
 
     // Month-col map for this block.
+    // Wider scan (10 rows) + bidi-mark stripping so header cells with
+    // invisible RTL/LTR isolation marks still match.
     var monthCols = {};
-    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 11, blockEnd); rr++) {
       for (var cc = 0; cc < data[rr].length; cc++) {
-        var name = String(data[rr][cc] || '').trim();
-        if (hebMonthIdx[name] && monthCols[hebMonthIdx[name]] === undefined) {
-          monthCols[hebMonthIdx[name]] = cc;
+        var raw = String(data[rr][cc] || '').trim();
+        if (!raw) continue;
+        // Strip bidi marks (U+200E..U+200F, U+202A..U+202E, U+2066..U+2069, U+FEFF)
+        var name = raw.replace(/[‎‏‪-‮⁦-⁩﻿]/g, '').trim();
+        var idx = hebMonthIdx[name] || hebMonthIdx[raw];
+        if (idx && monthCols[idx] === undefined) {
+          monthCols[idx] = cc;
         }
       }
     }
-    if (!Object.keys(monthCols).length) continue;
+    if (!Object.keys(monthCols).length) {
+      Logger.log('  ⚠️ ' + blk.year + ': no Hebrew month headers found in 10 rows after year header -- skipping. Run DIAGNOSE_DASHBOARD_LAYOUT.');
+      continue;
+    }
 
     for (var bk = 0; bk < _COMPANY_SUB_BUCKETS_.length; bk++) {
       var bucket = _COMPANY_SUB_BUCKETS_[bk];
@@ -1116,9 +1125,11 @@ function FIX_ALL_BUCKETS_ALL_YEARS() {
       }
       if (rowIdx < 0) continue;
 
+      var wroteThisRow = 0;
+      var missedMonths = [];
       for (var mi = 1; mi <= 12; mi++) {
         var col = monthCols[mi];
-        if (col === undefined) continue;
+        if (col === undefined) { missedMonths.push(mi); continue; }
         var mm2 = mi < 10 ? '0' + mi : '' + mi;
         var monthKey = blk.year + '-' + mm2;
         var formula =
@@ -1137,11 +1148,101 @@ function FIX_ALL_BUCKETS_ALL_YEARS() {
         var cell = dash.getRange(rowIdx + 1, col + 1);
         cell.setFormula(formula);
         totalWritten++;
+        wroteThisRow++;
       }
-      Logger.log('  ✏️  ' + blk.year + ' ' + label + ': wrote 12 cells');
+      Logger.log('  ✏️  ' + blk.year + ' ' + label + ' (row ' + (rowIdx + 1) + '): wrote ' + wroteThisRow + '/12 cells' +
+        (missedMonths.length ? '  MISSED months ' + missedMonths.join(',') : ''));
     }
   }
-  Logger.log('=== DONE: wrote ' + totalWritten + ' formulas across ' + yearBlocks.length + ' years × ' + _COMPANY_SUB_BUCKETS_.length + ' buckets ===');
+  Logger.log('=== DONE: wrote ' + totalWritten + ' formulas across ' + yearBlocks.length + ' years × ' + _COMPANY_SUB_BUCKETS_.length + ' buckets (max possible: ' + (yearBlocks.length * _COMPANY_SUB_BUCKETS_.length * 12) + ') ===');
+  if (totalWritten < yearBlocks.length * _COMPANY_SUB_BUCKETS_.length * 12) {
+    Logger.log('⚠️ Less than 100% coverage. Run DIAGNOSE_DASHBOARD_LAYOUT to see which month headers were missed and why.');
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// DIAGNOSE_DASHBOARD_LAYOUT — read-only deep-dive on the מאזן חברה
+// structure. Run this when FIX_ALL_BUCKETS_ALL_YEARS reports < 12 cells
+// per row. Outputs:
+//   - Every "שנת YYYY" header (row + col)
+//   - The 8 rows AFTER each year header, dumped col-by-col
+//   - Which cells the function matched as Hebrew month headers
+//   - Which Hebrew month names are MISSING from the block
+//
+// Steven 2026-05-26: shipped because Steven ran FIX_ALL_BUCKETS_ALL_YEARS
+// and got 60 formulas instead of 240. Need to see exactly which month
+// cells the scan is missing.
+// ════════════════════════════════════════════════════════════════════════
+function DIAGNOSE_DASHBOARD_LAYOUT() {
+  var ss = _openSheet_();
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_); return; }
+
+  Logger.log('=== DIAGNOSE_DASHBOARD_LAYOUT ===');
+  var data = dash.getDataRange().getValues();
+  Logger.log('Sheet dimensions: ' + data.length + ' rows × ' + (data[0] ? data[0].length : 0) + ' cols');
+
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var hebMonthSet = {};
+  for (var hi = 0; hi < hebMonths.length; hi++) hebMonthSet[hebMonths[hi]] = hi + 1;
+
+  // Find every year block
+  var yearBlocks = [];
+  for (var r = 0; r < data.length; r++) {
+    for (var c = 0; c < data[r].length; c++) {
+      var ym = String(data[r][c] || '').match(/שנת\s+(20\d{2})/);
+      if (ym) {
+        yearBlocks.push({ year: parseInt(ym[1], 10), headerRow: r, headerCol: c });
+        Logger.log('Year block: ' + ym[0] + ' at row ' + (r + 1) + ', col ' + String.fromCharCode(65 + c));
+        break;
+      }
+    }
+  }
+
+  // For each block, scan 8 rows after the header and dump every cell + flag months
+  for (var bi = 0; bi < yearBlocks.length; bi++) {
+    var blk = yearBlocks[bi];
+    Logger.log('');
+    Logger.log('── ' + blk.year + ' (header at row ' + (blk.headerRow + 1) + ') ──');
+    var foundMonths = {};
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 9, data.length); rr++) {
+      var rowLabel = 'row ' + (rr + 1) + ' (col A="' + String(data[rr][0] || '').slice(0, 30) + '")';
+      var cellsWithText = [];
+      for (var cc = 0; cc < data[rr].length; cc++) {
+        var raw = String(data[rr][cc] || '');
+        var trimmed = raw.trim();
+        if (!trimmed) continue;
+        // Strip RTL marks + bidi marks + zero-width spaces that often hide here
+        var normalized = trimmed.replace(/[‎‏‪-‮⁦-⁩﻿]/g, '').trim();
+        var marker = '';
+        if (hebMonthSet[normalized]) {
+          marker = ' ← MATCH month ' + hebMonthSet[normalized];
+          foundMonths[hebMonthSet[normalized]] = String.fromCharCode(65 + cc);
+        } else if (hebMonthSet[trimmed]) {
+          marker = ' ← MATCH (no-strip)';
+          foundMonths[hebMonthSet[trimmed]] = String.fromCharCode(65 + cc);
+        } else if (raw !== trimmed) {
+          marker = ' (had whitespace, raw len=' + raw.length + ')';
+        } else if (normalized !== trimmed) {
+          marker = ' (had bidi marks: ' + Array.from(trimmed).map(function(ch){ return ch.charCodeAt(0); }).join(',') + ')';
+        }
+        cellsWithText.push(String.fromCharCode(65 + cc) + '="' + trimmed.slice(0, 25) + '"' + marker);
+      }
+      if (cellsWithText.length) Logger.log('  ' + rowLabel + ':  ' + cellsWithText.join('  |  '));
+    }
+    var missing = [];
+    for (var mi = 1; mi <= 12; mi++) if (!foundMonths[mi]) missing.push(hebMonths[mi - 1]);
+    if (missing.length === 0) {
+      Logger.log('  ✅ all 12 months found: ' + JSON.stringify(foundMonths));
+    } else {
+      Logger.log('  ❌ MISSING months (' + missing.length + '): ' + missing.join(', '));
+      Logger.log('  Found: ' + JSON.stringify(foundMonths));
+    }
+  }
+  Logger.log('');
+  Logger.log('=== DIAGNOSIS COMPLETE ===');
+  Logger.log('If months are MISSING, the FIX function can not write formulas for them.');
+  Logger.log('Most common reasons: bidi marks in the cell, extra spaces, abbreviated form ("ינו" not "ינואר"), or the header is on a row > +8 from the year header.');
 }
 
 // ════════════════════════════════════════════════════════════════════════
