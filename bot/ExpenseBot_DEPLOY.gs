@@ -129,7 +129,33 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-pending-state-hijack-fix';
+const KFL_BUILD_VERSION = '2026-05-26-bot-trace-instrumented';
+
+// ── KFL-TRACE — uniform breadcrumb logger ─────────────────────────────────────
+// Steven 2026-05-26: when a bot reply is wrong (e.g. ₪200 written as ₪1, or
+// SHONUT text shown instead of the picker button), we need to know which
+// routing branch fired without asking Steven to repro 10 times. Every key
+// decision point in expense routing calls _kflTrace_ with a short branch
+// label so a single Apps Script log line tells us the whole path a message
+// took. Phone is truncated to last-4 only (PII-safe per the redaction rule
+// in task #228). Tag '[KFL-TRACE]' makes prod logs greppable in 1 second.
+function _kflTrace_(branch, fromPhone, text, extra) {
+  try {
+    var phoneTail = String(fromPhone || '').replace(/[^0-9]/g, '').slice(-4) || 'NONE';
+    var textSnip = String(text || '').slice(0, 40).replace(/[\r\n\t]+/g, ' ');
+    var extraStr = '';
+    if (extra && typeof extra === 'object') {
+      var keys = Object.keys(extra);
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i]; var v = extra[k];
+        if (v === undefined || v === null) v = '';
+        var vStr = (typeof v === 'string') ? v.slice(0, 30) : String(v);
+        extraStr += ' ' + k + '=' + vStr;
+      }
+    }
+    Logger.log('[KFL-TRACE] ' + branch + ' phone=...' + phoneTail + ' text="' + textSnip + '"' + extraStr);
+  } catch (_e) { /* never let tracing throw */ }
+}
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -4389,6 +4415,7 @@ function _spendingContextLine_(fromPhone) {
 // Returns { action: 'summary'|'help'|'examples'|'orders'|'chat', reply } or
 // null when Gemini is unavailable (caller then uses its own fallback).
 function _botConcierge_(fromPhone, text) {
+  _kflTrace_('concierge.entry', fromPhone, text);
   var tt = '';
   try { tt = _profileTrackingTypeCached_(fromPhone) || ''; } catch (_e) {}
   var who = (typeof _SURVEY_TRACKING_HUMAN_ !== 'undefined' && _SURVEY_TRACKING_HUMAN_[tt]) || '';
@@ -4406,7 +4433,8 @@ function _botConcierge_(fromPhone, text) {
     'סיכום הזמנות/לקוחות/מחזור → orders. כל שאלה/בקשה/שיחה אחרת (למשל "אפשר להוסיף קטגוריה?") → chat, ' +
     'וב-reply תני תשובה אמיתית, אישית ומועילה — לא משפט גנרי.';
   var raw = _geminiGenerate_(sys, text);
-  if (!raw) return null;
+  if (!raw) { _kflTrace_('concierge.gemini_empty', fromPhone, text); return null; }
+  _kflTrace_('concierge.gemini_raw', fromPhone, text, { rawLen: String(raw).length });
   // ANTI-LEAK: Gemini sometimes wraps its JSON in a ```json ... ```
   // markdown fence, or truncates mid-string. The OLD fallback returned the
   // raw string straight to the user, which leaked the literal ``` ```json
@@ -4429,6 +4457,7 @@ function _botConcierge_(fromPhone, text) {
     // If LLM returned an empty reply on a chat action, fall back to the
     // safe message so the user doesn't see a blank bubble.
     if (action === 'chat' && !reply) reply = SAFE_FALLBACK;
+    _kflTrace_('concierge.parsed', fromPhone, text, { action: action, replyLen: reply.length });
     return { action: action, reply: reply.slice(0, 600) };
   } catch (_pe) {
     Logger.log('_botConcierge_ json-parse fallback: ' + (_pe && _pe.message));
@@ -5942,7 +5971,8 @@ function _handlePendingCategoryText_(fromPhone, text) {
   if (!clean || !text) return { handled: false };
   var cache = CacheService.getScriptCache();
   var raw = cache.get('pendingExpense:' + clean);
-  if (!raw) return { handled: false };
+  if (!raw) { _kflTrace_('pending.no_state', fromPhone, text); return { handled: false }; }
+  _kflTrace_('pending.entry_with_state', fromPhone, text);
   var t = String(text).trim();
   if (!t) return { handled: false };
 
@@ -5972,6 +6002,7 @@ function _handlePendingCategoryText_(fromPhone, text) {
       if (!isNaN(n) && n >= 5) { sawAmt = true; break; }
     }
     if (sawAmt) {
+      _kflTrace_('pending.hijack_guard_fired', fromPhone, t);
       Logger.log('pending-hijack-guard: new amount in "' + t.slice(0, 40) + '" — dropping pending for ' + clean);
       cache.remove('pendingExpense:' + clean);
       cache.remove('pendingCreate:' + clean);
@@ -6103,10 +6134,12 @@ function _profilePaymentDefault_(fromPhone) {
 }
 
 function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
+  _kflTrace_('tenant_write.entry', fromPhone, rawText);
   // Reuse the rich Apps Script parser for amount + (cat, subcat) so
   // tenants get the same classification quality as the owner path.
   var parsed = parseAmountAndDescription(rawText);
   if (!parsed || !parsed.items || !parsed.items.length) {
+    _kflTrace_('tenant_write.no_parse_calling_concierge', fromPhone, rawText);
     // Not an expense — let the concierge understand + reply personally. For a
     // tenant we must NOT call owner-sheet summaries; we give safe guidance.
     var __tcg = null;
@@ -6124,6 +6157,10 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   try { matched = typeof matchCategory === 'function' ? matchCategory(rawText) : null; } catch (_) {}
   var category = (matched && matched.category) || 'אחר';
   var subcategory = (matched && matched.subcategory && matched.subcategory !== matched.category) ? matched.subcategory : '';
+  _kflTrace_('tenant_write.parsed_and_classified', fromPhone, rawText, {
+    amount: first.amount, category: category, subcategory: subcategory || '(none)',
+    matched: matched ? 'yes' : 'no',
+  });
 
   var botSecret = '';
   try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_e) {}
