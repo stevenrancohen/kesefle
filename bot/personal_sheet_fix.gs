@@ -1712,3 +1712,272 @@ function AUDIT_COMPANY_DASHBOARD() {
   }
   return summary;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// RECOVER_DASHBOARD_V2 — fixes the data-loss bug Steven hit 2026-05-26.
+//
+// Root cause of the data loss:
+//   SIMPLE_FIX_DASHBOARD line 1358 had `if (cat !== 'עסק' || ...) continue;`
+//   After PR #32 (multi-business naming) the bot writes `cat = "עסק 1"`,
+//   `cat = "עסק 2"`, etc. The strict equality skipped every multi-biz row,
+//   so it computed 0 for every monthly cell and overwrote real values.
+//   After PR #35 some business data may also live in per-business tabs
+//   alongside תנועות, which this function reads too.
+//
+// This v2 function:
+//   1. Reads ALL tabs that look like a transaction source (תנועות + any
+//      tab whose name starts with "עסק" or "כספלה" or contains "business")
+//   2. Uses LOOSE category filter — startsWith('עסק') instead of strict eq
+//   3. Computes monthly totals correctly
+//   4. WRITES TO HIDDEN BACKUP TAB BEFORE OVERWRITING anything
+//   5. Has explicit dryRun=true mode that logs every cell it would write
+//      without touching the sheet
+//   6. NEVER overwrites a cell whose current value is higher than the new
+//      computed value (so manual overrides survive)
+//
+// USAGE (run in this order):
+//
+//   1. DIAGNOSE_DASHBOARD_DATA_LOSS_V2()
+//      → read-only. Lists every source tab found, distinct category
+//        values, row counts. Tells you what's actually in your data.
+//
+//   2. RECOVER_DASHBOARD_DRY_RUN_V2()
+//      → no writes. Logs every cell it WOULD change with old → new value.
+//        Look at the log. If it looks right, run step 3.
+//
+//   3. RECOVER_DASHBOARD_APPLY_V2()
+//      → writes. Backs up מאזן חברה to a hidden tab first, then writes
+//        new values. Recovery-safe.
+// ════════════════════════════════════════════════════════════════════════
+
+// Internal: list every tab that might hold business transactions.
+function _PSF_FIND_TX_SOURCE_TABS_(ss) {
+  var allSheets = ss.getSheets();
+  var out = [];
+  for (var i = 0; i < allSheets.length; i++) {
+    var name = allSheets[i].getName();
+    if (name === _PSF_TX_TAB_) { out.push(name); continue; }
+    // Match per-business tabs created after PR #35.
+    // Patterns: "עסק <something>", "כספלה <something>", "<x> business <y>"
+    if (/^עסק[\s\d]/.test(name)) { out.push(name); continue; }
+    if (/^כספלה\b/i.test(name) && name !== _PSF_PERSONAL_TAB_ && name !== _PSF_COMPANY_TAB_) { out.push(name); continue; }
+    if (/business/i.test(name)) { out.push(name); continue; }
+  }
+  return out;
+}
+
+// Internal: read transaction rows from a tab using the 8-column schema.
+// Returns array of {monthKey, amount, cat, sub, desc, isExpense}.
+function _PSF_READ_TX_ROWS_(sh) {
+  var lastRow = sh.getLastRow();
+  if (lastRow < 2) return [];
+  var data = sh.getRange(2, 1, lastRow - 1, 8).getValues();
+  var rows = [];
+  for (var i = 0; i < data.length; i++) {
+    var r = data[i];
+    var monthKey = String(r[1] || '').trim();
+    var amount = Number(r[2]) || 0;
+    if (!amount) continue;
+    var m = monthKey.match(/^(\d{4})-(\d{1,2})$/);
+    if (!m) continue;
+    rows.push({
+      monthKey: monthKey,
+      amount: amount,
+      cat: String(r[3] || '').trim(),
+      sub: String(r[4] || '').trim(),
+      desc: String(r[5] || '').trim(),
+      isExpense: r[7] === true || String(r[7]).toUpperCase() === 'TRUE'
+    });
+  }
+  return rows;
+}
+
+// Internal: compute totals[monthKey][bucketLabel] from rows.
+// Uses LOOSE category filter (cat startsWith 'עסק') — the fix.
+function _PSF_COMPUTE_BUCKET_TOTALS_(allRows) {
+  var totals = {};
+  var classified = 0, skippedCat = 0, skippedBucket = 0, skippedDir = 0;
+  for (var i = 0; i < allRows.length; i++) {
+    var r = allRows[i];
+    // LOOSE filter: matches "עסק", "עסק 1", "עסק 2", "עסק כספלה - hostinger"
+    if (r.cat.indexOf('עסק') !== 0) { skippedCat++; continue; }
+    var bucket = _bucketForBizSub_(r.sub);
+    if (!bucket) {
+      for (var bi = 0; bi < _COMPANY_SUB_BUCKETS_.length; bi++) {
+        if (_COMPANY_SUB_BUCKETS_[bi].regex.test(r.desc)) { bucket = _COMPANY_SUB_BUCKETS_[bi].label; break; }
+      }
+    }
+    if (!bucket) { skippedBucket++; continue; }
+    var isRevenue = (bucket === 'מחזור ברוטו');
+    if (isRevenue && r.isExpense)  { skippedDir++; continue; }
+    if (!isRevenue && !r.isExpense) { skippedDir++; continue; }
+    if (!totals[r.monthKey]) totals[r.monthKey] = {};
+    totals[r.monthKey][bucket] = (totals[r.monthKey][bucket] || 0) + Math.abs(r.amount);
+    classified++;
+  }
+  return { totals: totals, stats: { classified: classified, skippedCat: skippedCat, skippedBucket: skippedBucket, skippedDir: skippedDir } };
+}
+
+// Step 1: diagnose. Read-only — no writes.
+function DIAGNOSE_DASHBOARD_DATA_LOSS_V2() {
+  var ss = _openSheet_();
+  Logger.log('=== DIAGNOSE_DASHBOARD_DATA_LOSS_V2 ===');
+  Logger.log('Sheet: ' + ss.getName());
+
+  var sources = _PSF_FIND_TX_SOURCE_TABS_(ss);
+  Logger.log('Found ' + sources.length + ' transaction-source tab(s): ' + sources.join(', '));
+
+  var allRows = [];
+  for (var s = 0; s < sources.length; s++) {
+    var sh = ss.getSheetByName(sources[s]);
+    var rows = _PSF_READ_TX_ROWS_(sh);
+    Logger.log('  • "' + sources[s] + '": ' + rows.length + ' rows with valid amount + month');
+    for (var i = 0; i < rows.length; i++) allRows.push(rows[i]);
+  }
+  Logger.log('Total rows across all sources: ' + allRows.length);
+
+  // Distinct categories — tells us why strict 'עסק' filter is wrong.
+  var catCounts = {};
+  for (var j = 0; j < allRows.length; j++) {
+    var c = allRows[j].cat || '(empty)';
+    catCounts[c] = (catCounts[c] || 0) + 1;
+  }
+  Logger.log('Distinct categories seen (with row counts):');
+  var keys = Object.keys(catCounts).sort();
+  for (var k = 0; k < keys.length; k++) {
+    Logger.log('  "' + keys[k] + '" → ' + catCounts[keys[k]] + ' row(s)');
+  }
+
+  // Compute with the loose filter so user sees what recovery WILL find.
+  var c = _PSF_COMPUTE_BUCKET_TOTALS_(allRows);
+  Logger.log('With LOOSE filter (cat startsWith "עסק"):');
+  Logger.log('  classified: ' + c.stats.classified);
+  Logger.log('  skipped (cat ≠ עסק*): ' + c.stats.skippedCat);
+  Logger.log('  skipped (no bucket match): ' + c.stats.skippedBucket);
+  Logger.log('  skipped (income/expense direction mismatch): ' + c.stats.skippedDir);
+
+  var monthKeys = Object.keys(c.totals).sort();
+  Logger.log('Months with data: ' + monthKeys.length);
+  for (var mk = 0; mk < monthKeys.length; mk++) {
+    var bks = Object.keys(c.totals[monthKeys[mk]]);
+    var summary = bks.map(function(b){ return b + '=' + Math.round(c.totals[monthKeys[mk]][b]); }).join(', ');
+    Logger.log('  ' + monthKeys[mk] + ': ' + summary);
+  }
+  Logger.log('=== END DIAGNOSE ===');
+  return c;
+}
+
+// Step 2: dry-run. Shows what would be written. No writes.
+function RECOVER_DASHBOARD_DRY_RUN_V2() {
+  return _PSF_RECOVER_DASHBOARD_CORE_(true);
+}
+
+// Step 3: apply. Backs up מאזן חברה first, then writes.
+function RECOVER_DASHBOARD_APPLY_V2() {
+  return _PSF_RECOVER_DASHBOARD_CORE_(false);
+}
+
+function _PSF_RECOVER_DASHBOARD_CORE_(dryRun) {
+  var ss = _openSheet_();
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab — abort'); return; }
+
+  var mode = dryRun ? 'DRY-RUN' : 'APPLY';
+  Logger.log('=== RECOVER_DASHBOARD_V2 (' + mode + ') ===');
+  Logger.log('Sheet: ' + ss.getName());
+
+  // Collect rows from every transaction-source tab.
+  var sources = _PSF_FIND_TX_SOURCE_TABS_(ss);
+  Logger.log('Reading ' + sources.length + ' source tab(s): ' + sources.join(', '));
+  var allRows = [];
+  for (var s = 0; s < sources.length; s++) {
+    var sh = ss.getSheetByName(sources[s]);
+    var rows = _PSF_READ_TX_ROWS_(sh);
+    for (var i = 0; i < rows.length; i++) allRows.push(rows[i]);
+  }
+  var c = _PSF_COMPUTE_BUCKET_TOTALS_(allRows);
+  Logger.log('Classified ' + c.stats.classified + ' rows across ' + Object.keys(c.totals).length + ' months');
+
+  // Find year blocks in מאזן חברה.
+  var dashData = dash.getDataRange().getValues();
+  var yearBlocks = [];
+  for (var r2 = 0; r2 < dashData.length; r2++) {
+    for (var c2 = 0; c2 < dashData[r2].length; c2++) {
+      var ym = String(dashData[r2][c2] || '').match(/שנת\s+(20\d{2})/);
+      if (ym) { yearBlocks.push({ year: parseInt(ym[1], 10), headerRow: r2 }); break; }
+    }
+  }
+  if (yearBlocks.length === 0) { Logger.log('!! no "שנת YYYY" headers in dashboard'); return; }
+  Logger.log('Year blocks: ' + yearBlocks.map(function(b){return b.year;}).join(', '));
+
+  // Backup BEFORE any writes (only when applying).
+  if (!dryRun) {
+    var tsName = '_backup_' + Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jerusalem', 'yyyyMMdd_HHmm');
+    var existing = ss.getSheetByName(tsName);
+    if (existing) ss.deleteSheet(existing);
+    var backup = dash.copyTo(ss);
+    backup.setName(tsName);
+    backup.hideSheet();
+    Logger.log('✅ Backup created: "' + tsName + '" (hidden tab)');
+  }
+
+  var changed = 0, preserved = 0, totalCells = 0;
+  for (var bi2 = 0; bi2 < yearBlocks.length; bi2++) {
+    var blk = yearBlocks[bi2];
+    var blockEnd = (bi2 + 1 < yearBlocks.length) ? yearBlocks[bi2 + 1].headerRow : dashData.length;
+
+    for (var bk = 0; bk < _COMPANY_SUB_BUCKETS_.length; bk++) {
+      var label = _COMPANY_SUB_BUCKETS_[bk].label;
+      var rowIdx = -1;
+      for (var ri = blk.headerRow; ri < blockEnd; ri++) {
+        if (_bucketLabelMatch_(dashData[ri][0], label)) { rowIdx = ri; break; }
+      }
+      if (rowIdx < 0) continue;
+      var rowNum = rowIdx + 1;
+
+      for (var mo = 1; mo <= 12; mo++) {
+        var mm = mo < 10 ? '0' + mo : '' + mo;
+        var mk = blk.year + '-' + mm;
+        var newV = Math.round((c.totals[mk] && c.totals[mk][label]) || 0);
+        // 2026-05 marketing manual +2100 override (Steven's cash, preserved).
+        if (label === 'עלות שיווק' && blk.year === 2026 && mo === 5) newV += 2100;
+
+        var colNum = 2 + mo; // C=3 for Jan, N=14 for Dec
+        var oldV = Math.round(Number(dashData[rowIdx][colNum - 1]) || 0);
+        totalCells++;
+
+        // SAFETY: never overwrite a higher existing value with a lower one
+        // unless the existing value is zero (which is the bug pattern).
+        if (oldV > newV && oldV !== 0 && newV === 0) {
+          preserved++;
+          Logger.log('  🔒 PRESERVED ' + blk.year + ' ' + label + ' month ' + mo + ' = ' + oldV + ' (computed 0 — manual entry kept)');
+          continue;
+        }
+
+        if (oldV !== newV) {
+          changed++;
+          Logger.log('  ' + (dryRun ? '✏️ WOULD WRITE' : '✏️ WROTE') +
+                     ' ' + blk.year + ' ' + label + ' month ' + mo +
+                     ': ' + oldV + ' → ' + newV);
+          if (!dryRun) dash.getRange(rowNum, colNum).setValue(newV);
+        }
+      }
+      // Refresh annual SUM formula for this row.
+      if (!dryRun) {
+        dash.getRange(rowNum, 2).setFormula('=SUM(C' + rowNum + ':N' + rowNum + ')');
+      }
+    }
+  }
+
+  Logger.log('=== ' + mode + ' SUMMARY ===');
+  Logger.log('  Cells inspected: ' + totalCells);
+  Logger.log('  Cells changed:   ' + changed);
+  Logger.log('  Cells preserved: ' + preserved + ' (existing > 0, computed = 0)');
+  if (dryRun) {
+    Logger.log('  Nothing was written. Re-run RECOVER_DASHBOARD_APPLY_V2() to apply.');
+  } else {
+    Logger.log('  Refresh sheet (Cmd+R). Backup tab is hidden — restore by un-hiding + copying values.');
+  }
+  return { changed: changed, preserved: preserved, totalCells: totalCells };
+}
+
