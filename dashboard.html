@@ -305,8 +305,11 @@
 
 <main class="relative mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 md:px-6">
 
-  <!-- Floating "add expense" FAB for desktop+mobile -->
-  <a id="kfl-fab" href="/expense" class="fixed bottom-6 left-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-brand-600 text-white shadow-glow hover:bg-brand-700 transition" title="הוסף הוצאה במהירות" aria-label="הוסף הוצאה">
+  <!-- Floating "+ עסקה חדשה" button — opens the PR-D2 quick-create modal.
+       Still falls back to /expense if JS fails (graceful degradation). -->
+  <a id="kfl-fab" href="/expense" onclick="if(window.kflOpenQuickCreate){event.preventDefault();window.kflOpenQuickCreate('expense');}"
+     class="fixed bottom-6 left-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-brand-600 text-white shadow-glow hover:bg-brand-700 transition"
+     title="הוסף עסקה במהירות" aria-label="הוסף עסקה">
     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
   </a>
 
@@ -3974,6 +3977,313 @@ window.addEventListener('load', function () {
     } catch (_e) {}
   }, 2500);
 });
+</script>
+
+<!-- =============== PR-D2 QUICK-CREATE MODAL (2026-05-26) ===============
+     Opens from the floating "+" button (#kfl-fab). 3 tabs:
+       • הוצאה  — fully functional, posts to /api/sheet/web-append
+       • הכנסה  — same shape, isIncome=true
+       • העברה  — placeholder for PR-D3 (multi-account support needed first)
+     Quick-amount chips at the top of the expense tab show 4 recent
+     distinct (amount, description) pairs from the user's sheet.
+================================================================== -->
+<div id="kfl-quick-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink-950/60 px-4 backdrop-blur-sm" onclick="kflQuickModalBackdropClick(event)">
+  <div class="w-full max-w-lg rounded-2xl border border-ink-200 bg-white p-6 shadow-glow dark:border-ink-700 dark:bg-ink-800" onclick="event.stopPropagation()" dir="rtl">
+
+    <!-- header: tabs + close -->
+    <div class="mb-5 flex items-center justify-between gap-3">
+      <div class="inline-flex rounded-xl border border-ink-200 bg-ink-50 p-0.5 text-sm dark:border-ink-700 dark:bg-ink-900" role="tablist">
+        <button type="button" data-quick-tab="expense" class="kfl-quick-tab rounded-lg px-3 py-1.5 font-medium" aria-selected="true">הוצאה</button>
+        <button type="button" data-quick-tab="income"  class="kfl-quick-tab rounded-lg px-3 py-1.5 font-medium" aria-selected="false">הכנסה</button>
+        <button type="button" data-quick-tab="transfer" class="kfl-quick-tab rounded-lg px-3 py-1.5 font-medium" aria-selected="false">העברה</button>
+      </div>
+      <button type="button" onclick="kflCloseQuickCreate()" aria-label="סגור" class="grid h-8 w-8 place-items-center rounded-lg text-ink-500 hover:bg-ink-100 dark:text-ink-400 dark:hover:bg-ink-700">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- EXPENSE tab -->
+    <form id="kfl-quick-expense" class="kfl-quick-pane" data-quick-pane="expense" onsubmit="kflQuickSubmit(event,'expense')">
+      <!-- quick-amount chips, populated by kflQuickLoadChips() -->
+      <div class="mb-4">
+        <div class="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-500 dark:text-ink-400">חזרה מהירה</div>
+        <div id="kfl-quick-chips" class="flex flex-wrap gap-2 text-sm">
+          <span class="text-xs text-ink-400">טוען...</span>
+        </div>
+      </div>
+      <label class="mb-3 block">
+        <span class="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-300">סכום (₪)</span>
+        <input type="number" min="0" step="0.01" required name="amount" id="kfl-quick-expense-amount" class="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-base font-bold tracking-tight text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-900 dark:text-white" placeholder="0">
+      </label>
+      <label class="mb-3 block">
+        <span class="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-300">תיאור</span>
+        <input type="text" name="description" required maxlength="80" class="w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-900 dark:text-white" placeholder="לדוגמה: סופר רמי לוי">
+      </label>
+      <label class="mb-4 block">
+        <span class="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-300">קטגוריה</span>
+        <select name="category" class="w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-900 dark:text-white">
+          <option value="">(הבוט יסווג אוטומטית)</option>
+          <option value="אוכל לבית">🛒 אוכל לבית</option>
+          <option value="אוכל בחוץ">🍴 אוכל בחוץ</option>
+          <option value="תחבורה">🚗 תחבורה</option>
+          <option value="דלק">⛽ דלק</option>
+          <option value="קניות">🛍 קניות</option>
+          <option value="בריאות">🏥 בריאות</option>
+          <option value="בידור">🎬 בידור</option>
+          <option value="חשבונות">⚡ חשבונות</option>
+          <option value="ביטוח">🛡 ביטוח</option>
+          <option value="הוצאות תפעוליות">🏢 הוצאות תפעוליות</option>
+        </select>
+      </label>
+      <button type="submit" class="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-soft hover:bg-brand-700 disabled:opacity-60">
+        <span class="kfl-quick-btn-label">שמור הוצאה</span>
+      </button>
+      <p class="mt-3 text-center text-[11px] text-ink-500 dark:text-ink-400">נשמר ישירות לגיליון שלך בדרייב 🔒</p>
+    </form>
+
+    <!-- INCOME tab -->
+    <form id="kfl-quick-income" class="kfl-quick-pane hidden" data-quick-pane="income" onsubmit="kflQuickSubmit(event,'income')">
+      <label class="mb-3 block">
+        <span class="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-300">סכום (₪)</span>
+        <input type="number" min="0" step="0.01" required name="amount" class="w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-base font-bold tracking-tight text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-900 dark:text-white" placeholder="0">
+      </label>
+      <label class="mb-3 block">
+        <span class="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-300">מקור</span>
+        <input type="text" name="description" required maxlength="80" class="w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-900 dark:text-white" placeholder="לדוגמה: משכורת מאי">
+      </label>
+      <label class="mb-4 block">
+        <span class="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-300">קטגוריה</span>
+        <select name="category" class="w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-900 dark:text-white">
+          <option value="משכורת">💰 משכורת</option>
+          <option value="פרילנס">💼 פרילנס</option>
+          <option value="השקעות">📈 השקעות</option>
+          <option value="החזר מס">↩️ החזר מס</option>
+          <option value="שכר דירה">🏠 שכר דירה</option>
+          <option value="אחר">✨ אחר</option>
+        </select>
+      </label>
+      <button type="submit" class="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-soft hover:bg-emerald-700 disabled:opacity-60">
+        <span class="kfl-quick-btn-label">שמור הכנסה</span>
+      </button>
+      <p class="mt-3 text-center text-[11px] text-ink-500 dark:text-ink-400">נשמר ישירות לגיליון שלך בדרייב 🔒</p>
+    </form>
+
+    <!-- TRANSFER tab (PR-D3 placeholder) -->
+    <div class="kfl-quick-pane hidden" data-quick-pane="transfer">
+      <div class="rounded-2xl border border-ink-200 bg-ink-50 p-8 text-center dark:border-ink-700 dark:bg-ink-900">
+        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#FEF3C7;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#92400E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
+        <div class="text-base font-bold text-ink-900 dark:text-white">העברות בין חשבונות</div>
+        <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">
+          הפיצ'ר הזה מגיע ב-PR-D3 אחרי שננהל מספר חשבונות.
+        </div>
+      </div>
+    </div>
+
+    <!-- shared feedback area -->
+    <div id="kfl-quick-status" class="mt-4 hidden rounded-lg px-3 py-2 text-sm"></div>
+  </div>
+</div>
+
+<style>
+  .kfl-quick-tab { color: #475569; transition: background 0.15s, color 0.15s; }
+  html.dark .kfl-quick-tab { color: #cbd5e1; }
+  .kfl-quick-tab[aria-selected="true"] { background: #ecfeff; color: #0e7490; }
+  html.dark .kfl-quick-tab[aria-selected="true"] { background: rgba(6,182,212,0.18); color: #a5f3fc; }
+  .kfl-quick-chip {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    border-radius: 9999px; padding: 0.35rem 0.75rem;
+    background: #ecfeff; color: #0e7490;
+    font-weight: 600; font-size: 0.8125rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .kfl-quick-chip:hover { background: #cffafe; border-color: #a5f3fc; }
+  html.dark .kfl-quick-chip { background: rgba(6,182,212,0.18); color: #a5f3fc; }
+  html.dark .kfl-quick-chip:hover { background: rgba(6,182,212,0.30); border-color: #06b6d4; }
+  #kfl-quick-modal.is-open { display: flex !important; }
+</style>
+
+<script>
+(function () {
+  // -----------------------------------------------------------------------
+  // Public API: kflOpenQuickCreate(tab?), kflCloseQuickCreate()
+  // -----------------------------------------------------------------------
+  window.kflOpenQuickCreate = function (tab) {
+    var m = document.getElementById('kfl-quick-modal');
+    if (!m) return;
+    m.classList.add('is-open');
+    kflQuickSwitchTab(tab || 'expense');
+    kflQuickLoadChips();
+    // focus first input for keyboard-only users
+    setTimeout(function () {
+      var first = m.querySelector('.kfl-quick-pane:not(.hidden) input[type="number"]');
+      if (first) first.focus();
+    }, 50);
+  };
+
+  window.kflCloseQuickCreate = function () {
+    var m = document.getElementById('kfl-quick-modal');
+    if (!m) return;
+    m.classList.remove('is-open');
+    var s = document.getElementById('kfl-quick-status');
+    if (s) { s.classList.add('hidden'); s.textContent = ''; }
+  };
+
+  window.kflQuickModalBackdropClick = function (e) {
+    if (e.target && e.target.id === 'kfl-quick-modal') kflCloseQuickCreate();
+  };
+
+  // -----------------------------------------------------------------------
+  // Tab switching
+  // -----------------------------------------------------------------------
+  function kflQuickSwitchTab(name) {
+    var tabs = document.querySelectorAll('[data-quick-tab]');
+    tabs.forEach(function (t) {
+      var on = t.getAttribute('data-quick-tab') === name;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    var panes = document.querySelectorAll('[data-quick-pane]');
+    panes.forEach(function (p) {
+      if (p.getAttribute('data-quick-pane') === name) p.classList.remove('hidden');
+      else p.classList.add('hidden');
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t && t.matches && t.matches('[data-quick-tab]')) {
+      kflQuickSwitchTab(t.getAttribute('data-quick-tab'));
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // Quick-amount chips — populated from /api/sheet/getExpenses (recent)
+  // -----------------------------------------------------------------------
+  function kflQuickLoadChips() {
+    var box = document.getElementById('kfl-quick-chips');
+    if (!box) return;
+    // Hard-coded fallback for first-time users (no recent rows yet).
+    var fallback = [
+      { amount: 14,  description: 'קפה' },
+      { amount: 50,  description: 'דלק' },
+      { amount: 100, description: 'ביט' },
+      { amount: 250, description: 'סופר' },
+    ];
+    fetch('/api/sheet/getExpenses?limit=20', { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var seen = {};
+        var picks = [];
+        var rows = (j && j.expenses) || [];
+        for (var i = 0; i < rows.length && picks.length < 4; i++) {
+          var row = rows[i];
+          var amt = Number(row.amount);
+          var desc = String(row.description || '').slice(0, 14);
+          if (!isFinite(amt) || amt <= 0 || !desc) continue;
+          var key = amt + ':' + desc;
+          if (seen[key]) continue;
+          seen[key] = true;
+          picks.push({ amount: amt, description: desc });
+        }
+        renderChips(picks.length ? picks : fallback);
+      })
+      .catch(function () { renderChips(fallback); });
+  }
+  function renderChips(arr) {
+    var box = document.getElementById('kfl-quick-chips');
+    if (!box) return;
+    box.innerHTML = '';
+    arr.forEach(function (it) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'kfl-quick-chip';
+      b.innerHTML = '<span>' + it.description + '</span><span class="opacity-60">·</span><span class="num">₪' + Number(it.amount).toLocaleString('he-IL') + '</span>';
+      b.addEventListener('click', function () {
+        var amt = document.getElementById('kfl-quick-expense-amount');
+        var desc = document.querySelector('#kfl-quick-expense input[name="description"]');
+        if (amt) amt.value = it.amount;
+        if (desc) desc.value = it.description;
+      });
+      box.appendChild(b);
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Submit handler — calls /api/sheet/web-append (existing endpoint)
+  // -----------------------------------------------------------------------
+  window.kflQuickSubmit = function (e, kind) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    var status = document.getElementById('kfl-quick-status');
+    var data = new FormData(form);
+    var amount = Number(data.get('amount'));
+    var description = String(data.get('description') || '').trim();
+    var category = String(data.get('category') || '').trim();
+    if (!isFinite(amount) || amount <= 0) {
+      showStatus('error', 'סכום לא תקין');
+      return;
+    }
+    if (!description) {
+      showStatus('error', 'תיאור חסר');
+      return;
+    }
+    btn.disabled = true;
+    var origLabel = btn.querySelector('.kfl-quick-btn-label').textContent;
+    btn.querySelector('.kfl-quick-btn-label').textContent = 'שומר...';
+    fetch('/api/sheet/web-append', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: amount,
+        isIncome: kind === 'income',
+        category: category || (kind === 'income' ? 'אחר' : ''),
+        rawText: description,
+        source: 'dashboard-quick-create',
+      }),
+    })
+      .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+      .then(function (j) {
+        if (j && j.ok) {
+          showStatus('ok', '✅ נשמר. הגיליון שלך עודכן.');
+          form.reset();
+          // Refresh recent-activity feed if present (defensive)
+          if (typeof window.kefleLiveRefresh === 'function') {
+            try { window.kefleLiveRefresh(); } catch (_e) {}
+          }
+          setTimeout(kflCloseQuickCreate, 1400);
+        } else {
+          showStatus('error', (j && j.error) || 'שגיאה');
+        }
+      })
+      .catch(function (err) {
+        showStatus('error', 'נכשל: ' + (err && err.message ? err.message : 'שגיאת רשת'));
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.querySelector('.kfl-quick-btn-label').textContent = origLabel;
+      });
+  };
+  function showStatus(kind, msg) {
+    var s = document.getElementById('kfl-quick-status');
+    if (!s) return;
+    s.classList.remove('hidden');
+    s.textContent = msg;
+    if (kind === 'ok') s.style.cssText = 'background:#dcfce7;color:#15803d;border:1px solid #86efac;';
+    else s.style.cssText = 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;';
+  }
+
+  // ESC closes modal
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      var m = document.getElementById('kfl-quick-modal');
+      if (m && m.classList.contains('is-open')) kflCloseQuickCreate();
+    }
+  });
+})();
 </script>
 </body>
 </html>
