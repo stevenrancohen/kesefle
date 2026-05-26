@@ -119,9 +119,29 @@
     box-shadow: 0 16px 40px -16px rgba(6, 182, 212, 0.35);
   }
 
-  /* Section heading rule */
-  .section-rule { border-bottom: 1px solid #E2E8F0; }
-  html.dark .section-rule { border-bottom-color: #334155; }
+  /* Section heading rule — premium 2px cyan/teal accent matching the new brand */
+  .section-rule { border-bottom: 2px solid #06b6d4; padding-bottom: 16px; }
+  html.dark .section-rule { border-bottom-color: #06b6d4; }
+  /* Section H2 — Rubik 900 + ink-900 + tight tracking, matches kesefle.com */
+  .kfl-section-h2 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    letter-spacing: -0.025em;
+    color: #0f1422;
+  }
+  html.dark .kfl-section-h2 { color: #ffffff; }
+  @media (min-width: 768px) { .kfl-section-h2 { font-size: 1.875rem; } }
+  /* Section eyebrow — cyan uppercase tag */
+  .kfl-section-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #0e7490;
+  }
+  .kfl-section-sub { font-size: 0.875rem; font-weight: 500; color: #41506f; margin-top: 6px; }
+  html.dark .kfl-section-sub { color: #94a3b8; }
 
   /* Discrete status dot */
   .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
@@ -388,8 +408,9 @@
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Real-time Analytics</h2>
-        <p class="mt-0.5 text-sm" style="color: #64748B;">Connecting to live data...</p>
+        <p class="kfl-section-eyebrow">חיים עכשיו</p>
+        <h2 class="kfl-section-h2">פעילות בזמן אמת</h2>
+        <p class="kfl-section-sub">כמה אנשים באתר ברגע זה, מאיפה הם, ומה הם עושים.</p>
       </div>
     </div>
 
@@ -621,7 +642,9 @@
   <!-- ====== SECTION 3: KEY STATS ====== -->
   <section class="mb-10">
     <div class="mb-4 section-rule pb-3">
-      <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Key metrics</h2>
+      <p class="kfl-section-eyebrow">המספרים</p>
+      <h2 class="kfl-section-h2">מדדים מרכזיים</h2>
+      <p class="kfl-section-sub">סיכומים שמראים את מצב העסק החודש.</p>
     </div>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="kfl-keystats">
 
@@ -668,7 +691,9 @@
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Conversion funnel (30 days)</h2>
+        <p class="kfl-section-eyebrow">קליטת לקוחות</p>
+        <h2 class="kfl-section-h2">משפך ההצטרפות (30 ימים)</h2>
+        <p class="kfl-section-sub">איפה לקוחות פוטנציאליים נופלים בדרך, כדי שנדע מה לשפר.</p>
         <p class="mt-0.5 text-sm" style="color: #64748B;">From site visit to first message to the bot — real event data.</p>
       </div>
       <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium" style="background: #F1F5F9; color: #475569;">Live data</span>
@@ -682,7 +707,9 @@
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Bot health</h2>
+        <p class="kfl-section-eyebrow">הבוט</p>
+        <h2 class="kfl-section-h2">מצב הבוט</h2>
+        <p class="kfl-section-sub">הוא עונה? הוא בחיים? אילו הודעות נכשלו אתמול?</p>
         <p class="mt-0.5 text-sm" style="color: #64748B;">Inference-tier distribution — higher T1/T2 share means lower spend.</p>
       </div>
     </div>
@@ -752,7 +779,9 @@
   <section class="mb-10">
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between section-rule pb-3">
       <div>
-        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Users</h2>
+        <p class="kfl-section-eyebrow">לקוחות</p>
+        <h2 class="kfl-section-h2">כל הלקוחות שלי</h2>
+        <p class="kfl-section-sub">חפש, מיין, ולחץ על שורה כדי לפתוח פרטים מלאים על הלקוח.</p>
         <p class="mt-0.5 text-sm" style="color: #64748B;" id="users-subtitle">Loading real users...</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
@@ -793,7 +822,9 @@
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
-        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Activity log</h2>
+        <p class="kfl-section-eyebrow">פעולות אחרונות</p>
+        <h2 class="kfl-section-h2">יומן פעילות</h2>
+        <p class="kfl-section-sub">מה קרה במערכת בשעות/ימים האחרונים — לקוחות שנרשמו, תשלומים שעברו, הודעות.</p>
         <p class="mt-0.5 text-sm" style="color: #64748B;">Recent system events.</p>
       </div>
       <span class="inline-flex items-center gap-1.5 text-[11px] font-medium" style="color: #10B981;">
@@ -814,7 +845,9 @@
   <!-- ====== SECTION 7: DAILY INSIGHTS ====== -->
   <section class="mb-10">
     <div class="mb-4 section-rule pb-3">
-      <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Daily insights</h2>
+      <p class="kfl-section-eyebrow">תובנות יומיות</p>
+      <h2 class="kfl-section-h2">מה כדאי לדעת היום</h2>
+      <p class="kfl-section-sub">דברים שצמחו, ירדו, או דורשים תשומת לב — עדכון יומי.</p>
       <p class="mt-0.5 text-sm" style="color: #64748B;">Automated analysis based on today's data.</p>
     </div>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -851,7 +884,9 @@
   <!-- ====== SECTION 8: SUGGESTED ACTIONS ====== -->
   <section class="mb-12">
     <div class="mb-4 section-rule pb-3">
-      <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Recommended actions</h2>
+      <p class="kfl-section-eyebrow">משימות</p>
+      <h2 class="kfl-section-h2">מה צריך לטפל היום</h2>
+      <p class="kfl-section-sub">משימות מומלצות לפי מצב המערכת — עדיפות גבוהה למעלה.</p>
       <p class="mt-0.5 text-sm" style="color: #64748B;">Steps to help Kesefle grow autonomously.</p>
     </div>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
