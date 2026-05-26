@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-q4-profession';
+const KFL_BUILD_VERSION = '2026-05-26-onboarding-v2';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1132,43 +1132,61 @@ function _maybeSendWelcome_(fromPhone) {
   props.setProperty(key, new Date().toISOString());
 
   var sheetUrl = _userSheetUrl_(fromPhone);
+  // PR (2026-05-26): Rewritten to match Steven's onboarding spec exactly —
+  // short, clear, includes an income example (משכורת), ends with a single
+  // call-to-action ("try one expense now"). The longer feature list moved
+  // to /עזרה so the first message doesn't overwhelm. The /survey kicks
+  // off after they send their first real message (not pre-emptively).
   var msg =
-    '👋 *ברוכים הבאים לכספ\'לה!*\n' +
-    'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. כל הוצאה נשמרת אוטומטית בגיליון Google הפרטי שלך.\n\n' +
-    'פשוט תכתוב לי כמו שאתה מדבר 😎\n' +
-    '━━━━━━━━━━━━━━━━━━\n\n' +
-    '• *150 סופר* ← יסווג כ"אוכל"\n' +
-    '• *ארנונה 400* ← יסווג כ"בית"\n' +
-    '• *200 דלק* ← יסווג כ"רכב"\n' +
-    '• *80 מתנה לאמא* ← יסווג כ"משפחה"\n' +
-    '• *1,200 שכר דירה* ← יסווג כ"בית"\n' +
-    '• *45 קפה ארומה* ← יסווג כ"בתי קפה"\n\n' +
-    'כל מילה שתחשוב עליה — אני כבר מכיר.\n\n' +
-    '💡 עוד דברים שאני יודע לעשות:\n' +
-    '• *אתמול 60 מכולת* — תאריך אחר\n' +
-    '• *$50 שרת* — מטבע זר (מומר לשקלים)\n' +
-    '• 🧾 *צילום קבלה* — שלח לי תמונה\n' +
-    '• *הערה: שילמתי במזומן* — הוסף הערה להוצאה האחרונה\n' +
-    '• *סיכום* — סיכום החודש\n' +
-    '• *עזרה* — כל הפקודות\n\n' +
-    '📌 *טיפ:* לחיצה ארוכה על ההודעה הזו ← "הצמד" (Pin), כדי שתהיה תמיד בהישג יד.\n\n' +
+    '👋 *ברוך הבא לכספ\'לה!*\n' +
+    'אני עוזר לך לעקוב אחרי הוצאות והכנסות דרך וואטסאפ.\n\n' +
+    'אפשר לשלוח לי הודעות פשוטות כמו:\n' +
+    '━━━━━━━━━━━━━━━━━━\n' +
+    '• *42 קפה*\n' +
+    '• *245 סופר*\n' +
+    '• *1,800 שכר דירה*\n' +
+    '• *12,000 משכורת* ← הכנסה\n' +
+    '• *+500 בונוס* ← הכנסה (סימן +)\n\n' +
+    '🎯 *רוצה להתחיל? שלח לי עכשיו הוצאה אחת מהיום.*\n\n' +
+    '_(אחר כך אשאל אותך 3-4 שאלות קצרות כדי להתאים את המעקב אליך.)_\n\n' +
     (sheetUrl ? ('📊 הגיליון שלך:\n' + sheetUrl + '\n\n') : '') +
-    '🎁 *הביאו חבר → חודש Pro חינם לשניכם:*\nhttps://kesefle.com/referral';
+    '💡 לעוד פקודות, שלח *עזרה*. כל פקודות הבוט שם.';
   try {
     if (typeof sendWhatsAppMessage === 'function') sendWhatsAppMessage(fromPhone, msg);
   } catch (_e) { Logger.log('welcome send err: ' + (_e && _e.message)); }
 
-  // Kick off the personalization questionnaire once, right after the welcome.
-  // Guarded by its own Script Property so re-welcomes (if the welcomed guard
-  // is ever cleared) never re-trigger Q1 on a user mid-flow.
-  try {
-    var surveyedKey = 'surveyed:' + clean;
-    if (!props.getProperty(surveyedKey) && typeof _surveyStart_ === 'function') {
-      props.setProperty(surveyedKey, new Date().toISOString());
-      _surveyStart_(fromPhone);
-    }
-  } catch (_sErr) { Logger.log('welcome survey kickoff err: ' + (_sErr && _sErr.message)); }
+  // PR (2026-05-26): NO LONGER kick off the survey here. Steven's
+  // onboarding spec puts the call-to-action ("try one expense") FIRST
+  // and surveys SECOND. Dumping 4 questions on a fresh user is
+  // overwhelming. The survey now fires lazily from processExpense after
+  // the user's FIRST successful expense is logged, when they've seen
+  // the bot work and are more invested. Look for the
+  // `_surveyMaybeStartAfterFirstExpense_` call in the expense path.
   return true;
+}
+
+// Lazy survey trigger: called from processExpense after a successful
+// expense write. Starts the personalization survey the FIRST time only,
+// guarded by surveyed:<phone> Script Property (same key as before, so
+// users who already saw the survey via the old welcome path won't see
+// it twice). Steven's onboarding spec 2026-05-26: don't ask questions
+// before the user has experienced the bot working.
+function _surveyMaybeStartAfterFirstExpense_(fromPhone) {
+  if (!fromPhone) return false;
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return false;
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var surveyedKey = 'surveyed:' + clean;
+    if (props.getProperty(surveyedKey)) return false;
+    if (typeof _surveyStart_ !== 'function') return false;
+    props.setProperty(surveyedKey, new Date().toISOString());
+    _surveyStart_(fromPhone);
+    return true;
+  } catch (_e) {
+    Logger.log('survey-after-first-expense err: ' + (_e && _e.message));
+    return false;
+  }
 }
 
 // Abuse blacklist — a Script Property holding a comma-separated list of
@@ -13691,7 +13709,17 @@ function _celebrateIfFirstExpense_(fromPhone) {
     var key = 'fxcel:' + p;
     if (props.getProperty(key)) return '';
     props.setProperty(key, new Date().toISOString());
-    return '\n\n🎉 זאת ההוצאה הראשונה שלך! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
+    // PR (2026-05-26): on first expense, ALSO kick off the survey (lazy
+    // path — moved out of the welcome message per new onboarding spec).
+    // Fire-and-forget; if the survey already ran (e.g. legacy welcome
+    // kicked it off), _surveyMaybeStartAfterFirstExpense_ is a no-op
+    // because of the surveyed:<phone> guard.
+    try {
+      if (typeof _surveyMaybeStartAfterFirstExpense_ === 'function') {
+        _surveyMaybeStartAfterFirstExpense_(fromPhone);
+      }
+    } catch (_sErr) { Logger.log('first-expense survey kickoff err: ' + (_sErr && _sErr.message)); }
+    return '\n\n🎉 זאת ההוצאה הראשונה שלך! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.\n\n_עוד שאלות קצרות במקביל כדי להתאים את המעקב אליך 👇_';
   } catch (_e) { return ''; }
 }
 
