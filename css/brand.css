@@ -1,0 +1,51 @@
+/* ====================================================================
+   Kesefle brand tokens — shared visual primitives.
+   Linked from every HTML page so any page can use these classes
+   and get the homepage's exact look.
+
+   Added 2026-05-26 to fix .holo-text rendering as flat white on
+   non-homepage pages (the class was inlined in index.html only).
+
+   Keep this file SMALL. Add a class only when it appears on > 1
+   page AND its absence is visible. Page-specific decoration
+   stays inline.
+   ==================================================================== */
+
+/* ---- holographic gradient text (used on hero headings) ----------- */
+@keyframes holo-sweep {
+  0%   { background-position:   0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.holo-text {
+  background-image: linear-gradient(110deg,
+    #4f46e5  0%,
+    #a855f7 25%,
+    #06b6d4 50%,
+    #a855f7 75%,
+    #4f46e5 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  animation: holo-sweep 5s linear infinite;
+}
+
+/* ---- aurora gradient mesh (premium depth background) ------------- */
+.aurora {
+  background-image:
+    radial-gradient(at 18% 22%, rgba( 79, 70,229,0.22) 0px, transparent 50%),
+    radial-gradient(at 82% 18%, rgba( 99,102,241,0.20) 0px, transparent 55%),
+    radial-gradient(at 55% 90%, rgba(244,114,182,0.18) 0px, transparent 55%),
+    radial-gradient(at 12% 78%, rgba( 56,189,248,0.20) 0px, transparent 55%);
+}
+
+/* ---- subtle dot-grid texture (paired with currentColor) ---------- */
+.dotgrid {
+  background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* ---- reduced motion -------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .holo-text { animation: none !important; }
+}
