@@ -20,6 +20,11 @@ import { withRateLimit } from '../lib/ratelimit.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+// Consensus threshold: how many independent corrections must agree before
+// the global learn is published to other users. Default 1 (legacy behavior:
+// every correction goes live immediately). Set to 2+ in production for
+// anti-poisoning (a single malicious user can't taint global). PR #17.
+const CONSENSUS_THRESHOLD = Math.max(1, parseInt(process.env.KESEFLE_LEARN_CONSENSUS_THRESHOLD || '1', 10));
 
 // Valid top-level categories (defense: never store a junk category globally).
 const VALID_CATS = new Set([
@@ -60,7 +65,15 @@ async function handlerImpl(req, res) {
     if (!HASH_RE.test(h)) return res.status(400).json({ ok: false, error: 'invalid_hash' });
     const rec = await kvGet('global_learn:' + h);
     if (!rec || !rec.category) return res.status(200).json({ ok: true, found: false });
-    return res.status(200).json({ ok: true, found: true, category: rec.category, subcategory: rec.subcategory || '', count: rec.count || 1 });
+    // Consensus gate: only return the learned category to a NEW user once
+    // CONSENSUS_THRESHOLD users have submitted the same (hash, category).
+    // Without this, a single user (potentially malicious) could publish a
+    // wrong mapping that every future user inherits.
+    const count = Number(rec.count) || 1;
+    if (count < CONSENSUS_THRESHOLD) {
+      return res.status(200).json({ ok: true, found: false, pending: { count, needed: CONSENSUS_THRESHOLD } });
+    }
+    return res.status(200).json({ ok: true, found: true, category: rec.category, subcategory: rec.subcategory || '', count });
   }
 
   // ── POST: record a correction ────────────────────────────────────────────
