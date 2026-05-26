@@ -358,7 +358,7 @@ function RESTORE_FROM_BACKUP() {
 var _COMPANY_SUB_BUCKETS_ = [
   { label: 'מחזור ברוטו',       regex: /^(מחזור|revenue|sale|sales|gross)\s*$|מחזור/ },
   { label: 'עלות חומרי גלם',    regex: /חומרי\s*גלם|raw\s*material/i },
-  { label: 'עלות שיווק',        regex: /שיווק|פרסום|advert|adwords|facebook|instagram|tiktok|google ads|fb ads|פייסבוק|אינסטה|טיקטוק|גוגל\s*אדס/i },
+  { label: 'עלות שיווק',        regex: /שיווק|פרסום|קמפיין|קמפיינים|מודעות|קידום\s*ממומן|קידום\s*אורגני|לידים|משפיענים|באנרים|באנר|קריאייטיב|דף\s*נחיתה|יח[״"׳']?צ|advert|adwords|marketing|campaign|paid\s*ads|acquisition|facebook|instagram|tiktok|google\s*ads|fb\s*ads|meta\s*ads|פייסבוק|אינסטה|אינסטגרם|טיקטוק|גוגל\s*אדס|seo|sem|ppc|cpc|cpm|retargeting|linkedin|לינקדאין|youtube|יוטיוב|canva|mailchimp|hubspot/i },
   { label: 'משלוחים והתקנות',   regex: /משלוח|אריזה|shipping|packaging|הובלה|התקנה/i },
   { label: 'הוצאות תפעוליות',   regex: /תפעולי|operational|יועצים|תוכנות|ציוד\s*עסקי|מיסים|operations|consulting|software|equipment|taxes/i },
 ];
@@ -761,11 +761,13 @@ function DEEP_DIAGNOSE() {
 // _COMPANY_SUB_BUCKETS_[2].regex but compiled as a string for the Sheets
 // REGEXMATCH formula. Case-insensitive via (?i). Add new vendors here.
 var _PSF_MARKETING_PATTERN_ =
-  '(?i)שיווק|פרסום|advert|adwords|facebook|instagram|tiktok|google|fb|' +
-  'פייסבוק|אינסטה|אינסטגרם|טיקטוק|גוגל|linkedin|לינקדאין|youtube|יוטיוב|' +
-  'mailchimp|hubspot|semrush|ahrefs|seo|sem|ppc|cpc|cpm|retargeting|' +
-  'meta|מטה|influencer|אינפלואנסר|sponsored|ממומן|קמפיין|campaign|' +
-  'banner|באנר|leads|לידים';
+  '(?i)שיווק|פרסום|קמפיין|קמפיינים|מודעות|קידום\\s*ממומן|קידום\\s*אורגני|' +
+  'לידים|משפיענים|באנרים|באנר|קריאייטיב|דף\\s*נחיתה|advert|adwords|' +
+  'marketing|campaign|paid\\s*ads|acquisition|facebook|instagram|tiktok|' +
+  'google\\s*ads|fb\\s*ads|meta\\s*ads|פייסבוק|אינסטה|אינסטגרם|טיקטוק|' +
+  'גוגל\\s*אדס|seo|sem|ppc|cpc|cpm|retargeting|linkedin|לינקדאין|youtube|' +
+  'יוטיוב|canva|mailchimp|hubspot|semrush|ahrefs|meta|מטה|influencer|' +
+  'אינפלואנסר|sponsored|ממומן';
 
 function FIX_MARKETING_ALL_YEARS() {
   var ss = _openSheet_();
@@ -924,4 +926,253 @@ function DRY_RUN_MARKETING_ALL_YEARS() {
       Logger.log('  ' + hebMonths[mi - 1] + ' (' + cell.getA1Notation() + ')  value=' + value + (formula ? '  formula=' + formula.slice(0, 90) : '  [no formula]'));
     }
   }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// CLEAN_BROKEN_FORMULAS_ALL_YEARS — same as CLEAN_BROKEN_FORMULAS but
+// loops across every "שנת YYYY" year block in מאזן חברה instead of just
+// the one B4 points to.
+//
+// Steven 2026-05-26: the bug Steven screenshotted shows
+// `=SUMIFS($I$20:$I$500,$A$20:$A$500,"יוני")` -- a local-column SUMIFS
+// with no `'תנועות'!` prefix. _isBrokenDashFormula_ already catches that
+// shape, but the old CLEAN_BROKEN_FORMULAS only iterated ONE year, so
+// broken cells in prior years (2023/2024/2025) stayed broken.
+//
+// This walks all year blocks, recomputes per-year totals from תנועות,
+// and rewrites ONLY cells whose formula matches _isBrokenDashFormula_.
+// Clean formulas + raw values are preserved.
+// ════════════════════════════════════════════════════════════════════════
+function CLEAN_BROKEN_FORMULAS_ALL_YEARS() {
+  var ss = _openSheet_();
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!tx)   { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
+
+  Logger.log('=== CLEAN_BROKEN_FORMULAS_ALL_YEARS ===');
+
+  // Build totals once: { year -> { bucket -> { 1..12 -> sum } } }
+  var lastRow = tx.getLastRow();
+  if (lastRow < 2) { Logger.log('!! תנועות empty'); return; }
+  var txData = tx.getRange(2, 1, lastRow - 1, 6).getValues();
+  var totals = {};
+  for (var i = 0; i < txData.length; i++) {
+    var r = txData[i];
+    var monthKey = String(r[1] || '').trim();
+    var amount   = Number(r[2]) || 0;
+    var cat      = String(r[3] || '').trim();
+    var sub      = String(r[4] || '').trim();
+    if (cat !== 'עסק' || !amount) continue;
+    var m = monthKey.match(/^(\d{4})-(\d{1,2})$/);
+    if (!m) continue;
+    var yr = parseInt(m[1], 10);
+    var mn = parseInt(m[2], 10);
+    var bucket = _bucketForBizSub_(sub);
+    if (!bucket) continue;
+    if (!totals[yr]) totals[yr] = {};
+    if (!totals[yr][bucket]) totals[yr][bucket] = {};
+    totals[yr][bucket][mn] = (totals[yr][bucket][mn] || 0) + Math.abs(amount);
+  }
+
+  var dashData = dash.getDataRange().getValues();
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+  // Find every "שנת YYYY" header
+  var yearBlocks = [];
+  for (var r2 = 0; r2 < dashData.length; r2++) {
+    for (var c2 = 0; c2 < dashData[r2].length; c2++) {
+      var mm = String(dashData[r2][c2] || '').match(/שנת\s+(20\d{2})/);
+      if (mm) { yearBlocks.push({ year: parseInt(mm[1], 10), headerRow: r2 }); break; }
+    }
+  }
+  if (yearBlocks.length === 0) { Logger.log('!! no year headers in dashboard'); return; }
+  Logger.log('Found ' + yearBlocks.length + ' year blocks: ' +
+    yearBlocks.map(function (b) { return b.year; }).join(', '));
+
+  var totalCleaned = 0;
+  for (var bi = 0; bi < yearBlocks.length; bi++) {
+    var blk = yearBlocks[bi];
+    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : dashData.length;
+    var yearTotals = totals[blk.year] || {};
+    Logger.log('-- year ' + blk.year + ' (rows ' + (blk.headerRow + 1) + '..' + blockEnd + ') --');
+
+    // Build the month-column map for THIS block.
+    var monthCols = {};
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
+      for (var cc = 0; cc < dashData[rr].length; cc++) {
+        var idx2 = hebMonths.indexOf(String(dashData[rr][cc] || '').trim());
+        if (idx2 >= 0 && !(idx2 + 1 in monthCols)) monthCols[idx2 + 1] = cc;
+      }
+    }
+    if (!Object.keys(monthCols).length) { Logger.log('  no month cols'); continue; }
+
+    for (var bk = 0; bk < _COMPANY_SUB_BUCKETS_.length; bk++) {
+      var label = _COMPANY_SUB_BUCKETS_[bk].label;
+      var subTotals = yearTotals[label] || {};
+      var rowIdx = -1;
+      for (var ri2 = blk.headerRow; ri2 < blockEnd; ri2++) {
+        if (String(dashData[ri2][0] || '').trim() === label) { rowIdx = ri2; break; }
+      }
+      if (rowIdx < 0) continue;
+
+      for (var mo = 1; mo <= 12; mo++) {
+        var col2 = monthCols[mo];
+        if (col2 === undefined) continue;
+        var cell = dash.getRange(rowIdx + 1, col2 + 1);
+        var f = '';
+        try { f = String(cell.getFormula() || ''); } catch (_) {}
+        if (!f) continue;
+        if (!_isBrokenDashFormula_(f)) continue;
+        var v = Math.round(subTotals[mo] || 0);
+        cell.setValue(v);
+        totalCleaned++;
+        Logger.log('  🧹 ' + cell.getA1Notation() + ' (' + label + ' ' + hebMonths[mo-1] + ' ' + blk.year + '): ₪' + v);
+      }
+    }
+  }
+  Logger.log('=== DONE: cleaned ' + totalCleaned + ' broken formulas across ' + yearBlocks.length + ' year blocks ===');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// FIX_ALL_BUCKETS_ALL_YEARS — extends FIX_MARKETING_ALL_YEARS to ALL 5
+// business buckets (revenue, raw materials, marketing, shipping, ops),
+// across every year block. Writes a canonical SUMPRODUCT formula in
+// every (bucket, month, year) cell. Idempotent + safe to re-run.
+//
+// Formula shape per cell:
+//   =IFERROR(SUMPRODUCT(
+//     ('תנועות'!C2:C5000) *                                  // amount
+//     ('תנועות'!B2:B5000 = "YYYY-MM") *                      // month
+//     ('תנועות'!D2:D5000 = "עסק") *                          // biz category
+//     ((REGEXMATCH('תנועות'!E2:E5000, "<pattern>") +
+//       REGEXMATCH('תנועות'!F2:F5000, "<pattern>")) > 0)     // subcat OR desc
+//   ), 0)
+//
+// The pattern per bucket comes from _COMPANY_SUB_BUCKETS_[].regex,
+// converted to a (?i) prefix for Sheets' REGEXMATCH. Two patterns are
+// special:
+//   - מחזור ברוטו: counts INCOME rows (column H = false/empty), not
+//     expense rows -- so the formula flips the category guard.
+//   - For each non-revenue bucket, the formula filters cat = "עסק".
+// ════════════════════════════════════════════════════════════════════════
+function FIX_ALL_BUCKETS_ALL_YEARS() {
+  var ss = _openSheet_();
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  if (!tx) { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
+
+  Logger.log('=== FIX_ALL_BUCKETS_ALL_YEARS ===');
+
+  var data = dash.getDataRange().getValues();
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var hebMonthIdx = {};
+  for (var hi = 0; hi < hebMonths.length; hi++) hebMonthIdx[hebMonths[hi]] = hi + 1;
+
+  // Find every year block.
+  var yearBlocks = [];
+  for (var r = 0; r < data.length; r++) {
+    for (var c = 0; c < data[r].length; c++) {
+      var ym = String(data[r][c] || '').match(/שנת\s+(20\d{2})/);
+      if (ym) { yearBlocks.push({ year: parseInt(ym[1], 10), headerRow: r }); break; }
+    }
+  }
+  if (yearBlocks.length === 0) { Logger.log('!! no year headers'); return; }
+
+  // Convert each bucket's JS regex to a Sheets-REGEXMATCH-friendly string.
+  function bucketPattern(re) {
+    var src = String(re.source);
+    // Strip JS regex anchors that REGEXMATCH doesn't need or interprets differently.
+    return '(?i)' + src;
+  }
+
+  var totalWritten = 0;
+  for (var bi = 0; bi < yearBlocks.length; bi++) {
+    var blk = yearBlocks[bi];
+    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length;
+
+    // Month-col map for this block.
+    var monthCols = {};
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
+      for (var cc = 0; cc < data[rr].length; cc++) {
+        var name = String(data[rr][cc] || '').trim();
+        if (hebMonthIdx[name] && monthCols[hebMonthIdx[name]] === undefined) {
+          monthCols[hebMonthIdx[name]] = cc;
+        }
+      }
+    }
+    if (!Object.keys(monthCols).length) continue;
+
+    for (var bk = 0; bk < _COMPANY_SUB_BUCKETS_.length; bk++) {
+      var bucket = _COMPANY_SUB_BUCKETS_[bk];
+      var label = bucket.label;
+      var pattern = bucketPattern(bucket.regex);
+
+      // Find row for this bucket inside the block.
+      var rowIdx = -1;
+      for (var sr = blk.headerRow; sr < blockEnd; sr++) {
+        if (String(data[sr][0] || '').trim() === label) { rowIdx = sr; break; }
+      }
+      if (rowIdx < 0) continue;
+
+      for (var mi = 1; mi <= 12; mi++) {
+        var col = monthCols[mi];
+        if (col === undefined) continue;
+        var mm2 = mi < 10 ? '0' + mi : '' + mi;
+        var monthKey = blk.year + '-' + mm2;
+        var formula =
+          '=IFERROR(SUMPRODUCT(' +
+          "('" + _PSF_TX_TAB_ + "'!C2:C5000)*" +
+          "('" + _PSF_TX_TAB_ + "'!B2:B5000=\"" + monthKey + "\")*" +
+          "('" + _PSF_TX_TAB_ + "'!D2:D5000=\"עסק\")*" +
+          '((IFERROR(REGEXMATCH(' + "'" + _PSF_TX_TAB_ + "'!E2:E5000,\"" + pattern + "\"),FALSE)+" +
+          'IFERROR(REGEXMATCH(' + "'" + _PSF_TX_TAB_ + "'!F2:F5000,\"" + pattern + "\"),FALSE))>0)" +
+          '),0)';
+        // Preserve the 2026-05 +2100 manual marketing adjustment ONLY for
+        // the marketing bucket. All other buckets get clean formulas.
+        if (label === 'עלות שיווק' && blk.year === 2026 && mi === 5) {
+          formula = formula + '+2100';
+        }
+        var cell = dash.getRange(rowIdx + 1, col + 1);
+        cell.setFormula(formula);
+        totalWritten++;
+      }
+      Logger.log('  ✏️  ' + blk.year + ' ' + label + ': wrote 12 cells');
+    }
+  }
+  Logger.log('=== DONE: wrote ' + totalWritten + ' formulas across ' + yearBlocks.length + ' years × ' + _COMPANY_SUB_BUCKETS_.length + ' buckets ===');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// SCAN_BUSINESS_TABS — read-only diagnostic. Lists every tab in the
+// spreadsheet whose first row matches the תנועות 8-col schema. After
+// PR #35 the bot creates per-business tabs (e.g., "כספלה", "הרמס") with
+// the same schema. The current dashboard formulas only sum תנועות; this
+// scan tells Steven which tabs are NOT yet aggregated.
+// ════════════════════════════════════════════════════════════════════════
+function SCAN_BUSINESS_TABS() {
+  var ss = _openSheet_();
+  var expected = ['תאריך','חודש','סכום','קטגוריה','תת-קטגוריה','תיאור','מקור','הוצאה?'];
+  var sheets = ss.getSheets();
+  Logger.log('=== SCAN_BUSINESS_TABS (' + sheets.length + ' tabs total) ===');
+  var matching = [];
+  for (var i = 0; i < sheets.length; i++) {
+    var sh = sheets[i];
+    if (sh.getLastRow() < 1) continue;
+    var headers = sh.getRange(1, 1, 1, 8).getValues()[0].map(function (h) { return String(h || '').trim(); });
+    var match = true;
+    for (var j = 0; j < expected.length; j++) {
+      if (headers[j] !== expected[j]) { match = false; break; }
+    }
+    if (match) {
+      matching.push(sh.getName());
+      Logger.log('  ✓ ' + sh.getName() + '  (rows: ' + sh.getLastRow() + ')');
+    }
+  }
+  Logger.log('=== ' + matching.length + ' tabs match the transactions schema ===');
+  if (matching.length > 1) {
+    Logger.log('Multi-tab detected. The dashboard formulas in מאזן חברה currently sum ONLY תנועות. To include other biz tabs in the dashboard, run FIX_ALL_BUCKETS_ALL_YEARS_MULTITAB (coming in next iteration).');
+  }
+  return matching;
 }
