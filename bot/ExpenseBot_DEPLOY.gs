@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-household-mode';
+const KFL_BUILD_VERSION = '2026-05-26-income-intent';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -7893,12 +7893,78 @@ function _matchCategory_orig(description) {
 // Smart entry-point: tries (1) learned cache from user corrections,
 // (2) keyword maps, (3) LLM fallback via Claude API for the long tail.
 // Falls back to DEFAULT_CATEGORY only if everything fails.
+// ────────────────────────────────────────────────────────────────────
+// Income intent detection (PR #16, 2026-05-26).
+//
+// The classifier matches against vendor / category keywords ("סופר",
+// "ארנונה") but the SIGN of an expense — money in vs money out — is
+// encoded in WHO MENTIONS THE ACTION and WHAT VERB they use. A message
+// like "קיבלתי 5000 משכורת" is unambiguously income; "+500" with a
+// leading plus is the universal "money in" shorthand; "החזר מס 1200"
+// is a tax refund.
+//
+// The classifier today catches some of these via static keyword lists
+// (משכורת, בונוס) but misses natural phrasings ("קיבלתי", "נכנס לי",
+// "שילם לי לקוח"). This pre-filter fires when the SENTENCE STRUCTURE
+// is unambiguously income — high-precision patterns only, so we never
+// flip a real expense to income.
+//
+// Used by matchCategorySmart: after the static keyword classifier
+// picks a category, if our intent detector says "income" but the
+// matched category is NOT already isIncome, we override.
+function _detectIncomeIntent_(text) {
+  if (!text) return false;
+  var raw = String(text).trim();
+  // Hebrew letters aren't part of \w, so \b doesn't fire around them.
+  // Use whitespace-or-edge boundaries (?:^|\s) ... (?=\s|$) instead.
+  // Pattern 1: leading "+" with a number — universal "money in" marker.
+  if (/^\+\s*\d/.test(raw)) return true;
+  // Pattern 2: Hebrew "I received" verbs anchored at sentence start.
+  // Anchored to avoid matching "המכולת קיבלה" (the store received) which
+  // is actually an expense ("I paid the store"). The verb must lead, AND
+  // be followed by whitespace or end (so "קיבלתיהו" wouldn't match).
+  if (/^(?:קיבלתי|קיבלנו|נכנס\s+לי|הכניסו\s+לי|שילם\s+לי|שילמו\s+לי|העביר\s+לי|העבירו\s+לי|החזיר\s+לי|החזירו\s+לי|זיכו\s+אותי|זיכוי\s+|הופקד|הופקדה)(?=\s|$)/.test(raw)) return true;
+  // Pattern 3: income-only words that have no expense interpretation
+  // in Hebrew finance vocabulary. Anchor on whitespace or sentence edge
+  // since Hebrew \b is a no-op.
+  if (/(?:^|\s)(?:פיצויים|מענק|תמלוגים|דיבידנד|רווחי\s+הון|רווחי\s+ריבית|דמי\s+אבטלה|דמי\s+לידה|דמי\s+חופשה|פנסיה\s+חודשית)(?=\s|$)/.test(raw)) return true;
+  // Pattern 4: refund patterns with explicit "החזר" + qualifier — always income.
+  // (Standalone "החזר" is ambiguous so we require a qualifier.)
+  if (/החזר\s+(?:מס|מע[״"]?מ|מעמ|ביטוח\s+לאומי|כסף|אשראי|חיוב|הוצאות|נסיעות|רכישה|עסקה|מנוי)/.test(raw)) return true;
+  // Pattern 5: explicit income vocabulary used as a verb.
+  if (/^(?:הרווחתי|הכנסתי\s+\d|הרווחנו)(?=\s|$)/.test(raw)) return true;
+  return false;
+}
+
+// If intent says income but the classified row is not flagged isIncome,
+// promote the row to הכנסות (income). We keep the original category as
+// the subcategory hint so the user can still tell what kind of income
+// it was (e.g. "+500 בונוס" → category=הכנסות, subcategory=שונות
+// (הכנסות), description retains "בונוס"). Original matched is returned
+// untouched when intent is neutral or already income.
+function _applyIncomeIntentOverride_(matched, text) {
+  if (!matched) return matched;
+  if (matched.isIncome) return matched;
+  if (!_detectIncomeIntent_(text)) return matched;
+  Logger.log('income-intent override: "' + String(text || '').slice(0, 60) + '" (was ' + matched.category + '/' + matched.subcategory + ')');
+  return {
+    category: 'הכנסות',
+    subcategory: 'שונות (הכנסות)',
+    isIncome: true,
+    intentOverride: 'income',
+    confidence: typeof matched.confidence === 'number' ? matched.confidence : 0.7,
+    // Preserve original guess so the user can see what we thought (helps
+    // debugging cases where the override is wrong).
+    originalGuess: { category: matched.category, subcategory: matched.subcategory },
+  };
+}
+
 function matchCategorySmart(text, fromPhone) {
   // Step 1: learned cache (user-corrected categorizations)
   var cached = _learnedLookup(text);
   if (cached) {
     Logger.log('matchCategorySmart: cache hit "' + text + '" → ' + cached.subcategory);
-    return cached;
+    return _applyIncomeIntentOverride_(cached, text);
   }
 
   // Step 1.5: Auto Synonyms tab (LLM-expanded synonyms from cronSynonymExpansion).
@@ -7908,7 +7974,7 @@ function matchCategorySmart(text, fromPhone) {
       var synHit = _autoSynonymLookup_(text);
       if (synHit) {
         Logger.log('matchCategorySmart: auto-synonym hit "' + text + '" → ' + synHit.subcategory);
-        return synHit;
+        return _applyIncomeIntentOverride_(synHit, text);
       }
     }
   } catch (_synErr) { Logger.log('matchCategorySmart auto-syn err: ' + _synErr.message); }
@@ -7918,7 +7984,7 @@ function matchCategorySmart(text, fromPhone) {
   var isDefault = matched && matched.category === DEFAULT_CATEGORY.category &&
                   matched.subcategory === DEFAULT_CATEGORY.subcategory;
 
-  if (!isDefault) return matched;
+  if (!isDefault) return _applyIncomeIntentOverride_(matched, text);
 
   // Step 2.7: cross-user global learning (privacy-safe). Before paying for an
   // LLM call, check the shared store — another user may have already corrected
@@ -7934,7 +8000,7 @@ function matchCategorySmart(text, fromPhone) {
       try { _learnedSave(text, globalHit, 'global'); } catch (_glErr) {}
       // fromGlobal drives the "📚 למדתי ממשתמשים אחרים" note (shown once, since
       // the local cache above means the next identical message is a local hit).
-      return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category, fromGlobal: true };
+      return _applyIncomeIntentOverride_({ category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category, fromGlobal: true }, text);
     }
   } catch (_glLookErr) { Logger.log('matchCategorySmart global err: ' + _glLookErr.message); }
 
@@ -7943,10 +8009,10 @@ function matchCategorySmart(text, fromPhone) {
   if (ai) {
     Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory);
     _learnedSave(text, ai); // remember for next time
-    return ai;
+    return _applyIncomeIntentOverride_(ai, text);
   }
 
-  return matched; // DEFAULT_CATEGORY
+  return _applyIncomeIntentOverride_(matched, text); // DEFAULT_CATEGORY (possibly flipped to income)
 }
 
 // Returns top-N category guesses for ambiguous text — used to populate the
