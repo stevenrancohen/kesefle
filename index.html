@@ -550,7 +550,7 @@
         <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">המוצר<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
-            <a href="/#demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">הדגמה חיה</a>
+            <a href="/demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">הדגמה חיה</a>
             <a href="/#about-kesefle" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">מה זה כספ'לה?</a>
           </div>
         </div>
@@ -610,8 +610,8 @@
 
   <!-- Mobile menu (native accordion). Slightly more opaque so it reads
        as a panel even over the transparent header. -->
-  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-white/[0.06] bg-white/95 px-5 py-3 backdrop-blur-lg dark:bg-ink-900/95 md:hidden">
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">המוצר<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/#demo" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הדגמה חיה</a></div></details>
+  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-white/[0.06] bg-white/95 px-5 py-3 backdrop-blur-lg dark:bg-ink-950/95 md:hidden">
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">המוצר<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הדגמה חיה</a></div></details>
 <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מחירים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/pricing#tiers" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מסלולים</a><a href="/pricing#compare" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואת תכונות</a></div></details>
     <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מדריכים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/blog" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">בלוג</a><a href="/start" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">התחלה מהירה</a></div></details>
     <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">החברה<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/about" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">אודות</a><a href="/about#timeline" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הסיפור שלנו</a><a href="/roadmap" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מפת דרכים</a></div></details>
@@ -705,7 +705,8 @@
       </div>
     </div>
 
-    <!-- right: WhatsApp mockup -->
+    <!-- right: LIVE auto-playing WhatsApp demo (moved here 2026-05-26 per Steven —
+         the bot in action, no controls, no script panel, just the chat running). -->
     <div class="relative kfl-hero-stage" data-stage="2" dir="rtl">
       <div class="absolute -top-10 -right-10 -z-10 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl"></div>
       <div class="absolute -bottom-10 -left-10 -z-10 h-72 w-72 rounded-full bg-accent-500/20 blur-3xl"></div>
@@ -718,47 +719,31 @@
       </div>
       <div class="tilt-3d mx-auto w-full max-w-md lg:max-w-lg rounded-[2rem] border border-ink-200 bg-white p-4 shadow-2xl ring-1 ring-black/5 dark:border-ink-700 dark:bg-ink-800 dark:ring-white/5">
         <!-- phone bezel -->
-        <div class="rounded-[1.7rem] bg-[#e5ddd5] p-4">
-          <!-- whatsapp header -->
-          <div class="flex items-center gap-3 rounded-t-2xl bg-[#075e54] px-4 py-3 text-white">
-            <div class="grid h-10 w-10 place-items-center rounded-full bg-brand-500 text-lg font-bold">₪</div>
-            <div class="flex-1">
-              <div class="text-base font-bold">כספ'לה</div>
-              <div class="text-[11px] text-white/70">פעיל עכשיו</div>
+        <div class="overflow-hidden rounded-[1.7rem] bg-ink-50 dark:bg-ink-950">
+          <!-- WhatsApp-style header -->
+          <div class="flex items-center gap-3 border-b border-white/5 bg-gradient-to-l from-brand-700/90 to-brand-600/90 px-4 py-3 text-white">
+            <div class="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-base font-black">₪</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-bold">כספ'לה</div>
+              <div class="text-[11px] opacity-80">פעיל עכשיו</div>
             </div>
-            <svg class="h-5 w-5 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a3 3 0 100-6 3 3 0 000 6zM12 14a3 3 0 100-6 3 3 0 000 6zM12 20a3 3 0 100-6 3 3 0 000 6z"/></svg>
-          </div>
-          <!-- chat body (interactive!) -->
-          <div class="space-y-2.5 px-2.5 py-4 max-h-[360px] overflow-y-auto no-scrollbar" id="hero-chat">
-            <!-- seed bubble (will be replaced once user types) -->
-            <div class="bubble flex justify-end">
-              <div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">
-                <span class="num">245</span> סופר
-                <div class="mt-1 text-left text-[10px] text-ink-500">14:23 ✓✓</div>
-              </div>
-            </div>
-            <div class="bubble flex justify-start">
-              <div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">
-                ✅ נרשם: <span class="num">₪245</span><br>
-                <span class="text-ink-500 text-[12px]">קטגוריה: אוכל לבית • שופרסל</span>
-                <div class="mt-1 text-left text-[10px] text-ink-500">14:23</div>
-              </div>
+            <div class="flex items-center gap-1.5 text-[10px] font-semibold opacity-80">
+              <span class="grid h-1.5 w-1.5 animate-pulse rounded-full bg-brand-300"></span>
+              LIVE
             </div>
           </div>
-          <!-- Hero mockup chat is decorative-only — no interactive input/chips.
-               The full auto-running interactive demo lives in #demo section
-               below per Steven's brief 2026-05-24: "no clicks, just plays".
-               Decorative typing hint preserves the WhatsApp look. -->
-          <div class="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-inner opacity-90">
-            <div class="flex-1 rounded-full bg-ink-100 px-3 py-1.5 text-[13px] text-ink-500 placeholder-ink-400">הודעה…</div>
-            <div class="grid h-9 w-9 place-items-center rounded-full bg-brand-500 text-white">
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
-            </div>
+
+          <!-- Auto-playing chat. min-h keeps the box stable while filling. -->
+          <div id="kfl-demo-chat" class="space-y-2.5 px-3 py-4 min-h-[420px] max-h-[440px] overflow-y-auto" dir="rtl">
+            <div class="text-center text-[10px] font-semibold text-ink-500/80">היום</div>
+            <div class="mx-auto max-w-[78%] rounded-lg bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-700 dark:text-amber-200">🔒 ההודעות מוצפנות ב-TLS בדרך לבוט</div>
           </div>
-          <!-- Hint chips point users to scroll down for the live demo, not type here. -->
-          <div class="mt-2 flex flex-wrap items-center gap-1.5 px-1 pb-1">
-            <a href="#demo" class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700 transition hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20">
-              ▶ ראו את הבוט עובד בלייב
+
+          <!-- "View sheet" CTA — hidden until all messages have played -->
+          <div id="kfl-demo-cta" class="hidden border-t border-white/5 bg-ink-50 dark:bg-ink-950 px-4 py-4">
+            <a href="#signup" class="flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-400">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>
+              <span>זה הזמן שלך — הרשמה בחינם →</span>
             </a>
           </div>
         </div>
@@ -767,19 +752,106 @@
       <div class="absolute -bottom-6 -right-6 hidden rotate-3 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-ink-900 shadow-2xl md:block">
         ⚡ נשמר לגיליון שלך תוך <span class="num">2</span> שניות
       </div>
-      <!-- live demo CTA — opens the full interactive demo -->
-      <div class="mt-8 flex justify-center">
-        <a href="/demo" class="kfl-magnetic group inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-5 py-2.5 text-sm font-bold text-brand-700 backdrop-blur transition hover:bg-brand-500/20 hover:border-brand-500/50 dark:text-brand-300 dark:hover:bg-brand-500/20">
-          <span class="relative flex h-2 w-2">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400/40 opacity-75"></span>
-            <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
-          </span>
-          לראות איך זה עובד בלייב
-          <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
-        </a>
-      </div>
     </div>
   </div>
+
+  <!-- Hero live-demo player. Plays immediately on page-load (hero is above fold). -->
+  <script>
+  (function () {
+    var DEMO_MESSAGES = [
+      { user: '45 קפה',           bot: ["✅ נרשם: 45₪", "☕ מזון ופארמה / אוכל מוכן"] },
+      { user: '1800 ארנונה',       bot: ["✅ נרשם: 1,800₪", "🏠 דיור / ארנונה"] },
+      { user: '230 סופר רמי לוי',  bot: ["✅ נרשם: 230₪", "🛒 מזון ופארמה / מזון"] },
+      { user: '8500 משכורת',       bot: ["✅ נרשמה כהכנסה: 8,500₪", "💼 שכר / שכר עבודה 1"] },
+      { user: '60 אובר',           bot: ["✅ נרשם: 60₪", "🚗 תחבורה / תחבורה שיתופית"] }
+    ];
+
+    var chatEl = document.getElementById('kfl-demo-chat');
+    var ctaEl  = document.getElementById('kfl-demo-cta');
+    if (!chatEl || !ctaEl) return;
+
+    function esc(t) { return String(t).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }
+    function nowStr() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+    function scrollChatBottom() { chatEl.scrollTop = chatEl.scrollHeight; }
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    function addUserBubble(text) {
+      var w = document.createElement('div');
+      w.className = 'flex justify-start';
+      w.innerHTML =
+        '<div class="max-w-[78%] rounded-2xl rounded-bl-md bg-brand-500/25 px-3.5 py-2 text-[14px] text-ink-900 dark:text-white shadow-sm" style="animation: kfl-pop 0.35s ease-out;">' +
+          '<div>' + esc(text) + '</div>' +
+          '<div class="mt-0.5 text-end text-[10px] font-mono text-ink-500/70 dark:text-white/60">' + nowStr() + ' ✓✓</div>' +
+        '</div>';
+      chatEl.appendChild(w);
+      scrollChatBottom();
+    }
+    function addBotBubble(lines) {
+      var w = document.createElement('div');
+      w.className = 'flex justify-end';
+      var inner = lines.map(function (l, i) {
+        return '<div' + (i === 0 ? ' class="font-bold"' : ' class="text-[12.5px] text-ink-600 dark:text-white/80"') + '>' + esc(l) + '</div>';
+      }).join('');
+      w.innerHTML =
+        '<div class="max-w-[80%] rounded-2xl rounded-br-md bg-white dark:bg-ink-800 px-3.5 py-2.5 text-[14px] text-ink-900 dark:text-white shadow-md" style="animation: kfl-pop 0.35s ease-out;">' +
+          inner +
+          '<div class="mt-1 text-end text-[10px] font-mono text-ink-500 dark:text-white/60">' + nowStr() + '</div>' +
+        '</div>';
+      chatEl.appendChild(w);
+      scrollChatBottom();
+    }
+    function addTyping() {
+      var w = document.createElement('div');
+      w.className = 'flex justify-end';
+      w.id = 'kfl-demo-typing';
+      w.innerHTML =
+        '<div class="rounded-2xl bg-white dark:bg-ink-800 px-4 py-2.5 shadow-md">' +
+          '<div class="flex items-center gap-1">' +
+            '<span class="h-1.5 w-1.5 rounded-full bg-ink-400" style="animation: kfl-dot 1.2s infinite 0s;"></span>' +
+            '<span class="h-1.5 w-1.5 rounded-full bg-ink-400" style="animation: kfl-dot 1.2s infinite 0.2s;"></span>' +
+            '<span class="h-1.5 w-1.5 rounded-full bg-ink-400" style="animation: kfl-dot 1.2s infinite 0.4s;"></span>' +
+          '</div>' +
+        '</div>';
+      chatEl.appendChild(w);
+      scrollChatBottom();
+    }
+    function removeTyping() { var t = document.getElementById('kfl-demo-typing'); if (t) t.remove(); }
+
+    var played = false;
+    async function play() {
+      if (played) return;
+      played = true;
+      for (var i = 0; i < DEMO_MESSAGES.length; i++) {
+        var ex = DEMO_MESSAGES[i];
+        await sleep(i === 0 ? 900 : 1400);
+        addUserBubble(ex.user);
+        await sleep(700);
+        addTyping();
+        await sleep(900);
+        removeTyping();
+        addBotBubble(ex.bot);
+      }
+      await sleep(800);
+      ctaEl.classList.remove('hidden');
+    }
+
+    // Kick off after the DOM is ready — hero is above the fold, so we don't
+    // wait for scroll. Honors reduced-motion via the keyframes below.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { setTimeout(play, 400); });
+    } else {
+      setTimeout(play, 400);
+    }
+  })();
+  </script>
+  <style>
+    @keyframes kfl-pop { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes kfl-dot { 0%, 60%, 100% { opacity: 0.3; transform: scale(0.9); } 30% { opacity: 1; transform: scale(1.2); } }
+    @media (prefers-reduced-motion: reduce) {
+      @keyframes kfl-pop { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes kfl-dot { 0%, 100% { opacity: 0.6; } }
+    }
+  </style>
 </section>
 
 <!-- ============== ABOUT KESEFLE / SEO LONG-FORM (moved to position #2 per Steven 2026-05-23) ============== -->
@@ -1142,174 +1214,6 @@
 </style>
 
 <!-- ============== INTERACTIVE DEMO (auto-running) ============== -->
-<!-- Steven brief 2026-05-24: replace the click-to-try demo with one that
-     auto-plays 5 user messages + bot replies, then surfaces a "go to your
-     sheet" CTA. Pure DOM, no expansion, no network. -->
-<section id="demo" class="relative overflow-hidden py-24 md:py-32">
-  <div class="pointer-events-none absolute inset-0 -z-10 aurora opacity-15"></div>
-  <div class="mx-auto max-w-5xl px-5">
-    <div class="mx-auto max-w-2xl text-center">
-      <p class="text-sm font-extrabold text-brand-300">הדגמה חיה</p>
-      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-6xl dark:text-white">
-        ככה זה <span class="holo-text">באמת נראה.</span>
-      </h2>
-      <p class="mt-4 text-base text-ink-600 md:text-lg dark:text-ink-200">
-        חמש הודעות אמיתיות, חמש תשובות של הבוט. בלי קליקים, בלי דמיון —
-        רק תראו את הזרימה.
-      </p>
-    </div>
-
-    <!-- Chat container — populated by JS on scroll-into-view -->
-    <div class="mx-auto mt-12 max-w-md">
-      <div class="overflow-hidden rounded-3xl border border-ink-200 bg-ink-50 shadow-glow backdrop-blur">
-        <!-- WhatsApp-style header -->
-        <div class="flex items-center gap-3 border-b border-white/5 bg-gradient-to-l from-brand-700/80 to-brand-600/80 px-4 py-3 text-white">
-          <div class="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-base font-black">₪</div>
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-bold">כספ'לה</div>
-            <div class="text-[11px] opacity-80">פעיל עכשיו</div>
-          </div>
-          <div class="flex items-center gap-1.5 text-[10px] font-semibold opacity-80">
-            <span class="grid h-1.5 w-1.5 animate-pulse rounded-full bg-brand-300"></span>
-            LIVE
-          </div>
-        </div>
-
-        <!-- Messages render here. min-h keeps the box stable while filling. -->
-        <div id="kfl-demo-chat" class="space-y-2.5 px-3 py-4 min-h-[420px] max-h-[440px] overflow-y-auto" dir="rtl">
-          <!-- The first system bubble shows immediately on page load so the box isn't empty pre-scroll. -->
-          <div class="text-center text-[10px] font-semibold text-ink-500/80">היום</div>
-          <div class="mx-auto max-w-[78%] rounded-lg bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-200">🔒 ההודעות מוצפנות ב-TLS בדרך לבוט</div>
-        </div>
-
-        <!-- "View sheet" CTA — hidden until all 5 messages have played -->
-        <div id="kfl-demo-cta" class="hidden border-t border-white/5 bg-ink-50 px-4 py-4">
-          <a href="/dashboard" class="flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-400">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>
-            <span>הכל בגיליון שלך — קחו אותי לראות →</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-  (function () {
-    // Five scripted (real product behavior) exchanges. Each entry:
-    //   user: text the user types
-    //   bot:  bot reply text shown
-    var DEMO_MESSAGES = [
-      { user: '45 קפה',           bot: { lines: ["✅ נרשם: 45₪", "☕ מזון ופארמה / אוכל מוכן"] } },
-      { user: '1800 ארנונה',       bot: { lines: ["✅ נרשם: 1,800₪", "🏠 דיור / ארנונה"] } },
-      { user: '230 סופר רמי לוי',  bot: { lines: ["✅ נרשם: 230₪", "🛒 מזון ופארמה / מזון"] } },
-      { user: '8500 משכורת',       bot: { lines: ["✅ נרשמה כהכנסה: 8,500₪", "💼 שכר / שכר עבודה 1"] } },
-      { user: '60 אובר',           bot: { lines: ["✅ נרשם: 60₪", "🚗 תחבורה / תחבורה שיתופית"] } }
-    ];
-
-    var chatEl = document.getElementById('kfl-demo-chat');
-    var ctaEl = document.getElementById('kfl-demo-cta');
-    var started = false;
-
-    function nowStr() {
-      var d = new Date();
-      return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-    }
-
-    function addUserBubble(text) {
-      var w = document.createElement('div');
-      w.className = 'flex justify-start';
-      w.innerHTML =
-        '<div class="max-w-[78%] rounded-2xl rounded-bl-md bg-brand-500/25 px-3.5 py-2 text-[14px] text-white shadow-sm" style="animation: kfl-pop 0.35s ease-out;">' +
-          '<div>' + text.replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) + '</div>' +
-          '<div class="mt-0.5 text-end text-[10px] font-mono text-white/60">' + nowStr() + ' ✓✓</div>' +
-        '</div>';
-      chatEl.appendChild(w);
-      scrollChatBottom();
-    }
-
-    function addBotBubble(lines) {
-      var w = document.createElement('div');
-      w.className = 'flex justify-end';
-      var inner = lines.map(function (l, i) {
-        return '<div' + (i === 0 ? ' class="font-bold"' : ' class="text-[12.5px] text-white/80"') + '>' +
-          l.replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }) +
-          '</div>';
-      }).join('');
-      w.innerHTML =
-        '<div class="max-w-[80%] rounded-2xl rounded-br-md bg-white px-3.5 py-2.5 text-[14px] text-ink-900 shadow-md" style="animation: kfl-pop 0.35s ease-out;">' +
-          inner +
-          '<div class="mt-1 text-end text-[10px] font-mono text-ink-500">' + nowStr() + '</div>' +
-        '</div>';
-      chatEl.appendChild(w);
-      scrollChatBottom();
-    }
-
-    function addTyping() {
-      var w = document.createElement('div');
-      w.className = 'flex justify-end';
-      w.id = 'kfl-demo-typing';
-      w.innerHTML =
-        '<div class="rounded-2xl bg-white px-4 py-2.5 shadow-md">' +
-          '<div class="flex items-center gap-1">' +
-            '<span class="h-1.5 w-1.5 rounded-full bg-ink-400" style="animation: kfl-dot 1.2s infinite 0s;"></span>' +
-            '<span class="h-1.5 w-1.5 rounded-full bg-ink-400" style="animation: kfl-dot 1.2s infinite 0.2s;"></span>' +
-            '<span class="h-1.5 w-1.5 rounded-full bg-ink-400" style="animation: kfl-dot 1.2s infinite 0.4s;"></span>' +
-          '</div>' +
-        '</div>';
-      chatEl.appendChild(w);
-      scrollChatBottom();
-    }
-    function removeTyping() {
-      var t = document.getElementById('kfl-demo-typing');
-      if (t) t.remove();
-    }
-    function scrollChatBottom() {
-      chatEl.scrollTop = chatEl.scrollHeight;
-    }
-    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-
-    async function play() {
-      if (started) return;
-      started = true;
-      for (var i = 0; i < DEMO_MESSAGES.length; i++) {
-        var ex = DEMO_MESSAGES[i];
-        await sleep(i === 0 ? 600 : 1400);
-        addUserBubble(ex.user);
-        await sleep(700);
-        addTyping();
-        await sleep(900);
-        removeTyping();
-        addBotBubble(ex.bot.lines);
-      }
-      // After the last bubble, reveal the CTA with a small delay.
-      await sleep(800);
-      ctaEl.classList.remove('hidden');
-      // Pulse the CTA briefly.
-      ctaEl.firstElementChild && ctaEl.firstElementChild.classList.add('animate-pulse');
-      await sleep(2200);
-      ctaEl.firstElementChild && ctaEl.firstElementChild.classList.remove('animate-pulse');
-    }
-
-    // Start only when the section scrolls into view, so the chat isn't
-    // half-played before the user can see it.
-    if (!('IntersectionObserver' in window)) { play(); return; }
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) { play(); io.disconnect(); }
-      });
-    }, { threshold: 0.35 });
-    io.observe(document.getElementById('demo'));
-  })();
-  </script>
-  <style>
-    @keyframes kfl-pop { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-    @keyframes kfl-dot { 0%, 60%, 100% { opacity: 0.3; transform: scale(0.9); } 30% { opacity: 1; transform: scale(1.2); } }
-    @media (prefers-reduced-motion: reduce) {
-      @keyframes kfl-pop { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes kfl-dot { 0%, 100% { opacity: 0.6; } }
-    }
-  </style>
-</section>
 
 
 <!-- Testimonials section removed 2026-05-26 (Steven). When we have real
@@ -1561,7 +1465,7 @@
 <!-- ============== FOOTER ============== -->
 <!-- Footer kept as its own visual identity (rest period before page end);
      border softened to a faint glow so the seam isn't a hard line. -->
-<footer class="relative border-t border-ink-200/50 bg-white py-14 dark:border-white/[0.06] dark:bg-ink-900/70">
+<footer class="relative border-t border-ink-200/50 bg-white py-14 dark:border-white/[0.06] dark:bg-ink-950/70">
   <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
     <div>
       <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
@@ -1574,7 +1478,7 @@
       <p class="font-bold dark:text-white">מוצר</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
         <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
-        <li><a href="/#demo" class="hover:text-ink-900 dark:hover:text-white">דמו אינטראקטיבי</a></li>
+        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">דמו אינטראקטיבי</a></li>
         <li><a href="/referral" class="hover:text-ink-900 dark:hover:text-white">חבר מביא חבר</a></li>
       </ul>
     </div>
