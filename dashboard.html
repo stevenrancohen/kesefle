@@ -224,12 +224,94 @@
 <!-- Referral banner removed 2026-05-24 per Steven: "תוריד ותשים פשוט עמוד שיהיה חבר מביא חבר".
      Standalone page lives at /referral and is linked from the user menu / footer. -->
 
+<!-- =============== DASHBOARD SIDEBAR (PR-D1, 2026-05-26) ===============
+     RTL sidebar pinned to the right edge on desktop, hamburger on mobile.
+     Hash-router below switches the visible `data-route` pane.
+     Per docs/DASHBOARD_REDESIGN_PRINCIPLES.md, this is the SHELL only —
+     the only pane with real content is "overview" (everything that was
+     already in <main>). Other panes are placeholder so users can see
+     what's coming.
+================================================================== -->
+<aside id="kfl-sidebar"
+       class="fixed inset-y-0 right-0 z-30 hidden w-64 transform border-l border-ink-200 bg-white/95 px-4 py-6 backdrop-blur transition-transform md:block dark:border-ink-700 dark:bg-ink-900/95"
+       dir="rtl"
+       aria-label="ניווט ראשי בדשבורד">
+  <div class="mb-6 flex items-center gap-2 px-2">
+    <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-500 text-white font-black">₪</span>
+    <div class="text-sm">
+      <div class="font-bold text-ink-900 dark:text-white">כספ'לה</div>
+      <div class="text-[11px] text-ink-500 dark:text-ink-400">הדשבורד שלך</div>
+    </div>
+  </div>
+
+  <nav class="space-y-1 text-sm" id="kfl-sidebar-nav">
+    <a href="#/overview"     data-route-link="overview"     class="kfl-side-link"><span class="kfl-side-icon">📊</span> סקירה כללית</a>
+    <a href="#/transactions" data-route-link="transactions" class="kfl-side-link"><span class="kfl-side-icon">💸</span> עסקאות</a>
+    <a href="#/budgets"      data-route-link="budgets"      class="kfl-side-link"><span class="kfl-side-icon">🎯</span> תקציבים ויעדים</a>
+    <a href="#/recurring"    data-route-link="recurring"    class="kfl-side-link"><span class="kfl-side-icon">🔁</span> תזרים קבוע</a>
+    <a href="#/manage"       data-route-link="manage"       class="kfl-side-link"><span class="kfl-side-icon">⚙️</span> ניהול</a>
+    <a href="/help"          target="_blank" rel="noopener" class="kfl-side-link"><span class="kfl-side-icon">❓</span> עזרה</a>
+  </nav>
+
+  <!-- Privacy reminder in the sidebar footer — every time the user looks at
+       their data, they see the line that says it's THEIRS. -->
+  <div class="absolute inset-x-4 bottom-4 rounded-xl border border-brand-200 bg-brand-50 p-3 text-[11px] leading-relaxed text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200">
+    <div class="flex items-center gap-1.5 font-bold">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      הגיליון שלך · בדרייב שלך
+    </div>
+    <div class="mt-1 opacity-80">אנחנו לא רואים את הנתונים</div>
+  </div>
+</aside>
+
+<!-- Mobile hamburger to open the sidebar -->
+<button id="kfl-sidebar-toggle"
+        type="button"
+        class="fixed top-4 right-4 z-40 grid h-10 w-10 place-items-center rounded-lg border border-ink-200 bg-white/90 backdrop-blur shadow-soft md:hidden dark:border-ink-700 dark:bg-ink-900/90"
+        aria-label="פתח תפריט"
+        aria-controls="kfl-sidebar"
+        aria-expanded="false">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+
+<style>
+  .kfl-side-link {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 0.75rem; border-radius: 0.625rem;
+    color: #475569; font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+  html.dark .kfl-side-link { color: #cbd5e1; }
+  .kfl-side-link:hover { background: rgba(6,182,212,0.08); color: #0891b2; }
+  html.dark .kfl-side-link:hover { background: rgba(6,182,212,0.14); color: #67e8f9; }
+  .kfl-side-link.is-active { background: #ecfeff; color: #0e7490; font-weight: 700; }
+  html.dark .kfl-side-link.is-active { background: rgba(6,182,212,0.18); color: #a5f3fc; }
+  .kfl-side-icon { display: inline-block; width: 1.25rem; text-align: center; }
+  /* Reserve space on desktop so the main content doesn't sit under the sidebar */
+  @media (min-width: 768px) {
+    body { padding-right: 16rem; }
+  }
+  /* On mobile, when sidebar is open, slide it in */
+  #kfl-sidebar.is-open {
+    display: block !important;
+    transform: translateX(0);
+  }
+  @media (max-width: 767.98px) {
+    #kfl-sidebar { transform: translateX(100%); display: block !important; }
+    #kfl-sidebar.is-open { transform: translateX(0); }
+    #kfl-sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 25; }
+  }
+</style>
+
 <main class="relative mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 md:px-6">
 
   <!-- Floating "add expense" FAB for desktop+mobile -->
   <a id="kfl-fab" href="/expense" class="fixed bottom-6 left-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-brand-600 text-white shadow-glow hover:bg-brand-700 transition" title="הוסף הוצאה במהירות" aria-label="הוסף הוצאה">
     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
   </a>
+
+  <!-- ALL EXISTING DASHBOARD CONTENT IS THE "OVERVIEW" ROUTE (PR-D1) -->
+  <div data-route="overview" class="kfl-route">
 
   <!-- Bulk-actions bar: appears when 1+ checkbox selected.
        Mobile: pinned higher (bottom-24) so it doesn't sit on top of the FAB.
@@ -1012,7 +1094,150 @@
 
   </section>
 
+  </div><!-- /data-route="overview" -->
+
+  <!-- =============== PR-D1 ROUTE PANES (placeholders) ===============
+       Each pane is hidden until #/{route} is the active hash. PR-D2+ will
+       fill them in with real UI. Empty states match PR #63's pattern:
+       icon tile + Hebrew title + sub.
+  ============================================================== -->
+
+  <div data-route="transactions" class="kfl-route hidden" dir="rtl">
+    <header class="mb-6">
+      <h1 class="text-3xl font-black tracking-tight text-ink-900 dark:text-white">עסקאות</h1>
+      <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">כל ההוצאות וההכנסות שלך במקום אחד, עם חיפוש וייצוא.</p>
+    </header>
+    <div class="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#ECFEFF;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="text-base font-bold text-ink-900 dark:text-white">העסקאות שלך יופיעו כאן</div>
+      <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">בקרוב — חיפוש, סינון לפי תאריך/קטגוריה/סכום, וייצוא ל-CSV.</div>
+      <a href="#/overview" class="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">חזרה לסקירה הכללית →</a>
+    </div>
+  </div>
+
+  <div data-route="budgets" class="kfl-route hidden" dir="rtl">
+    <header class="mb-6">
+      <h1 class="text-3xl font-black tracking-tight text-ink-900 dark:text-white">תקציבים ויעדים</h1>
+      <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">הגדר תקציב חודשי לכל קטגוריה ויעד פיננסי לחודש/חצי שנה/שנה.</p>
+    </header>
+    <div class="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#F0FDFA;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      </div>
+      <div class="text-base font-bold text-ink-900 dark:text-white">לא הוגדרו תקציבים או יעדים</div>
+      <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">
+        בינתיים תוכל להגדיר יעדים בוואטסאפ: <span class="num font-mono">קבע יעד אוכל 3000</span>.<br>
+        ממשק מלא בדף הזה מגיע ב-PR הבא.
+      </div>
+    </div>
+  </div>
+
+  <div data-route="recurring" class="kfl-route hidden" dir="rtl">
+    <header class="mb-6">
+      <h1 class="text-3xl font-black tracking-tight text-ink-900 dark:text-white">תזרים קבוע</h1>
+      <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">משכורת, שכירות, משכנתא, מנויים — כל מה שחוזר על עצמו בכל חודש.</p>
+    </header>
+    <div class="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#FEF3C7;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#92400E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </div>
+      <div class="text-base font-bold text-ink-900 dark:text-white">תזרים קבוע יופיע כאן</div>
+      <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">
+        הוסף בבוט: <span class="num font-mono">קבוע משכורת 14000 בכל 1 לחודש</span>.<br>
+        ניהול ויזואלי (השהיה, דילוג, עריכה) מגיע ב-PR הבא.
+      </div>
+    </div>
+  </div>
+
+  <div data-route="manage" class="kfl-route hidden" dir="rtl">
+    <header class="mb-6">
+      <h1 class="text-3xl font-black tracking-tight text-ink-900 dark:text-white">ניהול</h1>
+      <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">קטגוריות, אמצעי תשלום, חשבונות מקושרים, פרופיל.</p>
+    </header>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <a href="#/manage/categories" class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition hover:border-brand-300 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800">
+        <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <div class="font-bold text-ink-900 dark:text-white">קטגוריות</div>
+        <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">הוסף, ערוך, מחק קטגוריות. צבעים ואייקונים בקרוב.</div>
+      </a>
+      <a href="/account" class="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition hover:border-brand-300 hover:shadow-glow dark:border-ink-700 dark:bg-ink-800">
+        <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="font-bold text-ink-900 dark:text-white">פרופיל וחשבון</div>
+        <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">חיבור גוגל, מספר טלפון, הרשאות, מחיקת חשבון.</div>
+      </a>
+    </div>
+  </div>
+
 </main>
+
+<!-- Hash-router for the sidebar (PR-D1) -->
+<script>
+(function () {
+  // Routes that have a pane in the DOM. Default: overview.
+  var ROUTES = ['overview', 'transactions', 'budgets', 'recurring', 'manage'];
+  function currentRoute() {
+    var h = String(location.hash || '').replace(/^#\/?/, '');
+    // strip query / sub-paths for the top-level switch
+    var top = h.split(/[\/?#]/)[0];
+    return ROUTES.indexOf(top) >= 0 ? top : 'overview';
+  }
+  function applyRoute() {
+    var r = currentRoute();
+    var panes = document.querySelectorAll('[data-route]');
+    panes.forEach(function (p) {
+      if (p.getAttribute('data-route') === r) p.classList.remove('hidden');
+      else p.classList.add('hidden');
+    });
+    var links = document.querySelectorAll('[data-route-link]');
+    links.forEach(function (a) {
+      if (a.getAttribute('data-route-link') === r) a.classList.add('is-active');
+      else a.classList.remove('is-active');
+    });
+    // close mobile sidebar after navigation
+    closeMobileSidebar();
+    // scroll to top of main on route change
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_e) {}
+  }
+  window.addEventListener('hashchange', applyRoute);
+  if (document.readyState !== 'loading') applyRoute();
+  else document.addEventListener('DOMContentLoaded', applyRoute);
+
+  // Mobile sidebar toggle
+  function openMobileSidebar() {
+    var s = document.getElementById('kfl-sidebar');
+    if (s) s.classList.add('is-open');
+    var b = document.getElementById('kfl-sidebar-backdrop');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'kfl-sidebar-backdrop';
+      b.addEventListener('click', closeMobileSidebar);
+      document.body.appendChild(b);
+    }
+    var t = document.getElementById('kfl-sidebar-toggle');
+    if (t) t.setAttribute('aria-expanded', 'true');
+  }
+  function closeMobileSidebar() {
+    var s = document.getElementById('kfl-sidebar');
+    if (s) s.classList.remove('is-open');
+    var b = document.getElementById('kfl-sidebar-backdrop');
+    if (b) b.remove();
+    var t = document.getElementById('kfl-sidebar-toggle');
+    if (t) t.setAttribute('aria-expanded', 'false');
+  }
+  var toggle = document.getElementById('kfl-sidebar-toggle');
+  if (toggle) toggle.addEventListener('click', function () {
+    var s = document.getElementById('kfl-sidebar');
+    if (s && s.classList.contains('is-open')) closeMobileSidebar();
+    else openMobileSidebar();
+  });
+})();
+</script>
 
 <!-- transaction action modal (edit/delete) -->
 <div id="tx-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink-50 px-4 backdrop-blur-sm" onclick="kesefleCloseTxModal(event)">
