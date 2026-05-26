@@ -132,13 +132,12 @@
       </div>
     </div>
     <h2 class="text-lg font-medium mb-2" style="color: #1E293B;">Sign in to continue</h2>
-    <p class="text-sm mb-5" style="color: #64748B;">Enter the admin password to access the panel.</p>
+    <p class="text-sm mb-5" style="color: #64748B;">Use the admin Google account to access the panel.</p>
     <form id="gate-form" class="flex flex-col gap-3">
-      <input id="gate-pw" type="password" autocomplete="off" placeholder="Password" class="w-full rounded-lg px-4 py-2.5 text-sm" style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B; outline: none;" dir="ltr" />
-      <div id="gate-error" class="hidden text-xs font-medium" style="color: #EF4444;">Incorrect password. Try again.</div>
-      <button type="submit" class="rounded-lg px-4 py-2.5 text-sm font-medium text-white" style="background: #3B82F6;">Sign in</button>
+      <div id="gate-error" class="hidden text-xs font-medium" style="color: #EF4444;">Sign-in required.</div>
+      <button type="submit" class="rounded-lg px-4 py-2.5 text-sm font-medium text-white" style="background: #3B82F6;">Sign in with Google</button>
     </form>
-    <div class="mt-5 text-xs text-center" style="color: #94A3B8;">This page is not externally linked. <a href="/" style="color: #3B82F6;">Return to site</a>.</div>
+    <div class="mt-5 text-xs text-center" style="color: #94A3B8;">Access is restricted to addresses in <code>ADMIN_EMAILS</code>. <a href="/" style="color: #3B82F6;">Return to site</a>.</div>
   </div>
 </div>
 
@@ -761,13 +760,19 @@
 (function(){
   'use strict';
 
-  // ===== AUTH GATE =====
-  const GATE_KEY = 'kesefle_admin';
-  const PASSWORD = 'kesefle2026';
+  // ===== AUTH GATE (server-side) =====
+  // Steven 2026-05-26 (QA HIGH #2): the previous gate used a plaintext
+  // password embedded in this script + a localStorage flag. Anyone who
+  // viewed source learned the password, and anyone could set the flag
+  // from devtools to bypass the gate entirely. The actual `/api/admin/*`
+  // endpoints were the only real security barrier all along.
+  //
+  // New behaviour: on page load probe a `requireAdmin`-gated endpoint
+  // (funnel-summary is cheap and read-only). 200 -> show the admin app.
+  // Anything else -> show a sign-in card pointing to /account.
   const gate = document.getElementById('kfl-gate');
   const app = document.getElementById('kfl-app');
   const gateForm = document.getElementById('gate-form');
-  const gatePw = document.getElementById('gate-pw');
   const gateErr = document.getElementById('gate-error');
 
   function openApp() {
@@ -775,32 +780,53 @@
     app.classList.remove('gate-blur');
     setTimeout(initAll, 50);
   }
-  function lockApp() {
+  function lockApp(message) {
     gate.classList.remove('hidden');
     app.classList.add('gate-blur');
-    setTimeout(() => gatePw.focus(), 100);
-  }
-  if (localStorage.getItem(GATE_KEY) === 'true') {
-    openApp();
-  } else {
-    lockApp();
-  }
-  gateForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (gatePw.value === PASSWORD) {
-      localStorage.setItem(GATE_KEY, 'true');
-      gateErr.classList.add('hidden');
-      openApp();
-    } else {
+    if (message && gateErr) {
+      gateErr.textContent = message;
       gateErr.classList.remove('hidden');
-      gatePw.value = '';
-      gatePw.focus();
     }
-  });
-  document.getElementById('admin-logout').addEventListener('click', () => {
-    localStorage.removeItem(GATE_KEY);
-    lockApp();
-  });
+  }
+
+  async function probeAdmin() {
+    try {
+      const r = await fetch('/api/admin/funnel-summary', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (r.ok) {
+        openApp();
+        return;
+      }
+      if (r.status === 401 || r.status === 403) {
+        lockApp('יש להתחבר עם חשבון אדמין מאושר.');
+        return;
+      }
+      lockApp('שגיאה זמנית. נסה לרענן את הדף.');
+    } catch (e) {
+      lockApp('אין חיבור לשרת.');
+    }
+  }
+  probeAdmin();
+
+  // Gate form is now a "Sign in with Google" prompt rather than a password
+  // form. We still wire submit so pressing Enter on the page goes to /account.
+  if (gateForm) {
+    gateForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      window.location.href = '/account?next=' + encodeURIComponent('/admin');
+    });
+  }
+  const logoutBtn = document.getElementById('admin-logout');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      // Best-effort server-side logout, then refresh -> probe will fail -> gate.
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+        .catch(() => {})
+        .finally(() => { window.location.reload(); });
+    });
+  }
 
   // ===== THEME TOGGLE =====
   const themeBtn = document.getElementById('theme-toggle');
@@ -849,31 +875,38 @@
       tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-sm" style="color: #94A3B8;">No users to display.</td></tr>';
       return;
     }
-    tbody.innerHTML = list.map(u => `
-      <tr class="user-row" data-status="${u.status}" style="border-bottom: 1px solid #E2E8F0;">
+    // Steven 2026-05-26 (QA HIGH #3): every user-controlled string goes
+    // through esc() before landing in innerHTML. A signup name containing
+    // <img onerror=...> would otherwise execute when admin views the table.
+    tbody.innerHTML = list.map(u => {
+      const safeName = esc(u.name || '');
+      const initials = (u.name || '').split(' ').map(n => (n || '')[0] || '').join('').slice(0, 2);
+      return `
+      <tr class="user-row" data-status="${esc(u.status)}" style="border-bottom: 1px solid #E2E8F0;">
         <td class="p-3">
           <div class="flex items-center gap-2.5">
-            <span class="grid h-7 w-7 place-items-center rounded-full text-[10px] font-medium" style="background: #F1F5F9; color: #475569;">${u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</span>
+            <span class="grid h-7 w-7 place-items-center rounded-full text-[10px] font-medium" style="background: #F1F5F9; color: #475569;">${esc(initials)}</span>
             <div>
-              <div class="text-sm" style="color: #1E293B;">${u.name}</div>
-              <div class="text-[11px] num" style="color: #94A3B8;" dir="ltr">${u.email}</div>
+              <div class="text-sm" style="color: #1E293B;">${safeName}</div>
+              <div class="text-[11px] num" style="color: #94A3B8;" dir="ltr">${esc(u.email)}</div>
             </div>
           </div>
         </td>
-        <td class="p-3 num text-xs" style="color: #475569;" dir="ltr">${u.phone}</td>
-        <td class="p-3"><span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium" style="${u.planClass}">${u.plan}</span></td>
-        <td class="p-3 num text-xs" style="color: #475569;" dir="ltr">${u.signup}<div class="text-[10px]" style="color: #94A3B8;">${u.signupRaw}</div></td>
-        <td class="p-3 text-xs" style="color: #475569;">${u.activity}</td>
+        <td class="p-3 num text-xs" style="color: #475569;" dir="ltr">${esc(u.phone)}</td>
+        <td class="p-3"><span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium" style="${esc(u.planClass)}">${esc(u.plan)}</span></td>
+        <td class="p-3 num text-xs" style="color: #475569;" dir="ltr">${esc(u.signup)}<div class="text-[10px]" style="color: #94A3B8;">${esc(u.signupRaw)}</div></td>
+        <td class="p-3 text-xs" style="color: #475569;">${esc(u.activity)}</td>
         <td class="p-3 text-center">${sheetIcon(u.sheet)}</td>
-        <td class="p-3 text-end num text-sm font-medium" style="color: #1E293B;">${u.tx}</td>
-        <td class="p-3"><span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium" style="${u.statusClass}"><span class="status-dot" style="background: currentColor;"></span>${u.statusLabel}</span></td>
+        <td class="p-3 text-end num text-sm font-medium" style="color: #1E293B;">${esc(u.tx)}</td>
+        <td class="p-3"><span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium" style="${esc(u.statusClass)}"><span class="status-dot" style="background: currentColor;"></span>${esc(u.statusLabel)}</span></td>
         <td class="p-3">
           <button class="rounded p-1" style="color: #94A3B8;" title="Actions">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
         </td>
       </tr>
-    `).join('');
+      `;
+    }).join('');
   }
 
   function bindFilters() {
