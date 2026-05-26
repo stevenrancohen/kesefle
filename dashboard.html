@@ -183,7 +183,7 @@
 <script src="/lib/analytics.js" defer></script>
   <script src="/js/analytics-loader.js" defer></script>
 </head>
-<body class="min-h-screen bg-ink-50 bg-mesh text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-900 dark:text-white">
+<body class="min-h-screen bg-ink-50 bg-mesh text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-950 dark:text-white">
 
 <div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
   <div class="kfl-curtain-logo">₪</div>
@@ -205,7 +205,7 @@
 </script>
 
 <!-- nav -->
-<header class="sticky top-0 z-40 border-b border-ink-200/70 bg-white/85 backdrop-blur-md dark:border-ink-700/60 dark:bg-ink-900/80">
+<header class="sticky top-0 z-40 border-b border-ink-200/70 bg-white/85 backdrop-blur-md dark:border-ink-700/60 dark:bg-ink-950/80">
   <nav class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3.5">
     <a href="/" class="flex min-w-0 items-center gap-2 font-extrabold text-xl tracking-tight">
       <span class="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
@@ -318,7 +318,7 @@
       <div id="live-empty" class="hidden p-6 text-center text-sm text-ink-500 dark:text-ink-400">אין תנועות עדיין.</div>
       <div id="live-table-wrap" class="hidden overflow-x-auto">
         <table class="live-table w-full text-sm">
-          <thead class="bg-ink-50 text-right text-xs uppercase tracking-wide text-ink-500 dark:bg-ink-900 dark:text-ink-400">
+          <thead class="bg-ink-50 text-right text-xs uppercase tracking-wide text-ink-500 dark:bg-ink-950 dark:text-ink-400">
             <tr id="live-thead-row">
               <th class="px-4 py-2.5">תאריך</th>
               <th class="px-4 py-2.5">סכום</th>
@@ -650,7 +650,7 @@
   <!-- empty state (when no transactions yet) -->
   <section id="empty-state" class="hidden overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-brand-50 via-white to-brand-50 shadow-glow dark:border-ink-700 dark:from-ink-800 dark:via-ink-900 dark:to-ink-800">
     <!-- Demo preview toggle: shows users what the dashboard WILL look like once they have data -->
-    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-ink-200 bg-white/60 px-5 py-2.5 text-xs dark:border-ink-700 dark:bg-ink-900/40">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-ink-200 bg-white/60 px-5 py-2.5 text-xs dark:border-ink-700 dark:bg-ink-950/40">
       <span class="inline-flex items-center gap-1.5 font-bold text-ink-600 dark:text-ink-300">
         <span class="grid h-5 w-5 place-items-center rounded-md bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">i</span>
         אין עדיין נתונים — אבל הנה איך הדשבורד שלך ייראה בעוד דקה
@@ -716,14 +716,14 @@
       </div>
 
       <!-- right: live preview of where the message lands (sheet row) -->
-      <div class="relative h-full border-t border-ink-200 bg-ink-50/60 p-4 sm:p-6 md:border-r md:border-t-0 md:p-8 dark:border-ink-700 dark:bg-ink-900/40">
+      <div class="relative h-full border-t border-ink-200 bg-ink-50/60 p-4 sm:p-6 md:border-r md:border-t-0 md:p-8 dark:border-ink-700 dark:bg-ink-950/40">
         <div class="mb-3 flex items-center justify-between text-xs font-semibold text-ink-500 dark:text-ink-400">
           <span class="truncate">תצוגה מקדימה — איך זה ייראה בגיליון שלך</span>
           <span class="flex flex-shrink-0 items-center gap-1.5"><span class="grid h-4 w-4 place-items-center rounded bg-brand-500 text-[8px] font-black text-white">G</span> Sheets</span>
         </div>
         <div class="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800">
           <!-- sheet header row -->
-          <div dir="ltr" class="grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-b border-ink-200 bg-ink-100 text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-400">
+          <div dir="ltr" class="grid grid-cols-[40px_1fr_60px_56px] sm:grid-cols-[80px_1fr_90px_80px] gap-px border-b border-ink-200 bg-ink-100 text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:border-ink-700 dark:bg-ink-950 dark:text-ink-400">
             <div class="px-1.5 py-2 sm:px-2">Date</div>
             <div class="px-1.5 py-2 sm:px-2">Description</div>
             <div class="px-1.5 py-2 sm:px-2 text-right">Amount</div>
@@ -803,7 +803,7 @@
       </div>
       <div class="mt-2 text-3xl font-black"><span class="num stat-num" id="month-balance" data-target="0">₪0</span></div>
       <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="month-balance-status">—</div>
-      <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-900">
+      <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-950">
         <div id="balance-progress" class="h-full bg-brand-500 transition-all duration-700" style="width: 0%"></div>
       </div>
     </div>
@@ -840,7 +840,7 @@
         </p>
         <div class="flex gap-2">
           <input id="kfl-cats-input" type="text" maxlength="60" placeholder="לדוגמה: עסק יוסי / לימודים פרטיים"
-            class="flex-1 rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
+            class="flex-1 rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-950 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
           <button onclick="kflCatAdd()" class="rounded-xl bg-brand-600 hover:bg-brand-700 px-4 py-2 text-sm font-bold text-white">הוסף</button>
         </div>
         <ul id="kfl-cats-list" class="space-y-1.5"></ul>
@@ -869,10 +869,10 @@
       <!-- Search box (client-side filter of the visible recent list) -->
       <div class="mt-3 relative">
         <input id="kfl-recent-search" type="search" placeholder="🔍 חפש הוצאה (לפי תיאור / קטגוריה)..."
-          class="w-full rounded-xl border border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-900 px-3 py-2 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-white outline-none" />
+          class="w-full rounded-xl border border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-950 px-3 py-2 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-white outline-none" />
       </div>
       <div id="recent-list" class="mt-3 space-y-2">
-        <div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">
+        <div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">
           טוען תנועות…
         </div>
       </div>
@@ -929,18 +929,18 @@
   <section id="settings-panel" class="mt-6 hidden rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-6 dark:border-ink-700 dark:bg-ink-800">
     <h3 class="text-lg font-bold">הגדרות</h3>
     <div class="mt-4 space-y-3 text-sm">
-      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-950">
         <div><span class="font-semibold">חשבון Google</span> · <span id="settings-email" class="text-ink-500 dark:text-ink-400">—</span></div>
         <button onclick="kesefleLogout()" class="text-xs font-semibold text-red-600 hover:underline">התנתק</button>
       </div>
-      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-950">
         <div><span class="font-semibold">הגיליון שלך</span> · <a id="settings-sheet" target="_blank" rel="noopener" href="#" class="text-brand-600 hover:underline">פתח בגיליון →</a></div>
       </div>
-      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-950">
         <div><span class="font-semibold">תוכנית</span> · <span id="settings-plan">חינם</span></div>
         <a href="/account#plan" class="text-xs font-semibold text-brand-600 hover:underline">שדרג →</a>
       </div>
-      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-900">
+      <div class="flex items-center justify-between rounded-2xl bg-ink-50 p-3 dark:bg-ink-950">
         <div><span class="font-semibold">ייצוא נתונים</span></div>
         <a id="export-csv" href="#" class="text-xs font-semibold text-brand-600 hover:underline">הורד CSV (מהגיליון)</a>
       </div>
@@ -977,7 +977,7 @@
       <div id="ref-active-state" class="mt-4 hidden">
         <div class="flex flex-wrap items-stretch gap-2">
           <input id="ref-link-input" type="text" readonly aria-label="קישור הזמנה אישי"
-                 class="num min-w-0 flex-1 rounded-2xl border border-ink-200 bg-white px-3 py-2 text-sm font-mono text-ink-700 ltr:text-left dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100" />
+                 class="num min-w-0 flex-1 rounded-2xl border border-ink-200 bg-white px-3 py-2 text-sm font-mono text-ink-700 ltr:text-left dark:border-ink-700 dark:bg-ink-950 dark:text-ink-100" />
           <button type="button" onclick="kesefleCopyReferralLink()" id="ref-copy-btn" class="inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl bg-brand-500 px-3.5 py-2 text-sm font-bold text-white hover:bg-brand-600">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span id="ref-copy-label">העתק</span>
@@ -1026,7 +1026,7 @@
       </div>
       <button type="button" onclick="kesefleCloseTxModal()" class="grid h-8 w-8 place-items-center rounded-full text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-700" aria-label="סגור">✕</button>
     </div>
-    <div class="mt-5 rounded-2xl bg-ink-50 p-4 dark:bg-ink-900">
+    <div class="mt-5 rounded-2xl bg-ink-50 p-4 dark:bg-ink-950">
       <div class="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-500">סכום</div>
       <div id="tx-modal-amount" class="num mt-1 text-2xl font-black">₪0</div>
       <div id="tx-modal-raw" class="mt-3 break-words text-sm text-ink-600 dark:text-ink-300"></div>
@@ -1528,7 +1528,7 @@ function showReauthBanner() {
   document.getElementById('reauth-banner').classList.remove('hidden');
   document.getElementById('summary-cards').classList.add('hidden');
   document.getElementById('empty-state').classList.add('hidden');
-  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">לחץ "התחבר מחדש" כדי לטעון את הנתונים.</div>';
+  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">לחץ "התחבר מחדש" כדי לטעון את הנתונים.</div>';
   document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">—</div>';
 }
 
@@ -1610,7 +1610,7 @@ function setLoadingState() {
     var el = document.getElementById(id); if (el) el.textContent = '₪0';
   });
   var mc = document.getElementById('month-count'); if (mc) mc.textContent = '0';
-  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">טוען תנועות…</div>';
+  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">טוען תנועות…</div>';
   document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">טוען…</div>';
 }
 
@@ -1703,7 +1703,7 @@ function showEmptyState() {
   document.getElementById('reauth-banner').classList.add('hidden');
   document.getElementById('summary-cards').classList.add('hidden');
   document.getElementById('empty-state').classList.remove('hidden');
-  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400">אין תנועות עדיין. שלח לבוט הודעה ראשונה.</div>';
+  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">אין תנועות עדיין. שלח לבוט הודעה ראשונה.</div>';
   document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">אין נתונים עדיין.</div>';
 }
 
@@ -1816,7 +1816,7 @@ function renderDashboard(d) {
   recent.slice(0, 10).forEach(function(t, i) {
     var meta = categoryMeta(t.subcategory || t.category);
     var row = document.createElement('div');
-    row.className = 'tx-row row-in flex items-center gap-3 rounded-2xl bg-ink-50 p-3 transition hover:bg-ink-100 dark:bg-ink-900 dark:hover:bg-ink-700';
+    row.className = 'tx-row row-in flex items-center gap-3 rounded-2xl bg-ink-50 p-3 transition hover:bg-ink-100 dark:bg-ink-950 dark:hover:bg-ink-700';
     row.style.animationDelay = (i * 40) + 'ms';
     row.setAttribute('data-tx-idx', i);
     var sign = t.is_income ? '+' : '-';
@@ -3411,7 +3411,7 @@ function generatePseudoSeries(target, n, intLike) {
       pro.classList.remove('hidden');
       badge.textContent = (data.items || []).length + ' / ' + (data.max_allowed || 50);
       list.innerHTML = (data.items || []).map(function (item) {
-        return '<li class="flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg bg-ink-50 dark:bg-ink-900/40 text-sm">' +
+        return '<li class="flex items-center justify-between gap-2 py-1.5 px-3 rounded-lg bg-ink-50 dark:bg-ink-950/40 text-sm">' +
           '<span>' + escapeHtml(item.name) + '</span>' +
           '<button onclick="kflCatRemove(\'' + escapeHtml(item.name).replace(/'/g, '\\\'') + '\')" class="text-xs text-ink-500 dark:text-ink-500 hover:text-red-500" title="הסר">×</button>' +
         '</li>';
@@ -3646,7 +3646,7 @@ window.kflExportData = async function () {
       if (!placeholder) {
         placeholder = document.createElement('div');
         placeholder.id = 'kfl-search-no-matches';
-        placeholder.className = 'rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-900 dark:text-ink-400';
+        placeholder.className = 'rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400';
         placeholder.textContent = '🔍 אין תוצאות עבור "' + q + '"';
         document.getElementById('recent-list').appendChild(placeholder);
       } else {
