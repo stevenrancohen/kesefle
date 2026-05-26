@@ -234,3 +234,147 @@ KV impact: 1 record per goal + 1 list per user. For 1000 users × avg 3 goals = 
 5. **Goal renaming after creation — allow or force delete+recreate?** I drafted "replace by re-issuing the קבע יעד command" — simpler.
 
 Once you answer these, I open PR-1.
+
+---
+
+# v2 ADDITION — Onboarding question + recurring reminders (added 2026-05-26 by Steven)
+
+Original v1 (above) treated goals as something the user *opts into* by typing
+`קבע יעד אוכל 3000`. Steven asked for the OPPOSITE: the bot **proactively asks**
+during onboarding, and once a horizon is chosen, **proactively reminds** the user
+2-3× per week so the goal stays top of mind.
+
+This is the difference between a *budget tool* (user remembers to set caps) and
+a *coach* (the coach won't let you forget your goal).
+
+## New onboarding question
+
+Add a new step to the existing signup questionnaire (the one that already asks
+profession, tracking type, etc.). Placement: **last question in the questionnaire**,
+because by then the user is invested and won't drop off.
+
+Question text (Hebrew):
+```
+🎯 שאלה אחרונה — מה היעד הפיננסי שלך?
+נדלוק עליו ביחד.
+
+1️⃣ לחודש הקרוב   — קצר, ממוקד (חיסכון, לחתוך הוצאה, להגדיל הכנסה)
+2️⃣ ל-6 חודשים   — בינוני (סגירת חוב, קרן חירום, הקמת עסק)
+3️⃣ לשנה הקרובה  — גדול (משכנתא, השקעה, מטרת חיים)
+4️⃣ אין לי יעד   — נדבר בהמשך
+```
+
+The user replies with 1/2/3/4. We then ask the FREE-TEXT specifics:
+
+```
+מצוין. במשפט אחד — מה היעד?
+לדוגמה: "לחסוך 5,000 ש"ח לטיול ביוני" / "להוריד הוצאות אוכל ב-1000 לחודש" /
+"להחזיר את ההלוואה של 12,000 עד סוף השנה"
+```
+
+The user replies in free text → we save it.
+
+## Data model — extends the existing `goal:` schema
+
+NEW record type — `objective` (the long-horizon goal), separate from `goal`
+(the monthly cap/savings). One per user, replaced on re-issue.
+
+KV: `objective:{userSub}`
+```json
+{
+  "userSub": "117...",
+  "horizon": "month" | "six_months" | "year",
+  "horizonChosenAt": 1748259600000,
+  "horizonEndsAt": 1750851600000,         // computed: now + horizon
+  "description": "לחסוך 5000 ש\"ח לטיול ביוני",
+  "createdAt": 1748259600000,
+  "lastReminderAt": null,                  // managed by the reminder cron
+  "reminderCount": 0,
+  "muted": false,                          // user can mute via "השתק יעד"
+  "achieved": false                        // set true by user via "השגתי יעד" or by goal achievement
+}
+```
+
+## Reminder cron — 3× per week, smart content
+
+NEW cron: `api/cron/objective-reminders.js`, wired to `vercel.json` at
+`0 18 * * 0,2,4` (Sunday + Tuesday + Thursday, 20:00 IL = 18:00 UTC summer).
+
+For each active objective (not muted, not achieved, not past `horizonEndsAt`):
+1. Skip if `lastReminderAt` < 36h ago (anti-spam)
+2. Compute progress proxy from existing data:
+   - "month" horizon: this-month net cashflow vs implied target
+   - "six_months": last-6-months trend toward the description's keywords
+   - "year": last-12-months trend
+3. Pick one of 4 message templates based on progress band:
+   - **Behind** → encouragement: "💪 חצי חודש עבר ועדיין רחוק מ-X. מה תוכל לשנות השבוע?"
+   - **On track** → positive reinforcement: "🔥 אתה במסלול ל-X. עוד 18 ימים."
+   - **Ahead** → celebration: "✨ עברת חצי דרך ל-X באמצע החודש. כל הכבוד."
+   - **No data yet** → check-in: "🎯 רק תזכורת: היעד שלך הוא X. נדבר על איך להגיע."
+4. Send via WhatsApp DM
+5. Update `lastReminderAt`, increment `reminderCount`
+
+## New bot commands (on top of v1)
+
+| Command | Effect |
+|---|---|
+| `יעד שלי` | Show current objective + progress |
+| `השגתי יעד` | Mark `achieved: true`, congratulate, ask if they want a new horizon |
+| `השתק יעד` | Set `muted: true` for the current horizon period (auto-unmutes at next horizon) |
+| `שנה יעד <description>` | Update description without resetting horizon |
+| `יעד חדש` | Re-run the onboarding question + free-text capture |
+
+All routed through `_handleObjectiveCommand_` (new), wired BEFORE
+`_handleGoalCommand_` in doPost so "יעד" tokens are caught by the right handler.
+
+## Why this matters (the principle Steven gave)
+
+Per Steven's note: "The customer has to remember the financial goal — we won't
+let them forget." The whole feature is built around that contract:
+1. **Ask explicitly** at onboarding so the goal is named, not inferred
+2. **Remind regularly** so the goal stays present, not fade-away
+3. **Make achievement visible** so the user has a moment of "I did it"
+4. **Make re-entry easy** so when one goal ends, the next starts immediately
+
+This is what turns Kesefle from "expense tracker" into "financial coach."
+
+## Implementation order (extends the v1 3-PR rollout)
+
+### PR-1 (already merged as #72)
+- Manual goal commands: קבע יעד / יעדים / מחק יעד
+- Data layer + API endpoints + bot dispatcher
+
+### PR-2 — Objective onboarding + reminder cron (NEW from this v2)
+- New `objective:` KV record
+- 4 new bot commands (יעד שלי / השגתי יעד / השתק יעד / שנה יעד / יעד חדש)
+- New cron: `api/cron/objective-reminders.js` (Sun/Tue/Thu 20:00 IL)
+- Onboarding question added to the signup questionnaire (after profession step)
+- 4 reminder templates with progress-aware selection
+- 5+ regression tests in `bot/test_objective_reminders.js`
+
+### PR-3 — Post-write threshold alerts (from v1 PR-2)
+- 50/80/100% alerts on `spend_cap` goals
+- Daily 09:00 cron
+- (unchanged from v1 design)
+
+### PR-4 — Pre-write block + dashboard widget (from v1 PR-3)
+- `block: true` flag wiring
+- Dashboard "🎯 יעדים" section
+- (unchanged from v1 design)
+
+## Open questions added in v2
+
+6. **Onboarding placement** — last question of the questionnaire (my draft) OR
+   first question right after the welcome message?
+7. **Reminder cadence** — Sun/Tue/Thu evenings (3×/week, my draft) OR every
+   weekday morning OR just Sun+Wed?
+8. **"No data" gracefulness** — for a brand-new account with no expenses yet,
+   should the cron still fire reminders, or wait until there are ≥10 expenses?
+9. **Free-text validation** — the description is unstructured. Should we try to
+   parse it (amount + date + category) and create a `spend_cap`/`savings` goal
+   automatically, or keep it as text-only motivation?
+10. **Mute escape hatch** — should a single "stop" / "די" / "אל תזכיר" auto-mute,
+    or only the explicit `השתק יעד` command? I prefer the explicit command for
+    clarity but Steven may want the natural-language exit.
+
+Once Steven answers Q6-Q10 + Q1-Q5 from v1, I open PR-2 of the goals feature.
