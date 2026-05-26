@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-objectives-mini';
+const KFL_BUILD_VERSION = '2026-05-26-picker-expanded';
 
 // ── KFL-TRACE — uniform breadcrumb logger ─────────────────────────────────────
 // Steven 2026-05-26: when a bot reply is wrong (e.g. ₪200 written as ₪1, or
@@ -5365,63 +5365,136 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
   try {
     if (!fromPhone) return;
 
-    // 4 sections × ~9 rows each = 36 categories. Order within each section
-    // is "most common first" — saves the user a scroll on the typical case.
+    // PR-3 (2026-05-26): expanded from 4 sections x ~9 rows (36 categories) to
+    // 10 sections grouped per docs/BOT_MENU_FIRST_POLICY.md canonical buckets:
+    //   food / home / transport / personal / education-kids / leisure / business /
+    //   financial / income + escape "other / full list / new category".
+    // Row values use lib/categories.js subcategory names so the dashboard
+    // SUMIFS exact-match what the user picks. Order within each section is
+    // "most common first" -- saves a scroll on the typical case.
     var SECTIONS = [
       {
-        title: '🏠 יומיומי',
+        title: '🍞 אוכל',
         rows: [
-          { name: 'אוכל',          icon: '🍞' },
-          { name: 'תחבורה',         icon: '🚗' },
-          { name: 'קניות',          icon: '🛍' },
-          { name: 'בידור',          icon: '🎬' },
-          { name: 'בריאות',         icon: '💊' },
-          { name: 'ביגוד',          icon: '👔' },
-          { name: 'קפה ומסעדות',    icon: '☕' },
-          { name: 'דלק',           icon: '⛽' },
-          { name: 'מתנות',          icon: '🎁' },
-          { name: 'חינוך וחוגים',   icon: '🎓' },
+          { name: 'אוכל',              icon: '🍞' },
+          { name: 'סופר ומכולת',        icon: '🛒' },
+          { name: 'מסעדה ואוכל בחוץ',   icon: '🍽' },
+          { name: 'קפה',                icon: '☕' },
+          { name: 'אוכל מהיר',          icon: '🍔' },
+          { name: 'אוכל מוכן',          icon: '🥡' },
+          { name: 'אלכוהול',            icon: '🍷' },
+          { name: 'פארמה',              icon: '💊' },
         ],
       },
       {
-        title: '🏘 בית והוצאות קבועות',
+        title: '🏠 בית',
         rows: [
-          { name: 'הוצאות קבועות',  icon: '🏠' },
-          { name: 'חשמל ומים',      icon: '💡' },
-          { name: 'אינטרנט וטלפון', icon: '🌐' },
-          { name: 'ביטוחים',        icon: '🛡' },
-          { name: 'שכירות',         icon: '🏘' },
-          { name: 'משכנתא',         icon: '🏦' },
-          { name: 'חופשות',         icon: '🏖' },
-          { name: 'ילדים',          icon: '👶' },
-          { name: 'חיות מחמד',      icon: '🐶' },
-          { name: 'מנויים',         icon: '📺' },
+          { name: 'חשמל',               icon: '💡' },
+          { name: 'מים וביוב',          icon: '💧' },
+          { name: 'גז',                 icon: '🔥' },
+          { name: 'ארנונה',             icon: '🏛' },
+          { name: 'שכר דירה',           icon: '🏘' },
+          { name: 'משכנתה',             icon: '🏦' },
+          { name: 'ועד בית',            icon: '🧹' },
+          { name: 'תיקונים בבית',       icon: '🔧' },
+        ],
+      },
+      {
+        title: '🚗 תחבורה',
+        rows: [
+          { name: 'דלק',                icon: '⛽' },
+          { name: 'חניה',               icon: '🅿️' },
+          { name: 'כבישי אגרה',         icon: '🛣' },
+          { name: 'תחבורה ציבורית',     icon: '🚌' },
+          { name: 'מוניות',             icon: '🚕' },
+          { name: 'ביטוח רכב',          icon: '🛡' },
+          { name: 'תחזוקת רכב',         icon: '🔩' },
+          { name: 'רישוי רכב',          icon: '📄' },
+        ],
+      },
+      {
+        title: '🧍 אישי',
+        rows: [
+          { name: 'ביגוד',              icon: '👕' },
+          { name: 'נעליים',             icon: '👟' },
+          { name: 'מספרה',              icon: '💇' },
+          { name: 'קוסמטיקה',           icon: '💄' },
+          { name: 'בריאות',             icon: '🩺' },
+          { name: 'תרופות',             icon: '💊' },
+          { name: 'ספורט',              icon: '🏋' },
+          { name: 'אופטיקה',            icon: '👓' },
+        ],
+      },
+      {
+        title: '🎓 חינוך וילדים',
+        rows: [
+          { name: 'בית ספר',            icon: '🏫' },
+          { name: 'חוגים',              icon: '🎨' },
+          { name: 'צהרון',              icon: '🌞' },
+          { name: 'שיעור פרטי',         icon: '📚' },
+          { name: 'בייביסיטר',          icon: '🧒' },
+          { name: 'ביגוד ילדים',        icon: '👶' },
+          { name: 'צעצועים',            icon: '🧸' },
+          { name: 'דמי כיס',            icon: '💸' },
+        ],
+      },
+      {
+        title: '🎬 פנאי ובידור',
+        rows: [
+          { name: 'בידור',              icon: '🎬' },
+          { name: 'חופשות',             icon: '🏖' },
+          { name: 'מתנות',              icon: '🎁' },
+          { name: 'אירועים',            icon: '🎉' },
+          { name: 'מנויים',             icon: '📺' },
+          { name: 'חיות מחמד',          icon: '🐶' },
         ],
       },
       {
         title: '💼 עסק',
         rows: [
-          { name: 'הכנסה מעסק',     icon: '💵' },
-          { name: 'שיווק ופרסום',   icon: '📣' },
-          { name: 'עובדים',         icon: '👷' },
-          { name: 'קבלן משנה',      icon: '🔧' },
-          { name: 'חומרי גלם',      icon: '🧱' },
-          { name: 'תוכנות וציוד',   icon: '💻' },
-          { name: 'רואה חשבון',     icon: '🧮' },
-          { name: 'מיסים',          icon: '🏛' },
-          { name: 'משלוחים',        icon: '🚚' },
-          { name: 'שכירות משרד',    icon: '🏢' },
+          { name: 'הכנסה מעסק',         icon: '💵' },
+          { name: 'שיווק ופרסום',       icon: '📣' },
+          { name: 'שכר עובדים',         icon: '👷' },
+          { name: 'קבלן משנה',          icon: '🔧' },
+          { name: 'חומרי גלם',          icon: '🧱' },
+          { name: 'תוכנות וציוד',       icon: '💻' },
+          { name: 'רואה חשבון',         icon: '🧮' },
+          { name: 'מיסים',              icon: '🏛' },
+          { name: 'משלוחים עסקיים',     icon: '🚚' },
+          { name: 'שכירות משרד',        icon: '🏢' },
+        ],
+      },
+      {
+        title: '💰 פיננסי',
+        rows: [
+          { name: 'עמלות בנק',          icon: '🏦' },
+          { name: 'ריבית',              icon: '📈' },
+          { name: 'ביטוח חיים',         icon: '🛡' },
+          { name: 'ביטוח לאומי',        icon: '🇮🇱' },
+          { name: 'חיסכון',             icon: '💰' },
+          { name: 'השקעות',             icon: '📊' },
+          { name: 'החזר הלוואה',        icon: '↩️' },
         ],
       },
       {
         title: '📈 הכנסות',
         rows: [
-          { name: 'משכורת',         icon: '💴' },
-          { name: 'בונוס',          icon: '🎉' },
-          { name: 'שכר דירה',       icon: '🏠' },
-          { name: 'דיבידנדים',      icon: '📊' },
-          { name: 'החזר מס',        icon: '↩️' },
-          { name: 'אחר',           icon: '✨' },
+          { name: 'משכורת',             icon: '💴' },
+          { name: 'בונוס',              icon: '🎉' },
+          { name: 'שכר דירה (הכנסה)',   icon: '🏠' },
+          { name: 'קצבאות',             icon: '🤝' },
+          { name: 'דיבידנדים',          icon: '📊' },
+          { name: 'החזר מס',            icon: '↩️' },
+        ],
+      },
+      {
+        title: '✨ אחר',
+        rows: [
+          { name: 'שונות',              icon: '✨' },
+          { name: 'תרומות',             icon: '❤️' },
+          // Escape options - special ids handled in _handleRelabelTap_.
+          { name: '__custom__',         icon: '🆕', display: 'קטגוריה חדשה' },
+          { name: '__full_list__',      icon: '📋', display: 'פתח רשימה מלאה' },
         ],
       },
     ];
@@ -5464,6 +5537,28 @@ function _handleRelabelTap_(fromPhone, newCategory) {
   if (!fromPhone || !newCategory) return null;
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
   var cache = CacheService.getScriptCache();
+
+  // PR-3 escape options. These never call the relabel endpoint -- they prompt
+  // the user for free-text input. The picker keeps WhatsApp's 10x10 cap usable
+  // by always exposing a way out for categories not in the curated list.
+  if (newCategory === '__custom__') {
+    // Remember that the next free-text reply is meant as a category name.
+    try {
+      cache.put('awaitingCustomCategory:' + clean, '1', 600);
+    } catch (_ce) {}
+    return { replyText:
+      '✍️ כתוב/י את שם הקטגוריה החדשה (לדוגמה: "ציוד צילום" או "תשלום למורה לפסנתר"). אכניס לרשימה ואלמד אותה לטובה.'
+    };
+  }
+  if (newCategory === '__full_list__') {
+    // Rather than try to render 100+ rows in a list (WhatsApp cap is 10x10),
+    // tell the user to type the category name freely. Bot's classifier will
+    // match against the full lib/categories.js taxonomy.
+    return { replyText:
+      '📋 הרשימה המלאה ארוכה מדי לתפריט. פשוט כתוב/י את שם הקטגוריה (לדוגמה: "ביטוח רפואי נוסף", "תיקון מקרר", "שיעור פרטי") - אזהה ואעדכן.'
+    };
+  }
+
   var last = null;
   try {
     var raw = cache.get('lastTenantExp:' + clean);
