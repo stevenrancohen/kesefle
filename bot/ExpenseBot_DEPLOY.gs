@@ -8745,6 +8745,70 @@ function _recurringSuggestionLine_(fromPhone, history, current) {
   }
 }
 
+// PR #18 (2026-05-26): mirror of _detectRecurringCandidate_ for INCOME.
+// Today the expense-recurring detector explicitly skips isIncome rows
+// (line 8625: "expenses only (never income)"). But the same pattern is
+// just as useful for salaries — if a user receives the same amount as
+// "משכורת" / "הכנסה" 3 distinct months in a row, we should offer to
+// register it as expected recurring income. Lets the user see month-vs-
+// expected, get alerted if a salary doesn't show up, etc.
+//
+// Same gates: minMonths=3, maxRatio=1.5 (salary variance OK), pure
+// function for offline testability.
+function _detectRecurringIncomeCandidate_(history, current, opts) {
+  opts = opts || {};
+  var minMonths = opts.minMonths || 3;
+  var maxRatio = opts.maxRatio || 1.5;
+  if (!current || !current.isIncome) return null;
+  var desc = _normForRecurring_(current.description);
+  if (!desc || desc.length < 2) return null;
+  var curAmt = Math.abs(Number(current.amount) || 0);
+  if (curAmt <= 0) return null;
+
+  var months = {};
+  var amounts = [curAmt];
+  if (current.monthKey) months[current.monthKey] = true;
+  for (var i = 0; i < (history || []).length; i++) {
+    var h = history[i];
+    if (!h || !h.isIncome) continue; // INCOME only — flip of the expense detector
+    if (_normForRecurring_(h.description) !== desc) continue;
+    var a = Math.abs(Number(h.amount) || 0);
+    if (a <= 0) continue;
+    if (h.monthKey) months[h.monthKey] = true;
+    amounts.push(a);
+  }
+  var distinctMonths = Object.keys(months).length;
+  if (distinctMonths < minMonths) return null;
+
+  var mn = Math.min.apply(null, amounts);
+  var mx = Math.max.apply(null, amounts);
+  if (mn <= 0 || (mx / mn) > maxRatio) return null;
+
+  var avg = amounts.reduce(function (s, x) { return s + x; }, 0) / amounts.length;
+  return { count: distinctMonths, desc: String(current.description || '').trim(), amount: Math.round(avg) };
+}
+
+// User-facing income recurring suggestion. Different wording from the
+// expense version because the user-mental-model is different: they're
+// not signing up for a NEW recurring bill, they're CONFIRMING expected
+// income so they can budget against it.
+function _recurringIncomeSuggestionLine_(fromPhone, history, current) {
+  try {
+    var cand = _detectRecurringIncomeCandidate_(history, current);
+    if (!cand) return '';
+    var markerKey = 'recinc_' + _sha256Hex_((fromPhone || '') + '|' + _normForRecurring_(current.description)).slice(0, 24);
+    var props = PropertiesService.getScriptProperties();
+    if (props.getProperty(markerKey)) return '';
+    props.setProperty(markerKey, '1');
+    return '\n\n💰 זיהיתי "' + cand.desc + '" כהכנסה חוזרת ב-' + cand.count +
+           ' חודשים אחרונים (~' + _money_(cand.amount) + '). רוצה שאעקוב אחריה כצפויה? אם החודש לא תיכנס — אזכיר לך.\n' +
+           '👉 שלח: צפי ' + cand.desc + ' ' + cand.amount;
+  } catch (e) {
+    Logger.log('_recurringIncomeSuggestionLine_: ' + e.message);
+    return '';
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // USER-DRIVEN CATEGORY CORRECTION FLOW
 //
