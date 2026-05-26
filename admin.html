@@ -674,7 +674,7 @@
       <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium" style="background: #F1F5F9; color: #475569;">Live data</span>
     </div>
     <div class="card card-hover p-5">
-      <div id="kfl-funnel" class="space-y-3 text-sm" style="color: #64748B;">Loading...</div>
+      <div id="kfl-funnel" class="space-y-3 text-sm" style="color: #64748B;"><div class="flex items-center gap-2"><svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M22 12a10 10 0 0 1-10 10"/></svg><span>טוען נתוני משפך…</span></div></div>
     </div>
   </section>
 
@@ -1001,7 +1001,7 @@
     const tbody = document.getElementById('users-tbody');
     if (!tbody) return;
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-sm" style="color: #94A3B8;">No users to display.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="p-10 text-center" style="color: #64748B;"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#ECFEFF;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m22 11-3 3-1.5-1.5"/></svg></div><div class="text-sm font-medium" style="color:#1E293B;">עדיין אין משתמשים רשומים</div><div class="mt-1 text-xs" style="color:#64748B;">משתמש ראשון יופיע כאן אוטומטית ברגע שמישהו ירשם ב-kesefle.com</div></td></tr>';
       return;
     }
     // Steven 2026-05-26 (QA HIGH #3): every user-controlled string goes
@@ -1089,7 +1089,7 @@
     const ul = document.getElementById('activity-feed');
     if (!ul) return;
     if (!ACTIVITIES.length) {
-      ul.innerHTML = '<li class="p-6 text-center text-sm" style="color: #94A3B8;">No recent activity.</li>';
+      ul.innerHTML = '<li class="p-10 text-center" style="color: #64748B;"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#F0FDFA;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="text-sm font-medium" style="color:#1E293B;">אין פעילות חדשה כרגע</div><div class="mt-1 text-xs" style="color:#64748B;">הודעות מהבוט, הרשמות וקבלות יופיעו כאן בזמן אמת</div></li>';
       return;
     }
     ul.innerHTML = ACTIVITIES.map(a => activityRow(a)).join('');
@@ -1142,7 +1142,7 @@
       return;
     }
     var t = token();
-    list.innerHTML = '<div class="text-sm" style="color: #94A3B8;">Loading...</div>';
+    list.innerHTML = '<div class="text-sm flex items-center gap-2" style="color: #64748B;"><svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M22 12a10 10 0 0 1-10 10"/></svg><span>טוען תשלומים בהמתנה…</span></div>';
     try {
       var res = await fetch('/api/billing/manual?action=list', { credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
       if (res.status === 401 || res.status === 403) {
@@ -1152,7 +1152,7 @@
       var j = await res.json();
       if (!j.ok) { list.innerHTML = '<div class="text-sm" style="color: #EF4444;">Error: ' + esc(j.error || '') + '</div>'; return; }
       if (!j.pending || !j.pending.length) {
-        list.innerHTML = '<div class="card p-4 text-sm" style="color: #64748B;">No pending payments.</div>';
+        list.innerHTML = '<div class="card p-8 text-center" style="color: #64748B;"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#ECFDF5;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="text-sm font-medium" style="color:#1E293B;">אין תשלומים בהמתנה</div><div class="mt-1 text-xs" style="color:#64748B;">כל ההעברות הבנקאיות וההזמנות בביט אושרו ✓</div></div>';
         return;
       }
       list.innerHTML = j.pending.map(function (p) {
@@ -1253,7 +1253,7 @@
   async function loadHealth() {
     var box = el('kfl-reg-health'); var badge = el('kfl-reg-badge');
     if (!box) return;
-    box.innerHTML = '<div style="color: #94A3B8;">Loading...</div>'; if (badge) badge.textContent = '';
+    box.innerHTML = '<div class="text-sm flex items-center gap-2" style="color: #64748B;"><svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M22 12a10 10 0 0 1-10 10"/></svg><span>טוען בריאות מערכת…</span></div>'; if (badge) badge.textContent = '';
     try {
       var j = await getJSON('registration-health');
       if (j._noauth) { box.innerHTML = AUTH_MSG; return; }
@@ -1321,13 +1321,13 @@
   async function loadQuestionnaires() {
     var box = el('kfl-questionnaires');
     if (!box) return;
-    box.innerHTML = '<div style="color: #94A3B8;">Loading...</div>';
+    box.innerHTML = '<div class="text-sm flex items-center gap-2" style="color: #64748B;"><svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M22 12a10 10 0 0 1-10 10"/></svg><span>טוען שאלונים…</span></div>';
     try {
       var j = await getJSON('questionnaires');
       if (j._noauth) { box.innerHTML = AUTH_MSG; return; }
       if (j._denied) { box.innerHTML = '<div class="text-sm" style="color: #F59E0B;">הגישה נדחתה — ודא/י שהאימייל שלך ב-ADMIN_EMAILS.</div>'; return; }
       if (!j.ok) { box.innerHTML = '<div class="text-sm" style="color: #EF4444;">שגיאה: ' + esc(j.error || '') + '</div>'; return; }
-      if (!j.total) { box.innerHTML = '<div class="text-sm" style="color: #94A3B8;">No questionnaires yet. They will appear here once customers respond.</div>'; return; }
+      if (!j.total) { box.innerHTML = '<div class="card p-8 text-center" style="color: #64748B;"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#EFF6FF;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div><div class="text-sm font-medium" style="color:#1E293B;">עדיין אין שאלונים</div><div class="mt-1 text-xs" style="color:#64748B;">תשובות מהשאלון בבוט יופיעו כאן ברגע שמשתמשים יסיימו אותו</div></div>'; return; }
       var bt = j.summary && j.summary.byTrackingType || {};
       var chips = Object.keys(bt).map(function (k) {
         return '<span class="rounded-md px-2 py-0.5 text-xs font-medium" style="background: #F1F5F9; color: #475569;">' + esc(TRACK_HE[k] || k) + ': ' + bt[k] + '</span>';
