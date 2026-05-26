@@ -10,6 +10,9 @@
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" href="/logo.png" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&display=swap" />
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <script>
   tailwind.config = {
@@ -17,14 +20,16 @@
     theme: {
       extend: {
         fontFamily: {
-          sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'system-ui', 'sans-serif'],
+          sans: ['Inter', 'Heebo', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+          display: ['Rubik', 'Heebo', 'system-ui', 'sans-serif'],
         },
         colors: {
-          slate: {
-            50:'#F8FAFC', 100:'#F1F5F9', 200:'#E2E8F0', 300:'#CBD5E1',
-            400:'#94A3B8', 500:'#64748B', 600:'#475569', 700:'#334155',
-            800:'#1E293B', 900:'#0F172A', 950:'#020617',
-          },
+          // Official Kesefle brand palette — matches kesefle.com/
+          ink:    { 50:'#f7f8fb',100:'#eef0f6',200:'#dde1ec',300:'#bcc4d6',400:'#8a95b3',500:'#5d6b8f',600:'#41506f',700:'#2f3b54',800:'#1e2638',900:'#0f1422',950:'#070b16' },
+          brand:  { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+          accent: { 400:'#22d3ee',500:'#06b6d4',600:'#14b8a6' },
+          // Retain slate (used by existing components) so we don't break anything.
+          slate: { 50:'#F8FAFC',100:'#F1F5F9',200:'#E2E8F0',300:'#CBD5E1',400:'#94A3B8',500:'#64748B',600:'#475569',700:'#334155',800:'#1E293B',900:'#0F172A',950:'#020617' },
         },
       },
     },
@@ -173,58 +178,121 @@
 <!-- ============== APP SHELL ============== -->
 <main id="kfl-app" class="gate-blur mx-auto max-w-7xl px-5 pt-20 pb-20">
 
-  <!-- ====== SECTION 1: HEADER ====== -->
-  <section class="mb-10 pt-4">
+  <!-- ====== SECTION 1: HEADER (CEO dashboard — brand-aligned 2026-05-26) ====== -->
+  <section class="mb-8 pt-4">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div class="mb-3 inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-[11px] font-medium" style="background: #F1F5F9; color: #475569;">
-          <span class="status-dot" style="background: #10B981;"></span>
-          Live <span class="num" style="color: #64748B;" id="now-clock">00:00:00</span>
+        <div class="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest" style="background:#eef2ff;color:#4338ca;">
+          <span class="status-dot" style="background:#06b6d4;"></span>
+          Live <span class="num" style="color:#4338ca;" id="now-clock">00:00:00</span>
         </div>
-        <h1 class="text-3xl tracking-tight" style="font-weight: 300; color: #1E293B;">
-          dashboard
+        <h1 class="font-display text-4xl font-black tracking-tight md:text-5xl" style="color:#0f1422;letter-spacing:-0.035em;">
+          לוח בקרה
         </h1>
-        <p class="mt-1 text-sm" style="color: #64748B;">Welcome back, Steven.</p>
+        <p class="mt-2 text-base font-medium" style="color:#41506f;">שלום סטיבן, הנה מצב המערכת ברגע זה.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium" style="background: #F1F5F9; color: #475569;">
-          Plan: Pro
+        <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold" style="background:#eef2ff;color:#4338ca;">
+          תכנית: Pro
         </span>
-        <a href="https://kesefle.com" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-normal" style="border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569;">
-          <span class="status-dot" style="background: #10B981;"></span>
-          kesefle.com
+        <a href="https://kesefle.com" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition hover:opacity-90" style="border:1px solid #dde1ec;background:#ffffff;color:#2f3b54;">
+          <span class="status-dot" style="background:#10b981;"></span>
+          צפייה באתר
         </a>
-        <a href="https://kesefle.com" target="_blank" rel="noopener" class="rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569;">
-          View site
-        </a>
-        <button onclick="alert('Site editor coming soon.')" class="rounded-md px-3 py-1.5 text-sm font-medium text-white" style="background: #1E293B;">
-          Edit site
+        <button onclick="window.open('https://kesefle.com','_blank')" class="rounded-xl px-4 py-2 text-sm font-bold text-white transition hover:opacity-90" style="background:linear-gradient(135deg,#4f46e5,#4338ca);box-shadow:0 8px 20px -8px rgba(79,70,229,0.5);">
+          עריכת אתר
         </button>
       </div>
     </div>
   </section>
 
+  <!-- ====== KPI STRIP (CEO at-a-glance) ====== -->
+  <section class="mb-10" id="kfl-kpi-strip" aria-label="מדדים מרכזיים">
+    <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <!-- Each card: title, big number, subtext, accent stripe. Numbers fill from /api/admin?action=stats on init. -->
+      <div class="card p-4" style="border-top:3px solid #4f46e5;">
+        <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#41506f;">סה״כ משתמשים</div>
+        <div class="mt-1.5 font-display text-3xl font-black num" id="kfl-kpi-total" style="color:#0f1422;">—</div>
+        <div class="mt-1 text-xs" style="color:#5d6b8f;">חשבונות במערכת</div>
+      </div>
+      <div class="card p-4" style="border-top:3px solid #06b6d4;">
+        <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#41506f;">פעילים שבוע</div>
+        <div class="mt-1.5 font-display text-3xl font-black num" id="kfl-kpi-active" style="color:#0f1422;">—</div>
+        <div class="mt-1 text-xs" style="color:#5d6b8f;">הודעה ב-7 ימים האחרונים</div>
+      </div>
+      <div class="card p-4" style="border-top:3px solid #10b981;">
+        <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#41506f;">משלמים</div>
+        <div class="mt-1.5 font-display text-3xl font-black num" id="kfl-kpi-paying" style="color:#0f1422;">—</div>
+        <div class="mt-1 text-xs" style="color:#5d6b8f;">מנויי Pro או משפחה</div>
+      </div>
+      <div class="card p-4" style="border-top:3px solid #818cf8;">
+        <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#41506f;">הכנסה חודשית</div>
+        <div class="mt-1.5 font-display text-3xl font-black" id="kfl-kpi-mrr" style="color:#0f1422;">—</div>
+        <div class="mt-1 text-xs" style="color:#5d6b8f;">MRR נוכחי</div>
+      </div>
+      <div class="card p-4" style="border-top:3px solid #f59e0b;">
+        <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#41506f;">תקועים</div>
+        <div class="mt-1.5 font-display text-3xl font-black num" id="kfl-kpi-stuck" style="color:#0f1422;">—</div>
+        <div class="mt-1 text-xs" style="color:#5d6b8f;">נרשמו אבל אין גיליון</div>
+      </div>
+      <div class="card p-4" style="border-top:3px solid #ef4444;">
+        <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#41506f;">לתיקון היום</div>
+        <div class="mt-1.5 font-display text-3xl font-black num" id="kfl-kpi-todo" style="color:#0f1422;">—</div>
+        <div class="mt-1 text-xs" style="color:#5d6b8f;">בעיות מצטברות</div>
+      </div>
+    </div>
+    <script>
+    (function(){
+      // KPI fetcher — pulls existing /api/admin?action=stats and fills the cards.
+      // Falls back to "—" silently on error so the page never looks broken.
+      async function loadKpi() {
+        try {
+          var r = await fetch('/api/admin?action=stats', { credentials: 'include' });
+          if (!r.ok) return;
+          var j = await r.json();
+          var d = j && (j.stats || j.data || j) || {};
+          function set(id, v) { var el = document.getElementById(id); if (el && v != null) el.textContent = v; }
+          set('kfl-kpi-total',  d.totalUsers || d.users || d.signups || '—');
+          set('kfl-kpi-active', d.activeUsers7d || d.active || '—');
+          set('kfl-kpi-paying', d.payingUsers || d.paying || '—');
+          set('kfl-kpi-mrr',    (d.mrrILS != null ? '₪' + d.mrrILS : (d.mrr || '—')));
+          set('kfl-kpi-stuck',  d.stuckUsers || d.stuck || d.orphans || '—');
+          set('kfl-kpi-todo',   d.openIssues || d.todoCount || ((d.stuckUsers||0) + (d.brokenSheets||0) + (d.botErrors||0)) || '—');
+        } catch (_e) { /* leave em-dash */ }
+      }
+      // Wait for the auth gate to drop before fetching.
+      var attempts = 0;
+      var poller = setInterval(function(){
+        attempts++;
+        var gateGone = !document.getElementById('kfl-gate') || document.getElementById('kfl-gate').style.display === 'none';
+        if (gateGone || attempts > 40) { clearInterval(poller); loadKpi(); }
+      }, 250);
+    })();
+    </script>
+  </section>
+
   <!-- ====== SECTION 1.5: PENDING PAYMENTS ====== -->
   <section class="mb-10" id="pending-payments-section">
-    <div class="mb-4 flex items-end justify-between section-rule pb-3">
+    <div class="mb-4 flex items-end justify-between pb-3" style="border-bottom:2px solid #4f46e5;">
       <div>
-        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Pending payments</h2>
-        <p class="mt-0.5 text-sm" style="color: #64748B;">Bit / bank transfer — approve once funds are received; Premium activates immediately.</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest" style="color:#4338ca;">תשלומים</p>
+        <h2 class="font-display text-2xl font-black tracking-tight" style="color:#0f1422;">תשלומים ממתינים לאישור</h2>
+        <p class="mt-1 text-sm" style="color:#41506f;">Bit / העברה בנקאית — לאשר רק אחרי שהכסף נכנס. שדרוג ל-Pro קורה מיידית.</p>
       </div>
-      <button onclick="window.kflLoadPending && window.kflLoadPending()" class="rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">
-        Refresh
+      <button onclick="window.kflLoadPending && window.kflLoadPending()" class="rounded-xl px-3 py-2 text-sm font-bold transition hover:opacity-90" style="border:1px solid #dde1ec;color:#2f3b54;background:#ffffff;">
+        רענון
       </button>
     </div>
     <div id="pending-payments-list" class="grid gap-3"></div>
 
     <!-- PayPal one-time plan setup -->
-    <div class="card card-hover mt-5 p-4">
+    <div class="card card-hover mt-5 p-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div class="text-sm font-medium" style="color: #1E293B;">PayPal plans</div>
-          <div class="mt-0.5 text-xs" style="color: #64748B;">One click creates the Pro (₪19) and Family (₪39) plans in PayPal. Requires PAYPAL_CLIENT_ID + PAYPAL_CLIENT_SECRET on Vercel.</div>
+          <div class="text-base font-bold" style="color:#0f1422;">תכניות PayPal</div>
+          <div class="mt-1 text-sm" style="color:#41506f;">לחיצה אחת יוצרת את התכניות Pro (₪19) ו-משפחה (₪39) ב-PayPal. צריך PAYPAL_CLIENT_ID + PAYPAL_CLIENT_SECRET ב-Vercel.</div>
         </div>
-        <button id="kfl-paypal-setup-btn" onclick="window.kflCreatePaypalPlans && window.kflCreatePaypalPlans()" class="rounded-md px-3 py-1.5 text-sm font-medium text-white" style="background: #3B82F6;">Create PayPal plans</button>
+        <button id="kfl-paypal-setup-btn" onclick="window.kflCreatePaypalPlans && window.kflCreatePaypalPlans()" class="rounded-xl px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90" style="background:linear-gradient(135deg,#4f46e5,#4338ca);box-shadow:0 8px 20px -8px rgba(79,70,229,0.5);">צור תכניות PayPal</button>
       </div>
       <div id="kfl-paypal-setup-result" class="mt-3 hidden whitespace-pre-line rounded-md p-3 font-mono text-xs" style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B;"></div>
     </div>
@@ -232,27 +300,28 @@
 
   <!-- ====== SECTION 1.6: REGISTRATION HEALTH + QUESTIONNAIRES ====== -->
   <section class="mb-10" id="kfl-onboarding-section">
-    <div class="mb-4 flex items-end justify-between section-rule pb-3">
+    <div class="mb-4 flex items-end justify-between pb-3" style="border-bottom:2px solid #06b6d4;">
       <div>
-        <h2 class="text-lg font-medium tracking-tight" style="color: #1E293B;">Registration health &amp; questionnaires</h2>
-        <p class="mt-0.5 text-sm" style="color: #64748B;">Live check: every paying customer has a sheet, and what they answered in the onboarding form.</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">משתמשים</p>
+        <h2 class="font-display text-2xl font-black tracking-tight" style="color:#0f1422;">בריאות הרישום ושאלונים</h2>
+        <p class="mt-1 text-sm" style="color:#41506f;">בדיקה חיה: לכל לקוח משלם יש גיליון, וכל השאלון שמילא בהצטרפות.</p>
       </div>
-      <button onclick="window.kflLoadOnboarding && window.kflLoadOnboarding()" class="rounded-md px-3 py-1.5 text-sm font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #FFFFFF;">
-        Refresh
+      <button onclick="window.kflLoadOnboarding && window.kflLoadOnboarding()" class="rounded-xl px-3 py-2 text-sm font-bold transition hover:opacity-90" style="border:1px solid #dde1ec;color:#2f3b54;background:#ffffff;">
+        רענון
       </button>
     </div>
 
     <div class="card card-hover p-5">
       <div class="mb-3 flex items-center gap-2">
-        <span class="text-sm font-medium" style="color: #1E293B;">Registration health</span>
-        <span id="kfl-reg-badge" class="rounded-md px-2 py-0.5 text-xs font-medium"></span>
+        <span class="text-base font-bold" style="color:#0f1422;">בריאות הרישום</span>
+        <span id="kfl-reg-badge" class="rounded-full px-2.5 py-0.5 text-xs font-bold"></span>
       </div>
-      <div id="kfl-reg-health" class="text-sm" style="color: #64748B;">Loading...</div>
+      <div id="kfl-reg-health" class="text-sm" style="color:#41506f;">טוען...</div>
     </div>
 
     <div class="card card-hover mt-4 p-5">
-      <div class="mb-3 text-sm font-medium" style="color: #1E293B;">Customer questionnaires</div>
-      <div id="kfl-questionnaires" class="text-sm" style="color: #64748B;">Loading...</div>
+      <div class="mb-3 text-base font-bold" style="color:#0f1422;">שאלוני לקוחות</div>
+      <div id="kfl-questionnaires" class="text-sm" style="color:#41506f;">טוען...</div>
     </div>
   </section>
 
