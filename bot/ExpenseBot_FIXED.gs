@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-objectives-mini';
+const KFL_BUILD_VERSION = '2026-05-26-budget-intent-guard';
 
 // ── KFL-TRACE — uniform breadcrumb logger ─────────────────────────────────────
 // Steven 2026-05-26: when a bot reply is wrong (e.g. ₪200 written as ₪1, or
@@ -9261,8 +9261,89 @@ function _handleObjectiveCommand_(fromPhone, text) {
   var t = String(text).trim();
 
   // Quick reject. Recognized triggers all contain one of these.
-  if (!/(יעד\s+שלי|יעד\s+חדש|השגתי\s+יעד|השתק\s+יעד|שנה\s+יעד|^די$|^אל\s+תזכיר)/.test(t)) {
+  // STEVEN 2026-05-26 BUG: user wrote "היעד החדש הוא לרדת בהוצאות של האוכל ל 2000"
+  // and the bot interpreted it as an expense of ₪2 instead of a budget intent.
+  // The original regex only caught the structured "יעד שלי / יעד חדש / השגתי /
+  // השתק / שנה" commands. We now ALSO catch natural-language budget intent
+  // and route it here so the parser never gets a chance to write ₪2.
+  var hasStructuredTrigger = /(יעד\s+שלי|יעד\s+חדש|השגתי\s+יעד|השתק\s+יעד|שנה\s+יעד|^די$|^אל\s+תזכיר)/.test(t);
+  // Natural-language budget intent: "היעד החדש שלי...", "תקציב X", "לרדת ל...",
+  // "להפחית הוצאות X", "לא לעבור Y ב-...", "החודש לא לעבור...". All require
+  // a number somewhere in the text to count as a budget set-intent.
+  var hasNlBudgetIntent =
+    /(?:^|\s)היעד\s+החדש/i.test(t) ||
+    /(?:^|\s)תקציב\s+חודשי/.test(t) ||
+    /(?:^|\s)תקציב\s+(?:של\s+)?[א-ת]+/.test(t) ||
+    /לרדת\s+(?:ב?הוצאות|להוצאה|בקטגוריית|של\s+)/.test(t) ||
+    /להפחית\s+(?:ב?הוצאות|הוצאה|בקטגוריית|של)/.test(t) ||
+    /לא\s+(?:לעבור|לחרוג)\s+(?:את\s+)?\d/.test(t) ||
+    /החודש\s+לא\s+(?:לעבור|לחרוג)/.test(t);
+  if (!hasStructuredTrigger && !hasNlBudgetIntent) {
     return { handled: false };
+  }
+
+  // For natural-language budget intent, parse what we can and ASK CONFIRMATION
+  // before writing anything. NEVER auto-create from a free-text guess. This
+  // is the "menu-first / confirm before write" rule from Steven's UX policy.
+  if (hasNlBudgetIntent && !hasStructuredTrigger) {
+    // Extract amount: scan for any number, preferring 3+ digit numbers
+    // (since a "ל 2000" budget is more common than a "ל 2" budget). When
+    // both "2" and "2000" appear, pick the bigger one. Detect the
+    // "2 vs 2000" trap explicitly: if the largest amount is < 50 we ask
+    // for confirmation rather than guessing the user meant 1000x.
+    var amts = [];
+    var numRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
+    var m;
+    while ((m = numRe.exec(t)) !== null) {
+      var n = (typeof _parseIsraeliNumber_ === 'function')
+        ? _parseIsraeliNumber_(m[0])
+        : Number(String(m[0]).replace(/,/g, ''));
+      if (isFinite(n) && n >= 1) amts.push(n);
+    }
+    var amount = 0;
+    if (amts.length) amount = Math.max.apply(null, amts);
+
+    // Extract category heuristically — the word right after "האוכל" or "אוכל",
+    // or any of the common category names we know about. Keep it short; the
+    // confirmation prompt asks the user to confirm/change.
+    var category = '';
+    var catGuesses = ['אוכל', 'תחבורה', 'דלק', 'קניות', 'בריאות', 'בידור',
+                      'חשבונות', 'ביטוח', 'שכירות', 'שיווק', 'משכורת', 'הוצאות תפעוליות'];
+    for (var i = 0; i < catGuesses.length; i++) {
+      if (t.indexOf(catGuesses[i]) >= 0) { category = catGuesses[i]; break; }
+    }
+
+    // Suspicious-low-amount guard. "ל 2 שח החודש" is almost always a typo for 2000.
+    // Ask for confirmation in plain Hebrew rather than writing the wrong thing.
+    if (amount > 0 && amount < 50) {
+      return { handled: true, replyText:
+        '🤔 רגע — האם התכוונת לתקציב של *₪' + amount + '* או *₪' + (amount * 1000) + '*?\n\n' +
+        'שלח את הסכום הנכון בשורה משלו (לדוגמה: 2000), או "בטל" כדי להתחיל מחדש.'
+      };
+    }
+
+    if (!amount) {
+      return { handled: true, replyText:
+        '🎯 הבנתי שאתה רוצה לקבוע יעד.\n' +
+        'מה הסכום? (לדוגמה: 2000)\n\n' +
+        'או שלח: "יעד חדש" כדי לעבור על השלבים אחד-אחד.'
+      };
+    }
+
+    // We have an amount + maybe a category. Show a CONFIRMATION before write.
+    // PR-G2-mini already supports "יעד חדש <horizon> <desc>" as a one-shot,
+    // so we just suggest that exact command and let the user tap to confirm.
+    var horizonGuess = /החודש|חודש\s+(?:הקרוב|הזה|הבא)?|חודשי|כל\s+חודש/.test(t) ? 'month' : 'month';
+    var catBit = category ? (' של ' + category) : '';
+    return { handled: true, replyText:
+      '🎯 רגע, רק לוודא לפני שאני שומר:\n\n' +
+      '• יעד תקציב' + catBit + '\n' +
+      '• ₪' + amount.toLocaleString('he-IL') + ' לחודש\n' +
+      '• מתחיל היום, בודק בסוף החודש\n\n' +
+      'לאישור — שלח:\n' +
+      '*"יעד חדש חודש ' + (category || 'תקציב') + ' ' + amount + '"*\n\n' +
+      'או "בטל" כדי לא לשמור.'
+    };
   }
 
   var base = (typeof KESEFLE_API_BASE !== 'undefined') ? KESEFLE_API_BASE : '';
