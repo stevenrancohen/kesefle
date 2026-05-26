@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-bot-trace-instrumented';
+const KFL_BUILD_VERSION = '2026-05-26-bot-robustness-sweep';
 
 // ── KFL-TRACE — uniform breadcrumb logger ─────────────────────────────────────
 // Steven 2026-05-26: when a bot reply is wrong (e.g. ₪200 written as ₪1, or
@@ -4379,6 +4379,19 @@ function _botConcierge_(fromPhone, text) {
     var p = JSON.parse(m[0]);
     var action = String(p.action || 'chat').trim();
     var reply = String(p.reply || '').trim();
+    // ACTION WHITELIST (Steven 2026-05-26): Gemini can return ANY string
+    // as `action` — including "picker", "ask", "log_expense", or other
+    // hallucinated values that the bot doesn't actually implement. The
+    // caller then ignores the action and just sends `reply` as text,
+    // which is how "1 קפה → text-only 1/2/3/4 picker" leaks to users:
+    // Gemini decides to render its own categorization UX in chat. Force
+    // action into our known whitelist; anything else collapses to 'chat'
+    // (free-form Hebrew reply) which is the safe default.
+    var ALLOWED_ACTIONS = ['summary', 'help', 'examples', 'orders', 'chat'];
+    if (ALLOWED_ACTIONS.indexOf(action) === -1) {
+      _kflTrace_('concierge.action_rejected', fromPhone, text, { rejected: action });
+      action = 'chat';
+    }
     // If LLM returned an empty reply on a chat action, fall back to the
     // safe message so the user doesn't see a blank bubble.
     if (action === 'chat' && !reply) reply = SAFE_FALLBACK;
@@ -7665,6 +7678,16 @@ function parseForeignCurrencyHint(text) {
 function parseAmountAndDescription(text) {
   var t = String(text || '').trim();
   if (!t) return null;
+  // PHONE-NUMBER GUARD (Steven 2026-05-26): "050-1234567 דמי שיחה" or
+  // "0512345678 לאיש קשר" must NOT be parsed as 3 separate amounts +
+  // a single fragment. Strip dash-separated digit groups (Israeli mobile
+  // and landline patterns) BEFORE the number scan so they don't pollute
+  // the amount list. Patterns covered:
+  //   050-1234567 / 052-123-4567 / +972-50-1234567 / 03-1234567 / 1700123456
+  var phoneStripped = t
+    .replace(/(?:\+?972[-\s]?|0)\d{1,2}[-\s]?\d{3}[-\s]?\d{3,4}/g, ' ')
+    .replace(/\b1[\s-]?700[\s-]?\d{3}[\s-]?\d{3}\b/g, ' '); // 1700 service numbers
+  var phoneOnly = phoneStripped.trim() !== t.trim();
   // Match Israeli-formatted numbers: optional thousand groups (1,234,567)
   // followed by an optional decimal part using period or comma. The thousand
   // groups are distinguished from a decimal-comma by length: any comma that
@@ -7673,7 +7696,7 @@ function parseAmountAndDescription(text) {
   var numberRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
   var nums = [];
   var match;
-  while ((match = numberRe.exec(t)) !== null) {
+  while ((match = numberRe.exec(phoneStripped)) !== null) {
     var n = _parseIsraeliNumber_(match[0]);
     if (!isNaN(n) && n > 0) nums.push(n);
   }
