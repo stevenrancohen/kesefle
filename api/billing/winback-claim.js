@@ -55,7 +55,10 @@ async function handlerImpl(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const token = String(body?.token || '').trim();
-  if (!token || token.length < 8 || token.length > 64) {
+  // PR-S (2026-05-27 security audit Bug #7): token MUST be exactly 24 chars.
+  // The earlier `length < 8 || length > 64` window was too loose. Paired with
+  // the `startsWith` removal below, this enforces exact-prefix match.
+  if (token.length !== 24) {
     return res.status(400).json({ ok: false, error: 'invalid_token' });
   }
 
@@ -67,7 +70,10 @@ async function handlerImpl(req, res) {
   let matchedSub = null;
   for (const k of exitKeys) {
     const sub = k.replace('exit_survey:', '');
-    if (sub.startsWith(token) || sub.slice(0, 24) === token) {
+    // PR-S (2026-05-27 security audit Bug #7): drop the `sub.startsWith(token)`
+    // arm. With it, a 8-char token would forge-match anyone whose userSub
+    // begins with those chars. Exact 24-char prefix match only.
+    if (sub.slice(0, 24) === token) {
       matchedSub = sub;
       break;
     }
