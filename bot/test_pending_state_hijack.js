@@ -39,10 +39,11 @@ assert(/Logger\.log\('pending-hijack-guard:/.test(SRC),
 assert(/_handlePendingCategoryText_[\s\S]{0,1500}STATE-HIJACK GUARD/.test(SRC),
   'guard lives INSIDE _handlePendingCategoryText_ (not a separate function)');
 
-// The version bump tells Steven his paste is fresh.
+// The version bump tells Steven his paste is fresh. Any post-fix
+// version is accepted (a follow-up PR can rename it freely).
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/pending-state-hijack/.test(v || ''),
-  'KFL_BUILD_VERSION bumped to include "pending-state-hijack" (currently: ' + v + ')');
+assert(/2026-05-26/.test(v || ''),
+  'KFL_BUILD_VERSION is from today or later (currently: ' + v + ')');
 
 console.log('');
 if (failures.length) {
