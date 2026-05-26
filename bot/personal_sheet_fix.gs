@@ -363,6 +363,22 @@ var _COMPANY_SUB_BUCKETS_ = [
   { label: 'הוצאות תפעוליות',   regex: /תפעולי|operational|יועצים|תוכנות|ציוד\s*עסקי|מיסים|operations|consulting|software|equipment|taxes/i },
 ];
 
+// Tolerant bucket-label match. Steven's actual sheet has emoji-prefixed
+// labels like "📣 עלות שיווק" while _COMPANY_SUB_BUCKETS_ has plain
+// "עלות שיווק". Strict === missed every emoji label. This function:
+//   - trims whitespace + bidi marks
+//   - matches if cellLabel == label OR cellLabel ends with " " + label
+//     OR cellLabel contains label (as substring after the emoji prefix)
+// Returns true on match.
+function _bucketLabelMatch_(cellRaw, label) {
+  if (!cellRaw || !label) return false;
+  var cell = String(cellRaw).replace(/[‎‏‪-‮⁦-⁩﻿]/g, '').trim();
+  if (cell === label) return true;
+  // Endsmatch after stripping a leading emoji + space (most common pattern).
+  if (cell.length > label.length && cell.lastIndexOf(label) === cell.length - label.length) return true;
+  return false;
+}
+
 // Robust year detection for the dashboard. Steven's sheet uses a
 // drop-down at B4, but if that cell is empty / a formula returning a
 // date / a textual "2026 ▼" with extra chars, parseInt fails. We try:
@@ -501,7 +517,7 @@ function CLEAN_BROKEN_FORMULAS() {
     var subTotals = totals[label] || {};
     var rowIdx = -1;
     for (var ri = 0; ri < dashData.length; ri++) {
-      if (String(dashData[ri][0] || '').trim() === label) { rowIdx = ri; break; }
+      if (_bucketLabelMatch_(dashData[ri][0], label)) { rowIdx = ri; break; }
     }
     if (rowIdx < 0) continue;
     var monthCols = {};
@@ -597,7 +613,7 @@ function RECOMPUTE_COMPANY_DASHBOARD() {
     // 2024/2023 sections come below, this picks the 2026 row since B4=year).
     var rowIdx = -1;
     for (var ri = 0; ri < dashData.length; ri++) {
-      if (String(dashData[ri][0] || '').trim() === label) { rowIdx = ri; break; }
+      if (_bucketLabelMatch_(dashData[ri][0], label)) { rowIdx = ri; break; }
     }
     if (rowIdx < 0) {
       Logger.log('  skip "' + label + '" -- row label not found in dashboard');
@@ -809,7 +825,10 @@ function FIX_MARKETING_ALL_YEARS() {
   var totalWritten = 0;
   for (var bi = 0; bi < yearBlocks.length; bi++) {
     var blk = yearBlocks[bi];
-    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length;
+    // Bound the search to ~15 rows so the LAST block's range doesn't extend
+    // to the bottom of the sheet and accidentally hit unrelated tables
+    // (Steven has a "סיכום פיננסי" table at row 74 that uses the same labels).
+    var blockEnd = Math.min((bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length, (blk && blk.headerRow ? blk.headerRow + 15 : data.length));
 
     // Month columns live in the next 3 rows after the year header
     // (usually exactly 1 row down, but be forgiving).
@@ -831,7 +850,7 @@ function FIX_MARKETING_ALL_YEARS() {
     // Find the "עלות שיווק" row within this block.
     var marketingRow = -1;
     for (var sr = blk.headerRow; sr < blockEnd; sr++) {
-      if (String(data[sr][0] || '').trim() === 'עלות שיווק') {
+      if (_bucketLabelMatch_(data[sr][0], 'עלות שיווק')) {
         marketingRow = sr;
         break;
       }
@@ -901,7 +920,10 @@ function DRY_RUN_MARKETING_ALL_YEARS() {
 
   for (var bi = 0; bi < yearBlocks.length; bi++) {
     var blk = yearBlocks[bi];
-    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length;
+    // Bound the search to ~15 rows so the LAST block's range doesn't extend
+    // to the bottom of the sheet and accidentally hit unrelated tables
+    // (Steven has a "סיכום פיננסי" table at row 74 that uses the same labels).
+    var blockEnd = Math.min((bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length, (blk && blk.headerRow ? blk.headerRow + 15 : data.length));
     var monthCols = {};
     for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
       for (var cc = 0; cc < data[rr].length; cc++) {
@@ -912,7 +934,7 @@ function DRY_RUN_MARKETING_ALL_YEARS() {
     }
     var marketingRow = -1;
     for (var sr = blk.headerRow; sr < blockEnd; sr++) {
-      if (String(data[sr][0] || '').trim() === 'עלות שיווק') { marketingRow = sr; break; }
+      if (_bucketLabelMatch_(data[sr][0], 'עלות שיווק')) { marketingRow = sr; break; }
     }
     Logger.log('-- year ' + blk.year + ' (header row ' + (blk.headerRow + 1) + ') marketing row=' + (marketingRow < 0 ? 'NOT FOUND' : marketingRow + 1) + ' --');
     if (marketingRow < 0) continue;
@@ -993,7 +1015,7 @@ function CLEAN_BROKEN_FORMULAS_ALL_YEARS() {
   var totalCleaned = 0;
   for (var bi = 0; bi < yearBlocks.length; bi++) {
     var blk = yearBlocks[bi];
-    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : dashData.length;
+    var blockEnd = Math.min((bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : dashData.length, (blk && blk.headerRow ? blk.headerRow + 15 : dashData.length));
     var yearTotals = totals[blk.year] || {};
     Logger.log('-- year ' + blk.year + ' (rows ' + (blk.headerRow + 1) + '..' + blockEnd + ') --');
 
@@ -1012,7 +1034,7 @@ function CLEAN_BROKEN_FORMULAS_ALL_YEARS() {
       var subTotals = yearTotals[label] || {};
       var rowIdx = -1;
       for (var ri2 = blk.headerRow; ri2 < blockEnd; ri2++) {
-        if (String(dashData[ri2][0] || '').trim() === label) { rowIdx = ri2; break; }
+        if (_bucketLabelMatch_(dashData[ri2][0], label)) { rowIdx = ri2; break; }
       }
       if (rowIdx < 0) continue;
 
@@ -1090,7 +1112,10 @@ function FIX_ALL_BUCKETS_ALL_YEARS() {
   var totalWritten = 0;
   for (var bi = 0; bi < yearBlocks.length; bi++) {
     var blk = yearBlocks[bi];
-    var blockEnd = (bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length;
+    // Bound the search to ~15 rows so the LAST block's range doesn't extend
+    // to the bottom of the sheet and accidentally hit unrelated tables
+    // (Steven has a "סיכום פיננסי" table at row 74 that uses the same labels).
+    var blockEnd = Math.min((bi + 1 < yearBlocks.length) ? yearBlocks[bi + 1].headerRow : data.length, (blk && blk.headerRow ? blk.headerRow + 15 : data.length));
 
     // Month-col map for this block.
     // Wider scan (10 rows) + bidi-mark stripping so header cells with
@@ -1121,7 +1146,7 @@ function FIX_ALL_BUCKETS_ALL_YEARS() {
       // Find row for this bucket inside the block.
       var rowIdx = -1;
       for (var sr = blk.headerRow; sr < blockEnd; sr++) {
-        if (String(data[sr][0] || '').trim() === label) { rowIdx = sr; break; }
+        if (_bucketLabelMatch_(data[sr][0], label)) { rowIdx = sr; break; }
       }
       if (rowIdx < 0) continue;
 
@@ -1374,7 +1399,7 @@ function SIMPLE_FIX_DASHBOARD() {
       var label = _COMPANY_SUB_BUCKETS_[bk].label;
       var rowIdx = -1;
       for (var ri = blk.headerRow; ri < blockEnd; ri++) {
-        if (String(dashData[ri][0] || '').trim() === label) { rowIdx = ri; break; }
+        if (_bucketLabelMatch_(dashData[ri][0], label)) { rowIdx = ri; break; }
       }
       if (rowIdx < 0) {
         Logger.log('  ⚠️ ' + blk.year + ' "' + label + '": row not found in this block');
@@ -1474,7 +1499,7 @@ function FIX_NOW() {
       }
       if (blockRow >= 0) {
         for (var rr = blockRow; rr < Math.min(blockRow + 20, data.length); rr++) {
-          if (String(data[rr][0] || '').trim() === 'עלות שיווק') {
+          if (_bucketLabelMatch_(data[rr][0], 'עלות שיווק')) {
             var monthCol = now.getMonth() + 3; // C=Jan=3
             var val = dash.getRange(rr + 1, monthCol).getValue();
             Logger.log('');
