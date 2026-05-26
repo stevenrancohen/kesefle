@@ -1418,3 +1418,86 @@ function SIMPLE_FIX_DASHBOARD() {
   Logger.log('Trade-off: future bot writes to תנועות will NOT auto-update the dashboard until you re-run SIMPLE_FIX_DASHBOARD. (Re-run it any time, or set up a daily trigger.)');
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// FIX_NOW — bulletproof one-button solution. Steven runs THIS, never any
+// other function. Confirms script version, runs the fix, installs a
+// daily auto-trigger, and reads back the current month's marketing
+// value so you know it actually worked.
+// ════════════════════════════════════════════════════════════════════════
+var _FIX_NOW_SCRIPT_VERSION_ = '2026-05-26-v41-self-installing';
+
+function FIX_NOW() {
+  Logger.log('=== FIX_NOW (script version: ' + _FIX_NOW_SCRIPT_VERSION_ + ') ===');
+  Logger.log('If you do NOT see this exact version, your Apps Script has an OLDER paste of personal_sheet_fix.gs.');
+  Logger.log('Fix: replace the file from https://raw.githubusercontent.com/stevenrancohen/kesefle/main/bot/personal_sheet_fix.gs');
+  Logger.log('');
+
+  // Step 1: actually run the fix.
+  try {
+    SIMPLE_FIX_DASHBOARD();
+  } catch (e) {
+    Logger.log('!! SIMPLE_FIX_DASHBOARD threw: ' + (e && e.message));
+    return;
+  }
+
+  // Step 2: install a daily trigger if not already there.
+  var existing = ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === 'SIMPLE_FIX_DASHBOARD'; });
+  if (existing.length > 0) {
+    Logger.log('');
+    Logger.log('Daily trigger already exists -- no duplicate created.');
+  } else {
+    try {
+      ScriptApp.newTrigger('SIMPLE_FIX_DASHBOARD').timeBased().atHour(6).everyDays(1).create();
+      Logger.log('');
+      Logger.log('✅ Daily trigger installed: SIMPLE_FIX_DASHBOARD will auto-run at 6am every day. Dashboard stays fresh forever.');
+    } catch (e2) {
+      Logger.log('!! Could not install trigger: ' + (e2 && e2.message));
+    }
+  }
+
+  // Step 3: read back current month's marketing value so Steven sees the result.
+  try {
+    var ss = _openSheet_();
+    var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+    if (dash) {
+      var now = new Date();
+      var thisYear = now.getFullYear();
+      var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+      var thisMonth = hebMonths[now.getMonth()];
+      var data = dash.getDataRange().getValues();
+      var blockRow = -1;
+      for (var r = 0; r < data.length; r++) {
+        for (var c = 0; c < data[r].length; c++) {
+          if (String(data[r][c] || '').indexOf('שנת ' + thisYear) >= 0) { blockRow = r; break; }
+        }
+        if (blockRow >= 0) break;
+      }
+      if (blockRow >= 0) {
+        for (var rr = blockRow; rr < Math.min(blockRow + 20, data.length); rr++) {
+          if (String(data[rr][0] || '').trim() === 'עלות שיווק') {
+            var monthCol = now.getMonth() + 3; // C=Jan=3
+            var val = dash.getRange(rr + 1, monthCol).getValue();
+            Logger.log('');
+            Logger.log('📊 ' + thisMonth + ' ' + thisYear + ' עלות שיווק = ₪' + val + '  (cell ' + dash.getRange(rr + 1, monthCol).getA1Notation() + ')');
+            break;
+          }
+        }
+      }
+    }
+  } catch (e3) {
+    Logger.log('Could not read back current month value: ' + (e3 && e3.message));
+  }
+
+  Logger.log('');
+  Logger.log('=== FIX_NOW DONE — refresh the sheet (Cmd+R) ===');
+  Logger.log('If a month you EXPECT to have value still shows ₪0, the data is missing in תנועות.');
+  Logger.log('Check: row category=עסק, H=TRUE, and sub/desc contains a marketing keyword.');
+}
+
+// Stop the daily auto-refresh.
+function UNINSTALL_DAILY_TRIGGER() {
+  var triggers = ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === 'SIMPLE_FIX_DASHBOARD'; });
+  for (var i = 0; i < triggers.length; i++) ScriptApp.deleteTrigger(triggers[i]);
+  Logger.log('Removed ' + triggers.length + ' daily SIMPLE_FIX_DASHBOARD trigger(s).');
+}
+
