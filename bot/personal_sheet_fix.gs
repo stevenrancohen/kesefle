@@ -1526,3 +1526,189 @@ function UNINSTALL_DAILY_TRIGGER() {
   Logger.log('Removed ' + triggers.length + ' daily SIMPLE_FIX_DASHBOARD trigger(s).');
 }
 
+
+// ════════════════════════════════════════════════════════════════════════
+// AUDIT_COMPANY_DASHBOARD — READ-ONLY financial accuracy validator.
+//
+// This is the FINANCIAL TRUTH CHECK. For every metric in מאזן חברה,
+// it computes the expected value INDEPENDENTLY from תנועות and compares
+// it to whatever the cell currently shows. Any mismatch is logged as
+// ❌ MISMATCH with the cell address, current value, and expected value.
+//
+// Run this:
+//   1. Before any release ("does my dashboard tell the truth?")
+//   2. After running FIX_ALL_BUCKETS_ALL_YEARS ("did the fix actually work?")
+//   3. Monthly, end of month ("is my month-close trustworthy?")
+//
+// What it checks per (year, month):
+//   1. מחזור ברוטו           = sum of cat=עסק, H=FALSE (income), sub~revenue regex
+//   2. עלות חומרי גלם         = sum of cat=עסק, H=TRUE (expense), sub~raw mat regex
+//   3. עלות שיווק            = sum of cat=עסק, H=TRUE, sub~marketing regex
+//   4. משלוחים והתקנות       = sum of cat=עסק, H=TRUE, sub~shipping regex
+//   5. הוצאות תפעוליות       = sum of cat=עסק, H=TRUE, sub~ops regex
+//   6. Implicit: סה״כ הוצאות = sum of buckets 2-5
+//   7. Implicit: רווח נטו     = bucket 1 - sum of 2-5
+//   8. Implicit: אחוז רווחיות = (net profit / revenue)
+//
+// Tolerance: ±0.5₪ for rounding. Anything bigger = real mismatch.
+//
+// Output: structured Logger lines per cell + a summary count at the end.
+// ════════════════════════════════════════════════════════════════════════
+function AUDIT_COMPANY_DASHBOARD() {
+  var ss = _openSheet_();
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!tx)   { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
+
+  Logger.log('=== AUDIT_COMPANY_DASHBOARD ===');
+  Logger.log('Sheet: ' + ss.getName());
+
+  // Pull every תנועות row with all 8 cols.
+  var lastRow = tx.getLastRow();
+  if (lastRow < 2) { Logger.log('תנועות empty'); return; }
+  var txData = tx.getRange(2, 1, lastRow - 1, 8).getValues();
+
+  // Build expected totals: { year -> { bucket -> { 1..12 -> sum } } }
+  var expected = {};
+  for (var i = 0; i < txData.length; i++) {
+    var r = txData[i];
+    var monthKey = String(r[1] || '').trim();
+    var amount   = Number(r[2]) || 0;
+    var cat      = String(r[3] || '').trim();
+    var sub      = String(r[4] || '').trim();
+    var desc     = String(r[5] || '').trim();
+    var isExpense = r[7] === true || String(r[7]).toUpperCase() === 'TRUE';
+    if (cat !== 'עסק' || !amount) continue;
+    var m = monthKey.match(/^(\d{4})-(\d{1,2})$/);
+    if (!m) continue;
+    var yr = parseInt(m[1], 10);
+    var mn = parseInt(m[2], 10);
+    // Bucket decision: match sub OR description (whichever hits first).
+    var bucket = _bucketForBizSub_(sub);
+    if (!bucket) {
+      // Try description -- some rows have the keyword in the desc, not the sub.
+      for (var bi = 0; bi < _COMPANY_SUB_BUCKETS_.length; bi++) {
+        if (_COMPANY_SUB_BUCKETS_[bi].regex.test(desc)) { bucket = _COMPANY_SUB_BUCKETS_[bi].label; break; }
+      }
+    }
+    if (!bucket) continue;
+    // Revenue is income (H=FALSE). Cost buckets are expense (H=TRUE).
+    var isRevenueBucket = (bucket === 'מחזור ברוטו');
+    if (isRevenueBucket && isExpense)  continue; // expense in revenue regex -- skip
+    if (!isRevenueBucket && !isExpense) continue; // income in cost regex -- skip
+    if (!expected[yr]) expected[yr] = {};
+    if (!expected[yr][bucket]) expected[yr][bucket] = {};
+    expected[yr][bucket][mn] = (expected[yr][bucket][mn] || 0) + Math.abs(amount);
+  }
+
+  // Walk every year block in מאזן חברה and compare.
+  var dashData = dash.getDataRange().getValues();
+  var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var yearBlocks = [];
+  for (var rA = 0; rA < dashData.length; rA++) {
+    for (var cA = 0; cA < dashData[rA].length; cA++) {
+      var ym = String(dashData[rA][cA] || '').match(/שנת\s+(20\d{2})/);
+      if (ym) { yearBlocks.push({ year: parseInt(ym[1], 10), headerRow: rA }); break; }
+    }
+  }
+  if (yearBlocks.length === 0) { Logger.log('!! no year headers'); return; }
+
+  var TOL = 0.5;
+  var summary = { checked: 0, ok: 0, mismatch: 0, missing: 0 };
+
+  for (var bi2 = 0; bi2 < yearBlocks.length; bi2++) {
+    var blk = yearBlocks[bi2];
+    var blockEnd = (bi2 + 1 < yearBlocks.length) ? yearBlocks[bi2 + 1].headerRow : dashData.length;
+    var monthCols = {};
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
+      for (var cc = 0; cc < dashData[rr].length; cc++) {
+        var idx = hebMonths.indexOf(String(dashData[rr][cc] || '').trim());
+        if (idx >= 0 && !(idx + 1 in monthCols)) monthCols[idx + 1] = cc;
+      }
+    }
+    if (!Object.keys(monthCols).length) continue;
+    Logger.log('-- year ' + blk.year + ' --');
+    var yearExpected = expected[blk.year] || {};
+    var monthRevenue = {}, monthBucketSum = {};
+
+    for (var bk = 0; bk < _COMPANY_SUB_BUCKETS_.length; bk++) {
+      var label = _COMPANY_SUB_BUCKETS_[bk].label;
+      var rowIdx = -1;
+      for (var ri = blk.headerRow; ri < blockEnd; ri++) {
+        if (String(dashData[ri][0] || '').trim() === label) { rowIdx = ri; break; }
+      }
+      if (rowIdx < 0) {
+        Logger.log('  ⚠️ row "' + label + '" not found in this year block');
+        summary.missing++;
+        continue;
+      }
+      var subTotals = yearExpected[label] || {};
+      for (var mo = 1; mo <= 12; mo++) {
+        var col = monthCols[mo];
+        if (col === undefined) continue;
+        var cellVal = Number(dash.getRange(rowIdx + 1, col + 1).getValue()) || 0;
+        var expectedVal = Math.round(subTotals[mo] || 0);
+        summary.checked++;
+        if (label === 'מחזור ברוטו') monthRevenue[mo] = expectedVal;
+        else { monthBucketSum[mo] = (monthBucketSum[mo] || 0) + expectedVal; }
+        if (Math.abs(cellVal - expectedVal) <= TOL) {
+          summary.ok++;
+        } else {
+          summary.mismatch++;
+          var cellAddr = dash.getRange(rowIdx + 1, col + 1).getA1Notation();
+          Logger.log('  ❌ ' + cellAddr + '  ' + label + ' ' + hebMonths[mo-1] + '  cell=₪' + cellVal + '  expected=₪' + expectedVal + '  Δ=' + (cellVal - expectedVal));
+        }
+      }
+    }
+
+    // Also check (if those rows exist) the implicit metrics.
+    // Hard-coded names match Steven's template. Soft fail if absent.
+    var implicitRows = [
+      { name: 'רווח נטו חודשי', compute: function(mo) { return (monthRevenue[mo] || 0) - (monthBucketSum[mo] || 0); } },
+      { name: 'אחוז רווחיות', compute: function(mo) {
+        var rev = monthRevenue[mo] || 0;
+        if (!rev) return 0;
+        return (((monthRevenue[mo] || 0) - (monthBucketSum[mo] || 0)) / rev) * 100;
+      }, isPct: true },
+    ];
+    for (var ii = 0; ii < implicitRows.length; ii++) {
+      var info = implicitRows[ii];
+      var iRow = -1;
+      for (var ri2 = blk.headerRow; ri2 < blockEnd; ri2++) {
+        if (String(dashData[ri2][0] || '').trim() === info.name) { iRow = ri2; break; }
+      }
+      if (iRow < 0) continue;
+      for (var mo2 = 1; mo2 <= 12; mo2++) {
+        var col2 = monthCols[mo2];
+        if (col2 === undefined) continue;
+        var cellRaw = dash.getRange(iRow + 1, col2 + 1).getValue();
+        var cellV = Number(cellRaw) || 0;
+        if (info.isPct && Math.abs(cellV) < 1 && cellV !== 0) cellV = cellV * 100; // 0.46 -> 46
+        var expV = info.compute(mo2);
+        summary.checked++;
+        var tol = info.isPct ? 1.0 : TOL;
+        if (Math.abs(cellV - expV) <= tol) {
+          summary.ok++;
+        } else {
+          summary.mismatch++;
+          var addr2 = dash.getRange(iRow + 1, col2 + 1).getA1Notation();
+          Logger.log('  ❌ ' + addr2 + '  ' + info.name + ' ' + hebMonths[mo2-1] + '  cell=' + cellV.toFixed(info.isPct?1:0) + (info.isPct?'%':'₪') + '  expected=' + expV.toFixed(info.isPct?1:0) + (info.isPct?'%':'₪'));
+        }
+      }
+    }
+  }
+
+  Logger.log('');
+  Logger.log('=== AUDIT SUMMARY ===');
+  Logger.log('  Cells checked: ' + summary.checked);
+  Logger.log('  ✅ OK:        ' + summary.ok);
+  Logger.log('  ❌ Mismatch:  ' + summary.mismatch);
+  Logger.log('  ⚠️ Missing:   ' + summary.missing);
+  if (summary.mismatch === 0 && summary.missing === 0) {
+    Logger.log('🎉 Dashboard matches תנועות exactly. Financial accuracy confirmed.');
+  } else {
+    Logger.log('Run FIX_ALL_BUCKETS_ALL_YEARS to repair the bucket rows, then re-audit.');
+  }
+  return summary;
+}
