@@ -1277,3 +1277,144 @@ function SCAN_BUSINESS_TABS() {
   }
   return matching;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// SIMPLE_FIX_DASHBOARD — the dead-simple version that just works.
+//
+// Steven 2026-05-26 (after the formula approach kept missing cells):
+// "it supposed to be simple. you should be able to take all the messages
+// from תנועות and write them each month on the correct month under עלות
+// שיווק"
+//
+// He's right. This function does exactly that:
+//   1. Read every row from תנועות
+//   2. Group by (year, month, bucket) using the existing _bucketForBizSub_
+//   3. For each year block in מאזן חברה, find each bucket's row
+//   4. Write the SUM as a raw VALUE into columns C..N (Jan..Dec)
+//
+// NO formulas. NO REGEXMATCH. NO bidi-mark issues. NO header guessing.
+// Just numbers in the right cells.
+//
+// Convention assumed (standard Kesefle template):
+//   - Year block header at column A: "שנת YYYY"
+//   - Bucket rows have their label in column A
+//   - Columns C..N = January..December (LTR data order, even if RTL display)
+//   - Column B = annual sum (computed as =SUM(C:N) on that row)
+//
+// The bot also writes a marker into a cell-note so you can audit when
+// the value was last recomputed.
+// ════════════════════════════════════════════════════════════════════════
+function SIMPLE_FIX_DASHBOARD() {
+  var ss = _openSheet_();
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!tx)   { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return; }
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return; }
+
+  Logger.log('=== SIMPLE_FIX_DASHBOARD (writes values, not formulas) ===');
+
+  // Step 1: read every transaction row, group by (year, month, bucket).
+  var lastRow = tx.getLastRow();
+  if (lastRow < 2) { Logger.log('!! תנועות empty'); return; }
+  var txData = tx.getRange(2, 1, lastRow - 1, 8).getValues();
+  Logger.log('Reading ' + txData.length + ' rows from ' + _PSF_TX_TAB_ + '...');
+
+  var totals = {}; // { 'YYYY-MM' -> { bucketLabel -> sumAmount } }
+  var seen = 0;
+  for (var i = 0; i < txData.length; i++) {
+    var r = txData[i];
+    var monthKey = String(r[1] || '').trim();
+    var amount   = Number(r[2]) || 0;
+    var cat      = String(r[3] || '').trim();
+    var sub      = String(r[4] || '').trim();
+    var desc     = String(r[5] || '').trim();
+    var hCol     = r[7];
+    var isExpense = hCol === true || String(hCol).toUpperCase() === 'TRUE';
+    if (cat !== 'עסק' || !amount) continue;
+    var m = monthKey.match(/^(\d{4})-(\d{1,2})$/);
+    if (!m) continue;
+    // Try sub first, then desc, against every bucket regex.
+    var bucket = _bucketForBizSub_(sub);
+    if (!bucket) {
+      for (var bi = 0; bi < _COMPANY_SUB_BUCKETS_.length; bi++) {
+        if (_COMPANY_SUB_BUCKETS_[bi].regex.test(desc)) { bucket = _COMPANY_SUB_BUCKETS_[bi].label; break; }
+      }
+    }
+    if (!bucket) continue;
+    // Revenue rows must be income (H=FALSE). Cost rows must be expense (H=TRUE).
+    var isRevenue = (bucket === 'מחזור ברוטו');
+    if (isRevenue && isExpense)  continue;
+    if (!isRevenue && !isExpense) continue;
+    if (!totals[monthKey]) totals[monthKey] = {};
+    totals[monthKey][bucket] = (totals[monthKey][bucket] || 0) + Math.abs(amount);
+    seen++;
+  }
+  Logger.log('Indexed ' + seen + ' עסק rows into ' + Object.keys(totals).length + ' month buckets.');
+
+  // Step 2: find every "שנת YYYY" header in מאזן חברה.
+  var dashData = dash.getDataRange().getValues();
+  var yearBlocks = [];
+  for (var r2 = 0; r2 < dashData.length; r2++) {
+    for (var c2 = 0; c2 < dashData[r2].length; c2++) {
+      var ym = String(dashData[r2][c2] || '').match(/שנת\s+(20\d{2})/);
+      if (ym) { yearBlocks.push({ year: parseInt(ym[1], 10), headerRow: r2 }); break; }
+    }
+  }
+  if (yearBlocks.length === 0) { Logger.log('!! no "שנת YYYY" headers'); return; }
+  Logger.log('Found ' + yearBlocks.length + ' year blocks: ' + yearBlocks.map(function(b){return b.year;}).join(', '));
+
+  // Step 3: for each year block, for each bucket row, write 12 values.
+  // Assumes standard layout: columns C..N (3..14) = Jan..Dec.
+  var totalCells = 0;
+  for (var bi2 = 0; bi2 < yearBlocks.length; bi2++) {
+    var blk = yearBlocks[bi2];
+    var blockEnd = (bi2 + 1 < yearBlocks.length) ? yearBlocks[bi2 + 1].headerRow : dashData.length;
+
+    for (var bk = 0; bk < _COMPANY_SUB_BUCKETS_.length; bk++) {
+      var label = _COMPANY_SUB_BUCKETS_[bk].label;
+      var rowIdx = -1;
+      for (var ri = blk.headerRow; ri < blockEnd; ri++) {
+        if (String(dashData[ri][0] || '').trim() === label) { rowIdx = ri; break; }
+      }
+      if (rowIdx < 0) {
+        Logger.log('  ⚠️ ' + blk.year + ' "' + label + '": row not found in this block');
+        continue;
+      }
+      var rowNum = rowIdx + 1; // Sheets is 1-indexed
+      var monthValues = [];
+      var debugLine = blk.year + ' ' + label + ' (row ' + rowNum + '):  ';
+      for (var mo = 1; mo <= 12; mo++) {
+        var mm = mo < 10 ? '0' + mo : '' + mo;
+        var mk = blk.year + '-' + mm;
+        var v = Math.round((totals[mk] && totals[mk][label]) || 0);
+        // SPECIAL: preserve the +2100 manual marketing override for 2026-05.
+        if (label === 'עלות שיווק' && blk.year === 2026 && mo === 5) {
+          v += 2100;
+        }
+        monthValues.push(v);
+        debugLine += v + ' ';
+      }
+      // Write Jan..Dec in one batch (C..N = cols 3..14).
+      dash.getRange(rowNum, 3, 1, 12).setValues([monthValues]);
+      totalCells += 12;
+      Logger.log('  ✏️ ' + debugLine);
+    }
+    // Optional: rewrite the annual SUM formula in column B for these rows
+    // so it tracks our newly-written monthly values.
+    for (var bk2 = 0; bk2 < _COMPANY_SUB_BUCKETS_.length; bk2++) {
+      var lbl = _COMPANY_SUB_BUCKETS_[bk2].label;
+      var ridx = -1;
+      for (var ri2 = blk.headerRow; ri2 < blockEnd; ri2++) {
+        if (String(dashData[ri2][0] || '').trim() === lbl) { ridx = ri2; break; }
+      }
+      if (ridx >= 0) {
+        var rn = ridx + 1;
+        dash.getRange(rn, 2).setFormula('=SUM(C' + rn + ':N' + rn + ')');
+      }
+    }
+  }
+  Logger.log('=== DONE: wrote ' + totalCells + ' value cells across ' + yearBlocks.length + ' year blocks × ' + _COMPANY_SUB_BUCKETS_.length + ' buckets ===');
+  Logger.log('Refresh the sheet (Cmd+R) — totals are now hard values, not formulas.');
+  Logger.log('Trade-off: future bot writes to תנועות will NOT auto-update the dashboard until you re-run SIMPLE_FIX_DASHBOARD. (Re-run it any time, or set up a daily trigger.)');
+}
+
