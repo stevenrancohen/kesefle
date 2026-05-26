@@ -7,7 +7,7 @@
 <meta name="description" content="חזרת חזרה? הנה 50% הנחה לתמיד. פחות מקפה בחודש." />
 <meta name="robots" content="noindex,nofollow">
 <link rel="manifest" href="/manifest.webmanifest" />
-<meta name="theme-color" content="#4f46e5" />
+<meta name="theme-color" content="#0891b2" />
 <link rel="icon" type="image/png" href="/logo.png" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,7 +22,7 @@ tailwind.config = {
     fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
     colors: {
       ink: { 50:'#f7f8fb', 100:'#eef0f6', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-      brand: { 400:'#818cf8', 500:'#4f46e5', 600:'#4338ca', 700:'#3730a3' }
+      brand: { 400:'#22d3ee', 500:'#0891b2', 600:'#0e7490', 700:'#155e75' }
     }
   }}
 };
@@ -119,7 +119,7 @@ tailwind.config = {
       });
       var j = await r.json().catch(function(){ return { ok: false }; });
       if (j.ok) {
-        status.innerHTML = '<span style="color:#4338ca;font-weight:bold">✓ ההנחה הופעלה!</span> ניצור איתך קשר בוואטסאפ עם הצעד הבא.';
+        status.innerHTML = '<span style="color:#0e7490;font-weight:bold">✓ ההנחה הופעלה!</span> ניצור איתך קשר בוואטסאפ עם הצעד הבא.';
       } else {
         status.textContent = '✗ ' + (j.error || 'שגיאה זמנית') + (j.detail ? ': ' + j.detail.slice(0, 80) : '');
         status.style.color = '#dc2626';

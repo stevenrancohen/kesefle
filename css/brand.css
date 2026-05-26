@@ -18,11 +18,11 @@
 }
 .holo-text {
   background-image: linear-gradient(110deg,
-    #4f46e5  0%,
+    #0891b2  0%,
     #a855f7 25%,
     #06b6d4 50%,
     #a855f7 75%,
-    #4f46e5 100%);
+    #0891b2 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
           background-clip: text;
