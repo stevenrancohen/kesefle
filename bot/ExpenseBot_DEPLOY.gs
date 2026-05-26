@@ -1825,8 +1825,11 @@ function doPost(e) {
               }
             } catch (_mbErr) { Logger.log('doPost: my-biz cmd err: ' + (_mbErr && _mbErr.message)); }
           }
-          // "עסק N <amount> <description>" -> per-business sheet.
-          if (typeof _parseBusinessNumberPrefix_ === "function") {
+          // "עסק N <amount> <description>" -> per-business sheet/tab.
+          // OWNER-ONLY: this code path writes to SHEET_ID, which only the
+          // owner can edit. If a tenant types "עסק 2 X" we fall through to
+          // the normal expense flow so the row lands in THEIR own sheet.
+          if (typeof _parseBusinessNumberPrefix_ === "function" && _isOwnerPhone_(__from_)) {
             try {
               var __bizPref = _parseBusinessNumberPrefix_(__text_);
               if (__bizPref) {
