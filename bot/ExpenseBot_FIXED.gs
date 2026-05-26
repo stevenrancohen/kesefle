@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-q4-profession';
+const KFL_BUILD_VERSION = '2026-05-26-multi-biz-naming';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1755,7 +1755,7 @@ function doPost(e) {
             try {
               var __bizPref = _parseBusinessNumberPrefix_(__text_);
               if (__bizPref) {
-                var __bizRes = _writeBusinessNExpense_(__from_, __bizPref.n, __bizPref.rest);
+                var __bizRes = _writeBusinessNExpense_(__from_, __bizPref.n, __bizPref.name || null, __bizPref.rest);
                 if (__bizRes && __bizRes.handled) {
                   if (__bizRes.replyText && typeof sendWhatsAppMessage === "function") {
                     sendWhatsAppMessage(__from_, __bizRes.replyText);
@@ -10095,43 +10095,88 @@ function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, a
 // future enhancement (would need extending the api/sheet provisioner).
 // ════════════════════════════════════════════════════════════════════════
 
-// Match a leading "עסק <N> <rest>" prefix. Returns {n, rest} on match,
-// null otherwise. N must be 1-99 (sanity cap to avoid silly inputs).
+// Match a leading "עסק <N>" prefix and optionally a NAME for the
+// business + a body. Returns {n, name, rest} on match, null otherwise.
+// N must be 1-99 (sanity cap to avoid silly inputs).
+//
+// Supported shapes (Steven 2026-05-26):
+//   "עסק 2 320 שיווק"                   -> n=2, name=null, rest="320 שיווק"
+//   "עסק 2 כספלה - 52 hostinger"        -> n=2, name="כספלה", rest="52 hostinger"
+//   "עסק 2 כספלה: 52 hostinger"         -> n=2, name="כספלה", rest="52 hostinger"
+//   "עסק 2 כספלה"                       -> n=2, name="כספלה", rest=""  (set-name-only)
+//
+// The name is anything from the start up to a separator ("-", "—", ":")
+// that is NOT a number. Capped at 40 chars to avoid swallowing the body.
 function _parseBusinessNumberPrefix_(text) {
   if (!text) return null;
   var m = String(text).trim().match(/^עסק\s+(\d{1,2})\s+(.+)$/);
   if (!m) return null;
   var n = parseInt(m[1], 10);
   if (n < 1 || n > 99) return null;
-  return { n: n, rest: String(m[2] || '').trim() };
+  var rest = String(m[2] || '').trim();
+  var name = null;
+
+  // Pattern A: "name - body" / "name — body" / "name: body"
+  var sep = rest.match(/^([^\d+\-—:][^:\-—\n]{0,40}?)\s*[-—:]\s*(.+)$/);
+  if (sep) {
+    name = sep[1].trim();
+    rest = sep[2].trim();
+  } else if (!/^[+-]?\d/.test(rest)) {
+    // Pattern B: no separator AND rest does not start with a number
+    // -> the whole rest is the name (set-name-only command, no expense).
+    name = rest;
+    rest = '';
+  }
+  if (name && name.length > 40) name = name.slice(0, 40);
+  return { n: n, name: name, rest: rest };
 }
 
 // Resolve or auto-create the spreadsheet for owner's business number N.
-// Returns { sheetId, sheetUrl, isNew } or null on failure.
-function _getOrCreateBusinessSheet_(ownerPhone, n) {
+// Optionally persists a NAME for the business (Steven 2026-05-26): if a
+// name is passed, it is stored on the biz record. Subsequent calls
+// without a name return the previously-stored name. Returns
+// { sheetId, sheetUrl, isNew, name } or null on failure.
+function _getOrCreateBusinessSheet_(ownerPhone, n, nameOpt) {
   if (!n || n < 1) return null;
-  if (n === 1) {
-    return { sheetId: SHEET_ID, sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', isNew: false };
-  }
   var clean = String(ownerPhone || '').replace(/[^0-9]/g, '');
+  var nameClean = nameOpt ? String(nameOpt).trim().slice(0, 40) : '';
+
+  if (n === 1) {
+    // N=1 still maps to the main bot sheet. Allow naming for consistency,
+    // stored under biz:{phone}:1 just so /עסקים שלי can echo a label.
+    if (nameClean && clean) {
+      var k1 = 'biz:' + clean + ':1';
+      var prev1 = kvGet(k1) || {};
+      kvSet(k1, { sheetId: SHEET_ID, sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', n: 1, name: nameClean, createdAt: prev1.createdAt || Date.now() }, 0);
+    }
+    var existing1 = clean ? (kvGet('biz:' + clean + ':1') || {}) : {};
+    return { sheetId: SHEET_ID, sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', isNew: false, name: existing1.name || nameClean || '' };
+  }
   if (!clean) return null;
+
   var key = 'biz:' + clean + ':' + n;
   var existing = kvGet(key);
   if (existing && existing.sheetId) {
+    // If a new name was passed, persist it on top of the existing record.
+    if (nameClean && existing.name !== nameClean) {
+      existing.name = nameClean;
+      kvSet(key, existing, 0);
+    }
     return {
       sheetId: existing.sheetId,
       sheetUrl: existing.sheetUrl || ('https://docs.google.com/spreadsheets/d/' + existing.sheetId + '/edit'),
       isNew: false,
+      name: existing.name || '',
     };
   }
   // Auto-create by cloning the main bot sheet so the new biz sheet
   // inherits the same tab structure (תנועות, מאזן חברה, הזמנות, etc).
   try {
-    var copyName = 'Kesefle עסק ' + n + ' — ' + clean;
+    var copyName = 'Kesefle עסק ' + n + (nameClean ? ' ' + nameClean : '') + ' — ' + clean;
     var copy = DriveApp.getFileById(SHEET_ID).makeCopy(copyName);
     var newId = copy.getId();
     var url = 'https://docs.google.com/spreadsheets/d/' + newId + '/edit';
-    var rec = { sheetId: newId, sheetUrl: url, n: n, createdAt: Date.now() };
+    var rec = { sheetId: newId, sheetUrl: url, n: n, name: nameClean, createdAt: Date.now() };
     kvSet(key, rec, 0);
     // Maintain a list so "עסקים שלי" can show them all in one place.
     var listKey = 'biz:owner:' + clean + ':list';
@@ -10142,8 +10187,8 @@ function _getOrCreateBusinessSheet_(ownerPhone, n) {
       list.push(rec);
       kvSet(listKey, list, 0);
     }
-    Logger.log('_getOrCreateBusinessSheet_: created sheet ' + newId + ' for owner=' + clean + ' biz=' + n);
-    return { sheetId: newId, sheetUrl: url, isNew: true };
+    Logger.log('_getOrCreateBusinessSheet_: created sheet ' + newId + ' for owner=' + clean + ' biz=' + n + ' name=' + nameClean);
+    return { sheetId: newId, sheetUrl: url, isNew: true, name: nameClean };
   } catch (e) {
     Logger.log('_getOrCreateBusinessSheet_ err: ' + (e && e.message));
     return null;
@@ -10153,15 +10198,40 @@ function _getOrCreateBusinessSheet_(ownerPhone, n) {
 // Write an expense to business N. Parses "<amount> <description>" out
 // of `rest`, classifies subcategory, appends to the per-N תנועות, then
 // recomputes the per-N מאזן חברה. Income syntax: "+1500 <description>".
-function _writeBusinessNExpense_(fromPhone, n, rest) {
-  var target = _getOrCreateBusinessSheet_(fromPhone, n);
+//
+// Optional `nameOpt` (Steven 2026-05-26): the business name the user
+// declared in this message (e.g. "כספלה" in "עסק 2 כספלה - 52 hostinger").
+// If present, it is persisted on the biz record so future replies can
+// echo the name and the user does not have to re-type it.
+//
+// Special case: if `rest` is empty AND `nameOpt` is set, this is a
+// "set the name of business N to X" command -- no expense is written.
+function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest) {
+  var target = _getOrCreateBusinessSheet_(fromPhone, n, nameOpt || null);
   if (!target) return { handled: true, replyText: '😬 לא הצלחתי לפתוח את הגיליון של עסק ' + n };
+
+  var effectiveName = (nameOpt && String(nameOpt).trim()) || target.name || '';
+  var nameSuffix = effectiveName ? ' (' + effectiveName + ')' : '';
+
+  // Set-name-only: rest is empty + we got a name. Confirm and stop.
+  if ((!rest || !String(rest).trim()) && effectiveName) {
+    var setLines = ['✅ עסק ' + n + ' = ' + effectiveName];
+    if (target.isNew) {
+      setLines.push('');
+      setLines.push('🆕 יצרתי גיליון חדש:');
+      setLines.push('📊 ' + target.sheetUrl);
+    }
+    setLines.push('');
+    setLines.push('עכשיו תוכל לשלוח לדוגמה:');
+    setLines.push('"עסק ' + n + ' 320 שיווק"');
+    return { handled: true, replyText: setLines.join('\n') };
+  }
 
   // Accept "<amount> <description>" or "+<amount> <description>" (income).
   var m = String(rest || '').trim().match(/^([+-]?\d+(?:\.\d+)?)\s+(.+)$/);
   if (!m) {
     return { handled: true, replyText:
-      '😬 פורמט: "עסק ' + n + ' <סכום> <תיאור>"\n' +
+      '😬 פורמט: "עסק ' + n + (effectiveName ? ' ' + effectiveName : '') + ' <סכום> <תיאור>"\n' +
       'לדוגמה: "עסק ' + n + ' 320 שיווק פייסבוק"\n' +
       'או הכנסה: "עסק ' + n + ' +1500 מכירת תמונה"' };
   }
@@ -10190,7 +10260,7 @@ function _writeBusinessNExpense_(fromPhone, n, rest) {
     var tx = ss.getSheetByName(TRANSACTIONS_SHEET) || ss.getSheetByName('תנועות');
     if (!tx) {
       return { handled: true, replyText:
-        '😬 לא מצאתי לשונית תנועות בגיליון של עסק ' + n + '.\n📊 ' + target.sheetUrl +
+        '😬 לא מצאתי לשונית תנועות בגיליון של עסק ' + n + nameSuffix + '.\n📊 ' + target.sheetUrl +
         '\n💡 פתח את הגיליון, ודא שיש לשונית "תנועות".' };
     }
     var now = new Date();
@@ -10202,10 +10272,10 @@ function _writeBusinessNExpense_(fromPhone, n, rest) {
     catch (_dErr) { Logger.log('biz-N dash err: ' + (_dErr && _dErr.message)); }
 
     var emoji = isIncome ? '💵' : '💸';
-    var lines = [emoji + ' עסק ' + n + ': ₪' + amount.toLocaleString('he-IL') + ' · ' + sub];
+    var lines = [emoji + ' עסק ' + n + nameSuffix + ': ₪' + amount.toLocaleString('he-IL') + ' · ' + sub];
     if (target.isNew) {
       lines.push('');
-      lines.push('🆕 יצרתי גיליון חדש בשבילך לעסק ' + n + ':');
+      lines.push('🆕 יצרתי גיליון חדש בשבילך לעסק ' + n + (effectiveName ? ' (' + effectiveName + ')' : '') + ':');
       lines.push('📊 ' + target.sheetUrl);
       lines.push('');
       lines.push('הוא משוכפל מהגיליון הראשי שלך עם אותו מבנה (תנועות, מאזן חברה, הזמנות).');
@@ -10214,7 +10284,7 @@ function _writeBusinessNExpense_(fromPhone, n, rest) {
     }
     return { handled: true, replyText: lines.join('\n') };
   } catch (e) {
-    return { handled: true, replyText: '😬 שגיאה בכתיבה לגיליון של עסק ' + n + ': ' + (e && e.message) };
+    return { handled: true, replyText: '😬 שגיאה בכתיבה לגיליון של עסק ' + n + nameSuffix + ': ' + (e && e.message) };
   }
 }
 
