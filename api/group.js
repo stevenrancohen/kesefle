@@ -246,11 +246,19 @@ async function handlerImpl(req, res) {
         if (!(await kvGet('group:' + c))) { code = c; break; }
       }
       if (!code) return res.status(500).json({ ok: false, error: 'code_generation_failed' });
+      // PR #15: householdMode marks the record as a couples/roommates
+      // household (vs a one-off event group). Same data shape — the flag
+      // just changes how the bot formats balances ("מאזן הבית" vs "מאזן
+      // הקבוצה") and lets us light up household-only features later
+      // (default rent/bill split rules, monthly settlement reminders).
+      // We persist on creation only; existing groups stay flagged false.
+      const householdMode = !!body.householdMode;
       const group = {
         code,
         name: groupName,
         createdBy: creatorPhone,
         createdAt: new Date().toISOString(),
+        household: householdMode,
         members: [{ phone: creatorPhone, name: creatorName, joinedAt: new Date().toISOString() }],
         expenses: [],
         sheetId: null,

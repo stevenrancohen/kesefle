@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-q4-profession';
+const KFL_BUILD_VERSION = '2026-05-26-household-mode';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -2740,6 +2740,20 @@ function _handleGroupCommand_(fromPhone, text) {
   // Sub-command parsing. We try the keyword commands first; anything
   // starting with a digit is treated as a "record an expense" message.
 
+  // Household-specific aliases (PR #15, 2026-05-26). A household is just
+  // a group with household=true on the record — couples / roommates use
+  // case where shared rent/bills/groceries auto-split 50/50. Bot wraps
+  // the same /api/group endpoints but the create flow stamps the record
+  // with householdMode so the balances view + reminders format it as
+  // "מאזן הבית" instead of "מאזן הקבוצה". We match the household
+  // commands FIRST so "צור בית" doesn't fall through to plain "צור" with
+  // name="בית".
+  var mCreateHouse = body.match(/^(?:צור|create|הקם|פתח)\s+(?:בית|דירה|household|apartment)(?:\s+(.*))?$/i);
+  if (mCreateHouse) return _groupCreate_(fromPhone, (mCreateHouse[1] || '').trim() || 'הבית שלי', { householdMode: true });
+  var mJoinHouse = body.match(/^(?:הצטרף|join)\s+(?:לבית|לדירה|to\s*household|to\s*apartment)\s+([A-Z0-9]{6,8})\b/i);
+  if (mJoinHouse) return _groupJoin_(fromPhone, mJoinHouse[1].toUpperCase());
+  if (/^(?:מאזן\s+בית|בית|מי\s+חייב\s+למי|household\s+balance)$/i.test(body)) return _groupBalances_(fromPhone, 'full');
+
   // Create a new group: "צור [name]" / "create [name]" / "התחל [name]".
   // REQUIRE a word boundary after the keyword (whitespace or end), not
   // \s* — otherwise "כספלה צורה יפה" (a sentence about a shape) would
@@ -2812,9 +2826,13 @@ function _handleGroupCommand_(fromPhone, text) {
 }
 
 function _groupHelp_() {
-  return '🤝 *כספ\'לה — הוצאות קבוצתיות*\n' +
+  return '🤝 *כספ\'לה — הוצאות משותפות*\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
-    '*התחלה:*\n' +
+    '*🏠 משק בית (זוגות / שותפים לדירה):*\n' +
+    '  • "כספלה צור בית כהן" — פתח בית משותף\n' +
+    '  • "כספלה הצטרף לבית ABC123" — הצטרף לבית של בן/בת הזוג\n' +
+    '  • "כספלה מאזן בית" — מי חייב למי, חודשי\n\n' +
+    '*👨‍👩‍👧 קבוצה (משפחה / חברים / טיול):*\n' +
     '  • "כספלה צור משפחה כהן" — צור קבוצה חדשה\n' +
     '  • "כספלה הצטרף ABC123" — הצטרף לקבוצה עם קוד\n' +
     '  • "כספלה מצב" — פרטי הקבוצה הפעילה\n' +
@@ -2878,30 +2896,46 @@ function _groupAPI_(action, payload) {
 
 // ============ command implementations ============
 
-function _groupCreate_(fromPhone, name) {
-  var groupName = name && name.length > 0 ? name : 'הקבוצה שלי';
+function _groupCreate_(fromPhone, name, opts) {
+  opts = opts || {};
+  var isHousehold = !!opts.householdMode;
+  var groupName = name && name.length > 0 ? name : (isHousehold ? 'הבית שלי' : 'הקבוצה שלי');
   var senderName = _groupSenderName_(fromPhone);
-  var r = _groupAPI_('create', { creatorPhone: fromPhone, creatorName: senderName, groupName: groupName });
+  // PR #15: householdMode flag carries through to /api/group create so the
+  // server stamps the record with household=true. The flag affects the
+  // balances view formatting + reminder copy ("מאזן הבית" vs "מאזן הקבוצה").
+  var r = _groupAPI_('create', {
+    creatorPhone: fromPhone,
+    creatorName: senderName,
+    groupName: groupName,
+    householdMode: isHousehold,
+  });
   if (!r || !r.ok) {
-    return { handled: true, replyText: '😬 לא הצלחתי ליצור קבוצה: ' + (r && r.error || 'שגיאה') };
+    return { handled: true, replyText: '😬 לא הצלחתי ליצור ' + (isHousehold ? 'בית' : 'קבוצה') + ': ' + (r && r.error || 'שגיאה') };
   }
   // HONESTY: server creates the KV record either way, but the SHARED SHEET
   // creation is best-effort and depends on the creator having an OAuth-linked
   // account. We must NOT lie that "group created" if the user can't actually
   // use it. Tell the user the true state.
   var sheetCreated = !!(r.group && (r.group.sheetUrl || r.group.sheetId));
+  var entityWord = isHousehold ? 'בית' : 'קבוצה';
+  var joinKeyword = isHousehold ? 'הצטרף לבית' : 'הצטרף';
   var sheetLine = sheetCreated
     ? '📊 גיליון משותף נוצר ב-Drive שלך:\n' + (r.group.sheetUrl || ('https://docs.google.com/spreadsheets/d/' + r.group.sheetId)) + '\n\n'
-    : '⚠️  *הקבוצה רשומה אבל בלי גיליון משותף עדיין.* כדי שאני אוכל ליצור את הגיליון:\n' +
+    : '⚠️  *ה' + entityWord + ' רשומ' + (isHousehold ? '' : 'ה') + ' אבל בלי גיליון משותף עדיין.* כדי שאני אוכל ליצור את הגיליון:\n' +
       '1. כנס/י ל-kesefle.com/account עם המספר הזה\n' +
       '2. התחבר עם Google\n' +
-      '3. שלח שוב "כספלה צור משפחה ' + groupName + '"\n\n';
+      '3. שלח שוב "כספלה צור ' + (isHousehold ? 'בית ' : 'משפחה ') + groupName + '"\n\n';
+  var householdHint = isHousehold
+    ? '\n💡 *טיפ:* שותפים שמצטרפים לבית יראו אוטומטית את כל ההוצאות המשותפות (שכירות, ארנונה, חשמל, מים, אינטרנט, ועד בית, קניות לבית) ויקבלו חישוב 50/50 של מי חייב למי. שלח "כספלה מאזן בית" בכל רגע.\n'
+    : '';
   return { handled: true, replyText:
-    '✅ נוצרה קבוצה: *' + groupName + '*\n' +
+    '✅ נוצר/ה ' + entityWord + ': *' + groupName + '*\n' +
     '🔑 קוד הזמנה: *' + r.code + '*\n\n' +
     sheetLine +
-    'שתף/י את הקוד עם חברי הקבוצה כדי שיצטרפו:\n' +
-    '"כספלה הצטרף ' + r.code + '"\n\n' +
+    'שתף/י את הקוד עם חברי ה' + entityWord + ' כדי שיצטרפו:\n' +
+    '"כספלה ' + joinKeyword + ' ' + r.code + '"\n\n' +
+    householdHint +
     'או הזמן/י אותם ב-https://kesefle.com/family-invite\n\n' +
     (sheetCreated ? 'עכשיו אפשר לרשום הוצאה: "כספלה 245 סופר"' : '(לאחר שתשלים/י את החיבור, הוצאות יזוהו אוטומטית)') };
 }
