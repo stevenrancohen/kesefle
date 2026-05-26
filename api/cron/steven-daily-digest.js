@@ -10,6 +10,7 @@
 // ?admin=<KESEFLE_BOT_SECRET> כדי שלא נשלח שלא בטעות.
 
 import { withRequestId, log } from '../../lib/log.js';
+import { constantTimeEqual } from '../../lib/crypto.js';
 
 const STEVEN_PHONE     = '972547760643';
 const GITHUB_REPO      = 'stevenrancohen/kesefle';
@@ -126,14 +127,14 @@ async function sendWhatsApp(text) {
 function isAuthorizedCronCall(req) {
   // ריצת cron של Vercel שולחת את הטוקן המסוים הזה
   var cronAuth = req.headers['authorization'];
-  if (cronAuth && process.env.CRON_SECRET && cronAuth === 'Bearer ' + process.env.CRON_SECRET) {
+  if (cronAuth && process.env.CRON_SECRET && constantTimeEqual(cronAuth, 'Bearer ' + process.env.CRON_SECRET)) {
     return true;
   }
   // ריצה ידנית עם בוט סיקרט בפרמטר
   var adminParam = (req.query && req.query.admin) || (req.url && (function () {
     try { return new URL(req.url, 'http://x').searchParams.get('admin'); } catch { return null; }
   })());
-  if (adminParam && process.env.KESEFLE_BOT_SECRET && adminParam === process.env.KESEFLE_BOT_SECRET) {
+  if (adminParam && process.env.KESEFLE_BOT_SECRET && constantTimeEqual(adminParam, process.env.KESEFLE_BOT_SECRET)) {
     return true;
   }
   return false;
