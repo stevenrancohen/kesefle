@@ -719,6 +719,9 @@
         <p class="kfl-section-sub">הוא עונה? הוא בחיים? אילו הודעות נכשלו אתמול?</p>
         <p class="mt-0.5 text-sm" style="color: #64748B;">Inference-tier distribution — higher T1/T2 share means lower spend.</p>
       </div>
+      <div id="kfl-bot-freshness" class="hidden text-xs font-medium rounded-full px-3 py-1.5 flex items-center gap-1.5">
+        <!-- populated by loadBotFreshness() -->
+      </div>
     </div>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
@@ -1390,7 +1393,53 @@
     } catch (e) { box.innerHTML = '<div class="text-sm" style="color: #EF4444;">Error: ' + esc(e.message) + '</div>'; }
   }
 
-  function loadOnboarding() { loadHealth(); loadQuestionnaires(); }
+  // Bot-version freshness badge. Reads /api/admin/bot-version, which
+  // compares the deployed bot's last-reported KFL_BUILD_VERSION to the
+  // value in main's bot/ExpenseBot_FIXED.gs. If they differ, surfaces a
+  // red badge so Steven knows he needs to re-paste DEPLOY.gs in Apps
+  // Script. Solves the recurring "bot is running stale code" bug.
+  async function loadBotFreshness() {
+    var pill = document.getElementById('kfl-bot-freshness');
+    if (!pill) return;
+    try {
+      var r = await fetch('/api/admin/bot-version', { credentials: 'include' });
+      if (r.status === 401 || r.status === 403) return;     // silently hide if no admin
+      var j = await r.json();
+      if (!j || !j.ok) return;
+      pill.classList.remove('hidden');
+      var html;
+      if (j.drift) {
+        pill.style.background = '#FEE2E2';
+        pill.style.color = '#991B1B';
+        pill.style.border = '1px solid #FCA5A5';
+        html =
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+          '<line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+          'בוט לא מסונכרן — צריך paste מחדש (deployed: ' + (j.deployed_version || '?') + ', main: ' + (j.repo_version || '?') + ')';
+      } else if (j.unknown) {
+        pill.style.background = '#FEF3C7';
+        pill.style.color = '#92400E';
+        pill.style.border = '1px solid #FCD34D';
+        html =
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+          'גרסת בוט לא ידועה (אין heartbeat עדכני)';
+      } else {
+        pill.style.background = '#DCFCE7';
+        pill.style.color = '#15803D';
+        pill.style.border = '1px solid #86EFAC';
+        var stale = j.stale_minutes != null ? ' (' + j.stale_minutes + 'min ago)' : '';
+        html =
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="20 6 9 17 4 12"/></svg>' +
+          'בוט מסונכרן · ' + (j.deployed_version || '?') + stale;
+      }
+      pill.innerHTML = html;
+    } catch (_e) { /* silent — badge stays hidden */ }
+  }
+
+  function loadOnboarding() { loadHealth(); loadQuestionnaires(); loadBotFreshness(); }
   window.kflLoadOnboarding = loadOnboarding;
   if (document.readyState !== 'loading') loadOnboarding();
   else document.addEventListener('DOMContentLoaded', loadOnboarding);
