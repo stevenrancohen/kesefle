@@ -23,7 +23,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { exchangeRefreshForAccess, sanitizeCell } from '../../lib/sheet-writer.js';
-import { decryptRefreshToken } from '../../lib/secure-kv.js';
+import { constantTimeEqual, decryptRefreshToken } from '../../lib/crypto.js';
 
 const TX_TAB = 'תנועות';
 
@@ -57,7 +57,7 @@ async function handlerImpl(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const got = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-  if (got !== expected) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  if (!constantTimeEqual(got, expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
 
   const phone = normalizeE164(body?.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
