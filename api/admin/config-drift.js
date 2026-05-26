@@ -13,6 +13,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { requireAdmin } from '../../lib/auth.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
@@ -74,4 +75,9 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(requireAdmin(handlerImpl));
+// Steven 2026-05-26 (API audit follow-up): defense-in-depth rate limit.
+// This endpoint also self-fetches /api/config + the homepage on every
+// call, so the rate limit doubly protects against amplification too.
+export default withRequestId(
+  withRateLimit({ key: 'admin_config_drift', limit: 30, windowSec: 60 })(requireAdmin(handlerImpl))
+);

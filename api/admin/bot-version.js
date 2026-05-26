@@ -11,6 +11,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { requireAdmin } from '../../lib/auth.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -82,4 +83,11 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(requireAdmin(handlerImpl));
+// Steven 2026-05-26 (API audit follow-up): admin endpoints must have a
+// rate limit even though requireAdmin gates them — defense in depth + cap
+// runaway client polling. Matches the pattern from create-sample-sheet.js,
+// help-queries.js, inbox.js, etc. 60/min is generous for legitimate admin
+// dashboard polling.
+export default withRequestId(
+  withRateLimit({ key: 'admin_bot_version', limit: 60, windowSec: 60 })(requireAdmin(handlerImpl))
+);

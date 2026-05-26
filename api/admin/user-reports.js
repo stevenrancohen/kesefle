@@ -6,6 +6,7 @@
 
 import { withRequestId } from '../../lib/log.js';
 import { requireAdmin } from '../../lib/auth.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -36,4 +37,7 @@ async function handlerImpl(req, res) {
   }
 }
 
-export default withRequestId(requireAdmin(handlerImpl));
+// Steven 2026-05-26 (API audit follow-up): defense-in-depth rate limit.
+export default withRequestId(
+  withRateLimit({ key: 'admin_user_reports', limit: 60, windowSec: 60 })(requireAdmin(handlerImpl))
+);
