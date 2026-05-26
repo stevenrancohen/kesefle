@@ -15,6 +15,7 @@ import { constantTimeEqual } from '../../lib/crypto.js';
 const STEVEN_PHONE     = '972547760643';
 const GITHUB_REPO      = 'stevenrancohen/kesefle';
 const HOURS_LOOKBACK   = 24;
+const AFTERNOON_LOOKBACK = 8;  // מצב אחה"צ: מסתכל רק על 8 השעות האחרונות (מאז הבוקר)
 const PROJECT_START    = '2026-05-15T00:00:00Z'; // תחילת הפרויקט (נשתמש בזה כברירת מחדל לשליחה ראשונה)
 
 // ── עזר: ניסוח עברי לקטגוריות קומיטים ──────────────────────────────
@@ -58,8 +59,11 @@ async function fetchCommits(sinceISO) {
 }
 
 // ── עזר: בניית גוף ההודעה בעברית ────────────────────────────────────
-function buildDigest(commits, isFirstRun) {
+function buildDigest(commits, isFirstRun, isAfternoon) {
   if (!commits.length) {
+    if (isAfternoon) {
+      return '🌇 ערב טוב סטיבן!\n\nמאז הבוקר לא בוצעו קומיטים חדשים ב-main.\nהכל ממשיך לעבוד כרגיל.\n\n— כספ\'לה';
+    }
     return '☕ בוקר טוב סטיבן!\n\nאתמול לא בוצעו קומיטים חדשים ב-main.\nכל המערכת ממשיכה לעבוד כרגיל.\n\n— כספ\'לה';
   }
   // קיבוץ לפי קטגוריה
@@ -70,9 +74,14 @@ function buildDigest(commits, isFirstRun) {
     byBucket[b].push(c);
   });
 
-  var header = isFirstRun
-    ? '🚀 *תקציר התקדמות הפרויקט עד היום*\n\nשלום סטיבן! זו ההודעה הראשונה. הנה כל מה שהתבצע מאז תחילת הפרויקט:'
-    : '☕ *בוקר טוב סטיבן!*\n\nהנה מה שהתבצע אתמול בפרויקט:';
+  var header;
+  if (isFirstRun) {
+    header = '🚀 *תקציר התקדמות הפרויקט עד היום*\n\nשלום סטיבן! זו ההודעה הראשונה. הנה כל מה שהתבצע מאז תחילת הפרויקט:';
+  } else if (isAfternoon) {
+    header = '🌇 *ערב טוב סטיבן!*\n\nהנה מה שהתבצע מהבוקר עד עכשיו:';
+  } else {
+    header = '☕ *בוקר טוב סטיבן!*\n\nהנה מה שהתבצע אתמול בפרויקט:';
+  }
 
   var sections = [];
   Object.keys(byBucket).forEach(function (b) {
@@ -147,10 +156,14 @@ async function handlerImpl(req, res) {
   }
 
   // ?firstRun=1 שולח את כל ההיסטוריה (מאז PROJECT_START); אחרת רק 24 שעות אחרונות.
+  // ?afternoon=1 מצב אחה"צ -- מסתכל רק על 8 השעות האחרונות + כותרת ערב.
   var isFirstRun = String((req.query && req.query.firstRun) || '').match(/^(1|true|yes)$/i);
+  var isAfternoon = String((req.query && req.query.afternoon) || '').match(/^(1|true|yes)$/i);
   var sinceISO;
   if (isFirstRun) {
     sinceISO = PROJECT_START;
+  } else if (isAfternoon) {
+    sinceISO = new Date(Date.now() - AFTERNOON_LOOKBACK * 60 * 60 * 1000).toISOString();
   } else {
     sinceISO = new Date(Date.now() - HOURS_LOOKBACK * 60 * 60 * 1000).toISOString();
   }
@@ -163,7 +176,7 @@ async function handlerImpl(req, res) {
     return res.status(502).json({ ok: false, error: 'github_fetch_failed', detail: e.message });
   }
 
-  var body = buildDigest(commits, isFirstRun);
+  var body = buildDigest(commits, isFirstRun, isAfternoon);
 
   // אם הודעת הטקסט ארוכה מ-4096 תווים (הגבול של WhatsApp), נחתוך
   if (body.length > 4000) {
