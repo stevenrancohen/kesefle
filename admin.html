@@ -51,14 +51,17 @@
   }
   /* Base typography + colors per design spec — matches kesefle.com */
   html { scroll-behavior: smooth; }
+  /* Steven 2026-05-26 LIGHT-FIRST: page bg = #F8FAFC with whisper-soft cyan tint.
+     Removed the indigo (rgba 79,70,229) glow so the page reads as clean fintech,
+     not a debug screen with purple haze. Text bumped from #0f1422 to true ink
+     #0F172A for WCAG AA across all body copy. */
   body {
     background:
-      radial-gradient(at 12% 10%, rgba( 79, 70,229,0.06) 0px, transparent 50%),
-      radial-gradient(at 88% 14%, rgba(  6,182,212,0.08) 0px, transparent 55%),
-      radial-gradient(at 50% 90%, rgba( 20,184,166,0.05) 0px, transparent 55%),
-      #f7f8fb;
+      radial-gradient(at 80% 0%, rgba(  6,182,212,0.05) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba( 20,184,166,0.04) 0px, transparent 55%),
+      #F8FAFC;
     font-family: 'Inter', 'Heebo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    color: #0f1422;
+    color: #0F172A;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -94,12 +97,14 @@
   /* LTR-isolated numerals */
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; font-variant-numeric: tabular-nums; }
 
-  /* Premium card — matches kesefle.com pricing/feature cards */
+  /* Premium card — light-first per Steven 2026-05-26.
+     Border bumped from #eef0f6 -> #E2E8F0 (slate-200, his spec) so the card
+     edge is visible against the page bg even on washed-out monitors. */
   .card {
     background: #FFFFFF;
-    border: 1px solid #eef0f6;
-    border-radius: 20px;
-    box-shadow: 0 8px 30px -12px rgba(15, 20, 34, 0.08);
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 4px 16px -4px rgba(15, 23, 42, 0.06);
   }
   html.dark .card {
     background: #1e2638;
@@ -140,7 +145,9 @@
     letter-spacing: 0.1em;
     color: #0e7490;
   }
-  .kfl-section-sub { font-size: 0.875rem; font-weight: 500; color: #41506f; margin-top: 6px; }
+  /* Light-mode secondary text — bumped to #475569 (slate-600) per Steven's
+     palette spec. Was #41506f (custom dim) which read as too faded. */
+  .kfl-section-sub { font-size: 0.875rem; font-weight: 500; color: #475569; margin-top: 6px; }
   html.dark .kfl-section-sub { color: #94a3b8; }
 
   /* Discrete status dot */
@@ -1016,7 +1023,10 @@
     }
     localStorage.setItem('kesefle_theme', mode);
   }
-  applyTheme(localStorage.getItem('kesefle_theme') || 'dark');
+  // Steven 2026-05-26: default to LIGHT — admin must read as a clean,
+  // bright CEO dashboard, not a dark debug page. Users can still flip to
+  // dark via the toggle but light is now the default first-load experience.
+  applyTheme(localStorage.getItem('kesefle_theme') || 'light');
   themeBtn.addEventListener('click', () => {
     const cur = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     applyTheme(cur === 'dark' ? 'light' : 'dark');
