@@ -37,6 +37,8 @@
     { "source": "/changelog", "destination": "/", "permanent": true },
     { "source": "/changelog.rss", "destination": "/", "permanent": true },
     { "source": "/help", "destination": "/contact", "permanent": true },
+    { "source": "/business", "destination": "/", "permanent": true },
+    { "source": "/business/", "destination": "/", "permanent": true },
     { "source": "/family", "destination": "/", "permanent": true },
     { "source": "/family-invite", "destination": "/", "permanent": true },
     { "source": "/group", "destination": "/", "permanent": true },
