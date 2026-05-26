@@ -4407,14 +4407,32 @@ function _botConcierge_(fromPhone, text) {
     'וב-reply תני תשובה אמיתית, אישית ומועילה — לא משפט גנרי.';
   var raw = _geminiGenerate_(sys, text);
   if (!raw) return null;
-  var m = String(raw).match(/\{[\s\S]*\}/);
-  if (!m) return { action: 'chat', reply: String(raw).slice(0, 600) };
+  // ANTI-LEAK: Gemini sometimes wraps its JSON in a ```json ... ```
+  // markdown fence, or truncates mid-string. The OLD fallback returned the
+  // raw string straight to the user, which leaked the literal ``` ```json
+  // {"action":"chat","reply":...} ``` blob to WhatsApp. Strip fences first,
+  // and if parsing still fails, return a safe Hebrew message instead of raw.
+  var rawClean = String(raw)
+    .replace(/^\s*```(?:json|JSON)?\s*/, '')
+    .replace(/```\s*$/, '')
+    .trim();
+  var SAFE_FALLBACK = 'לא הבנתי. נסה לשלוח הוצאה (למשל "50 קפה") או "סיכום".';
+  var m = rawClean.match(/\{[\s\S]*\}/);
+  if (!m) {
+    Logger.log('_botConcierge_ no-json fallback: ' + rawClean.slice(0, 120));
+    return { action: 'chat', reply: SAFE_FALLBACK };
+  }
   try {
     var p = JSON.parse(m[0]);
     var action = String(p.action || 'chat').trim();
-    return { action: action, reply: String(p.reply || '').slice(0, 600) };
+    var reply = String(p.reply || '').trim();
+    // If LLM returned an empty reply on a chat action, fall back to the
+    // safe message so the user doesn't see a blank bubble.
+    if (action === 'chat' && !reply) reply = SAFE_FALLBACK;
+    return { action: action, reply: reply.slice(0, 600) };
   } catch (_pe) {
-    return { action: 'chat', reply: String(raw).slice(0, 600) };
+    Logger.log('_botConcierge_ json-parse fallback: ' + (_pe && _pe.message));
+    return { action: 'chat', reply: SAFE_FALLBACK };
   }
 }
 
@@ -7526,6 +7544,12 @@ function processExpense(text, fromPhone) {
       if (fx && fx.autoConverted && fx.foreignAmount && fx.foreignSymbol) {
         __fxOriginal = ' (' + fx.foreignAmount + fx.foreignSymbol + ')';
       }
+      // Always offer the picker — Steven wants the user to be able to
+      // change category on ANY expense, not only when the bot was unsure.
+      // Picker is a separate interactive message; the text reply is sent first.
+      try { _sendChangeCategoryPicker_(fromPhone, matched.category); } catch (_pkErr) {
+        Logger.log('owner-write picker err: ' + (_pkErr && _pkErr.message));
+      }
       return { reply:
         '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + __fxOriginal + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
         '\n📂 ' + matched.category + __subLabel + __globalNote +
@@ -7535,7 +7559,7 @@ function processExpense(text, fromPhone) {
         __recurringTail +
         __streakTail +
         (__softHintTail || '') +
-        '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.' +
+        '\n\n👇 לשנות קטגוריה — בחר מהרשימה למטה, או שלח "קטגוריה <שם>".' +
         '\nכתוב "סיכום" לראות איפה אתה עומד החודש.' +
         _sheetLinkLine_(fromPhone)
       };
@@ -8967,6 +8991,11 @@ function _handleReceiptImage_(fromPhone, image) {
     ? '\n📅 ' + dateStr
     : '';
   var vendorLine = vendor ? '\n🏪 ' + vendor : '';
+  // Always offer the picker on a receipt parse too — OCR is the most
+  // error-prone path, so the user definitely wants a one-tap fix.
+  try { _sendChangeCategoryPicker_(fromPhone, matched.category); } catch (_pkErr) {
+    Logger.log('receipt picker err: ' + (_pkErr && _pkErr.message));
+  }
   return {
     replyText:
       '📸 קבלה נקראה!\n' +
@@ -8975,7 +9004,7 @@ function _handleReceiptImage_(fromPhone, image) {
       '\n💰 ₪' + amount.toLocaleString('he-IL') +
       dateLine +
       '\n📂 ' + matched.category + subLabel +
-      '\n\n❓ קטגוריה לא מדויקת? שלח "קטגוריה <השם הנכון>" ואני אלמד.'
+      '\n\n👇 לשנות קטגוריה — בחר מהרשימה למטה, או שלח "קטגוריה <שם>".'
   };
 }
 
@@ -9147,6 +9176,26 @@ function _handleCategoryCorrection_(fromPhone, text) {
   if (!fromPhone || !text) return null;
   var trimmed = String(text).trim();
   var cache = CacheService.getScriptCache();
+
+  // Bare "קטגוריה" / "category" — show the picker against the last
+  // expense (if any). Previously this fell through to Gemini, which
+  // could leak raw ``` ```json {…} ``` markdown back to the user.
+  if (trimmed === 'קטגוריה' || /^category$/i.test(trimmed)) {
+    var phoneClean = String(fromPhone).replace(/[^0-9]/g, '');
+    var lastRaw = cache.get('lastTenantExp:' + phoneClean) || cache.get('lastExp:' + fromPhone);
+    if (!lastRaw) {
+      return {
+        handled: true,
+        replyText: '🤔 אין הוצאה אחרונה לתיקון.\nשלח קודם הוצאה (למשל "50 קפה") ואז שלח שוב "קטגוריה" כדי לבחור.'
+      };
+    }
+    var le = null; try { le = JSON.parse(lastRaw); } catch (_) {}
+    var curCat = (le && le.category) || '';
+    try { _sendChangeCategoryPicker_(fromPhone, curCat); } catch (_pkErr) {
+      Logger.log('bare-קטגוריה picker err: ' + (_pkErr && _pkErr.message));
+    }
+    return { handled: true, replyText: '👇 בחר קטגוריה חדשה מהרשימה למטה.' };
+  }
 
   var corMatch = trimmed.match(/^קטגוריה\s+(.+)$/i) || trimmed.match(/^category\s+(.+)$/i);
   if (corMatch) {
