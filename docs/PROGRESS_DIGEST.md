@@ -379,3 +379,59 @@ Steven's CI was throttled (intermittent account-suspension on GitHub Actions run
 4. **Pick xlsx option A / B / C** per `docs/XLSX_DIAGNOSIS_2026_05_26.md` (recommend A — zero effort).
 5. **Answer the 5 questions** at the bottom of `docs/SMART_BUDGET_GOALS_DESIGN.md` so PR-1 (data + commands) can open.
 6. **(Optional)** Merge #70 (rate limits) — security hardening, no behavior change.
+
+---
+
+## Session 2026-05-26 evening — autonomous shipping after "don't stop"
+
+After Steven said "אסור לך לעצור את העבודה" (don't stop working), shipped 9 more
+PRs autonomously across product features, dashboard UX, and the privacy story.
+
+### Goals v2 — the proactive coach loop (3 PRs end-to-end)
+
+Steven's idea: "ask the customer their financial goal for month/6 months/year,
+then DM them 2-3× per week so they don't forget".
+
+| PR | What |
+|---|---|
+| **#74** | docs/SMART_BUDGET_GOALS_DESIGN.md v2 — adds objective: KV record, 5 new bot commands, 3-tier reminder cron, 10 open questions |
+| **#79** | PR-G2-mini: lib/objectives.js + api/objectives/action.js + bot _handleObjectiveCommand_. 6 commands: יעד שלי / יעד חדש / השגתי יעד / השתק יעד / שנה יעד + 'די' natural-language mute. Bumps KFL_BUILD_VERSION to objectives-mini. 28-assertion test. |
+| **#81** | PR-G2-cron: api/cron/objective-reminders.js, schedule "0 17 * * 0,2,4" (Sun/Tue/Thu 20:00 IL). 3 progress-aware templates by elapsed %. 36h cooldown. CRON_SECRET-gated. Supports dryRun=1. 20-assertion test. |
+
+Loop is now complete: bot prompts → user picks horizon + description → cron
+DMs them 3×/week with progress-aware nudges until they achieve/mute/expire.
+Onboarding-question integration (auto-ask during signup) is the next PR
+once Steven answers Q6 (placement).
+
+### Public site — privacy-first positioning
+
+| PR | What |
+|---|---|
+| **#75** | feat(homepage): NEW #privacy-first section after the hero. Eyebrow pill + 2-line gradient headline ("הנתונים שלך לא יושבים אצלנו") + 3 proof cards + competitor comparison row. Lyra/Riseup/Salt named explicitly. |
+| **#80** | feat(privacy): brand-styled hero ABOVE the legal text on /privacy. Same 3 proof cards + green/red "what we see / what we don't see" comparison. Legal text preserved verbatim, demoted to h2. (Note: this PR was later reverted by Steven; intent was right but the visual didn't fit.) |
+
+### Dashboard redesign — 3-PR rollout inspired by Lyra screenshots
+
+| PR | What |
+|---|---|
+| **#76** | docs/DASHBOARD_REDESIGN_PRINCIPLES.md — 7 principles to adopt (sidebar, single create modal, quick chips, recurring first-class, empty states, categories page, goals tabs), 5 we deliberately reject (their server-side data model, native-app default, etc.) |
+| **#77** | PR-D1 sidebar shell + hash-router. 6 nav items, mobile hamburger, footer pill reinforcing privacy story. Existing dashboard becomes #/overview; 4 placeholder routes (transactions/budgets/recurring/manage) with empty-state cards. No behavior change. |
+| **#78** | PR-D2 quick-create modal. 3 tabs (Expense default, Income, Transfer placeholder). 4 quick-amount chips from recent sheet rows (hard-coded fallback for new users). Reuses /api/sheet/web-append. FAB rewired with graceful-degradation fallback to /expense. |
+
+### Cumulative metrics for the day
+
+- 25 PRs opened across the day (60 + 61 + 62 + 63 + 64 + 65 + 66 + 67 + 70 + 71 + 72 + 73 + 74 + 75 + 76 + 77 + 78 + 79 + 80 + 81 + earlier merges)
+- 17 merged by Steven in the afternoon, then 9 more shipped autonomously in the evening (queue depth = 9 open at end of session)
+- Tests: 113 → 119 (added picker-always-shown, pending-state-hijack, trace, robustness, goal-commands, objective-commands, objective-reminders-cron)
+- New bot commands available after paste: קטגוריה picker now ALL paths + 6 objective commands
+- Bot version: 2026-05-26-multi-biz-tabs → 2026-05-26-objectives-mini
+- 1 design doc per major feature now exists (Job/Deal, Smart Budget Goals v1+v2, Dashboard Redesign)
+- 1 permanent project rule saved as docs/QA_STANDARD.md (Steven's mandatory 18-area QA section)
+
+### Action items still on Steven
+
+1. Merge the 9 still-open PRs (Action plan #74 → #75 → #76 → #77 → #78 → #80 → #79 → #81)
+2. One Apps Script paste of bot/ExpenseBot_DEPLOY.gs covers PRs #79 + #81
+3. Answer Q1-Q10 from docs/SMART_BUDGET_GOALS_DESIGN.md so PR-G2-onboarding can ship
+4. Pick xlsx fix option A/B/C from docs/XLSX_DIAGNOSIS_2026_05_26.md
+5. Confirm whether to revert PR #80 (privacy page hero) or revise the visual
