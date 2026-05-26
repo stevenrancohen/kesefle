@@ -11083,6 +11083,10 @@ function _getStreakCount_(fromPhone) {
 
 // Returns "החודש הוצאת ₪X על Y — בדרך לממוצע שלך." or empty if not applicable.
 // Skipped silently for income categories or when month-to-date is small.
+//
+// Fix 2026-05-26: only sum EXPENSE rows (H column = TRUE). Old code summed
+// ALL rows matching the category, including incoming refunds, which inflated
+// the figure and caused the bot to lie ("4,600 when actual was 4,478").
 function _categoryMonthToDateLine_(category, isIncome) {
   if (isIncome) return '';
   if (!category) return '';
@@ -11098,9 +11102,14 @@ function _categoryMonthToDateLine_(category, isIncome) {
       var d = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
       if (isNaN(d.getTime()) || d < monthStart) continue;
       if (String(data[i][3] || '') !== category) continue;
+      // EXCLUDE income rows. H col (index 7) = isExpense; only count TRUE.
+      var hCol = data[i][7];
+      var isExp = hCol === true || String(hCol).toUpperCase() === 'TRUE';
+      if (!isExp) continue;
       sum += Number(data[i][2]) || 0;
     }
     if (sum < 50) return ''; // too early in month to be insightful
+    Logger.log('_categoryMonthToDateLine_ ' + category + ' sum=' + sum);
     return 'החודש הוצאת ₪' + sum.toLocaleString('he-IL') + ' על ' + category + '.';
   } catch (e) { return ''; }
 }
@@ -11158,6 +11167,10 @@ function _budgetStatsForCategory_(category) {
       if (String(row[3] || '') !== category) continue;
       var amount = Number(row[2]) || 0;
       if (amount <= 0) continue;
+      // EXCLUDE income rows. Same fix as _categoryMonthToDateLine_ above.
+      var hCol = row[7];
+      var isExp = hCol === true || String(hCol).toUpperCase() === 'TRUE';
+      if (!isExp) continue;
 
       if (d >= monthStart && d <= now) {
         thisMonthSpent += amount;
@@ -11237,9 +11250,12 @@ function _budgetAlertTail_(category, fromPhone) {
 
   var fmt = function(n) { return Math.round(n).toLocaleString('he-IL'); };
 
-  // Tier 3 — already exceeded
-  if (thisMonth > baseline) {
+  // Tier 3 — already exceeded. ANTI-LIE GUARD: require at least 5% over so
+  // we don't claim "we crossed last month!" when this month is 4,478 and
+  // last month was 4,485 (off by 7 ILS — basically equal).
+  if (thisMonth > baseline * 1.05) {
     if (!_budgetAlertThrottle_(fromPhone, category, 3)) return '';
+    Logger.log('budget tier-3 ' + category + ' thisMonth=' + Math.round(thisMonth) + ' baseline=' + Math.round(baseline));
     return '\n🔥 חצינו את הוצאת ' + category + ' של חודש שעבר (₪' +
            fmt(thisMonth) + ' מ-₪' + fmt(baseline) + ').';
   }
@@ -11248,6 +11264,7 @@ function _budgetAlertTail_(category, fromPhone) {
   if (thisMonth > baseline * 0.8 && daysElapsed < daysInMonth * 0.66) {
     if (!_budgetAlertThrottle_(fromPhone, category, 2)) return '';
     var pct = Math.round(paceRatio * 100);
+    Logger.log('budget tier-2 ' + category + ' thisMonth=' + Math.round(thisMonth) + ' baseline=' + Math.round(baseline) + ' pct=' + pct);
     return '\n🚨 כבר ' + pct + '% מההוצאה של ' + category +
            ' בחודש שעבר, ועדיין ' + daysLeft + ' ימים בחודש.';
   }
@@ -11919,17 +11936,26 @@ function detectAnomalies(newAmount, newCategory, newDescription) {
   }
 
   // ----- 3. Category MTD grew >X% vs same period last month -----------------
+  // ANTI-LIE GUARD 2026-05-26: also require that mtdNow exceeds the FULL
+  // previous month, not just the partial same-period. The old code fired
+  // "360% יותר" when prev-same-period was tiny (e.g. 970 in first 26 days)
+  // even though the full prev month total (4,485) was actually GREATER
+  // than this month's MTD (4,478). That's misleading — kill it.
   var mtdGrowth = _anomalyProp_('ANOMALY_MTD_GROWTH_PCT');
   var mtdNow = idx.mtdByCat[newCategory] || 0;
   var mtdPrev = idx.prevMtdByCat[newCategory] || 0;
-  if (mtdPrev > 100 && mtdNow > mtdPrev * (1 + mtdGrowth / 100)) {
+  var mtdPrevFull = (idx.prevFullByCat && idx.prevFullByCat[newCategory]) || 0;
+  if (mtdPrev > 100 && mtdNow > mtdPrev * (1 + mtdGrowth / 100) &&
+      // New guard: this-month MTD must actually exceed last-month FULL total,
+      // OR last-month-full must be zero (genuinely new category for user).
+      (mtdPrevFull === 0 || mtdNow > mtdPrevFull * 1.05)) {
     var pct = Math.round(((mtdNow - mtdPrev) / mtdPrev) * 100);
     candidates.push({
       type: 'MTD_GROWTH',
       severity: pct >= 100 ? 5 : 3,
       ratio: pct / 100,
       message: '📈 בקטגוריה ' + newCategory + ' הוצאת ' + pct + '% יותר החודש לעומת אותה תקופה בחודש שעבר',
-      context: { category: newCategory, mtdNow: Math.round(mtdNow), mtdPrev: Math.round(mtdPrev), pct: pct }
+      context: { category: newCategory, mtdNow: Math.round(mtdNow), mtdPrev: Math.round(mtdPrev), mtdPrevFull: Math.round(mtdPrevFull), pct: pct }
     });
   }
 
