@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-multi-biz-tabs';
+const KFL_BUILD_VERSION = '2026-05-26-pending-state-hijack-fix';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -5875,6 +5875,34 @@ function _handlePendingCategoryText_(fromPhone, text) {
   // EXCEPT a pure 1-2 digit number, which is interpreted as picker index.
   var mNum = t.match(/^\s*(\d{1,2})\s*$/);
   if (!mNum && /^\s*\d/.test(t)) return { handled: false };
+
+  // STATE-HIJACK GUARD (Steven 2026-05-26): if the user sends a message like
+  // "בנזין 200" (category + amount, in either order), they're CLEARLY logging
+  // a NEW expense — not answering the pending category question. Without
+  // this guard the bot reads the old pending amount (e.g. ₪1) and writes
+  // a row for ₪1 instead of ₪200. Detect any amount >= 5 anywhere in the
+  // text and bail out of the pending handler so the normal expense parser
+  // takes over. Also drop the pending state so the user isn't stuck.
+  // 5₪ floor avoids treating an embedded "1" / "2" (a picker index typed
+  // with extra words like "1 קפה" — though that case is already handled
+  // above) as a new amount.
+  if (!mNum) {
+    var amtRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
+    var sawAmt = false;
+    var probe;
+    while ((probe = amtRe.exec(t)) !== null) {
+      var n = (typeof _parseIsraeliNumber_ === 'function')
+        ? _parseIsraeliNumber_(probe[0])
+        : Number(String(probe[0]).replace(/,/g, ''));
+      if (!isNaN(n) && n >= 5) { sawAmt = true; break; }
+    }
+    if (sawAmt) {
+      Logger.log('pending-hijack-guard: new amount in "' + t.slice(0, 40) + '" — dropping pending for ' + clean);
+      cache.remove('pendingExpense:' + clean);
+      cache.remove('pendingCreate:' + clean);
+      return { handled: false };
+    }
+  }
 
   var pending;
   try { pending = JSON.parse(raw); } catch (_) { return { handled: false }; }
