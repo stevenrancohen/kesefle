@@ -5175,40 +5175,111 @@ function _tenantCategoryMtdLine_(fromPhone, category) {
 
 // Send the "change category" interactive list AFTER an expense was logged.
 // Steven 2026-05-24: every confirmation should expose a one-tap way to
-// re-classify if the bot got it wrong. Six top-level Pa'amonim groups +
-// "אחר" so we stay under the 10-row WhatsApp list cap.
+// re-classify if the bot got it wrong.
+//
+// Steven 2026-05-26: expanded from 7 categories → 36 across 4 sections.
+// WhatsApp interactive lists support up to 10 sections × 10 rows = 100 rows
+// in a single message, with section titles acting as group headers. This
+// covers personal, fixed home expenses, business, and income — so a
+// contractor + their family use the same one-tap picker.
+//
+// Limits enforced:
+//   - title max 24 chars (we slice)
+//   - section title max 24 chars
+//   - section ids start with "relabel|" so _handleRelabelTap_ routes them
+//   - sections capped at 10 rows each, sections capped at 10 total
 function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
   try {
     if (!fromPhone) return;
-    // Six common top-level options + "אחר" = 7 rows, well under the cap.
-    var TOP_CATEGORIES = [
-      { name: 'אוכל',     icon: '🍞' },
-      { name: 'תחבורה',   icon: '🚗' },
-      { name: 'קניות',    icon: '🛍' },
-      { name: 'בידור',    icon: '🎬' },
-      { name: 'הוצאות קבועות', icon: '🏠' },
-      { name: 'בריאות',   icon: '💊' },
-      { name: 'אחר',      icon: '✨' },
+
+    // 4 sections × ~9 rows each = 36 categories. Order within each section
+    // is "most common first" — saves the user a scroll on the typical case.
+    var SECTIONS = [
+      {
+        title: '🏠 יומיומי',
+        rows: [
+          { name: 'אוכל',          icon: '🍞' },
+          { name: 'תחבורה',         icon: '🚗' },
+          { name: 'קניות',          icon: '🛍' },
+          { name: 'בידור',          icon: '🎬' },
+          { name: 'בריאות',         icon: '💊' },
+          { name: 'ביגוד',          icon: '👔' },
+          { name: 'קפה ומסעדות',    icon: '☕' },
+          { name: 'דלק',           icon: '⛽' },
+          { name: 'מתנות',          icon: '🎁' },
+          { name: 'חינוך וחוגים',   icon: '🎓' },
+        ],
+      },
+      {
+        title: '🏘 בית והוצאות קבועות',
+        rows: [
+          { name: 'הוצאות קבועות',  icon: '🏠' },
+          { name: 'חשמל ומים',      icon: '💡' },
+          { name: 'אינטרנט וטלפון', icon: '🌐' },
+          { name: 'ביטוחים',        icon: '🛡' },
+          { name: 'שכירות',         icon: '🏘' },
+          { name: 'משכנתא',         icon: '🏦' },
+          { name: 'חופשות',         icon: '🏖' },
+          { name: 'ילדים',          icon: '👶' },
+          { name: 'חיות מחמד',      icon: '🐶' },
+          { name: 'מנויים',         icon: '📺' },
+        ],
+      },
+      {
+        title: '💼 עסק',
+        rows: [
+          { name: 'הכנסה מעסק',     icon: '💵' },
+          { name: 'שיווק ופרסום',   icon: '📣' },
+          { name: 'עובדים',         icon: '👷' },
+          { name: 'קבלן משנה',      icon: '🔧' },
+          { name: 'חומרי גלם',      icon: '🧱' },
+          { name: 'תוכנות וציוד',   icon: '💻' },
+          { name: 'רואה חשבון',     icon: '🧮' },
+          { name: 'מיסים',          icon: '🏛' },
+          { name: 'משלוחים',        icon: '🚚' },
+          { name: 'שכירות משרד',    icon: '🏢' },
+        ],
+      },
+      {
+        title: '📈 הכנסות',
+        rows: [
+          { name: 'משכורת',         icon: '💴' },
+          { name: 'בונוס',          icon: '🎉' },
+          { name: 'שכר דירה',       icon: '🏠' },
+          { name: 'דיבידנדים',      icon: '📊' },
+          { name: 'החזר מס',        icon: '↩️' },
+          { name: 'אחר',           icon: '✨' },
+        ],
+      },
     ];
-    var rows = [];
-    for (var i = 0; i < TOP_CATEGORIES.length; i++) {
-      var c = TOP_CATEGORIES[i];
-      // Skip the row that matches the current pick to avoid wasted taps.
-      if (c.name === currentCategory) continue;
-      rows.push({
-        id: 'relabel|' + c.name,
-        title: (c.icon + ' ' + c.name).slice(0, 24),
-        description: '',
-      });
+
+    var sectionsOut = [];
+    for (var s = 0; s < SECTIONS.length; s++) {
+      var sec = SECTIONS[s];
+      var rows = [];
+      for (var i = 0; i < sec.rows.length; i++) {
+        var c = sec.rows[i];
+        // Skip the row that matches the current pick to avoid wasted taps.
+        if (c.name === currentCategory) continue;
+        rows.push({
+          id: 'relabel|' + c.name,
+          title: (c.icon + ' ' + c.name).slice(0, 24),
+          description: '',
+        });
+        if (rows.length >= 10) break; // WhatsApp cap per section
+      }
+      if (rows.length) sectionsOut.push({ title: sec.title.slice(0, 24), rows: rows });
+      if (sectionsOut.length >= 10) break; // WhatsApp cap on sections
     }
-    if (!rows.length) return;
+    if (!sectionsOut.length) return;
+
     sendWhatsAppInteractiveList(
       fromPhone,
       'לשנות קטגוריה?',
-      'הבוט בחר *' + currentCategory + '*. אפשר לבחור אחרת:',
+      'הבוט בחר *' + currentCategory + '*. אפשר לבחור אחרת מהרשימה למטה:',
       'אפשר להתעלם — הרישום נשמר',
       'בחר',
-      [{ title: 'קטגוריות אחרות', rows: rows }]
+      sectionsOut
     );
   } catch (e) { Logger.log('_sendChangeCategoryPicker_ err: ' + (e && e.message)); }
 }
