@@ -333,3 +333,49 @@ Net: signup dropped from ~250 commands to ~25. Still binding at >200 active user
 5. **Run `node scripts/preflight-test.mjs https://kesefle.com`** before posting the launch link.
 
 Realistic 24h verdict: launch is technically possible on the Meta test number with 5 allow-listed users for QA; full 1,000-user launch is gated on WABA approval (1-3 days).
+
+---
+
+## Session 2026-05-26 — 11 PRs in one day
+
+Steven's CI was throttled (intermittent account-suspension on GitHub Actions runners — recovered mid-session). Shipped 11 PRs end-to-end despite the friction.
+
+### Bot (4 PRs, 1 merged, 3 await Steven paste)
+- **#60** ✅ MERGED — category picker expanded 7 → 36 (4 sections: יומיומי / בית / עסק / הכנסות). New `bot/test_category_picker.js` with 17 assertions.
+- **#61** ✅ MERGED — chore: regen `ExpenseBot_DEPLOY.gs` to match FIXED.gs after #60.
+- **#62** ✅ MERGED — picker now appears on EVERY expense reply (owner-write + receipt-OCR paths). Bare "קטגוריה" command shows the picker instead of leaking raw Gemini JSON. New `bot/test_picker_always_shown.js` with 12 assertions.
+- **#59** OPEN — anti-lie guards on enriched expense reply (3 wrong claims fixed: false "we crossed last month", inflated MTD totals from including income rows, false 360% growth). Requires Apps Script re-paste.
+- **#67** OPEN — pending-state hijack fix: "בנזין 200" was writing ₪1 (the OLD pending amount) instead of ₪200. New regression test. Requires Apps Script re-paste.
+- **#68** OPEN — KFL-TRACE breadcrumbs at every expense-routing branch (catches future bot-routing bugs in one log line).
+- **#69** OPEN — Gemini action whitelist + phone-number guard (suspected root cause of the "1 קפה → text-only 1/2/3/4 picker" path).
+
+### Admin (4 PRs, all OPEN, all CI green)
+- **#55** ✅ MERGED — premium green/cyan rebrand (admin PR-A1: KPI strip + Rubik 900 hero + Hebrew section headers + branded buttons). Replaced indigo "debug screen" feel with cyan/teal "על אוטומט" CEO dashboard.
+- **#57** OPEN — admin emoji → Lucide SVG icons (11 swaps).
+- **#58** OPEN — admin PR-A2a: 8 Hebrew CEO section headers below the fold.
+- **#63** OPEN — admin PR-A2b: 7 Hebrew empty states + branded loading spinners. No more "Loading..." / "No users to display."
+
+### Public website (2 PRs)
+- **#65** OPEN — full global brand flip: 29 HTML + 2 CSS files, indigo → cyan at every shade index. `bg-brand-600` etc. now render cyan on every page. 187 + / 187 − (perfectly balanced — same-length hex swaps).
+- **#66** OPEN — demo page hero h1+h2 had no explicit `text-color` class → invisible under some browser dark-mode overrides. Added `text-ink-900 dark:text-white`.
+
+### API / security (1 PR)
+- **#70** OPEN — defense-in-depth: 4 admin endpoints (`recent-signups`, `user-reports`, `bot-version`, `config-drift`) had only `requireAdmin` — now also have `withRateLimit` 30/min per admin.
+
+### Docs (3 PRs)
+- **#56** OPEN — Job/Deal profitability tracking design (547 lines, 5-PR rollout, 8 decisions needed from Steven).
+- **#64** OPEN — xlsx diagnosis: Steven's `~/Downloads/מאזן אישי (14).xlsx` has 2 competing מאזן חברה tabs — the OLD one shows all-zeros revenue because its SUMIFS expect non-emoji labels but the bot writes emoji-prefixed ones. 3 fix options proposed.
+- **(this commit)** — Smart Budget Goals design (`docs/SMART_BUDGET_GOALS_DESIGN.md`): 3 user stories, KV-only data model, 5 bot commands, post-write + pre-write alert logic, 3-PR rollout, 5 open questions.
+
+### Operational notes
+- GitHub account suspension was intermittent (runners blocked, public surfaces worked). Cleared itself ~15:35 IL without Support intervention.
+- 113 → 114 offline QA checks (added `bot/test_picker_always_shown` + `bot/test_pending_state_hijack`).
+- `docs/QA_STANDARD.md` committed — Steven's mandatory 18-area QA section now a permanent project file.
+
+### Action items for Steven (in priority order)
+1. **Merge the 7 zero-risk UI/docs PRs first** (#56, #57, #58, #63, #64, #65, #66) — no paste needed, no production risk.
+2. **Merge the 4 bot PRs as a batch** (#59 + #67 + #68 + #69) and do ONE Apps Script paste, ONE Deploy → New Version.
+3. **After paste, run the 4-message test plan** documented in PR #67 to confirm "בנזין 200" writes ₪200.
+4. **Pick xlsx option A / B / C** per `docs/XLSX_DIAGNOSIS_2026_05_26.md` (recommend A — zero effort).
+5. **Answer the 5 questions** at the bottom of `docs/SMART_BUDGET_GOALS_DESIGN.md` so PR-1 (data + commands) can open.
+6. **(Optional)** Merge #70 (rate limits) — security hardening, no behavior change.
