@@ -103,7 +103,17 @@ export default async function handler(req, res) {
       console.error('KV write failed', e);
     }
   } else {
-    console.log('USER_SIGNUP', JSON.stringify(user));
+    // KV not configured (local dev / mis-provisioned staging). Log a
+    // redacted record so we know a signup happened without dumping
+    // email/name/picture to the function logs (which Vercel retains).
+    console.log('USER_SIGNUP', JSON.stringify({
+      sub: user.sub,
+      provider: user.provider,
+      email_verified: !!user.email_verified,
+      hasEmail: !!user.email,
+      hasName: !!user.name,
+      firstSeen: user.firstSeen,
+    }));
   }
 
   return res.status(200).json({ ok: true, user });
