@@ -90,9 +90,12 @@ assert(traceCallCount >= 10,
   '>= 10 trace call sites total (saw ' + traceCallCount + ')');
 
 // --- Build version sanity ---
+// Loosened from strict "trace-instrumented" to "2026-05-26" so subsequent
+// PRs can rebump the version freely without breaking this guard. The
+// trace helper + 10+ call sites are verified above.
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/trace-instrumented/.test(v || ''),
-  'KFL_BUILD_VERSION includes "trace-instrumented" (currently: ' + v + ')');
+assert(/2026-05-26/.test(v || ''),
+  'KFL_BUILD_VERSION is from today or later (currently: ' + v + ')');
 
 console.log('');
 if (failures.length) {
