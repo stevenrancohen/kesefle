@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-multi-biz-naming';
+const KFL_BUILD_VERSION = '2026-05-26-multi-biz-tabs';
 
 // ALLOWED_PHONE removed for multi-tenant operation — bot now accepts messages
 // from any phone and routes them to the sender's own Sheet via KV lookup.
@@ -1830,7 +1830,7 @@ function doPost(e) {
             try {
               var __bizPref = _parseBusinessNumberPrefix_(__text_);
               if (__bizPref) {
-                var __bizRes = _writeBusinessNExpense_(__from_, __bizPref.n, __bizPref.name || null, __bizPref.rest);
+                var __bizRes = _writeBusinessNExpense_(__from_, __bizPref.n, __bizPref.name || null, __bizPref.rest, __msgId_ || null);
                 if (__bizRes && __bizRes.handled) {
                   if (__bizRes.replyText && typeof sendWhatsAppMessage === "function") {
                     sendWhatsAppMessage(__from_, __bizRes.replyText);
@@ -10148,26 +10148,30 @@ function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, a
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// MULTI-BUSINESS routing (Steven 2026-05-25):
+// MULTI-BUSINESS routing (Steven 2026-05-26 v2 -- TABS, not spreadsheets):
 //
-// Steven owns multiple businesses. He asked: "עסק 1 X" should go to the
-// default biz sheet, "עסק 2 X" to a SECOND sheet the bot creates on
-// demand, "עסק 3 X" to a third, etc.
+// Steven owns multiple businesses. "עסק 1 X" goes to the main תנועות tab.
+// "עסק 2 X" goes to a SECOND TAB inside the SAME main spreadsheet --
+// NOT a separate spreadsheet. Same for עסק 3, 4, ..., 99.
 //
-// Storage:
-//   KV biz:{ownerPhone}:{n} = { sheetId, sheetUrl, n, createdAt }
-//   KV biz:owner:{ownerPhone}:list = [ {sheetId, sheetUrl, n, createdAt}, ... ]
+// Why tabs and not separate spreadsheets:
+//   - One link, one Drive permission, one backup target.
+//   - All businesses visible side-by-side in the same Sheets UI.
+//   - Dashboards (מאזן חברה) can SUMIF across tabs if needed.
+//   - Cheaper Sheets API quota (1 spreadsheet vs N).
 //
-// N=1 is special — always maps to the bot's main SHEET_ID. Backward
-// compatible with single-sheet users.
+// Storage (v2):
+//   KV biz:{ownerPhone}:{n} = { tabName, tabGid, n, name, createdAt }
+//     -- no sheetId field; everything lives in SHEET_ID.
+//   KV biz:owner:{ownerPhone}:list = [ { n, tabName, name }, ... ]
+//   KV tx:{ownerPhone}:{messageId} = 1  -- dedupe, 30-day TTL
 //
-// For N>=2 the bot CLONES the main sheet on first use (so the new biz
-// sheet inherits Steven's tab structure + dashboards). Subsequent writes
-// to "עסק N ..." just append to the existing sheet.
+// N=1 is the main תנועות tab. N>=2 creates a tab named after the user's
+// declared business name (or "עסק N" as fallback).
 //
-// Limitation: owner-only for now. Tenants going through /api/sheet/append
-// still use their single provisioned sheet. Multi-tenant multi-biz is a
-// future enhancement (would need extending the api/sheet provisioner).
+// Limitation: owner-only for now. Tenants via /api/sheet/append still
+// use their single provisioned sheet. Multi-tenant multi-biz tabs are
+// the next iteration.
 // ════════════════════════════════════════════════════════════════════════
 
 // Match a leading "עסק <N>" prefix and optionally a NAME for the
@@ -10206,94 +10210,175 @@ function _parseBusinessNumberPrefix_(text) {
   return { n: n, name: name, rest: rest };
 }
 
-// Resolve or auto-create the spreadsheet for owner's business number N.
-// Optionally persists a NAME for the business (Steven 2026-05-26): if a
-// name is passed, it is stored on the biz record. Subsequent calls
-// without a name return the previously-stored name. Returns
-// { sheetId, sheetUrl, isNew, name } or null on failure.
-function _getOrCreateBusinessSheet_(ownerPhone, n, nameOpt) {
+// Sanitize a string for use as a Google Sheets tab name. Sheets blocks
+// these chars: : \ / ? * [ ] and tab names cap at 100 chars.
+function _sanitizeTabName_(s) {
+  if (!s) return '';
+  return String(s).trim().replace(/[:\\\/\?\*\[\]]/g, ' ').replace(/\s+/g, ' ').slice(0, 90);
+}
+
+// Resolve or auto-create a TAB inside the owner's main spreadsheet
+// (SHEET_ID) for business number N. NO separate spreadsheets are created.
+// Returns { tabName, tabGid, sheetUrl, isNew, name } or null on failure.
+//
+// Naming:
+//   - n=1   -> tabName = TRANSACTIONS_SHEET ('תנועות'), the existing main tab
+//   - n>=2  -> tabName = sanitized(nameOpt) or "עסק N" if no name
+//   - When the user later passes a NEW name, we RENAME the existing tab
+//     (no data loss) and update KV.
+function _getOrCreateBusinessTab_(ownerPhone, n, nameOpt) {
   if (!n || n < 1) return null;
   var clean = String(ownerPhone || '').replace(/[^0-9]/g, '');
   var nameClean = nameOpt ? String(nameOpt).trim().slice(0, 40) : '';
 
+  var ss;
+  try { ss = SpreadsheetApp.openById(SHEET_ID); }
+  catch (e) { Logger.log('_getOrCreateBusinessTab_ openById err: ' + (e && e.message)); return null; }
+
   if (n === 1) {
-    // N=1 still maps to the main bot sheet. Allow naming for consistency,
-    // stored under biz:{phone}:1 just so /עסקים שלי can echo a label.
+    // N=1 always = the existing main 'תנועות' tab. Persist optional name for /עסקים שלי.
+    var mainSheet = ss.getSheetByName(TRANSACTIONS_SHEET);
+    if (!mainSheet) {
+      Logger.log('_getOrCreateBusinessTab_: main TRANSACTIONS tab missing');
+      return null;
+    }
     if (nameClean && clean) {
       var k1 = 'biz:' + clean + ':1';
       var prev1 = kvGet(k1) || {};
-      kvSet(k1, { sheetId: SHEET_ID, sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', n: 1, name: nameClean, createdAt: prev1.createdAt || Date.now() }, 0);
+      kvSet(k1, { tabName: TRANSACTIONS_SHEET, tabGid: mainSheet.getSheetId(), n: 1, name: nameClean, createdAt: prev1.createdAt || Date.now() }, 0);
     }
     var existing1 = clean ? (kvGet('biz:' + clean + ':1') || {}) : {};
-    return { sheetId: SHEET_ID, sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', isNew: false, name: existing1.name || nameClean || '' };
+    return {
+      tabName: TRANSACTIONS_SHEET,
+      tabGid: mainSheet.getSheetId(),
+      sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit#gid=' + mainSheet.getSheetId(),
+      isNew: false,
+      name: existing1.name || nameClean || '',
+    };
   }
   if (!clean) return null;
 
   var key = 'biz:' + clean + ':' + n;
   var existing = kvGet(key);
-  if (existing && existing.sheetId) {
-    // If a new name was passed, persist it on top of the existing record.
-    if (nameClean && existing.name !== nameClean) {
-      existing.name = nameClean;
-      kvSet(key, existing, 0);
+
+  // Resolve the desired tab name -- prefer the existing stored name, fall
+  // back to a fresh nameClean, fall back to "עסק N".
+  var desiredTabName = _sanitizeTabName_((existing && existing.tabName) || nameClean || ('עסק ' + n));
+  if (!desiredTabName) desiredTabName = 'עסק ' + n;
+
+  // If a NEW name was passed and differs from the stored tabName, rename the tab.
+  if (existing && existing.tabName && nameClean) {
+    var newTabName = _sanitizeTabName_(nameClean);
+    if (newTabName && newTabName !== existing.tabName) {
+      var sh = ss.getSheetByName(existing.tabName);
+      if (sh) {
+        try { sh.setName(newTabName); desiredTabName = newTabName; }
+        catch (_renameErr) { /* tab with that name may already exist; fall through */ }
+      }
     }
-    return {
-      sheetId: existing.sheetId,
-      sheetUrl: existing.sheetUrl || ('https://docs.google.com/spreadsheets/d/' + existing.sheetId + '/edit'),
-      isNew: false,
-      name: existing.name || '',
-    };
   }
-  // Auto-create by cloning the main bot sheet so the new biz sheet
-  // inherits the same tab structure (תנועות, מאזן חברה, הזמנות, etc).
-  try {
-    var copyName = 'Kesefle עסק ' + n + (nameClean ? ' ' + nameClean : '') + ' — ' + clean;
-    var copy = DriveApp.getFileById(SHEET_ID).makeCopy(copyName);
-    var newId = copy.getId();
-    var url = 'https://docs.google.com/spreadsheets/d/' + newId + '/edit';
-    var rec = { sheetId: newId, sheetUrl: url, n: n, name: nameClean, createdAt: Date.now() };
-    kvSet(key, rec, 0);
-    // Maintain a list so "עסקים שלי" can show them all in one place.
-    var listKey = 'biz:owner:' + clean + ':list';
-    var list = kvGet(listKey) || [];
-    var already = false;
-    for (var i = 0; i < list.length; i++) { if (list[i] && list[i].n === n) { already = true; break; } }
-    if (!already) {
-      list.push(rec);
-      kvSet(listKey, list, 0);
+
+  var tab = ss.getSheetByName(desiredTabName);
+  var isNew = false;
+
+  if (!tab) {
+    // First write for this business -- create the tab with the same 8-column
+    // header as the main 'תנועות' tab. NO Drive copy, NO new spreadsheet.
+    try {
+      tab = ss.insertSheet(desiredTabName);
+      // Header row matches the main תנועות schema so existing dashboard
+      // formulas (and any future SUMIF-across-tabs) keep working.
+      tab.appendRow(['תאריך', 'חודש', 'סכום', 'קטגוריה', 'תת-קטגוריה', 'תיאור', 'מקור', 'הוצאה?']);
+      // Freeze header + set RTL for Hebrew readability.
+      try { tab.setFrozenRows(1); } catch (_) {}
+      try { tab.setRightToLeft(true); } catch (_) {}
+      isNew = true;
+    } catch (e) {
+      Logger.log('_getOrCreateBusinessTab_ insertSheet err: ' + (e && e.message));
+      return null;
     }
-    Logger.log('_getOrCreateBusinessSheet_: created sheet ' + newId + ' for owner=' + clean + ' biz=' + n + ' name=' + nameClean);
-    return { sheetId: newId, sheetUrl: url, isNew: true, name: nameClean };
-  } catch (e) {
-    Logger.log('_getOrCreateBusinessSheet_ err: ' + (e && e.message));
-    return null;
   }
+
+  var tabGid = tab.getSheetId();
+  var rec = {
+    tabName: desiredTabName,
+    tabGid: tabGid,
+    n: n,
+    name: nameClean || (existing && existing.name) || '',
+    createdAt: (existing && existing.createdAt) || Date.now(),
+  };
+  kvSet(key, rec, 0);
+
+  // Update the per-owner list.
+  var listKey = 'biz:owner:' + clean + ':list';
+  var list = kvGet(listKey) || [];
+  var idx = -1;
+  for (var i = 0; i < list.length; i++) { if (list[i] && list[i].n === n) { idx = i; break; } }
+  var listEntry = { n: n, tabName: desiredTabName, name: rec.name };
+  if (idx >= 0) list[idx] = listEntry; else list.push(listEntry);
+  kvSet(listKey, list, 0);
+
+  if (isNew) Logger.log('_getOrCreateBusinessTab_: created tab "' + desiredTabName + '" gid=' + tabGid + ' for owner=' + clean + ' n=' + n);
+
+  return {
+    tabName: desiredTabName,
+    tabGid: tabGid,
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit#gid=' + tabGid,
+    isNew: isNew,
+    name: rec.name,
+  };
 }
 
-// Write an expense to business N. Parses "<amount> <description>" out
-// of `rest`, classifies subcategory, appends to the per-N תנועות, then
-// recomputes the per-N מאזן חברה. Income syntax: "+1500 <description>".
+// Back-compat alias so any other code that still calls the old name keeps
+// working (the new behaviour is the right behaviour for both).
+function _getOrCreateBusinessSheet_(ownerPhone, n, nameOpt) {
+  var t = _getOrCreateBusinessTab_(ownerPhone, n, nameOpt);
+  if (!t) return null;
+  // Shape the response to look like the old contract (sheetId is the main
+  // spreadsheet ID since we no longer mint per-biz spreadsheets).
+  return {
+    sheetId: SHEET_ID,
+    sheetUrl: t.sheetUrl,
+    isNew: t.isNew,
+    name: t.name,
+    tabName: t.tabName,
+    tabGid: t.tabGid,
+  };
+}
+
+// Write an expense to business N as a row in the per-business TAB inside
+// the user's main spreadsheet. NO new spreadsheets are created -- only
+// new tabs. The default storage model is now: one spreadsheet per user,
+// one tab per business.
 //
 // Optional `nameOpt` (Steven 2026-05-26): the business name the user
 // declared in this message (e.g. "כספלה" in "עסק 2 כספלה - 52 hostinger").
-// If present, it is persisted on the biz record so future replies can
-// echo the name and the user does not have to re-type it.
+// If present, it becomes the tab name AND is persisted on the biz record.
+//
+// Optional `messageId`: WhatsApp wamid for duplicate prevention. If the
+// same messageId has been processed in the last 30 days, the write is
+// skipped (idempotent).
 //
 // Special case: if `rest` is empty AND `nameOpt` is set, this is a
-// "set the name of business N to X" command -- no expense is written.
-function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest) {
-  var target = _getOrCreateBusinessSheet_(fromPhone, n, nameOpt || null);
-  if (!target) return { handled: true, replyText: '😬 לא הצלחתי לפתוח את הגיליון של עסק ' + n };
+// "set the name of business N to X" command -- creates the tab (if new),
+// renames it (if existed under a different name), and confirms.
+function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId) {
+  var target = _getOrCreateBusinessTab_(fromPhone, n, nameOpt || null);
+  if (!target) return { handled: true, replyText: '😬 לא הצלחתי לפתוח את הטאב של עסק ' + n + ' בגיליון.' };
 
   var effectiveName = (nameOpt && String(nameOpt).trim()) || target.name || '';
   var nameSuffix = effectiveName ? ' (' + effectiveName + ')' : '';
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
 
   // Set-name-only: rest is empty + we got a name. Confirm and stop.
   if ((!rest || !String(rest).trim()) && effectiveName) {
     var setLines = ['✅ עסק ' + n + ' = ' + effectiveName];
     if (target.isNew) {
       setLines.push('');
-      setLines.push('🆕 יצרתי גיליון חדש:');
+      setLines.push('🆕 יצרתי טאב חדש בגיליון שלך בשם "' + target.tabName + '".');
+      setLines.push('📊 ' + target.sheetUrl);
+    } else {
+      setLines.push('');
       setLines.push('📊 ' + target.sheetUrl);
     }
     setLines.push('');
@@ -10316,6 +10401,16 @@ function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest) {
   var isIncome = raw.charAt(0) === '+';
   if (!amount || isNaN(amount)) return { handled: true, replyText: '😬 סכום לא חוקי.' };
 
+  // Dedupe: skip if we already wrote a row for this messageId in the last 30 days.
+  if (messageId && clean) {
+    var dedupeKey = 'tx:' + clean + ':' + String(messageId);
+    if (kvGet(dedupeKey)) {
+      Logger.log('_writeBusinessNExpense_: dedupe hit messageId=' + messageId + ', skipping');
+      return { handled: true, replyText: '' /* silent skip -- already processed */ };
+    }
+    kvSet(dedupeKey, 1, 60 * 60 * 24 * 30);  // 30-day TTL
+  }
+
   // Classify subcategory using the existing matcher (prefix with "עסק"
   // so the business keywords fire). Fall back to first word as sub.
   var sub = '';
@@ -10326,67 +10421,79 @@ function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest) {
     }
   } catch (_) {}
   if (!sub) {
-    // Heuristic: first word of description as the sub (Steven can re-tag later).
     sub = description.split(/\s+/)[0] || 'שונות';
   }
 
   try {
-    var ss = SpreadsheetApp.openById(target.sheetId);
-    var tx = ss.getSheetByName(TRANSACTIONS_SHEET) || ss.getSheetByName('תנועות');
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var tx = ss.getSheetByName(target.tabName);
     if (!tx) {
       return { handled: true, replyText:
-        '😬 לא מצאתי לשונית תנועות בגיליון של עסק ' + n + nameSuffix + '.\n📊 ' + target.sheetUrl +
-        '\n💡 פתח את הגיליון, ודא שיש לשונית "תנועות".' };
+        '😬 לא מצאתי את הטאב "' + target.tabName + '" בגיליון.\n📊 ' + target.sheetUrl };
     }
     var now = new Date();
     var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    // 8-column schema matches the main 'תנועות' tab exactly so all
+    // existing dashboard formulas keep working.
     tx.appendRow([now, monthKey, amount, 'עסק', sub, description, 'WhatsApp', !isIncome]);
 
-    // Recompute the per-N dashboard so the total reflects this write.
-    try { _updateBusinessDashboardInSheet_(ss, 'עסק', sub, monthKey, amount); }
-    catch (_dErr) { Logger.log('biz-N dash err: ' + (_dErr && _dErr.message)); }
+    // For n=1 only, recompute the per-N dashboard. n>=2 tabs don't have
+    // their own dashboard rows yet (next iteration).
+    if (n === 1) {
+      try { _updateBusinessDashboardInSheet_(ss, 'עסק', sub, monthKey, amount); }
+      catch (_dErr) { Logger.log('biz dash err: ' + (_dErr && _dErr.message)); }
+    }
 
     var emoji = isIncome ? '💵' : '💸';
     var lines = [emoji + ' עסק ' + n + nameSuffix + ': ₪' + amount.toLocaleString('he-IL') + ' · ' + sub];
     if (target.isNew) {
       lines.push('');
-      lines.push('🆕 יצרתי גיליון חדש בשבילך לעסק ' + n + (effectiveName ? ' (' + effectiveName + ')' : '') + ':');
+      lines.push('🆕 יצרתי טאב חדש בגיליון שלך בשם "' + target.tabName + '".');
       lines.push('📊 ' + target.sheetUrl);
       lines.push('');
-      lines.push('הוא משוכפל מהגיליון הראשי שלך עם אותו מבנה (תנועות, מאזן חברה, הזמנות).');
+      lines.push('עוברים בלשונית הזו בלבד -- שום מידע של עסקים אחרים לא מתערבב.');
     } else {
       lines.push('📊 ' + target.sheetUrl);
     }
     return { handled: true, replyText: lines.join('\n') };
   } catch (e) {
-    return { handled: true, replyText: '😬 שגיאה בכתיבה לגיליון של עסק ' + n + nameSuffix + ': ' + (e && e.message) };
+    return { handled: true, replyText: '😬 שגיאה בכתיבה לעסק ' + n + nameSuffix + ': ' + (e && e.message) };
   }
 }
 
-// "עסקים שלי" -- list all business sheets the owner has provisioned via
-// the multi-business routing. Always includes #1 (the main sheet) even
-// if it isn't in KV, since N=1 is implicit.
+// "עסקים שלי" -- list all business TABS in the user's main spreadsheet.
+// Always includes #1 (the main תנועות tab) since N=1 is implicit.
 function _handleMyBusinessesCommand_(fromPhone, text) {
   var t = String(text || '').trim();
   if (!/^עסקים\s*שלי$|^my\s+businesses$|^עסקים$/i.test(t)) return { handled: false };
   var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
   if (!clean) return { handled: true, replyText: '😬 לא הצלחתי לזהות את המספר שלך.' };
   var list = kvGet('biz:owner:' + clean + ':list') || [];
-  var lines = ['📋 *העסקים שלך:*', ''];
-  lines.push('1. *עסק 1* (הגיליון הראשי)');
+  var biz1 = kvGet('biz:' + clean + ':1') || {};
+  var biz1Name = biz1.name ? ' (' + biz1.name + ')' : '';
+
+  var lines = ['📋 *העסקים שלך:*', '', 'הכל בגיליון אחד -- טאב נפרד לכל עסק.', ''];
+  lines.push('1. *עסק 1' + biz1Name + '*  -- טאב: ' + TRANSACTIONS_SHEET);
   lines.push('   📊 https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit');
-  for (var i = 0; i < list.length; i++) {
-    var r = list[i];
-    if (!r || !r.n || r.n === 1) continue;
+
+  // Sort the rest by n
+  var rest = list.filter(function(r) { return r && r.n && r.n > 1; })
+                 .sort(function(a, b) { return a.n - b.n; });
+  for (var i = 0; i < rest.length; i++) {
+    var r = rest[i];
+    var nm = r.name ? ' (' + r.name + ')' : '';
     lines.push('');
-    lines.push(r.n + '. *עסק ' + r.n + '*');
-    lines.push('   📊 ' + (r.sheetUrl || 'https://docs.google.com/spreadsheets/d/' + r.sheetId + '/edit'));
+    lines.push(r.n + '. *עסק ' + r.n + nm + '*  -- טאב: ' + (r.tabName || 'עסק ' + r.n));
+    // Deep-link if we have a gid (older records may not have it; KV is updated lazily on next write)
+    if (r.tabName) {
+      lines.push('   📊 https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit (פתח את הטאב "' + r.tabName + '")');
+    }
   }
-  if (list.length <= 1) {
+  if (rest.length === 0) {
     lines.push('');
     lines.push('💡 רוצה להוסיף עסק שני? פשוט שלח:');
-    lines.push('   "עסק 2 320 שיווק"');
-    lines.push('ואני אצור לך גיליון חדש אוטומטית.');
+    lines.push('   "עסק 2 שם-העסק - 320 שיווק"');
+    lines.push('ואני אצור טאב חדש בתוך אותו גיליון. בלי לערבב נתונים.');
   }
   return { handled: true, replyText: lines.join('\n') };
 }

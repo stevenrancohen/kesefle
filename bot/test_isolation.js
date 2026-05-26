@@ -110,7 +110,7 @@ while ((leakMatch = leakRe.exec(botSrc)) !== null) {
 // Find the function body containing each match and ensure it gates on
 // _isOwnerPhone_ OR is the _userSheetUrl_ owner branch itself OR is
 // the multi-business owner-only helper.
-var leakSafeFns = ['_userSheetUrl_', '_getOrCreateBusinessSheet_', '_handleMyBusinessesCommand_', 'getDictionaryLink'];
+var leakSafeFns = ['_userSheetUrl_', '_getOrCreateBusinessSheet_', '_getOrCreateBusinessTab_', '_handleMyBusinessesCommand_', 'getDictionaryLink'];
 var leaksFound = 0;
 leakMatches.forEach(function(idx) {
   // Walk backward to find the enclosing function declaration.
