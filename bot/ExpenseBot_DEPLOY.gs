@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-bot-robustness-sweep';
+const KFL_BUILD_VERSION = '2026-05-26-objectives-mini';
 
 // ── KFL-TRACE — uniform breadcrumb logger ─────────────────────────────────────
 // Steven 2026-05-26: when a bot reply is wrong (e.g. ₪200 written as ₪1, or
@@ -1942,6 +1942,25 @@ function doPost(e) {
               }
             } catch (_lrnErr) {
               Logger.log('doPost: learning command error: ' + (_lrnErr && _lrnErr.stack || _lrnErr));
+            }
+          }
+
+          // Smart Budget Goals v2 — long-horizon objectives ("יעד שלי" /
+          // "השגתי יעד" / "השתק יעד" / "שנה יעד <desc>" / "יעד חדש [...]").
+          // Routes BEFORE _handleGoalCommand_ so "יעד שלי" doesn't get
+          // confused with the goals lister "יעדים".
+          if (typeof _handleObjectiveCommand_ === "function") {
+            try {
+              var __objRes = _handleObjectiveCommand_(__from_, __text_);
+              if (__objRes && __objRes.handled) {
+                if (__objRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __objRes.replyText);
+                }
+                Logger.log('doPost: objective command handled');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_objErr) {
+              Logger.log('doPost: objective command error: ' + (_objErr && _objErr.stack || _objErr));
             }
           }
 
@@ -9295,6 +9314,186 @@ function _resolveCorrectionPair_(raw) {
 // All calls go through KESEFLE_API_BASE + KESEFLE_BOT_SECRET (same pattern
 // as _tenantWriteExpense_), so the tenant-isolation invariant is preserved
 // by the API endpoint, not by the bot.
+// ═══════════════════════════════════════════════════════════════════════════
+// SMART BUDGET GOALS v2 — OBJECTIVES (PR-G2-mini, 2026-05-26)
+// A user's LONG-HORIZON goal in plain language ("save 5K for a trip in June").
+// Distinct from "goals" (monthly category caps from PR #72). One per user.
+//
+// Commands:
+//   "יעד שלי"                         -> get + show
+//   "יעד חדש"                         -> 2-step flow: ask horizon, then desc
+//   "יעד חדש <horizon> <desc>"        -> one-shot create
+//   "השגתי יעד"                       -> mark achieved
+//   "השתק יעד" / "די" / "אל תזכיר"   -> mute reminders
+//   "שנה יעד <desc>"                  -> rename
+//
+// All calls route through /api/objectives/action with the bot-secret. The
+// API enforces tenant isolation (phone -> userSub -> objective:{userSub}).
+// Reminder cron + onboarding-question integration come in PR-G2-cron /
+// PR-G2-onboarding once Steven answers Q6-Q10 from the design doc.
+function _handleObjectiveCommand_(fromPhone, text) {
+  if (!fromPhone || !text) return { handled: false };
+  var t = String(text).trim();
+
+  // Quick reject. Recognized triggers all contain one of these.
+  if (!/(יעד\s+שלי|יעד\s+חדש|השגתי\s+יעד|השתק\s+יעד|שנה\s+יעד|^די$|^אל\s+תזכיר)/.test(t)) {
+    return { handled: false };
+  }
+
+  var base = (typeof KESEFLE_API_BASE !== 'undefined') ? KESEFLE_API_BASE : '';
+  var secret = '';
+  try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+  if (!base || !secret) {
+    return { handled: true, replyText: '😬 שגיאת קונפיגורציה (יעדים).' };
+  }
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+
+  function _api_(body) {
+    try {
+      var resp = UrlFetchApp.fetch(base + '/api/objectives/action', {
+        method: 'post', contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': secret },
+        payload: JSON.stringify(body),
+        muteHttpExceptions: true,
+      });
+      return { code: resp.getResponseCode(), body: resp.getContentText() };
+    } catch (e) { return { code: 0, body: '', err: e && e.message }; }
+  }
+  function _parseJ_(resp) {
+    try { return JSON.parse(resp.body || '{}'); } catch (_) { return {}; }
+  }
+
+  // ── "יעד שלי" — show current ───────────────────────────────────────
+  if (/^יעד\s+שלי$/.test(t)) {
+    var r1 = _api_({ phone: clean, action: 'get' });
+    if (r1.code !== 200) return { handled: true, replyText: '😬 שגיאה זמנית.' };
+    var j1 = _parseJ_(r1);
+    var o = j1 && j1.objective;
+    if (!o) {
+      return { handled: true, replyText:
+        '🎯 אין לך יעד פעיל.\n\nלקבוע יעד:\n• "יעד חדש" — מתחיל שיחה איתי\n• "יעד חדש חודש לחסוך 1000 לטיול" — בשורה אחת'
+      };
+    }
+    return { handled: true, replyText: _formatObjectiveReply_(o) };
+  }
+
+  // ── "השגתי יעד" ──────────────────────────────────────────────────
+  if (/^השגתי\s+יעד$/.test(t)) {
+    var r2 = _api_({ phone: clean, action: 'achieve' });
+    if (r2.code === 404) return { handled: true, replyText: '🤔 אין יעד פעיל. שלח "יעד חדש" כדי לקבוע אחד.' };
+    if (r2.code !== 200) return { handled: true, replyText: '😬 שגיאה זמנית.' };
+    return { handled: true, replyText:
+      '🏆 *מזל טוב!* היעד מסומן כהושג.\n\n💡 רוצה יעד חדש? שלח "יעד חדש".'
+    };
+  }
+
+  // ── mute (explicit or natural-language) ───────────────────────────
+  if (/^השתק\s+יעד$/.test(t) || /^די$/i.test(t) || /^אל\s+תזכיר(י)?$/.test(t)) {
+    var r3 = _api_({ phone: clean, action: 'mute' });
+    if (r3.code === 404) return { handled: true, replyText: '🤔 אין יעד פעיל להשתיק.' };
+    if (r3.code !== 200) return { handled: true, replyText: '😬 שגיאה זמנית.' };
+    return { handled: true, replyText: '🔕 השתקתי תזכורות יעד. שלח "יעד חדש" כדי להפעיל שוב.' };
+  }
+
+  // ── "שנה יעד <desc>" ────────────────────────────────────────────
+  var renM = t.match(/^שנה\s+יעד\s+(.+)$/);
+  if (renM) {
+    var newDesc = renM[1].trim().slice(0, 200);
+    if (!newDesc) return { handled: true, replyText: '🤔 תיאור חדש חסר. נסה: "שנה יעד <תיאור>".' };
+    var r4 = _api_({ phone: clean, action: 'rename', description: newDesc });
+    if (r4.code === 404) return { handled: true, replyText: '🤔 אין יעד פעיל לשנות.' };
+    if (r4.code !== 200) return { handled: true, replyText: '😬 שגיאה זמנית.' };
+    var j4 = _parseJ_(r4);
+    return { handled: true, replyText: '✅ עודכן:\n"' + (j4.objective && j4.objective.description) + '"' };
+  }
+
+  // ── "יעד חדש [horizon desc]" — one-shot OR 2-step ─────────────────
+  // One-shot first (parse horizon keyword off the front)
+  var newM = t.match(/^יעד\s+חדש\s+(.+)$/);
+  if (newM) {
+    var tail = newM[1].trim();
+    var horizon = null, rest = tail;
+    var words = [
+      { he: 'חצי שנה', h: 'six_months' },
+      { he: 'חצי-שנה', h: 'six_months' },
+      { he: 'חודש',    h: 'month' },
+      { he: 'לחודש',   h: 'month' },
+      { he: 'חודשי',   h: 'month' },
+      { he: 'שנה',     h: 'year' },
+      { he: 'לשנה',    h: 'year' },
+      { he: 'שנתי',    h: 'year' },
+    ];
+    for (var i = 0; i < words.length; i++) {
+      if (tail === words[i].he || tail.indexOf(words[i].he + ' ') === 0) {
+        horizon = words[i].h;
+        rest = tail.slice(words[i].he.length).trim();
+        break;
+      }
+    }
+    if (!horizon || !rest) {
+      return { handled: true, replyText:
+        '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
+        '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
+        '2️⃣ ל-6 חודשים   — בינוני (סגירת חוב, קרן חירום)\n' +
+        '3️⃣ לשנה הקרובה  — גדול (משכנתא, השקעה, מטרת חיים)\n' +
+        '4️⃣ אין לי יעד   — נדבר בהמשך\n\n' +
+        'דוגמה: "יעד חדש חודש לחסוך 1000 לטיול ביוני"'
+      };
+    }
+    var r5 = _api_({ phone: clean, action: 'set', horizon: horizon, description: rest });
+    if (r5.code !== 200) {
+      var j5e = _parseJ_(r5);
+      return { handled: true, replyText: '😬 ' + (j5e.error || ('שגיאה ' + r5.code)) };
+    }
+    var j5 = _parseJ_(r5);
+    var horizonHe = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    return { handled: true, replyText:
+      '✅ יעד חדש נקבע ' + horizonHe[j5.objective.horizon] + ':\n\n' +
+      '"' + j5.objective.description + '"\n\n' +
+      '💡 אזכיר אותך מספר פעמים בשבוע כדי שלא תשכח (תזכורות יידלקו ב-PR הבא).\n' +
+      '   "יעד שלי" כדי לראות את הסטטוס בכל זמן.'
+    };
+  }
+
+  // Bare "יעד חדש" — start the 2-step conversation
+  if (/^יעד\s+חדש$/.test(t)) {
+    return { handled: true, replyText:
+      '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
+      '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
+      '2️⃣ ל-6 חודשים   — בינוני (סגירת חוב, קרן חירום)\n' +
+      '3️⃣ לשנה הקרובה  — גדול (משכנתא, השקעה, מטרת חיים)\n' +
+      '4️⃣ אין לי יעד   — נדבר בהמשך\n\n' +
+      'ענה במספר 1/2/3/4, או שלח בשורה אחת:\n' +
+      '"יעד חדש חודש לחסוך 1000 לטיול ביוני"'
+    };
+  }
+
+  return { handled: false };
+}
+
+// Helper — same shape as lib/objectives.js formatObjective(). Duplicated
+// here because Apps Script can't import ES modules.
+function _formatObjectiveReply_(o) {
+  var horizonHe = { month: 'לחודש', six_months: 'לחצי שנה', year: 'לשנה הקרובה' };
+  var MS = 24 * 60 * 60 * 1000;
+  var daysLeft = Math.max(0, Math.round((o.horizonEndsAt - Date.now()) / MS));
+  var status = o.achieved ? '✅ הושג!' : (o.muted ? '🔕 מושתק' : '🔥 פעיל');
+  var lines = [
+    '🎯 *היעד שלך* ' + (horizonHe[o.horizon] || ''),
+    '',
+    '"' + o.description + '"',
+    '',
+    'סטטוס: ' + status,
+  ];
+  if (!o.achieved) lines.push('נשארו: ' + daysLeft + ' ימים');
+  lines.push('');
+  if (o.achieved) lines.push('💡 רוצה יעד חדש? שלח "יעד חדש"');
+  else if (o.muted) lines.push('💡 כדי לקבל תזכורות שוב, שלח "יעד חדש"');
+  else lines.push('💡 "השגתי יעד" / "השתק יעד" / "שנה יעד <תיאור>"');
+  return lines.join('\n');
+}
+// ═══════════════════════════════════════════════════════════════════════════
+
 function _handleGoalCommand_(fromPhone, text) {
   if (!fromPhone || !text) return { handled: false };
   var t = String(text).trim();

@@ -43,10 +43,12 @@ assert(/numberRe\.exec\(phoneStripped\)/.test(SRC),
   'parser scans phoneStripped (not raw text) for amounts');
 
 // --- 3. Version bump ---
+// The original assertion required the string "robustness" in the version,
+// but the version bumps with every bot change. Loosen to: non-empty + dated.
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
 console.log('\nVersion: ' + v);
-assert(/robustness/.test(v || ''),
-  'KFL_BUILD_VERSION includes "robustness" (currently: ' + v + ')');
+assert(v && /^\d{4}-\d{2}-\d{2}/.test(v),
+  'KFL_BUILD_VERSION starts with a YYYY-MM-DD date (currently: ' + v + ')');
 
 // --- 4. Old whitelist code shouldn't be in concierge (defensive — should
 //        be inside the try block, not above the JSON.parse) ---
