@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-26-picker-expanded';
+const KFL_BUILD_VERSION = '2026-05-27-lies-removed';
 
 // ── KFL-TRACE — uniform breadcrumb logger ─────────────────────────────────────
 // Steven 2026-05-26: when a bot reply is wrong (e.g. ₪200 written as ₪1, or
@@ -9470,8 +9470,8 @@ function _handleObjectiveCommand_(fromPhone, text) {
     return { handled: true, replyText:
       '✅ יעד חדש נקבע ' + horizonHe[j5.objective.horizon] + ':\n\n' +
       '"' + j5.objective.description + '"\n\n' +
-      '💡 אזכיר אותך מספר פעמים בשבוע כדי שלא תשכח (תזכורות יידלקו ב-PR הבא).\n' +
-      '   "יעד שלי" כדי לראות את הסטטוס בכל זמן.'
+      '💡 שלח "יעד שלי" כדי לראות את הסטטוס בכל זמן.\n' +
+      '   "השגתי יעד" כשמסיימים, או "השתק יעד" כדי להפסיק תזכורות.'
     };
   }
 
@@ -9569,9 +9569,13 @@ function _handleGoalCommand_(fromPhone, text) {
     }
   }
 
-  // ── MUTE (placeholder until PR-2) ────────────────────────────────────
+  // ── MUTE ─────────────────────────────────────────────────────────────
   if (mMute) {
-    return { handled: true, replyText: '🔕 התראות יעדים יופעלו ב-PR הבא. בינתיים יעדים נשמרים אבל לא שולחים התראות.' };
+    // PR-bot-fix-lies (2026-05-27): was "התראות יעדים יופעלו ב-PR הבא"
+    // which lied -- there's no scheduled reminder cron yet. Rewritten
+    // to honest copy. Mute still records the intent in KV so when the
+    // cron does land, the user's preference is already there.
+    return { handled: true, replyText: '🔕 רשמתי שלא לשלוח לך תזכורות על יעדים. תמיד אפשר לבדוק סטטוס עם "יעד שלי".' };
   }
 
   // ── DELETE ───────────────────────────────────────────────────────────
@@ -9639,8 +9643,11 @@ function _handleGoalCommand_(fromPhone, text) {
         reply = '✅ יעד חיסכון חודשי נקבע: ' + sav_amt +
           '\n💡 שלח "סיכום" כדי לראות את ההתקדמות.';
       } else {
+        // PR-bot-fix-lies (2026-05-27): removed "התראות יישלחו אוטומטית
+        // ב-50%, 80% ו-100% (נדלק ב-PR-2)" -- those alerts don't exist
+        // yet. Honest copy: tell the user to check status manually.
         reply = '✅ יעד נקבע: ' + savedGoal.category + ' — ' + sav_amt + '/חודש' +
-          '\n💡 התראות יישלחו אוטומטית ב-50%, 80% ו-100% (נדלק ב-PR-2).';
+          '\n💡 שלח "סיכום" או "כמה הוצאתי על ' + savedGoal.category + '" בכל זמן כדי לראות התקדמות.';
       }
       return { handled: true, replyText: reply };
     } catch (e) {
