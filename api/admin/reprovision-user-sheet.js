@@ -268,4 +268,15 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(withRateLimit(requireAdmin(handlerImpl), { route: 'admin.reprovision-user-sheet', windowMs: 60_000, max: 10 }));
+// PR-S5 (2026-05-27 backend audit Bug #1): two bugs in one line.
+//   1. withRateLimit was being called as withRateLimit(handler, opts) but
+//      the actual signature is withRateLimit(opts)(handler). The wrong
+//      argument order made the rate limiter a silent no-op -- the function
+//      returned by withRateLimit(handler) was just passed (never invoked).
+//   2. Option names didn't match: route/windowMs/max -> key/windowSec/limit.
+// Both fixed below. The rate limit is now actually enforced.
+export default withRequestId(
+  withRateLimit({ key: 'admin_reprovision_user_sheet', windowSec: 60, limit: 10 })(
+    requireAdmin(handlerImpl)
+  )
+);
