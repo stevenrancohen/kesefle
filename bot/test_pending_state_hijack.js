@@ -41,9 +41,11 @@ assert(/_handlePendingCategoryText_[\s\S]{0,1500}STATE-HIJACK GUARD/.test(SRC),
 
 // The version bump tells Steven his paste is fresh. Any post-fix
 // version is accepted (a follow-up PR can rename it freely).
+// Relaxed from hardcoded /2026-05-26/ to any YYYY-MM-DD prefix --
+// the hardcoded date broke every PR shipped after 2026-05-26.
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/2026-05-26/.test(v || ''),
-  'KFL_BUILD_VERSION is from today or later (currently: ' + v + ')');
+assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
+  'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 
 console.log('');
 if (failures.length) {
