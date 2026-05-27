@@ -1876,3 +1876,264 @@ function _PSF_RECOVER_DASHBOARD_CORE_(dryRun) {
   return { changed: changed, preserved: preserved, totalCells: totalCells };
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// PHASE A v2.2 — UNIVERSAL DASHBOARD REPAIR (Steven 2026-05-28)
+// ═══════════════════════════════════════════════════════════════════════
+//
+// Two functions:
+//   DRY_RUN_DASHBOARD_REPAIR()                  → scan only, log changes, NO writes
+//   APPLY_DASHBOARD_REPAIR("YES I UNDERSTAND")  → require literal arg, write formulas
+//
+// Covers ALL 9 dashboard metrics across ALL year blocks (not just marketing):
+//   מחזור ברוטו / מס' הזמנות / עלות חומרי גלם / עלות שיווק /
+//   משלוחים והתקנות / הוצאות תפעוליות / סה"כ הוצאות עסקיות /
+//   רווח נטו חודשי / אחוז רווחיות
+//
+// Repairs:
+//   - hardcoded values (no formula)
+//   - broken formulas detected by _isBrokenDashFormula_
+//   - cells showing #REF! errors
+//   - formulas missing the 'תנועות' sheet qualifier
+//
+// Writes audit trail to A1 cell-note: "תיקון אחרון: YYYY-MM-DD HH:MM | N תאים"
+//
+// Differs from existing FIX_MARKETING_ALL_YEARS (which only fixes marketing).
+// Differs from existing APPLY_RESTORE_2026 (which only fixes 2026 block).
+//
+// Source of truth: 'תנועות' tab. Filter: category="עסק" + month=YYYY-MM
+// + col H = TRUE/FALSE for expense/income.
+
+// 4 expense-bucket regex patterns. Match against subcategory + description
+// columns. Uses regex alternation so the dashboard hits all keyword variants.
+var _PSF_PATTERNS_v2_ = {
+  materials: 'חומרי\\s*גלם|חומרים|חומר|קנבס|זכוכית|הדפסה|מסגרת|ציוד\\s*ייצור|raw\\s*materials?|materials?',
+  marketing: 'שיווק|פרסום|קמפיין|פייסבוק|אינסטגרם|טיקטוק|google\\s*ads?|meta\\s*ads?|ppc|לידים|קידום|advertising|marketing',
+  shipping:  'משלוח|משלוחים|התקנ|הובל|שליח|אריזה|courier|delivery|installation',
+  ops:       'תפעולי|תוכנ|משרד|טלפון|אינטרנט|רואה\\s*חשבון|עמלות|תחזוקה|ציוד\\s*משרדי|saas|operational'
+};
+
+// 9 dashboard metrics — order matches typical dashboard layout.
+var _PSF_DASH_METRICS_v2_ = [
+  { key: 'revenue',    label: 'מחזור ברוטו' },
+  { key: 'orderCount', label: "מס' הזמנות" },
+  { key: 'materials',  label: 'עלות חומרי גלם' },
+  { key: 'marketing',  label: 'עלות שיווק' },
+  { key: 'shipping',   label: 'משלוחים והתקנות' },
+  { key: 'ops',        label: 'הוצאות תפעוליות' },
+  { key: 'totalExp',   label: 'סה"כ הוצאות עסקיות' },
+  { key: 'netProfit',  label: 'רווח נטו חודשי' },
+  { key: 'marginPct',  label: 'אחוז רווחיות' }
+];
+
+// A1 column letter for 1-based col index.
+function _psf_colLetter_v2_(col1Based) {
+  var s = '';
+  var n = col1Based;
+  while (n > 0) {
+    var rem = (n - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+// Build the canonical FORMULA for one (year × month × metric) cell.
+// rowOffsets maps metric.key → 1-based row number (for netProfit/marginPct
+// cross-cell refs in the same column).
+function _psf_buildFormula_v2_(year, mi, metricKey, rowOffsets, col0Based) {
+  var mm = mi < 10 ? '0' + mi : '' + mi;
+  var monthKey = year + '-' + mm;
+  var T = "'" + _PSF_TX_TAB_ + "'";
+  var colL = _psf_colLetter_v2_(col0Based + 1);
+
+  if (metricKey === 'revenue') {
+    // Sum of income amounts (col H=FALSE) for biz category, this month.
+    return '=IFERROR(SUMPRODUCT(' +
+      T + '!C2:C5000*(' + T + '!B2:B5000="' + monthKey + '")*' +
+      '(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=FALSE)),0)';
+  }
+  if (metricKey === 'orderCount') {
+    // Count income rows for biz category, this month.
+    return '=IFERROR(SUMPRODUCT(' +
+      '(' + T + '!B2:B5000="' + monthKey + '")*' +
+      '(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=FALSE)),0)';
+  }
+  if (metricKey === 'totalExp') {
+    // Sum of expense amounts (col H=TRUE) for biz category, this month.
+    return '=IFERROR(SUMPRODUCT(' +
+      T + '!C2:C5000*(' + T + '!B2:B5000="' + monthKey + '")*' +
+      '(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=TRUE)),0)';
+  }
+  if (metricKey === 'netProfit') {
+    // Same-column cross-reference: revenue - totalExp.
+    if (!rowOffsets.revenue || !rowOffsets.totalExp) return '=0';
+    return '=' + colL + rowOffsets.revenue + '-' + colL + rowOffsets.totalExp;
+  }
+  if (metricKey === 'marginPct') {
+    // IFERROR(profit/revenue, 0) — survives zero-revenue months.
+    if (!rowOffsets.netProfit || !rowOffsets.revenue) return '=0';
+    return '=IFERROR(' + colL + rowOffsets.netProfit + '/' + colL + rowOffsets.revenue + ',0)';
+  }
+  // Expense bucket — materials/marketing/shipping/ops.
+  var pattern = _PSF_PATTERNS_v2_[metricKey];
+  if (!pattern) return '=0';
+  return '=IFERROR(SUMPRODUCT(' +
+    T + '!C2:C5000*(' + T + '!B2:B5000="' + monthKey + '")*' +
+    '(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=TRUE)*' +
+    '((IFERROR(REGEXMATCH(' + T + '!E2:E5000,"' + pattern + '"),FALSE)+' +
+    'IFERROR(REGEXMATCH(' + T + '!F2:F5000,"' + pattern + '"),FALSE))>0)),0)';
+}
+
+// Core scanner. applyMode=false → log only. applyMode=true → write formulas.
+function _psf_scanDashboardForRepair_v2_(applyMode) {
+  var ss = _openSheet_();
+  var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+  if (!dash) { Logger.log('!! no ' + _PSF_COMPANY_TAB_ + ' tab'); return { error: 'no_tab', changes: [] }; }
+  var tx = ss.getSheetByName(_PSF_TX_TAB_);
+  if (!tx) { Logger.log('!! no ' + _PSF_TX_TAB_ + ' tab'); return { error: 'no_tx_tab', changes: [] }; }
+
+  var data = dash.getDataRange().getValues();
+  var hebMonth = {
+    'ינואר': 1, 'פברואר': 2, 'מרץ': 3, 'אפריל': 4, 'מאי': 5, 'יוני': 6,
+    'יולי': 7, 'אוגוסט': 8, 'ספטמבר': 9, 'אוקטובר': 10, 'נובמבר': 11, 'דצמבר': 12
+  };
+
+  // Pass 1 — find all "שנת YYYY" headers.
+  var blocks = [];
+  for (var r = 0; r < data.length; r++) {
+    for (var c = 0; c < data[r].length; c++) {
+      var m = String(data[r][c] || '').match(/שנת\s+(20\d{2})/);
+      if (m) { blocks.push({ year: parseInt(m[1], 10), headerRow: r }); break; }
+    }
+  }
+  if (blocks.length === 0) { Logger.log('!! no year headers found'); return { error: 'no_year_blocks', changes: [] }; }
+  Logger.log('Found ' + blocks.length + ' year block(s): ' + blocks.map(function (b) { return b.year; }).join(', '));
+
+  var changes = [];
+
+  for (var bi = 0; bi < blocks.length; bi++) {
+    var blk = blocks[bi];
+    var blockEnd = Math.min((bi + 1 < blocks.length) ? blocks[bi + 1].headerRow : data.length, blk.headerRow + 18);
+
+    // Find month columns (within 3 rows below header).
+    var monthCols = {};
+    for (var rr = blk.headerRow + 1; rr < Math.min(blk.headerRow + 4, blockEnd); rr++) {
+      for (var cc = 0; cc < data[rr].length; cc++) {
+        var name = String(data[rr][cc] || '').trim();
+        if (hebMonth[name] && monthCols[hebMonth[name]] === undefined) monthCols[hebMonth[name]] = cc;
+      }
+      if (Object.keys(monthCols).length >= 12) break;
+    }
+    if (Object.keys(monthCols).length === 0) {
+      Logger.log('  ⚠️ year ' + blk.year + ': no month columns found, skipping');
+      continue;
+    }
+
+    // Find rows for each of the 9 metrics (using existing _bucketLabelMatch_).
+    var metricRows = {};
+    for (var mr = blk.headerRow; mr < blockEnd; mr++) {
+      var labelCell = String(data[mr][0] || '');
+      for (var mki = 0; mki < _PSF_DASH_METRICS_v2_.length; mki++) {
+        var met = _PSF_DASH_METRICS_v2_[mki];
+        if (metricRows[met.key] !== undefined) continue;
+        if (_bucketLabelMatch_(labelCell, met.label)) metricRows[met.key] = mr;
+      }
+    }
+
+    // Build 1-based row offsets for cross-cell formulas (netProfit, marginPct).
+    var rowOffsets = {};
+    Object.keys(metricRows).forEach(function (k) { rowOffsets[k] = metricRows[k] + 1; });
+
+    Logger.log('-- year ' + blk.year + ' — metrics found: ' + Object.keys(metricRows).join(',') + ' ; months: ' + Object.keys(monthCols).length);
+
+    // Walk every (metric × month) cell, decide if it needs repair.
+    for (var mki2 = 0; mki2 < _PSF_DASH_METRICS_v2_.length; mki2++) {
+      var metric = _PSF_DASH_METRICS_v2_[mki2];
+      var metricRow = metricRows[metric.key];
+      if (metricRow === undefined) continue;
+
+      for (var mi = 1; mi <= 12; mi++) {
+        var col = monthCols[mi];
+        if (col === undefined) continue;
+
+        var cell = dash.getRange(metricRow + 1, col + 1);
+        var existingFormula = cell.getFormula();
+        var existingValue = cell.getValue();
+        var newFormula = _psf_buildFormula_v2_(blk.year, mi, metric.key, rowOffsets, col);
+
+        // Preserve the 2026-May +2100 manual marketing adjustment.
+        if (blk.year === 2026 && mi === 5 && metric.key === 'marketing') newFormula += '+2100';
+
+        // Decide if this cell needs repair.
+        var needsRepair = false;
+        var reason = '';
+        if (!existingFormula) { needsRepair = true; reason = 'hardcoded value (no formula)'; }
+        else if (typeof _isBrokenDashFormula_ === 'function' && _isBrokenDashFormula_(existingFormula)) {
+          needsRepair = true; reason = 'broken formula';
+        }
+        else if (String(existingValue).indexOf('#REF') >= 0) { needsRepair = true; reason = '#REF! error'; }
+        else if (existingFormula.indexOf("'" + _PSF_TX_TAB_ + "'") < 0 && metric.key !== 'netProfit' && metric.key !== 'marginPct') {
+          needsRepair = true; reason = "missing 'תנועות' sheet ref";
+        }
+
+        if (needsRepair) {
+          changes.push({
+            year: blk.year, metric: metric.key, metricLabel: metric.label, month: mi,
+            a1: cell.getA1Notation(), reason: reason,
+            currentRaw: existingFormula || String(existingValue),
+            newFormula: newFormula
+          });
+          if (applyMode) cell.setFormula(newFormula);
+        }
+      }
+    }
+  }
+
+  return { yearBlocks: blocks, changes: changes };
+}
+
+// ─── PUBLIC ENTRY POINTS ─────────────────────────────────────────────────
+
+function DRY_RUN_DASHBOARD_REPAIR() {
+  Logger.log('=== DRY_RUN_DASHBOARD_REPAIR — nothing will be written ===');
+  var res = _psf_scanDashboardForRepair_v2_(false);
+  if (res.error) { Logger.log('ERROR: ' + res.error); return; }
+  Logger.log('-- ' + res.changes.length + ' cell(s) would change --');
+  for (var i = 0; i < res.changes.length; i++) {
+    var ch = res.changes[i];
+    Logger.log('  ' + ch.a1 + '  ' + ch.year + '/' + ch.month + '  ' + ch.metricLabel + '  [' + ch.reason + ']');
+    Logger.log('    FROM: ' + String(ch.currentRaw).slice(0, 90));
+    Logger.log('    TO:   ' + String(ch.newFormula).slice(0, 110));
+  }
+  Logger.log('=== DRY-RUN COMPLETE — your sheet was NOT modified ===');
+  Logger.log('When ready to apply: APPLY_DASHBOARD_REPAIR("YES I UNDERSTAND")');
+}
+
+function APPLY_DASHBOARD_REPAIR(confirmation) {
+  if (confirmation !== 'YES I UNDERSTAND') {
+    Logger.log('!! REFUSED — pass the EXACT string "YES I UNDERSTAND" as the argument.');
+    Logger.log('   Example: APPLY_DASHBOARD_REPAIR("YES I UNDERSTAND")');
+    Logger.log('   First run DRY_RUN_DASHBOARD_REPAIR() and review the log.');
+    return { refused: true };
+  }
+  Logger.log('=== APPLY_DASHBOARD_REPAIR — writing formulas now ===');
+  var res = _psf_scanDashboardForRepair_v2_(true);
+  if (res.error) { Logger.log('ERROR: ' + res.error); return res; }
+
+  // Audit trail in cell A1 NOTE (not the cell value — so it doesn't disturb layout).
+  try {
+    var ss = _openSheet_();
+    var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
+    if (dash) {
+      var ts = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM-dd HH:mm');
+      var trail = 'תיקון דשבורד אחרון: ' + ts + ' | ' + res.changes.length + ' תאים | KFL_DASHBOARD_REPAIR_v1';
+      dash.getRange('A1').setNote(trail);
+      Logger.log('Audit trail → A1 note: ' + trail);
+    }
+  } catch (auditErr) { Logger.log('audit trail err (non-fatal): ' + auditErr.message); }
+
+  Logger.log('=== APPLY COMPLETE: ' + res.changes.length + ' cells repaired across ' + res.yearBlocks.length + ' year blocks ===');
+  Logger.log('Refresh your sheet (Cmd+R). New תנועות writes should now update מאזן חברה automatically.');
+  return res;
+}
