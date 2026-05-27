@@ -94,12 +94,14 @@
   /* LTR-isolated numerals */
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; font-variant-numeric: tabular-nums; }
 
-  /* Premium card — matches kesefle.com pricing/feature cards */
+  /* Premium card — matches Steven's 2026-05-26 fintech spec:
+     border #E2E8F0, radius 16px, subtle elevation. Replaces the
+     softer #eef0f6 / 20px look. */
   .card {
     background: #FFFFFF;
-    border: 1px solid #eef0f6;
-    border-radius: 20px;
-    box-shadow: 0 8px 30px -12px rgba(15, 20, 34, 0.08);
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px -12px rgba(15, 20, 34, 0.06);
   }
   html.dark .card {
     background: #1e2638;
@@ -118,6 +120,73 @@
     border-color: #06b6d4;
     box-shadow: 0 16px 40px -16px rgba(6, 182, 212, 0.35);
   }
+
+  /* PR-A2 (2026-05-26): KPI typography hierarchy.
+     Single source of truth for the "CEO at a glance" cards so every
+     metric tile reads at the same weight + contrast. Used by the KPI
+     strip; eligible for any future numeric card.
+     Steven palette: #0F172A primary, #475569 secondary, #06B6D4 accent. */
+  .kfl-kpi-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0e7490;  /* cyan-700, default accent */
+    line-height: 1;
+  }
+  .kfl-kpi-eyebrow.warn { color: #b45309; }  /* amber-700 */
+  .kfl-kpi-eyebrow.crit { color: #b91c1c; }  /* red-700 */
+  html.dark .kfl-kpi-eyebrow { color: #67e8f9; }
+  html.dark .kfl-kpi-eyebrow.warn { color: #fbbf24; }
+  html.dark .kfl-kpi-eyebrow.crit { color: #f87171; }
+
+  .kfl-kpi-num {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 2rem;          /* 32px, up from text-3xl=30px */
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #0F172A;
+    direction: ltr;
+    unicode-bidi: isolate;
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 768px) { .kfl-kpi-num { font-size: 2.25rem; } }  /* 36px on desktop */
+  html.dark .kfl-kpi-num { color: #ffffff; }
+
+  .kfl-kpi-sub {
+    font-size: 0.8125rem;     /* 13px, up from text-xs=12px */
+    font-weight: 500;
+    color: #475569;            /* Steven secondary palette */
+    line-height: 1.4;
+  }
+  html.dark .kfl-kpi-sub { color: #94a3b8; }
+
+  /* PR-A2: Status badges. Use for "tier", "status", "state" chips on
+     KPI cards, tables, and lists. Variants: default (neutral),
+     ok (green), warn (amber), crit (red), info (cyan). */
+  .kfl-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    border: 1px solid transparent;
+  }
+  .kfl-badge.kfl-badge-ok   { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+  .kfl-badge.kfl-badge-warn { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+  .kfl-badge.kfl-badge-crit { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+  .kfl-badge.kfl-badge-info { background: #ECFEFF; color: #0E7490; border-color: #A5F3FC; }
+  .kfl-badge.kfl-badge-neutral { background: #F8FAFC; color: #475569; border-color: #E2E8F0; }
+  html.dark .kfl-badge.kfl-badge-ok   { background: rgba(4,120,87,0.15);   color: #6EE7B7; border-color: rgba(167,243,208,0.3); }
+  html.dark .kfl-badge.kfl-badge-warn { background: rgba(180,83,9,0.15);   color: #FCD34D; border-color: rgba(253,230,138,0.3); }
+  html.dark .kfl-badge.kfl-badge-crit { background: rgba(185,28,28,0.15);  color: #FCA5A5; border-color: rgba(254,202,202,0.3); }
+  html.dark .kfl-badge.kfl-badge-info { background: rgba(14,116,144,0.15); color: #67E8F9; border-color: rgba(165,243,252,0.3); }
+  html.dark .kfl-badge.kfl-badge-neutral { background: rgba(71,85,105,0.15); color: #CBD5E1; border-color: rgba(226,232,240,0.3); }
 
   /* Section heading rule — premium 2px cyan/teal accent matching the new brand */
   .section-rule { border-bottom: 2px solid #06b6d4; padding-bottom: 16px; }
@@ -140,7 +209,9 @@
     letter-spacing: 0.1em;
     color: #0e7490;
   }
-  .kfl-section-sub { font-size: 0.875rem; font-weight: 500; color: #41506f; margin-top: 6px; }
+  /* PR-A2: aligned to Steven's secondary text color (#475569). The old
+     #41506f was slightly more saturated and clashed with the cyan accent. */
+  .kfl-section-sub { font-size: 0.875rem; font-weight: 500; color: #475569; margin-top: 6px; }
   html.dark .kfl-section-sub { color: #94a3b8; }
 
   /* Discrete status dot */
@@ -265,53 +336,57 @@
   <section class="mb-10" id="kfl-kpi-strip" aria-label="מדדים מרכזיים">
     <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
       <!-- Premium KPI cards (Lucide-style SVG icons, single cyan accent + amber/red for warnings) -->
+      <!-- PR-A2: unified .kfl-kpi-* typography classes replace inline
+           text-3xl + color styles. Stronger hierarchy: bigger numbers
+           (text-3xl -> text-4xl at md), Steven-spec secondary color
+           (#475569 not #5d6b8f), warn/crit eyebrow variants. -->
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">משתמשים</div>
+          <div class="kfl-kpi-eyebrow">משתמשים</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-total" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">סך כל החשבונות</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-total">—</div>
+        <div class="mt-1 kfl-kpi-sub">סך כל החשבונות</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">פעילים</div>
+          <div class="kfl-kpi-eyebrow">פעילים</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-active" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">השתמשו השבוע</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-active">—</div>
+        <div class="mt-1 kfl-kpi-sub">השתמשו השבוע</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">משלמים</div>
+          <div class="kfl-kpi-eyebrow">משלמים</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-paying" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">מנויי Pro / משפחה</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-paying">—</div>
+        <div class="mt-1 kfl-kpi-sub">מנויי Pro / משפחה</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">הכנסה</div>
+          <div class="kfl-kpi-eyebrow">הכנסה</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black" id="kfl-kpi-mrr" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">חודשית קבועה</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-mrr">—</div>
+        <div class="mt-1 kfl-kpi-sub">חודשית קבועה</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#b45309;">תקועים</div>
+          <div class="kfl-kpi-eyebrow warn">תקועים</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-stuck" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">נרשמו, אין גיליון</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-stuck">—</div>
+        <div class="mt-1 kfl-kpi-sub">נרשמו, אין גיליון</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#b91c1c;">לתיקון</div>
+          <div class="kfl-kpi-eyebrow crit">לתיקון</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-todo" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">מצריך תשומת לב</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-todo">—</div>
+        <div class="mt-1 kfl-kpi-sub">מצריך תשומת לב</div>
       </div>
     </div>
     <script>
