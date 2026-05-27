@@ -90,6 +90,31 @@ assert(fbBlock && /metricKey === 'netProfit'/.test(fbBlock[0]),
   'formula builder handles netProfit metric (cross-cell reference)');
 assert(fbBlock && /metricKey === 'marginPct'/.test(fbBlock[0]),
   'formula builder handles marginPct metric (handles zero-revenue div)');
+// Phase A v2.2-fix1: no destructive "=0" fallback for netProfit/marginPct.
+assert(fbBlock && /Fallback — compute directly from תנועות/.test(fbBlock[0]),
+  'netProfit has direct-from-תנועות fallback (no destructive "=0")');
+assert(fbBlock && /Inline ratio direct from תנועות/.test(fbBlock[0]),
+  'marginPct has direct-from-תנועות fallback (no destructive "=0")');
+assert(!/if \(!rowOffsets\.revenue \|\| !rowOffsets\.totalExp\) return '=0'/.test(fbBlock ? fbBlock[0] : ''),
+  'old destructive "=0" fallback for netProfit is REMOVED');
+assert(!/if \(!rowOffsets\.netProfit \|\| !rowOffsets\.revenue\) return '=0'/.test(fbBlock ? fbBlock[0] : ''),
+  'old destructive "=0" fallback for marginPct is REMOVED');
+
+// Phase A v2.2-fix2: preserve non-zero hardcoded values (historical data).
+console.log('\nHistorical-value preservation (fix2):');
+assert(/existing[A-Za-z]*NonZeroNumber|existingIsNonZeroNumber/.test(SRC),
+  'scanner checks for existing non-zero numeric value');
+assert(/likely historical|PRESERVE/i.test(SRC),
+  'scanner comments explain historical-data preservation');
+assert(/empty\/zero cell \(no formula\)/.test(SRC),
+  'scanner only marks empty/zero hardcoded cells for repair (not non-zero)');
+
+// Phase A v2.2: zero-arg APPLY wrapper for the function dropdown.
+console.log('\nAPPLY wrapper (zero-arg, for function dropdown):');
+assert(/function APPLY_DASHBOARD_REPAIR_NOW\(\)/.test(SRC),
+  'APPLY_DASHBOARD_REPAIR_NOW() wrapper defined (no args, runs from dropdown)');
+assert(/APPLY_DASHBOARD_REPAIR\('YES I UNDERSTAND'\)/.test(SRC),
+  'wrapper passes literal "YES I UNDERSTAND" internally');
 
 // ───── DRY_RUN ─────
 console.log('\nDRY_RUN_DASHBOARD_REPAIR (Steven explicit: no writes):');

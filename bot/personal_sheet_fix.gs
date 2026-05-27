@@ -1966,14 +1966,28 @@ function _psf_buildFormula_v2_(year, mi, metricKey, rowOffsets, col0Based) {
       '(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=TRUE)),0)';
   }
   if (metricKey === 'netProfit') {
-    // Same-column cross-reference: revenue - totalExp.
-    if (!rowOffsets.revenue || !rowOffsets.totalExp) return '=0';
-    return '=' + colL + rowOffsets.revenue + '-' + colL + rowOffsets.totalExp;
+    // Prefer same-column cross-reference when both rows exist.
+    if (rowOffsets.revenue && rowOffsets.totalExp) {
+      return '=' + colL + rowOffsets.revenue + '-' + colL + rowOffsets.totalExp;
+    }
+    // Fallback — compute directly from תנועות. Avoids the destructive "=0"
+    // that would otherwise wipe historical netProfit values when the year
+    // block lacks revenue/totalExp helper rows.
+    return '=IFERROR(SUMPRODUCT(' +
+      T + '!C2:C5000*(' + T + '!B2:B5000="' + monthKey + '")*' +
+      '(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=FALSE))' +
+      '-SUMPRODUCT(' +
+      T + '!C2:C5000*(' + T + '!B2:B5000="' + monthKey + '")*' +
+      '(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=TRUE)),0)';
   }
   if (metricKey === 'marginPct') {
-    // IFERROR(profit/revenue, 0) — survives zero-revenue months.
-    if (!rowOffsets.netProfit || !rowOffsets.revenue) return '=0';
-    return '=IFERROR(' + colL + rowOffsets.netProfit + '/' + colL + rowOffsets.revenue + ',0)';
+    if (rowOffsets.netProfit && rowOffsets.revenue) {
+      return '=IFERROR(' + colL + rowOffsets.netProfit + '/' + colL + rowOffsets.revenue + ',0)';
+    }
+    // Inline ratio direct from תנועות.
+    var inc = 'SUMPRODUCT(' + T + '!C2:C5000*(' + T + '!B2:B5000="' + monthKey + '")*(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=FALSE))';
+    var exp = 'SUMPRODUCT(' + T + '!C2:C5000*(' + T + '!B2:B5000="' + monthKey + '")*(' + T + '!D2:D5000="עסק")*(' + T + '!H2:H5000=TRUE))';
+    return '=IFERROR((' + inc + '-' + exp + ')/' + inc + ',0)';
   }
   // Expense bucket — materials/marketing/shipping/ops.
   var pattern = _PSF_PATTERNS_v2_[metricKey];
@@ -2066,9 +2080,21 @@ function _psf_scanDashboardForRepair_v2_(applyMode) {
         if (blk.year === 2026 && mi === 5 && metric.key === 'marketing') newFormula += '+2100';
 
         // Decide if this cell needs repair.
+        // SAFETY: hardcoded NON-ZERO values are treated as HISTORICAL data
+        // (manual entry or old-script aggregate). We PRESERVE them — never
+        // silently overwrite with a formula that might compute a different
+        // value. Only repair: empty cells, zero cells (formula would also
+        // give 0 there), broken formulas, #REF! errors, missing sheet refs.
         var needsRepair = false;
         var reason = '';
-        if (!existingFormula) { needsRepair = true; reason = 'hardcoded value (no formula)'; }
+        var existingNum = parseFloat(existingValue);
+        var existingIsNonZeroNumber = !isNaN(existingNum) && existingNum !== 0;
+        if (!existingFormula) {
+          if (existingValue === '' || existingValue === null || existingNum === 0) {
+            needsRepair = true; reason = 'empty/zero cell (no formula)';
+          }
+          // else: hardcoded non-zero value → PRESERVE (likely historical).
+        }
         else if (typeof _isBrokenDashFormula_ === 'function' && _isBrokenDashFormula_(existingFormula)) {
           needsRepair = true; reason = 'broken formula';
         }
@@ -2136,4 +2162,11 @@ function APPLY_DASHBOARD_REPAIR(confirmation) {
   Logger.log('=== APPLY COMPLETE: ' + res.changes.length + ' cells repaired across ' + res.yearBlocks.length + ' year blocks ===');
   Logger.log('Refresh your sheet (Cmd+R). New תנועות writes should now update מאזן חברה automatically.');
   return res;
+}
+
+// Apps Script function dropdown can't pass arguments. This zero-arg
+// wrapper makes APPLY_DASHBOARD_REPAIR runnable from the dropdown.
+// Same safety: it passes the literal confirmation string internally.
+function APPLY_DASHBOARD_REPAIR_NOW() {
+  return APPLY_DASHBOARD_REPAIR('YES I UNDERSTAND');
 }
