@@ -840,6 +840,69 @@
     </div>
   </section>
 
+  <!-- PR-D3 (2026-05-26): Financial Overview hero strip.
+       Headline section that gives a 1-second read on "am I OK this
+       month?". Pulls from the same data payload as summary-cards;
+       no new endpoint. Hidden by default until the first render call
+       so the empty-state flow still works for first-time users. -->
+  <section id="kfl-fo-hero" class="mb-6 hidden">
+    <div class="relative overflow-hidden rounded-3xl border border-ink-200 bg-gradient-to-br from-white via-brand-50/40 to-white p-6 shadow-soft dark:border-ink-700 dark:from-ink-800 dark:via-brand-500/5 dark:to-ink-800 md:p-8">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-700 dark:text-brand-300">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/></svg>
+            סקירה פיננסית
+          </div>
+          <h2 class="mt-1 font-display text-2xl font-black tracking-tight text-ink-900 dark:text-white md:text-3xl" id="kfl-fo-month">—</h2>
+        </div>
+        <div id="kfl-fo-status" class="kfl-fo-pill kfl-fo-pill-neutral">
+          <span class="kfl-fo-pill-dot"></span>
+          <span id="kfl-fo-status-text">טוען…</span>
+        </div>
+      </div>
+      <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div>
+          <div class="text-xs font-semibold text-ink-600 dark:text-ink-300">תזרים נטו</div>
+          <div class="mt-1 font-display text-3xl font-black tracking-tight md:text-4xl" id="kfl-fo-net" dir="ltr" style="font-variant-numeric: tabular-nums; line-height: 1.05;">—</div>
+          <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="kfl-fo-net-sub">הכנסות פחות הוצאות</div>
+        </div>
+        <div class="sm:border-r sm:border-l-0 sm:pr-6 sm:border-ink-200 dark:sm:border-ink-700">
+          <div class="text-xs font-semibold text-ink-600 dark:text-ink-300">הוצאה יומית ממוצעת</div>
+          <div class="mt-1 font-display text-3xl font-black tracking-tight text-red-600 md:text-4xl" id="kfl-fo-burn" dir="ltr" style="font-variant-numeric: tabular-nums; line-height: 1.05;">—</div>
+          <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="kfl-fo-burn-sub">מתחילת החודש</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-ink-600 dark:text-ink-300">נותרו בחודש</div>
+          <div class="mt-1 font-display text-3xl font-black tracking-tight text-ink-900 dark:text-white md:text-4xl" id="kfl-fo-days" dir="ltr" style="font-variant-numeric: tabular-nums; line-height: 1.05;">—</div>
+          <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="kfl-fo-days-sub">ימים</div>
+        </div>
+      </div>
+    </div>
+    <style>
+      .kfl-fo-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px; border-radius: 9999px;
+        font-size: 13px; font-weight: 700;
+        border: 1px solid transparent;
+      }
+      .kfl-fo-pill-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: currentColor;
+        animation: kfl-fo-pulse 2s ease-in-out infinite;
+      }
+      @keyframes kfl-fo-pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+      @media (prefers-reduced-motion: reduce) { .kfl-fo-pill-dot { animation: none; } }
+      .kfl-fo-pill-ok      { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+      .kfl-fo-pill-warn    { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+      .kfl-fo-pill-crit    { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+      .kfl-fo-pill-neutral { background: #F8FAFC; color: #475569; border-color: #E2E8F0; }
+      html.dark .kfl-fo-pill-ok      { background: rgba(4,120,87,0.18);   color: #6EE7B7; border-color: rgba(167,243,208,0.35); }
+      html.dark .kfl-fo-pill-warn    { background: rgba(180,83,9,0.18);   color: #FCD34D; border-color: rgba(253,230,138,0.35); }
+      html.dark .kfl-fo-pill-crit    { background: rgba(185,28,28,0.18);  color: #FCA5A5; border-color: rgba(254,202,202,0.35); }
+      html.dark .kfl-fo-pill-neutral { background: rgba(71,85,105,0.18);  color: #CBD5E1; border-color: rgba(226,232,240,0.35); }
+    </style>
+  </section>
+
   <!-- summary cards -->
   <section id="summary-cards" class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
     <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
@@ -1981,6 +2044,11 @@ function renderDashboard(d) {
   function fmt(n) { return new Intl.NumberFormat('he-IL').format(Math.round(n || 0)); }
   function num(n) { return '₪' + fmt(n); }
 
+  // --- PR-D3: Populate the Financial Overview hero. Runs first so the
+  //     headline is up before the per-card animations finish. Computes
+  //     entirely from the same `d` payload — no new endpoint.
+  try { populateFinancialOverviewHero(d); } catch (_foErr) { /* never block */ }
+
   // --- Animated summary cards
   countUp(document.getElementById('month-expenses'), d.month_expenses || 0, { prefix: '₪' });
   countUp(document.getElementById('month-income'), d.month_income || 0, { prefix: '₪' });
@@ -2100,6 +2168,103 @@ function renderDashboard(d) {
       '<span class="num w-20 text-left text-xs font-semibold tabular-nums">' + num(seg.total) + '</span>';
     cl.appendChild(row);
   });
+}
+
+// PR-D3 (2026-05-26): Financial Overview hero populator. Pulls from the
+// same `d` payload as the per-card animations, computes 3 hero metrics +
+// a health pill, fills the strip. No side effects, no fetches; if any
+// piece is missing it leaves the em-dash placeholder.
+function populateFinancialOverviewHero(d) {
+  var hero = document.getElementById('kfl-fo-hero');
+  if (!hero) return;
+  // Show the hero only if we have something meaningful to display.
+  var income = Math.max(0, +(d && d.month_income) || 0);
+  var expenses = Math.max(0, +(d && d.month_expenses) || 0);
+  if (income <= 0 && expenses <= 0) {
+    hero.classList.add('hidden');
+    return;
+  }
+  hero.classList.remove('hidden');
+
+  var fmt = function(n) { return new Intl.NumberFormat('he-IL').format(Math.round(n || 0)); };
+
+  // Month name in Hebrew, e.g. "מאי 2026". Intl handles Hebrew month
+  // names natively in modern browsers; fall back to ISO if it fails.
+  var monthName = '';
+  try {
+    monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' })
+      .format(new Date());
+  } catch (_e) {
+    var now = new Date();
+    monthName = (now.getMonth() + 1) + '/' + now.getFullYear();
+  }
+  var mEl = document.getElementById('kfl-fo-month');
+  if (mEl) mEl.textContent = monthName;
+
+  // Net cashflow (= income - expenses). Color-coded: green if positive,
+  // amber if mildly negative (<= 15% of income), red otherwise.
+  var net = income - expenses;
+  var netEl = document.getElementById('kfl-fo-net');
+  if (netEl) {
+    netEl.textContent = (net >= 0 ? '+' : '−') + '₪' + fmt(Math.abs(net));
+    netEl.style.color = net >= 0
+      ? '#047857'   // emerald-700
+      : (income > 0 && (expenses - income) / income <= 0.15 ? '#B45309' : '#B91C1C');
+  }
+  var netSubEl = document.getElementById('kfl-fo-net-sub');
+  if (netSubEl) {
+    if (income > 0) {
+      var pct = Math.round((expenses / income) * 100);
+      netSubEl.textContent = 'הוצאת ' + pct + '% מההכנסה';
+    } else {
+      netSubEl.textContent = 'אין עדיין הכנסות החודש';
+    }
+  }
+
+  // Daily burn rate. Use days elapsed in the current month (counting
+  // today). On day 1 of the month this is "1" so we never divide by zero.
+  var now = new Date();
+  var dayOfMonth = now.getDate();
+  var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  var daysRemaining = Math.max(0, daysInMonth - dayOfMonth);
+  var burn = expenses / Math.max(1, dayOfMonth);
+  var burnEl = document.getElementById('kfl-fo-burn');
+  if (burnEl) burnEl.textContent = '₪' + fmt(burn);
+  var burnSubEl = document.getElementById('kfl-fo-burn-sub');
+  if (burnSubEl) burnSubEl.textContent = 'מתחילת ' + monthName.split(' ')[0];
+
+  var daysEl = document.getElementById('kfl-fo-days');
+  if (daysEl) daysEl.textContent = String(daysRemaining);
+  var daysSubEl = document.getElementById('kfl-fo-days-sub');
+  if (daysSubEl) {
+    daysSubEl.textContent = daysRemaining === 0
+      ? 'החודש מסתיים היום' : 'מתוך ' + daysInMonth + ' ימים';
+  }
+
+  // Status pill: 4 tiers based on the net/income ratio.
+  //   - bal >= 0           => OK (green)
+  //   - 0-15% over budget  => warn (amber)
+  //   - >15% over          => crit (red)
+  //   - no income yet      => neutral (no judgment)
+  var statusEl = document.getElementById('kfl-fo-status');
+  var statusTxt = document.getElementById('kfl-fo-status-text');
+  if (statusEl && statusTxt) {
+    // Reset variants to avoid stuck classes after re-render.
+    statusEl.className = 'kfl-fo-pill';
+    if (income <= 0) {
+      statusEl.classList.add('kfl-fo-pill-neutral');
+      statusTxt.textContent = 'ממתין להכנסה ראשונה';
+    } else if (net >= 0) {
+      statusEl.classList.add('kfl-fo-pill-ok');
+      statusTxt.textContent = 'במסלול - יתרה חיובית';
+    } else if ((expenses - income) / income <= 0.15) {
+      statusEl.classList.add('kfl-fo-pill-warn');
+      statusTxt.textContent = 'דורש תשומת לב';
+    } else {
+      statusEl.classList.add('kfl-fo-pill-crit');
+      statusTxt.textContent = 'גרעון משמעותי';
+    }
+  }
 }
 
 // Generate a smooth random series so sparklines look alive even before API plumbed
