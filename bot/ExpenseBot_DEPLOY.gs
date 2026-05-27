@@ -129,7 +129,75 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-27-lies-removed';
+const KFL_BUILD_VERSION = '2026-05-28-phase-a-v2';
+
+// Phase A v2: confidence threshold for the menu-first picker. Below this,
+// the bot asks via interactive list instead of silent-writing. Configurable
+// via Script Property KFL_CONFIDENCE_ASK_THRESHOLD (e.g. 0.90 = ask more,
+// 0.70 = ask less). Hard floor 0.0, hard ceiling 1.0. Default 0.85.
+function _kflConfidenceAskThreshold_() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('KFL_CONFIDENCE_ASK_THRESHOLD');
+    if (raw == null || raw === '') return 0.85;
+    var v = parseFloat(raw);
+    if (isNaN(v)) return 0.85;
+    if (v < 0) v = 0;
+    if (v > 1) v = 1;
+    return v;
+  } catch (_e) { return 0.85; }
+}
+
+// Phase A v2: does a proposed business-name collide with a category in
+// CATEGORY_MAP? Used by the עסק-N command to prevent the bot from
+// creating a tab named "שיווק" / "אוכל" / "דלק" etc. (which are
+// CATEGORIES, not business names). Returns true if name matches any
+// keyword OR any category/subcategory label in CATEGORY_MAP.
+function _isCategoryName_(name) {
+  if (!name) return false;
+  var n = String(name).trim().toLowerCase();
+  if (!n) return false;
+  // Common business-expense categories users mis-type as business names.
+  var commonBlocklist = ['שיווק','אוכל','דלק','חומרים','חומרי גלם','שיווק ופרסום','משלוח','משלוחים','עובדים','מסי הזמנות','תפעוליות','הוצאות תפעוליות','יועצים','מיסים','מס','ביטוח','חשמל','מים','גז','ארנונה','אינטרנט','טלפון','קפה','בית קפה','סופר','שופרסל','רמי לוי','בנזין','חניה','מוסך','רכבת','אוטובוס','מונית'];
+  for (var i = 0; i < commonBlocklist.length; i++) {
+    if (commonBlocklist[i].toLowerCase() === n) return true;
+  }
+  // Cross-check CATEGORY_MAP categories + subcategories + keywords.
+  try {
+    if (typeof CATEGORY_MAP !== 'undefined' && Array.isArray(CATEGORY_MAP)) {
+      for (var j = 0; j < CATEGORY_MAP.length; j++) {
+        var row = CATEGORY_MAP[j];
+        if (!row) continue;
+        if (String(row.category || '').toLowerCase() === n) return true;
+        if (String(row.subcategory || '').toLowerCase() === n) return true;
+        if (Array.isArray(row.keywords)) {
+          for (var k = 0; k < row.keywords.length; k++) {
+            if (String(row.keywords[k] || '').toLowerCase() === n) return true;
+          }
+        }
+      }
+    }
+  } catch (_e) {}
+  return false;
+}
+
+// Phase A v2: how many distinct business tabs has this owner registered?
+// Used by the עסק-N command to flag implausible N (e.g. "עסק 35" when
+// the user only has 2 businesses → almost certainly a typo or accidental
+// invocation). Reads the biz:owner:{clean}:list KV index.
+function _userBusinessCount_(ownerPhone) {
+  try {
+    var clean = String(ownerPhone || '').replace(/[^0-9]/g, '');
+    if (!clean) return 0;
+    var list = (typeof kvGet === 'function') ? kvGet('biz:owner:' + clean + ':list') : null;
+    if (Array.isArray(list)) return list.length;
+    // Probe: count biz:{clean}:N for N=1..10 that exist.
+    var c = 0;
+    for (var n = 1; n <= 10; n++) {
+      try { if (kvGet('biz:' + clean + ':' + n)) c++; } catch (_e) {}
+    }
+    return c;
+  } catch (_e) { return 0; }
+}
 
 // ── KFL-TRACE — uniform breadcrumb logger ─────────────────────────────────────
 // Steven 2026-05-26: when a bot reply is wrong (e.g. ₪200 written as ₪1, or
@@ -7551,7 +7619,10 @@ function processExpense(text, fromPhone) {
                    aiRich.category !== 'בלתי מזוהה' &&
                    aiRich.category !== 'שונות' &&
                    aiRich.category !== 'שונות ואחרים';
-        var TIER_DIRECT     = 0.85;
+        // Phase A v2: TIER_DIRECT is now env-configurable via
+        // KFL_CONFIDENCE_ASK_THRESHOLD Script Property. Raising it makes the
+        // bot ask more often; lowering it makes it write more often.
+        var TIER_DIRECT     = _kflConfidenceAskThreshold_();
         var TIER_SOFT       = 0.70;
         var TIER_LIST_SMALL = 0.40;
 
@@ -8561,7 +8632,7 @@ function _aiCategorizeRich(text, fromPhone) {
       '  • בידור (סטרימינג, משחקים, יציאות, בילויים, אירועים, ספורט, הופעות, סרטים)\n' +
       '  • בריאות (בריאות, רופא פרטי, שיניים, תרופות, תוספים, כושר ומנויים)\n' +
       '  • חינוך (קורסים מקוונים, ספרים מקצועיים, שיעורים פרטיים, אוניברסיטה)\n' +
-      '  • ילדים (גני ילדים, חוגים, בגדים לילדים, צעצועים, ספרי ילדים)\n' +
+      '  • ילדים (גני ילדים, חוגים, בגדים לילדים, צעצועים, ספרי ילדים, חיתולים ותינוקות, מזון תינוקות, עגלות תינוק, ציוד וטיפוח לתינוק)\n' +
       '  • ממשלה ומיסים (מס הכנסה, ביטוח לאומי, רישוי, קנסות, דמי גמל)\n' +
       '  • פיננסים (השקעות, עמלות בנקאיות, ניהול תיקים)\n' +
       '  • שירותים (הובלות, ניקיון, שיפוצים, גינון, חשמלאי, אינסטלטור)\n' +
@@ -8602,6 +8673,12 @@ function _aiCategorizeRich(text, fromPhone) {
       '"קולנוע יס פלאנט" → {"category":"בידור","subcategory":"סרטים","confidence":0.98,"reason":"בית קולנוע"}\n' +
       '"חתונה רוני" → {"category":"בידור","subcategory":"אירועים","confidence":0.88,"reason":"מתנת חתונה"}\n' +
       '"גן ילדים שירה" → {"category":"ילדים","subcategory":"גני ילדים","confidence":0.96,"reason":"גן ילדים"}\n' +
+      '"40 טיטול" → {"category":"ילדים","subcategory":"חיתולים ותינוקות","confidence":0.95,"reason":"חיתולים לתינוק"}\n' +
+      '"100 חיתולים פמפרס" → {"category":"ילדים","subcategory":"חיתולים ותינוקות","confidence":0.98,"reason":"חיתולי תינוקות"}\n' +
+      '"מטרנה גולד" → {"category":"ילדים","subcategory":"מזון תינוקות","confidence":0.97,"reason":"תרכובת חלב לתינוק"}\n' +
+      '"מגבונים לתינוק" → {"category":"ילדים","subcategory":"חיתולים ותינוקות","confidence":0.95,"reason":"מגבונים לתינוק"}\n' +
+      '"עגלת תינוק בוגאבו" → {"category":"ילדים","subcategory":"עגלות תינוק","confidence":0.97,"reason":"עגלת תינוק"}\n' +
+      '"180 חוג ריקוד מיכל" → {"category":"ילדים","subcategory":"חוגים","confidence":0.92,"reason":"חוג לילד"}\n' +
       '"משכורת" → {"category":"הכנסות","subcategory":"משכורת","confidence":0.99,"reason":"משכורת חודשית"}\n' +
       '"החזר מס" → {"category":"הכנסות","subcategory":"החזר מס","confidence":0.99,"reason":"החזר ממס הכנסה"}\n' +
       '"asdfgh" → {"category":"בלתי מזוהה","subcategory":"לא ברור","confidence":0.05,"reason":"טקסט לא מובן"}' +
@@ -11049,12 +11126,62 @@ function _getOrCreateBusinessSheet_(ownerPhone, n, nameOpt) {
 // "set the name of business N to X" command -- creates the tab (if new),
 // renames it (if existed under a different name), and confirms.
 function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId) {
+  // ───── PHASE A v2 STRUCTURAL GUARDS ─────
+  // Before we open or create a tab, check three failure modes Steven hit:
+  //   Guard A — name collides with a known CATEGORY ("שיווק", "אוכל", etc.)
+  //   Guard B — N is implausibly high vs. user's existing business count
+  //   Guard C — no-amount set-name-only on a fresh business needs confirm
+  // Any of these → return a clarification question to the user. Do NOT
+  // create a tab. Do NOT write a row. The user must answer the question.
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  var nameCandidate = (nameOpt && String(nameOpt).trim()) || '';
+  var restClean = String(rest || '').trim();
+  var bizN = parseInt(n, 10);
+  var existingBiz = null;
+  try { if (clean && bizN >= 1) existingBiz = kvGet('biz:' + clean + ':' + bizN); } catch (_e) {}
+  var bizCount = _userBusinessCount_(clean);
+
+  // Guard A — set-name-only AND name is a known CATEGORY (no rest, no amount).
+  // Example Steven hit: "עסק 35 שיווק" → tried to register business #35
+  // as "שיווק", which is the MARKETING category. Now we ask first.
+  if (!restClean && nameCandidate && _isCategoryName_(nameCandidate)) {
+    return { handled: true, replyText:
+      '🤔 רגע — "' + nameCandidate + '" נשמע כמו קטגוריה, לא שם עסק.\n\n' +
+      'מה התכוונת?\n' +
+      '1. רישום הוצאה לעסק ' + bizN + ' בקטגוריה ' + nameCandidate + ' — שלח: "עסק ' + bizN + ' <סכום> ' + nameCandidate + '"\n' +
+      '2. פתיחת עסק חדש בשם "' + nameCandidate + '" — שלח: "עסק ' + bizN + ' שם: ' + nameCandidate + '"\n' +
+      '3. ביטול — שלח: "בטל"' };
+  }
+
+  // Guard B — implausible business number (no existing tab, N > count+2).
+  // Example Steven hit: "עסק 35 שיווק" with N=35 when user has 1-2 businesses.
+  if (!existingBiz && bizN >= 1 && bizN > bizCount + 2 && bizN > 5) {
+    var sugg = [];
+    for (var s = 1; s <= Math.min(3, bizCount + 1); s++) sugg.push(String(s));
+    return { handled: true, replyText:
+      '🤔 עסק ' + bizN + ' לא קיים אצלך עדיין' + (bizCount > 0 ? ' (יש לך ' + bizCount + ' עסק' + (bizCount > 1 ? 'ים' : '') + ')' : '') + '.\n\n' +
+      'התכוונת לעסק ' + sugg.join('/') + '?\n' +
+      'שלח: "עסקים שלי" כדי לראות את הרשימה,\n' +
+      'או "עסק ' + bizN + ' שם: <שם חדש>" כדי לפתוח עסק חדש בכוונה.' };
+  }
+
+  // Guard C — fresh business, no amount, no explicit "שם:" prefix → ask.
+  // Differentiates "I want to open a new business" from "I made a typo".
+  if (!restClean && nameCandidate && !existingBiz && !/^שם\s*:/i.test(String(nameOpt || ''))) {
+    // Only fire when the user did NOT explicitly use "שם:" — those are intentional.
+    // For unmarked cases, ask once before creating the tab.
+    return { handled: true, replyText:
+      '🆕 פתיחת עסק חדש מספר ' + bizN + ' בשם "' + nameCandidate + '"?\n\n' +
+      'אשר: שלח "כן"\n' +
+      'בטל: שלח "בטל"\n' +
+      'או רישום הוצאה ישיר: "עסק ' + bizN + ' <סכום> <תיאור>"' };
+  }
+
   var target = _getOrCreateBusinessTab_(fromPhone, n, nameOpt || null);
   if (!target) return { handled: true, replyText: '😬 לא הצלחתי לפתוח את הטאב של עסק ' + n + ' בגיליון.' };
 
   var effectiveName = (nameOpt && String(nameOpt).trim()) || target.name || '';
   var nameSuffix = effectiveName ? ' (' + effectiveName + ')' : '';
-  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
 
   // Set-name-only: rest is empty + we got a name. Confirm and stop.
   if ((!rest || !String(rest).trim()) && effectiveName) {

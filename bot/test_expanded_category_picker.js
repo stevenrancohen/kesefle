@@ -126,10 +126,13 @@ assert(customIdx > 0 && lookupIdx > 0 && customIdx < lookupIdx,
   '__custom__ early-return runs BEFORE lastTenantExp lookup');
 
 // ── 7) Version bumped ────────────────────────────────────────────────────
+// Loosened from /picker/ literal to any YYYY-MM-DD prefix so subsequent
+// PRs can rebump the version freely. Same fix-class as
+// test_pending_state_hijack.js / test_trace_instrumentation.js.
 console.log('\nVersion:');
 const v = (BOT.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/picker/.test(v || ''),
-  'KFL_BUILD_VERSION contains "picker" (currently: ' + v + ')');
+assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
+  'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 
 // ── 8) Sanity — picker still calls sendWhatsAppInteractiveList ──────────
 console.log('\nWhatsApp wiring:');

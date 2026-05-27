@@ -67,10 +67,15 @@ assert(/✅ יעד נקבע: /.test(CODE),
   'goal-set success reply still present');
 
 // Version bumped so admin freshness badge flips red until Steven pastes.
+// Loosened from PR-specific name match to any YYYY-MM-DD prefix so
+// subsequent PRs can rebump the version freely. Same fix-class as
+// test_pending_state_hijack.js / test_trace_instrumentation.js. The
+// substantive "no active lies" assertions above are what actually guard
+// the fix.
 console.log('\nVersion:');
 const v = (BOT.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/lies-removed|lies-fixed|honest-copy/.test(v || ''),
-  'KFL_BUILD_VERSION reflects this fix (currently: ' + v + ')');
+assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
+  'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 
 console.log('');
 if (failures.length) {
