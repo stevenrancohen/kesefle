@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-phase-a-v2';
+const KFL_BUILD_VERSION = '2026-05-28-phase-a-v2-1-clar-resolver';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -178,6 +178,109 @@ function _isCategoryName_(name) {
     }
   } catch (_e) {}
   return false;
+}
+
+// Phase A v2.1: resolves a user reply against a pending clarification flow.
+// Triggered by the 3 guards in _writeBusinessNExpense_ (category-name
+// collision, implausible-N, fresh-business-confirm). The bot saves a
+// pending state to PropertiesService when each guard fires, and this
+// resolver runs FIRST on every owner message in doPost — BEFORE the
+// _parseBusinessNumberPrefix_ → _writeBusinessNExpense_ chain — so the
+// user's reply does NOT get re-parsed as a fresh עסק-N command.
+//
+// Returns one of:
+//   { handled: true, reply: '...' }                  → resolver answered
+//   { handled: true, reRouteTo: { phone, n, ... } }  → run _writeBusinessNExpense_ with bypassGuards
+//   { handled: false }                                → no match, fall through (state preserved)
+//   { handled: false, expire: true }                  → expire pending state (15+ min old)
+function _resolvePendingClarification_(payloadJson, replyText, fromPhone) {
+  var p;
+  try { p = JSON.parse(payloadJson); } catch (_e) { return { handled: false, expire: true }; }
+  if (!p || !p.kind) return { handled: false, expire: true };
+
+  // 15-minute TTL — old pending state shouldn't hijack a fresh new message.
+  if (p.ts && (Date.now() - p.ts) > 900000) {
+    return { handled: false, expire: true };
+  }
+
+  var t = String(replyText || '').trim();
+  if (!t) return { handled: false };
+
+  // Cancel patterns — apply to ALL kinds.
+  if (/^(ביטול|בטל|cancel|לא תודה|stop|נחזור אחר כך)$/i.test(t)) {
+    return { handled: true, reply: '✓ בוטל' };
+  }
+
+  // Try to extract option number from many phrasings.
+  var optNum = null;
+  var nMatch = t.match(/^([1-9])\b/);
+  if (nMatch) optNum = parseInt(nMatch[1], 10);
+  if (optNum == null) {
+    var optMatch = t.match(/^אפשרות\s+([1-9])\b/i);
+    if (optMatch) optNum = parseInt(optMatch[1], 10);
+  }
+  if (optNum == null) {
+    if (/^(הראשון|הראשונה|ראשון|ראשונה)\b/i.test(t)) optNum = 1;
+    else if (/^(השני|השנייה|שני|שנייה)\b/i.test(t)) optNum = 2;
+    else if (/^(השלישי|השלישית|שלישי|שלישית)\b/i.test(t)) optNum = 3;
+  }
+  // Free-text patterns that mean "register the expense, do NOT create biz" → option 1.
+  if (optNum == null && /(?:^|\s)(רק\s*רישום|תרשום\s*כהוצאה|הוצאה\s*לעסק|לא\s*לפתוח|לא\s*ליצור|לא\s*טאב|לא\s*לשונית|רישום\s*ההוצאה|תרשום)/i.test(t)) {
+    optNum = 1;
+  }
+
+  // "עסק N - <rest>" / "עסק N <rest>" override pattern — user typed a
+  // fresh business+content reply. Treat as option 1 with override N + rest.
+  var bizOverride = t.match(/^עסק\s+(\d{1,2})\s*[-–—:]?\s*(.+)?$/);
+  if (bizOverride) {
+    var overrideN = parseInt(bizOverride[1], 10);
+    var overrideRestRaw = String(bizOverride[2] || '').trim();
+    if (overrideN >= 1 && overrideN <= 99) {
+      optNum = optNum || 1;
+      p.overrideN = overrideN;
+      // If the rest starts with "- " or "— " or ": ", strip the leading
+      // separator before passing to the amount parser.
+      p.overrideRest = overrideRestRaw.replace(/^[-—–:]\s*/, '').trim();
+    }
+  }
+
+  // Guard C — "כן" / "yes" means CONFIRM the new business creation.
+  if (optNum == null && p.kind === 'biz_n_clarify_C' && /^(כן|yes|אישור|ok|תפתח|פתח)$/i.test(t)) {
+    return { handled: true, reRouteTo: { phone: fromPhone, n: p.n, name: p.nameCandidate, rest: '', bypass: true } };
+  }
+
+  if (optNum == null) {
+    return { handled: false };
+  }
+
+  // ─── Execute the resolved option ───
+  if (p.kind === 'biz_n_clarify_A' || p.kind === 'biz_n_clarify_B' || p.kind === 'biz_n_clarify_C') {
+    if (optNum === 1) {
+      // REGISTER AS EXPENSE (do NOT create new business).
+      var effN = p.overrideN || 1;
+      var effRest;
+      if (p.overrideRest != null && p.overrideRest !== '') {
+        effRest = p.overrideRest;
+      } else if (p.kind === 'biz_n_clarify_A' && p.n && p.nameCandidate) {
+        // Original "עסק 35 שיווק" — user meant amount=35, description=שיווק.
+        effRest = String(p.n) + ' ' + String(p.nameCandidate);
+      } else {
+        // Can't reconstruct — ask user to retry.
+        return { handled: true, reply: '🤔 לא הצלחתי להבין את הסכום והתיאור. שלח שוב בפורמט: "<סכום> <תיאור>"' };
+      }
+      return { handled: true, reRouteTo: { phone: fromPhone, n: effN, name: null, rest: effRest, bypass: true } };
+    }
+    if (optNum === 2) {
+      // CREATE the new business (user explicitly chose this option).
+      var newN = p.overrideN || p.n || 1;
+      return { handled: true, reRouteTo: { phone: fromPhone, n: newN, name: p.nameCandidate || null, rest: '', bypass: true } };
+    }
+    if (optNum === 3) {
+      return { handled: true, reply: '✓ בוטל' };
+    }
+  }
+
+  return { handled: false };
 }
 
 // Phase A v2: how many distinct business tabs has this owner registered?
@@ -1907,6 +2010,48 @@ function doPost(e) {
         // to the main bot SHEET_ID, same as today. Owner-only for now;
         // tenants still flow through the standard /api/sheet/append path.
         if (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(__from_)) {
+          // ─── PHASE A v2.1 — pending clarification resolver ───
+          // If a previous Guard A/B/C set a pending state, this reply is
+          // an ANSWER to that question — not a fresh עסק-N command. Run
+          // the resolver BEFORE _parseBusinessNumberPrefix_ so the global
+          // parser doesn't misinterpret "עסק 1 - 35 הוצאות שיווק" as a
+          // "create business" command. Steven hit this bug 2026-05-28.
+          try {
+            var __clarClean = String(__from_ || '').replace(/[^0-9]/g, '');
+            var __clarKey = 'clarPend:' + __clarClean;
+            var __clarProps = PropertiesService.getScriptProperties();
+            var __clarRaw = __clarProps.getProperty(__clarKey);
+            if (__clarRaw && typeof _resolvePendingClarification_ === 'function') {
+              var __clarRes = _resolvePendingClarification_(__clarRaw, __text_, __from_);
+              if (__clarRes && __clarRes.handled) {
+                __clarProps.deleteProperty(__clarKey);
+                if (__clarRes.reRouteTo && typeof _writeBusinessNExpense_ === 'function') {
+                  // Re-route through the same handler with bypassGuards=true
+                  // so the guards don't fire again on the user's confirmed input.
+                  var __rt = __clarRes.reRouteTo;
+                  var __rtRes = _writeBusinessNExpense_(__rt.phone, __rt.n, __rt.name || null, __rt.rest, __msgId_ || null, true);
+                  if (__rtRes && __rtRes.replyText && typeof sendWhatsAppMessage === "function") {
+                    sendWhatsAppMessage(__from_, __rtRes.replyText);
+                  }
+                  Logger.log('doPost: clarification resolver re-routed N=' + __rt.n + ' rest="' + (__rt.rest || '').slice(0, 40) + '"');
+                  return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+                }
+                if (__clarRes.reply && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __clarRes.reply);
+                }
+                Logger.log('doPost: clarification resolver answered (no reroute)');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+              if (__clarRes && __clarRes.expire) {
+                __clarProps.deleteProperty(__clarKey);
+                Logger.log('doPost: clarification state expired (>15 min)');
+              }
+              // If __clarRes is { handled: false } without expire → keep state, fall through.
+            }
+          } catch (_clarErr) {
+            Logger.log('doPost: clarification resolver err: ' + (_clarErr && _clarErr.message));
+          }
+
           // "עסקים שלי" lists provisioned biz sheets.
           if (typeof _handleMyBusinessesCommand_ === "function") {
             try {
@@ -11125,14 +11270,15 @@ function _getOrCreateBusinessSheet_(ownerPhone, n, nameOpt) {
 // Special case: if `rest` is empty AND `nameOpt` is set, this is a
 // "set the name of business N to X" command -- creates the tab (if new),
 // renames it (if existed under a different name), and confirms.
-function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId) {
+function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId, bypassGuards) {
   // ───── PHASE A v2 STRUCTURAL GUARDS ─────
   // Before we open or create a tab, check three failure modes Steven hit:
   //   Guard A — name collides with a known CATEGORY ("שיווק", "אוכל", etc.)
   //   Guard B — N is implausibly high vs. user's existing business count
   //   Guard C — no-amount set-name-only on a fresh business needs confirm
-  // Any of these → return a clarification question to the user. Do NOT
-  // create a tab. Do NOT write a row. The user must answer the question.
+  // Any of these → save a pendingClarification state + return a question.
+  // The resolver in doPost will route the next reply back here with
+  // bypassGuards=true so the user's confirmed input proceeds normally.
   var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
   var nameCandidate = (nameOpt && String(nameOpt).trim()) || '';
   var restClean = String(rest || '').trim();
@@ -11141,40 +11287,55 @@ function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId) {
   try { if (clean && bizN >= 1) existingBiz = kvGet('biz:' + clean + ':' + bizN); } catch (_e) {}
   var bizCount = _userBusinessCount_(clean);
 
+  // Phase A v2.1: helper to save pending clarification state. Skipped
+  // when bypassGuards=true (resolver re-route already cleared it).
+  function _savePendingClar_(kind) {
+    if (bypassGuards || !clean) return;
+    try {
+      PropertiesService.getScriptProperties().setProperty('clarPend:' + clean, JSON.stringify({
+        kind: kind,
+        n: bizN,
+        nameCandidate: nameCandidate,
+        ts: Date.now()
+      }));
+    } catch (_e) { Logger.log('clarPend save err: ' + _e.message); }
+  }
+
   // Guard A — set-name-only AND name is a known CATEGORY (no rest, no amount).
   // Example Steven hit: "עסק 35 שיווק" → tried to register business #35
   // as "שיווק", which is the MARKETING category. Now we ask first.
-  if (!restClean && nameCandidate && _isCategoryName_(nameCandidate)) {
+  if (!bypassGuards && !restClean && nameCandidate && _isCategoryName_(nameCandidate)) {
+    _savePendingClar_('biz_n_clarify_A');
     return { handled: true, replyText:
       '🤔 רגע — "' + nameCandidate + '" נשמע כמו קטגוריה, לא שם עסק.\n\n' +
       'מה התכוונת?\n' +
-      '1. רישום הוצאה לעסק ' + bizN + ' בקטגוריה ' + nameCandidate + ' — שלח: "עסק ' + bizN + ' <סכום> ' + nameCandidate + '"\n' +
-      '2. פתיחת עסק חדש בשם "' + nameCandidate + '" — שלח: "עסק ' + bizN + ' שם: ' + nameCandidate + '"\n' +
-      '3. ביטול — שלח: "בטל"' };
+      '1. רישום הוצאה לעסק ' + bizN + ' בקטגוריה ' + nameCandidate + ' — שלח: "1" או "רישום הוצאה"\n' +
+      '2. פתיחת עסק חדש בשם "' + nameCandidate + '" — שלח: "2" או "פתח עסק חדש"\n' +
+      '3. ביטול — שלח: "3" או "בטל"' };
   }
 
   // Guard B — implausible business number (no existing tab, N > count+2).
   // Example Steven hit: "עסק 35 שיווק" with N=35 when user has 1-2 businesses.
-  if (!existingBiz && bizN >= 1 && bizN > bizCount + 2 && bizN > 5) {
+  if (!bypassGuards && !existingBiz && bizN >= 1 && bizN > bizCount + 2 && bizN > 5) {
     var sugg = [];
     for (var s = 1; s <= Math.min(3, bizCount + 1); s++) sugg.push(String(s));
+    _savePendingClar_('biz_n_clarify_B');
     return { handled: true, replyText:
       '🤔 עסק ' + bizN + ' לא קיים אצלך עדיין' + (bizCount > 0 ? ' (יש לך ' + bizCount + ' עסק' + (bizCount > 1 ? 'ים' : '') + ')' : '') + '.\n\n' +
       'התכוונת לעסק ' + sugg.join('/') + '?\n' +
-      'שלח: "עסקים שלי" כדי לראות את הרשימה,\n' +
-      'או "עסק ' + bizN + ' שם: <שם חדש>" כדי לפתוח עסק חדש בכוונה.' };
+      'שלח: "עסק 1" / "עסק 2" / ... כדי לתקן,\n' +
+      'או "בטל" כדי לבטל.' };
   }
 
   // Guard C — fresh business, no amount, no explicit "שם:" prefix → ask.
   // Differentiates "I want to open a new business" from "I made a typo".
-  if (!restClean && nameCandidate && !existingBiz && !/^שם\s*:/i.test(String(nameOpt || ''))) {
-    // Only fire when the user did NOT explicitly use "שם:" — those are intentional.
-    // For unmarked cases, ask once before creating the tab.
+  if (!bypassGuards && !restClean && nameCandidate && !existingBiz && !/^שם\s*:/i.test(String(nameOpt || ''))) {
+    _savePendingClar_('biz_n_clarify_C');
     return { handled: true, replyText:
       '🆕 פתיחת עסק חדש מספר ' + bizN + ' בשם "' + nameCandidate + '"?\n\n' +
       'אשר: שלח "כן"\n' +
       'בטל: שלח "בטל"\n' +
-      'או רישום הוצאה ישיר: "עסק ' + bizN + ' <סכום> <תיאור>"' };
+      'או רישום הוצאה: "עסק ' + bizN + ' <סכום> <תיאור>"' };
   }
 
   var target = _getOrCreateBusinessTab_(fromPhone, n, nameOpt || null);

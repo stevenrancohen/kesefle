@@ -124,6 +124,50 @@ assert(/_kflTrace_/.test(SRC),
 assert(/KFL_DISABLE_BOT_WRITES/.test(SRC),
   'KFL_DISABLE_BOT_WRITES kill switch still present');
 
+// Phase A v2.1 — clarification resolver (Steven 2026-05-28 bug fix)
+console.log('\nPending-clarification resolver (Phase A v2.1):');
+assert(/function _resolvePendingClarification_\(payloadJson, replyText, fromPhone\)/.test(SRC),
+  '_resolvePendingClarification_ helper is defined');
+const clarFn = SRC.match(/function _resolvePendingClarification_\([\s\S]*?\n}\n\n/);
+assert(clarFn && /15-minute TTL|900000/.test(clarFn[0]),
+  'resolver has 15-min TTL (pending state expires automatically)');
+assert(clarFn && /^(.*ביטול|בטל|cancel)/m.test(clarFn[0]) || /'ביטול\|בטל\|cancel'/.test(clarFn[0]) || /ביטול\\\|בטל\\\|cancel/.test(clarFn[0]),
+  'resolver handles cancel patterns (ביטול/בטל/cancel)');
+assert(clarFn && /אפשרות\\s\+/.test(clarFn[0]),
+  'resolver matches "אפשרות N" pattern');
+assert(clarFn && /הראשון|הראשונה/.test(clarFn[0]),
+  'resolver matches "הראשון/הראשונה" (Steven listed phrasing)');
+assert(clarFn && /רק\\s\*רישום|תרשום\\s\*כהוצאה|הוצאה\\s\*לעסק|לא\\s\*לפתוח/.test(clarFn[0]),
+  'resolver matches free-text option-1 patterns from Steven (רישום/תרשום/הוצאה לעסק/לא לפתוח)');
+assert(clarFn && /\^עסק\\s\+\(\\d\{1,2\}\)/.test(clarFn[0]),
+  'resolver matches "עסק N" override pattern (Steven typed: עסק 1 - 35 הוצאות שיווק)');
+assert(clarFn && /biz_n_clarify_A|biz_n_clarify_B|biz_n_clarify_C/.test(clarFn[0]),
+  'resolver handles all 3 guard kinds');
+assert(clarFn && /reRouteTo/.test(clarFn[0]),
+  'resolver returns reRouteTo for re-processing through _writeBusinessNExpense_ with bypassGuards');
+
+// Verify the resolver runs BEFORE the עסק-N parser in doPost
+console.log('\nDispatcher ordering (resolver before global parser):');
+const clarHookPos = SRC.indexOf('PHASE A v2.1 — pending clarification resolver');
+const parsePos = SRC.indexOf('var __bizPref = _parseBusinessNumberPrefix_(__text_);');
+assert(clarHookPos > 0 && parsePos > 0 && clarHookPos < parsePos,
+  'pending-clarification check in doPost runs BEFORE _parseBusinessNumberPrefix_ (fixes Steven\'s "עסק 1 - 35 הוצאות שיווק" bug)');
+assert(/clarPend:'\s*\+\s*__clarClean/.test(SRC) || /'clarPend:' \+ __clarClean/.test(SRC),
+  "doPost reads clarPend:{phone} PropertiesService key");
+
+// Verify bypassGuards param threaded through
+console.log('\nGuard bypass on resolver re-route:');
+assert(/function _writeBusinessNExpense_\(fromPhone, n, nameOpt, rest, messageId, bypassGuards\)/.test(SRC),
+  '_writeBusinessNExpense_ accepts bypassGuards param');
+assert(/!bypassGuards && !restClean && nameCandidate && _isCategoryName_\(nameCandidate\)/.test(SRC),
+  'Guard A skipped when bypassGuards=true');
+assert(/!bypassGuards && !existingBiz && bizN >= 1 && bizN > bizCount \+ 2/.test(SRC),
+  'Guard B skipped when bypassGuards=true');
+assert(/!bypassGuards && !restClean && nameCandidate && !existingBiz/.test(SRC),
+  'Guard C skipped when bypassGuards=true');
+assert(/function _savePendingClar_\(kind\)/.test(SRC),
+  '_savePendingClar_ inner helper saves clarPend state on guard fire');
+
 // Deferred items honesty
 console.log('\nDeferred items (NOT in this PR -- Phase A v2.5 follow-up):');
 console.log('  INFO  60s timeout sweep (needs time-driven trigger infra)');
