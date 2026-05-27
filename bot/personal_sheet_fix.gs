@@ -1914,17 +1914,44 @@ var _PSF_PATTERNS_v2_ = {
 };
 
 // 9 dashboard metrics — order matches typical dashboard layout.
+// Hebrew punctuation: use the Hebrew geresh ׳ (U+05F3) and gershayim ״ (U+05F4)
+// — NOT ASCII ' and " — so the labels match Steven's actual sheet headers.
+// (Fix3: earlier ASCII versions silently missed orderCount + totalExp rows.)
 var _PSF_DASH_METRICS_v2_ = [
   { key: 'revenue',    label: 'מחזור ברוטו' },
-  { key: 'orderCount', label: "מס' הזמנות" },
+  { key: 'orderCount', label: 'מס׳ הזמנות' },
   { key: 'materials',  label: 'עלות חומרי גלם' },
   { key: 'marketing',  label: 'עלות שיווק' },
   { key: 'shipping',   label: 'משלוחים והתקנות' },
   { key: 'ops',        label: 'הוצאות תפעוליות' },
-  { key: 'totalExp',   label: 'סה"כ הוצאות עסקיות' },
+  { key: 'totalExp',   label: 'סה״כ הוצאות עסקיות' },
   { key: 'netProfit',  label: 'רווח נטו חודשי' },
   { key: 'marginPct',  label: 'אחוז רווחיות' }
 ];
+
+// Tolerant label match: normalizes both Hebrew geresh ׳/gershayim ״ and
+// ASCII '/" so a sheet using either variant matches. Belt-and-suspenders
+// over the canonical Hebrew-chars choice above.
+function _psf_normalizeLabel_(s) {
+  return String(s || '')
+    .replace(/[׳]/g, "'")    // geresh → ASCII apostrophe
+    .replace(/[״]/g, '"')    // gershayim → ASCII double quote
+    .replace(/[‎‏‪-‮⁦-⁩﻿]/g, '') // bidi marks
+    .trim();
+}
+
+function _psf_labelMatch_v2_(cellRaw, metricLabel) {
+  if (!cellRaw || !metricLabel) return false;
+  var cell = _psf_normalizeLabel_(cellRaw);
+  var lab = _psf_normalizeLabel_(metricLabel);
+  if (cell === lab) return true;
+  // Endsmatch after a leading emoji + space (or any prefix).
+  if (cell.length > lab.length && cell.indexOf(lab) >= 0 &&
+      cell.lastIndexOf(lab) === cell.length - lab.length) {
+    return true;
+  }
+  return false;
+}
 
 // A1 column letter for 1-based col index.
 function _psf_colLetter_v2_(col1Based) {
@@ -2051,7 +2078,9 @@ function _psf_scanDashboardForRepair_v2_(applyMode) {
       for (var mki = 0; mki < _PSF_DASH_METRICS_v2_.length; mki++) {
         var met = _PSF_DASH_METRICS_v2_[mki];
         if (metricRows[met.key] !== undefined) continue;
-        if (_bucketLabelMatch_(labelCell, met.label)) metricRows[met.key] = mr;
+        // Use the v2 tolerant matcher that normalizes Hebrew geresh ׳/gershayim ״
+        // vs ASCII '/" (fix3 — older _bucketLabelMatch_ misses these variants).
+        if (_psf_labelMatch_v2_(labelCell, met.label)) metricRows[met.key] = mr;
       }
     }
 
@@ -2126,14 +2155,25 @@ function DRY_RUN_DASHBOARD_REPAIR() {
   var res = _psf_scanDashboardForRepair_v2_(false);
   if (res.error) { Logger.log('ERROR: ' + res.error); return; }
   Logger.log('-- ' + res.changes.length + ' cell(s) would change --');
+  // Per-metric and per-year counters so Steven can verify nothing's silently skipped.
+  var byMetric = {}, byYear = {}, byReason = {};
   for (var i = 0; i < res.changes.length; i++) {
     var ch = res.changes[i];
+    byMetric[ch.metricLabel] = (byMetric[ch.metricLabel] || 0) + 1;
+    byYear[ch.year] = (byYear[ch.year] || 0) + 1;
+    byReason[ch.reason] = (byReason[ch.reason] || 0) + 1;
     Logger.log('  ' + ch.a1 + '  ' + ch.year + '/' + ch.month + '  ' + ch.metricLabel + '  [' + ch.reason + ']');
     Logger.log('    FROM: ' + String(ch.currentRaw).slice(0, 90));
     Logger.log('    TO:   ' + String(ch.newFormula).slice(0, 110));
   }
+  Logger.log('=== SUMMARY ===');
+  Logger.log('  Total cells flagged for repair: ' + res.changes.length);
+  Logger.log('  By year: ' + JSON.stringify(byYear));
+  Logger.log('  By metric: ' + JSON.stringify(byMetric));
+  Logger.log('  By reason: ' + JSON.stringify(byReason));
+  Logger.log('  Historical non-zero cells PRESERVED (not in the list above).');
   Logger.log('=== DRY-RUN COMPLETE — your sheet was NOT modified ===');
-  Logger.log('When ready to apply: APPLY_DASHBOARD_REPAIR("YES I UNDERSTAND")');
+  Logger.log('When ready to apply: APPLY_DASHBOARD_REPAIR_NOW (zero-arg wrapper).');
 }
 
 function APPLY_DASHBOARD_REPAIR(confirmation) {

@@ -59,8 +59,9 @@ for (const k of metricKeys) {
   assert(metricsBlock && new RegExp("key:\\s*'" + k + "'").test(metricsBlock[0]),
     'metric key "' + k + '" defined');
 }
-const metricLabels = ['מחזור ברוטו', "מס' הזמנות", 'עלות חומרי גלם', 'עלות שיווק',
-                      'משלוחים והתקנות', 'הוצאות תפעוליות', 'סה"כ הוצאות עסקיות',
+// Fix3: Hebrew geresh ׳ + gershayim ״ — NOT ASCII '/" — match Steven's actual sheet labels.
+const metricLabels = ['מחזור ברוטו', 'מס׳ הזמנות', 'עלות חומרי גלם', 'עלות שיווק',
+                      'משלוחים והתקנות', 'הוצאות תפעוליות', 'סה״כ הוצאות עסקיות',
                       'רווח נטו חודשי', 'אחוז רווחיות'];
 for (const lab of metricLabels) {
   assert(metricsBlock && metricsBlock[0].indexOf(lab) >= 0,
@@ -115,6 +116,30 @@ assert(/function APPLY_DASHBOARD_REPAIR_NOW\(\)/.test(SRC),
   'APPLY_DASHBOARD_REPAIR_NOW() wrapper defined (no args, runs from dropdown)');
 assert(/APPLY_DASHBOARD_REPAIR\('YES I UNDERSTAND'\)/.test(SRC),
   'wrapper passes literal "YES I UNDERSTAND" internally');
+
+// Phase A v2.2-fix3: Hebrew punctuation handling (geresh ׳ + gershayim ״).
+console.log('\nFix3 — Hebrew punctuation in metric labels:');
+assert(/label: 'מס׳ הזמנות'/.test(SRC),
+  'orderCount label uses Hebrew geresh ׳ (U+05F3), not ASCII apostrophe');
+assert(/label: 'סה״כ הוצאות עסקיות'/.test(SRC),
+  'totalExp label uses Hebrew gershayim ״ (U+05F4), not ASCII double-quote');
+assert(/function _psf_normalizeLabel_\(s\)/.test(SRC),
+  '_psf_normalizeLabel_ helper defined (Hebrew↔ASCII normalization)');
+assert(/function _psf_labelMatch_v2_\(cellRaw, metricLabel\)/.test(SRC),
+  '_psf_labelMatch_v2_ tolerant matcher defined');
+assert(/_psf_labelMatch_v2_\(labelCell, met\.label\)/.test(SRC),
+  'scanner uses the tolerant v2 matcher (not strict _bucketLabelMatch_)');
+
+// Fix3 — summary log
+console.log('\nFix3 — explicit summary count in DRY_RUN log:');
+assert(/Total cells flagged for repair:/.test(SRC),
+  'DRY_RUN logs total cells flagged');
+assert(/By year:/.test(SRC),
+  'DRY_RUN logs per-year breakdown');
+assert(/By metric:/.test(SRC),
+  'DRY_RUN logs per-metric breakdown');
+assert(/Historical non-zero cells PRESERVED/.test(SRC),
+  'DRY_RUN notes preservation of historical non-zero cells');
 
 // ───── DRY_RUN ─────
 console.log('\nDRY_RUN_DASHBOARD_REPAIR (Steven explicit: no writes):');
