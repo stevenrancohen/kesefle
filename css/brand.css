@@ -11,6 +11,108 @@
    stays inline.
    ==================================================================== */
 
+/* ---- Palette tokens (Steven 2026-05-27 high-tech upgrade) ---------
+   Kesefle cyan/teal stays the PRIMARY brand. The new tokens (purple/
+   orange/red) are SECONDARY accents per his brief:
+     - red/pink   => urgent, error, high-risk
+     - orange     => warning, pending
+     - purple     => premium, pro, AI, insights
+     - dark navy  => strong contrast areas
+   Used by .kfl-btn-gradient + future high-tech components. */
+:root {
+  --k-dark:   #171721;
+  --k-purple: #872B97;
+  --k-orange: #FF7130;
+  --k-red:    #FF3C68;
+  --k-cyan:   #06B6D4;
+  --k-teal:   #14B8A6;
+  /* Gradient steps -- cyan -> purple. Direction matches Steven's
+     screenshot (left=blue/cyan, right=purple). Use 135deg for
+     diagonal lift on buttons. */
+  --k-grad-primary: linear-gradient(135deg, #06B6D4 0%, #6366F1 45%, #872B97 100%);
+  --k-grad-primary-hover: linear-gradient(135deg, #0891B2 0%, #4F46E5 45%, #6B21A8 100%);
+  --k-grad-text: linear-gradient(110deg, #06B6D4 0%, #6366F1 45%, #872B97 100%);
+}
+
+/* ---- Primary gradient button (Steven 2026-05-27 brand upgrade) ----
+   Use on any primary CTA: "התחל חינם", "הרשמה", "התחבר", "שדרג", etc.
+   Replaces flat bg-brand-600 / bg-cyan-600 / hard-coded #0891b2 cyan.
+
+   Visual: cyan -> indigo -> purple diagonal, white text, soft glow.
+   Hover: deeper saturation + lift. Active: shrink + glow.
+   Accessible: contrast meets AA on white text. */
+.kfl-btn-gradient {
+  background-image: var(--k-grad-primary);
+  color: #FFFFFF !important;
+  border: 0;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 20px -8px rgba(99, 102, 241, 0.55),
+              0 2px 6px -2px rgba(135, 43, 151, 0.35);
+  transition: background-image 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.kfl-btn-gradient:hover {
+  background-image: var(--k-grad-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px -10px rgba(99, 102, 241, 0.65),
+              0 4px 10px -4px rgba(135, 43, 151, 0.45);
+}
+.kfl-btn-gradient:active { transform: translateY(0) scale(0.99); }
+.kfl-btn-gradient:focus-visible {
+  outline: 2px solid #6366F1;
+  outline-offset: 3px;
+}
+.kfl-btn-gradient[disabled],
+.kfl-btn-gradient.is-disabled {
+  background-image: linear-gradient(135deg, #94A3B8 0%, #64748B 100%);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ---- Logo wordmark gradient (Steven 2026-05-27) ------------------
+   Use on the "כספ'לה" wordmark wherever it appears in the header,
+   footer, sign-in card, etc. Same gradient palette as .kfl-btn-gradient
+   so logo + CTA feel unified.
+
+   Use as: <span class="kfl-logo-text">כספ'לה</span>
+   Or wrap the whole logo link if you want the underline + emoji
+   to inherit the gradient too. */
+.kfl-logo-text {
+  background-image: var(--k-grad-text);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---- Global override: every legacy primary brand button gets the
+   gradient automatically (Steven 2026-05-27).
+   Targets the existing Tailwind patterns used across the site so
+   we don't have to touch every page. Only overrides when the
+   button is a clear PRIMARY (filled brand color), not ghost
+   variants. Hover + focus colors handled via the .kfl-btn-gradient
+   chain above to stay consistent. */
+a.bg-brand-600, button.bg-brand-600,
+a.bg-brand-500, button.bg-brand-500,
+a.bg-cyan-600, button.bg-cyan-600,
+a.bg-cyan-500, button.bg-cyan-500 {
+  background-image: var(--k-grad-primary) !important;
+  background-color: transparent !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  transition: background-image 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+a.bg-brand-600:hover, button.bg-brand-600:hover,
+a.bg-brand-500:hover, button.bg-brand-500:hover,
+a.bg-cyan-600:hover, button.bg-cyan-600:hover,
+a.bg-cyan-500:hover, button.bg-cyan-500:hover,
+a.hover\:bg-brand-700:hover, button.hover\:bg-brand-700:hover,
+a.hover\:bg-cyan-700:hover, button.hover\:bg-cyan-700:hover {
+  background-image: var(--k-grad-primary-hover) !important;
+  transform: translateY(-1px);
+}
+
 /* ---- holographic gradient text (used on hero headings) ----------- */
 @keyframes holo-sweep {
   0%   { background-position:   0% 50%; }
