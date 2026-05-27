@@ -72,6 +72,22 @@ async function handlerImpl(req, res) {
     return res.status(404).json({ ok: false, error: 'no_sheet_for_user' });
   }
 
+  // PR-S2 (2026-05-27 security audit H1): tenant-isolation guard.
+  // Same shape as api/sheet/append.js:124-132. Aborts BEFORE deleting if the
+  // phone-record's cached sheet id disagrees with the canonical sheet:{userSub}.
+  // Without this guard, a stale/poisoned phone-record sheet pointer could
+  // route a DELETE call to the wrong tenant's sheet.
+  const sheetRec = await kvGet('sheet:' + phoneRec.userSub);
+  const canonicalSheetId = sheetRec?.spreadsheetId || null;
+  const phoneSheetId = phoneRec.spreadsheetId || null;
+  if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
+    log.error('delete_last.sheet_ownership_mismatch', {
+      reqId: req.reqId, phone, userSub: phoneRec.userSub,
+      phoneRecordSheet: phoneSheetId, canonicalSheet: canonicalSheetId,
+    });
+    return res.status(409).json({ ok: false, error: 'sheet_ownership_mismatch' });
+  }
+
   // Decrypt + mint access token.
   let refreshToken = null;
   if (userRecord.refreshTokenEnvelope) {

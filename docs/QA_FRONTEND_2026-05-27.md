@@ -13,20 +13,18 @@ The site is structurally healthy: every page has correct charset, viewport, titl
 
 ## High (broken UX, not a blocker)
 
-3. **Header "המוצר" dropdown contains only one item ("הדגמה חיה") on every page.** The HTML comments still list `<!-- 1. המוצר -->` then jump to `<!-- 3. מחירים -->` — item 2 was deleted but the comment numbering reveals the seam. Example: `start.html:96-104`, `install.html:83-91`, identical on `team.html`, `index.html`, others. A single-item dropdown is worse UX than just a top-level link.
-4. **"החברה" dropdown has trailing empty `<a>` slots (whitespace-only).** `start.html:131-135`, `install.html:118-122` — deleted links left two empty lines inside the dropdown div, causing visual padding gaps.
-5. **`/install` is orphaned from the public nav.** No page in the target set links to `/install` in the header, footer, or body. The page is only reachable via redirects (`/pwa`, `/app`, `/download`, `/install-app`). Either add it to the "המוצר" dropdown or remove it from sitemap.xml.
-6. **`team.html` footer omits `/team`, `/press`, `/en` self-references.** Compare `team.html:371-378` (has team/press/en) vs `start.html` footer — start.html and 404.html footers are missing the "החברה" + language column entirely. Inconsistent footer between pages.
-7. **`contact.html:200` shows "בקרוב" placeholder under "רשתות" social card.** It's a real placeholder ("we haven't opened social channels yet"), not test content, but as a 3rd of a 3-column contact grid it looks like a broken card next to the working WhatsApp and email cards.
-8. **`en.html:372` "Premium · coming soon" with a real price (₪29/mo) and full feature list.** English-speaking visitors see a paid plan that doesn't exist yet. Either ship the plan, hide the card, or change the badge.
+3. **"המוצר" dropdown has only one item on every page.** Source shows `<!-- 1. המוצר -->` jumping to `<!-- 3. מחירים -->` — item 2 was deleted. Example: `start.html:96-104`, `install.html:83-91`; same on `team.html`, `index.html`, all nav-bearing pages. A one-item dropdown is worse UX than a top-level link.
+4. **"החברה" dropdown has trailing empty `<a>` slots (whitespace-only).** Deleted links left two empty lines and visual padding gaps. `start.html:131-135`, `install.html:118-122`, plus sweep.
+5. **`/install` is orphaned from the public nav.** No target page links to `/install` in header, footer, or body. Only reachable via `/pwa`, `/app`, `/download`, `/install-app` redirects. Add to "המוצר" dropdown or drop from sitemap.xml.
+6. **Footers are inconsistent across pages.** `start.html` and `404.html` are missing the "החברה" + language column; `team.html` self-includes `/team`/`/press`/`/en` but other pages don't. Pick one footer.
+7. **`contact.html:200` shows "בקרוב" placeholder under "רשתות" card.** Real placeholder ("no social channels yet"), but as 1 of 3 contact cards next to working WhatsApp/email it reads as broken.
+8. **`en.html:371-380` "Premium · coming soon" shows a real price (₪29/mo) and full feature list.** English visitors see a paid plan that doesn't exist. Ship it, hide it, or change the badge.
 
 ## Medium (polish)
 
-9. **`account.html:341` and `account.html:417` have `href="#"`.** Both are runtime-populated by JS (`#link-wa-deeplink` and `#sheet-link`). Not a real bug, but if JS fails to load the user lands on `#` (no-op). Consider `href="javascript:void(0)"` or removing the href until JS runs.
-10. **`index.html:222`, `pricing.html:120`, `about.html:188`, `en.html:104`, `team.html:107`, `press.html:103` all set `color: white` in `<style>` blocks for badge text.** Each is layered on a colored gradient — safe — but the pattern is repeated 6 times instead of being in `/css/brand.css`.
-11. **`account.html:1192` placeholder text is `email@example.com`.** Acceptable convention, just noting it for the hardcoded-string scanner.
-12. **`404.html` has `<meta property="og:url" content="https://kesefle.com/" />`** pointing to homepage, not the actual 404 URL. Intentional per the comment on line 9-10, just confirming.
-13. **`account.html` uses inline `style="..."` extensively inside JS-generated HTML** (`account.html:1191-1192`, `account.html:1671`, etc.). Functions, but blocks future CSP tightening from `'unsafe-inline'`.
+9. **`account.html:341,417` use `href="#"`** — populated by JS at runtime. Not a bug, but if JS fails the user jumps to top. Use `javascript:void(0)` or strip until JS runs.
+10. **6 pages repeat `color: white` badge `<style>` blocks** instead of using `/css/brand.css`: `index.html:222`, `pricing.html:120`, `about.html:188`, `en.html:104`, `team.html:107`, `press.html:103`. All safe (layered on gradients).
+11. **`account.html` builds HTML strings with heavy inline `style="..."`** (e.g. `account.html:1191-1192,1671`). Works, but blocks future CSP tightening of `'unsafe-inline'`.
 
 ## Top 10 fixes to ship this week
 

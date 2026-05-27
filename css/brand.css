@@ -151,3 +151,86 @@ a.hover\:bg-cyan-700:hover, button.hover\:bg-cyan-700:hover {
 @media (prefers-reduced-motion: reduce) {
   .holo-text { animation: none !important; }
 }
+
+/* ====================================================================
+   PR-W3 (2026-05-27): Status-state chip palette.
+   Steven's brief: use the new palette as ACCENTS for state:
+     - red/pink   => urgent, error, high-risk
+     - orange     => warning, pending
+     - purple     => premium, pro, AI, insights
+     - emerald    => success, ok, healthy
+     - cyan/teal  => info, neutral-positive (already the brand primary)
+     - slate      => neutral, default
+   These chip utilities work site-wide (.html + admin + dashboard) so
+   "Pro" / "תקוע" / "מסוכן" / "תקציב ירוק" all render with consistent
+   visual weight + dark-mode-aware contrast.
+
+   Usage:
+     <span class="kfl-chip kfl-chip-premium">Pro</span>
+     <span class="kfl-chip kfl-chip-warn">תקוע 7 ימים</span>
+     <span class="kfl-chip kfl-chip-danger">חריגה</span>
+     <span class="kfl-chip kfl-chip-success">במסלול</span>
+     <span class="kfl-chip kfl-chip-info">מידע</span>
+     <span class="kfl-chip kfl-chip-neutral">לא ידוע</span>
+
+   Pair with .kfl-status-dot inside the chip for a colored dot:
+     <span class="kfl-chip kfl-chip-success">
+       <span class="kfl-status-dot"></span> במסלול
+     </span>
+   ==================================================================== */
+.kfl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.kfl-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Success / OK / healthy — emerald */
+.kfl-chip-success { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+html.dark .kfl-chip-success { background: rgba(4,120,87,0.18); color: #6EE7B7; border-color: rgba(167,243,208,0.35); }
+
+/* Warning / pending / attention — orange (Steven palette #FF7130) */
+.kfl-chip-warn { background: #FFF7ED; color: #C2410C; border-color: #FED7AA; }
+html.dark .kfl-chip-warn { background: rgba(255,113,48,0.18); color: #FDBA74; border-color: rgba(254,215,170,0.35); }
+
+/* Danger / urgent / error / high-risk — red/pink (Steven palette #FF3C68) */
+.kfl-chip-danger { background: #FFF1F2; color: #BE123C; border-color: #FECDD3; }
+html.dark .kfl-chip-danger { background: rgba(255,60,104,0.18); color: #FDA4AF; border-color: rgba(254,205,211,0.35); }
+
+/* Premium / Pro / AI / insights — purple (Steven palette #872B97) */
+.kfl-chip-premium { background: #FAF5FF; color: #6B21A8; border-color: #E9D5FF; }
+html.dark .kfl-chip-premium { background: rgba(135,43,151,0.22); color: #D8B4FE; border-color: rgba(216,180,254,0.35); }
+
+/* Info / neutral-positive — cyan (Kesefle brand primary) */
+.kfl-chip-info { background: #ECFEFF; color: #0E7490; border-color: #A5F3FC; }
+html.dark .kfl-chip-info { background: rgba(14,116,144,0.18); color: #67E8F9; border-color: rgba(165,243,252,0.35); }
+
+/* Neutral / default / unknown — slate */
+.kfl-chip-neutral { background: #F8FAFC; color: #475569; border-color: #E2E8F0; }
+html.dark .kfl-chip-neutral { background: rgba(71,85,105,0.18); color: #CBD5E1; border-color: rgba(226,232,240,0.35); }
+
+/* Modifier: subtle gradient backdrop for premium chips on hero/CTAs.
+   Use sparingly -- it's eye-catching by design. */
+.kfl-chip-premium.kfl-chip-gradient {
+  background-image: linear-gradient(135deg, #FAF5FF 0%, #FCE7F3 100%);
+  color: #6B21A8;
+  border-color: #E9D5FF;
+}
+html.dark .kfl-chip-premium.kfl-chip-gradient {
+  background-image: linear-gradient(135deg, rgba(135,43,151,0.22) 0%, rgba(255,60,104,0.18) 100%);
+  color: #D8B4FE;
+}
