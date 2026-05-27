@@ -299,7 +299,21 @@ async function handlerImpl(req, res) {
   if (!userSub) return res.status(404).json({ ok: false, error: 'no_user' });
   const userRec = await kvGet('user:' + userSub);
   const sheetRec = await kvGet('sheet:' + userSub);
-  const spreadsheetId = sheetRec?.spreadsheetId || userRec?.spreadsheetId || null;
+
+  // PR-S2 (2026-05-27 security audit H1): tenant-isolation guard.
+  // Same shape as api/sheet/append.js:124-132. Aborts BEFORE writing if the
+  // phone-record's cached sheet id disagrees with canonical sheet:{userSub}.
+  const canonicalSheetId = sheetRec?.spreadsheetId || null;
+  const phoneSheetId = phoneRec.spreadsheetId || null;
+  if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
+    log.error('csv_import.sheet_ownership_mismatch', {
+      reqId: req.reqId, phone, userSub,
+      phoneRecordSheet: phoneSheetId, canonicalSheet: canonicalSheetId,
+    });
+    return res.status(409).json({ ok: false, error: 'sheet_ownership_mismatch' });
+  }
+
+  const spreadsheetId = canonicalSheetId || userRec?.spreadsheetId || null;
   if (!spreadsheetId) return res.status(404).json({ ok: false, error: 'no_sheet' });
   if (!userRec?.refreshTokenEnvelope && !userRec?.refreshToken) {
     return res.status(409).json({ ok: false, error: 'reauth_required' });
