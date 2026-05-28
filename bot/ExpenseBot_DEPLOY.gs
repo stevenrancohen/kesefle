@@ -93,7 +93,12 @@
 // ⚙️ הגדרות - מלא את הערכים האלה לפני פרסום
 // ============================================================
 
-const SHEET_ID = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
+// 2026-05-28 Phase 1 Migration: Steven approved switching the bot's owner
+// write target from OLD sheet (1UKrXDk...) to NEW Kesefle sheet (1rtiPQs1...).
+// After this paste, every owner-path bot write lands in NEW. Tenant writes
+// (per-user sheets) are unaffected — they route through /api/sheet/append.
+// Rollback: change back to '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo'.
+const SHEET_ID = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
 const COMPANY_SHEET_ID = SHEET_ID;
 // ── SECURITY — owner of the hardcoded SHEET_ID above ──────────────────
 // The legacy single-tenant code in this file writes DIRECTLY to SHEET_ID
@@ -129,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-bot-loop-order-echo';
+const KFL_BUILD_VERSION = '2026-05-28-migration-phase-1-new-sheet';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
