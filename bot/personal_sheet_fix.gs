@@ -36,7 +36,10 @@
 // don't collide with the bot's own globals when Steven pastes this file
 // into the bot's Apps Script project. (The bot already declares
 // `const _PSF_ORDERS_TAB_`, which used to cause a SyntaxError on load.)
-var _PSF_SHEET_ID_       = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
+// 2026-05-28 Phase 1 Migration: swap dashboard-repair target to NEW Kesefle
+// sheet (alongside bot/ExpenseBot_FIXED.gs SHEET_ID swap). Rollback: change
+// back to '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo'.
+var _PSF_SHEET_ID_       = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
 
 var _PSF_TX_TAB_         = 'תנועות';
 var _PSF_ORDERS_TAB_     = 'הזמנות';
