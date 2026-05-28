@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-b1-income-flag-fix';
+const KFL_BUILD_VERSION = '2026-05-28-b1-b2-combined';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2743,9 +2743,19 @@ var _ORDER_MATERIALS_ = ['קנבס','בד','נייר','אקריליק','עץ','�
 function parseBusinessOrder_(text) {
   if (!text) return null;
   var s = String(text).trim();
-  // Must start with the עסק / biz prefix; otherwise treat as personal.
-  if (!/^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s)) return null;
-  s = s.replace(/^(עסק|biz|business)\s*[:\-]?\s*/i, '');
+  // Must start with the עסק / עסקה / עסקת / biz / business prefix;
+  // otherwise treat as personal.
+  //
+  // 2026-05-28 B2 fix (PR audit Agent 4): also accept "עסקה" (deal) and
+  // "עסקת" (construct state) — Steven naturally writes
+  //   "עסקה יוסי הכנסה 10000 עובדים 2500 חומרים 1200"
+  // which was silently dropped by the old prefix regex because the
+  // lookahead required a non-Hebrew-letter immediately after "עסק"
+  // (so the ה or ת suffix failed the test).
+  // ORDER MATTERS: עסקה / עסקת before עסק so the longer prefix matches
+  // first and gets stripped fully.
+  if (!/^(עסקה|עסקת|עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s)) return null;
+  s = s.replace(/^(עסקה|עסקת|עסק|biz|business)\s*[:\-]?\s*/i, '');
 
   function _num(re) {
     var m = s.match(re);
