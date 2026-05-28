@@ -94,8 +94,14 @@ assert(setValuesInsideApply >= 2,
 console.log('\nDedupe (idempotent re-runs):');
 assert(/function _mig_txKey_\(row\)/.test(SRC),
   '_mig_txKey_(row) deterministic key for תנועות rows');
-assert(/function _mig_orderKey_\(row\)/.test(SRC),
-  '_mig_orderKey_(row) deterministic key for orders');
+assert(/function _mig_orderKey_\(row, shape\)/.test(SRC),
+  '_mig_orderKey_(row, shape) deterministic key, shape-aware (no schema-mismatch dupes on re-run)');
+assert(/_mig_orderKey_\([^,]+,\s*['"]new['"]\)/.test(SRC),
+  'existing NEW rows read with shape="new" (12-col schema)');
+assert(/_mig_orderKey_\([^,]+,\s*['"]source['"]\)/.test(SRC),
+  'OLD source candidate rows read with shape="source" (4-element synth)');
+assert(/shape === ['"]new['"]/.test(SRC),
+  'shape="new" branch reads customer at row[2] / salePrice at row[6]');
 assert(/existingTxKeys\s*=\s*\{\}/.test(SRC),
   'Build existingTxKeys map from NEW תנועות');
 assert(/existingOrderKeys\s*=\s*\{\}/.test(SRC),
@@ -196,6 +202,30 @@ assert(/return \{[\s\S]{0,300}transactions:\s*\{[\s\S]{0,200}toMigrate:[\s\S]{0,
   'Returns { transactions: { toMigrate, skipped: {...} } }');
 assert(/orders:\s*\{[\s\S]{0,200}toMigrate:[\s\S]{0,200}skipped:/.test(SRC),
   'Returns { orders: { toMigrate, skipped: {...} } }');
+
+// ── Concurrent-run lock (self-check pass 2 hardening) ─────────────────
+console.log('\nConcurrent-run lock (APPLY only):');
+assert(/LockService\.getScriptLock\(\)/.test(SRC),
+  'APPLY mode acquires a script lock (works for standalone Apps Script — getDocumentLock returns null on standalone)');
+assert(!/LockService\.getDocumentLock\(\)/.test(SRC),
+  'No getDocumentLock — Steven\'s bot is standalone, not container-bound (the doc lock would be null)');
+assert(/tryLock\(30000\)/.test(SRC),
+  'Lock has 30s timeout (blocks if another run is in progress)');
+assert(/error:\s*['"]lock_held['"]/.test(SRC),
+  'Returns { error: "lock_held" } if another run is active (not silent corrupt)');
+assert(/releaseLock\(\)/.test(SRC),
+  'Lock released after APPLY completes (avoids orphan locks)');
+// DRY-RUN should NOT lock (it doesn't write, no need)
+const lockGuard = SRC.match(/var _migLock = null;[\s\S]{0,800}if \(applyMode\) \{[\s\S]{0,400}getScriptLock/);
+assert(lockGuard !== null,
+  'Lock acquisition is gated by `if (applyMode)` — dry-run never locks');
+
+// ── Raw-row sample in dry-run (self-check pass 2: verify col layout) ───
+console.log('\nRaw col-layout verification (dry-run dumps OLD מאזן חברה rows):');
+assert(/Raw sample of OLD מאזן חברה Q-AN/.test(SRC),
+  'Dry-run logs first 3 raw rows of OLD מאזן חברה Q-AN (Steven verifies layout)');
+assert(/for \(var rs = 0; rs < Math\.min\(3, compData\.length\)/.test(SRC),
+  'Raw sample loops first 3 rows (not just one)');
 
 // ── No SHEET_ID env-var override (Steven rule: explicit only) ──────────
 console.log('\nNo silent SHEET_ID override (explicit constants only):');

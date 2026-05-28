@@ -47,17 +47,32 @@ function _mig_txKey_(row) {
   return [dStr, amt, cat, sub, desc].join('|');
 }
 
-// Build dedupe key for an order row in NEW הזמנות (first 4 cols).
-// Schema (NEW): [תאריך, שם לקוח, גודל/תיאור, סכום, ...]
-// We also extend NEW הזמנות to 12 cols via migration to match the bot's
-// _writeOrderRow_ output (cols I-L = shipping/profit/source/status).
-function _mig_orderKey_(row) {
+// Build dedupe key for an order row.
+//
+// IMPORTANT — two row shapes exist:
+//   shape='new'   → NEW הזמנות full 12-col row written by _writeOrderRow_:
+//                   [date, month, customer, size, material, prodCost,
+//                    salePrice, shipping, profit, source, raw, status]
+//                   → customer at [2], salePrice at [6]
+//   shape='source' → synthesized OLD source candidate (4 elements):
+//                    [dateCell, customer, sizeDesc, salePrice]
+//                   → customer at [1], salePrice at [3]
+//
+// Reading the wrong index would let duplicates slip through on re-run,
+// so we make the shape explicit (no `row[1] || row[2]` fallbacks).
+function _mig_orderKey_(row, shape) {
   var d = row[0];
   var dStr = (d && d instanceof Date)
     ? Utilities.formatDate(d, 'Asia/Jerusalem', 'yyyy-MM-dd')
     : String(d || '').slice(0, 30);
-  var customer = String(row[1] || row[2] || '');
-  var amount = String(row[3] || row[6] || '');
+  var customer, amount;
+  if (shape === 'new') {
+    customer = String(row[2] || '');
+    amount   = String(row[6] || '');
+  } else { // 'source'
+    customer = String(row[1] || '');
+    amount   = String(row[3] || '');
+  }
   return [dStr, customer, amount].join('|');
 }
 
@@ -67,6 +82,24 @@ function _mig_scanAndOptionallyApply_(applyMode) {
   Logger.log('OLD: ' + _MIG_OLD_SHEET_ID_);
   Logger.log('NEW: ' + _MIG_NEW_SHEET_ID_);
   Logger.log('Version: ' + _MIG_VERSION_);
+
+  // Concurrent-run guard. Even though dedupe makes re-runs idempotent,
+  // two simultaneous APPLY runs could BOTH see the same OLD rows as "not in
+  // NEW yet" and both write them (commit happens at end of each). The lock
+  // serializes the critical section.
+  //
+  // Use getScriptLock (not getDocumentLock) — the bot's Apps Script is a
+  // standalone project (it calls SpreadsheetApp.openById), not container-
+  // bound. getDocumentLock() returns null for standalone scripts.
+  var _migLock = null;
+  if (applyMode) {
+    _migLock = LockService.getScriptLock();
+    if (!_migLock || !_migLock.tryLock(30000)) {
+      Logger.log('!! Another migration run is in progress — aborting (try again in a minute)');
+      return { error: 'lock_held' };
+    }
+    Logger.log('Acquired script lock (30s timeout); concurrent runs are blocked.');
+  }
 
   // ── Open both sheets ──
   var oldSS, newSS;
@@ -98,7 +131,7 @@ function _mig_scanAndOptionallyApply_(applyMode) {
     if (newOrdersLastRow > 1) {
       var newOrdersData = newOrdersSheet.getRange(2, 1, newOrdersLastRow - 1, Math.min(newOrdersSheet.getLastColumn(), 12)).getValues();
       for (var oi = 0; oi < newOrdersData.length; oi++) {
-        existingOrderKeys[_mig_orderKey_(newOrdersData[oi])] = true;
+        existingOrderKeys[_mig_orderKey_(newOrdersData[oi], 'new')] = true;
       }
     }
     Logger.log('NEW הזמנות: ' + Math.max(0, newOrdersLastRow - 1) + ' existing rows.');
@@ -157,6 +190,15 @@ function _mig_scanAndOptionallyApply_(applyMode) {
       var compData = oldCompany.getRange(1, 17, compLastRow, endCol - 16).getValues();
       // cols: Q=0, R=1, S=2, T=3, U=4, V=5, W=6, X=7, ...
 
+      // Dump first 3 RAW rows of Q-AN so Steven can verify the assumed
+      // col layout (Q=date, R=customer, S=size, T=prodCost, U=shipping,
+      // W=salePrice, X=profit). If the layout shifted in the real OLD
+      // sheet, the dry-run log will show it and we abort before APPLY.
+      Logger.log('Raw sample of OLD מאזן חברה Q-AN (first 3 rows, for layout verification):');
+      for (var rs = 0; rs < Math.min(3, compData.length); rs++) {
+        Logger.log('  row ' + (rs + 1) + ': ' + JSON.stringify(compData[rs]).slice(0, 300));
+      }
+
       for (var cr = 0; cr < compData.length; cr++) {
         var crow = compData[cr];
         var dateCell = crow[0];
@@ -181,7 +223,7 @@ function _mig_scanAndOptionallyApply_(applyMode) {
 
         // Dedupe against existing NEW הזמנות
         var orderKeyRow = [dateCell, customer, sizeDesc, saleNum];
-        var orderKey = _mig_orderKey_(orderKeyRow);
+        var orderKey = _mig_orderKey_(orderKeyRow, 'source');
         if (existingOrderKeys[orderKey]) { ordersSkipped.duplicate++; continue; }
 
         ordersToMigrate.push({
@@ -256,6 +298,11 @@ function _mig_scanAndOptionallyApply_(applyMode) {
   } else {
     Logger.log('\n=== DRY-RUN COMPLETE — your sheet was NOT modified ===');
     Logger.log('To apply: run APPLY_MIGRATE_RAW_NOW (zero-arg wrapper).');
+  }
+
+  // Release the lock if we held it (APPLY mode only)
+  if (_migLock) {
+    try { _migLock.releaseLock(); } catch (_lockErr) { /* ignore */ }
   }
 
   return {
