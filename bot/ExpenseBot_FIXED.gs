@@ -54,7 +54,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-order-parser-fix';
+const KFL_BUILD_VERSION = '2026-05-28-bot-loop-order-echo';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1382,6 +1382,15 @@ var _BOT_ECHO_REGEXES_ = [
   /^הודעה אוטומטית/,                          // hebrew "automatic message"
   /^בוט:?\s/,                                // "bot: ..."
   /^\[bot\]/i,
+  // 2026-05-28: order-confirmation reply patterns — added after Steven hit
+  // a bot-loop where the bot's own "✅ הזמנה נרשמה / 💰 מחזור: ₪850 / 🏭 עלות
+  // ייצור: ₪375 / 🚚 משלוח: ₪50 / 📈 רווח: ₪425" reply got fed back via
+  // Hermes/WhatsApp echo and re-parsed as a new expense ("850₪ unknown
+  // category"). Each pattern matches a line in the bot's OWN order reply.
+  /^\s*✅\s*הזמנה\s+נרשמה/,                  // order-confirmation header
+  /💰\s*מחזור:\s*₪?\d/,                       // gross revenue line in confirmation
+  /🏭\s*עלות\s+ייצור:\s*₪?\d/,                // production cost line
+  /📈\s*רווח:\s*₪?[-]?\d/,                    // profit line (allow negative for losses)
 ];
 
 function _looksLikeBotEcho_(text, interactive) {

@@ -61,6 +61,14 @@ expectTrue('הודעה אוטומטית: אני לא זמין', 'hebrew automate
 expectTrue('this is an automated reply', 'plain automated reply');
 expectTrue('I\'ll respond to your message when I return', 'auto-vacation');
 
+console.log('\n-- Order-confirmation echo (Steven\'s 2026-05-28 bug) --');
+expectTrue('✅ הזמנה נרשמה\n💰 מחזור: ₪850\n🏭 עלות ייצור: ₪375\n🚚 משלוח: ₪50\n📈 רווח: ₪425', 'full order confirmation echo (Steven\'s actual case)');
+expectTrue('✅ הזמנה נרשמה', 'just the order-confirmation header');
+expectTrue('💰 מחזור: ₪3,000', 'revenue line alone');
+expectTrue('🏭 עלות ייצור: ₪560', 'production cost line alone');
+expectTrue('📈 רווח: ₪1,940', 'profit line alone (positive)');
+expectTrue('📈 רווח: ₪-2,100', 'profit line alone (negative — loss month)');
+
 console.log('\n-- Real human messages (must NOT trigger) --');
 expectFalse('320 שיווק פייסבוק', 'normal expense message');
 expectFalse('42 קפה ארומה', 'normal cafe expense');
