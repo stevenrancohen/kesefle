@@ -129,7 +129,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-phase-a-v2-1-clar-resolver';
+const KFL_BUILD_VERSION = '2026-05-28-order-parser-fix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2750,9 +2750,29 @@ function parseBusinessOrder_(text) {
   // Steven uses them in practice. Order matters: specific multi-word
   // labels must come BEFORE the bare "עלות" fallback so we never
   // mistake "עלות מכירה 880" for productionCost=880.
-  var productionCost = _num(/(?:עלות\s+ייצור|עלות\s+יצור|עלות\s+מוצר|עלות\s+פריט|עלות\s+חומר|ייצור|יצור|production|עלות)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
-  var salePrice      = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירה|מחיר|sale)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
-  var shipping       = _num(/(?:דמי\s+משלוח|משלוח|שילוח|shipping)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  //
+  // 2026-05-28 expansion (Steven's actual messages):
+  //   productionCost: also accept bare "חומר גלם"/"חומרי גלם"/"חומרים" without
+  //                   the "עלות" prefix (he writes "חומר גלם 375", not "עלות
+  //                   חומר 375"). Also raw_materials English. The pattern
+  //                   allows up to 2 words between the keyword and the number
+  //                   so "עלות חומר גלם 0" still captures the 0.
+  //   salePrice: also accept "מכירת" (construct state — "מכירת תמונה 850"
+  //              is the natural Hebrew form). Allow up to 2 words between
+  //              "מכירת"/"מכירה" and the number.
+  //   shipping: also accept "משלוח והתקנה" / "משלוח והובלה" / "התקנה" — Steven
+  //             often groups shipping + install in one number. Allow up to 2
+  //             words between the keyword and the number.
+  // Non-greedy `{0,1}?` — try 0 skip-words FIRST, then 1. Greedy `{0,2}`
+  // captured the WRONG number when keywords stacked like "חומר גלם 375 משלוח 50"
+  // (was capturing 50 for productionCost because it skipped "375 משלוח").
+  var productionCost = _num(/(?:עלות\s+ייצור|עלות\s+יצור|עלות\s+מוצר|עלות\s+פריט|עלות\s+חומר(?:\s+גלם)?|חומרי?\s+גלם|חומרים|ייצור|יצור|raw\s+materials?|production|עלות)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  // Track salePrice provenance: a LABELED match counts as a field in
+  // fieldsFound; a bare-amount headline fallback does NOT (else every
+  // single-number message parses as a "rich order").
+  var salePriceLabeled = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירת|מכירה|מחיר|sold|sale)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  var salePrice      = salePriceLabeled;
+  var shipping       = _num(/(?:דמי\s+משלוח|משלוח\s+(?:והתקנה|והובלה|והתקנות)|משלוח|שילוח|התקנה|התקנות|shipping|delivery)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
 
   // Customer name: try the explicit label first ("שם לקוח X" / "לקוח X").
   var customer = _word(/(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s*([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,})|$)/i);
@@ -2808,13 +2828,17 @@ function parseBusinessOrder_(text) {
   // Only treat as a "rich order" when we got at least 2 distinct fields
   // beyond a bare amount. Otherwise the caller falls back to the existing
   // dropdown flow (which serves "עסק 24 שיווק" style messages).
+  // 2026-05-28: a LABELED salePrice ("מכירת תמונה 300") now counts as a
+  // field. Previously only counted if `headline !== salePrice`, which
+  // meant "מכירת תמונה 300 רווח נטו 300" (where salePrice == headline)
+  // didn't parse as an order.
   var fieldsFound = 0;
-  if (customer)       fieldsFound++;
-  if (size)           fieldsFound++;
-  if (material)       fieldsFound++;
-  if (productionCost) fieldsFound++;
-  if (shipping)       fieldsFound++;
-  if (salePrice && headline !== salePrice) fieldsFound++;
+  if (customer)         fieldsFound++;
+  if (size)             fieldsFound++;
+  if (material)         fieldsFound++;
+  if (productionCost)   fieldsFound++;
+  if (shipping)         fieldsFound++;
+  if (salePriceLabeled != null) fieldsFound++;
   if (fieldsFound < 2) return null;
 
   var profit = null;
@@ -7028,6 +7052,39 @@ function processExpense(text, fromPhone) {
     try {
       var __hP = JSON.parse(__hPRaw);
       var __nowSec = Math.floor(Date.now() / 1000);
+      if (__hP && __hP.expiresAt > __nowSec) {
+        // ───── SMART_PENDING HIJACK GUARD (2026-05-28) ─────
+        // If the new text is a fresh business-order message (starts with
+        // "עסק" + parseBusinessOrder_ returns a valid rich order), the
+        // user has abandoned the pending picker and started a new order.
+        // Drop the pending state + bypass the picker so processExpense's
+        // normal order-parse flow handles the new order.
+        //
+        // Steven's bug 2026-05-28: "עסק - מכירת תמונה 850 חומר גלם 375
+        // משלוח 50 רווח 425" got written as ₪300 (stale pending amount)
+        // under category "אריזה ומשלוח" because the substring picker
+        // matched "משלוח" in the new message to the old menu option.
+        var __hijackedByNewOrder = false;
+        try {
+          if (/^עסק\b/i.test(__hT) && typeof parseBusinessOrder_ === 'function') {
+            var __hijackOrder = parseBusinessOrder_(__hT);
+            if (__hijackOrder) {
+              __hProps.deleteProperty('smart_pending');
+              Logger.log('smart_pending-hijack: new עסק order detected — dropping pending state');
+              __hijackedByNewOrder = true;
+            }
+          }
+        } catch (__hijackErr) {
+          Logger.log('smart_pending-hijack err: ' + (__hijackErr && __hijackErr.message));
+        }
+        if (__hijackedByNewOrder) {
+          // Fall through to normal processing. __hIsBiz block below will
+          // call parseBusinessOrder_ again and route to _writeOrderRow_.
+          __hP = null;
+        }
+      }
+      // Re-check __hP after hijack — if it was cleared, skip the rest of
+      // the picker block.
       if (__hP && __hP.expiresAt > __nowSec) {
         if (/^(בטל|cancel)$/i.test(__hT)) {
           __hProps.deleteProperty('smart_pending');

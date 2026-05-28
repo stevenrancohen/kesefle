@@ -28,8 +28,12 @@ console.log('\nbot/test_phase_a_v2_uncertainty.js\n');
 // Build version
 console.log('Build version:');
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/phase-a-v2/.test(v || ''),
-  'KFL_BUILD_VERSION marks phase-a-v2 (currently: ' + v + ')');
+// Loosened from /phase-a-v2/ to date-prefix so subsequent PRs can rebump
+// the version freely. Same fix-class as test_pending_state_hijack.js
+// / test_trace_instrumentation.js. The structural assertions above are
+// what actually guard the fix.
+assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
+  'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
   'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 
