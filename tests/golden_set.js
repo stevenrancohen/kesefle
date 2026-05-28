@@ -138,6 +138,29 @@ const GOLDEN = [
   // ── הכנסות: income ──
   ['משכורת 12000', 'הכנסות'], ['הכנסה ממשכורת 9500', 'הכנסות'], ['בונוס 5000', 'הכנסות'],
 
+  // PR-B 2026-05-28 — "לימים" is Steven's actual typo of "לימודים" living
+  // in the OLD sheet's top-20 col E values (per docs section 3.2). Added
+  // as a CATEGORY_MAP keyword so future writes route to לימודים row.
+  ['לימים 400', 'הוצאות קבועות'],
+
+  // ── עסק: business (PR-B 2026-05-28 — canonical subs per docs section 4) ──
+  // After PR-B, CATEGORY_MAP business rows emit the EXACT subcategory the
+  // company dashboard SUMIFS expects, so a non-עסק-prefixed message that
+  // hits a business keyword classifies into category 'עסק' with the
+  // canonical sub. Top-of-category is 'עסק'; sub: assertions guard the
+  // canonical bucket name.
+  ['marketing 320', 'sub:עלות שיווק'],
+  ['advertising 500', 'sub:עלות שיווק'],
+  ['קמפיין 1200', 'sub:עלות שיווק'],
+  ['raw materials 900', 'sub:עלות חומרי גלם'],
+  ['חומרי גלם 1500', 'sub:עלות חומרי גלם'],
+  ['shipping 60', 'sub:משלוחים והתקנות'],
+  ['אריזה ומשלוח 90', 'sub:משלוחים והתקנות'],
+  ['saas 150', 'sub:הוצאות תפעוליות'],
+  ['vat payment 4500', 'sub:הוצאות תפעוליות'],
+  ['accountant 1500', 'sub:יועצים'],
+  ['רואה חשבון 800', 'sub:יועצים'],
+
   // ── DEFAULT: genuinely ambiguous → the bot SHOULD ask ──
   ['250', 'DEFAULT'], ['תשלום 500', 'DEFAULT'], ['העברה 1000', 'DEFAULT'],
   ['משהו 50', 'DEFAULT'], ['קניתי דברים 100', 'DEFAULT'], ['עוד הוצאה 30', 'DEFAULT'],

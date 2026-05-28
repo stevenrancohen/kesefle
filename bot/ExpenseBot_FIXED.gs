@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-pr-del-confirm-destructive-deletes';
+const KFL_BUILD_VERSION = '2026-05-28-pr-b-biz-canonical-subs';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -272,14 +272,30 @@ const CATEGORY_MAP = [
   // ===== BUSINESS (עסק) — English + Hebrew aliases, top of list so they
   // win priority. Subcategories match the short forms the dashboard
   // SUMIFS literally expects ("שיווק", "תפעוליות", etc.). =====
-  {"keywords":["marketing","advertising","ads","promotion","promo","branding","campaign","sponsored","influencer","social media ads","content marketing","email marketing","seo","sem","ppc","pr","press release","יחסי ציבור","קמפיין","פרסומת","קידום","שיווק","פרסום"],"category":"עסק","subcategory":"שיווק"},
-  {"keywords":["operations","operational","ops","admin","administrative","admin fee","running cost","overhead","operating expense","תפעול","תפעולי","הוצאות תפעוליות"],"category":"עסק","subcategory":"תפעוליות"},
-  {"keywords":["raw materials","materials","material","supplies","supply","inventory","stock","wholesale","ingredients","components","parts","חומרי גלם","חומר גלם","סחורה","מלאי","חומרים","רכש"],"category":"עסק","subcategory":"חומרי גלם"},
-  {"keywords":["shipping","delivery","courier","freight","logistics","packaging","packing","postage","fulfillment","משלוח","משלוחים","הובלה","אריזה","שילוח","אריזה ומשלוח"],"category":"עסק","subcategory":"משלוח"},
+  // 2026-05-28 PR-B (OLD->NEW sync): every business CATEGORY_MAP row now
+  // emits the CANONICAL subcategory string that the company dashboard's
+  // SUMIFS / wildcard criteria literally expect. Before this fix the
+  // bot wrote "שיווק" while the dashboard summed "*שיווק*" (worked, sort
+  // of), but anywhere else the canonical string "עלות שיווק" was needed
+  // -- _BIZ_DASH_SUBS lookups, the picker labels, the personal-sheet
+  // wildcards -- the short-form rows fell through to 0. The previous
+  // short forms ARE still routed via _BIZ_DASH_SUBS below, so legacy
+  // historical rows keep matching; new writes are canonical from here.
+  // See docs/BOT_TAXONOMY_RECONCILE_2026-05-28.md section 4 + 6.
+  {"keywords":["marketing","advertising","ads","promotion","promo","branding","campaign","sponsored","influencer","social media ads","content marketing","email marketing","seo","sem","ppc","pr","press release","יחסי ציבור","קמפיין","פרסומת","קידום","שיווק","פרסום"],"category":"עסק","subcategory":"עלות שיווק"},
+  {"keywords":["operations","operational","ops","admin","administrative","admin fee","running cost","overhead","operating expense","תפעול","תפעולי","הוצאות תפעוליות"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["raw materials","materials","material","supplies","supply","inventory","stock","wholesale","ingredients","components","parts","חומרי גלם","חומר גלם","סחורה","מלאי","חומרים","רכש"],"category":"עסק","subcategory":"עלות חומרי גלם"},
+  {"keywords":["shipping","delivery","courier","freight","logistics","packaging","packing","postage","fulfillment","משלוח","משלוחים","הובלה","אריזה","שילוח","אריזה ומשלוח"],"category":"עסק","subcategory":"משלוחים והתקנות"},
   {"keywords":["consultant","consulting","consultancy","advisor","advisory","freelancer","contractor","attorney","lawyer","accountant","cpa","bookkeeper","יועץ","יועצים","ייעוץ","רואה חשבון","עו\"ד","עורך דין","עורכי דין","מנהלת חשבונות","פרילנסר","ספק שירות"],"category":"עסק","subcategory":"יועצים"},
-  {"keywords":["software","saas","subscription tool","tool","app","application","license","software license","cloud service","אופיס","תוכנה","תוכנת חשבוניות","סאאס","רישיון","כלי עבודה"],"category":"עסק","subcategory":"תוכנות"},
-  {"keywords":["business equipment","office equipment","equipment","printer","scanner","laptop","monitor","desk","office chair","ציוד עסקי","ציוד למשרד","מדפסת","סורק","ציוד משרד"],"category":"עסק","subcategory":"ציוד עסקי"},
-  {"keywords":["business tax","corporate tax","vat","vat payment","income tax","tax payment","sales tax","מע\"מ","מעמ","תשלום מעמ","מס הכנסה עסקי","מסי עסק","ביטוח לאומי עצמאי"],"category":"עסק","subcategory":"מיסים"},
+  // Software / equipment / business taxes all roll into תפעוליות in
+  // Steven's commerce-business taxonomy (Pa'amonim-style, but with biz
+  // overhead bucketed flat rather than further split). The dashboard
+  // has a single "הוצאות תפעוליות" row that the wildcard *תפעולי* + the
+  // exact-match exceptions "תוכנות","ציוד עסקי","מיסים" all sum into;
+  // emitting the canonical name makes the SUMIFS even simpler.
+  {"keywords":["software","saas","subscription tool","tool","app","application","license","software license","cloud service","אופיס","תוכנה","תוכנת חשבוניות","סאאס","רישיון","כלי עבודה"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["business equipment","office equipment","equipment","printer","scanner","laptop","monitor","desk","office chair","ציוד עסקי","ציוד למשרד","מדפסת","סורק","ציוד משרד"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["business tax","corporate tax","vat","vat payment","income tax","tax payment","sales tax","מע\"מ","מעמ","תשלום מעמ","מס הכנסה עסקי","מסי עסק","ביטוח לאומי עצמאי"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["revenue","sale","sales","income payment","customer payment","invoice paid","order received","קבלת תשלום","תשלום לקוח","הזמנה","מחזור","מכירה","מכירות","ssayhe"],"category":"עסק","subcategory":"מחזור","isIncome":true},
 
   // ===== FAMILY + KIDS + BABY (expanded 2026-05-24 per Steven's request) =====
@@ -390,7 +406,12 @@ const CATEGORY_MAP = [
   {"keywords":["epic games","fortnite","gaming","nintendo","playstation","ps plus","ps5","steam","xbox","פלייסטיישן","פלייסטישן"],"category":"הוצאות קבועות","subcategory":"פלייסטיישן"},
   {"keywords":["lotto","הגרלה","חיש גד","לוטו","מפעל הפיס","פיס"],"category":"שונות ואחרים","subcategory":"לוטו"},
   {"keywords":["אפולו"],"category":"הוצאות קבועות","subcategory":"אפולו"},
-  {"keywords":["coursera","edx","udemy","אוניברסיטה","חוברת לימוד","לימודים","מודל","מורה פרטי","מכללה","משכן הסטודנט","ספרי לימוד","קורס","שיעור פרטי","שכר לימוד"],"category":"הוצאות קבועות","subcategory":"לימודים"},
+  // PR-B 2026-05-28: added "לימים" -- Steven's OLD sheet (1UKr...) has
+  // this typo of "לימודים" appearing in the top-20 col E values per docs
+  // BOT_TAXONOMY_RECONCILE_2026-05-28.md section 3.2. Adding it as a
+  // keyword makes the bot file new "לימים" inputs into the dashboard's
+  // לימודים row instead of the catch-all שונות.
+  {"keywords":["coursera","edx","udemy","אוניברסיטה","חוברת לימוד","לימודים","לימים","מודל","מורה פרטי","מכללה","משכן הסטודנט","ספרי לימוד","קורס","שיעור פרטי","שכר לימוד"],"category":"הוצאות קבועות","subcategory":"לימודים"},
   {"keywords":["אישי"],"category":"שונות ואחרים","subcategory":"אישי"},
   {"keywords":["gift","מתנה","מתנות","צדקה","תרומה"],"category":"שונות ואחרים","subcategory":"מתנות"},
   {"keywords":["אירוע","בר מצווה","בת מצווה","חתונה","יום הולדת"],"category":"שונות ואחרים","subcategory":"אירועים"},
@@ -10997,14 +11018,57 @@ function syncEverything() {
   return summary.join(' | ');
 }
 
+// 2026-05-28 PR-B: expanded to cover every short-form subcategory the
+// bot used to emit (pre-PR-B CATEGORY_MAP) PLUS the historical
+// vocabulary Steven's OLD sheet (1UKr...) has on file. Each row is
+// mapped to one of the FOUR canonical dashboard buckets the company
+// SUMIFS literally compares against (per docs section 4):
+//   - עלות חומרי גלם   (raw materials)
+//   - עלות שיווק       (marketing)
+//   - משלוחים והתקנות   (shipping + install)
+//   - הוצאות תפעוליות   (operations, the catch-all for ops cost)
+// יועצים is its OWN dashboard row in Steven's template -> override stays
+// as 'יועצים' (was 'הוצאות תפעוליות' pre-PR-B; the docs reconcile flagged
+// this as a known bug).
+//
+// _normalizeBizSub_ is called by _updateBusinessDashboard_ (value-write
+// path); after PR-B's CATEGORY_MAP changes the matchCategory path also
+// emits canonical names so the lookup is a no-op for new rows -- this
+// table primarily catches historical migration rows + any custom user
+// input the picker reroutes manually.
 var _BIZ_DASH_SUBS = {
+  // Already-canonical names (idempotent)
   'מחזור': 'מחזור',
   'עלות חומרי גלם': 'עלות חומרי גלם',
   'עלות שיווק': 'עלות שיווק',
-  'שיווק': 'עלות שיווק',
   'משלוחים והתקנות': 'משלוחים והתקנות',
   'הוצאות תפעוליות': 'הוצאות תפעוליות',
-  'יועצים': 'הוצאות תפעוליות',
+  'יועצים': 'יועצים',
+  // Raw materials variants from CATEGORY_MAP pre-PR-B + OLD sheet history
+  'חומרי גלם': 'עלות חומרי גלם',
+  'חומרים': 'עלות חומרי גלם',
+  'חומר גלם': 'עלות חומרי גלם',
+  'רכש': 'עלות חומרי גלם',
+  'מלאי': 'עלות חומרי גלם',
+  'סחורה': 'עלות חומרי גלם',
+  // Marketing variants
+  'שיווק': 'עלות שיווק',
+  'פרסום': 'עלות שיווק',
+  'קמפיין': 'עלות שיווק',
+  // Shipping + install variants
+  'משלוח': 'משלוחים והתקנות',
+  'משלוחים': 'משלוחים והתקנות',
+  'אריזה': 'משלוחים והתקנות',
+  'אריזה ומשלוח': 'משלוחים והתקנות',
+  'הובלה': 'משלוחים והתקנות',
+  'התקנה': 'משלוחים והתקנות',
+  'התקנות': 'משלוחים והתקנות',
+  // Operations variants (everything-else-overhead)
+  'תפעוליות': 'הוצאות תפעוליות',
+  'תפעול': 'הוצאות תפעוליות',
+  'תוכנות': 'הוצאות תפעוליות',
+  'ציוד עסקי': 'הוצאות תפעוליות',
+  'מיסים': 'הוצאות תפעוליות',
   'אחר': 'הוצאות תפעוליות',
   'שונות': 'הוצאות תפעוליות',
   'שונות עסק': 'הוצאות תפעוליות'
