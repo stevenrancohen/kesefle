@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-migration-phase-1-new-sheet';
+const KFL_BUILD_VERSION = '2026-05-28-pr-del-confirm-destructive-deletes';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -7212,6 +7212,57 @@ function processExpense(text, fromPhone) {
   }
 
   const trimmed = text.trim().toLowerCase();
+
+  // ─── PR-DEL — destructive-delete confirmation interceptor ───
+  // Monday QA Critical 2944130802: previously "מחק"/"מחק הזמנה" deleted
+  // immediately with no confirm. Now the delete command STAGES a pending
+  // delete (delPend:{phone} PropertiesService key, 60s TTL) and the actual
+  // delete only happens on a subsequent "אישור" message within 60s.
+  // Anything else clears the pending state.
+  try {
+    var __dpFromClean = String(fromPhone || '').replace(/\D/g, '');
+    if (__dpFromClean) {
+      var __dpKeyCheck = 'delPend:' + __dpFromClean;
+      var __dpProps = PropertiesService.getScriptProperties();
+      var __dpRaw = __dpProps.getProperty(__dpKeyCheck);
+      if (__dpRaw) {
+        try {
+          var __dpState = JSON.parse(__dpRaw);
+          var __dpAge = Date.now() - (__dpState && __dpState.ts || 0);
+          // Hard TTL — 60s. Beyond that, treat as expired even if state lingers.
+          if (__dpAge > 60000) {
+            __dpProps.deleteProperty(__dpKeyCheck);
+            Logger.log('PR-DEL: delPend expired (>60s), cleared');
+          } else if (/^(?:אישור|אישוּר|כן|yes|confirm)$/.test(text.trim())) {
+            // Confirmed — perform the actual delete + clear state.
+            __dpProps.deleteProperty(__dpKeyCheck);
+            var __dpKind = __dpState && __dpState.kind;
+            Logger.log('PR-DEL: confirmed delete kind=' + __dpKind);
+            if (__dpKind === 'order') {
+              return { reply: deleteLastOrder() };
+            }
+            if (__dpKind === 'tx') {
+              return { reply: deleteLastTransaction() };
+            }
+            return { reply: '😬 משהו השתבש באישור המחיקה. נסה שוב.' };
+          } else {
+            // User sent anything else — cancel the pending delete cleanly.
+            __dpProps.deleteProperty(__dpKeyCheck);
+            Logger.log('PR-DEL: delPend cancelled by non-confirm reply');
+            // Fall through to normal processing (don't return — user may have
+            // sent a new command/expense, not just a cancel).
+          }
+        } catch (__dpJsonErr) {
+          // Corrupted state — clear it and fall through.
+          __dpProps.deleteProperty(__dpKeyCheck);
+          Logger.log('PR-DEL: delPend JSON err: ' + __dpJsonErr.message);
+        }
+      }
+    }
+  } catch (__dpHookErr) {
+    Logger.log('PR-DEL: hook err (non-fatal): ' + (__dpHookErr && __dpHookErr.message));
+  }
+
   // Self-check: confirms which build is live + whether the Gemini key is visible.
   if (trimmed === 'בדיקה' || trimmed === 'diag' || trimmed === 'דיבאג') {
     var _hasGem = false, _hasSecret = false, _gemOk = false;
@@ -7397,7 +7448,21 @@ function processExpense(text, fromPhone) {
     return { reply: getOrdersSummary() };
   }
   if (trimmed === 'מחק הזמנה' || trimmed === 'מחק הזמנה אחרונה' || trimmed === 'undo order') {
-    return { reply: deleteLastOrder() };
+    // PR-DEL — two-step confirm (Monday QA Critical 2944130802)
+    // Stage the pending delete; the actual delete happens when the user
+    // replies "אישור" within 60s. Caught by the delPend hook in doPost
+    // (added in the same PR, scans BEFORE the command parser).
+    try {
+      var __dpKey = 'delPend:' + String(fromPhone || '').replace(/\D/g, '');
+      PropertiesService.getScriptProperties().setProperty(__dpKey, JSON.stringify({
+        kind: 'order',
+        ts: Date.now()
+      }));
+    } catch (__delErr) { Logger.log('delPend save err: ' + __delErr.message); }
+    return { reply:
+      '⚠️ למחוק את ההזמנה האחרונה מהגיליון?\n' +
+      'שלח "אישור" תוך 60 שניות כדי לאשר, או כל הודעה אחרת לביטול.'
+    };
   }
   if (trimmed === 'סנכרן' || trimmed === 'sync') {
     try { var s = syncEverything(); return { reply: '✅ סונכרן: ' + s }; }
@@ -7416,7 +7481,19 @@ function processExpense(text, fromPhone) {
     catch (e) { return { reply: '😬 משהו השתבש בבנייה מחדש: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?' }; }
   }
   if (trimmed === 'מחק אחרון' || trimmed === 'undo') {
-    return { reply: deleteLastTransaction() };
+    // PR-DEL — two-step confirm (Monday QA Critical 2944130802)
+    // Stage the pending delete; "אישור" within 60s triggers actual delete.
+    try {
+      var __dpKey2 = 'delPend:' + String(fromPhone || '').replace(/\D/g, '');
+      PropertiesService.getScriptProperties().setProperty(__dpKey2, JSON.stringify({
+        kind: 'tx',
+        ts: Date.now()
+      }));
+    } catch (__delErr2) { Logger.log('delPend save err: ' + __delErr2.message); }
+    return { reply:
+      '⚠️ למחוק את התנועה האחרונה מהגיליון?\n' +
+      'שלח "אישור" תוך 60 שניות כדי לאשר, או כל הודעה אחרת לביטול.'
+    };
   }
   if (trimmed === 'מנוע' || trimmed === 'engine' || trimmed === 'status' || trimmed === 'stats') {
     return { reply: getEngineStatus() };
