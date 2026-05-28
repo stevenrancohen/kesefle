@@ -125,10 +125,12 @@ assert(/__hP = null/.test(SRC),
 // ───── Build version ─────
 console.log('\nBuild version:');
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/order-parser-fix/.test(v || ''),
-  'KFL_BUILD_VERSION marks order-parser-fix (currently: ' + v + ')');
+// Loosened from /order-parser-fix/ literal to date-prefix so subsequent
+// PRs can rebump the version freely. Same fix-class as
+// test_pending_state_hijack.js. The structural assertions above are
+// what actually guard the order-parser fix.
 assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
-  'KFL_BUILD_VERSION is date-stamped');
+  'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 
 console.log('');
 if (failures.length) {
