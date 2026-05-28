@@ -379,3 +379,73 @@ Steven's CI was throttled (intermittent account-suspension on GitHub Actions run
 4. **Pick xlsx option A / B / C** per `docs/XLSX_DIAGNOSIS_2026_05_26.md` (recommend A — zero effort).
 5. **Answer the 5 questions** at the bottom of `docs/SMART_BUDGET_GOALS_DESIGN.md` so PR-1 (data + commands) can open.
 6. **(Optional)** Merge #70 (rate limits) — security hardening, no behavior change.
+
+---
+
+## Session 2026-05-27 → 2026-05-28 — Phase A v2 + dashboard incident + recovery
+
+A long session with a real production incident (PR #114 wiped Steven's dashboard, restored from backup). Mixed results — some genuine wins, one ugly mistake, lots of process improvements.
+
+### What shipped (5 PRs merged + 2 closed/redesign)
+
+**Merged ✅**:
+- **#108** — `docs/APP_STRATEGY_WHATSAPP_PLUS_APP.md` — one-page strategy: WhatsApp stays input, dashboard becomes correction layer, PWA over native app.
+- **#109** — skill `honest-counter-opinion` — push-back-on-external-plans pattern.
+- **#110** — `docs/SHEET_AND_DASHBOARD_STRATEGY.md` — companion strategy reconciling morning vs evening asks.
+- **#111** — skill `reconcile-conflicting-strategy` — table-not-silent-override pattern.
+- **#112** — Phase A v2: bot uncertainty guards + diaper LLM examples + עסק-N structural guards. Live test passed for diaper classification. 412 LOC added.
+- **#113** — Phase A v2.1: pending-clarification resolver fix. "עסק 1 - 35 הוצאות שיווק" reply now routes correctly to expense write instead of being re-parsed as a tab-creation command. Live test passed.
+
+**Closed without merge ❌**:
+- **#114** — Phase A v2.2 dashboard repair. **CRITICAL INCIDENT**: APPLY zeroed 4 years of Steven's historical revenue + order data because my new formula builder pointed all metrics to `תנועות` instead of the dual-source architecture (`הזמנות` for revenue, `תנועות` for bot expenses). Steven restored from backup. Closed PR with full analysis. Redesign tracked in [Monday 2945153160](https://kesefle.monday.com/boards/5097200701/pulses/2945153160).
+
+**Open (doc-only)**:
+- **#115** — skill `verify-data-sources-before-formula-repair` — captures the lesson from #114.
+
+### The dashboard incident — what went wrong + what we learned
+
+I assumed `תנועות` was the single source-of-truth tab for all metrics. Actually:
+- `הזמנות` (orders tab) is the source for revenue + per-order detail
+- `תנועות` (transactions tab) is the bot's WhatsApp expense writes
+
+The existing `_buildRevenueFormulas_` in `personal_sheet_fix.gs` already used `_PSF_ORDERS_TAB_ = 'הזמנות'` correctly. I ignored it and wrote a "cleaner" replacement that broke everything.
+
+**3 new process rules saved to memory**:
+1. `feedback-two-source-tabs-revenue-vs-expenses` — Steven's data architecture has TWO source tabs, never assume one.
+2. `feedback-audit-agents-verify-before-fix` — All 7 findings from this session's background audit agent were false positives. Verify every audit finding against actual code at the cited line before any fix.
+3. `feedback-monday-move-completed` — Reinforced: always sync Monday subitem status to reality between turns.
+
+### Bot tests + QA
+
+- 18/18 bot tests passing (added `test_phase_a_v2_uncertainty.js` with 41 assertions, `test_dashboard_repair.js` with 52 assertions before PR #114 was reverted)
+- 118/118 offline full_qa checks passing
+- Relaxed 2 brittle hardcoded-version test assertions (same fix-class as `test_pending_state_hijack.js` earlier)
+
+### Skills added this session
+
+1. `monday-sync-at-turn-end` — end-of-turn workflow (Monday sync + new skill + next-stage tasks)
+2. `monday-feature-spec` — 7-section template for deferred Monday items
+3. `honest-counter-opinion` — push back on external plans
+4. `reconcile-conflicting-strategy` — table-not-silent-override pattern
+5. `verify-data-sources-before-formula-repair` — 3-step pre-flight before formula apply
+
+### Monday tasks queued (not started)
+
+- [2944947687](https://kesefle.monday.com/boards/5097200701/pulses/2944947687) — Sheet tab cleanup strategy (25 tabs, many duplicates)
+- [2945063597](https://kesefle.monday.com/boards/5097200701/pulses/2945063597) — Column H NULL backfill (older bot rows missing isExpense flag)
+- [2945153160](https://kesefle.monday.com/boards/5097200701/pulses/2945153160) — Dashboard repair redesign (per `docs/DASHBOARD_REPAIR_REDESIGN_v2.md`)
+- Plus the existing Bot uncertainty + Review Inbox + PWA MVP epic with 7 remaining subitems
+
+### Honest scope report
+
+- **Done well**: Phase A v2 + v2.1 (real bot bug fixes, live-tested, deployed by Steven)
+- **Done badly**: Phase A v2.2 dashboard repair (architectural assumption wrong, data temporarily destroyed, recovered from backup)
+- **Process improvements**: 5 new skills + 3 new memory rules to prevent the same mistakes
+- **Trust impact**: Steven explicitly told me to stop all feature work + verify everything. New rule: no formula apply without per-cell evaluated-value verification.
+
+### Next session priorities (when Steven says go)
+
+1. Verify dashboard fully recovered from backup (live bot test)
+2. Pick dashboard redesign Path A/B/C per `docs/DASHBOARD_REPAIR_REDESIGN_v2.md`
+3. If "hold" — move to deferred Phase A v2.5 (60s timeout + needs_review + correction-button-after-save)
+4. AI multi-model router only after both above are confirmed
