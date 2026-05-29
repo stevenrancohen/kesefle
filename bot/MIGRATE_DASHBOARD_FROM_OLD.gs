@@ -100,24 +100,63 @@ function _MDD_collectLabels_(sheet) {
     var a = String(values[r][0] == null ? '' : values[r][0]).trim();
     if (!a) continue;
     if (seen[a]) continue;
-    // Skip selector + headers.
+    // ---- Basic skips ----
     if (/^\d{4}$/.test(a)) continue;                            // bare year cell
     if (/^[A-Z]:\$?[A-Z]\$?\d+/.test(a)) continue;              // range refs
-    if (a.indexOf('===') !== -1) continue;                      // banners
+    if (a.indexOf('===') !== -1) continue;                      // banner === ... ===
     if (a.indexOf(_MDD_TOTAL_PREFIX_) === 0) continue;          // "סה"כ ..."
     if (a.indexOf('שנת ') === 0) continue;       // "שנת 2024" banner
-    // Skip month names (e.g. "אפריל" used as a header).
+    // ---- Metric / header / debug-label skips (Steven's DRY_RUN feedback 2026-05-29) ----
+    // These all appear as col-A labels but are computed metrics, section headers,
+    // or debug-only strings — never SUMIFS-able categories.
+    if (a.indexOf('Σ') !== -1) continue;                        // Σ summations / debug
+    if (a.indexOf('Δ') !== -1) continue;                        // Δ delta % labels
+    if (a.indexOf('==') !== -1) continue;                       // "X == annual" debug
+    if (a.charAt(a.length - 1) === ':') continue;               // ends with ":" → header
+    if (a.indexOf('%') !== -1) continue;                        // percent rows
+    // Hebrew metric/total phrases (substrings — catches with/without emoji prefix).
+    var metricNeedles = [
+      'סה״כ',          // total
+      'סה"כ',
+      'נטו שנתי',      // annual net
+      'רווח נטו',      // net profit
+      'מחזור',         // turnover/revenue
+      'הזמנה ממוצע',   // average order value
+      'מס׳ הזמנות',    // number of orders
+      'מס\' הזמנות',
+      'אחוז רווח',     // profit %
+      'שנה רווחית',    // most profitable year
+      'שנה עם',        // year with X
+      'שנה הכי',       // year with least X
+      'הגורם',         // "the main factor"
+      'המלצה',         // "the recommendation"
+      'גורם העיקרי',
+      'המלצה אופרטיב'
+    ];
+    var isMetric = false;
+    for (var mn = 0; mn < metricNeedles.length; mn++) {
+      if (a.indexOf(metricNeedles[mn]) !== -1) { isMetric = true; break; }
+    }
+    if (isMetric) continue;
+    // ---- Month name as header ----
     var isMonth = false;
     for (var m = 0; m < _MDD_MONTHS_.length; m++) {
       if (a === _MDD_MONTHS_[m]) { isMonth = true; break; }
     }
     if (isMonth) continue;
-    // Skip rows whose col B is neither a number nor a formula — those tend
-    // to be visual headers ("הוצאות", "הכנסות", etc.).
+    // ---- Col B must be a SUMIFS-style formula (categories) or a numeric value ----
     var bVal = values[r][1];
     var bFormula = '';
     try { bFormula = sheet.getRange(r + 1, 2).getFormula(); } catch (e) { bFormula = ''; }
     if (!bFormula && (bVal === '' || bVal === null)) continue;
+    if (bFormula) {
+      // Real category rows aggregate transactions — accept SUMIFS / SUMIF / SUMPRODUCT.
+      // Reject AVERAGE / RANK / IFS / INDEX / MAX / LARGE / TEXTJOIN — those are
+      // computed metrics, not category sums.
+      var fUpper = bFormula.toUpperCase();
+      var isCategoryFormula = /\b(SUMIFS|SUMIF|SUMPRODUCT)\s*\(/.test(fUpper);
+      if (!isCategoryFormula) continue;
+    }
     seen[a] = true;
     labels.push(a);
   }
