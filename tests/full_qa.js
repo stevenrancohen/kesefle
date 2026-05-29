@@ -217,12 +217,26 @@ ok('fresh sheet uses the 8-col תנועות headers (lock-step with buildExpense
    /TX_HEADERS/.test(SW) && /createUserSheetWithRefresh/.test(SW));
 ok('template recreates the 4 tabs (transactions + orders + personal + company dashboards)',
    /PERSONAL_DASHBOARD_TAB/.test(SW) && /COMPANY_DASHBOARD_TAB/.test(SW) && /ORDERS_TAB/.test(SW));
-ok('personal dashboard total ranges fixed (corrected from xlsx off-by-one)',
+// 2026-05-29 deep-review WS4: variable section grew 3 -> 4 rows (חופשות
+// added). Section-total ranges below 'סה״כ הוצאות זמניות' shift down by
+// one row, so the regression guard tracks the new positions.
+ok('personal dashboard total ranges match current row layout',
    /_personalSectionTotal\('סה״כ הוצאות קבועות', 16, 27\)/.test(SW)
-   && /_personalSectionTotal\('סה״כ הוצאות זמניות', 31, 33\)/.test(SW)
-   && /_personalSectionTotal\('סה״כ אוכל', 37, 38\)/.test(SW)
-   && /_personalSectionTotal\('סה״כ תחבורה', 42, 49\)/.test(SW)
-   && /_personalSectionTotal\('סה״כ שונות', 53, 57\)/.test(SW));
+   && /_personalSectionTotal\('סה״כ הוצאות זמניות', 31, 34\)/.test(SW)
+   && /_personalSectionTotal\('סה״כ אוכל', 38, 39\)/.test(SW)
+   && /_personalSectionTotal\('סה״כ תחבורה', 43, 50\)/.test(SW)
+   && /_personalSectionTotal\('סה״כ שונות', 54, 58\)/.test(SW));
+// WS4 additions: assert the three fixes ship together so a future refactor
+// that drops one of them flags here.
+ok('lib/sheet-writer.js has year-selector dataValidation helper',
+   /YEAR_SELECTOR_VALUES\s*=\s*\[\s*'2023'/.test(SW)
+   && /function _sw_yearSelector/.test(SW)
+   && /'ONE_OF_LIST'/.test(SW));
+ok("personal dashboard transport row uses 'אחזקת רכב' (matches bot CATEGORY_MAP)",
+   /PERSONAL_TRANSPORT_ROWS\s*=\s*\[[\s\S]*?'אחזקת רכב'[\s\S]*?\]/.test(SW)
+   && !/PERSONAL_TRANSPORT_ROWS\s*=\s*\[[\s\S]*?'תחזוקת רכב'[\s\S]*?\]/.test(SW));
+ok("personal dashboard variable rows include 'חופשות' as its own row",
+   /PERSONAL_VARIABLE_ROWS\s*=\s*\[[\s\S]*?'חופשות'[\s\S]*?\]/.test(SW));
 ok('appendRowToUserSheet writes to A:I (9 cols incl. VAT-deductible)',
    /'\$\{TX_TAB\}'!A:I/.test(SW));
 // P0 regression guard (2026-05-24): the spec sent to POST /v4/spreadsheets must
