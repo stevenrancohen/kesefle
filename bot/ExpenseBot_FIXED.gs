@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-pr-b-biz-canonical-subs';
+const KFL_BUILD_VERSION = '2026-05-28-b1-income-flag-fix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -682,6 +682,55 @@ const CATEGORY_MAP = [
 ];
 
 const DEFAULT_CATEGORY = { category: 'שונות ואחרים', subcategory: 'שונות', isIncome: false };
+
+/**
+ * _isIncomeCategory_ -- definitional fallback for income detection.
+ *
+ * BUGFIX B1 (2026-05-28, autonomous-audit Agent 4 finding): added so every
+ * appendRow site that writes to תנועות col H can derive isIncome from the
+ * matched category/subcategory even when the upstream matcher (legacy code
+ * paths, picker re-entries, AI fallbacks, historical learned-cache rows)
+ * didn't propagate the isIncome flag through its return value. CATEGORY_MAP
+ * keeps isIncome:true on income rows, but many code paths only read
+ * category/subcategory and drop the flag, so this function re-derives it
+ * from the categorical name.
+ *
+ * Income detection rules (in order):
+ *   1. category === 'הכנסות'   (all personal income subcategories)
+ *   2. category === 'עסק' AND subcategory === 'מחזור'
+ *                              (business revenue, the only income row in
+ *                              the company dashboard)
+ *
+ * Anything else returns false (expense). Returns a boolean, never undefined,
+ * so it's safe to invert with ! for col-H assignment.
+ */
+function _isIncomeCategory_(category, subcategory) {
+  var c = String(category || '').trim();
+  var s = String(subcategory || '').trim();
+  if (c === 'הכנסות') return true;
+  if (c === 'עסק' && s === 'מחזור') return true;
+  return false;
+}
+
+/**
+ * _resolveIsIncome_ -- single source of truth for "is this row income?".
+ *
+ * Combines three signals so every appendRow call site agrees:
+ *   1. Explicit matched.isIncome from the matcher (most reliable).
+ *   2. Raw user input starts with '+' (e.g. "+1500 משכורת" -- standard
+ *      Kesefle convention also used by _writeBusinessNExpense_).
+ *   3. Categorical fallback via _isIncomeCategory_ for any path that lost
+ *      the isIncome flag in transit (picker reply, learned cache, AI).
+ *
+ * Returns a boolean -- true for income, false for expense. Caller writes
+ * the inverse ( !resolveIsIncome(...) ) into col H of תנועות.
+ */
+function _resolveIsIncome_(matched, rawText, category, subcategory) {
+  if (matched && matched.isIncome) return true;
+  var s = String(rawText || '').trim();
+  if (s.charAt(0) === '+') return true;
+  return _isIncomeCategory_(category, subcategory);
+}
 
 /**
  * sanitizeForSheet — prevents formula injection when user-typed strings land in a cell.
@@ -2387,7 +2436,13 @@ function handleInteractiveReply_(fromPhone, interactive) {
     var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
     var category = decoded.category;
     var subcategory = decoded.subcategory;
-    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', true]);
+    // BUGFIX B1 (2026-05-28): the option id encoded by _encodeCategoryOptionId
+    // only carries category/subcategory/amount/textKey -- not isIncome -- so
+    // the picker-reply write previously hardcoded TRUE (expense). Re-derive
+    // isIncome from the chosen category + the pending raw text (which may
+    // start with '+') so income picks land FALSE in col H.
+    var __interIsInc = _resolveIsIncome_(null, (pending && pending.rawText) || '', category, subcategory);
+    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', !__interIsInc]);
     // Original-text cell note — capture the raw user message that triggered
     // this categorization (preserves provenance even after corrections).
     try {
@@ -7086,7 +7141,11 @@ function processExpense(text, fromPhone) {
               var __hPCategory = 'עסק';
               var __hPSubcategory = __hPicked.subcategory || 'תפעוליות';
               var __hPDesc = __hPicked.label || __hPSubcategory;
-              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', true]);
+              // BUGFIX B1 (2026-05-28): if the user's smart_pending pick is
+              // 'מחזור' (business revenue) or the raw input had '+', flip col
+              // H to FALSE (income). Old code hardcoded TRUE here too.
+              var __hPIsInc = _resolveIsIncome_(__hPicked, __hP.rawText, __hPCategory, __hPSubcategory);
+              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', !__hPIsInc]);
               // Original-text cell note — preserves the business amount input + picked category.
               try {
                 var __hPLastForNote = __hPSheet.getLastRow();
@@ -7949,8 +8008,14 @@ function processExpense(text, fromPhone) {
       const finalAmount = Math.abs(item.amount);
       runningTotal += finalAmount;
       _coerceCategoryBySubcategory(matched);
-      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory);
-      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', true]);
+      // BUGFIX B1 (2026-05-28): col H was hardcoded TRUE (expense) even when
+      // the matched category was income ('הכנסות' / 'עסק מחזור') or the user
+      // prefixed the amount with '+'. _resolveIsIncome_ combines all three
+      // signals (matched.isIncome, '+' prefix, categorical fallback) so
+      // income rows write FALSE in col H, keeping dashboards correct.
+      var __isInc = _resolveIsIncome_(matched, item.originalText || text, matched.category, matched.subcategory);
+      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory + ' isIncome=' + __isInc);
+      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', !__isInc]);
       Logger.log('processExpense: appendRow DONE, lastRow=' + sheet.getLastRow());
       // ── Original-text cell note (column F = פירוט). Records the raw user
       // message + optional FX conversion line. Capture row number BEFORE the
@@ -8387,10 +8452,15 @@ function matchCategory(text) {
     for (var i = 0; i < entries.length; i++) {
       var kw = entries[i].kw;
       if (_kflKwHit_(t, kw)) {
-        return { category: entries[i].category, subcategory: entries[i].subcategory };
+        // BUGFIX B1 (2026-05-28): BUSINESS_CATEGORY_MAP doesn't carry an
+        // isIncome flag per-row, but the "מחזור" subcategory is by definition
+        // income (revenue). Without this, "עסק הכנסה 10000" matched מחזור
+        // but the downstream col-H assignment got TRUE (expense) anyway.
+        var bizIncome = (entries[i].subcategory === 'מחזור');
+        return { category: entries[i].category, subcategory: entries[i].subcategory, isIncome: bizIncome };
       }
     }
-    return { category: "עסק", subcategory: "הוצאות תפעוליות" };
+    return { category: "עסק", subcategory: "הוצאות תפעוליות", isIncome: false };
   }
   return _matchCategory_long(text);
 }
@@ -8443,8 +8513,14 @@ function _matchCategory_long(text) {
       if (!Array.isArray(kws)) continue;
       var cat = item.category || '';
       var sub = item.subcategory || '';
+      // BUGFIX B1 (2026-05-28): propagate isIncome from CATEGORY_MAP entry.
+      // Previously this flattening lost the isIncome flag, so messages like
+      // "הכנסה עסקית 10000" matched the income subcategory but col H was
+      // hardcoded TRUE (expense) downstream -- silently flipping income to
+      // expense in the תנועות sheet and dashboard.
+      var isInc = !!item.isIncome;
       for (var k = 0; k < kws.length; k++) {
-        entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub });
+        entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub, isIncome: isInc });
       }
     }
   } else if (typeof CATEGORY_MAP === 'object') {
@@ -8455,7 +8531,7 @@ function _matchCategory_long(text) {
         var kws = subs[sub];
         if (!Array.isArray(kws)) continue;
         for (var k = 0; k < kws.length; k++) {
-          entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub });
+          entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub, isIncome: false });
         }
       }
     }
@@ -8466,7 +8542,9 @@ function _matchCategory_long(text) {
     var kw = entries[i].kw;
     if (!kw) continue;
     if (_kflKwHit_(t, kw)) {
-      return { category: entries[i].category, subcategory: entries[i].subcategory };
+      // B1 fix: include isIncome in the result so downstream col-H assignment
+      // can flip to FALSE (income) when the matched entry is marked as income.
+      return { category: entries[i].category, subcategory: entries[i].subcategory, isIncome: !!entries[i].isIncome };
     }
   }
   return _matchCategory_orig(text);
