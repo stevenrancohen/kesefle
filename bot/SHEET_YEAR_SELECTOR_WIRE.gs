@@ -68,7 +68,12 @@ var _YS_VERSION_     = 'YearSelectorWire_v1';
 
 // The "current" year -- when B4 == this value, formulas use LIVE sources.
 // When B4 is any other value, formulas use historical summary.
-var _YS_CURRENT_YEAR_ = 2026;
+// 2026-05-29: was hardcoded to 2026. That meant on Jan-1-2027 every
+// dashboard formula silently flipped to "treat 2026 as live, 2027 as
+// historical" -- but 2026 would NO LONGER be live data, it would be
+// the just-completed past year. Converted to a function so the live
+// year always tracks the Asia/Jerusalem wall clock.
+function _YS_CURRENT_YEAR_() { return parseInt(Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy'), 10); }
 
 // Year-selector dropdown values (2023..2027).
 var _YS_YEAR_RANGE_ = [2023, 2024, 2025, 2026, 2027];
@@ -118,7 +123,7 @@ function _ys_ensureYearDropdown_(dash) {
       // If it's a list-of-values validation and the list contains 2026,
       // assume it's our dropdown -- no rewrite needed.
       var crit = SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST;
-      if (criteria === crit && values && values[0] && values[0].indexOf(_YS_CURRENT_YEAR_) !== -1) {
+      if (criteria === crit && values && values[0] && values[0].indexOf(_YS_CURRENT_YEAR_()) !== -1) {
         return { existed: true, ok: true, message: 'B4 dropdown present with ' + values[0].join(',') };
       }
     } catch (e) { /* fall through and rewrite */ }
@@ -136,7 +141,7 @@ function _ys_ensureYearDropdown_(dash) {
   // something meaningful on first open.
   var v = b4.getValue();
   if (v === '' || v === null || v === undefined) {
-    b4.setValue(_YS_CURRENT_YEAR_);
+    b4.setValue(_YS_CURRENT_YEAR_());
   }
   return { existed: false, ok: true, message: 'B4 dropdown installed: ' + _YS_YEAR_RANGE_.join(',') };
 }
@@ -198,7 +203,7 @@ function _ys_wrapWithYearSwitch_(liveFormula, rowNum, colIdx, currentLiteralValu
 
   // Already wrapped? Detect heuristically: if formula starts with =IFS($B$4=...
   // bail out so re-runs are idempotent.
-  if (liveFormula && liveFormula.indexOf('IFS($B$4=' + _YS_CURRENT_YEAR_) !== -1) {
+  if (liveFormula && liveFormula.indexOf('IFS($B$4=' + _YS_CURRENT_YEAR_()) !== -1) {
     return liveFormula;  // already wrapped, no-op
   }
 
@@ -206,7 +211,7 @@ function _ys_wrapWithYearSwitch_(liveFormula, rowNum, colIdx, currentLiteralValu
   // Strip leading "=" from historical too.
   var histInner = historical.charAt(0) === '=' ? historical.substring(1) : historical;
 
-  return '=IFS($B$4=' + _YS_CURRENT_YEAR_ + ',(' + live + '),TRUE,(' + histInner + '))';
+  return '=IFS($B$4=' + _YS_CURRENT_YEAR_() + ',(' + live + '),TRUE,(' + histInner + '))';
 }
 
 // ---- BACKUP ------------------------------------------------------------

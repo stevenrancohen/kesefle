@@ -19,7 +19,15 @@
 // Configuration
 // ---------------------------------------------------------------------------
 
-var BC_SHEET_ID = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
+// 2026-05-29: was hardcoded to the OLD pre-migration sheet
+// (1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo). Every BOT_COMMANDS
+// query (summary, undo, fix-last, delete-match, stats) would read/write
+// the OLD sheet -- so the bot writes a row to NEW via the main path,
+// but "siכum hayom" or "machak acharon" silently operated on OLD. Switched
+// to NEW. For multi-tenant the right answer is to resolve a per-user
+// sheet via _resolveTenant_, but this file is owner-only so NEW is the
+// right default. See bot/WEEKLY_DIGEST.gs:32 for the same pattern.
+var BC_SHEET_ID = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
 var BC_TX_SHEET = 'תנועות';
 
 // Column indexes (0-based) inside the תנועות sheet.
