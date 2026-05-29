@@ -176,25 +176,47 @@ function _MDD_findYearSelectorA1_(sheet) {
 }
 
 // ============================================================
-// Build the SUMIFS formulas for a category row.
-// Returns { yearly: '=SUMIFS(...)', monthly: ['=SUMIFS(... -01)', ..., '=SUMIFS(... -12)'] }
-// All criteria wired to $B$4 — no hardcoded year.
+// Build the SUMPRODUCT formulas for a category row.
+// Returns { yearly: '=SUMPRODUCT(...)', monthly: [...] }
+//
+// Why SUMPRODUCT and not SUMIFS:
+//   Steven's 2026-05-29 live debugging surfaced that SUMIFS with the criterion
+//   '">=" & $B$4 & "-01"' gets parsed as arithmetic — Sheets evaluates the
+//   "2025-01" tail as subtraction (2024), turning the text comparison into a
+//   numeric one, which always returns 0 against text-typed col B values like
+//   "2025-05". SUMPRODUCT with explicit LEFT(B,4) comparison sidesteps this
+//   entirely.
+//
+// Why bounded ranges (B2:B2000) and not B:B:
+//   SUMPRODUCT(B:B = "x") multiplies the header row (text) by the data, which
+//   returns #VALUE!. Bounded ranges skip the header and avoid the error.
+//
+// Why IF($B$4="", YEAR(TODAY()), $B$4):
+//   On some tenant sheets B4 is locked / has stale validation that rejects
+//   programmatic setValue. Falling back to YEAR(TODAY()) makes the dashboard
+//   show CURRENT-year totals out of the box, while still respecting any year
+//   the user picks manually from the B4 dropdown.
+//
+// All criteria wired to $B$4 (with current-year fallback) — never hardcodes
+// a literal year.
 // ============================================================
 function _MDD_buildFormulas_(label) {
-  // Escape any " in the label for SUMIFS criterion.
+  // Escape any " in the label so it survives the criterion string.
   var crit = String(label).replace(/"/g, '""');
   var tx = "'" + _MDD_TX_ + "'";
-  // Yearly: B between $B$4&"-01" and $B$4&"-12" (string compare works because YYYY-MM is fixed-width)
+  var yearExpr = 'IF($B$4="",TEXT(YEAR(TODAY()),"0000"),TEXT($B$4,"0000"))';
+  // Yearly: SUMPRODUCT over E2:E2000 = label AND LEFT(B2:B2000, 4) = year, sum C2:C2000.
   var yearly =
-    '=SUMIFS(' + tx + '!C:C, ' + tx + '!E:E, "' + crit + '", ' +
-    tx + '!B:B, ">=" & $B$4 & "-01", ' +
-    tx + '!B:B, "<=" & $B$4 & "-12")';
+    '=SUMPRODUCT((' + tx + '!E2:E2000="' + crit + '")*' +
+    '(LEFT(' + tx + '!B2:B2000,4)=' + yearExpr + ')*' +
+    tx + '!C2:C2000)';
   var monthly = [];
   var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
   for (var m = 1; m <= 12; m++) {
     monthly.push(
-      '=SUMIFS(' + tx + '!C:C, ' + tx + '!E:E, "' + crit + '", ' +
-      tx + '!B:B, $B$4 & "-' + pad(m) + '")'
+      '=SUMPRODUCT((' + tx + '!E2:E2000="' + crit + '")*' +
+      '(' + tx + '!B2:B2000=' + yearExpr + '&"-' + pad(m) + '")*' +
+      tx + '!C2:C2000)'
     );
   }
   return { yearly: yearly, monthly: monthly };
