@@ -240,8 +240,11 @@ console.log('\nBuild version:');
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
 assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
   'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
-assert(/b1-income/.test(v || ''),
-  'KFL_BUILD_VERSION mentions b1-income (currently: ' + v + ')');
+// We used to pin "b1-income" in the build string, but every new feature bumps
+// that string and the b1 token can't ride along forever. Instead verify the
+// B1-fix code marker still lives in the source — that's what actually matters.
+assert(/B1 fix: include isIncome/.test(SRC),
+  'B1 fix marker present in ExpenseBot_FIXED.gs (the "// B1 fix: include isIncome" comment by the income-flag propagation site)');
 
 console.log('');
 if (fail) {
