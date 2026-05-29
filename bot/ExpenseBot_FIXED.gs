@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-b1-b2-combined';
+const KFL_BUILD_VERSION = '2026-05-28-b1-b2-llm-profession-combined';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -4628,6 +4628,195 @@ function _profileTrackingTypeCached_(fromPhone) {
   }
 }
 
+// === Q4 profession -> LLM categorizer hint (task #218) ================
+// When the onboarding questionnaire learned the user's profession (Q4 / id
+// from lib/professions.js), we feed a single English nudge line into the
+// categorizer's system prompt so ambiguous messages bias toward
+// profession-relevant Hebrew sub-categories.
+//
+// Resolution priority:
+//   1. Exact profession-id override (only the high-signal ones -- teacher,
+//      contractor, etc. -- that don't fit cleanly into a category bucket).
+//   2. Category-bucket fallback (construction / healthcare / education / etc.).
+//   3. Empty string ('' -> no boost) when profession is missing/unknown so the
+//      bot behaves identically to before Q4 was rolled out.
+//
+// Purely additive: callers that don't pass a profession get '' back.
+// English on purpose -- the system prompt is English and the LLM keys off
+// English instructions; the example Hebrew category names appear inside the
+// hint so the model emits them verbatim.
+//
+// CATEGORY -> NUDGE: keyed by the catalog's `category` field. Ten buckets
+// cover the whole 119-entry catalog; if a new category is added to
+// lib/professions.js the function falls back to '' which is safe.
+var _KESEFLE_PROFESSION_AI_HINT_BY_CATEGORY_ = {
+  construction:           'This person is a construction professional (contractor/electrician/plumber/renovator). Prefer business categories עסק (חומרי בניין, פועלים, ציוד עסקי, דלק/רכב עבודה, יועצים) for ambiguous expenses > ₪200.',
+  professional_services:  'This person runs a professional-services practice (lawyer/accountant/consultant). Prefer business categories עסק (יועצים, תוכנות עסק, שיווק, חומרי גלם, ציוד עסקי) and treat large recurring software fees as עסק.',
+  healthcare:             'This person works in healthcare (רפואה -- רופא/אחות/פיזיותרפיסט/פסיכולוג). Prefer business categories עסק (ציוד רפואי, מנוי מקצועי, יועצים) and education-related expenses for continuing-education (חינוך).',
+  tech:                   'This person works in tech (developer/designer/product). Prefer business categories עסק (תוכנות עסק, מנויי SaaS, ציוד עסקי, יועצים) for software-shaped charges.',
+  retail_service:         'This person runs a retail/service business (חנות, מספרה, ניקיון). Prefer business categories עסק (חומרי גלם, ציוד עסקי, שיווק, מכירה) for stock and supplies; cash receipts as עצמאי.',
+  creative:               'This person is an artisan/maker/creative (אומן, צלם, מעצב, יוצר/ת). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה, יועצים) when amounts > ₪200 and message is ambiguous.',
+  education:              'This person teaches (מורה/מרצה/מדריך/ת). Prefer education-related Hebrew (ספרי לימוד, ציוד עזר, מנוי חינוכי, קורסים מקוונים) and treat per-session payments received as עצמאי.',
+  logistics:              'This person works in transport/logistics (נהג/שליח/מובילים). Prefer transport business categories עסק (דלק/רכב עבודה, ביטוח רכב, רישוי, ציוד עסקי) and treat fares as עצמאי.',
+  agriculture:            'This person works in agriculture/farming (חקלאי/דייג/פרחים). Prefer business categories עסק (חומרי גלם, ציוד עסקי, דלק/רכב עבודה) and produce sales as עצמאי.',
+  employee:               'This person is a salaried employee (שכיר/ה). Lean toward employee categories (משכורת, קרן השתלמות, נסיעות לעבודה, ביטוח רפואי משלים); do NOT prefer business categories עסק unless the message clearly names a business expense.',
+};
+// PROFESSION-ID overrides -- only used when the per-id signal is meaningfully
+// different from its category bucket. Most professions inherit their category
+// hint; these are the ones worth a tailored line.
+var _KESEFLE_PROFESSION_AI_HINT_BY_ID_ = {
+  // education sub-types
+  private_tutor:    'This person is a private tutor (מורה פרטי/ת). Prefer education categories (ספרי לימוד, ציוד עזר, מנוי חינוכי) and home-tutoring expenses; treat per-session income as עצמאי.',
+  teacher_public:   'This person is a public-school teacher (מורה ציבורי/ת -- שכיר/ה). Lean toward employee categories (משכורת, קרן השתלמות, חינוך לציוד עזר); do NOT prefer business categories עסק.',
+  music_teacher:    'This person teaches music (מורה למוזיקה). Prefer education + creative categories (ציוד עזר, חומרי גלם, ספרי לימוד); per-session income as עצמאי.',
+  // family / household
+  homemaker:        'This person is a homemaker (משק בית) -- no business. Prefer family/household categories (אוכל לבית, ילדים, חינוך, בריאות, הוצאות קבועות); NEVER use business categories עסק.',
+  // artisan signal aliases (the "artisan" / "maker" wording in the spec)
+  ceramicist:       'This person is a ceramicist artisan/maker (אומן/קדר/ת). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה, יועצים) for studio supplies; cash sales as עצמאי.',
+  jewelry_maker:    'This person is a jewelry-maker artisan (יוצר/ת תכשיטים). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה, יועצים) for materials and tools; cash sales as עצמאי.',
+  visual_artist:    'This person is a visual artist (אומן/אומנית). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה) for art supplies; sales of works as עצמאי.',
+};
+
+// Embedded id -> category lookup (mirrors lib/professions.js). We can't
+// import the ESM catalog into Apps Script so we inline the mapping for the
+// ids we ship via the Q4 quick-pick + the fuzzy matcher. Anything missing
+// falls through to '' which is the safe no-op for the prompt.
+var _KESEFLE_PROFESSION_CATEGORY_ = {
+  // construction
+  general_contractor: 'construction', renovator: 'construction',
+  electrician: 'construction', plumber: 'construction',
+  painter_construction: 'construction', handyman: 'construction',
+  // professional_services
+  lawyer: 'professional_services', accountant: 'professional_services',
+  financial_advisor: 'professional_services', insurance_agent: 'professional_services',
+  real_estate_agent: 'professional_services', translator: 'professional_services',
+  // healthcare
+  doctor: 'healthcare', dentist: 'healthcare', nurse: 'healthcare',
+  physiotherapist: 'healthcare', psychologist: 'healthcare',
+  veterinarian: 'healthcare', nutritionist: 'healthcare',
+  physician_employed: 'healthcare', physician_private: 'healthcare',
+  psychiatrist: 'healthcare', social_worker: 'healthcare',
+  pharmacist: 'healthcare', pharmacy_owner: 'healthcare',
+  // tech
+  software_developer_freelance: 'tech',
+  // creative
+  graphic_designer: 'creative', photographer: 'creative',
+  videographer: 'creative', copywriter: 'creative',
+  content_writer: 'creative', musician: 'creative',
+  music_producer: 'creative', visual_artist: 'creative',
+  ceramicist: 'creative', jewelry_maker: 'creative',
+  makeup_artist: 'creative', event_planner: 'creative',
+  // education
+  private_tutor: 'education', teacher_public: 'education',
+  lecturer: 'education', kindergarten_owner: 'education',
+  hobby_instructor: 'education', music_teacher: 'education',
+  driving_instructor: 'education', coach: 'education',
+  nanny: 'education', babysitter: 'education',
+  yoga_instructor: 'education', personal_trainer: 'education',
+  // logistics
+  taxi_driver: 'logistics', delivery_driver: 'logistics',
+  truck_driver: 'logistics', uber_driver: 'logistics',
+  // retail_service
+  hairstylist: 'retail_service', cleaner: 'retail_service',
+  gardener: 'retail_service', dog_walker: 'retail_service',
+  shop_owner: 'retail_service', online_store: 'retail_service',
+  restaurant_owner: 'retail_service', cafe_owner: 'retail_service',
+  chef: 'retail_service', caterer: 'retail_service',
+  baker: 'retail_service',
+  // agriculture
+  farmer: 'agriculture', fisherman: 'agriculture',
+  // employee
+  cashier: 'employee', office_worker: 'employee',
+  civil_servant: 'employee', security_guard: 'employee',
+  soldier: 'employee', police_officer: 'employee',
+  firefighter: 'employee', flight_attendant: 'employee',
+  pilot: 'employee', salesperson_employed: 'employee',
+  manager_employed: 'employee', retiree: 'employee',
+  student: 'employee', unemployed: 'employee',
+  homemaker: 'employee', other_employee: 'employee',
+};
+
+// Alias map: when a caller (or a future free-text path) hands us a coarse
+// label instead of an id, normalize to a category bucket. Hebrew + English.
+// Special marker '__homemaker__' jumps straight to the homemaker id-override.
+// Steven 2026-05-28 (task #218).
+var _KESEFLE_PROFESSION_ALIAS_ = {
+  // English aliases the spec mentions
+  artisan: 'creative', maker: 'creative',
+  salaried: 'employee', employee: 'employee',
+  teacher: 'education',
+  healthcare: 'healthcare', medical: 'healthcare',
+  'family-only': '__homemaker__', familyonly: '__homemaker__',
+  business: 'professional_services',
+  // Hebrew aliases
+  'מורה': 'education',                 // teacher
+  'רפואה': 'healthcare',               // healthcare
+  'משק בית': '__homemaker__',          // family-only
+  'שכיר': 'employee',                  // salaried
+  'עוסק': 'professional_services',     // business
+};
+
+// Build a 1-line English hint for the categorizer based on the user's
+// profession id (from lib/professions.js) or a coarse label alias. Lookup:
+//   1. exact id override                 -- _KESEFLE_PROFESSION_AI_HINT_BY_ID_
+//   2. id -> category bucket fallback    -- _KESEFLE_PROFESSION_CATEGORY_
+//   3. raw category string (alias path)  -- _KESEFLE_PROFESSION_ALIAS_
+//   4. '' (no boost -- safe default)
+// Pure function: NO network calls, NO storage access. Safe for tests.
+function _professionContextLine_(profession) {
+  if (!profession) return '';
+  var raw = String(profession).trim();
+  if (!raw) return '';
+  // 1. Exact id override (e.g. private_tutor, homemaker, ceramicist).
+  if (_KESEFLE_PROFESSION_AI_HINT_BY_ID_[raw]) {
+    return _KESEFLE_PROFESSION_AI_HINT_BY_ID_[raw];
+  }
+  // 2. Resolve id -> category via the embedded map (mirrors lib/professions.js).
+  var category = _KESEFLE_PROFESSION_CATEGORY_[raw];
+  // 3. If not an id, try the alias map (coarse labels like 'artisan').
+  if (!category) {
+    var aliasKey = raw.toLowerCase();
+    var alias = _KESEFLE_PROFESSION_ALIAS_[aliasKey];
+    if (alias === '__homemaker__') {
+      return _KESEFLE_PROFESSION_AI_HINT_BY_ID_.homemaker;
+    }
+    if (alias) category = alias;
+  }
+  if (category && _KESEFLE_PROFESSION_AI_HINT_BY_CATEGORY_[category]) {
+    return _KESEFLE_PROFESSION_AI_HINT_BY_CATEGORY_[category];
+  }
+  return '';
+}
+
+// Cached read of a customer's profession (profile:{phone}.profession) so the
+// LLM hint costs at most one network call per hour per phone. Mirrors
+// _profileTrackingTypeCached_ -- same TTL, same defensive guards. Any failure
+// returns '' so the categorizer behaves identically to pre-Q4. Steven
+// 2026-05-28 (task #218).
+function _profileProfessionCached_(fromPhone) {
+  if (!fromPhone) return '';
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return '';
+  var cacheKey = 'profileProf:' + clean;
+  try {
+    var cache = CacheService.getScriptCache();
+    var hit = cache.get(cacheKey);
+    if (hit !== null) return hit === '_none_' ? '' : hit;
+    var prof = '';
+    try {
+      if (typeof _profileAPI_ === 'function') {
+        var g = _profileAPI_('get', { phone: clean });
+        if (g && g.ok && g.profile && g.profile.profession) prof = String(g.profile.profession);
+      }
+    } catch (_apiErr) { Logger.log('_profileProfessionCached_ api err: ' + _apiErr.message); }
+    cache.put(cacheKey, prof || '_none_', _SURVEY_TTL_SEC_);
+    return prof;
+  } catch (_cErr) {
+    Logger.log('_profileProfessionCached_ err: ' + _cErr.message);
+    return '';
+  }
+}
+
 // === Gemini conversational layer ("concierge") =======================
 // Makes the bot UNDERSTAND free-form messages and reply personally instead of
 // a generic "didn't understand". Degrades gracefully: if GEMINI_API_KEY is not
@@ -8925,6 +9114,18 @@ function _aiCategorizeRich(text, fromPhone) {
       }
     } catch (_ptErr) { Logger.log('profile hint err: ' + _ptErr.message); }
 
+    // Profession context (Q4 onboarding -> LLM bias). Additive: empty string
+    // when profession is missing/unknown, so the prompt is identical to
+    // before for users who skipped Q4. Steven 2026-05-28 (task #218).
+    var professionHintBlock = '';
+    try {
+      var profId = fromPhone ? _profileProfessionCached_(fromPhone) : '';
+      var profLine = _professionContextLine_(profId);
+      if (profLine) {
+        professionHintBlock = '\n\nPROFESSION CONTEXT (apply ONLY to break ties on ambiguous expenses; clear vendor matches always win):\n' + profLine + '\n';
+      }
+    } catch (_ppErr) { Logger.log('profession hint err: ' + _ppErr.message); }
+
     // Smart few-shot: top-12 high-signal corrections, most-similar first.
     // Falls back to the original last-10 reader if the smart picker fails.
     var userExamples = null;
@@ -9009,7 +9210,7 @@ function _aiCategorizeRich(text, fromPhone) {
       '"משכורת" → {"category":"הכנסות","subcategory":"משכורת","confidence":0.99,"reason":"משכורת חודשית"}\n' +
       '"החזר מס" → {"category":"הכנסות","subcategory":"החזר מס","confidence":0.99,"reason":"החזר ממס הכנסה"}\n' +
       '"asdfgh" → {"category":"בלתי מזוהה","subcategory":"לא ברור","confidence":0.05,"reason":"טקסט לא מובן"}' +
-      userExamplesBlock + profileHintBlock;
+      userExamplesBlock + profileHintBlock + professionHintBlock;
 
     var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only with confidence and reason.';
 
