@@ -194,8 +194,11 @@ const detail = sandbox._dashboardDetailNote_;
   check('KFL_BUILD_VERSION declared',
     !!m,
     'no version line found');
-  check('KFL_BUILD_VERSION mentions year-separator',
-    !!m && /year-separator/.test(m[1]),
+  // The feature is the function pair _composeNoteWithYearSeparator_ + the
+  // year-separator marker line. Verify the FEATURE CODE is still in the source
+  // — not the build-version string, which legitimately bumps on every release.
+  check('year-separator feature still in source',
+    /=== ' \+ year \+ ' ===/.test(SRC) && /_composeNoteWithYearSeparator_/.test(SRC),
     'got: ' + (m && m[1]));
 }
 
