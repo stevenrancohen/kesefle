@@ -34,7 +34,7 @@
  *     a browser does not corrupt RTL/bidi.
  *
  * Functions (run in this order):
- *   _MDD_SELF_TEST_HEBREW_   - prove Hebrew decoded correctly
+ *   MDD_SELF_TEST_HEBREW   - prove Hebrew decoded correctly
  *   DRY_RUN_MIGRATE_DASHBOARD - read OLD + NEW, log proposed changes, no writes
  *   APPLY_MIGRATE_DASHBOARD   - gated; writes the new rows + year selectors
  *   ROLLBACK_MIGRATE_DASHBOARD - restores from backup
@@ -73,7 +73,7 @@ var _MDD_TOTAL_PREFIX_ = 'סה';   // starts with "סה"
 // ============================================================
 // Self-test: prove Hebrew strings decoded right BEFORE any read/write.
 // ============================================================
-function _MDD_SELF_TEST_HEBREW_() {
+function MDD_SELF_TEST_HEBREW() {
   Logger.log('=== MDD self-test ===');
   Logger.log('תנועות     -> ' + _MDD_TX_);
   Logger.log('מאזן אישי  -> ' + _MDD_PERSON_);

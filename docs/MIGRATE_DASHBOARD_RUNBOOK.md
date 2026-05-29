@@ -29,7 +29,7 @@ The repo is now private, so use the local file:
 
 ## Step 4 — Self-test Hebrew
 
-1. Top toolbar function dropdown → pick **`_MDD_SELF_TEST_HEBREW_`**.
+1. Top toolbar function dropdown → pick **`MDD_SELF_TEST_HEBREW`**.
 2. Click **Run**.
 3. Open the execution log (`Cmd+Enter` or **View → Logs**).
 4. You should see:
