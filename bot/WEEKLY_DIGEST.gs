@@ -29,7 +29,14 @@
 // Configuration
 // ---------------------------------------------------------------------------
 
-var WD_SHEET_ID = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
+// 2026-05-29: was hardcoded to the OLD pre-migration sheet
+// (1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo). If the
+// Sunday 08:00 trigger fires while pointing at OLD, every
+// subscriber receives stale data. Switched to the NEW Kesefle
+// sheet. For multi-tenant the right answer is to resolve a
+// per-subscriber sheet via _resolveTenant_, but the digest is
+// currently owner-only so the NEW sheet is the right default.
+var WD_SHEET_ID = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
 var WD_TX_SHEET = 'תנועות';
 var WD_TRIGGER_HANDLER = '_WEEKLY_DIGEST_HANDLER_';
 var WD_TZ = 'Asia/Jerusalem';

@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-29-cell-note-year-separator';
+const KFL_BUILD_VERSION = '2026-05-29-weekly-digest-fix-plus-3-category-routes';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -399,6 +399,15 @@ const CATEGORY_MAP = [
   {"keywords":["inokim","ninebot","segway","קורקינט"],"category":"תחבורה","subcategory":"קורקינט"},
   {"keywords":["agrat rishui","annual test","appraiser report","car appraiser","carmel levin car appraisal","comprehensive test","department of motor vehicles israel","dmv israel","dmv ישראל","license validity","licensing fee","licensing institute","licensing test","misrad harishui","road accident","test rechev","testing center","vehicle license","vehicle test","vision test","wiscar appraisal","wiscar שמאות","yearly inspection","אגרת רישוי","דוח שמאי","טסט","טסט מקיף","טסט עיני","טסט רכב","טסט שנתי","מבחן רישוי","מבחן שנתי","מכון בודק","משרד הרישוי","רישוי רכב","רישיון רכב","שמאי כרמל לוין","שמאי רכב","תאונת דרכים","תוקף רישוי"],"category":"תחבורה","subcategory":"רישוי"},
   {"keywords":["להעביר לאבא"],"category":"הוצאות זמניות","subcategory":"אבא"},
+  // 2026-05-29: 3 Steven-only category routes added per deep-review WS1 findings.
+  // Before this, expenses for גיא/חצי אירון מן/חצי אוסטריה silently routed to
+  // שונות. Subcategory strings match the EXISTING col-E values in Steven's NEW
+  // תנועות tab (verified via AUDIT_APPENDED_ROWS — חצי איירון מן has 6 matches,
+  // מרוץ - אוסטריה has 1 match, גיא has 3 matches via manual entry).
+  // קולקציות deferred — Steven asked "what is this?" — investigating col E hits.
+  {"keywords":["גיא","להעביר לגיא","להעביר ל-גיא","ל-גיא","תשלום לגיא"],"category":"הוצאות זמניות","subcategory":"גיא"},
+  {"keywords":["חצי אירון מן","חצי איירון מן","איירון מן","ironman","half ironman","triathlon","טריאתלון","תחרות איירון מן","מרוץ איירון"],"category":"הוצאות זמניות","subcategory":"חצי איירון מן"},
+  {"keywords":["חצי אוסטריה","מרוץ אוסטריה","אוסטריה מרוץ","austria race","austria marathon","austria triathlon"],"category":"הוצאות זמניות","subcategory":"מרוץ - אוסטריה"},
   {"keywords":["crossfit","goactive","gym","אימון","בריכה","גו אקטיב","חדר כושר","חוגים","יוגה","כושר","מאמן אישי","מכון כושר","פיט פלוס","פילאטיס","קאנטרי קלאב","שחייה"],"category":"הוצאות קבועות","subcategory":"מכון כושר"},
   {"keywords":["adidas","asos","castro","fox","h&m","levis","mango","next","nike","puma","renuar","shein","shoe","tommy","urbanica","zara","אדידס","אופנה","אורבניקה","בגדים","ביגוד","גולף","גרביים","דלתא","טומי הילפיגר","לויס","נייקי","נעליים","פולגת","פומה"],"category":"קניות","subcategory":"ביגוד"},
   {"keywords":["haircut","sephora","super pharm makeup","tikkun","wax","איי קיו","איפור","בושם","טיפוח","מאניקור","מספרה","מעצב שיער","מקס מרה","ספורה","ספרית","פדיקור","קרם","שעווה","תספורת"],"category":"קניות","subcategory":"טיפוח"},
