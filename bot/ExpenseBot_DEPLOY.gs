@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-pr-b-biz-canonical-subs';
+const KFL_BUILD_VERSION = '2026-05-29-cell-note-year-separator';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -757,6 +757,55 @@ const CATEGORY_MAP = [
 ];
 
 const DEFAULT_CATEGORY = { category: 'שונות ואחרים', subcategory: 'שונות', isIncome: false };
+
+/**
+ * _isIncomeCategory_ -- definitional fallback for income detection.
+ *
+ * BUGFIX B1 (2026-05-28, autonomous-audit Agent 4 finding): added so every
+ * appendRow site that writes to תנועות col H can derive isIncome from the
+ * matched category/subcategory even when the upstream matcher (legacy code
+ * paths, picker re-entries, AI fallbacks, historical learned-cache rows)
+ * didn't propagate the isIncome flag through its return value. CATEGORY_MAP
+ * keeps isIncome:true on income rows, but many code paths only read
+ * category/subcategory and drop the flag, so this function re-derives it
+ * from the categorical name.
+ *
+ * Income detection rules (in order):
+ *   1. category === 'הכנסות'   (all personal income subcategories)
+ *   2. category === 'עסק' AND subcategory === 'מחזור'
+ *                              (business revenue, the only income row in
+ *                              the company dashboard)
+ *
+ * Anything else returns false (expense). Returns a boolean, never undefined,
+ * so it's safe to invert with ! for col-H assignment.
+ */
+function _isIncomeCategory_(category, subcategory) {
+  var c = String(category || '').trim();
+  var s = String(subcategory || '').trim();
+  if (c === 'הכנסות') return true;
+  if (c === 'עסק' && s === 'מחזור') return true;
+  return false;
+}
+
+/**
+ * _resolveIsIncome_ -- single source of truth for "is this row income?".
+ *
+ * Combines three signals so every appendRow call site agrees:
+ *   1. Explicit matched.isIncome from the matcher (most reliable).
+ *   2. Raw user input starts with '+' (e.g. "+1500 משכורת" -- standard
+ *      Kesefle convention also used by _writeBusinessNExpense_).
+ *   3. Categorical fallback via _isIncomeCategory_ for any path that lost
+ *      the isIncome flag in transit (picker reply, learned cache, AI).
+ *
+ * Returns a boolean -- true for income, false for expense. Caller writes
+ * the inverse ( !resolveIsIncome(...) ) into col H of תנועות.
+ */
+function _resolveIsIncome_(matched, rawText, category, subcategory) {
+  if (matched && matched.isIncome) return true;
+  var s = String(rawText || '').trim();
+  if (s.charAt(0) === '+') return true;
+  return _isIncomeCategory_(category, subcategory);
+}
 
 /**
  * sanitizeForSheet — prevents formula injection when user-typed strings land in a cell.
@@ -2462,7 +2511,13 @@ function handleInteractiveReply_(fromPhone, interactive) {
     var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
     var category = decoded.category;
     var subcategory = decoded.subcategory;
-    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', true]);
+    // BUGFIX B1 (2026-05-28): the option id encoded by _encodeCategoryOptionId
+    // only carries category/subcategory/amount/textKey -- not isIncome -- so
+    // the picker-reply write previously hardcoded TRUE (expense). Re-derive
+    // isIncome from the chosen category + the pending raw text (which may
+    // start with '+') so income picks land FALSE in col H.
+    var __interIsInc = _resolveIsIncome_(null, (pending && pending.rawText) || '', category, subcategory);
+    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', !__interIsInc]);
     // Original-text cell note — capture the raw user message that triggered
     // this categorization (preserves provenance even after corrections).
     try {
@@ -2763,9 +2818,19 @@ var _ORDER_MATERIALS_ = ['קנבס','בד','נייר','אקריליק','עץ','�
 function parseBusinessOrder_(text) {
   if (!text) return null;
   var s = String(text).trim();
-  // Must start with the עסק / biz prefix; otherwise treat as personal.
-  if (!/^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s)) return null;
-  s = s.replace(/^(עסק|biz|business)\s*[:\-]?\s*/i, '');
+  // Must start with the עסק / עסקה / עסקת / biz / business prefix;
+  // otherwise treat as personal.
+  //
+  // 2026-05-28 B2 fix (PR audit Agent 4): also accept "עסקה" (deal) and
+  // "עסקת" (construct state) — Steven naturally writes
+  //   "עסקה יוסי הכנסה 10000 עובדים 2500 חומרים 1200"
+  // which was silently dropped by the old prefix regex because the
+  // lookahead required a non-Hebrew-letter immediately after "עסק"
+  // (so the ה or ת suffix failed the test).
+  // ORDER MATTERS: עסקה / עסקת before עסק so the longer prefix matches
+  // first and gets stripped fully.
+  if (!/^(עסקה|עסקת|עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s)) return null;
+  s = s.replace(/^(עסקה|עסקת|עסק|biz|business)\s*[:\-]?\s*/i, '');
 
   function _num(re) {
     var m = s.match(re);
@@ -4634,6 +4699,195 @@ function _profileTrackingTypeCached_(fromPhone) {
     return tt;
   } catch (_cErr) {
     Logger.log('_profileTrackingTypeCached_ err: ' + _cErr.message);
+    return '';
+  }
+}
+
+// === Q4 profession -> LLM categorizer hint (task #218) ================
+// When the onboarding questionnaire learned the user's profession (Q4 / id
+// from lib/professions.js), we feed a single English nudge line into the
+// categorizer's system prompt so ambiguous messages bias toward
+// profession-relevant Hebrew sub-categories.
+//
+// Resolution priority:
+//   1. Exact profession-id override (only the high-signal ones -- teacher,
+//      contractor, etc. -- that don't fit cleanly into a category bucket).
+//   2. Category-bucket fallback (construction / healthcare / education / etc.).
+//   3. Empty string ('' -> no boost) when profession is missing/unknown so the
+//      bot behaves identically to before Q4 was rolled out.
+//
+// Purely additive: callers that don't pass a profession get '' back.
+// English on purpose -- the system prompt is English and the LLM keys off
+// English instructions; the example Hebrew category names appear inside the
+// hint so the model emits them verbatim.
+//
+// CATEGORY -> NUDGE: keyed by the catalog's `category` field. Ten buckets
+// cover the whole 119-entry catalog; if a new category is added to
+// lib/professions.js the function falls back to '' which is safe.
+var _KESEFLE_PROFESSION_AI_HINT_BY_CATEGORY_ = {
+  construction:           'This person is a construction professional (contractor/electrician/plumber/renovator). Prefer business categories עסק (חומרי בניין, פועלים, ציוד עסקי, דלק/רכב עבודה, יועצים) for ambiguous expenses > ₪200.',
+  professional_services:  'This person runs a professional-services practice (lawyer/accountant/consultant). Prefer business categories עסק (יועצים, תוכנות עסק, שיווק, חומרי גלם, ציוד עסקי) and treat large recurring software fees as עסק.',
+  healthcare:             'This person works in healthcare (רפואה -- רופא/אחות/פיזיותרפיסט/פסיכולוג). Prefer business categories עסק (ציוד רפואי, מנוי מקצועי, יועצים) and education-related expenses for continuing-education (חינוך).',
+  tech:                   'This person works in tech (developer/designer/product). Prefer business categories עסק (תוכנות עסק, מנויי SaaS, ציוד עסקי, יועצים) for software-shaped charges.',
+  retail_service:         'This person runs a retail/service business (חנות, מספרה, ניקיון). Prefer business categories עסק (חומרי גלם, ציוד עסקי, שיווק, מכירה) for stock and supplies; cash receipts as עצמאי.',
+  creative:               'This person is an artisan/maker/creative (אומן, צלם, מעצב, יוצר/ת). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה, יועצים) when amounts > ₪200 and message is ambiguous.',
+  education:              'This person teaches (מורה/מרצה/מדריך/ת). Prefer education-related Hebrew (ספרי לימוד, ציוד עזר, מנוי חינוכי, קורסים מקוונים) and treat per-session payments received as עצמאי.',
+  logistics:              'This person works in transport/logistics (נהג/שליח/מובילים). Prefer transport business categories עסק (דלק/רכב עבודה, ביטוח רכב, רישוי, ציוד עסקי) and treat fares as עצמאי.',
+  agriculture:            'This person works in agriculture/farming (חקלאי/דייג/פרחים). Prefer business categories עסק (חומרי גלם, ציוד עסקי, דלק/רכב עבודה) and produce sales as עצמאי.',
+  employee:               'This person is a salaried employee (שכיר/ה). Lean toward employee categories (משכורת, קרן השתלמות, נסיעות לעבודה, ביטוח רפואי משלים); do NOT prefer business categories עסק unless the message clearly names a business expense.',
+};
+// PROFESSION-ID overrides -- only used when the per-id signal is meaningfully
+// different from its category bucket. Most professions inherit their category
+// hint; these are the ones worth a tailored line.
+var _KESEFLE_PROFESSION_AI_HINT_BY_ID_ = {
+  // education sub-types
+  private_tutor:    'This person is a private tutor (מורה פרטי/ת). Prefer education categories (ספרי לימוד, ציוד עזר, מנוי חינוכי) and home-tutoring expenses; treat per-session income as עצמאי.',
+  teacher_public:   'This person is a public-school teacher (מורה ציבורי/ת -- שכיר/ה). Lean toward employee categories (משכורת, קרן השתלמות, חינוך לציוד עזר); do NOT prefer business categories עסק.',
+  music_teacher:    'This person teaches music (מורה למוזיקה). Prefer education + creative categories (ציוד עזר, חומרי גלם, ספרי לימוד); per-session income as עצמאי.',
+  // family / household
+  homemaker:        'This person is a homemaker (משק בית) -- no business. Prefer family/household categories (אוכל לבית, ילדים, חינוך, בריאות, הוצאות קבועות); NEVER use business categories עסק.',
+  // artisan signal aliases (the "artisan" / "maker" wording in the spec)
+  ceramicist:       'This person is a ceramicist artisan/maker (אומן/קדר/ת). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה, יועצים) for studio supplies; cash sales as עצמאי.',
+  jewelry_maker:    'This person is a jewelry-maker artisan (יוצר/ת תכשיטים). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה, יועצים) for materials and tools; cash sales as עצמאי.',
+  visual_artist:    'This person is a visual artist (אומן/אומנית). Prefer business categories עסק (חומרי גלם, עלות שיווק, מכירה) for art supplies; sales of works as עצמאי.',
+};
+
+// Embedded id -> category lookup (mirrors lib/professions.js). We can't
+// import the ESM catalog into Apps Script so we inline the mapping for the
+// ids we ship via the Q4 quick-pick + the fuzzy matcher. Anything missing
+// falls through to '' which is the safe no-op for the prompt.
+var _KESEFLE_PROFESSION_CATEGORY_ = {
+  // construction
+  general_contractor: 'construction', renovator: 'construction',
+  electrician: 'construction', plumber: 'construction',
+  painter_construction: 'construction', handyman: 'construction',
+  // professional_services
+  lawyer: 'professional_services', accountant: 'professional_services',
+  financial_advisor: 'professional_services', insurance_agent: 'professional_services',
+  real_estate_agent: 'professional_services', translator: 'professional_services',
+  // healthcare
+  doctor: 'healthcare', dentist: 'healthcare', nurse: 'healthcare',
+  physiotherapist: 'healthcare', psychologist: 'healthcare',
+  veterinarian: 'healthcare', nutritionist: 'healthcare',
+  physician_employed: 'healthcare', physician_private: 'healthcare',
+  psychiatrist: 'healthcare', social_worker: 'healthcare',
+  pharmacist: 'healthcare', pharmacy_owner: 'healthcare',
+  // tech
+  software_developer_freelance: 'tech',
+  // creative
+  graphic_designer: 'creative', photographer: 'creative',
+  videographer: 'creative', copywriter: 'creative',
+  content_writer: 'creative', musician: 'creative',
+  music_producer: 'creative', visual_artist: 'creative',
+  ceramicist: 'creative', jewelry_maker: 'creative',
+  makeup_artist: 'creative', event_planner: 'creative',
+  // education
+  private_tutor: 'education', teacher_public: 'education',
+  lecturer: 'education', kindergarten_owner: 'education',
+  hobby_instructor: 'education', music_teacher: 'education',
+  driving_instructor: 'education', coach: 'education',
+  nanny: 'education', babysitter: 'education',
+  yoga_instructor: 'education', personal_trainer: 'education',
+  // logistics
+  taxi_driver: 'logistics', delivery_driver: 'logistics',
+  truck_driver: 'logistics', uber_driver: 'logistics',
+  // retail_service
+  hairstylist: 'retail_service', cleaner: 'retail_service',
+  gardener: 'retail_service', dog_walker: 'retail_service',
+  shop_owner: 'retail_service', online_store: 'retail_service',
+  restaurant_owner: 'retail_service', cafe_owner: 'retail_service',
+  chef: 'retail_service', caterer: 'retail_service',
+  baker: 'retail_service',
+  // agriculture
+  farmer: 'agriculture', fisherman: 'agriculture',
+  // employee
+  cashier: 'employee', office_worker: 'employee',
+  civil_servant: 'employee', security_guard: 'employee',
+  soldier: 'employee', police_officer: 'employee',
+  firefighter: 'employee', flight_attendant: 'employee',
+  pilot: 'employee', salesperson_employed: 'employee',
+  manager_employed: 'employee', retiree: 'employee',
+  student: 'employee', unemployed: 'employee',
+  homemaker: 'employee', other_employee: 'employee',
+};
+
+// Alias map: when a caller (or a future free-text path) hands us a coarse
+// label instead of an id, normalize to a category bucket. Hebrew + English.
+// Special marker '__homemaker__' jumps straight to the homemaker id-override.
+// Steven 2026-05-28 (task #218).
+var _KESEFLE_PROFESSION_ALIAS_ = {
+  // English aliases the spec mentions
+  artisan: 'creative', maker: 'creative',
+  salaried: 'employee', employee: 'employee',
+  teacher: 'education',
+  healthcare: 'healthcare', medical: 'healthcare',
+  'family-only': '__homemaker__', familyonly: '__homemaker__',
+  business: 'professional_services',
+  // Hebrew aliases
+  'מורה': 'education',                 // teacher
+  'רפואה': 'healthcare',               // healthcare
+  'משק בית': '__homemaker__',          // family-only
+  'שכיר': 'employee',                  // salaried
+  'עוסק': 'professional_services',     // business
+};
+
+// Build a 1-line English hint for the categorizer based on the user's
+// profession id (from lib/professions.js) or a coarse label alias. Lookup:
+//   1. exact id override                 -- _KESEFLE_PROFESSION_AI_HINT_BY_ID_
+//   2. id -> category bucket fallback    -- _KESEFLE_PROFESSION_CATEGORY_
+//   3. raw category string (alias path)  -- _KESEFLE_PROFESSION_ALIAS_
+//   4. '' (no boost -- safe default)
+// Pure function: NO network calls, NO storage access. Safe for tests.
+function _professionContextLine_(profession) {
+  if (!profession) return '';
+  var raw = String(profession).trim();
+  if (!raw) return '';
+  // 1. Exact id override (e.g. private_tutor, homemaker, ceramicist).
+  if (_KESEFLE_PROFESSION_AI_HINT_BY_ID_[raw]) {
+    return _KESEFLE_PROFESSION_AI_HINT_BY_ID_[raw];
+  }
+  // 2. Resolve id -> category via the embedded map (mirrors lib/professions.js).
+  var category = _KESEFLE_PROFESSION_CATEGORY_[raw];
+  // 3. If not an id, try the alias map (coarse labels like 'artisan').
+  if (!category) {
+    var aliasKey = raw.toLowerCase();
+    var alias = _KESEFLE_PROFESSION_ALIAS_[aliasKey];
+    if (alias === '__homemaker__') {
+      return _KESEFLE_PROFESSION_AI_HINT_BY_ID_.homemaker;
+    }
+    if (alias) category = alias;
+  }
+  if (category && _KESEFLE_PROFESSION_AI_HINT_BY_CATEGORY_[category]) {
+    return _KESEFLE_PROFESSION_AI_HINT_BY_CATEGORY_[category];
+  }
+  return '';
+}
+
+// Cached read of a customer's profession (profile:{phone}.profession) so the
+// LLM hint costs at most one network call per hour per phone. Mirrors
+// _profileTrackingTypeCached_ -- same TTL, same defensive guards. Any failure
+// returns '' so the categorizer behaves identically to pre-Q4. Steven
+// 2026-05-28 (task #218).
+function _profileProfessionCached_(fromPhone) {
+  if (!fromPhone) return '';
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return '';
+  var cacheKey = 'profileProf:' + clean;
+  try {
+    var cache = CacheService.getScriptCache();
+    var hit = cache.get(cacheKey);
+    if (hit !== null) return hit === '_none_' ? '' : hit;
+    var prof = '';
+    try {
+      if (typeof _profileAPI_ === 'function') {
+        var g = _profileAPI_('get', { phone: clean });
+        if (g && g.ok && g.profile && g.profile.profession) prof = String(g.profile.profession);
+      }
+    } catch (_apiErr) { Logger.log('_profileProfessionCached_ api err: ' + _apiErr.message); }
+    cache.put(cacheKey, prof || '_none_', _SURVEY_TTL_SEC_);
+    return prof;
+  } catch (_cErr) {
+    Logger.log('_profileProfessionCached_ err: ' + _cErr.message);
     return '';
   }
 }
@@ -7161,7 +7415,11 @@ function processExpense(text, fromPhone) {
               var __hPCategory = 'עסק';
               var __hPSubcategory = __hPicked.subcategory || 'תפעוליות';
               var __hPDesc = __hPicked.label || __hPSubcategory;
-              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', true]);
+              // BUGFIX B1 (2026-05-28): if the user's smart_pending pick is
+              // 'מחזור' (business revenue) or the raw input had '+', flip col
+              // H to FALSE (income). Old code hardcoded TRUE here too.
+              var __hPIsInc = _resolveIsIncome_(__hPicked, __hP.rawText, __hPCategory, __hPSubcategory);
+              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', !__hPIsInc]);
               // Original-text cell note — preserves the business amount input + picked category.
               try {
                 var __hPLastForNote = __hPSheet.getLastRow();
@@ -8024,8 +8282,14 @@ function processExpense(text, fromPhone) {
       const finalAmount = Math.abs(item.amount);
       runningTotal += finalAmount;
       _coerceCategoryBySubcategory(matched);
-      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory);
-      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', true]);
+      // BUGFIX B1 (2026-05-28): col H was hardcoded TRUE (expense) even when
+      // the matched category was income ('הכנסות' / 'עסק מחזור') or the user
+      // prefixed the amount with '+'. _resolveIsIncome_ combines all three
+      // signals (matched.isIncome, '+' prefix, categorical fallback) so
+      // income rows write FALSE in col H, keeping dashboards correct.
+      var __isInc = _resolveIsIncome_(matched, item.originalText || text, matched.category, matched.subcategory);
+      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory + ' isIncome=' + __isInc);
+      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', !__isInc]);
       Logger.log('processExpense: appendRow DONE, lastRow=' + sheet.getLastRow());
       // ── Original-text cell note (column F = פירוט). Records the raw user
       // message + optional FX conversion line. Capture row number BEFORE the
@@ -8462,10 +8726,15 @@ function matchCategory(text) {
     for (var i = 0; i < entries.length; i++) {
       var kw = entries[i].kw;
       if (_kflKwHit_(t, kw)) {
-        return { category: entries[i].category, subcategory: entries[i].subcategory };
+        // BUGFIX B1 (2026-05-28): BUSINESS_CATEGORY_MAP doesn't carry an
+        // isIncome flag per-row, but the "מחזור" subcategory is by definition
+        // income (revenue). Without this, "עסק הכנסה 10000" matched מחזור
+        // but the downstream col-H assignment got TRUE (expense) anyway.
+        var bizIncome = (entries[i].subcategory === 'מחזור');
+        return { category: entries[i].category, subcategory: entries[i].subcategory, isIncome: bizIncome };
       }
     }
-    return { category: "עסק", subcategory: "הוצאות תפעוליות" };
+    return { category: "עסק", subcategory: "הוצאות תפעוליות", isIncome: false };
   }
   return _matchCategory_long(text);
 }
@@ -8518,8 +8787,14 @@ function _matchCategory_long(text) {
       if (!Array.isArray(kws)) continue;
       var cat = item.category || '';
       var sub = item.subcategory || '';
+      // BUGFIX B1 (2026-05-28): propagate isIncome from CATEGORY_MAP entry.
+      // Previously this flattening lost the isIncome flag, so messages like
+      // "הכנסה עסקית 10000" matched the income subcategory but col H was
+      // hardcoded TRUE (expense) downstream -- silently flipping income to
+      // expense in the תנועות sheet and dashboard.
+      var isInc = !!item.isIncome;
       for (var k = 0; k < kws.length; k++) {
-        entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub });
+        entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub, isIncome: isInc });
       }
     }
   } else if (typeof CATEGORY_MAP === 'object') {
@@ -8530,7 +8805,7 @@ function _matchCategory_long(text) {
         var kws = subs[sub];
         if (!Array.isArray(kws)) continue;
         for (var k = 0; k < kws.length; k++) {
-          entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub });
+          entries.push({ kw: String(kws[k]).toLowerCase(), category: cat, subcategory: sub, isIncome: false });
         }
       }
     }
@@ -8541,7 +8816,9 @@ function _matchCategory_long(text) {
     var kw = entries[i].kw;
     if (!kw) continue;
     if (_kflKwHit_(t, kw)) {
-      return { category: entries[i].category, subcategory: entries[i].subcategory };
+      // B1 fix: include isIncome in the result so downstream col-H assignment
+      // can flip to FALSE (income) when the matched entry is marked as income.
+      return { category: entries[i].category, subcategory: entries[i].subcategory, isIncome: !!entries[i].isIncome };
     }
   }
   return _matchCategory_orig(text);
@@ -8912,6 +9189,18 @@ function _aiCategorizeRich(text, fromPhone) {
       }
     } catch (_ptErr) { Logger.log('profile hint err: ' + _ptErr.message); }
 
+    // Profession context (Q4 onboarding -> LLM bias). Additive: empty string
+    // when profession is missing/unknown, so the prompt is identical to
+    // before for users who skipped Q4. Steven 2026-05-28 (task #218).
+    var professionHintBlock = '';
+    try {
+      var profId = fromPhone ? _profileProfessionCached_(fromPhone) : '';
+      var profLine = _professionContextLine_(profId);
+      if (profLine) {
+        professionHintBlock = '\n\nPROFESSION CONTEXT (apply ONLY to break ties on ambiguous expenses; clear vendor matches always win):\n' + profLine + '\n';
+      }
+    } catch (_ppErr) { Logger.log('profession hint err: ' + _ppErr.message); }
+
     // Smart few-shot: top-12 high-signal corrections, most-similar first.
     // Falls back to the original last-10 reader if the smart picker fails.
     var userExamples = null;
@@ -8996,7 +9285,7 @@ function _aiCategorizeRich(text, fromPhone) {
       '"משכורת" → {"category":"הכנסות","subcategory":"משכורת","confidence":0.99,"reason":"משכורת חודשית"}\n' +
       '"החזר מס" → {"category":"הכנסות","subcategory":"החזר מס","confidence":0.99,"reason":"החזר ממס הכנסה"}\n' +
       '"asdfgh" → {"category":"בלתי מזוהה","subcategory":"לא ברור","confidence":0.05,"reason":"טקסט לא מובן"}' +
-      userExamplesBlock + profileHintBlock;
+      userExamplesBlock + profileHintBlock + professionHintBlock;
 
     var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only with confidence and reason.';
 
@@ -11767,7 +12056,30 @@ function _bucketRegexFor_(canonLabel) {
 // that sums this expense is, by construction, the row labeled with its
 // subcategory. For business we collapse to the canonical biz-sub the company
 // dashboard rows use (same mapping _updateBusinessDashboard_ relies on).
-function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteText) {
+// Pure string helper: given an existing cell note + a new entry line and the
+// year of that new entry, return the combined note with a "=== YYYY ===" header
+// inserted whenever the year of the new entry differs from the year of the most
+// recently appended block. Exposed as its own function so we can unit-test it
+// without touching SpreadsheetApp.
+function _composeNoteWithYearSeparator_(existingNote, newLine, year) {
+  var header = '=== ' + year + ' ===';
+  if (!existingNote) return header + '\n' + newLine;
+  // Find the LAST === YYYY === marker in the existing note. If the new entry's
+  // year matches, just append the line under that header. Otherwise (different
+  // year, or no header at all — legacy notes) start a fresh year block.
+  var re = /===\s*(\d{4})\s*===/g;
+  var lastYear = null;
+  var m;
+  while ((m = re.exec(existingNote)) !== null) {
+    lastYear = parseInt(m[1], 10);
+  }
+  if (lastYear === year) {
+    return existingNote + '\n' + newLine;
+  }
+  return existingNote + '\n' + header + '\n' + newLine;
+}
+
+function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteText, transactionYear) {
   if (!noteText) return false;
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var isBiz = (category === 'עסק');
@@ -11782,6 +12094,12 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
   var monthIdx = parseInt((monthKey || '').split('-')[1], 10);
   var monthLabel = (!isNaN(monthIdx) && monthIdx >= 1 && monthIdx <= 12) ? hebMonths[monthIdx - 1] : null;
   if (!monthLabel) return false;
+  // Resolve the year tag for the separator (caller normally passes it via
+  // _dashboardDetailNote_; fall back to current Jerusalem year for safety).
+  var yearTag = parseInt(transactionYear, 10);
+  if (!yearTag || isNaN(yearTag)) {
+    yearTag = parseInt(Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy'), 10);
+  }
   for (var d = 0; d < dashNames.length; d++) {
     var ds = ss.getSheetByName(dashNames[d]);
     if (!ds) continue;
@@ -11794,9 +12112,9 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
               if (String(dvals[hr][hc] || '').trim() === monthLabel) {
                 var cell = ds.getRange(r + 1, hc + 1);
                 var existing = cell.getNote();
-                var combined = existing ? (existing + '\n' + noteText) : noteText;
+                var combined = _composeNoteWithYearSeparator_(existing, noteText, yearTag);
                 cell.setNote(combined);
-                Logger.log('setDashboardNoteForTransaction_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' += "' + noteText + '"');
+                Logger.log('setDashboardNoteForTransaction_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' += "' + noteText + '" (year ' + yearTag + ')');
                 return true;
               }
             }
@@ -11816,10 +12134,15 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
 function _dashboardDetailNote_(category, subcategory, monthKey, amount, description, when) {
   try {
     var d = (when instanceof Date) ? when : new Date();
-    var line = Utilities.formatDate(d, 'Asia/Jerusalem', 'dd/MM HH:mm') +
+    // Full date including year — so multi-year cells (Jan 2024 vs Jan 2026 in
+    // the same row×col on the multi-year dashboard) are never ambiguous.
+    var line = Utilities.formatDate(d, 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm') +
                ' · ₪' + Math.abs(Number(amount) || 0).toLocaleString('he-IL') +
                ' · ' + String(description == null ? '' : description).trim().slice(0, 50);
-    return setDashboardNoteForTransaction_(category, subcategory, monthKey, line);
+    // Year tag drives the === YYYY === separator grouping inside the cell note.
+    var yearStr = Utilities.formatDate(d, 'Asia/Jerusalem', 'yyyy');
+    var yearInt = parseInt(yearStr, 10);
+    return setDashboardNoteForTransaction_(category, subcategory, monthKey, line, yearInt);
   } catch (e) {
     Logger.log('_dashboardDetailNote_: ' + (e && e.message));
     return false;

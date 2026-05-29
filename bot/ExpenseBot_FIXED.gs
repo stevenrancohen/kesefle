@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-28-b1-b2-llm-profession-combined';
+const KFL_BUILD_VERSION = '2026-05-29-cell-note-year-separator';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -11981,7 +11981,30 @@ function _bucketRegexFor_(canonLabel) {
 // that sums this expense is, by construction, the row labeled with its
 // subcategory. For business we collapse to the canonical biz-sub the company
 // dashboard rows use (same mapping _updateBusinessDashboard_ relies on).
-function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteText) {
+// Pure string helper: given an existing cell note + a new entry line and the
+// year of that new entry, return the combined note with a "=== YYYY ===" header
+// inserted whenever the year of the new entry differs from the year of the most
+// recently appended block. Exposed as its own function so we can unit-test it
+// without touching SpreadsheetApp.
+function _composeNoteWithYearSeparator_(existingNote, newLine, year) {
+  var header = '=== ' + year + ' ===';
+  if (!existingNote) return header + '\n' + newLine;
+  // Find the LAST === YYYY === marker in the existing note. If the new entry's
+  // year matches, just append the line under that header. Otherwise (different
+  // year, or no header at all — legacy notes) start a fresh year block.
+  var re = /===\s*(\d{4})\s*===/g;
+  var lastYear = null;
+  var m;
+  while ((m = re.exec(existingNote)) !== null) {
+    lastYear = parseInt(m[1], 10);
+  }
+  if (lastYear === year) {
+    return existingNote + '\n' + newLine;
+  }
+  return existingNote + '\n' + header + '\n' + newLine;
+}
+
+function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteText, transactionYear) {
   if (!noteText) return false;
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var isBiz = (category === 'עסק');
@@ -11996,6 +12019,12 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
   var monthIdx = parseInt((monthKey || '').split('-')[1], 10);
   var monthLabel = (!isNaN(monthIdx) && monthIdx >= 1 && monthIdx <= 12) ? hebMonths[monthIdx - 1] : null;
   if (!monthLabel) return false;
+  // Resolve the year tag for the separator (caller normally passes it via
+  // _dashboardDetailNote_; fall back to current Jerusalem year for safety).
+  var yearTag = parseInt(transactionYear, 10);
+  if (!yearTag || isNaN(yearTag)) {
+    yearTag = parseInt(Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy'), 10);
+  }
   for (var d = 0; d < dashNames.length; d++) {
     var ds = ss.getSheetByName(dashNames[d]);
     if (!ds) continue;
@@ -12008,9 +12037,9 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
               if (String(dvals[hr][hc] || '').trim() === monthLabel) {
                 var cell = ds.getRange(r + 1, hc + 1);
                 var existing = cell.getNote();
-                var combined = existing ? (existing + '\n' + noteText) : noteText;
+                var combined = _composeNoteWithYearSeparator_(existing, noteText, yearTag);
                 cell.setNote(combined);
-                Logger.log('setDashboardNoteForTransaction_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' += "' + noteText + '"');
+                Logger.log('setDashboardNoteForTransaction_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' += "' + noteText + '" (year ' + yearTag + ')');
                 return true;
               }
             }
@@ -12030,10 +12059,15 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
 function _dashboardDetailNote_(category, subcategory, monthKey, amount, description, when) {
   try {
     var d = (when instanceof Date) ? when : new Date();
-    var line = Utilities.formatDate(d, 'Asia/Jerusalem', 'dd/MM HH:mm') +
+    // Full date including year — so multi-year cells (Jan 2024 vs Jan 2026 in
+    // the same row×col on the multi-year dashboard) are never ambiguous.
+    var line = Utilities.formatDate(d, 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm') +
                ' · ₪' + Math.abs(Number(amount) || 0).toLocaleString('he-IL') +
                ' · ' + String(description == null ? '' : description).trim().slice(0, 50);
-    return setDashboardNoteForTransaction_(category, subcategory, monthKey, line);
+    // Year tag drives the === YYYY === separator grouping inside the cell note.
+    var yearStr = Utilities.formatDate(d, 'Asia/Jerusalem', 'yyyy');
+    var yearInt = parseInt(yearStr, 10);
+    return setDashboardNoteForTransaction_(category, subcategory, monthKey, line, yearInt);
   } catch (e) {
     Logger.log('_dashboardDetailNote_: ' + (e && e.message));
     return false;
