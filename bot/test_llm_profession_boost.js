@@ -239,9 +239,20 @@ console.log('\n=== KFL_BUILD_VERSION ===\n');
 
 // Heart-beat / admin-dashboard sanity check: the build version bumped for
 // this PR so the deployed bot's "בדיקה" command surfaces the new code.
-check('KFL_BUILD_VERSION bumped (date-prefixed)',
-  /KFL_BUILD_VERSION\s*=\s*['"]2026-05-28-[\w-]+['"]/.test(SRC),
-  'KFL_BUILD_VERSION not bumped or not date-prefixed');
+// 2026-05-29: was hardcoded to the 2026-05-28- prefix and started failing
+// every time the build version legitimately bumped for a later PR (e.g.
+// PR #153 bumped to 2026-05-29-... ). Relaxed to verify the LLM-profession
+// FEATURE CODE is in source (the actual thing this PR landed) instead of
+// asserting on the build-version string, which is expected to change.
+// Same pattern as the fix applied to bot/test_cell_note_year_separator.js
+// in PR #153.
+const _kflMatch = SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/);
+check('KFL_BUILD_VERSION declared',
+  !!_kflMatch,
+  'no version line found');
+check('LLM profession-boost feature still in source',
+  /_profileProfessionCached_/.test(SRC) && /professionHintBlock/.test(SRC),
+  'feature code (_profileProfessionCached_ + professionHintBlock) missing — version: ' + (_kflMatch && _kflMatch[1]));
 
 console.log('\n' + (fail === 0
   ? 'PASS ALL ' + pass + ' CHECKS PASSED'
