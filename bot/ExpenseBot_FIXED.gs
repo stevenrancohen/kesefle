@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-29-kolektziot-route-added';
+const KFL_BUILD_VERSION = '2026-05-29-frozen-year-installers-and-kolektziot';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -11249,6 +11249,14 @@ function migrateDashboardToSUMIFS() {
       continue;
     }
     processed++;
+    // 2026-05-29 FROZEN-YEAR FIX (WS2 HIGH from PR #152 deep-review):
+    // The old code baked `year + '-' + MM` as a literal SUMIFS criterion, so
+    // the dashboard's $B$4 year selector became cosmetic — switching it did
+    // not change totals. Now we wire every formula to $B$4 via SUMPRODUCT +
+    // LEFT(B,4), matching _MDD_buildFormulas_ in MIGRATE_DASHBOARD_FROM_OLD.gs.
+    // See bot/MIGRATE_DASHBOARD_FROM_OLD.gs:203 for the canonical pattern and
+    // why SUMPRODUCT not SUMIFS (Sheets parses "2025-01" as arithmetic).
+    var _MDS_yearExpr = 'IF($B$4="",TEXT(YEAR(TODAY()),"0000"),TEXT($B$4,"0000"))';
     for (let mi = 0; mi < monthCols.length; mi++) {
       const col = monthCols[mi];
       const monthNum = mi + 1;
@@ -11261,7 +11269,12 @@ function migrateDashboardToSUMIFS() {
         transactions.appendRow([dt, monthKey, val, sanitizeForSheet(currentSection), sanitizeForSheet(name), 'מיגרציה אוטומטית מהדשבורד', 'Legacy']);
         legacy++;
       }
-      cell.setFormula('=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, $A' + cellRow + ', תנועות!B:B, "' + monthKey + '"), 0)');
+      var _MDS_mm = monthNum < 10 ? '0' + monthNum : '' + monthNum;
+      cell.setFormula(
+        '=SUMPRODUCT((תנועות!E2:E2000=$A' + cellRow + ')*' +
+        '(תנועות!B2:B2000=' + _MDS_yearExpr + '&"-' + _MDS_mm + '")*' +
+        'תנועות!C2:C2000)'
+      );
       formulas++;
     }
     dashboard.getRange(cellRow, 2).setFormula('=SUM(C' + cellRow + ':N' + cellRow + ')');
@@ -15835,18 +15848,30 @@ function installCompanyDashboardFormulas() {
       continue;
     }
 
-    // Phase 3: install SUMIFS for direct metric rows.
+    // Phase 3: install SUMPRODUCT for direct metric rows.
+    // 2026-05-29 FROZEN-YEAR FIX (WS2 HIGH from PR #152 deep-review):
+    // The old code baked `year + '-' + MM` as a literal SUMIFS criterion, so
+    // the dashboard's $B$4 year selector became cosmetic. Now we wire every
+    // formula to $B$4 via SUMPRODUCT + LEFT(B,4), matching _MDD_buildFormulas_
+    // in MIGRATE_DASHBOARD_FROM_OLD.gs:203.
+    var _ICDF_yearExpr = 'IF($B$4="",TEXT(YEAR(TODAY()),"0000"),TEXT($B$4,"0000"))';
     for (var canonSub in metricRows) {
       var rowsForSub = metricRows[canonSub];
+      // Escape any " in canonSub so it survives the criterion string.
+      var _ICDF_crit = String(canonSub).replace(/"/g, '""');
       for (var ri = 0; ri < rowsForSub.length; ri++) {
         var rowIdx0 = rowsForSub[ri];
         for (var monthLabel in monthCols) {
           var colIdx0 = monthCols[monthLabel];
           var monthIdx1 = _DASH_HEB_MONTHS.indexOf(monthLabel) + 1; // 1..12
-          var monthKey = year + '-' + (monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1);
+          var _ICDF_mm = monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1;
           var cell = sheet.getRange(rowIdx0 + 1, colIdx0 + 1);
-          // Use IFERROR to keep cell numeric even if no matches yet.
-          var f = '=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, "' + canonSub + '", תנועות!B:B, "' + monthKey + '"), 0)';
+          // SUMPRODUCT keeps the cell numeric; bounded range B2:B2000 avoids
+          // header-row #VALUE! errors. Year wired to $B$4.
+          var f =
+            '=SUMPRODUCT((תנועות!E2:E2000="' + _ICDF_crit + '")*' +
+            '(תנועות!B2:B2000=' + _ICDF_yearExpr + '&"-' + _ICDF_mm + '")*' +
+            'תנועות!C2:C2000)';
           var res = _safeReplaceWithFormula_(cell, f, tabKey + '/' + canonSub + '/' + monthLabel);
           if (res === 'fixed') { summary.fixed++; tabStat.fixed++; }
           else if (res === 'skip-formula' || res === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
@@ -15973,6 +15998,12 @@ function installPersonalDashboardFormulas() {
     }
     var monthCols = [3,4,5,6,7,8,9,10,11,12,13,14]; // C..N
     var colA = sheet.getRange(1, 1, lastRow, 1).getValues();
+    // 2026-05-29 FROZEN-YEAR FIX (WS2 HIGH from PR #152 deep-review):
+    // The old code baked `year + '-' + MM` as a literal SUMIFS criterion, so
+    // the dashboard's $B$4 year selector became cosmetic. Now we wire every
+    // formula to $B$4 via SUMPRODUCT + LEFT(B,4), matching _MDD_buildFormulas_
+    // in MIGRATE_DASHBOARD_FROM_OLD.gs:203.
+    var _IPDF_yearExpr = 'IF($B$4="",TEXT(YEAR(TODAY()),"0000"),TEXT($B$4,"0000"))';
     for (var r = 3; r < colA.length; r++) { // skip first 3 rows (title + year + header)
       var rowLabel = _dashNormalizeLabel_(colA[r][0]);
       if (!rowLabel) continue;
@@ -15982,9 +16013,14 @@ function installPersonalDashboardFormulas() {
       for (var mi = 0; mi < monthCols.length; mi++) {
         var col = monthCols[mi];
         var monthIdx1 = mi + 1;
-        var monthKey = year + '-' + (monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1);
+        var _IPDF_mm = monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1;
         var cell = sheet.getRange(rowOneBased, col);
-        var f = '=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, $A' + rowOneBased + ', תנועות!B:B, "' + monthKey + '"), 0)';
+        // SUMPRODUCT keeps the cell numeric; bounded range B2:B2000 avoids
+        // header-row #VALUE! errors. Year wired to $B$4.
+        var f =
+          '=SUMPRODUCT((תנועות!E2:E2000=$A' + rowOneBased + ')*' +
+          '(תנועות!B2:B2000=' + _IPDF_yearExpr + '&"-' + _IPDF_mm + '")*' +
+          'תנועות!C2:C2000)';
         var res = _safeReplaceWithFormula_(cell, f, tabKey + '/' + rowLabel + '/' + _DASH_HEB_MONTHS[mi]);
         if (res === 'fixed') { summary.fixed++; tabStat.fixed++; }
         else if (res === 'skip-formula' || res === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
