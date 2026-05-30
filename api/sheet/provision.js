@@ -287,7 +287,16 @@ async function handlerImpl(req, res) {
       if (tokRec) { tokRec.sheetId = spreadsheetId; await kvSetSimple('token:' + userSub, tokRec); }
     } catch (e) { console.warn('token_record_merge_failed', e); }
   } else {
-    console.log('SHEET_PROVISIONED', JSON.stringify(record));
+    // 2026-05-29 resweep R5: was raw console.log of the full record (userSub,
+    // userEmail, spreadsheetId, spreadsheetUrl). Only fires when KV is not
+    // configured (local dev / mis-provisioned staging) but still violates the
+    // log-PII contract. Switched to redacted log.info.
+    log.info('provision.sheet_provisioned_no_kv', {
+      userSub: record.userSub,
+      hasEmail: !!record.userEmail,
+      hasSheet: !!record.spreadsheetId,
+      provisioned: record.provisioned,
+    });
   }
 
   return res.status(200).json({

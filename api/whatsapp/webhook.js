@@ -352,13 +352,18 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
     try {
       refreshToken = decryptRefreshToken(userRecord.refreshTokenEnvelope, userRecord.userSub);
     } catch (e) {
-      console.error('WRITE_BLOCKED_DECRYPT_FAILED', { userSub: userRecord.userSub, err: e.message });
+      // log.error redacts userSub (matches /usersub/i in lib/log.js SECRET_KEY_PATTERNS),
+      // so Vercel log retention won't see the raw Google sub. This replaces the
+      // earlier console.error which bypassed the redactor — flagged H2 in
+      // docs/SECURITY_PRIVACY_AUDIT_KESEFLE.md (2026-05-28) and re-confirmed in
+      // docs/SECURITY_QA_RESWEEP_2026_05_29.md.
+      log.error('wa.write_blocked_decrypt_failed', { userSub: userRecord.userSub, error: e.message });
       return { ok: false, error: 'refresh_token_decrypt_failed' };
     }
   } else if (userRecord?.refreshToken) {
     refreshToken = userRecord.refreshToken; // legacy
   } else {
-    console.error('WRITE_BLOCKED_NO_REFRESH_TOKEN', { userSub: userRecord.userSub, spreadsheetId: userRecord.spreadsheetId });
+    log.error('wa.write_blocked_no_refresh_token', { userSub: userRecord.userSub, spreadsheetId: userRecord.spreadsheetId });
     return { ok: false, error: 'no_refresh_token_relink_needed' };
   }
 

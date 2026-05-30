@@ -40,6 +40,51 @@ async function kvDel(key) {
   return r.ok;
 }
 
+// 2026-05-29 resweep R1: single source of truth for "every KV key that holds
+// per-user state". Previously the cookie-auth deleteAccount() path and the
+// bot-secret deleteByPhone() path each maintained their own list, and they
+// drifted: the web path missed profile/recurring/memberGroup/reminders/nps/
+// testimonial; the bot path missed referral:code/referral:reverse.
+//
+// The full list is enumerated from `grep -rnE "/set/" --include='*.js' api/ lib/`
+// (29 distinct prefixes across the codebase). Phone-keyed entries are only
+// included when `phone` is provided; userSub-keyed entries are always included.
+// Referral-reverse requires a read because the lookup is forward-only.
+async function _keysForUser_(userSub, phone, referralCode) {
+  const keys = [
+    // Identity / auth core (both flows already had these)
+    'user:' + userSub,
+    'sheet:' + userSub,
+    'token:' + userSub,          // legacy plaintext token store — GDPR purge
+    'userPhone:' + userSub,
+    // Referral mapping (only the web flow had these; bot flow missed them)
+    'referral:code:' + userSub,
+    // Web push subscription
+    'push_sub:' + userSub,
+    // NPS submission (free-text comment is PII)
+    'nps:' + userSub,
+    // Submitted testimonial (free text + name + plan, possibly displayed
+    // publicly elsewhere). If a user deletes, drop the unpublished copy.
+    'testimonial:' + userSub,
+    // Cancellation exit-survey (free text reason). 365-day TTL anyway,
+    // but the user explicitly asked for deletion — honor it.
+    'exit_survey:' + userSub,
+  ];
+  if (phone) {
+    // Phone-keyed records (only the bot flow had these; web flow missed them)
+    keys.push('phone:' + phone);
+    keys.push('profile:' + phone);          // billing profile, currency, premium fields
+    keys.push('recurring:' + phone);        // recurring expense templates
+    keys.push('recurring_pending:' + phone); // pending recurring confirmation
+    keys.push('memberGroup:' + phone);      // family/group membership pointer
+    keys.push('reminders:' + phone);        // reminder list (PII in free text)
+  }
+  if (referralCode) {
+    keys.push('referral:reverse:' + referralCode);
+  }
+  return keys;
+}
+
 async function revokeGoogleToken(refreshToken) {
   if (!refreshToken) return;
   try {
@@ -101,29 +146,13 @@ async function deleteAccount(req, res) {
   }
 
   const deleted = [];
-  const keysToDelete = [
-    'user:' + userSub,
-    'sheet:' + userSub,
-    'token:' + userSub, // legacy PLAINTEXT token store — must be purged too (GDPR)
-    // Referral keys (clean these up too)
-    'referral:code:' + userSub,
-  ];
 
-  // If user has a referral code, also delete the reverse lookup.
-  const code = await kvGet('referral:code:' + userSub);
-  if (code) keysToDelete.push('referral:reverse:' + code);
-
-  // Phone-mapping cleanup. Without this, the deleted user's phone stays
-  // mapped in KV pointing at a now-missing user record, so the bot would
-  // open a stale-state conversation ("✅ נרשם" reply with no sheet to
-  // write to) the next time they message in. We look up the reverse
-  // mapping `userPhone:<sub>` to find the E164 phone, then drop both
-  // directions.
+  // Look up the reverse phone mapping + referral code to build the full
+  // per-user key list (R1 unified delete — see _keysForUser_ above).
   const userPhoneRec = await kvGet('userPhone:' + userSub);
-  if (userPhoneRec && userPhoneRec.phone) {
-    keysToDelete.push('phone:' + userPhoneRec.phone);
-    keysToDelete.push('userPhone:' + userSub);
-  }
+  const referralCode = await kvGet('referral:code:' + userSub);
+  const phone = (userPhoneRec && userPhoneRec.phone) ? userPhoneRec.phone : null;
+  const keysToDelete = await _keysForUser_(userSub, phone, referralCode);
 
   for (const k of keysToDelete) {
     if (await kvDel(k)) deleted.push(k);
@@ -317,8 +346,12 @@ async function deleteByPhone(req, res) {
       : userRec.refreshToken;
     if (refresh) await revokeGoogleToken(refresh);
   }
+  // R1 unified delete: same key inventory the cookie-auth path uses, so
+  // bot-driven and web-driven deletes leave identical residue (none).
+  const referralCode = await kvGet('referral:code:' + userSub);
   const deleted = [];
-  for (const k of ['user:' + userSub, 'sheet:' + userSub, 'token:' + userSub, 'phone:' + phone, 'userPhone:' + userSub, 'profile:' + phone, 'recurring:' + phone, 'memberGroup:' + phone, 'reminders:' + phone]) {
+  const keysToDelete = await _keysForUser_(userSub, phone, referralCode);
+  for (const k of keysToDelete) {
     if (await kvDel(k)) deleted.push(k);
   }
   log.info('account.delete_by_phone', { reqId: req.reqId, phone: phone.replace(/\d(?=\d{4})/g, '*') });
