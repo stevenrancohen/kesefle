@@ -1,6 +1,7 @@
 import { requireUser } from '../_lib/session.js';
 import { getGoogleClientId } from '../../lib/auth.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -87,7 +88,7 @@ function isInCurrentMonth(date) {
   return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
 }
 
-export default async function handler(req, res) {
+async function handlerImpl(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' });
   }
@@ -206,3 +207,9 @@ export default async function handler(req, res) {
     totalThisMonth,
   });
 }
+
+// 2026-05-29 resweep R7: was previously authed-only (requireUser) with no rate
+// limit. An authed user could spam reads and hit Google Sheets per-project
+// quota (300 req/min) trivially, and Vercel function execution cost. 60/min IP
+// cap matches the rest of api/sheet/* read endpoints (bot-query, stats).
+export default withRateLimit({ key: 'sheet_get_expenses', limit: 60, windowSec: 60 })(handlerImpl);
