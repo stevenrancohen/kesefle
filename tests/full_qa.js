@@ -46,7 +46,7 @@ function extractFn(src, name) {
 
 // ── 1. Existing unit suites ─────────────────────────────────────────────────
 console.log('\n══ 1. Unit suites (isolation + parser) ══');
-for (const f of ['bot/test_isolation.js', 'bot/test_parser.js', 'bot/test_classify.js', 'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js', 'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js', 'bot/test_objective_commands.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js']) {
+for (const f of ['bot/test_isolation.js', 'bot/test_parser.js', 'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js', 'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js', 'bot/test_objective_commands.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js']) {
   try { execFileSync('node', [path.join(ROOT, f)], { stdio: 'pipe' }); ok(f + ' passed', true); }
   catch (e) { ok(f + ' passed', false); }
 }
