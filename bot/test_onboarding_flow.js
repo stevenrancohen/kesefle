@@ -336,9 +336,10 @@ check('at least 3 hand-off sites from Q4 (interactive + 2 free-text)',
 // The interactive dispatch routes sec_* taps to the survey handler.
 check('handleInteractiveReply_ routes sec_* to _surveyHandleInteractive_',
   /\/\^sec_\/\.test\(String\(picked\)\)/.test(SRC));
-// And q4_ is now routed too (was a latent gap: /^q[123]_/ excluded q4).
-check('handleInteractiveReply_ gate now includes q4 (q[1234])',
-  /\/\^q\[1234\]_\//.test(SRC));
+// And q0_ (gender) + q4_ are routed too. The gate is /^q[01234]_/: q0 gender,
+// q1 tracking, q2 recurring, q3 autolog, q4 profession.
+check('handleInteractiveReply_ gate includes q0 (gender) through q4 (q[01234])',
+  /\/\^q\[01234\]_\//.test(SRC));
 
 // _surveyHandleInteractive_ consumes sec_* early and returns.
 check('_surveyHandleInteractive_ delegates sec_* to _onboardingHandleInteractive_',
