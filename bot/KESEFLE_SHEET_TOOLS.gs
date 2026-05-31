@@ -772,21 +772,21 @@ function AYD_ROLLBACK() {
 // Schema A..L: date, month, customer, size/desc, material, production-cost,
 // sale-price(=revenue, col G), shipping, profit, source, note, status.
 var _FOH_NEW_SHEET_ID_ = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
-var _FOH_ORDERS_TAB_   = 'הזמנות';  // hazmanot (orders)
+var _FOH_ORDERS_TAB_   = '\u05d4\u05d6\u05de\u05e0\u05d5\u05ea';  // hazmanot (orders)
 var _FOH_BACKUP_PROP_  = 'FOH_BACKUP_HEADERS';
 var _FOH_HEADERS_ = [
-  'תאריך',                              // A: tarich (date)
-  'חודש',                                    // B: chodesh (month)
-  'שם לקוח',                       // C: shem lakoach (customer)
-  'גודל / תיאור',   // D: godel/teur (size/desc)
-  'חומר',                                    // E: chomer (material)
-  'עלות ייצור',     // F: alut yetzur (production cost)
-  'מחיר מכירה',     // G: mechir mechira (sale price = revenue)
-  'משלוח',                              // H: mishloach (shipping)
-  'רווח',                                    // I: revach (profit)
-  'מקור',                                    // J: makor (source)
-  'הערה',                                    // K: heara (note)
-  'סטטוס'                               // L: status
+  '\u05ea\u05d0\u05e8\u05d9\u05da',                              // A: tarich (date)
+  '\u05d7\u05d5\u05d3\u05e9',                                    // B: chodesh (month)
+  '\u05e9\u05dd \u05dc\u05e7\u05d5\u05d7',                       // C: shem lakoach (customer)
+  '\u05d2\u05d5\u05d3\u05dc / \u05ea\u05d9\u05d0\u05d5\u05e8',   // D: godel/teur (size/desc)
+  '\u05d7\u05d5\u05de\u05e8',                                    // E: chomer (material)
+  '\u05e2\u05dc\u05d5\u05ea \u05d9\u05d9\u05e6\u05d5\u05e8',     // F: alut yetzur (production cost)
+  '\u05de\u05d7\u05d9\u05e8 \u05de\u05db\u05d9\u05e8\u05d4',     // G: mechir mechira (sale price = revenue)
+  '\u05de\u05e9\u05dc\u05d5\u05d7',                              // H: mishloach (shipping)
+  '\u05e8\u05d5\u05d5\u05d7',                                    // I: revach (profit)
+  '\u05de\u05e7\u05d5\u05e8',                                    // J: makor (source)
+  '\u05d4\u05e2\u05e8\u05d4',                                    // K: heara (note)
+  '\u05e1\u05d8\u05d8\u05d5\u05e1'                               // L: status
 ];
 
 function FIX_ORDERS_HEADERS() {
