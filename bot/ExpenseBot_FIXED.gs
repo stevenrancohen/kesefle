@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-templates-10';
+const KFL_BUILD_VERSION = '2026-05-31-templates-10-multiitem-guard-cat-routes';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9366,15 +9366,42 @@ function matchCategorySmart(text, fromPhone) {
     }
   } catch (_glLookErr) { Logger.log('matchCategorySmart global err: ' + _glLookErr.message); }
 
-  // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only)
-  var ai = _aiCategorize(text, fromPhone);
-  if (ai) {
-    Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory);
-    _learnedSave(text, ai); // remember for next time
-    return ai;
+  // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only).
+  //
+  // NEVER-silently-corrupt invariant (Steven): this path is hit on the
+  // MULTI-ITEM write loop (parsed.items.forEach → matchCategorySmart →
+  // appendRow) where there is no per-item pre-pass to gate the AI. So we
+  // MUST enforce the same classify-contract here as the single-item path:
+  // we only accept the AI category when the normalized contract says it is
+  // safe to auto-write (!should_ask_user) AND confidence clears the 0.6 hard
+  // floor. A low-confidence / ambiguous AI result (e.g. {אוכל, 0.45}) must
+  // NOT be returned as a confident category — instead we fall through to the
+  // keyword/DEFAULT match (שונות ואחרים / שונות), so the caller files it in
+  // the explicit needs-review bucket rather than silently writing a wrong
+  // financial row. (Premium gate + 'בלתי מזוהה' filter preserved from the
+  // old thin _aiCategorize wrapper.)
+  if (!fromPhone || _hasActivePremium_(fromPhone)) {
+    var rich = _aiCategorizeRich(text, fromPhone);
+    var richConf = rich
+      ? ((typeof rich.confidence_score === 'number' ? rich.confidence_score
+         : (rich.contract && typeof rich.contract.confidence_score === 'number' ? rich.contract.confidence_score
+         : (typeof rich.confidence === 'number' ? rich.confidence : 0))))
+      : 0;
+    if (rich && rich.category && rich.category !== 'בלתי מזוהה' &&
+        rich.contract && !rich.contract.should_ask_user && richConf >= 0.6) {
+      var ai = { category: rich.category, subcategory: rich.subcategory };
+      Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory + ' (conf=' + richConf + ')');
+      _learnedSave(text, ai); // remember for next time
+      return ai;
+    }
+    if (rich) {
+      Logger.log('matchCategorySmart: AI result for "' + text + '" withheld (shouldAsk=' +
+        (rich.contract ? rich.contract.should_ask_user : 'n/a') + ', conf=' + richConf +
+        ') — falling through to DEFAULT so the caller routes to needs_review');
+    }
   }
 
-  return matched; // DEFAULT_CATEGORY
+  return matched; // DEFAULT_CATEGORY (שונות ואחרים / שונות) → caller asks / needs_review
 }
 
 // Returns top-N category guesses for ambiguous text — used to populate the
@@ -9836,18 +9863,18 @@ function _normalizeAiClassifyResult_(rich, opts) {
   };
 }
 
+// DEPRECATED / DISABLED (2026-05-31 multi-item-guard):
+//   This thin wrapper used to return ANY AI category != 'בלתי מזוהה',
+//   DISCARDING contract.should_ask_user / needs_review and the 0.6 hard
+//   confidence floor. That let a low-confidence/ambiguous AI result (e.g.
+//   {אוכל, 0.45}) be written SILENTLY when reached via the multi-item
+//   matchCategorySmart path — bypassing the NEVER-silently-corrupt invariant.
+//   matchCategorySmart now calls _aiCategorizeRich directly and enforces the
+//   contract inline. This wrapper is retired and returns null so NO code path
+//   can ever bypass the classify contract again. Do not re-introduce a caller.
 function _aiCategorize(text, fromPhone) {
-  // Premium gating — AI categorisation is Pro+. Free users fall back
-  // to CATEGORY_MAP keyword matching + learned cache. The bot reply
-  // path adds an upsell line on the way out so the upgrade prompt is
-  // contextual ("we couldn't categorise this — Pro would").
-  if (fromPhone && !_hasActivePremium_(fromPhone)) {
-    return null;
-  }
-  var rich = _aiCategorizeRich(text, fromPhone);
-  if (!rich) return null;
-  if (rich.category === 'בלתי מזוהה') return null;
-  return { category: rich.category, subcategory: rich.subcategory, confidence: rich.confidence, reason: rich.reason };
+  Logger.log('_aiCategorize: DISABLED (multi-item-guard) — use _aiCategorizeRich + contract gating');
+  return null;
 }
 
 function _aiCategorizeRich(text, fromPhone) {

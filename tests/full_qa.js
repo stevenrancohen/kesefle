@@ -140,7 +140,11 @@ console.log('\n══ 5b. Cross-user global learning ══');
 const _mcs = extractFn(BOT, 'matchCategorySmart');
 const _iDict = _mcs.indexOf('matchCategory(text)');
 const _iGlobal = _mcs.indexOf('_globalLearnLookup_(');
-const _iLLM = _mcs.indexOf('_aiCategorize(');
+// LLM tier: matchCategorySmart Step-3 now calls _aiCategorizeRich directly
+// (multi-item-guard, 2026-05-31) so it can enforce the classify contract
+// (should_ask_user + 0.6 floor) instead of the old thin _aiCategorize wrapper
+// that silently dropped it. The latency-safe ordering invariant is unchanged.
+const _iLLM = _mcs.indexOf('_aiCategorizeRich(');
 ok('global tier sits AFTER dictionary, BEFORE LLM (latency-safe order)',
    _iDict > -1 && _iGlobal > _iDict && _iLLM > _iGlobal);
 // The hot in-memory lookup must NOT itself make the HTTP call (would add a hop
