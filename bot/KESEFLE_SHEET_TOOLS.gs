@@ -92,6 +92,54 @@ function DB_DUMP_ALL_COMPANY() {
   return 'ok';
 }
 
+// -- 4b. FULL company dump: A label + B(annual) + C(Jan) formulas, rows 1..16.
+//   This is the diagnostic for "esek income shows 0". The annual revenue row
+//   (mahzor bruto) is SUM(C:N); the FROZEN-YEAR bug lives in the MONTHLY cells
+//   (C..N), which DB_DUMP_ALL_COMPANY does not print. Here we print C(Jan) too:
+//     - if C(Jan) of the revenue row contains a literal year ("2025-01")  -> FROZEN
+//       (changing the B4 year selector does nothing) -> needs an unfreeze rewire.
+//     - if C(Jan) references $B$4 / LEFT(..,4)=year                       -> year-aware
+//       (the 0 is then a NO-DATA-that-year issue, not a formula bug).
+function DB_DUMP_COMPANY_FULL() {
+  Logger.log('');
+  Logger.log('=== DB_DUMP_COMPANY_FULL (read-only) ===');
+  var ss = _db_ss_();
+  var sheets = ss.getSheets();
+  var found = 0;
+  for (var i = 0; i < sheets.length; i++) {
+    var nm = sheets[i].getName();
+    if (nm.indexOf(_DB_COMPANY_) !== 0) continue;
+    found++;
+    var sh = sheets[i];
+    var lastRow = Math.min(sh.getLastRow(), 16);
+    var rng = sh.getRange(1, 1, lastRow, 14);   // A..N
+    var f = rng.getFormulas();
+    var d = rng.getDisplayValues();
+    Logger.log('## "' + nm + '"  (rows 1..' + lastRow + ')');
+    for (var yr = 0; yr < Math.min(lastRow, 6); yr++) {
+      for (var yc = 0; yc < 14; yc++) {
+        var yv = String(d[yr][yc] || '').replace(/[^0-9]/g, '');
+        if (/^(202[0-9]|2030)$/.test(yv)) Logger.log('  YEAR cell ' + _db_colLetter_(yc + 1) + (yr + 1) + ' = ' + d[yr][yc]);
+      }
+    }
+    for (var r = 0; r < lastRow; r++) {
+      var label = d[r][0];
+      if (!label) continue;
+      var b = f[r][1] || '(' + d[r][1] + ')';
+      var cJan = f[r][2] || '(' + d[r][2] + ')';
+      Logger.log('  R' + (r + 1) + ' "' + label + '"  [B shows: ' + d[r][1] + ']');
+      Logger.log('      B=' + (b.length > 130 ? b.slice(0, 130) + '...' : b));
+      Logger.log('      C(Jan)=' + (cJan.length > 130 ? cJan.slice(0, 130) + '...' : cJan));
+    }
+  }
+  if (!found) Logger.log('!! No company tab found.');
+  Logger.log('');
+  Logger.log('HOW TO READ: find the revenue row (mahzor bruto). If its C(Jan) has a literal');
+  Logger.log('year like "2025-01" -> FROZEN (needs unfreeze). If it has $B$4 / LEFT(..,4) ->');
+  Logger.log('year-aware, so the 0 is a no-data-that-year issue. Copy this whole log to Claude.');
+  return 'ok';
+}
+
 // -- 5. Auto-flag findings ----------------------------------------------------
 function DB_FINDINGS() {
   Logger.log('');
