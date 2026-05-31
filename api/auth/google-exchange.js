@@ -139,6 +139,17 @@ async function handlerImpl(req, res) {
     return res.status(400).json({ ok: false, error: 'id_token_missing_sub' });
   }
 
+  // 2026-05-31 audit fix (docs/AUDIT_OAUTH_DRIVE_2026_05_31.md M3):
+  // Reject Google ID tokens whose email claim is unverified. The other Google
+  // auth entry point (api/auth/google.js:81) already enforces this; without
+  // it here a Workspace admin who controls a tenant could mint ID tokens
+  // with arbitrary unverified email fields and pollute our user record's
+  // `email` (which is then trusted by the ADMIN_EMAILS lookup in lib/auth.js).
+  if (identity.email_verified !== true) {
+    log.warn('exchange.email_not_verified', { reqId: req.reqId, userSub: identity.sub });
+    return res.status(403).json({ ok: false, error: 'email_not_verified' });
+  }
+
   // Store the refresh token in KV (only on first consent — Google omits refresh_token on subsequent grants
   // unless prompt=consent was forced).
   const kvUrl = process.env.KV_REST_API_URL;
@@ -177,6 +188,12 @@ async function handlerImpl(req, res) {
         connectedAt: existing?.connectedAt || nowIso,
         lastLoginAt: nowIso,
       };
+      // 2026-05-31 audit fix (docs/AUDIT_OAUTH_DRIVE_2026_05_31.md M1):
+      // The `...existing` spread above silently preserves any pre-migration
+      // plaintext refreshToken field. Strip it here so re-login on a legacy
+      // record converts to envelope-only storage. KV write below replaces the
+      // whole record, so this delete is sufficient.
+      delete record.refreshToken;
       // Start a 14-day Pro trial exactly once, at first signup. Guarded on
       // trialEndsAt absence so we never reset a trial or override a paid plan.
       if (isNewUser && !record.trialEndsAt && !record.stripeSubscriptionId) {
