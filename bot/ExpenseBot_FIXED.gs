@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-templates-10-multiitem-guard-cat-routes-kolektziot-biz';
+const KFL_BUILD_VERSION = '2026-05-31-onboarding-gender-need-fixed-link';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2371,12 +2371,13 @@ function handleInteractiveReply_(fromPhone, interactive) {
   }
 
   // Personalization questionnaire taps:
-  //   q1_*/q2_*/q3_* (tracking/recurring/autolog), q4_* (profession),
-  //   q_pets_*/q_car_* (lifestyle), sec_* (the extended A-H sections E-H).
+  //   q0_* (gender), q1_*/q2_*/q3_* (tracking/recurring/autolog),
+  //   q4_* (profession), q_pets_*/q_car_* (lifestyle),
+  //   sec_* (the extended A-H sections E-H).
   // The handler sends any follow-up question itself; it returns { replyText }
   // only when a TEXT reply is the next step (Q2 "yes" -> ask for recurring
   // items), else null.
-  if ((/^q[1234]_/.test(String(picked)) || /^q_(pets|car)_/.test(String(picked)) ||
+  if ((/^q[01234]_/.test(String(picked)) || /^q_(pets|car)_/.test(String(picked)) ||
        /^sec_/.test(String(picked))) &&
       typeof _surveyHandleInteractive_ === 'function') {
     return _surveyHandleInteractive_(fromPhone, picked);
@@ -4376,6 +4377,64 @@ function _surveySetAutoLogPref_(fromPhone, pref) {
   catch (_e) {}
 }
 
+// --- Gender + need (personal/business/both) — stored in Script Properties so
+// they PERSIST per tenant beyond the 1h survey cache and need no api/profile
+// change (api/profile.js whitelists fields and would silently drop a gender
+// field). Keyed by phone digits only, fully bot-local. gender:'m'|'f',
+// need:'personal'|'business'|'both'. Used to address the user with a gendered
+// brother/sister + well-done encouragement, and (need) to note which tabs to
+// provision.
+function _genderKey_(fromPhone) { return 'gender:' + String(fromPhone).replace(/[^0-9]/g, ''); }
+function _setGender_(fromPhone, g) {
+  if (g !== 'm' && g !== 'f') return;
+  try { PropertiesService.getScriptProperties().setProperty(_genderKey_(fromPhone), g); } catch (_e) {}
+}
+function _getGender_(fromPhone) {
+  try { return PropertiesService.getScriptProperties().getProperty(_genderKey_(fromPhone)) || ''; }
+  catch (_e) { return ''; }
+}
+function _needKey_(fromPhone) { return 'need:' + String(fromPhone).replace(/[^0-9]/g, ''); }
+function _setNeed_(fromPhone, n) {
+  if (n !== 'personal' && n !== 'business' && n !== 'both') return;
+  try { PropertiesService.getScriptProperties().setProperty(_needKey_(fromPhone), n); } catch (_e) {}
+}
+function _getNeed_(fromPhone) {
+  try { return PropertiesService.getScriptProperties().getProperty(_needKey_(fromPhone)) || ''; }
+  catch (_e) { return ''; }
+}
+
+// Gendered second-person address: brother (m) / sister (f) / '' (unknown).
+// Caller decides where to place it so we never double-gender a sentence.
+function _addr_(fromPhone) {
+  var g = _getGender_(fromPhone);
+  if (g === 'm') return 'אחי';
+  if (g === 'f') return 'אחותי';
+  return '';
+}
+// A short, warm, gendered well-done tail (one emoji). Empty until we know
+// the gender, so we never guess. Throttled to once per Israel-calendar-day
+// per user (via CacheService) so confirmations stay warm, not spammy.
+// Appended to expense confirmations.
+function _kudosTail_(fromPhone) {
+  var a = _addr_(fromPhone);
+  if (!a) return '';
+  try {
+    var clean = String(fromPhone).replace(/[^0-9]/g, '');
+    var dayKey = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM-dd');
+    var ck = 'kudos:' + clean + ':' + dayKey;
+    var cache = CacheService.getScriptCache();
+    if (cache.get(ck)) return '';        // already encouraged today
+    cache.put(ck, '1', 86400);           // 24h
+  } catch (_e) { /* on cache failure, allow the kudos rather than suppress it */ }
+  // Rotate a few phrasings so it doesn't read like a canned string. Keep the
+  // champion noun gender-correct using the stored gender.
+  var champ = (_getGender_(fromPhone) === 'f') ? 'אלופה' : 'אלוף';
+  var lines = ['כל הכבוד ' + a + '! 👏', 'יפה ' + a + ', ככה ממשיכים! 💪', champ + ' ' + a + '! 👏'];
+  var idx = 0;
+  try { idx = (new Date()).getDate() % lines.length; } catch (_e2) {}
+  return '\n\n' + lines[idx];
+}
+
 // --- Interactive List sender for the questionnaire. Wraps the existing,
 // proven low-level sender (sendWhatsAppInteractiveList) which already uses
 // the right token / phoneId / Graph URL. Each row id is namespaced so the
@@ -4399,18 +4458,31 @@ function _surveySendList_(fromPhone, bodyText, buttonText, rows, headerText) {
   );
 }
 
+// --- Q0: gender. ASKED FIRST so every later reply can address the user with
+// a gendered brother/sister + genuine well-done. Two quick-reply buttons
+// (cleaner than a list). Answer handled in _surveyHandleInteractive_ (ids
+// q0_male/q0_female), or as free text in _surveyHandleText_ while state=q0.
+function _surveySendQ0_(fromPhone) {
+  _surveySetState_(fromPhone, 'q0');
+  sendWhatsAppQuickButtons(fromPhone, 'רגע לפני שמתחילים — אתה או את? ככה אדבר אליך נכון 😊', [
+    { id: 'q0_male',   title: 'אני בן' },
+    { id: 'q0_female', title: 'אני בת' },
+  ]);
+}
+
 // --- The three questions (each sends one interactive message). ---
 function _surveySendQ1_(fromPhone) {
   _surveySetState_(fromPhone, 'q1');
   _surveySendList_(
     fromPhone,
-    'מהו סוג המעקב העיקרי שלך?',
+    'על מה תרצה לעקוב?',
     'בחר סוג',
     [
-      { id: 'q1_personal', title: 'אישי בלבד', description: 'מעקב על ההוצאות שלך' },
+      { id: 'q1_personal', title: 'אישי בלבד', description: 'ההוצאות הפרטיות שלך' },
+      { id: 'q1_business', title: 'עסק בלבד', description: 'הכנסות והוצאות עסקיות' },
+      { id: 'q1_both', title: 'אישי + עסק', description: 'גם פרטי וגם עסקי' },
       { id: 'q1_family', title: 'משפחתי', description: 'הוצאות משק הבית' },
       { id: 'q1_group', title: 'שותפים/קבוצה', description: 'חלוקת הוצאות בקבוצה' },
-      { id: 'q1_business', title: 'עסק קטן/עוסק פטור', description: 'הכנסות והוצאות עסקיות' },
     ]
   );
 }
@@ -4606,15 +4678,24 @@ function _surveySendCarQuestion_(fromPhone) {
   } catch (_e) { Logger.log('car question send err: ' + (_e && _e.message)); }
 }
 
-// Public entry: start the questionnaire at Q1.
+// Public entry: start the questionnaire at Q0 (gender), then Q1 (need).
 function _surveyStart_(fromPhone) {
-  _surveySendQ1_(fromPhone);
+  _surveySendQ0_(fromPhone);
 }
 
-// Map a q1_* id to the trackingType value persisted server-side.
+// Map a q1_* id to the trackingType value persisted server-side. NOTE:
+// api/profile.js whitelists trackingType to personal|family|group|business,
+// so the "both" pick (אישי+עסק) is sent as 'business' for provisioning while
+// the precise need ('both') is kept bot-local via _setNeed_.
 var _SURVEY_TRACKING_ = {
   q1_personal: 'personal', q1_family: 'family',
   q1_group: 'group', q1_business: 'business',
+  q1_both: 'business',
+};
+// q1_* id -> bot-local need ('personal'|'business'|'both') for Q2 of the spec.
+var _SURVEY_NEED_ = {
+  q1_personal: 'personal', q1_business: 'business', q1_both: 'both',
+  q1_family: 'personal', q1_group: 'personal',
 };
 var _SURVEY_TRACKING_HUMAN_ = {
   personal: 'אישי בלבד', family: 'משפחתי',
@@ -5249,8 +5330,10 @@ function _surveyFinish_(fromPhone) {
   var presetHuman = (prof.profileType && typeof _ONBOARDING_PRESETS_ === 'object')
     ? (_ONBOARDING_PRESETS_[prof.profileType] || prof.profileType)
     : '';
+  var _aF = _addr_(fromPhone);
+  var _hi = _aF ? (' ' + _aF) : '';
   var msg =
-    '✅ *סיימנו! זה הפרופיל שלך:*\n' +
+    '✅ *סיימנו' + _hi + '! זה הפרופיל שלך:*\n' +
     '━━━━━━━━━━━━━━━━━━\n' +
     '• סוג מעקב: ' + trackingHuman + '\n' +
     '• הוצאות קבועות: ' + recurringHuman + '\n' +
@@ -5260,6 +5343,17 @@ function _surveyFinish_(fromPhone) {
     '\n' +
     'אפשר לשנות בכל עת עם הפקודה *שאלון*';
   try { sendWhatsAppMessage(fromPhone, msg); } catch (_e) {}
+
+  // Spec Q3 — fixed monthly expenses live on the WEBSITE (working link, mobile-
+  // safe https). Then immediately ask for the FIRST real expense, one per
+  // message. This is the hand-off from onboarding to everyday use.
+  var fixedMsg =
+    '💡 הוצאות קבועות (שכירות, ארנונה, מנויים) — תזין פעם אחת באתר והן יירשמו לבד בכל חודש:\n' +
+    'https://kesefle.com/dashboard#/recurring\n\n' +
+    'ועכשיו' + _hi + ' — מה הוצאת היום או השבוע?\n' +
+    'שלח לי הוצאה אחת בכל הודעה, לדוגמה: *45 קפה* ☕';
+  try { sendWhatsAppMessage(fromPhone, fixedMsg); } catch (_e2) {}
+
   _surveyClearState_(fromPhone);
   try { CacheService.getScriptCache().remove(_surveyAutoLogKey_(fromPhone)); } catch (_e) {}
 }
@@ -5276,10 +5370,21 @@ function _surveyHandleInteractive_(fromPhone, picked) {
       typeof _onboardingHandleInteractive_ === 'function') {
     if (_onboardingHandleInteractive_(fromPhone, picked)) return null;
   }
+  // --- Q0: gender (asked first). Store it, then continue to Q1 (need). ---
+  if (picked === 'q0_male' || picked === 'q0_female') {
+    _setGender_(fromPhone, picked === 'q0_male' ? 'm' : 'f');
+    var _a0 = _addr_(fromPhone);
+    try { sendWhatsAppMessage(fromPhone, 'מעולה' + (_a0 ? ' ' + _a0 : '') + '! 👊'); } catch (_g0e) {}
+    _surveySendQ1_(fromPhone);
+    return null;
+  }
   // --- Q1: tracking type ---
   if (_SURVEY_TRACKING_.hasOwnProperty(picked)) {
     var tt = _SURVEY_TRACKING_[picked];
     _profileAPI_('set', { phone: clean, fields: { trackingType: tt } });
+    // Spec Q2: record the precise need (personal / business / both) bot-local
+    // for tab provisioning, even where trackingType collapses 'both'->business.
+    try { if (_SURVEY_NEED_.hasOwnProperty(picked)) _setNeed_(fromPhone, _SURVEY_NEED_[picked]); } catch (_nErr) {}
     // For family / group trackers we ask about kids' names FIRST -- if they
     // give names we'll create one dashboard row per child (real work, not
     // fake). Anyone else jumps straight to Q2. Steven's request 2026-05-24.
@@ -5388,6 +5493,25 @@ function _surveyHandleText_(fromPhone, text) {
     if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
     if (!r.logged) return { handled: true, replyText: 'אין מה לאשר כרגע.' };
     return { handled: true, replyText: '✅ נרשם: ' + _money_(r.logged.amount) + ' ' + (r.logged.description || '') };
+  }
+
+  // Q0 typed-gender capture (only while the survey is in the gender step).
+  // Robustness for users who type instead of tapping the button. Recognised
+  // male/female words (see regexes below). Unrecognised text re-asks once.
+  if (_surveyGetState_(fromPhone) === 'q0') {
+    if (/^(?:אני\s+)?(?:בן|זכר|גבר|בחור|m|male|man)\s*$/i.test(t)) {
+      _setGender_(fromPhone, 'm');
+      try { sendWhatsAppMessage(fromPhone, 'מעולה ' + _addr_(fromPhone) + '! 👊'); } catch (_e) {}
+      _surveySendQ1_(fromPhone);
+      return { handled: true };
+    }
+    if (/^(?:אני\s+)?(?:בת|נקבה|אישה|אשה|בחורה|f|female|woman)\s*$/i.test(t)) {
+      _setGender_(fromPhone, 'f');
+      try { sendWhatsAppMessage(fromPhone, 'מעולה ' + _addr_(fromPhone) + '! 👊'); } catch (_e) {}
+      _surveySendQ1_(fromPhone);
+      return { handled: true };
+    }
+    return { handled: true, replyText: 'רק שאדע איך לפנות אליך — כתוב *בן* או *בת* 🙂' };
   }
 
   // Free-text kids capture (only while the survey is in that step). Steven's
@@ -7406,11 +7530,15 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
       // after the confirmation. Done inline (Apps Script has no real timers)
       // so users see ✅ → tap option to change.
       try { _sendChangeCategoryPicker_(fromPhone, category); } catch (_pkErr) {}
+      var __firstCel = _celebrateIfFirstExpense_(fromPhone);
       return { reply:
         '✅ נרשם: ' + nice +
         (__mtdLine ? '\n' + __mtdLine : '') +
         _sheetLinkLine_(fromPhone) +
-        _celebrateIfFirstExpense_(fromPhone)
+        __firstCel +
+        // Gendered encouragement (throttled to once/day) — skip on the first-
+        // expense message, which already carries its own celebration line.
+        (__firstCel ? '' : _kudosTail_(fromPhone))
       };
     }
     Logger.log('_tenantWriteExpense_ HTTP ' + code + ' ' + body.slice(0, 300));
@@ -16202,7 +16330,8 @@ function _celebrateIfFirstExpense_(fromPhone) {
     var key = 'fxcel:' + p;
     if (props.getProperty(key)) return '';
     props.setProperty(key, new Date().toISOString());
-    return '\n\n🎉 זאת ההוצאה הראשונה שלך! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
+    var _aC = _addr_(fromPhone);
+    return '\n\n🎉 זאת ההוצאה הראשונה שלך' + (_aC ? ' ' + _aC : '') + '! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
   } catch (_e) { return ''; }
 }
 

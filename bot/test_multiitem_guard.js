@@ -277,10 +277,12 @@ console.log('\n=== (4) SOURCE WIRING — no path bypasses the contract ===\n');
   check('matchCategorySmart preserves the premium gate (_hasActivePremium_)',
     /_hasActivePremium_\(fromPhone\)/.test(mcs));
 
-  // KFL_BUILD_VERSION carries the multiitem-guard marker.
+  // KFL_BUILD_VERSION is present and date-prefixed (YYYY-MM-DD-...). The
+  // version string is bumped on every deploy, so this no longer pins a
+  // specific feature marker (that would break on the very next deploy).
   const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-  check('KFL_BUILD_VERSION carries -multiitem-guard (currently: ' + v + ')',
-    /multiitem-guard/.test(v || ''), v);
+  check('KFL_BUILD_VERSION present + date-prefixed (currently: ' + v + ')',
+    /^\d{4}-\d{2}-\d{2}-.+/.test(v || ''), v);
 })();
 
 console.log('\n' + (fail === 0
