@@ -761,3 +761,63 @@ function AYD_ROLLBACK() {
     lock.releaseLock();
   }
 }
+
+// ===================== 5) FIX ORDERS HEADERS (FOH_*) =====================
+// The orders tab ('hazmanot') DATA uses the bot's 12-col order schema, but its
+// HEADER row drifted to an old 8-col layout, so the headers do not match the
+// data below them. FIX_ORDERS_HEADERS sets A1:L1 to the correct labels.
+// COSMETIC ONLY: dashboard formulas reference columns by LETTER (orders!G:G is
+// the revenue the company dashboard sums), never by header text -> totals are
+// unaffected. Backs up the old headers first; FIX_ORDERS_HEADERS_ROLLBACK undoes.
+// Schema A..L: date, month, customer, size/desc, material, production-cost,
+// sale-price(=revenue, col G), shipping, profit, source, note, status.
+var _FOH_NEW_SHEET_ID_ = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
+var _FOH_ORDERS_TAB_   = 'הזמנות';  // hazmanot (orders)
+var _FOH_BACKUP_PROP_  = 'FOH_BACKUP_HEADERS';
+var _FOH_HEADERS_ = [
+  'תאריך',                              // A: tarich (date)
+  'חודש',                                    // B: chodesh (month)
+  'שם לקוח',                       // C: shem lakoach (customer)
+  'גודל / תיאור',   // D: godel/teur (size/desc)
+  'חומר',                                    // E: chomer (material)
+  'עלות ייצור',     // F: alut yetzur (production cost)
+  'מחיר מכירה',     // G: mechir mechira (sale price = revenue)
+  'משלוח',                              // H: mishloach (shipping)
+  'רווח',                                    // I: revach (profit)
+  'מקור',                                    // J: makor (source)
+  'הערה',                                    // K: heara (note)
+  'סטטוס'                               // L: status
+];
+
+function FIX_ORDERS_HEADERS() {
+  var ss = SpreadsheetApp.openById(_FOH_NEW_SHEET_ID_);
+  var sh = ss.getSheetByName(_FOH_ORDERS_TAB_);
+  if (!sh) { Logger.log('!! orders tab not found: ' + _FOH_ORDERS_TAB_); return 'no-tab'; }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
+  try {
+    var n = _FOH_HEADERS_.length;            // 12 -> A1:L1
+    var rng = sh.getRange(1, 1, 1, n);
+    var old = rng.getValues()[0];
+    PropertiesService.getScriptProperties().setProperty(
+      _FOH_BACKUP_PROP_, JSON.stringify({ headers: old, at: new Date().toISOString() }));
+    Logger.log('Backed up old headers: ' + JSON.stringify(old));
+    rng.setValues([_FOH_HEADERS_]);
+    SpreadsheetApp.flush();
+    Logger.log('DONE. Orders A1:L1 now = ' + JSON.stringify(_FOH_HEADERS_));
+    Logger.log('Dashboard totals unaffected (formulas use column letters). Undo: FIX_ORDERS_HEADERS_ROLLBACK.');
+    return 'ok';
+  } finally { lock.releaseLock(); }
+}
+
+function FIX_ORDERS_HEADERS_ROLLBACK() {
+  var props = PropertiesService.getScriptProperties();
+  var raw = props.getProperty(_FOH_BACKUP_PROP_);
+  if (!raw) { Logger.log('!! no backup found.'); return 'no-backup'; }
+  var bak = JSON.parse(raw);
+  var sh = SpreadsheetApp.openById(_FOH_NEW_SHEET_ID_).getSheetByName(_FOH_ORDERS_TAB_);
+  sh.getRange(1, 1, 1, bak.headers.length).setValues([bak.headers]);
+  SpreadsheetApp.flush();
+  Logger.log('ROLLED BACK orders headers from ' + bak.at);
+  return 'ok';
+}
