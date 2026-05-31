@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-onboarding-gender-need-fixed-link';
+const KFL_BUILD_VERSION = '2026-05-31-onboard-state-kv';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1346,14 +1346,40 @@ function _sheetLinkLine_(fromPhone) {
 // welcomed:<phone>. NOTE: WhatsApp Cloud API has no programmatic
 // "pin message" button — pinning is a user gesture — so we instruct the
 // user how to pin (long-press → Pin) rather than fake a button.
+// Onboarding "seen" flags (welcomed:/surveyed:) live in KV, not Script
+// Properties, so the bot's property store does not fill up against the Apps
+// Script ~50-property UI cap as users sign up. Reads fall back to the legacy
+// Script Property so anyone onboarded before this change is never
+// re-welcomed/re-surveyed; writes fall back to a Script Property ONLY if KV
+// is unavailable, so dedup still holds during a KV outage. Config (creds,
+// gates) stays in Script Properties — only this per-phone state moved.
+function _onboardSeen_(kind, clean) {
+  if (!clean) return false;
+  var key = kind + ':' + clean;
+  try { if (typeof kvGet === 'function' && kvGet(key)) return true; } catch (_e) {}
+  try { if (PropertiesService.getScriptProperties().getProperty(key)) return true; } catch (_e2) {}
+  return false;
+}
+function _onboardMark_(kind, clean) {
+  if (!clean) return;
+  var key = kind + ':' + clean;
+  var stamp = new Date().toISOString();
+  var ok = false;
+  try { ok = (typeof kvSet === 'function') ? kvSet(key, stamp) : false; } catch (_e) { ok = false; }
+  if (!ok) {
+    // KV unreachable (creds unset / error): keep the legacy Script-Property
+    // write so the user is never re-welcomed. This is the only remaining path
+    // that writes a per-phone key to Script Properties.
+    try { PropertiesService.getScriptProperties().setProperty(key, stamp); } catch (_e2) {}
+  }
+}
+
 function _maybeSendWelcome_(fromPhone) {
   if (!fromPhone) return false;
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
   if (!clean) return false;
-  var props = PropertiesService.getScriptProperties();
-  var key = 'welcomed:' + clean;
-  if (props.getProperty(key)) return false;
-  props.setProperty(key, new Date().toISOString());
+  if (_onboardSeen_('welcomed', clean)) return false;
+  _onboardMark_('welcomed', clean);
 
   var sheetUrl = _userSheetUrl_(fromPhone);
   var msg =
@@ -1386,9 +1412,8 @@ function _maybeSendWelcome_(fromPhone) {
   // Guarded by its own Script Property so re-welcomes (if the welcomed guard
   // is ever cleared) never re-trigger Q1 on a user mid-flow.
   try {
-    var surveyedKey = 'surveyed:' + clean;
-    if (!props.getProperty(surveyedKey) && typeof _surveyStart_ === 'function') {
-      props.setProperty(surveyedKey, new Date().toISOString());
+    if (!_onboardSeen_('surveyed', clean) && typeof _surveyStart_ === 'function') {
+      _onboardMark_('surveyed', clean);
       _surveyStart_(fromPhone);
     }
   } catch (_sErr) { Logger.log('welcome survey kickoff err: ' + (_sErr && _sErr.message)); }
@@ -8307,10 +8332,8 @@ function processExpense(text, fromPhone) {
     try {
       var __gcl = String(fromPhone || '').replace(/[^0-9]/g, '');
       if (__gcl) {
-        var __gprops = PropertiesService.getScriptProperties();
-        var __gkey = 'surveyed:' + __gcl;
-        if (!__gprops.getProperty(__gkey) && typeof _surveyStart_ === 'function') {
-          __gprops.setProperty(__gkey, new Date().toISOString());
+        if (!_onboardSeen_('surveyed', __gcl) && typeof _surveyStart_ === 'function') {
+          _onboardMark_('surveyed', __gcl);
           // Schedule the first survey question for ~1.5 sec after the
           // greeting so the user reads the intro first. Apps Script has
           // no real setTimeout — just send both synchronously, WhatsApp
