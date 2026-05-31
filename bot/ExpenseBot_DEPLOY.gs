@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-multi-business-dash-recognition';
+const KFL_BUILD_VERSION = '2026-05-31-ai-providers-contract';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -8218,7 +8218,10 @@ function processExpense(text, fromPhone) {
       }
 
       if (!keywordOrCached) {
-        var apiKeyAvail = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+        // Provider availability is now provider-agnostic: any configured AI key
+        // (OpenAI/Gemini/xAI/Anthropic/OpenRouter) enables the fallback. No
+        // hardcoded ANTHROPIC dependency.
+        var apiKeyAvail = !!_aiProviderResolve_();
         var aiRich = null;
         if (apiKeyAvail) {
           try { sendWhatsAppMessage(fromPhone, '🤖 מנתח את ההוצאה...'); } catch (_pmErr) {}
@@ -8241,7 +8244,16 @@ function processExpense(text, fromPhone) {
         var TIER_SOFT       = 0.70;
         var TIER_LIST_SMALL = 0.40;
 
-        if (aiOK && aiConf >= TIER_DIRECT) {
+        // NEVER-silently-corrupt invariant: the normalized contract decides
+        // whether this result may be auto-written. should_ask_user is true
+        // whenever confidence < max(0.6 hard floor, env threshold) OR the
+        // category is the misc/unknown bucket. We REQUIRE !should_ask_user to
+        // write — so a low-confidence/ambiguous AI result can never write a
+        // financial row, regardless of how TIER_DIRECT is tuned.
+        var aiShouldAsk = aiRich && aiRich.contract ? !!aiRich.contract.should_ask_user : true;
+        var aiMayWrite  = aiOK && aiConf >= TIER_DIRECT && !aiShouldAsk;
+
+        if (aiMayWrite) {
           // Tier A: write directly, no preliminary, no soft hint.
           try { _learnedSave(soleItem.description, { category: aiRich.category, subcategory: aiRich.subcategory }, 'ai'); } catch (_lsErr) {}
           try {
@@ -8308,10 +8320,13 @@ function processExpense(text, fromPhone) {
                 ai_category: aiRich ? aiRich.category : '',
                 ai_confidence: aiConf,
                 via: 'ambiguity_list_sent',
+                // Held for the user to confirm — flagged needs_review so the
+                // ML-audit trail records that nothing was auto-written.
+                needs_review: true,
                 from_phone: fromPhone
               });
             } catch (_e) {}
-            Logger.log('processExpense: sent interactive list (' + listSize + ' opts) for "' + soleItem.description + '" aiConf=' + aiConf);
+            Logger.log('processExpense: sent interactive list (' + listSize + ' opts) for "' + soleItem.description + '" aiConf=' + aiConf + ' shouldAsk=' + aiShouldAsk);
             return { ambiguousSent: true };
           } catch (ambErr) {
             Logger.log('processExpense: ambiguity-list failed, falling through: ' + (ambErr && ambErr.stack || ambErr));
@@ -9200,6 +9215,204 @@ function _hasActivePremium_(fromPhone) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// 🔑 AI PROVIDER RESOLUTION (env / Script-Property only — NO hardcoded keys)
+// ----------------------------------------------------------------------------
+// The classifier is provider-agnostic. Keys are read ONLY from Apps Script
+// Script Properties (the GAS analogue of env vars). We pick the FIRST one that
+// is configured, in this priority order:
+//     OPENAI_API_KEY → GEMINI_API_KEY → XAI_API_KEY → ANTHROPIC_API_KEY → OPENROUTER_API_KEY
+// If NONE is set, the resolver returns null and the LLM step is skipped
+// gracefully (the bot still runs on its deterministic keyword/cache pipeline).
+//
+// Also honoured for the Node contract test (which has no PropertiesService):
+//   if a global `process` with `env` exists, those values are used as the key
+//   source. In Apps Script `process` is undefined, so production always reads
+//   the Script Properties.
+// ════════════════════════════════════════════════════════════════════════════
+var _AI_PROVIDER_PRIORITY_ = [
+  { provider: 'openai',     key: 'OPENAI_API_KEY' },
+  { provider: 'gemini',     key: 'GEMINI_API_KEY' },
+  { provider: 'xai',        key: 'XAI_API_KEY' },
+  { provider: 'anthropic',  key: 'ANTHROPIC_API_KEY' },
+  { provider: 'openrouter', key: 'OPENROUTER_API_KEY' }
+];
+
+// Read a single property from Script Properties, falling back to process.env
+// (used only by the offline Node test harness). Never throws.
+function _aiReadKey_(name) {
+  try {
+    var v = PropertiesService.getScriptProperties().getProperty(name);
+    if (v != null && String(v).trim() !== '') return String(v).trim();
+  } catch (_psErr) {}
+  try {
+    if (typeof process !== 'undefined' && process && process.env && process.env[name] != null && String(process.env[name]).trim() !== '') {
+      return String(process.env[name]).trim();
+    }
+  } catch (_envErr) {}
+  return null;
+}
+
+// Returns {provider, keyName, key} for the first configured provider, or null
+// when no AI key is present. Pure, side-effect-free, never throws.
+function _aiProviderResolve_() {
+  for (var i = 0; i < _AI_PROVIDER_PRIORITY_.length; i++) {
+    var entry = _AI_PROVIDER_PRIORITY_[i];
+    var k = _aiReadKey_(entry.key);
+    if (k) return { provider: entry.provider, keyName: entry.key, key: k };
+  }
+  return null;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 🤖 PROVIDER DISPATCH — send the same system+user prompt to whichever provider
+// resolved, return the RAW text reply (or null on any failure). All branches
+// use muteHttpExceptions and degrade to null so a provider outage never throws.
+// OpenAI / xAI / OpenRouter share the OpenAI chat-completions schema. Gemini
+// and Anthropic each use their own. The shared JSON contract is enforced by the
+// caller (it parses the text out of whatever the model returns).
+// ════════════════════════════════════════════════════════════════════════════
+function _aiChatComplete_(provider, key, systemPrompt, userMsg) {
+  try {
+    if (provider === 'anthropic') {
+      var aResp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        payload: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 140,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userMsg }]
+        }),
+        muteHttpExceptions: true
+      });
+      if (aResp.getResponseCode() !== 200) { Logger.log('_aiChatComplete_ anthropic ' + aResp.getResponseCode() + ': ' + aResp.getContentText().slice(0, 200)); return null; }
+      var aBody = JSON.parse(aResp.getContentText());
+      return (aBody.content && aBody.content[0] && aBody.content[0].text) || '';
+    }
+
+    if (provider === 'gemini') {
+      var gModels = [];
+      var gConfigured = _aiReadKey_('GEMINI_MODEL');
+      if (gConfigured) gModels.push(gConfigured);
+      ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-flash-latest'].forEach(function (m) { if (gModels.indexOf(m) < 0) gModels.push(m); });
+      var gPayload = JSON.stringify({
+        systemInstruction: { parts: [{ text: String(systemPrompt || '') }] },
+        contents: [{ role: 'user', parts: [{ text: String(userMsg || '') }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 180 }
+      });
+      for (var gi = 0; gi < gModels.length; gi++) {
+        var gUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(gModels[gi]) + ':generateContent?key=' + encodeURIComponent(key);
+        var gResp = UrlFetchApp.fetch(gUrl, { method: 'post', contentType: 'application/json', payload: gPayload, muteHttpExceptions: true });
+        if (gResp.getResponseCode() === 200) {
+          var gBody = JSON.parse(gResp.getContentText());
+          var gCand = gBody && gBody.candidates && gBody.candidates[0];
+          var gTxt = gCand && gCand.content && gCand.content.parts && gCand.content.parts[0] && gCand.content.parts[0].text;
+          if (gTxt) return String(gTxt);
+        } else {
+          Logger.log('_aiChatComplete_ gemini ' + gModels[gi] + ' → ' + gResp.getResponseCode());
+        }
+      }
+      return null;
+    }
+
+    // OpenAI-compatible providers: openai, xai, openrouter.
+    var url, model;
+    if (provider === 'xai') { url = 'https://api.x.ai/v1/chat/completions'; model = _aiReadKey_('XAI_MODEL') || 'grok-3-mini'; }
+    else if (provider === 'openrouter') { url = 'https://openrouter.ai/api/v1/chat/completions'; model = _aiReadKey_('OPENROUTER_MODEL') || 'openai/gpt-4o-mini'; }
+    else { url = 'https://api.openai.com/v1/chat/completions'; model = _aiReadKey_('OPENAI_MODEL') || 'gpt-4o-mini'; }
+    var oResp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      payload: JSON.stringify({
+        model: model,
+        max_tokens: 180,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMsg }
+        ]
+      }),
+      muteHttpExceptions: true
+    });
+    if (oResp.getResponseCode() !== 200) { Logger.log('_aiChatComplete_ ' + provider + ' ' + oResp.getResponseCode() + ': ' + oResp.getContentText().slice(0, 200)); return null; }
+    var oBody = JSON.parse(oResp.getContentText());
+    return (oBody.choices && oBody.choices[0] && oBody.choices[0].message && oBody.choices[0].message.content) || '';
+  } catch (e) {
+    Logger.log('_aiChatComplete_ ' + provider + ' err: ' + (e && e.message));
+    return null;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 📐 CLASSIFY CONTRACT NORMALIZER
+// ----------------------------------------------------------------------------
+// Maps a raw AI classification (and the parser-supplied amount/currency/etc.)
+// into the canonical 13-field contract that the whole pipeline agrees on:
+//
+//   {intent, amount, currency, type, profile_type, category, subcategory,
+//    project_name, business_name, confidence_score, reason,
+//    should_ask_user, needs_review}
+//
+// SAFETY INVARIANT (Steven, NEVER-silently-corrupt rule):
+//   A low-confidence or ambiguous (שונות / שונות ואחרים / בלתי מזוהה) result
+//   MUST set should_ask_user=true and needs_review=true so the caller asks the
+//   user instead of writing a financial row. The hard floor is 0.6: below that
+//   we ALWAYS ask, regardless of how the env threshold is tuned. The ask
+//   threshold is max(0.6, KFL_CONFIDENCE_ASK_THRESHOLD) so raising the env knob
+//   only makes the bot MORE cautious, never less.
+// ════════════════════════════════════════════════════════════════════════════
+var _AI_AMBIGUOUS_CATEGORIES_ = ['שונות', 'שונות ואחרים', 'בלתי מזוהה'];
+
+// Hard confidence floor below which we ALWAYS ask the user — the contract-level
+// invariant that no env tuning can lower.
+function _aiAskFloor_() { return 0.6; }
+
+function _normalizeAiClassifyResult_(rich, opts) {
+  opts = opts || {};
+  var cat = rich && rich.category ? String(rich.category).trim() : '';
+  var sub = rich && rich.subcategory ? String(rich.subcategory).trim() : '';
+  var conf = (rich && typeof rich.confidence === 'number' && !isNaN(rich.confidence)) ? rich.confidence : 0;
+  if (conf < 0) conf = 0; if (conf > 1) conf = 1;
+
+  var isAmbiguous = !cat || _AI_AMBIGUOUS_CATEGORIES_.indexOf(cat) >= 0;
+
+  // Ask threshold: the env knob, but never below the 0.6 hard floor.
+  var envThreshold;
+  try { envThreshold = _kflConfidenceAskThreshold_(); } catch (_e) { envThreshold = 0.85; }
+  var askThreshold = Math.max(_aiAskFloor_(), (typeof envThreshold === 'number' ? envThreshold : 0.85));
+
+  // INVARIANT: ask whenever confidence is below the bar OR the category is the
+  // misc/unknown bucket. needs_review mirrors this — anything NOT confidently
+  // auto-written is flagged for human review rather than silently filed.
+  var shouldAsk = isAmbiguous || conf < askThreshold;
+
+  // type (income vs expense): prefer an explicit caller hint, else derive from
+  // the category (income categories → 'income'). Never guessed by the model.
+  var type = opts.type;
+  if (type !== 'income' && type !== 'expense') {
+    var inc = false;
+    try { inc = (typeof _isIncomeCategory_ === 'function') ? _isIncomeCategory_(cat, sub) : false; } catch (_incErr) {}
+    type = inc ? 'income' : 'expense';
+  }
+
+  return {
+    intent: opts.intent || 'log_expense',
+    amount: (typeof opts.amount === 'number' && !isNaN(opts.amount)) ? opts.amount : null,
+    currency: opts.currency || 'ILS',
+    type: type,
+    profile_type: opts.profile_type || null,
+    category: cat || 'בלתי מזוהה',
+    subcategory: sub || 'לא ברור',
+    project_name: opts.project_name || null,
+    business_name: opts.business_name || null,
+    confidence_score: conf,
+    reason: rich && rich.reason ? String(rich.reason).slice(0, 80) : '',
+    should_ask_user: !!shouldAsk,
+    needs_review: !!shouldAsk
+  };
+}
+
 function _aiCategorize(text, fromPhone) {
   // Premium gating — AI categorisation is Pro+. Free users fall back
   // to CATEGORY_MAP keyword matching + learned cache. The bot reply
@@ -9216,8 +9429,11 @@ function _aiCategorize(text, fromPhone) {
 
 function _aiCategorizeRich(text, fromPhone) {
   try {
-    var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-    if (!apiKey) return null;
+    // Provider keys come ONLY from env / Script Properties (no hardcoded keys).
+    // Pick the first configured provider; skip AI gracefully if none is set so
+    // the bot keeps running on its deterministic keyword/cache pipeline.
+    var ai = _aiProviderResolve_();
+    if (!ai) return null;
 
     // Behavior learning from the onboarding questionnaire: if we know how this
     // customer tracks money (trackingType from profile:{phone}), give the model
@@ -9332,32 +9548,17 @@ function _aiCategorizeRich(text, fromPhone) {
 
     var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only with confidence and reason.';
 
-    var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-      method: 'post',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      payload: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 140,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }]
-      }),
-      muteHttpExceptions: true
-    });
-
-    if (response.getResponseCode() !== 200) {
-      Logger.log('_aiCategorizeRich: API error ' + response.getResponseCode() + ': ' + response.getContentText().slice(0, 200));
+    // Send to the resolved provider (Anthropic / OpenAI / Gemini / xAI /
+    // OpenRouter). Returns the raw text reply or null on any failure. The
+    // structured-JSON contract below is provider-independent.
+    var reply = _aiChatComplete_(ai.provider, ai.key, systemPrompt, userMsg);
+    if (reply == null || reply === '') {
+      Logger.log('_aiCategorizeRich: provider ' + ai.provider + ' returned no reply');
       return null;
     }
-
-    var body = JSON.parse(response.getContentText());
-    var reply = (body.content && body.content[0] && body.content[0].text) || '';
     var jsonMatch = String(reply).match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      Logger.log('_aiCategorizeRich: no JSON in reply: ' + reply.slice(0, 200));
+      Logger.log('_aiCategorizeRich: no JSON in reply: ' + String(reply).slice(0, 200));
       return null;
     }
     var parsed;
@@ -9378,7 +9579,11 @@ function _aiCategorizeRich(text, fromPhone) {
 
     if (category === 'שונות' || category === 'שונות ואחרים') {
       Logger.log('_aiCategorizeRich: model returned שונות despite instruction — treating as low-confidence בלתי מזוהה');
-      return { category: 'בלתי מזוהה', subcategory: 'לא ברור', confidence: Math.min(confidence, 0.4), reason: reason || 'מודל הציע שונות' };
+      var miscRich = { category: 'בלתי מזוהה', subcategory: 'לא ברור', confidence: Math.min(confidence, 0.4), reason: reason || 'מודל הציע שונות' };
+      // Attach the normalized 13-field contract. For the misc/ambiguous bucket
+      // it forces should_ask_user + needs_review = true (NEVER silently write).
+      miscRich.contract = _normalizeAiClassifyResult_(miscRich, { text: text });
+      return miscRich;
     }
 
     var validCats = ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','בריאות','עסק','שירותים','בידור','חינוך','ילדים','ממשלה ומיסים','פיננסים','בלתי מזוהה'];
@@ -9386,7 +9591,12 @@ function _aiCategorizeRich(text, fromPhone) {
       Logger.log('_aiCategorizeRich: invalid category from AI: ' + category);
       return null;
     }
-    return { category: category, subcategory: subcategory, confidence: confidence, reason: reason };
+    var rich = { category: category, subcategory: subcategory, confidence: confidence, reason: reason };
+    // Normalized 13-field classify contract. The caller uses
+    // contract.should_ask_user / contract.needs_review to decide whether to
+    // write the row or ask the user (the NEVER-silently-corrupt invariant).
+    rich.contract = _normalizeAiClassifyResult_(rich, { text: text });
+    return rich;
   } catch (e) {
     Logger.log('_aiCategorizeRich error: ' + e.message);
     return null;
@@ -11009,7 +11219,9 @@ function getEngineStatus() {
   try {
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('מילון לימוד');
     var learnedCount = sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
-    var aiEnabled = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+    var _aiProv = null;
+    try { _aiProv = _aiProviderResolve_(); } catch (_aiPErr) {}
+    var aiEnabled = !!_aiProv;
     var keywordCount = (typeof CATEGORY_MAP !== 'undefined') ? CATEGORY_MAP.reduce(function(a,b){ return a + (b.keywords ? b.keywords.length : 0); }, 0) : 0;
     var categoryCount = (typeof CATEGORY_MAP !== 'undefined') ? CATEGORY_MAP.length : 0;
     return '⚡ *מצב המנוע*\n' +
@@ -11020,9 +11232,9 @@ function getEngineStatus() {
       '🥈 *שכבה 2 — Keywords*\n' +
       '   ' + keywordCount + ' מילים פרושות על ' + categoryCount + ' קטגוריות\n' +
       '   ~5ms • חינם\n\n' +
-      '🥉 *שכבה 3 — Claude AI*\n' +
-      '   ' + (aiEnabled ? '✅ מופעל (claude-3-5-haiku)' : '⚠️ לא מופעל (חסר API key)') + '\n' +
-      '   ~800ms • $0.0001/קריאה\n\n' +
+      '🥉 *שכבה 3 — AI*\n' +
+      '   ' + (aiEnabled ? '✅ מופעל (' + _aiProv.provider + ')' : '⚠️ לא מופעל (חסר API key)') + '\n' +
+      '   ~800ms\n\n' +
       '🔒 הכל נשמר ב-Drive שלך. לא אצלנו.';
   } catch (e) {
     return '😬 לא הצלחתי לקרוא מצב מנוע: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?';
@@ -13877,13 +14089,15 @@ function installKesefleBot() {
     err++;
   }
 
-  // 4. Optional: ANTHROPIC_API_KEY (AI fallback)
-  var ai = props.getProperty('ANTHROPIC_API_KEY');
-  if (!ai) {
-    report.push('⚠️  ANTHROPIC_API_KEY — not set (AI fallback disabled, bot still works with 18,725 keywords)');
+  // 4. Optional: AI provider key (AI fallback). Any one of
+  // OPENAI/GEMINI/XAI/ANTHROPIC/OPENROUTER enables it; first configured wins.
+  var aiProvider = null;
+  try { aiProvider = _aiProviderResolve_(); } catch (_aiResErr) {}
+  if (!aiProvider) {
+    report.push('⚠️  AI provider key — none set (OPENAI/GEMINI/XAI/ANTHROPIC/OPENROUTER). AI fallback disabled, bot still works with 18,725 keywords)');
     warn++;
   } else {
-    report.push('✅ ANTHROPIC_API_KEY — set (AI fallback enabled)');
+    report.push('✅ AI provider — ' + aiProvider.keyName + ' set (AI fallback enabled, provider=' + aiProvider.provider + ')');
     ok++;
   }
 
@@ -14043,7 +14257,8 @@ function installKesefleBot() {
 function getBotStatusMessage(fromPhone) {
   try {
     var props = PropertiesService.getScriptProperties();
-    var ai = !!props.getProperty('ANTHROPIC_API_KEY');
+    var ai = false;
+    try { ai = !!_aiProviderResolve_(); } catch (_aiSErr) {}
     var pnid = props.getProperty('WHATSAPP_PHONE_NUMBER_ID') || WHATSAPP_PHONE_NUMBER_ID;
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
     var rowCount = sheet ? (sheet.getLastRow() - 1) : 0;
