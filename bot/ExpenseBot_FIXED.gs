@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-onboarding-sections-a-h';
+const KFL_BUILD_VERSION = '2026-05-31-templates-10';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -5531,16 +5531,22 @@ var _ONBOARDING_CONTRACTOR_PROFESSIONS_ = {
   gardener: true,
 };
 
-// The allowed preset ids. Mirrors docs/PERSONALIZED_CATEGORY_PROFILES.md
-// §7 (six presets). The NEXT step (sheet seeding) keys on these exact
-// strings, so they MUST stay snake_case ASCII and in sync with
-// api/profile.js PROFILE_TYPES.
+// The allowed preset ids -> Hebrew display label (shown in the onboarding
+// summary). Extended from the original 6 (docs/PERSONALIZED_CATEGORY_PROFILES.md
+// §7) to the full TEN templates the epic asks for. The sheet-seeding step
+// (applyTemplatePreset_ below) keys on these exact ids, so they MUST stay
+// snake_case ASCII and in sync with api/profile.js PROFILE_TYPES and the
+// _TEMPLATE_PRESETS_ table.
 var _ONBOARDING_PRESETS_ = {
-  basic_personal: 'אישי בסיסי',
-  family: 'משפחתי',
-  business: 'עסק קטן',
-  contractor: 'קבלן / פרויקטים',
-  mixed: 'משולב (אישי + עסק)',
+  basic_personal:    'אישי בסיסי',
+  couple:            'זוג',
+  family:            'משפחתי (ילדים)',
+  divorced:          'גרוש/ה',
+  employee:          'שכיר/ה',
+  freelancer:        'עצמאי/ת (פרילנס)',
+  business:          'בעל עסק',
+  contractor:        'קבלן / פרויקטים',
+  mixed:             'משולב (אישי + עסק)',
   advanced_imported: 'מתקדם (ייבוא היסטוריה)',
 };
 
@@ -5578,11 +5584,17 @@ function _onboardingNextSection_(profile, doneSection) {
 // PURE: derive the template preset (profile_type) from the full set of
 // answers. Order of precedence is deliberate and tested:
 //   1. contractor  — a business that does project/construction work
-//   2. business    — any other עסק tracker
-//   3. family      — family / group household tracker
-//   4. advanced_imported — personal user importing historical data
-//   5. mixed       — personal user whose profession is self-employed
-//   6. basic_personal — the safe default
+//   2. freelancer  — an עוסק פטור (section E osek=patur), i.e. a solo
+//                    freelancer who is NOT a construction contractor
+//   3. business    — any other עסק tracker (morsheh / company)
+//   4. family      — family / group household tracker
+//   5. advanced_imported — personal user importing historical data
+//   6. mixed       — personal user whose profession is self-employed
+//   7. basic_personal — the safe default
+// NOTE: the finer presets that the CURRENT Q1-Q4+E-H questionnaire has no
+// dedicated signal for yet (couple / divorced / employee) are still fully
+// defined in _TEMPLATE_PRESETS_ and seedable via applyTemplatePreset_; they
+// just aren't auto-derived here until onboarding grows a question for them.
 function _onboardingPickPreset_(profile) {
   profile = profile || {};
   var ob = profile.onboarding || {};
@@ -5592,8 +5604,12 @@ function _onboardingPickPreset_(profile) {
   var isContractorProf = !!_ONBOARDING_CONTRACTOR_PROFESSIONS_[prof];
   var tracksProjects = !!(ob.F && ob.F.tracksProjects);
   var wantsImport = !!(ob.H && ob.H.wantsImport);
+  var osekType = (ob.E && ob.E.osekType) ? String(ob.E.osekType) : '';
 
   if (isBusiness && (isContractorProf || tracksProjects)) return 'contractor';
+  // עוסק פטור with no project tracking and not a construction trade -> the
+  // lighter "freelancer" ledger rather than the full business one.
+  if (isBusiness && osekType === 'patur') return 'freelancer';
   if (isBusiness) return 'business';
   if (tt === 'family' || tt === 'group') return 'family';
   if (wantsImport) return 'advanced_imported';
@@ -5700,8 +5716,9 @@ function _onboardingAdvance_(fromPhone, doneSection) {
 }
 
 // --- Close out: pick the preset, persist it as profile.profileType (the
-// field the next step / sheet-seeding reads as profile_type), then hand
-// off to the existing _surveyFinish_ summary (which we extend to show it).
+// field the seeding step reads as profile_type), SEED that preset's extra
+// category rows into the user's sheet (idempotent add-category-row path),
+// then hand off to the existing _surveyFinish_ summary (which shows it).
 function _onboardingFinishSections_(fromPhone) {
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
   var profile = _onboardingGetProfile_(fromPhone);
@@ -5709,6 +5726,16 @@ function _onboardingFinishSections_(fromPhone) {
   try {
     _profileAPI_('set', { phone: clean, fields: { profileType: preset } });
   } catch (_e) { Logger.log('_onboardingFinishSections_ preset save err: ' + (_e && _e.message)); }
+  // Seed the preset's extra rows. Best-effort + idempotent (server dedups);
+  // a hiccup here must never block the summary or wedge onboarding.
+  try {
+    if (typeof applyTemplatePreset_ === 'function') {
+      var seedRes = applyTemplatePreset_(preset, clean);
+      Logger.log('applyTemplatePreset_ ' + preset + ': seeded=' +
+        (seedRes.seeded || []).length + ' dup=' + (seedRes.duplicates || []).length +
+        ' failed=' + (seedRes.failed || []).length);
+    }
+  } catch (_e2) { Logger.log('_onboardingFinishSections_ seed err: ' + (_e2 && _e2.message)); }
   _surveyFinish_(fromPhone);
 }
 
@@ -5752,6 +5779,202 @@ function _onboardingHandleInteractive_(fromPhone, picked) {
     return true;
   }
   return false;
+}
+
+// =====================================================================
+// TEMPLATE PRESETS (10) — extends the existing add-category-row seeding.
+// ---------------------------------------------------------------------
+// The base tenant sheet (lib/sheet-writer.js) already materialises the
+// standard "מאזן אישי" dashboard with ~30 default personal rows (income,
+// בית/חשמל/מים, דלק/אחזקת רכב, אוכל, ביגוד/בריאות, ...). A PRESET does NOT
+// restructure that template; it just SEEDS the EXTRA category rows that a
+// given profile needs, through the SAME idempotent add-category-row path
+// the bot already uses for "צור קטגוריה X" and the kids/pets/car steps
+// (POST /api/sheet/add-category-row -> _addCategoryRows_). That endpoint
+// dedups by exact label, so re-seeding a row the default template already
+// has (or seeding the same preset twice) returns {duplicate:true} and
+// NEVER creates a second row. This file is the single source of which rows
+// each of the ten templates adds + which dashboard sections it lights up.
+//
+// `sections` is metadata only here — it names the dashboard areas the
+// preset expects to be visible (personal is always on; business/projects/
+// historical gate the company + project + historical blocks). The seeding
+// step records it on the result so a downstream dashboard renderer / the
+// admin user-template audit can verify the user got the right shape. We do
+// not toggle dashboard sections from the bot directly (that is the sheet
+// builder's job); listing them keeps the contract explicit + testable.
+//
+// Row labels are Hebrew and chosen to match what the classifier actually
+// writes into תנועות col D/E (the add-category-row formula is a fuzzy
+// SUMPRODUCT over category+subcategory+description), so a seeded row sweeps
+// up the real transactions. Kept here as ASCII-commented Hebrew literals.
+// =====================================================================
+var _TEMPLATE_PRESETS_ = {
+  // 1. Basic Personal — the safe default. Adds nothing beyond the standard
+  //    template (which already covers income / housing / food / transport /
+  //    personal). Listed explicitly so applyTemplatePreset_ is total.
+  basic_personal: {
+    label: 'אישי בסיסי',
+    sections: ['personal'],
+    extraRows: [],
+  },
+  // 2. Couple — two earners sharing a household. Adds a second income line
+  //    + shared-bill buckets a single-person default doesn't surface.
+  couple: {
+    label: 'זוג',
+    sections: ['personal'],
+    extraRows: ['הכנסת בן/בת זוג', 'הוצאות משותפות', 'מתנות וזוגיות'],
+  },
+  // 3. Family with kids — kid-specific buckets on top of the household.
+  family: {
+    label: 'משפחתי (ילדים)',
+    sections: ['personal'],
+    extraRows: ['חינוך וגן', 'חוגים', 'ביגוד ילדים', 'צעצועים', 'רופא ילדים', 'תינוק'],
+  },
+  // 4. Divorced — single parent / post-divorce. Child-support + alimony +
+  //    a second-household bucket that the plain personal template lacks.
+  divorced: {
+    label: 'גרוש/ה',
+    sections: ['personal'],
+    extraRows: ['מזונות ילדים', 'דמי מזונות', 'חינוך וגן', 'משק בית שני'],
+  },
+  // 5. Employee — salaried. Surfaces pension/keren-hishtalmut + commute as
+  //    distinct lines so a payslip-driven user sees them separately.
+  employee: {
+    label: 'שכיר/ה',
+    sections: ['personal'],
+    extraRows: ['פנסיה', 'קרן השתלמות', 'נסיעות לעבודה', 'ביטוח בריאות'],
+  },
+  // 6. Freelancer — עוסק פטור, solo, no employees. Income + the light
+  //    business-expense set (tools/software/marketing) WITHOUT the full
+  //    employer/VAT-morsheh ledger.
+  freelancer: {
+    label: 'עצמאי/ת (פרילנס)',
+    sections: ['personal', 'business'],
+    extraRows: ['הכנסה מעסק', 'עלות שיווק', 'תוכנות ומנויים', 'ציוד עסקי', 'יועצים ושירותים'],
+  },
+  // 7. Business owner — עוסק מורשה, full ledger. The four canonical company
+  //    buckets the company dashboard sums + tax + admin rows.
+  business: {
+    label: 'בעל עסק',
+    sections: ['personal', 'business'],
+    extraRows: [
+      'הכנסה מעסק', 'עלות חומרי גלם', 'עלות שיווק', 'משלוחים והתקנות',
+      'הוצאות תפעוליות', 'יועצים ושירותים', 'תוכנות ומנויים', 'ציוד עסקי',
+      'מיסים', 'שכר עובדים',
+    ],
+  },
+  // 8. Contractor — per-project / per-client profit tracking on top of the
+  //    business set. Project rows so each job's margin is visible.
+  contractor: {
+    label: 'קבלן / פרויקטים',
+    sections: ['personal', 'business', 'projects'],
+    extraRows: [
+      'הכנסה מפרויקט', 'הכנסה מריטיינר', 'עלות חומרי גלם', 'קבלני משנה',
+      'עלות שיווק', 'ציוד וכלים', 'יועצים ושירותים', 'מיסים',
+    ],
+  },
+  // 9. Mixed (Advanced — Steven's everyday) — a salaried/personal user WITH
+  //    a side business. Personal household + a compact side-business block.
+  mixed: {
+    label: 'משולב (אישי + עסק)',
+    sections: ['personal', 'business'],
+    extraRows: [
+      'הכנסה מעסק צדדי', 'עלות שיווק', 'תוכנות ומנויים', 'ציוד עסקי',
+      'יועצים ושירותים', 'הוצאות תפעוליות',
+    ],
+  },
+  // 10. Imported historical — power-user / migrant with an OLD sheet. The
+  //     "everything" preset: personal + business + the historical block.
+  //     Most real rows arrive via the migration importer; here we seed the
+  //     business baseline so the company dashboard is non-empty on day one.
+  advanced_imported: {
+    label: 'מתקדם (ייבוא היסטוריה)',
+    sections: ['personal', 'business', 'historical'],
+    extraRows: [
+      'הכנסה מעסק', 'עלות חומרי גלם', 'עלות שיווק', 'משלוחים והתקנות',
+      'הוצאות תפעוליות', 'מיסים',
+    ],
+  },
+};
+
+// Normalize an arbitrary profile_type string to a known preset id, falling
+// back to basic_personal. Tolerant of casing/whitespace so a value read
+// back from the profile KV ('Business', ' contractor ') still resolves.
+function _resolveTemplatePresetId_(profileType) {
+  var id = String(profileType == null ? '' : profileType).toLowerCase().trim();
+  if (_TEMPLATE_PRESETS_.hasOwnProperty(id)) return id;
+  return 'basic_personal';
+}
+
+// Seed the EXTRA category rows for `profile_type` into the user's sheet via
+// the existing add-category-row path. `userSheet` is the phone/E.164 (the
+// add-category-row endpoint resolves phone -> userSub -> sheet; the bot
+// never opens the tenant sheet directly). Idempotent: the endpoint dedups
+// by label, so rows already present (default template OR a prior run) come
+// back as duplicates and are NOT re-created.
+//
+// `opts.seedFn(phone, name)` may be injected (tests pass a stub) — it must
+// have the _addCategoryRows_ signature and return its reply string; when a
+// row already exists the endpoint reports it (the reply contains "כבר
+// קיים") and we count it as a duplicate, never a new row. Defaults to the
+// real _addCategoryRows_.
+//
+// Returns a STRUCTURED result (also used by the test):
+//   { ok, profileType, sections, requested, seeded:[...], duplicates:[...],
+//     failed:[...] }
+// Best-effort: a failure on one row never aborts the rest, and the whole
+// thing is wrapped so onboarding never wedges if seeding hiccups.
+function applyTemplatePreset_(profile_type, userSheet, opts) {
+  opts = opts || {};
+  var id = _resolveTemplatePresetId_(profile_type);
+  var preset = _TEMPLATE_PRESETS_[id];
+  var rows = (preset && preset.extraRows) || [];
+  var sections = (preset && preset.sections) || ['personal'];
+  var phone = String(userSheet == null ? '' : userSheet).replace(/[^0-9]/g, '');
+
+  var result = {
+    ok: false, profileType: id, sections: sections.slice(),
+    requested: rows.slice(), seeded: [], duplicates: [], failed: [],
+  };
+  if (!phone) { result.failed = rows.slice(); return result; }
+  if (!rows.length) { result.ok = true; return result; }
+
+  var seedFn = (typeof opts.seedFn === 'function') ? opts.seedFn : _addCategoryRows_;
+
+  // De-dup the request itself so the SAME label is never asked twice in one
+  // call (cheap guard on top of the server-side dedup).
+  var seen = {};
+  for (var i = 0; i < rows.length; i++) {
+    var name = String(rows[i] || '').trim();
+    if (!name || seen[name]) continue;
+    seen[name] = true;
+    var reply = '';
+    try {
+      reply = String(seedFn(phone, name) || '');
+    } catch (e) {
+      try { Logger.log('applyTemplatePreset_ "' + name + '" threw: ' + (e && e.message)); } catch (_le) {}
+      result.failed.push(name);
+      continue;
+    }
+    // Interpret the human reply from _addCategoryRows_: it lists newly-added
+    // names after "נוספו לגיליון", duplicates after "כבר קיים", failures
+    // after "לא הצליח". We classify per-row by which bucket mentions it.
+    if (reply.indexOf('כבר קיים') >= 0 && reply.indexOf(name) >= 0 &&
+        reply.indexOf('נוספו לגיליון') < 0) {
+      result.duplicates.push(name);
+    } else if (reply.indexOf('לא הצליח') >= 0 && reply.indexOf('נוספו') < 0) {
+      result.failed.push(name);
+    } else if (reply.indexOf('נוספו') >= 0 || reply.indexOf('✅') >= 0) {
+      result.seeded.push(name);
+    } else {
+      // Unrecognized reply (e.g. an error hint). Treat as failed so the
+      // caller/test can see it, but don't throw.
+      result.failed.push(name);
+    }
+  }
+  result.ok = (result.failed.length === 0);
+  return result;
 }
 
 // Daily cron — asks the Vercel API to scan ALL users' templates and log

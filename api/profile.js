@@ -9,10 +9,11 @@
 //   onboarding   : { A?,B?,C?,D?,E?,F?,G?,H? } — answers from the bot's A-H
 //                  onboarding questionnaire, keyed by section letter. Merged
 //                  on set. Each value is a small plain object.
-//   profileType  : template preset chosen at the end of onboarding
-//                  ('basic_personal'|'family'|'business'|'contractor'|
-//                  'mixed'|'advanced_imported'). Read as profile_type by the
-//                  downstream sheet-seeding step.
+//   profileType  : template preset chosen at the end of onboarding (one of
+//                  the 10 in PROFILE_TYPES: basic_personal | couple | family
+//                  | divorced | employee | freelancer | business | contractor
+//                  | mixed | advanced_imported). Read as profile_type by the
+//                  downstream sheet-seeding step (applyTemplatePreset_).
 //   trackingType  : 'personal' | 'family' | 'group' | 'business'
 //   hasRecurring  : boolean
 //   autoLogPref   : 'auto' | 'remind'
@@ -64,10 +65,14 @@ function normalizeE164(input) {
 const TRACKING_TYPES = ['personal', 'family', 'group', 'business'];
 const AUTOLOG_PREFS = ['auto', 'remind'];
 // Template presets the onboarding A-H section block can pick (profile_type).
-// MUST stay in sync with the bot's _ONBOARDING_PRESETS_ and the downstream
-// sheet-seeding step that reads profile_type. See
-// docs/PERSONALIZED_CATEGORY_PROFILES.md §7.
-const PROFILE_TYPES = ['basic_personal', 'family', 'business', 'contractor', 'mixed', 'advanced_imported'];
+// MUST stay in sync with the bot's _ONBOARDING_PRESETS_ / _TEMPLATE_PRESETS_
+// and the downstream sheet-seeding step (applyTemplatePreset_) that reads
+// profile_type. Extended from the original 6 to the full 10 templates.
+// See docs/PERSONALIZED_CATEGORY_PROFILES.md §7.
+const PROFILE_TYPES = [
+  'basic_personal', 'couple', 'family', 'divorced', 'employee',
+  'freelancer', 'business', 'contractor', 'mixed', 'advanced_imported',
+];
 // Section letters the onboarding questionnaire stores answers under.
 const ONBOARDING_SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
