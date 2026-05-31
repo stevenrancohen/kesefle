@@ -88,6 +88,15 @@ const GOLDEN = [
   ['שכירות 4500', 'הוצאות קבועות'], ['שכר דירה 4500', 'הוצאות קבועות'],
   ['משכנתא 5200', 'הוצאות קבועות'], ['ועד בית 250', 'הוצאות קבועות'],
   ['ביטוח דירה 90', 'הוצאות קבועות'],
+  // ITEM 3 fix (2026-06-01): "ביטוח אישי" used to be swallowed by the bare
+  // "אישי" keyword and mis-filed under שונות. Now routes to its own sub.
+  ['ביטוח אישי 500', 'הוצאות קבועות'],
+  // ITEM 4 (2026-06-01): dashboard-vocabulary keywords — generic insurance
+  // and the tax-and-fees label map to recurring fixed costs. NOTE: bare "גז"
+  // was deliberately NOT added — the golden set already labels bare "גז" as
+  // ambiguous (DEFAULT, see below); only "חשבון גז"/"תשלום גז" route to גז.
+  ['ביטוח 300', 'הוצאות קבועות'],
+  ['מיסים ואגרות 400', 'הוצאות קבועות'],
   // income tax / national insurance → recurring obligations in this map (consistent)
   ['מס הכנסה 2000', 'הוצאות קבועות'], ['תשלום מס הכנסה 1500', 'הוצאות קבועות'],
   ['מקדמות מס 900', 'הוצאות קבועות'], ['ביטוח לאומי 500', 'הוצאות קבועות'],
@@ -119,6 +128,8 @@ const GOLDEN = [
   ['זארה 200', 'קניות'], ['קסטרו 180', 'קניות'], ['פוקס 140', 'קניות'],
   ['קניתי נעליים 300', 'קניות'], ['אייפון 4000', 'קניות'], ['אוזניות 250', 'קניות'],
   ['מחשב נייד 5500', 'קניות'], ['איקאה 800', 'קניות'], ['רהיט 1200', 'קניות'],
+  ['אלקטרוניקה 500', 'קניות'],   // ITEM 4 (2026-06-01): dashboard label
+  ['רהיטים 800', 'קניות'],       // ITEM 4: already routed; anchored as golden
   ['ספה 3000', 'קניות'], ['כיסא משרדי 600', 'קניות'], ['בגדים 350', 'קניות'],
   ['חולצה 90', 'קניות'], ['מתנה ליום הולדת 150', 'מתנות'],
 

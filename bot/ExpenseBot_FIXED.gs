@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-onboard-state-kv';
+const KFL_BUILD_VERSION = '2026-06-01-objective-insurance-fix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -356,7 +356,9 @@ const CATEGORY_MAP = [
     // Smartwatches + wearables
     "שעון חכם","smartwatch","apple watch","apple watch ultra","אפל ווטש","garmin","גרמין","fitbit","פיטביט","whoop","וופ",
     // Smart home
-    "אלקסה","alexa","amazon echo","google nest","נסט","smart speaker","רמקול חכם","sonos","סונוס","bose","שיאומי בית חכם","smart bulb","נורה חכמה","smart plug","שקע חכם"
+    "אלקסה","alexa","amazon echo","google nest","נסט","smart speaker","רמקול חכם","sonos","סונוס","bose","שיאומי בית חכם","smart bulb","נורה חכמה","smart plug","שקע חכם",
+    // Generic dashboard label (2026-06-01)
+    "אלקטרוניקה"
   ],"category":"קניות","subcategory":"אלקטרוניקה"},
   {"keywords":["איקאה","ביתילי","רהיט","רהיט חדש","מזרן חדש","מערכת ישיבה","שולחן אוכל"],"category":"קניות","subcategory":"רהיטים"},
   {"keywords":["פלאפל","חומוס","המבורגר","גלידה","קינוח","ארוחת בוקר עסקית","בראנץ"],"category":"אוכל","subcategory":"אוכל בחוץ"},
@@ -366,7 +368,7 @@ const CATEGORY_MAP = [
   {"keywords":["ביטוח רכב","ביטוח חובה","ביטוח מקיף"],"category":"תחבורה","subcategory":"ביטוח רכב"},
   {"keywords":["רב קו","טעינת רב קו","מטרונית","נסיעה ברכבת ישראל"],"category":"תחבורה","subcategory":"תחבורה ציבורית"},
   {"keywords":["יציאה עם חברים","ערב עם חברים","בילוי עם חברים","יצאנו עם חברים","יציאה עם חברות","ערב עם חברות","בילוי בעיר","ערב בעיר","יציאה לעיר","בילוי","בילויים","מסיבה","מסיבת","הופעה","הופעות","מופע","קולנוע","סרט בקולנוע","תיאטרון","סטנדאפ","קריוקי","מועדון","מועדון לילה","דרינק","דרינקים","ערב בילוי"],"category":"בידור","subcategory":"יציאות"},
-  {"keywords":["תשלום מס הכנסה","מס הכנסה","מקדמת מס","מקדמות מס","דמי ביטוח לאומי","ביטוח לאומי","תשלום מעמ","תשלום מע״מ","מס שבח","מס רכישה","שומת מס","אגרת מס","תשלום לרשות המיסים","רשות המיסים"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
+  {"keywords":["מיסים ואגרות","תשלום מס הכנסה","מס הכנסה","מקדמת מס","מקדמות מס","דמי ביטוח לאומי","ביטוח לאומי","תשלום מעמ","תשלום מע״מ","מס שבח","מס רכישה","שומת מס","אגרת מס","תשלום לרשות המיסים","רשות המיסים"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
   {"keywords":["ארוחה בחוץ","ארוחת צהריים","ארוחת בוקר","ארוחת ערב","ארוחה במסעדה","אוכל במשלוח","הזמנת אוכל","משלוח אוכל","אכלנו בחוץ","בית קפה","קפה ומאפה"],"category":"אוכל","subcategory":"אוכל בחוץ"},
   {"keywords":["קניות בסופר","קנייה בסופר","קניות לבית","קניות שבועיות","מצרכים","קניות במכולת"],"category":"אוכל","subcategory":"אוכל לבית"},
   {"keywords":["חשבון חשמל","תשלום חשמל"],"category":"הוצאות קבועות","subcategory":"חשמל"},
@@ -429,7 +431,7 @@ const CATEGORY_MAP = [
   // keyword makes the bot file new "לימים" inputs into the dashboard's
   // לימודים row instead of the catch-all שונות.
   {"keywords":["coursera","edx","udemy","אוניברסיטה","חוברת לימוד","לימודים","לימים","מודל","מורה פרטי","מכללה","משכן הסטודנט","ספרי לימוד","קורס","שיעור פרטי","שכר לימוד"],"category":"הוצאות קבועות","subcategory":"לימודים"},
-  {"keywords":["אישי"],"category":"שונות ואחרים","subcategory":"אישי"},
+  {"keywords":["הוצאה אישית","קניה אישית","קנייה אישית"],"category":"שונות ואחרים","subcategory":"אישי"},
   {"keywords":["gift","מתנה","מתנות","צדקה","תרומה"],"category":"שונות ואחרים","subcategory":"מתנות"},
   {"keywords":["אירוע","בר מצווה","בת מצווה","חתונה","יום הולדת"],"category":"שונות ואחרים","subcategory":"אירועים"},
   {"keywords":["electricity","iec","חברת חשמל","חשמל"],"category":"הוצאות קבועות","subcategory":"חשמל"},
@@ -450,7 +452,7 @@ const CATEGORY_MAP = [
   {"keywords":["avis","hertz","אביס","באדג\\\\","הרץ"],"category":"תחבורה","subcategory":"רכב שכור"},
   {"keywords":["bank discount","bank leumi","beinleumi","discount","fibi","hapoalim","igud","leumi","massad","mercantile","mizrahi","otsar hahayal","poalim","tefahot","union bank","yahav","אוצר החייל","איגוד","בנק איגוד","בנק דיסקונט","בנק הבינלאומי","בנק הפועלים","בנק יהב","בנק לאומי","בנק מזרחי","בנק מסד","דיסקונט","הבינלאומי","הפועלים","יהב","לאומי","מזרחי טפחות","מסד","מרכנתיל","מרכנתיל דיסקונט","פאג"],"category":"הוצאות קבועות","subcategory":"בנקאות"},
   {"keywords":["altshuler","altshuler shaham","analyst","bitcoin","blender","clal finance","crypto","etf","excellence","ibi","interactive brokers","meitav","meitav dash","more investments","psagot","yelin lapidot","איי.בי.איי","אלטשולר","אנליסט","אקסלנס","ביטקוין","בלנדר","השקעה","ילין לפידות","כלל פיננסים","מור","מיטב דש","מניה","מניות","פסגות","קריפטו"],"category":"שונות ואחרים","subcategory":"השקעות"},
-  {"keywords":["aig","ayalon","clal","clal insurance","harel","harel insurance","menora","menorah","migdal","migdal insurance","mivtachim","phoenix","phoenix holdings","איי איי ג\\\\","איילון","הפניקס","הראל","כלל","מגדל","מנורה","מנורה מבטחים"],"category":"הוצאות קבועות","subcategory":"ביטוח אישי"},
+  {"keywords":["ביטוח אישי","aig","ayalon","clal","clal insurance","harel","harel insurance","menora","menorah","migdal","migdal insurance","mivtachim","phoenix","phoenix holdings","איי איי ג\\\\","איילון","הפניקס","הראל","כלל","מגדל","מנורה","מנורה מבטחים"],"category":"הוצאות קבועות","subcategory":"ביטוח אישי"},
   {"keywords":["apple istore","bug","bug multisystem","evergreen","idigital","itzik electric","ksp","machsanei chashmal","photo house","samsung","אוורגרין","איציק אלקטריק","אל ג\\\\","מחסני חשמל","סמסונג","פוטו האוס","קי אס פי"],"category":"קניות","subcategory":"אלקטרוניקה"},
   {"keywords":["agrah","bituach leumi","darkon","doar israel","fee","income tax","israel post","lawyer","machon rishuy","mas hachnasa","national insurance","notary","oreh din","passport","rishyon nehiga","teudat zehut","אגרה","ביטוח לאומי","דואר ישראל","דרכון","מכון רישוי","מס הכנסה","נוטריון","עורך דין","רישיון נהיגה","תעודת זהות"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
   {"keywords":["agoda","airbnb","booking","booking.com","expedia","hotels.com","kayak","trivago","אגודה","בוקינג"],"category":"שונות ואחרים","subcategory":"נסיעות"},
@@ -685,7 +687,7 @@ const CATEGORY_MAP = [
   {"keywords":["תדלוק","דלק 95","דלק 98","בנזין","סולר","תחנת דלק","מילוי דלק","כביש אגרה","אגרת כביש","נסיעה ברכבת","כרטיס רכבת","נסיעה באוטובוס","כרטיס אוטובוס","רכבת קלה","טעינת רב קו","כרטיסיית נסיעות","נסיעת מונית","הזמנת מונית","השכרת אופניים","השכרת קורקינט","קורקינט חשמלי","אופניים חשמליים","טיסת פנים"],"category":"תחבורה","subcategory":"תחבורה"},
   {"keywords":["דמי חניה","חניה בתשלום","תשלום חניה","חניון יומי","דוח חניה","קנס חניה","חניה כחול לבן","מנוי חניה","אגרת חניה"],"category":"תחבורה","subcategory":"חניה"},
   {"keywords":["חשבון חשמל","חשבון מים","חשבון גז","חשבון טלפון","חשבון אינטרנט","חבילת אינטרנט","חבילת סלולר","חבילת גלישה","חבילת טלוויזיה","מנוי טלוויזיה","דמי ניהול","ועד בית","דמי ועד","שכר דירה","דמי שכירות","ארנונה חודשית","חשבון סלולרי","גלישה ניידת"],"category":"הוצאות קבועות","subcategory":"חשבונות"},
-  {"keywords":["ביטוח דירה","ביטוח רכב","ביטוח חובה","ביטוח מקיף","ביטוח צד שלישי","ביטוח בריאות","ביטוח חיים","ביטוח משכנתא","ביטוח נסיעות","ביטוח שיניים","פרמיית ביטוח","דמי ביטוח"],"category":"הוצאות קבועות","subcategory":"ביטוח"},
+  {"keywords":["ביטוח דירה","ביטוח רכב","ביטוח חובה","ביטוח מקיף","ביטוח צד שלישי","ביטוח בריאות","ביטוח חיים","ביטוח משכנתא","ביטוח נסיעות","ביטוח שיניים","פרמיית ביטוח","דמי ביטוח","ביטוח"],"category":"הוצאות קבועות","subcategory":"ביטוח"},
   {"keywords":["ביקור רופא","רופא פרטי","השתתפות עצמית","קופת חולים","בדיקות דם","בדיקה רפואית","חיסון","ייעוץ רפואי","בדיקת עיניים","אופטומטריסט","משקפי ראייה","עדשות מגע","פיזיותרפיה","טיפול פסיכולוגי","דיאטנית","תזונאית"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["תרופות","מרשם","בית מרקחת","כדורים","אנטיביוטיקה","משכך כאבים","אקמול","נורופן","ויטמינים","תוספי תזונה","מד חום","פלסטרים","קרם הגנה","משחה רפואית"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["רופא שיניים","טיפול שיניים","סתימה","עקירת שן","יישור שיניים","אורתודונט","ניקוי אבנית","כתר שן","שתל שן","הלבנת שיניים"],"category":"בריאות","subcategory":"שיניים"},
@@ -2145,6 +2147,29 @@ function doPost(e) {
             } catch (_bizErr) {
               Logger.log('doPost: multi-biz error: ' + (_bizErr && _bizErr.stack || _bizErr));
             }
+          }
+        }
+
+        // === PENDING OBJECTIVE REPLY (2026-06-01 FIX) ===
+        // Must run BEFORE the expense fast-path below. After "יעד חדש" the bot
+        // asks the user to reply 1/2/3/4. That bare digit used to hit the
+        // fast-path and get written as a 1-shekel expense. This dispatcher
+        // intercepts an END-ANCHORED 1-4 reply (and the follow-up goal text)
+        // and routes it to objective-creation. "1 קפה" is NOT end-anchored,
+        // so it returns handled=false and books an expense exactly as before.
+        // Available to ALL tenants (objectives are not owner-gated).
+        if (typeof _handleObjectivePendingReply_ === "function") {
+          try {
+            var __objPendRes = _handleObjectivePendingReply_(__from_, __text_);
+            if (__objPendRes && __objPendRes.handled) {
+              if (__objPendRes.replyText && typeof sendWhatsAppMessage === "function") {
+                sendWhatsAppMessage(__from_, __objPendRes.replyText);
+              }
+              Logger.log('doPost: pending-objective reply handled');
+              return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+            }
+          } catch (_objPendErr) {
+            Logger.log('doPost: pending-objective error: ' + (_objPendErr && _objPendErr.stack || _objPendErr));
           }
         }
 
@@ -4399,6 +4424,37 @@ function _surveyGetAutoLogPref_(fromPhone) {
 }
 function _surveySetAutoLogPref_(fromPhone, pref) {
   try { CacheService.getScriptCache().put(_surveyAutoLogKey_(fromPhone), String(pref), _SURVEY_TTL_SEC_); }
+  catch (_e) {}
+}
+
+// --- Objective ("יעד חדש") pending-state helpers (CacheService, 15-min TTL).
+// 2026-06-01 FIX: the bare "יעד חדש" prompt and the one-shot-missing-horizon
+// prompt ask the user to "reply 1/2/3/4" but used to set NO pending state.
+// The user's bare reply "1" then hit the doPost expense FAST-PATH (any text
+// starting with a digit) and was written as a 1-shekel expense. We now stamp
+// a short-lived pending-objective state when the prompt is shown, and a
+// dispatcher (run BEFORE the expense fast-path) routes an END-ANCHORED reply
+// of 1-4 into objective creation instead of processExpense. "1 קפה" still
+// books an expense because it is not end-anchored ^[1-4]$.
+//
+// State value shapes (plain strings, stored in the same per-phone cache the
+// rest of the bot uses):
+//   "horizon"      -> prompt was shown, waiting for the 1/2/3/4 pick
+//   "desc:<h>"     -> a horizon <h> was picked, waiting for the goal text
+var _OBJ_PEND_TTL_SEC_ = 900; // 15 minutes
+function _objPendKey_(fromPhone) {
+  return 'objPend:' + String(fromPhone).replace(/[^0-9]/g, '');
+}
+function _objPendGet_(fromPhone) {
+  try { return CacheService.getScriptCache().get(_objPendKey_(fromPhone)); }
+  catch (_e) { return null; }
+}
+function _objPendSet_(fromPhone, state) {
+  try { CacheService.getScriptCache().put(_objPendKey_(fromPhone), String(state), _OBJ_PEND_TTL_SEC_); }
+  catch (_e) {}
+}
+function _objPendClear_(fromPhone) {
+  try { CacheService.getScriptCache().remove(_objPendKey_(fromPhone)); }
   catch (_e) {}
 }
 
@@ -11065,13 +11121,29 @@ function _handleObjectiveCommand_(fromPhone, text) {
       }
     }
     if (!horizon || !rest) {
+      // 2026-06-01 FIX: stamp pending-objective state so the user's bare
+      // "1/2/3/4" reply routes to objective-creation (see
+      // _handleObjectivePendingReply_) instead of the expense fast-path.
+      // If a horizon WAS parsed but the description is missing, skip the
+      // horizon question and wait for the goal text directly.
+      if (typeof _objPendSet_ === 'function') {
+        _objPendSet_(clean, horizon ? ('desc:' + horizon) : 'horizon');
+      }
+      if (horizon && !rest) {
+        return { handled: true, replyText:
+          '🎯 מעולה! ומה היעד עצמו?\n\n' +
+          'כתוב לי במשפט אחד מה תרצה להשיג —\n' +
+          'לדוגמה: "לחסוך 1000 לטיול ביוני".'
+        };
+      }
       return { handled: true, replyText:
         '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
         '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
         '2️⃣ ל-6 חודשים   — בינוני (סגירת חוב, קרן חירום)\n' +
         '3️⃣ לשנה הקרובה  — גדול (משכנתא, השקעה, מטרת חיים)\n' +
         '4️⃣ אין לי יעד   — נדבר בהמשך\n\n' +
-        'דוגמה: "יעד חדש חודש לחסוך 1000 לטיול ביוני"'
+        'ענה במספר 1/2/3/4, או שלח בשורה אחת:\n' +
+        '"יעד חדש חודש לחסוך 1000 לטיול ביוני"'
       };
     }
     var r5 = _api_({ phone: clean, action: 'set', horizon: horizon, description: rest });
@@ -11091,6 +11163,9 @@ function _handleObjectiveCommand_(fromPhone, text) {
 
   // Bare "יעד חדש" — start the 2-step conversation
   if (/^יעד\s+חדש$/.test(t)) {
+    // 2026-06-01 FIX: stamp pending-objective state (see helper docs) so the
+    // user's "1/2/3/4" reply routes to objective-creation, not a 1₪ expense.
+    if (typeof _objPendSet_ === 'function') { _objPendSet_(clean, 'horizon'); }
     return { handled: true, replyText:
       '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
       '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
@@ -11102,6 +11177,120 @@ function _handleObjectiveCommand_(fromPhone, text) {
     };
   }
 
+  return { handled: false };
+}
+
+// 2026-06-01 FIX: pending-objective reply dispatcher. Called from doPost
+// BEFORE the expense fast-path. Handles the user's reply to the "יעד חדש"
+// 1/2/3/4 prompt, and the follow-up goal-description text.
+//
+// Returns { handled, replyText } when it consumes the message, or
+// { handled:false } to let normal routing (incl. the expense fast-path)
+// continue. Critically:
+//   - reply "1".."4" (END-ANCHORED) when state == "horizon" -> pick horizon
+//     (1/2/3) or decline (4); NEVER books an expense.
+//   - "1 קפה" is NOT end-anchored, so this returns {handled:false} and the
+//     message books an expense exactly as before.
+//   - cancel words (ביטול / לא / בטל) clear the pending state.
+//   - while waiting for the goal text (state "desc:<h>"), a NEW expense
+//     (text starting with a digit) drops the pending state and falls through
+//     so the user isn't trapped.
+function _handleObjectivePendingReply_(fromPhone, text) {
+  if (!fromPhone || !text) return { handled: false };
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return { handled: false };
+  var state = (typeof _objPendGet_ === 'function') ? _objPendGet_(clean) : null;
+  if (!state) return { handled: false };
+  var t = String(text).trim();
+  if (!t) return { handled: false };
+
+  // Cancel words clear the flow from any stage.
+  if (/^(ביטול|בטל|לא|עזוב|תעזוב|cancel)$/i.test(t)) {
+    if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+    return { handled: true, replyText: '👌 בוטל. כשתרצה לקבוע יעד, שלח "יעד חדש".' };
+  }
+
+  // Stage 1: waiting for the 1/2/3/4 horizon pick.
+  if (state === 'horizon') {
+    var m = t.match(/^([1-4])$/);
+    if (!m) {
+      // Not an end-anchored 1-4 pick (e.g. "1 קפה", or free text). Let it
+      // fall through so it books as an expense / hits other routers. We keep
+      // the pending state until TTL so a clean "1" right after still works.
+      return { handled: false };
+    }
+    var pick = m[1];
+    if (pick === '4') {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: true, replyText:
+        '👍 אין בעיה, נדבר על יעד בהמשך.\n' +
+        'מתי שתרצה — שלח "יעד חדש".'
+      };
+    }
+    var horizonByPick = { '1': 'month', '2': 'six_months', '3': 'year' };
+    var horizon = horizonByPick[pick];
+    if (typeof _objPendSet_ === 'function') { _objPendSet_(clean, 'desc:' + horizon); }
+    var horizonHe = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    return { handled: true, replyText:
+      '🎯 מעולה — יעד ' + horizonHe[horizon] + '.\n\n' +
+      'ומה היעד עצמו? כתוב לי במשפט אחד —\n' +
+      'לדוגמה: "לחסוך 1000 לטיול ביוני".'
+    };
+  }
+
+  // Stage 2: a horizon was picked; this message is the goal description.
+  var dm = String(state).match(/^desc:(month|six_months|year)$/);
+  if (dm) {
+    var h = dm[1];
+    // A new expense (leading digit) drops the pending objective so the user
+    // isn't trapped mid-flow — mirrors the pending-category hijack guard.
+    if (/^\s*\d/.test(t)) {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: false };
+    }
+    var desc = t.slice(0, 200);
+    // Reuse the same API the rest of _handleObjectiveCommand_ uses.
+    var base = (typeof KESEFLE_API_BASE !== 'undefined') ? KESEFLE_API_BASE : '';
+    var secret = '';
+    try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!base || !secret) {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: true, replyText: '😬 שגיאת קונפיגורציה (יעדים).' };
+    }
+    var resp;
+    try {
+      resp = UrlFetchApp.fetch(base + '/api/objectives/action', {
+        method: 'post', contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': secret },
+        payload: JSON.stringify({ phone: clean, action: 'set', horizon: h, description: desc }),
+        muteHttpExceptions: true,
+      });
+    } catch (e) {
+      // Keep state so the user can retry the description.
+      return { handled: true, replyText: '😬 שגיאה זמנית. נסה לשלוח את היעד שוב.' };
+    }
+    var code = resp.getResponseCode();
+    if (code !== 200) {
+      var je = {};
+      try { je = JSON.parse(resp.getContentText() || '{}'); } catch (_) {}
+      return { handled: true, replyText: '😬 ' + (je.error || ('שגיאה ' + code)) };
+    }
+    if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+    var j = {};
+    try { j = JSON.parse(resp.getContentText() || '{}'); } catch (_) {}
+    var horizonHe2 = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    var savedDesc = (j.objective && j.objective.description) || desc;
+    var savedHor = (j.objective && j.objective.horizon) || h;
+    return { handled: true, replyText:
+      '✅ יעד חדש נקבע ' + horizonHe2[savedHor] + ':\n\n' +
+      '"' + savedDesc + '"\n\n' +
+      '💡 שלח "יעד שלי" כדי לראות את הסטטוס בכל זמן.\n' +
+      '   "השגתי יעד" כשמסיימים, או "השתק יעד" כדי להפסיק תזכורות.'
+    };
+  }
+
+  // Unknown state — clear it defensively and let routing continue.
+  if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
   return { handled: false };
 }
 
