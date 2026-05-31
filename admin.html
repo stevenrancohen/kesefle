@@ -1655,9 +1655,22 @@
         var f = chip.dataset.filter, labelMap = { all: 'All', active: 'Active', trial: 'Trial', paused: 'Paused', cancelled: 'Cancelled' };
         if (labelMap[f] !== undefined) chip.textContent = labelMap[f] + ' (' + (counts[f] || 0) + ')';
       });
-      // activity feed = real recent signups
+      // activity feed = real recent signups.
+      // 2026-05-31 audit fix (docs/AUDIT_FRONTEND_XSS_CSRF_2026_05_31.md HIGH):
+      // x.email and x.name come from user-controlled signup records. Before this
+      // fix they were concatenated into innerHTML without escaping, so a user
+      // signing up with display name '</span><img src=x onerror=alert(1)>'
+      // would execute JS in the admin's session every time /admin is loaded.
+      // The HTML must stay (we still want bold), so escape the user fields and
+      // template-literal the wrapper instead of building an unescaped string.
+      var _kflEscHtml = function (s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      };
       var recent = mapped.slice(0, 12).map(function (x) {
-        return { text: '<span style="font-weight: 500;">' + (x.email || x.name) + '</span> signed up for Kesefle', time: x.signupRaw };
+        var label = _kflEscHtml(x.email || x.name || '');
+        return { text: '<span style="font-weight: 500;">' + label + '</span> signed up for Kesefle', time: x.signupRaw };
       });
       if (window.__kflSetActivities) window.__kflSetActivities(recent);
     }

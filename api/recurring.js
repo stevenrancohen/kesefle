@@ -73,6 +73,26 @@ async function kvExists(key) {
   const j = await r.json();
   return j?.result != null;
 }
+// 2026-05-31 audit fix (docs/AUDIT_RECURRING_ENGINE_2026_05_31.md F2 HIGH):
+// Atomic set-if-not-exists with TTL — uses Upstash REST's SET ... NX EX syntax.
+// Returns true if the key did NOT exist and was set (lock acquired); returns
+// false if it already existed. Used as a race-safe alternative to the
+// kvExists → ... → kvSetTTL sequence in logOccurrence, which had a TOCTOU
+// window where two concurrent crons could both pass kvExists, both write the
+// same row to the user's sheet, and only THEN race to set the dedup key.
+async function kvSetNX(key, value, ttlSec) {
+  if (!KV_URL || !KV_TOKEN) return false;
+  // Upstash REST: POST /set/{key}?nx=true&ex={ttl} with the value as body.
+  const r = await fetch(`${KV_URL}/set/${encodeURIComponent(key)}?nx=true&ex=${Number(ttlSec) || 86400}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(String(value || '1')),
+  });
+  if (!r.ok) return false;
+  const j = await r.json().catch(() => ({}));
+  // Upstash returns { result: "OK" } when set, or { result: null } when NX rejected.
+  return j?.result === 'OK';
+}
 async function kvScan(pattern, max = 500) {
   if (!KV_URL || !KV_TOKEN) return [];
   let cursor = '0';
@@ -199,26 +219,40 @@ async function resolveTenantWriteRecord(phone, phoneRec) {
 
 async function logOccurrence(phone, phoneRec, tpl, dateStr) {
   const idemKey = `recurring_logged:${phone}:${tpl.id}:${dateStr}`;
-  if (await kvExists(idemKey)) return { skipped: true };
-  // Resolve the real write record (token from user:{userSub}); the phone record
-  // alone has no refresh token, so writing with it would always fail.
-  const resolved = await resolveTenantWriteRecord(phone, phoneRec);
-  if (!resolved.ok) return { error: resolved.error };
-  // Note: 8-col template -- currency + messageId are no longer columns.
-  // Dedup happens upstream via idemKey (recurring_logged:...) above, not via
-  // a messageId row column.
-  const row = buildExpenseRow({
-    amount: Number(tpl.amount),
-    isIncome: false,
-    category: tpl.category || 'הוצאות קבועות',
-    subcategory: tpl.subcategory || 'קבוע',
-    rawText: `🔁 [קבוע] ${tpl.amount} ${tpl.description}`,
-    date: dateStr, // backfills to the right YYYY-MM in col B
-  });
-  const result = await appendRowToUserSheet({ userRecord: resolved.userRecord, row });
-  if (!result.ok) return { error: result.error || 'write_failed' };
-  await kvSetTTL(idemKey, '1', LOGGED_TTL_SEC);
-  return { ok: true, dateStr, amount: Number(tpl.amount), description: tpl.description };
+  // 2026-05-31 audit fix (docs/AUDIT_RECURRING_ENGINE_2026_05_31.md F2 HIGH):
+  // Was kvExists → resolveTenantWriteRecord → appendRowToUserSheet (~500ms) →
+  // kvSetTTL. Two concurrent invocations could both pass kvExists and both
+  // append the same row before either set the dedup key. Switched to atomic
+  // SETNX-as-lock BEFORE the Sheets write. If SETNX fails, another invocation
+  // already holds the lock — return skipped without writing.
+  const locked = await kvSetNX(idemKey, '1', LOGGED_TTL_SEC);
+  if (!locked) return { skipped: true, reason: 'already_locked_or_logged' };
+  try {
+    // Resolve the real write record (token from user:{userSub}); the phone record
+    // alone has no refresh token, so writing with it would always fail.
+    const resolved = await resolveTenantWriteRecord(phone, phoneRec);
+    if (!resolved.ok) return { error: resolved.error };
+    // Note: 8-col template -- currency + messageId are no longer columns.
+    // Dedup happens upstream via idemKey (recurring_logged:...) above, not via
+    // a messageId row column.
+    const row = buildExpenseRow({
+      amount: Number(tpl.amount),
+      isIncome: false,
+      category: tpl.category || 'הוצאות קבועות',
+      subcategory: tpl.subcategory || 'קבוע',
+      rawText: `🔁 [קבוע] ${tpl.amount} ${tpl.description}`,
+      date: dateStr, // backfills to the right YYYY-MM in col B
+    });
+    const result = await appendRowToUserSheet({ userRecord: resolved.userRecord, row });
+    if (!result.ok) return { error: result.error || 'write_failed' };
+    // Lock already set above; no further dedup write needed.
+    return { ok: true, dateStr, amount: Number(tpl.amount), description: tpl.description };
+  } catch (e) {
+    // If the write throws, the SETNX lock would prevent retry today (45d TTL).
+    // That's intentional — manual recovery is safer than silent retry storms.
+    // Surface the error so admin can investigate.
+    return { error: e.message || 'log_occurrence_threw' };
+  }
 }
 
 // ── User actions (bot-secret) ───────────────────────────────────────────────────
