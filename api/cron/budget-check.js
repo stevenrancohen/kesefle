@@ -15,7 +15,7 @@
 // Schedule: vercel.json `0 8 * * *` (08:00 UTC = 11:00 Asia/Jerusalem).
 // Auth: Vercel cron sends Authorization: Bearer <CRON_SECRET>.
 
-import { withRequestId, log } from '../../lib/log.js';
+import { withRequestId, log, subHash } from '../../lib/log.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
 import { sendPush } from '../../lib/push.js';
@@ -220,7 +220,7 @@ async function handlerImpl(req, res) {
         refreshToken = userRec.refreshToken;
       }
     } catch (e) {
-      log.warn('budget_check.decrypt_failed', { reqId: req.reqId, userSub, error: e.message });
+      log.warn('budget_check.decrypt_failed', { reqId: req.reqId, sub: subHash(userSub), error: e.message });
     }
     if (!refreshToken) { skipped++; continue; }
 
@@ -228,7 +228,7 @@ async function handlerImpl(req, res) {
     try { accessToken = await exchangeRefreshForAccess(refreshToken); }
     catch (e) {
       errors++;
-      log.warn('budget_check.token_exchange_failed', { reqId: req.reqId, userSub, error: e.message });
+      log.warn('budget_check.token_exchange_failed', { reqId: req.reqId, sub: subHash(userSub), error: e.message });
       continue;
     }
 
@@ -236,12 +236,12 @@ async function handlerImpl(req, res) {
     try { mtdByCat = await readMtdByCategory(spreadsheetId, accessToken); }
     catch (e) {
       errors++;
-      log.warn('budget_check.sheet_read_failed', { reqId: req.reqId, userSub, error: e.message });
+      log.warn('budget_check.sheet_read_failed', { reqId: req.reqId, sub: subHash(userSub), error: e.message });
       continue;
     }
     if (mtdByCat == null) {
       errors++;
-      log.warn('budget_check.sheet_read_returned_null', { reqId: req.reqId, userSub });
+      log.warn('budget_check.sheet_read_returned_null', { reqId: req.reqId, sub: subHash(userSub) });
       continue;
     }
 
@@ -282,7 +282,7 @@ async function handlerImpl(req, res) {
         perUser.push({ userSub, category, spent, cap, pct: pctStr });
       } else {
         errors++;
-        log.warn('budget_check.send_failed', { reqId: req.reqId, userSub, category, detail: sendResult });
+        log.warn('budget_check.send_failed', { reqId: req.reqId, sub: subHash(userSub), category, detail: sendResult });
       }
     }
   }

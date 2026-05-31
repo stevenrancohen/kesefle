@@ -136,6 +136,16 @@ function _WEEKLY_DIGEST_HANDLER_(_event) {
   return { ok: true, sent: sent, skipped: skipped, errors: errors };
 }
 
+// 2026-05-31 audit follow-up (docs/AUDIT_WEEKLY_DIGEST_AND_CRONS_2026_05_31.md §4):
+// Defensive owner-phone allowlist. WD_SHEET_ID is hardcoded to Steven's NEW
+// sheet, so every subscriber received Steven's data. The SUBSCRIBERS Script
+// Property is owner-only by design, but the TODO at line 20 flags that we'll
+// add per-tenant resolution later. Until then this allowlist makes the
+// cross-tenant leak class impossible if SUBSCRIBERS is ever updated by
+// accident or by future code. Add a phone here only after confirming it
+// should receive Steven's sheet contents.
+var WD_OWNER_PHONES = ['972547760643'];
+
 // ---------------------------------------------------------------------------
 // Per-user digest builder + sender.
 // Returns: { sent: bool, reason?: string, replyText?: string, transport?: any }
@@ -143,6 +153,11 @@ function _WEEKLY_DIGEST_HANDLER_(_event) {
 function _sendWeeklyDigestToPhone_(phone, sheetId) {
   var phoneStr = String(phone == null ? '' : phone).trim();
   if (!phoneStr) return { sent: false, reason: 'empty_phone' };
+
+  if (WD_OWNER_PHONES.indexOf(phoneStr) === -1) {
+    Logger.log('Weekly digest: ' + _WD_phoneTail_(phoneStr) + ' not in WD_OWNER_PHONES allowlist; skipping.');
+    return { sent: false, reason: 'not_owner_phone' };
+  }
 
   if (_WD_isOptedOut_(phoneStr)) {
     return { sent: false, reason: 'opted_out' };
