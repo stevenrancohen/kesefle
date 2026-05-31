@@ -57,6 +57,11 @@ async function _keysForUser_(userSub, phone, referralCode) {
     'sheet:' + userSub,
     'token:' + userSub,          // legacy plaintext token store — GDPR purge
     'userPhone:' + userSub,
+    // 2026-05-31 audit fix (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md #2):
+    // Legacy GIS one-tap path in api/auth/google.js wrote to user:google:{sub}
+    // instead of user:{sub}. Records persist past delete unless we also try
+    // this orphan namespace. Best-effort: KV DEL of a missing key is a no-op.
+    'user:google:' + userSub,
     // Referral mapping (only the web flow had these; bot flow missed them)
     'referral:code:' + userSub,
     // Web push subscription
@@ -69,6 +74,24 @@ async function _keysForUser_(userSub, phone, referralCode) {
     // Cancellation exit-survey (free text reason). 365-day TTL anyway,
     // but the user explicitly asked for deletion — honor it.
     'exit_survey:' + userSub,
+    // 2026-05-31 audit additions (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md
+    // GDPR completeness): per-user prefixes that were written across the
+    // codebase but never enumerated here, so deletion left orphan records
+    // behind. Each is a single KV DEL; missing keys are no-ops.
+    'usr_budget:' + userSub,             // per-user budget caps
+    'custom_categories:' + userSub,      // Pro custom category list
+    'objective:' + userSub,              // weekly objective state
+    'payment_failed:' + userSub,         // dunning state (PII via timing)
+    'retention:discount:' + userSub,     // cancel-flow save offer record
+    'retention:pause:' + userSub,        // cancel-flow pause record
+    'winback:' + userSub,                // post-cancel winback claim (PII)
+    'user_seen_announcement:' + userSub, // dismissed announcement IDs
+    'referral:redeemed:' + userSub,      // referral redemption idempotency
+    // TODO (deferred — needs SCAN, not DEL):
+    //   goal:{userSub}:{goalId}   — multi-key, requires kvScan to enumerate
+    //   stats:{userSub}:{window}  — multi-key cached stats; TTL'd but PII
+    // Plus the SET `users_all` needs SREM (different op than DEL) — handled
+    // separately in deleteAccount handler so this list stays SET-vs-KEY clean.
   ];
   if (phone) {
     // Phone-keyed records (only the bot flow had these; web flow missed them)
@@ -78,6 +101,8 @@ async function _keysForUser_(userSub, phone, referralCode) {
     keys.push('recurring_pending:' + phone); // pending recurring confirmation
     keys.push('memberGroup:' + phone);      // family/group membership pointer
     keys.push('reminders:' + phone);        // reminder list (PII in free text)
+    keys.push('phoneGroups:' + phone);      // 2026-05-31 audit addition: family/group list
+    keys.push('optout:' + phone);           // 2026-05-31 audit addition: WhatsApp STOP record
   }
   if (referralCode) {
     keys.push('referral:reverse:' + referralCode);

@@ -145,8 +145,13 @@ async function handlerImpl(req, res) {
       const user = await kvGet('user:google:' + sub);
       if (!user || !user.phoneE164) { skipped++; continue; }
 
-      // opt-out check
-      const optOut = await kvGet('opt_out:' + user.phoneE164);
+      // opt-out check.
+      // 2026-05-31 audit fix (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md
+      // bug #1 CRITICAL): was 'opt_out:' (underscore) — webhook.js writes
+      // 'optout:' (no underscore) on STOP/UNSUBSCRIBE, so EVERY user who
+      // typed STOP was still being sent the weekly digest. Israeli direct-
+      // marketing law + GDPR Art.21 issue. Aligned to the canonical key.
+      const optOut = await kvGet('optout:' + user.phoneE164);
       if (optOut) { skipped++; continue; }
 
       if (dryRun) {
