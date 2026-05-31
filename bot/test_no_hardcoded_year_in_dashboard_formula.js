@@ -96,6 +96,116 @@ if (problemFiles.length === 0) {
     'found ' + problemFiles.length + ' formula-emit line(s) with hardcoded year literals — must reference B4 or YEAR(TODAY())');
 }
 
+// Multi-line frozen-year pattern (Steven 2026-05-30, PR #152 WS2 follow-up):
+//   var year = 2026;                                  // ← literal year assignment
+//   var monthKey = year + '-' + MM;                   // ← concat
+//   sheet.getRange(...).setFormula(... "' + monthKey + '" ...);  // ← write
+// The single-line scanner above does NOT catch this because the year literal
+// and the setFormula sit on different lines. This static backward-walk
+// closes that gap: for every setFormula call in a .gs file, scan back N
+// lines for `var year = <numeric literal>` (or `let`/`const`). If found
+// AND a `monthKey` (or similar concatenation of `year` with a hyphen) sits
+// between them, flag the file/line as a frozen-year installer.
+//
+// NOTE: dynamic assignments — `var year = _dashResolveYear_(sheet);`,
+// `var year = now.getFullYear();`, `var year = blk.year;` — are NOT
+// flagged because the right-hand side is a function call / property
+// access, not a numeric literal. The config-object pattern in
+// personal_sheet_fix.gs (`year: 2026` inside `_PSF_YEAR_2026_`) is also
+// not flagged — only direct numeric assignment to a bare `year` variable.
+const LITERAL_YEAR_ASSIGN_RE = /\b(?:var|let|const)\s+year\s*=\s*(20[2-9][0-9])\s*[;,]/;
+const SETFORMULA_RE = /\.setFormula[s]?\s*\(/;
+const MONTHKEY_CONCAT_RE = /\b(monthKey|monthkey|mKey|mk)\s*=\s*\b(year|y)\b\s*\+\s*['"`]-/;
+const BACKWARD_WINDOW = 30;
+
+const frozenYearFindings = [];
+
+for (const fname of botFiles) {
+  const full = path.join(BOT_DIR, fname);
+  const src = fs.readFileSync(full, 'utf8');
+  const lines = src.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!SETFORMULA_RE.test(line)) continue;
+    // Walk backward up to BACKWARD_WINDOW lines.
+    const lo = Math.max(0, i - BACKWARD_WINDOW);
+    let foundLiteralYearAt = -1;
+    let foundMonthKeyAt = -1;
+    for (let k = i - 1; k >= lo; k--) {
+      const back = lines[k];
+      const trimmedBack = back.trim();
+      // Skip comments inside the window — they should not count.
+      if (trimmedBack.startsWith('//') || trimmedBack.startsWith('*') ||
+          trimmedBack.startsWith('/*')) continue;
+      if (foundLiteralYearAt < 0 && LITERAL_YEAR_ASSIGN_RE.test(back)) {
+        foundLiteralYearAt = k;
+      }
+      if (foundMonthKeyAt < 0 && MONTHKEY_CONCAT_RE.test(back)) {
+        foundMonthKeyAt = k;
+      }
+      if (foundLiteralYearAt >= 0 && foundMonthKeyAt >= 0) break;
+    }
+    // Both signals must be present AND the literal year must precede the
+    // monthKey concat (i.e. monthKey was actually built from the literal).
+    if (foundLiteralYearAt >= 0 &&
+        foundMonthKeyAt >= 0 &&
+        foundLiteralYearAt <= foundMonthKeyAt) {
+      frozenYearFindings.push({
+        file: fname,
+        setFormulaLine: i + 1,
+        literalYearLine: foundLiteralYearAt + 1,
+        literalYearSnippet: lines[foundLiteralYearAt].trim().slice(0, 120),
+        monthKeyLine: foundMonthKeyAt + 1,
+        monthKeySnippet: lines[foundMonthKeyAt].trim().slice(0, 120),
+      });
+    }
+  }
+}
+
+if (frozenYearFindings.length === 0) {
+  assert(true, 'no multi-line frozen-year installer pattern found (backward-walk check)');
+} else {
+  for (const f of frozenYearFindings) {
+    console.error('    -> ' + f.file + ':' + f.setFormulaLine + ' setFormula reads frozen year');
+    console.error('       year literal at line ' + f.literalYearLine + ': ' + f.literalYearSnippet);
+    console.error('       monthKey concat at line ' + f.monthKeyLine + ': ' + f.monthKeySnippet);
+  }
+  assert(false,
+    'found ' + frozenYearFindings.length +
+    ' multi-line frozen-year installer pattern(s) — replace `var year = 2026` with a dynamic resolution (_dashResolveYear_ / B4 / YEAR(TODAY()))');
+}
+
+// Self-test: the backward-walk SHOULD fire on a deliberately broken sample
+// so a future refactor that breaks the walker is caught here. We use a
+// synthetic string (no file write) to exercise the logic without touching
+// the repo.
+(function selfTest() {
+  const sample = [
+    'function _installerBad_(sheet) {',
+    '  var year = 2026;',
+    '  for (var m = 1; m <= 12; m++) {',
+    "    var monthKey = year + '-' + (m < 10 ? '0' + m : m);",
+    "    sheet.getRange(1, m).setFormula('=SUMIFS(A:A, B:B, \"' + monthKey + '\")');",
+    '  }',
+    '}',
+  ];
+  let hits = 0;
+  for (let i = 0; i < sample.length; i++) {
+    if (!SETFORMULA_RE.test(sample[i])) continue;
+    const lo = Math.max(0, i - BACKWARD_WINDOW);
+    let yIdx = -1, mIdx = -1;
+    for (let k = i - 1; k >= lo; k--) {
+      if (yIdx < 0 && LITERAL_YEAR_ASSIGN_RE.test(sample[k])) yIdx = k;
+      if (mIdx < 0 && MONTHKEY_CONCAT_RE.test(sample[k])) mIdx = k;
+      if (yIdx >= 0 && mIdx >= 0) break;
+    }
+    if (yIdx >= 0 && mIdx >= 0 && yIdx <= mIdx) hits++;
+  }
+  assert(hits === 1,
+    'backward-walk self-test catches the deliberately broken sample (expected 1 hit, got ' + hits + ')');
+})();
+
 // Also verify RECOMPUTE_COMPANY_DASHBOARD exists AND references B4 or YEAR.
 const fixSrc = (() => {
   try {

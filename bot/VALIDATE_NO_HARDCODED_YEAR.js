@@ -94,6 +94,19 @@ const RE_HARDCODED_YEAR_COMPARE = /YEAR\s*\([^)]*\)\s*[=<>!]+\s*2(0[2-9][0-9])/;
 // where the opening quote can be escaped (\") or raw (").
 const RE_HARDCODED_YEAR_AMPERSAND = /\b2(0[2-9][0-9])\s*&\s*\\?["']-\d{2}/;
 
+// Pattern E (multi-line "frozen-year installer", Steven 2026-05-30):
+//   var year = 2026;                                  // ← literal year
+//   var monthKey = year + '-' + MM;                   // ← concat
+//   sheet.getRange(...).setFormula(... "' + monthKey + '" ...);  // ← write
+// Patterns A-D fire only when the year literal and the SUMIFS sit on the
+// SAME line. This pattern requires a backward walk from setFormula(...)
+// to detect the literal year assignment. Detected by scanFile via the
+// FROZEN_YEAR_* regexes and the BACKWARD_WINDOW constant below.
+const RE_LITERAL_YEAR_ASSIGN = /\b(?:var|let|const)\s+year\s*=\s*(20[2-9][0-9])\s*[;,]/;
+const RE_SETFORMULA_CALL = /\.setFormula[s]?\s*\(/;
+const RE_MONTHKEY_FROM_YEAR = /\b(monthKey|monthkey|mKey|mk)\s*=\s*\b(year|y)\b\s*\+\s*['"`]-/;
+const FROZEN_YEAR_BACKWARD_WINDOW = 30;
+
 // ────────────────────────────────────────────────────────────────────────
 // Markers that this line is FORMULA-BUILDING (vs just talking about a
 // year in a comment or log). Used as a co-occurrence filter to reduce
@@ -255,6 +268,40 @@ function scanFile(filePath) {
       reason: hits.join(' + '),
       snippet: line.replace(/^\s+/, '').slice(0, 160),
     });
+  }
+
+  // Pattern E pass: multi-line frozen-year installer detection. For every
+  // .setFormula(...) call site, walk back FROZEN_YEAR_BACKWARD_WINDOW lines
+  // looking for both `var year = <literal>` AND `var monthKey = year + '-' ...`.
+  // If both are present and the literal-year line precedes the monthKey
+  // line (i.e. monthKey was actually built from the literal), flag the
+  // setFormula line.
+  for (var fi = 0; fi < lines.length; fi++) {
+    var fline = lines[fi];
+    if (!RE_SETFORMULA_CALL.test(fline)) continue;
+    var lo = Math.max(0, fi - FROZEN_YEAR_BACKWARD_WINDOW);
+    var litIdx = -1;
+    var mkIdx = -1;
+    for (var k = fi - 1; k >= lo; k--) {
+      var back = lines[k];
+      var tback = back.replace(/^\s+/, '');
+      // Skip obvious comment-only lines so a commented-out historical
+      // snippet doesn't accidentally trigger.
+      if (tback.indexOf('//') === 0 || tback.indexOf('*') === 0 ||
+          tback.indexOf('/*') === 0) continue;
+      if (litIdx < 0 && RE_LITERAL_YEAR_ASSIGN.test(back)) litIdx = k;
+      if (mkIdx < 0 && RE_MONTHKEY_FROM_YEAR.test(back)) mkIdx = k;
+      if (litIdx >= 0 && mkIdx >= 0) break;
+    }
+    if (litIdx >= 0 && mkIdx >= 0 && litIdx <= mkIdx) {
+      violations.push({
+        file: filePath,
+        line: fi + 1,
+        reason: 'multi-line frozen-year installer (literal year at line ' +
+                (litIdx + 1) + ', monthKey concat at line ' + (mkIdx + 1) + ')',
+        snippet: lines[fi].replace(/^\s+/, '').slice(0, 160),
+      });
+    }
   }
 
   return { error: null, violations: violations };
