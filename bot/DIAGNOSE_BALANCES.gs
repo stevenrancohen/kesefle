@@ -175,13 +175,70 @@ function DB_FINDINGS() {
   return 'ok';
 }
 
-// -- 6. One-click: run everything ---------------------------------------------
+function _db_colLetter_(col) {
+  var s = '';
+  while (col > 0) { var m = (col - 1) % 26; s = String.fromCharCode(65 + m) + s; col = (col - m - 1) / 26; }
+  return s;
+}
+
+// -- 6. Rebuild reconnaissance: is the personal tab year-aware + formula-driven?
+//   Answers two questions before any rebuild:
+//   (a) Are the month cells FORMULAS (safe to rewire) or hand-typed numbers
+//       (must be preserved)?
+//   (b) Is the year cell a dropdown, and do the rows already reference it
+//       ($B$2/$B$4) -- i.e. are they ALREADY year-aware?
+function DB_REBUILD_RECON() {
+  Logger.log('');
+  Logger.log('=== DB_REBUILD_RECON (read-only) ===');
+  var sh = _db_ss_().getSheetByName(_DB_PERSONAL_);
+  if (!sh) { Logger.log('!! personal tab not found.'); return 'no-tab'; }
+  var last = Math.min(sh.getLastRow(), _DB_MAX_ROWS_);
+  var rng = sh.getRange(1, 1, last, 14);   // A..N
+  var forms = rng.getFormulas();
+  var vals = rng.getValues();
+  var disp = rng.getDisplayValues();
+
+  Logger.log('-- year cell(s) in rows 1-6 + dropdown? --');
+  for (var r = 0; r < Math.min(last, 6); r++) {
+    for (var c = 0; c < 14; c++) {
+      var yv = String(disp[r][c] || '').replace(/[^0-9]/g, '');
+      if (/^(202[0-9]|2030)$/.test(yv)) {
+        var dvr = sh.getRange(r + 1, c + 1).getDataValidation();
+        Logger.log('  ' + _db_colLetter_(c + 1) + (r + 1) + ' = ' + disp[r][c] + '   dropdown=' + (dvr ? 'YES' : 'NO'));
+      }
+    }
+  }
+
+  Logger.log('-- rows with HAND-TYPED non-zero numbers in months C..N (would be lost in a rewire) --');
+  var manual = 0;
+  for (var r2 = 0; r2 < last; r2++) {
+    var cols = [];
+    for (var c2 = 2; c2 < 14; c2++) {
+      if (!forms[r2][c2] && typeof vals[r2][c2] === 'number' && vals[r2][c2] !== 0) cols.push(_db_colLetter_(c2 + 1));
+    }
+    if (cols.length) { Logger.log('  R' + (r2 + 1) + ' "' + disp[r2][0] + '": ' + cols.join(',')); manual++; }
+  }
+  if (!manual) Logger.log('  NONE -- every month cell is a formula. Safe to rewire from \u05ea\u05e0\u05d5\u05e2\u05d5\u05ea.');
+  else Logger.log('  ^ these ' + manual + ' rows have hand-typed numbers -- a rewire must preserve them.');
+
+  Logger.log('-- sample January (col C) formulas, to see if rows are already year-aware --');
+  var shown = 0;
+  for (var r3 = 0; r3 < last && shown < 10; r3++) {
+    var cf = forms[r3][2];
+    if (cf) { Logger.log('  R' + (r3 + 1) + ' "' + disp[r3][0] + '" C=' + (cf.length > 140 ? cf.slice(0, 140) + '...' : cf)); shown++; }
+  }
+  Logger.log('  (looking for $B$2 / $B$4 / LEFT(..,4) = year-aware, vs static =C61 / raw)');
+  return 'ok';
+}
+
+// -- 7. One-click: run everything ---------------------------------------------
 function DB_RUN_ALL() {
   DB_SELF_TEST_HEBREW();
   DB_LIST_TABS();
   DB_DUMP_PERSONAL();
   DB_DUMP_ALL_COMPANY();
   DB_FINDINGS();
+  DB_REBUILD_RECON();
   Logger.log('');
   Logger.log('=== DONE. Copy this whole log and send it to Claude. ===');
   return 'ok';
