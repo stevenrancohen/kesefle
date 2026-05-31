@@ -821,3 +821,598 @@ function FIX_ORDERS_HEADERS_ROLLBACK() {
   Logger.log('ROLLED BACK orders headers from ' + bak.at);
   return 'ok';
 }
+
+
+// ===================== 6) MIGRATE OLD PERSONAL (MOP_*) =====================
+// Migrate the OLD personal sheet's expense categories + cell-notes into the NEW
+// 'maazan ishi' tab. Pure label-walker: every row is resolved by reading col A
+// at runtime -- NO hardcoded row numbers (rows shift as cycles insert/delete).
+//
+//   MOP_..._DRY_RUN  : READ ONLY. Plans every ADD / EXISTS / note / orphan-drop.
+//   MOP_..._APPLY    : gated by Script Property + backup (props chunks + hidden
+//                      tab) + ScriptLock + full ROLLBACK. Inserts missing rows,
+//                      rewrites section totals to include them, writes 54 notes,
+//                      deletes the 'mehagilion hakodem' orphan block.
+//   MOP_..._ROLLBACK : restore from the backup tab (or props).
+//
+// HARD RULES: never touch 'tnuot' (movements) / 'hazmanot' (orders). Existing
+// section categories are NEVER duplicated -- only genuinely-missing ones are
+// inserted; notes still migrate onto whichever row already holds that label.
+// Year cell is personal B2; month SUMIFS are year-aware ($B$2 & "-01" .. "-12").
+// Hebrew is \uXXXX-escaped (matches this file's convention).
+// =============================================================================
+
+var _MOP_NEW_SHEET_ID_ = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
+var _MOP_PERSONAL_     = '\u05de\u05d0\u05d6\u05df \u05d0\u05d9\u05e9\u05d9';   // maazan ishi
+var _MOP_TNUOT_        = '\u05ea\u05e0\u05d5\u05e2\u05d5\u05ea';               // tnuot (movements) -- NEVER touch
+var _MOP_YEAR_CELL_    = 'B2';                                                // year selector cell
+var _MOP_MAX_ROWS_     = 200;                                                 // scan cap for the label-walker
+
+var _MOP_CONFIRM_PROP_ = 'CONFIRM_MIGRATE_OLD_PERSONAL';
+var _MOP_CONFIRM_VAL_  = 'YES I UNDERSTAND';
+var _MOP_BACKUP_TAB_   = '_MOP_BACKUP_';
+var _MOP_BACKUP_PROP_  = 'MOP_BACKUP';        // base key; chunks => MOP_BACKUP_0, _1, ...
+var _MOP_BACKUP_META_  = 'MOP_BACKUP_META';   // {chunks:n, at:iso}
+var _MOP_BACKUP_ROWS_  = 100;                 // snapshot rows 1..100
+var _MOP_BACKUP_COLS_  = 14;                  // cols A..N
+var _MOP_PROP_CHUNK_   = 9000;                // < 9KB per Script Property value
+
+var _MOP_SE_           = '\u05e1\u05d4\u05f4\u05db';   // "se..k" total-row prefix ("seh-kaf")
+var _MOP_ORPHAN_FRAG_  = '\u05de\u05d4\u05d2\u05d9\u05dc\u05d9\u05d5\u05df \u05d4\u05e7\u05d5\u05d3\u05dd'; // "mehagilion hakodem"
+
+// Section descriptor: key + the col-A fragments that identify its banner & total.
+// total = row containing _MOP_SE_ AND totalFrag ; banner = row containing
+// bannerFrag but NOT _MOP_SE_. Fragments chosen to be collision-free vs the
+// grand-total row "se..k hotsaot" (which contains none of these section frags).
+var _MOP_SECTIONS_ = [
+  { key: '\u05e7\u05d1\u05d5\u05e2',     // kavua (fixed)
+    bannerFrag: '\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea',   // "hotsaot kvuot"
+    totalFrag:  '\u05e7\u05d1\u05d5\u05e2' },                                                // "kavua"
+  { key: '\u05d6\u05de\u05e0\u05d9',     // zmani (temporary)
+    bannerFrag: '\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d6\u05de\u05e0\u05d9\u05d5\u05ea',   // "hotsaot zmaniot"
+    totalFrag:  '\u05d6\u05de\u05e0\u05d9' },                                                // "zmani"
+  { key: '\u05d0\u05d5\u05db\u05dc',     // okhel (food)
+    bannerFrag: '\u05d0\u05d5\u05db\u05dc',                                                  // "okhel"
+    totalFrag:  '\u05d0\u05d5\u05db\u05dc' },                                                // "okhel"
+  { key: '\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4',   // tahbura (transport)
+    bannerFrag: '\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4',                                      // "tahbura"
+    totalFrag:  '\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4' },                                    // "tahbura"
+  { key: '\u05d0\u05d7\u05e8',           // aher (other)  -- spec maps to 'aher'/'aheret'
+    bannerFrag: '\u05d5\u05d0\u05d7\u05e8\u05d9\u05dd',                                      // "ve-aherim" (banner: shonot ve-aherim)
+    totalFrag:  '\u05d0\u05d7\u05e8' }                                                      // "aher" (total: se..k hotsaa aheret)
+];
+
+
+// ---- generated literal arrays (Hebrew \u-escaped via JSON.dumps ensure_ascii) ----
+var _MOP_CATS_ = [
+  { 'new': "\u05d1\u05d9\u05ea", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05de\u05db\u05d5\u05df \u05db\u05d5\u05e9\u05e8", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05d0\u05e4\u05d5\u05dc\u05d5", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05ea\u05e7\u05e9\u05d5\u05e8\u05ea", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05dc\u05d9\u05de\u05d5\u05d3\u05d9\u05dd", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05d1\u05d9\u05d8\u05d5\u05d7 \u05d0\u05d9\u05e9\u05d9", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05d0\u05d1\u05d0", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05d1\u05e0\u05e7\u05d0\u05d5\u05ea", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05e4\u05dc\u05d9\u05d9\u05e1\u05d8\u05d9\u05d9\u05e9\u05df", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05d7\u05d1\u05e8\u05d4 / \u05de\u05e1 / \u05d1\u05d9\u05d8\u05d5\u05d7 \u05dc\u05d0\u05d5\u05de\u05d9", 'section': "\u05e7\u05d1\u05d5\u05e2" },
+  { 'new': "\u05d7\u05e6\u05d9 \u05d0\u05d9\u05d9\u05e8\u05d5\u05df \u05de\u05df", 'section': "\u05d6\u05de\u05e0\u05d9" },
+  { 'new': "\u05de\u05e8\u05d5\u05e5 - \u05d0\u05d5\u05e1\u05d8\u05e8\u05d9\u05d4", 'section': "\u05d6\u05de\u05e0\u05d9" },
+  { 'new': "\u05e2\u05d5\u05e8\u05db\u05d9 \u05d3\u05d9\u05df", 'section': "\u05d6\u05de\u05e0\u05d9" },
+  { 'new': "\u05d1\u05e0\u05e7 \u05d4\u05e4\u05d5\u05e2\u05dc\u05d9\u05dd", 'section': "\u05d6\u05de\u05e0\u05d9" },
+  { 'new': "\u05d7\u05d5\u05e4\u05e9\u05d5\u05ea", 'section': "\u05d6\u05de\u05e0\u05d9" },
+  { 'new': "\u05d2\u05d9\u05d0", 'section': "\u05d6\u05de\u05e0\u05d9" },
+  { 'new': "\u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5", 'section': "\u05d0\u05d5\u05db\u05dc" },
+  { 'new': "\u05d0\u05d5\u05db\u05dc \u05dc\u05d1\u05d9\u05ea", 'section': "\u05d0\u05d5\u05db\u05dc" },
+  { 'new': "\u05d1\u05d9\u05d8\u05d5\u05d7 \u05e8\u05db\u05d1", 'section': "\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4" },
+  { 'new': "\u05e8\u05d5\u05d1\u05d9\u05e7\u05d5\u05df", 'section': "\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4" },
+  { 'new': "\u05d7\u05e0\u05d9\u05d4", 'section': "\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4" },
+  { 'new': "\u05dc\u05d9\u05d9\u05dd", 'section': "\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4" },
+  { 'new': "BMW s1000", 'section': "\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4" },
+  { 'new': "\u05d3\u05dc\u05e7", 'section': "\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4" },
+  { 'new': "\u05d0\u05d5\u05d8\u05d5\u05d1\u05d5\u05e1/\u05de\u05d5\u05e0\u05d9\u05ea/\u05e8\u05db\u05d1\u05ea", 'section': "\u05ea\u05d7\u05d1\u05d5\u05e8\u05d4" },
+  { 'new': "\u05d0\u05d8\u05e8\u05e7\u05e6\u05d9\u05d5\u05ea", 'section': "\u05d0\u05d7\u05e8" },
+  { 'new': "\u05e1\u05e4\u05e8\u05d9\u05dd", 'section': "\u05d0\u05d7\u05e8" },
+  { 'new': "\u05e6\u05d9\u05d5\u05d3 \u05de\u05d7\u05e9\u05d1\u05d9 \u05d5\u05d2\u05d3\u05d2'\u05d8\u05d9\u05dd", 'section': "\u05d0\u05d7\u05e8" },
+  { 'new': "\u05d1\u05d9\u05d2\u05d5\u05d3", 'section': "\u05d0\u05d7\u05e8" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'section': "\u05d0\u05d7\u05e8" },
+];
+
+var _MOP_NOTES_ = [
+  { 'new': "\u05d4\u05db\u05e0\u05e1\u05d4 1 \u2014 \u05de\u05e9\u05db\u05d5\u05e8\u05ea", 'col': "F", 'text': "3900 \u05d3\u05d5\u05dc\u05e8 / 11505 \u05e9\u05e7\u05dc" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "C", 'text': "\u2550\u2550 2024 \u2550\u2550\n\u20aa150 \u05ea\u05e9\u05dc\u05d5\u05dd \u05e2\u05dc \u05d0\u05d9\u05e9\u05d5\u05e8 \u05e8\u05d5\u05e4\u05d0 \u05dc\u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05d0\u05de\u05e5\u00a0\n\n\u20aa97 \u05dc\u05d1\u05d9\u05d8\u05d5\u05d7 \u05ea\u05d0\u05d5\u05e0\u05d5\u05ea \u05d7\u05d5\u05d3\u05e9\u05d9\u05d5\u05ea" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "I", 'text': "\u2550\u2550 2025 \u2550\u2550\n420 \u05de\u05d1\u05e8\u05d2\u05d4" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "L", 'text': "\u2550\u2550 2024 \u2550\u2550\n3900 \u05e9\u05d7 \u05de\u05db\u05d9\u05e8\u05ea \u05e9\u05e2\u05d5\u05df \u05e8\u05d0\u05d3\u05d5" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "N", 'text': "\u2550\u2550 2024 \u2550\u2550\nplus500" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "D", 'text': "\u2550\u2550 2026 \u2550\u2550\n3350 \u05d0\u05d2\u05e8\u05d4 \u05d3\u05d5\u05d7 \u05e9\u05e0\u05ea\u05d9 2023 -2022" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "E", 'text': "\u2550\u2550 2026 \u2550\u2550\n500 \u05d5\u05d9\u05dc\u05d5\u05e0\u05d5\u05ea+\u05e4\u05d7+\u05de\u05e6\u05e2\u05d9\u05dd+\u05e7\u05d5\u05dc\u05d1 | 800 \u05de\u05d5\u05d1\u05d9\u05dc\u05d9\u05dd \u05dc\u05de\u05e7\u05e8\u05e8 \u05d5\u05dc\u05e9\u05d5\u05dc\u05d7\u05df | 963 \u05e8\u05d9\u05d4\u05d5\u05d8 \u05dc\u05d1\u05d9\u05ea | 1106 \u05d7\u05d5\u05de\u05e8 \u05e6\u05d1\u05d9\u05e2\u05d4 \u05d5\u05d0\u05d9\u05d8\u05d5\u05dd \u05dc\u05d1\u05d9\u05ea (\u05dc\u05d1\u05d3\u05d5\u05e7 \u05de\u05d5\u05dc \u05de\u05d0\u05d5\u05e8 \u05d0\u05ea \u05d4\u05de\u05e2\u05f4\u05de) + 400 \u05e6\u05d9\u05d5\u05d3 \u05dc\u05d1\u05d9\u05ea + 475 (\u05e2\u05d5\u05d3 \u05d7\u05d5\u05de\u05e8 \u05e6\u05d1\u05d9\u05e2\u05d4 \u05d5\u05db\u05d5\u05f4) + 120 \u05e9\u05e4\u05db\u05d8\u05dc \u05d0\u05de\u05e8\u05d9\u05e7\u05d0\u05d9 \u05e9\u05dc\u05d9\u05e9\u05d9 + 1077 (\u05d0\u05d1\u05d0) \u05e6\u05d9\u05d5\u05d3 \u05e6\u05d1\u05d9\u05e2\u05d4+ 50 \u05e6\u05d9\u05d5\u05d3 \u05e8\u05d5\u05dc\u05e8 \u05e9\u05e4\u05db\u05d8\u05dc + 316 \u05de\u05d5\u05e6\u05e8\u05d9 \u05de\u05d8\u05d1\u05d7+240(\u05e6\u05d9\u05d5\u05d3 \u05e6\u05d1\u05d9\u05e2\u05d4 \u05e9\u05e0\u05d9 \u05d3\u05dc\u05d9\u05d9\u05dd) + 1152 (\u05e6\u05d9\u05d5\u05d3 \u05ea\u05d0\u05d5\u05e8\u05d4 \u05d5\u05de\u05d8\u05d0\u05d8\u05d0) +658 \u05e6\u05d9\u05d5\u05d3 \u05de\u05e7\u05d3\u05d7\u05d4 \u05dc\u05d1\u05d9\u05ea + 613 \u05d0\u05dc\u05d9\u05d0\u05e7\u05e1\u05e4\u05e8\u05e1 \u05d3\u05d1\u05e8\u05d9\u05dd \u05dc\u05d1\u05d9\u05ea+1000 \u05e2\u05d6\u05e8\u05d4 \u05d1\u05e0\u05d9\u05e7\u05d5\u05d9 \u05d4\u05d1\u05d9\u05ea \u05dc\u05d0\u05d1\u05d0 \u05d5\u05d2\u05d9\u05d0+ \u05d8\u05d5\u05e1\u05d8\u05e8 \u05e7 +272 \u05d1\u05d5\u05e0\u05d3\u05e8\u05d5\u05dc + \u05de\u05d8\u05d0\u05d8\u05d0 + \u05e9\u05d9\u05e4\u05d5\u05e6\u05e0\u05d9\u05e7+65 \u05d2\u05de\u05d1\u05d5 \u05d5\u05d1\u05d5\u05e7\u05e1\u05d4 + 1000 \u05e9\u05dc\u05d5\u05de\u05d9 \u05e2\u05d6\u05e8\u05d4 \u05e1\u05e4\u05e8\u05d9\u05d4+\u05d4\u05ea\u05e7\u05e0\u05ea \u05d8\u05dc\u05d5\u05d5\u05d9\u05d6\u05d9\u05d4+\u05ea\u05d0\u05d5\u05e8\u05d4+509 \u05ea\u05d0\u05d5\u05e8\u05d4 \u05dc\u05d1\u05d9\u05ea + 1000 \u05e9\u05dc\u05d5\u05de\u05d9 \u05e9\u05e7\u05e2\u05d9\u05dd + 143 \u05e9\u05e4\u05db\u05d8\u05dc \u05d0\u05de\u05e8\u05d9\u05e7\u05d0\u05d9 + 3 \u05e9\u05e7\u05e2\u05d9\u05dd \u05dc\u05d1\u05d9\u05ea + 420 \u05e6\u05d1\u05e2 \u05dc\u05d1\u05d9\u05ea + \u05de\u05e0\u05d5\u05e8\u05d5\u05ea + 170 \u05de\u05ea\u05dc\u05d4 \u05dc\u05d5\u05d5\u05d9\u05dc\u05d5\u05e0\u05d5\u05ea + 450 \u05e9\u05dc\u05d5\u05de\u05d9 \u05d7\u05e6\u05d9 \u05d9\u05d5\u05dd \u05e2\u05d1\u05d5\u05d3\u05d4 + 490 \u05ea\u05d0\u05d5\u05e8\u05d4 \u05d5\u05de\u05d5\u05d8 \u05dc\u05d5\u05d5\u05d9\u05dc\u05d5\u05e0\u05d5\u05ea + 210 \u05e2\u05dc \u05e2\u05d1\u05d5\u05d3\u05d4" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "F", 'text': "\u2550\u2550 2026 \u2550\u2550\n\u05de\u05d3\u05f4\u05d0 (\u05e6\u05d9\u05d5\u05d3 \u05dc\u05d1\u05d9\u05ea): 400\n\u05db\u05e0\u05d9\u05e1\u05d4 \u05dc\u05d3\u05dc\u05ea \u05e8\u05d1 \u05d1\u05e8\u05d9\u05d7: 183\n\u05de\u05e6\u05dc\u05de\u05d4 \u05dc\u05d1\u05d9\u05ea \u05d5\u05e6\u05d9\u05d5\u05d3 \u05e0\u05d5\u05e1\u05e3: 153\n\u05e4\u05d8\u05d9\u05e9\u05d5\u05df: 300\n\u05e6\u05d9\u05e0\u05d5\u05e8 \u05dc\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd: +\u05e7\u05e6\u05e3 \u05e4\u05d5\u05dc\u05d9\u05d0\u05d5\u05e8\u05d9\u05ea\u05df +\u05d0\u05e7\u05d3\u05d7 \u05e1\u05d9\u05dc\u05d9\u05e7\u05d5\u05df +\u05e4\u05e8\u05d5\u05e4\u05d5\u05e7\u05e1\u05d9 = 324" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "G", 'text': "\u2550\u2550 2025 \u2550\u2550\n2000 \u05e9\u05db\u05d9\u05e8\u05d5\u05ea\n595 \u05de\u05d9\u05dd \u05d7\u05e6\u05d9 \u05e9\u05e0\u05ea\u05d9" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "H", 'text': "\u2550\u2550 2024 \u2550\u2550\n1040 \u05d7\u05e9\u05de\u05dc\n270 \u05d5\u05d5\u05e2\u05d3 \u05d1\u05d9\u05ea" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "I", 'text': "\u2550\u2550 2025 \u2550\u2550\n790 \u05d0\u05e8\u05e0\u05d5\u05e0\u05d4 \u05d0\u05e8\u05d1\u05e2 \u05d7\u05d5\u05d3\u05e9\u05d9\u05dd" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "L", 'text': "\u2550\u2550 2025 \u2550\u2550\n\u05d7\u05e9\u05de\u05dc - 410\n\n\u2550\u2550 2024 \u2550\u2550\n2294+537 \u05d7\u05e9\u05d1\u05d5\u05df \u05d7\u05e9\u05de\u05dc \u05d5\u05d7\u05e9\u05d1\u05d5\u05df \u05de\u05d9\u05dd" },
+  { 'new': "\u05d1\u05d9\u05ea", 'col': "M", 'text': "\u2550\u2550 2025 \u2550\u2550\n500 - \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d7\u05e9\u05de\u05dc \u05d0\u05e8\u05e0\u05d5\u05e0\u05d4 \u05de\u05d9\u05dd\n300 \u05d5\u05d5\u05e2\u05d3" },
+  { 'new': "\u05de\u05db\u05d5\u05df \u05db\u05d5\u05e9\u05e8", 'col': "E", 'text': "\u2550\u2550 2026 \u2550\u2550\n700 \u05d5\u05d9\u05d8\u05de\u05d9\u05e0\u05d9\u05dd + 20 \u05d1\u05e7\u05d1\u05d5\u05e7 \u05e9\u05ea\u05d9\u05d4" },
+  { 'new': "\u05de\u05db\u05d5\u05df \u05db\u05d5\u05e9\u05e8", 'col': "F", 'text': "\u2550\u2550 2025 \u2550\u2550\n75 - \u05d7\u05e6\u05d9 \u05d7\u05d5\u05d3\u05e9 \u05d7\u05d9\u05d3\u05d5\u05e9 \u05de\u05e0\u05d5\u05d9 \u05e1\u05e4\u05d9\u05d9\u05e1\u00a0\n230 - \u05ea\u05d5\u05e1\u05e4\u05d9 \u05ea\u05d6\u05d5\u05e0\u05d4 \u05d5\u05d8\u05d9\u05e4\u05d5\u05d7" },
+  { 'new': "\u05de\u05db\u05d5\u05df \u05db\u05d5\u05e9\u05e8", 'col': "J", 'text': "\u2550\u2550 2025 \u2550\u2550\n82+53\u05d1\u05d2\u05d3\u05d9\u05dd \u05d0\u05dc\u05d9\u05d0\u05e7\u05e1\u05e4\u05e8\u05e1\u00a0\n14 \u05dc\u05d0 \u05d9\u05d3\u05d5\u05e2\n11 \u05d0\u05d1\u05d0\n50 \u05de\u05e1\u05e4\u05e8\u05d4 \n210 \u05e4\u05e8\u05d7\u05d9\u05dd - \u05e8\u05d5\u05e0\u05d9\n67 \u05db\u05e4\u05db\u05e4\u05d9\u05dd \u05d0\u05dc\u05d9\u05d0\u05e7\u05e1\u05e8\u05e1" },
+  { 'new': "\u05d0\u05e4\u05d5\u05dc\u05d5", 'col': "D", 'text': "\u2550\u2550 2026 \u2550\u2550\n252 \u05e1\u05d5\u05dc\u05e7 payplus" },
+  { 'new': "\u05d0\u05e4\u05d5\u05dc\u05d5", 'col': "E", 'text': "\u2550\u2550 2026 \u2550\u2550\n\u05e4\u05e8\u05e2\u05d5\u05e9\u05d9\u05dd 343 + 385 \u05d2\u05dc\u05d9\u05d9\u05e7\u05d5\u05e4\u05dc\u05e7\u05e1 + 39 \u05e8\u05e6\u05d5\u05e2\u05d4 \u05dc\u05d7\u05d9\u05d6\u05d5\u05e7 \u05d4\u05e8\u05d2\u05d9\u05dc + 500 \u05d4\u05d9\u05d3\u05e8\u05d5\u05ea\u05e8\u05e4\u05d9\u05d4 + 230 \u05db\u05d3\u05d5\u05e8 \u05de\u05d2\u05d3\n\n\u2550\u2550 2024 \u2550\u2550\n\u05d0\u05d5\u05db\u05dc - 409\u00a0\n670 \u05de\u05e0\u05d5\u05d9 \u05e9\u05e0\u05ea\u05d9" },
+  { 'new': "\u05d0\u05e4\u05d5\u05dc\u05d5", 'col': "F", 'text': "\u2550\u2550 2026 \u2550\u2550\n\u05e7\u05d5\u05dc\u05e8 \u05d0\u05d9\u05dc\u05d5\u05e3 (\u05d0\u05e4\u05d5\u05dc\u05d5): 101\n\u05d0\u05d5\u05db\u05dc \u05dc\u05d0\u05e4\u05d5\u05dc\u05d5: 340" },
+  { 'new': "\u05d0\u05e4\u05d5\u05dc\u05d5", 'col': "G", 'text': "\u2550\u2550 2024 \u2550\u2550\n459 \u05d0\u05d5\u05db\u05dc \u05dc\u05d0\u05e4\u05d5\u05dc\u05d5\n250 \u05db\u05d3\u05d5\u05e8 \u05e0\u05d2\u05d3 \u05e4\u05e8\u05e2\u05d5\u05e9\u05d9\u05dd" },
+  { 'new': "\u05d0\u05e4\u05d5\u05dc\u05d5", 'col': "I", 'text': "\u2550\u2550 2024 \u2550\u2550\n360 - 18 \u05e7\u05d9\u05dc\u05d5 \u05d0\u05d5\u05db\u05dc \u05dc\u05d0\u05e4\u05d5\u05dc\u05d5" },
+  { 'new': "\u05d0\u05e4\u05d5\u05dc\u05d5", 'col': "L", 'text': "\u2550\u2550 2023 \u2550\u2550\n168 \u05e1\u05dc\u05d9\u05d9\u05d3\u05e8\u05d9\u05dd \u05dc\u05d0\u05d5\u05e4\u05e0\u05d5\u05e2 - 8.7.24" },
+  { 'new': "\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea", 'col': "F", 'text': "\u2550\u2550 2026 \u2550\u2550\n\u05e0\u05d8\u05e4\u05dc\u05d9\u05e7\u05e1: 70\nClaude: 311\nClaude: 311" },
+  { 'new': "\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d5\u05ea", 'col': "H", 'text': "\u2550\u2550 2024 \u2550\u2550\n\u05de\u05ea\u05e0\u05d4 \u05dc\u05d9\u05d5\u05dd \u05d4\u05d5\u05dc\u05d3\u05ea \u05de\u05d0\u05d5\u05e8 - 650 \u05e9\u05d7" },
+  { 'new': "\u05dc\u05d9\u05de\u05d5\u05d3\u05d9\u05dd", 'col': "C", 'text': "\u2550\u2550 2026 \u2550\u2550\n400 \u05d1\u05df \u05e8\u05d5\u05df \u05ea\u05d0\u05d2\u05d9\u05d3\u05d9\u05dd" },
+  { 'new': "\u05dc\u05d9\u05de\u05d5\u05d3\u05d9\u05dd", 'col': "H", 'text': "\u2550\u2550 2024 \u2550\u2550\n370 \u05e6\u05e2\u05e6\u05d5\u05e2\u05d9\u05dd \u05d5\u05d7\u05d8\u05d9\u05e4\u05d9\u05dd\n80 \u05d0\u05d5\u05db\u05dc \u05dc\u05d0\u05e4\u05d5\u05dc\u05d5" },
+  { 'new': "\u05d0\u05d1\u05d0", 'col': "J", 'text': "\u2550\u2550 2024 \u2550\u2550\n6000 - \u05d0\u05d2\u05e8\u05d4\n4000 - \u05e2\u05d5\u05f4\u05d3" },
+  { 'new': "\u05e4\u05dc\u05d9\u05d9\u05e1\u05d8\u05d9\u05d9\u05e9\u05df", 'col': "E", 'text': "\u2550\u2550 2026 \u2550\u2550\nBattlefield: 287\n\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 (\u05e4\u05dc\u05d9\u05d9\u05e1\u05d8\u05d9\u05d9\u05e9\u05df): 16\n\u05de\u05e0\u05d5\u05d9 \u05e9\u05e0\u05ea\u05d9: 320\n\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 (\u05e4\u05dc\u05d9\u05d9\u05e1\u05d8\u05d9\u05d9\u05e9\u05df): 16\nBattlefield: 287" },
+  { 'new': "\u05e2\u05d5\u05e8\u05db\u05d9 \u05d3\u05d9\u05df", 'col': "F", 'text': "\u2550\u2550 2025 \u2550\u2550\n1062 \u05e9\u05f4\u05d7 - \u05e2\u05d5\u05f4\u05d3 \u05e9\u05d9 \u05e8\u05e9\u05e3" },
+  { 'new': "\u05d1\u05e0\u05e7 \u05d4\u05e4\u05d5\u05e2\u05dc\u05d9\u05dd", 'col': "I", 'text': "\u2550\u2550 2024 \u2550\u2550\n1064 \u05d4\u05d5\u05e6\u05d0\u05d4 \u05dc\u05e4\u05d5\u05e2\u05dc" },
+  { 'new': "\u05d1\u05e0\u05e7 \u05d4\u05e4\u05d5\u05e2\u05dc\u05d9\u05dd", 'col': "K", 'text': "\u2550\u2550 2024 \u2550\u2550\n\u20aa2740 \u05ea\u05e9\u05dc\u05d5\u05dd \u05d7\u05df\u05d1 11/9" },
+  { 'new': "\u05d7\u05d5\u05e4\u05e9\u05d5\u05ea", 'col': "J", 'text': "\u2550\u2550 2025 \u2550\u2550\n\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d1\u05e9\"\u05d7\n75 \u05de\u05d5\u05e0\u05d9\u05ea\n131 \u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5\n64 \u05d1\u05d9\u05d8\u05d5\u05d7\n70 \u05d7\u05d1\u05d9\u05dc\u05ea \u05d2\u05dc\u05d9\u05e9\u05d4\n2,335 \u05db\u05e8\u05d8\u05d9\u05e1 \u05d8\u05d9\u05e1\u05d4\n\u05e1\u05d4\"\u05db \u05d1\u05e9\"\u05d7 = 2,675 \u20aa\n\n\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d1\u05d3\u05d5\u05dc\u05e8 \u2192 \u05e9\u05e7\u05dc\n200 \u05de\u05d5\u05e0\u05d9\u05ea = 200 \u00d7 3.4 = 680 \u20aa\n1,637 \u05de\u05e1\u05d9\u05d1\u05d4 = 1,637 \u00d7 3.4 = 5,565.8 \u20aa\n\n263 \u05e9\u05ea\u05d9\u05d9\u05d4 \u05d5\u05e9\u05e3 = 263 \u00d7 3.4 = 894.2 \u20aa\n\u05e1\u05d4\"\u05db \u05d1\u05d3\u05d5\u05dc\u05e8 = 2,100 $ = 7,140 \u20aa\n\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d1\u05d9\u05d5\u05e8\u05d5 \u2192 \u05e9\u05e7\u05dc\n\n30 \u05de\u05d5\u05e0\u05d9\u05ea \u05e0\u05ea\u05d1\"\u05d2 = 120 \u20aa\n340 \u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5 = 1,360 \u20aa\n360 \u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5 = 1,440 \u20aa\n262.5 \u05d4\u05e9\u05db\u05e8\u05ea \u05e8\u05d5\u05d1\u05d9\u05e7\u05d5\u05df = 1,050 \u20aa\n468 \u05d1\u05d2\u05d3\u05d9\u05dd = 1,872 \u20aa\n30 \u05d3\u05dc\u05e7 = 120 \u20aa\n105 \u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5 = 420 \u20aa\n520 \u05de\u05e1\u05d9\u05d1\u05d4 = 2,080 \u20aa\n60 \u05de\u05d5\u05e0\u05d9\u05ea = 240 \u20aa\n13 \u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5 = 52 \u20aa\n\u05e1\u05d4\"\u05db \u05d1\u05d9\u05d5\u05e8\u05d5 = 2,188.5 \u20ac = 8,754 \u20aa\n\n\u05e1\u05d9\u05db\u05d5\u05dd \u05db\u05dc\u05dc\u05d9\n\u05e1\u05d4\"\u05db \u20aa \u05d9\u05e9\u05d9\u05e8 = 2,675 \u20aa\n\u05e1\u05d4\"\u05db $ \u2192 \u20aa = 7,140 \u20aa\n\u05e1\u05d4\"\u05db \u20ac \u2192 \u20aa = 8,754 \u20aa\n\u05e1\u05d4\"\u05db \u05db\u05d5\u05dc\u05dc = 18,569 \u20aa" },
+  { 'new': "\u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5", 'col': "AG", 'text': "23/05 12:33 \u00b7 \u20aa32 \u00b7 \u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5\n23/05 21:18 \u00b7 \u20aa400 \u00b7 \u05d0\u05d5\u05db\u05dc\n23/05 22:36 \u00b7 \u20aa21 \u00b7 \u05d0\u05d5\u05db\u05dc \u05d1\u05d7\u05d5\u05e5\n24/05 10:04 \u00b7 \u20aa1 \u00b7 \u05e7\u05e4\u05d4\n25/05 13:13 \u00b7 \u20aa280 \u00b7 \u05d0\u05d5\u05db\u05dc \u05dc\u05d1\u05d9\u05ea\n25/05 14:03 \u00b7 \u20aa330 \u00b7 \u05d0\u05d5\u05db\u05dc \u05dc\u05d1\u05d9\u05ea \u05de\u05d2\u05d1\u05d5\u05ea \u05de\u05e6\u05e2\u05d9\u05dd" },
+  { 'new': "\u05d0\u05d5\u05db\u05dc \u05dc\u05d1\u05d9\u05ea", 'col': "AG", 'text': "25/05 22:06 \u00b7 \u20aa1 \u00b7 \u05e1\u05d5\u05e4\u05e8" },
+  { 'new': "\u05e8\u05d5\u05d1\u05d9\u05e7\u05d5\u05df", 'col': "C", 'text': "\u2550\u2550 2026 \u2550\u2550\n400 -\u00a0\u05e8\u05db\u05d9\u05e9\u05ea \u05d7\u05dc\u05e7\u05d9\u05dd \u05dc\u05e8\u05db\u05d1 aliexpress" },
+  { 'new': "\u05d7\u05e0\u05d9\u05d4", 'col': "C", 'text': "\u2550\u2550 2026 \u2550\u2550\n35 \u05e4\u05d5\u05d8\u05d5\u05e9\u05d5\u05e4" },
+  { 'new': "\u05dc\u05d9\u05d9\u05dd", 'col': "D", 'text': "\u2550\u2550 2025 \u2550\u2550\n40 \u05de\u05e0\u05d5\u05d9 \u05d7\u05d5\u05d3\u05e9\u05d9" },
+  { 'new': "\u05dc\u05d9\u05d9\u05dd", 'col': "E", 'text': "\u2550\u2550 2025 \u2550\u2550\n\u05d0\u05e4\u05dc: 40\n\n\u05d2\u05e8\u05de\u05d9\u05d5: 50\n\n\u05dc\u05d9\u05d9\u05dd: 40\n\n110 \u05d0\u05e4\u05dc" },
+  { 'new': "\u05dc\u05d9\u05d9\u05dd", 'col': "F", 'text': "\u2550\u2550 2025 \u2550\u2550\n38 - \u05e1\u05e8\u05d8" },
+  { 'new': "\u05dc\u05d9\u05d9\u05dd", 'col': "AG", 'text': "22/05 10:16 \u00b7 \u20aa16 \u00b7 \u05dc\u05d9\u05d9\u05dd\n22/05 13:26 \u00b7 \u20aa18 \u00b7 \u05dc\u05d9\u05d9\u05dd\n22/05 19:09 \u00b7 \u20aa18 \u00b7 \u05dc\u05d9\u05d9\u05dd\n28/05 01:16 \u00b7 \u20aa14 \u00b7 \u05dc\u05d9\u05d9\u05dd" },
+  { 'new': "\u05d3\u05dc\u05e7", 'col': "D", 'text': "\u2550\u2550 2024 \u2550\u2550\n\u05de\u05ea\u05e0\u05d4 - \u05e1\u05d8\u05d9\u05d1\u05df \u05de\u05e9\u05dc\u05dd" },
+  { 'new': "\u05d3\u05dc\u05e7", 'col': "F", 'text': "\u2550\u2550 2024 \u2550\u2550\n\u05e1\u05d8\u05d9\u05d1\u05df - \u05d7\u05e9\u05d1\u05d5\u05df \u05d1\u05e0\u05e7" },
+  { 'new': "\u05d3\u05dc\u05e7", 'col': "J", 'text': "\u2550\u2550 2024 \u2550\u2550\n210 okcupid" },
+  { 'new': "\u05d3\u05dc\u05e7", 'col': "L", 'text': "\u2550\u2550 2024 \u2550\u2550\n122 - nordpass 2 year plan" },
+  { 'new': "\u05d3\u05dc\u05e7", 'col': "M", 'text': "\u2550\u2550 2024 \u2550\u2550\n347 = \u05d1\u05d9\u05d8\u05d5\u05d7 \u05d7\u05d5\u05d1\u05d4 \u05d7\u05d5\u05d3\u05e9\u05d9\n\n110 = \u05d1\u05d9\u05d8\u05d5\u05d7 \u05d2\u05e8\u05e8 - \u05ea\u05e9\u05dc\u05d5\u05dd \u05e9\u05dc 440 \u05de\u05e1\u05ea\u05d9\u05d9\u05dd \u05d1\u05d3\u05e6\u05de\u05d1\u05e8" },
+  { 'new': "\u05d0\u05d5\u05d8\u05d5\u05d1\u05d5\u05e1/\u05de\u05d5\u05e0\u05d9\u05ea/\u05e8\u05db\u05d1\u05ea", 'col': "E", 'text': "\u2550\u2550 2026 \u2550\u2550\n220 \u05de\u05d9\u05d3\u05d2\u05d5\u05e8\u05e0\u05d9 \n55 - runway gen3" },
+  { 'new': "\u05d0\u05d5\u05d8\u05d5\u05d1\u05d5\u05e1/\u05de\u05d5\u05e0\u05d9\u05ea/\u05e8\u05db\u05d1\u05ea", 'col': "M", 'text': "\u2550\u2550 2025 \u2550\u2550\n150\n96\n43\n60" },
+  { 'new': "\u05e6\u05d9\u05d5\u05d3 \u05de\u05d7\u05e9\u05d1\u05d9 \u05d5\u05d2\u05d3\u05d2'\u05d8\u05d9\u05dd", 'col': "G", 'text': "\u2550\u2550 2025 \u2550\u2550\n\u20aa70 \u05e4\u05d5\u05d8\u05d5\u05e9\u05d5\u05e4" },
+  { 'new': "\u05e6\u05d9\u05d5\u05d3 \u05de\u05d7\u05e9\u05d1\u05d9 \u05d5\u05d2\u05d3\u05d2'\u05d8\u05d9\u05dd", 'col': "H", 'text': "\u2550\u2550 2025 \u2550\u2550\n388 \u05e7\u05d5\u05d1\u05d9\u05d4 \u05d4\u05d5\u05e0\u05d2\u05e8\u05d9\u05ea" },
+  { 'new': "\u05e6\u05d9\u05d5\u05d3 \u05de\u05d7\u05e9\u05d1\u05d9 \u05d5\u05d2\u05d3\u05d2'\u05d8\u05d9\u05dd", 'col': "L", 'text': "\u2550\u2550 2024 \u2550\u2550\n101 \u05de\u05e1\u05d0\u05d6 \u05dc\u05db\u05d9\u05e1\u05d0 \u05de\u05d7\u05e9\u05d1" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "C", 'text': "\u2550\u2550 2024 \u2550\u2550\n\u20aa150 \u05ea\u05e9\u05dc\u05d5\u05dd \u05e2\u05dc \u05d0\u05d9\u05e9\u05d5\u05e8 \u05e8\u05d5\u05e4\u05d0 \u05dc\u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05d0\u05de\u05e5\u00a0\n\n\u20aa97 \u05dc\u05d1\u05d9\u05d8\u05d5\u05d7 \u05ea\u05d0\u05d5\u05e0\u05d5\u05ea \u05d7\u05d5\u05d3\u05e9\u05d9\u05d5\u05ea" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "I", 'text': "\u2550\u2550 2025 \u2550\u2550\n420 \u05de\u05d1\u05e8\u05d2\u05d4" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "L", 'text': "\u2550\u2550 2024 \u2550\u2550\n3900 \u05e9\u05d7 \u05de\u05db\u05d9\u05e8\u05ea \u05e9\u05e2\u05d5\u05df \u05e8\u05d0\u05d3\u05d5" },
+  { 'new': "\u05e9\u05d5\u05e0\u05d5\u05ea", 'col': "N", 'text': "\u2550\u2550 2024 \u2550\u2550\nplus500" },
+];
+
+function _mop_ss_()   { return SpreadsheetApp.openById(_MOP_NEW_SHEET_ID_); }
+function _mop_sheet_(){ return _mop_ss_().getSheetByName(_MOP_PERSONAL_); }
+
+// Column letter (1->A, 27->AA) ; and letter->index.
+function _mop_colLetter_(n) {
+  var s = '';
+  while (n > 0) { var m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+function _mop_colIndex_(letter) {
+  var n = 0;
+  for (var i = 0; i < letter.length; i++) n = n * 26 + (letter.charCodeAt(i) - 64);
+  return n;
+}
+
+// Read col A labels (1..maxRows) once, trimmed. Returns array indexed by row-1.
+function _mop_readLabels_(sh) {
+  var last = Math.min(sh.getLastRow(), _MOP_MAX_ROWS_);
+  if (last < 1) return [];
+  var vals = sh.getRange(1, 1, last, 1).getValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    var v = vals[i][0];
+    out.push(v == null ? '' : String(v).trim());
+  }
+  return out;
+}
+
+// Find first row (1-based) whose label contains EVERY fragment in `frags` and
+// NONE in `notFrags`. Returns -1 if none. `from` is a 0-based start index.
+function _mop_findRow_(labels, frags, notFrags, from) {
+  from = from || 0;
+  for (var i = from; i < labels.length; i++) {
+    var L = labels[i];
+    if (!L) continue;
+    var ok = true, j;
+    for (j = 0; j < frags.length; j++) { if (L.indexOf(frags[j]) === -1) { ok = false; break; } }
+    if (ok && notFrags) for (j = 0; j < notFrags.length; j++) { if (L.indexOf(notFrags[j]) !== -1) { ok = false; break; } }
+    if (ok) return i + 1;
+  }
+  return -1;
+}
+
+// Find a row whose label EXACTLY equals `label` within [fromRow..toRow] (1-based, inclusive).
+function _mop_findExact_(labels, label, fromRow, toRow) {
+  for (var r = fromRow; r <= toRow && r <= labels.length; r++) {
+    if (labels[r - 1] === label) return r;
+  }
+  return -1;
+}
+
+// Set of all category 'new' labels (so a banner is never mistaken for a category row,
+// e.g. the food banner fragment "okhel" also occurs in "okhel ba-huts" / "okhel la-bayit").
+var _MOP_CAT_LABELSET_ = null;
+function _mop_catLabelSet_() {
+  if (_MOP_CAT_LABELSET_) return _MOP_CAT_LABELSET_;
+  _MOP_CAT_LABELSET_ = {};
+  for (var i = 0; i < _MOP_CATS_.length; i++) _MOP_CAT_LABELSET_[_MOP_CATS_[i]['new']] = true;
+  return _MOP_CAT_LABELSET_;
+}
+
+// Resolve a section: { key, bannerRow, totalRow }. -1 rows if not found.
+// banner = FIRST row before the total that contains bannerFrag, is NOT a total row,
+// and is NOT itself one of the migrated category labels. This keeps the food banner
+// ("...okhel") from collapsing onto the "okhel ba-huts"/"okhel la-bayit" category rows.
+function _mop_resolveSection_(labels, sec) {
+  var totalRow = _mop_findRow_(labels, [_MOP_SE_, sec.totalFrag], null, 0);
+  var bannerRow = -1;
+  if (totalRow > 0) {
+    var cats = _mop_catLabelSet_();
+    for (var i = 0; i < totalRow - 1; i++) {
+      var L = labels[i];
+      if (L && L.indexOf(sec.bannerFrag) !== -1 && L.indexOf(_MOP_SE_) === -1 && !cats[L]) {
+        bannerRow = i + 1;
+        break;   // first (top-most) qualifying banner wins
+      }
+    }
+  }
+  return { key: sec.key, bannerRow: bannerRow, totalRow: totalRow };
+}
+
+// Build the year-aware month SUMIFS for a category row `r`, month column index `ci` (C=3..N=14).
+// =SUMIFS('tnuot'!C:C,'tnuot'!B:B,$B$2&"-MM",'tnuot'!E:E,$A{r})
+function _mop_monthFormula_(r, ci) {
+  var mm = ci - 2;                       // C(3)->1 ... N(14)->12
+  var mmStr = (mm < 10 ? '0' : '') + mm;
+  var T = "'" + _MOP_TNUOT_ + "'";
+  // year cell as a fully-absolute ref: 'B2' -> '$B$2'
+  var Y = '$' + _MOP_YEAR_CELL_.replace(/([A-Z]+)(\d+)/, '$1$$$2');
+  return "=SUMIFS(" + T + "!C:C," + T + "!B:B," + Y + '&"-' + mmStr + '",'
+       + T + "!E:E,$A" + r + ")";
+}
+
+// Banner=SUM over the section's category range for B and each month col.
+function _mop_sumFormula_(col, firstRow, lastRow) {
+  return "=SUM(" + col + firstRow + ":" + col + lastRow + ")";
+}
+
+// ---- 6.1 DRY RUN (READ ONLY) -------------------------------------------------
+function MIGRATE_OLD_PERSONAL_DRY_RUN() {
+  Logger.log('=== MIGRATE_OLD_PERSONAL_DRY_RUN (READ ONLY) ===');
+  var sh = _mop_sheet_();
+  if (!sh) { Logger.log('!! personal tab not found: ' + _MOP_PERSONAL_); return 'no-tab'; }
+  var labels = _mop_readLabels_(sh);
+  var yr = sh.getRange(_MOP_YEAR_CELL_).getDisplayValue();
+  Logger.log('Tab "' + _MOP_PERSONAL_ + '"  scanned ' + labels.length + ' rows. Year cell ' + _MOP_YEAR_CELL_ + ' = ' + yr);
+  Logger.log('');
+
+  // Resolve sections + plan ADD/EXISTS per category.
+  var addCountBySection = {}, totalAdd = 0;
+  var resolved = {};        // key -> {bannerRow,totalRow}
+  var rowForLabel = {};     // 'new' label -> row that holds (or will hold, post-insert order) it; for DRY we map existing only
+  for (var s = 0; s < _MOP_SECTIONS_.length; s++) {
+    var sec = _MOP_SECTIONS_[s];
+    var info = _mop_resolveSection_(labels, sec);
+    resolved[sec.key] = info;
+    addCountBySection[sec.key] = 0;
+    if (info.bannerRow < 0 || info.totalRow < 0) {
+      Logger.log('!! SECTION "' + sec.key + '" NOT RESOLVED (banner=' + info.bannerRow + ' total=' + info.totalRow + ') -- its categories will be skipped.');
+      continue;
+    }
+    Logger.log('SECTION "' + sec.key + '": banner R' + info.bannerRow + ' .. total R' + info.totalRow
+               + '  (category range R' + (info.bannerRow + 1) + '..R' + (info.totalRow - 1) + ')');
+    for (var c = 0; c < _MOP_CATS_.length; c++) {
+      var cat = _MOP_CATS_[c];
+      if (cat.section !== sec.key) continue;
+      var hit = _mop_findExact_(labels, cat['new'], info.bannerRow + 1, info.totalRow - 1);
+      if (hit > 0) {
+        Logger.log('   EXISTS  R' + hit + '  "' + cat['new'] + '"  (skip insert)');
+        rowForLabel[cat['new']] = hit;
+      } else {
+        Logger.log('   ADD     (insert before total)  "' + cat['new'] + '"');
+        addCountBySection[sec.key]++;
+        totalAdd++;
+      }
+    }
+  }
+  Logger.log('');
+
+  // Notes plan: resolve each note's target row by EXACT label anywhere in the sheet
+  // (income rows included). EXISTS rows are known; ADD rows do not exist yet so we
+  // report them as "(new row)" -- they WILL exist at apply-time.
+  var addLabels = {};
+  for (var c2 = 0; c2 < _MOP_CATS_.length; c2++) {
+    var cc = _MOP_CATS_[c2];
+    if (rowForLabel[cc['new']] === undefined) addLabels[cc['new']] = true; // genuinely-missing categories
+  }
+  var noteSet = 0, noteSkip = 0;
+  Logger.log('NOTES (' + _MOP_NOTES_.length + '):');
+  for (var n = 0; n < _MOP_NOTES_.length; n++) {
+    var note = _MOP_NOTES_[n];
+    var ci = _mop_colIndex_(note.col);
+    var row = rowForLabel[note['new']];
+    if (row === undefined) {
+      // A genuinely-missing category gets a NEW row at apply-time -> report that first
+      // (its only current match would be the to-be-deleted orphan block).
+      if (addLabels[note['new']]) {
+        Logger.log('   SET   ' + note.col + '(new row)  <- note for "' + note['new'] + '" (row inserted at apply)');
+        noteSet++;
+      } else {
+        // label that exists OUTSIDE the expense sections (e.g. an income row).
+        var anyRow = _mop_findExact_(labels, note['new'], 1, labels.length);
+        if (anyRow > 0) {
+          Logger.log('   SET   ' + note.col + 'R' + anyRow + '  <- note for "' + note['new'] + '"');
+          noteSet++;
+        } else {
+          Logger.log('   SKIP  note for "' + note['new'] + '" col ' + note.col + ' (label not found)');
+          noteSkip++;
+        }
+      }
+    } else {
+      Logger.log('   SET   ' + note.col + 'R' + row + '  <- note for "' + note['new'] + '"');
+      noteSet++;
+    }
+  }
+  Logger.log('');
+
+  // Orphan block.
+  var orphanRow = _mop_findRow_(labels, [_MOP_ORPHAN_FRAG_], null, 0);
+  if (orphanRow > 0) {
+    var endRow = _mop_orphanEnd_(labels, orphanRow);
+    Logger.log('ORPHAN: "mehagilion hakodem" banner R' + orphanRow + ' .. block ends R' + endRow
+               + '  => will DELETE rows ' + orphanRow + '..' + endRow + ' (' + (endRow - orphanRow + 1) + ' rows).');
+  } else {
+    Logger.log('ORPHAN: not found (nothing to delete).');
+  }
+  Logger.log('');
+
+  // Clean summary.
+  Logger.log('---------------- SUMMARY ----------------');
+  for (var s2 = 0; s2 < _MOP_SECTIONS_.length; s2++) {
+    var k = _MOP_SECTIONS_[s2].key;
+    Logger.log('  ' + k + ': ' + addCountBySection[k] + ' row(s) to ADD');
+  }
+  Logger.log('  TOTAL rows to add : ' + totalAdd);
+  Logger.log('  Notes to SET      : ' + noteSet + '   (SKIP ' + noteSkip + ')');
+  Logger.log('  Orphan block      : ' + (orphanRow > 0 ? 'will be REMOVED' : 'none'));
+  Logger.log('  Section totals    : will be REWRITTEN to include the new rows (no double-count).');
+  Logger.log('  Writes performed  : 0 (dry run).');
+  Logger.log('To apply: set Script Property ' + _MOP_CONFIRM_PROP_ + ' = ' + _MOP_CONFIRM_VAL_ + ' then run MIGRATE_OLD_PERSONAL_APPLY.');
+  return 'ok';
+}
+
+// Orphan block end = walk down from bannerRow while rows are non-empty (label OR
+// any value in A..N). Stops at the first fully-blank row (or sheet end / cap).
+function _mop_orphanEnd_(labels, bannerRow) {
+  var sh = _mop_sheet_();
+  var last = Math.min(sh.getLastRow(), _MOP_MAX_ROWS_);
+  var end = bannerRow;
+  // read A..N for the tail once to detect blank rows
+  var height = last - bannerRow + 1;
+  if (height < 1) return bannerRow;
+  var block = sh.getRange(bannerRow, 1, height, _MOP_BACKUP_COLS_).getValues();
+  for (var i = 1; i < block.length; i++) {       // start at row after banner
+    var blank = true;
+    for (var c = 0; c < block[i].length; c++) {
+      if (block[i][c] !== '' && block[i][c] !== null) { blank = false; break; }
+    }
+    if (blank) break;
+    end = bannerRow + i;
+  }
+  return end;
+}
+
+// ---- 6.2 APPLY ---------------------------------------------------------------
+function MIGRATE_OLD_PERSONAL_APPLY() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(_MOP_CONFIRM_PROP_) !== _MOP_CONFIRM_VAL_) {
+    Logger.log('!! REFUSING: set Script Property ' + _MOP_CONFIRM_PROP_ + ' = ' + _MOP_CONFIRM_VAL_ + ' first.');
+    return 'not-confirmed';
+  }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
+  try {
+    var ss = _mop_ss_();
+    var sh = ss.getSheetByName(_MOP_PERSONAL_);
+    if (!sh) { Logger.log('!! personal tab not found: ' + _MOP_PERSONAL_); return 'no-tab'; }
+
+    // ---- BACKUP FIRST (hidden tab + chunked props) ----
+    _mop_backup_(ss, sh, props);
+    Logger.log('BACKUP done -> tab "' + _MOP_BACKUP_TAB_ + '" + props "' + _MOP_BACKUP_PROP_ + '_*".');
+
+    // ===== PHASE 1: INSERT blank rows for missing categories (label in col A only). =====
+    // Process sections BOTTOM-UP so inserting in a lower section never shifts the rows of
+    // a not-yet-processed (higher) section. We write col-A labels only here; ALL formulas
+    // are written in PHASE 2 by FINAL resolved row, so nothing depends on Sheets auto-
+    // adjusting references when later sections push rows down.
+    var orderIdx = [];
+    for (var i = 0; i < _MOP_SECTIONS_.length; i++) orderIdx.push(i);
+    var labels0 = _mop_readLabels_(sh);
+    orderIdx.sort(function(a, b) {
+      return _mop_resolveSection_(labels0, _MOP_SECTIONS_[b]).totalRow
+           - _mop_resolveSection_(labels0, _MOP_SECTIONS_[a]).totalRow;   // descending total row
+    });
+
+    var addedLabels = {};   // label -> section key  (for PHASE 2 formula write)
+    var addedTotal = 0;
+    for (var oi = 0; oi < orderIdx.length; oi++) {
+      var sec = _MOP_SECTIONS_[orderIdx[oi]];
+      var labels = _mop_readLabels_(sh);
+      var info = _mop_resolveSection_(labels, sec);
+      if (info.bannerRow < 0 || info.totalRow < 0) {
+        Logger.log('!! SKIP section "' + sec.key + '" (unresolved banner=' + info.bannerRow + ' total=' + info.totalRow + ').');
+        continue;
+      }
+      var missing = [];
+      for (var c = 0; c < _MOP_CATS_.length; c++) {
+        var cat = _MOP_CATS_[c];
+        if (cat.section !== sec.key) continue;
+        var hit = _mop_findExact_(labels, cat['new'], info.bannerRow + 1, info.totalRow - 1);
+        if (hit < 0) missing.push(cat['new']);
+        else Logger.log('   EXISTS R' + hit + ' "' + cat['new'] + '" (skip)');
+      }
+      for (var m = 0; m < missing.length; m++) {
+        labels = _mop_readLabels_(sh);
+        info = _mop_resolveSection_(labels, sec);
+        sh.insertRowsBefore(info.totalRow, 1);          // blank row just above the total
+        sh.getRange(info.totalRow, 1).setValue(missing[m]);   // col A label only
+        addedLabels[missing[m]] = sec.key;
+        Logger.log('   ADD    "' + missing[m] + '" (blank row inserted above "' + sec.key + '" total)');
+        addedTotal++;
+      }
+    }
+
+    // ===== PHASE 2: write B + C..N formulas on every ADDED row, by FINAL resolved row. =====
+    var labelsF = _mop_readLabels_(sh);
+    for (var a2 = 0; a2 < _MOP_CATS_.length; a2++) {
+      var lab = _MOP_CATS_[a2]['new'];
+      if (!addedLabels.hasOwnProperty(lab)) continue;     // only the rows we inserted
+      var r = _mop_findExact_(labelsF, lab, 1, labelsF.length);
+      if (r < 0) { Logger.log('!! PHASE2: could not relocate added row "' + lab + '"'); continue; }
+      sh.getRange(r, 2).setFormula('=SUM(C' + r + ':N' + r + ')');         // B = SUM(C{r}:N{r})
+      for (var ci = 3; ci <= _MOP_BACKUP_COLS_; ci++) {
+        sh.getRange(r, ci).setFormula(_mop_monthFormula_(r, ci));          // C..N year-aware SUMIFS
+      }
+      Logger.log('   FORMULA R' + r + ' "' + lab + '" B=SUM(C' + r + ':N' + r + '), C..N=SUMIFS(year ' + _MOP_YEAR_CELL_ + ')');
+    }
+
+    // ===== PHASE 3: rewrite each section total over its FINAL category range. =====
+    // (bannerRow+1 .. totalRow-1) -> includes the new rows, excludes banner & total => no double-count.
+    for (var s3 = 0; s3 < _MOP_SECTIONS_.length; s3++) {
+      var secT = _MOP_SECTIONS_[s3];
+      var labelsT = _mop_readLabels_(sh);
+      var infoT = _mop_resolveSection_(labelsT, secT);
+      if (infoT.bannerRow < 0 || infoT.totalRow < 0) continue;
+      var first = infoT.bannerRow + 1;
+      var lastCat = infoT.totalRow - 1;
+      if (lastCat < first) continue;
+      sh.getRange(infoT.totalRow, 2).setFormula(_mop_sumFormula_('B', first, lastCat));
+      for (var ci2 = 3; ci2 <= _MOP_BACKUP_COLS_; ci2++) {
+        var col = _mop_colLetter_(ci2);
+        sh.getRange(infoT.totalRow, ci2).setFormula(_mop_sumFormula_(col, first, lastCat));
+      }
+      Logger.log('   TOTAL  R' + infoT.totalRow + ' "' + secT.key + '" = SUM(rows ' + first + '..' + lastCat + ') for B..N');
+    }
+
+    // ===== PHASE 4: WRITE NOTES (resolve each row by EXACT label, top-most match). =====
+    // The new section rows sit ABOVE the orphan block, so a top-down first match always
+    // lands on the real row, never the soon-to-be-deleted orphan duplicate.
+    var labelsN = _mop_readLabels_(sh);
+    var noteSet = 0, noteSkip = 0;
+    for (var n = 0; n < _MOP_NOTES_.length; n++) {
+      var note = _MOP_NOTES_[n];
+      var row = _mop_findExact_(labelsN, note['new'], 1, labelsN.length);
+      if (row < 0) { Logger.log('   SKIP note "' + note['new'] + '" col ' + note.col + ' (label not found)'); noteSkip++; continue; }
+      var ci = _mop_colIndex_(note.col);
+      sh.getRange(row, ci).setNote(note.text);
+      Logger.log('   NOTE   ' + note.col + 'R' + row + ' <- "' + note['new'] + '"');
+      noteSet++;
+    }
+
+    // ===== PHASE 5: DELETE the 'mehagilion hakodem' orphan block. =====
+    var labelsO = _mop_readLabels_(sh);
+    var orphanRow = _mop_findRow_(labelsO, [_MOP_ORPHAN_FRAG_], null, 0);
+    if (orphanRow > 0) {
+      var endRow = _mop_orphanEnd_(labelsO, orphanRow);
+      var cnt = endRow - orphanRow + 1;
+      sh.deleteRows(orphanRow, cnt);
+      Logger.log('   ORPHAN deleted rows ' + orphanRow + '..' + endRow + ' (' + cnt + ' rows).');
+    } else {
+      Logger.log('   ORPHAN none found.');
+    }
+
+    SpreadsheetApp.flush();
+    Logger.log('=== APPLY DONE: added ' + addedTotal + ' rows, set ' + noteSet + ' notes (skip ' + noteSkip + '). Undo: MIGRATE_OLD_PERSONAL_ROLLBACK. ===');
+    return 'ok';
+  } finally { lock.releaseLock(); }
+}
+
+// Snapshot rows 1..100 cols A..N (values + formulas + notes) -> hidden tab AND chunked props.
+function _mop_backup_(ss, sh, props) {
+  var rng = sh.getRange(1, 1, _MOP_BACKUP_ROWS_, _MOP_BACKUP_COLS_);
+  var values   = rng.getValues();
+  var formulas = rng.getFormulas();
+  var notes    = rng.getNotes();
+
+  // -- hidden backup tab: write a fresh one (delete stale) --
+  var old = ss.getSheetByName(_MOP_BACKUP_TAB_);
+  if (old) ss.deleteSheet(old);
+  var b = ss.insertSheet(_MOP_BACKUP_TAB_);
+  b.hideSheet();
+  // restore-friendly: for each cell, prefer formula else value; also stash notes.
+  var restore = [];
+  for (var r = 0; r < values.length; r++) {
+    var rowOut = [];
+    for (var c = 0; c < values[r].length; c++) {
+      rowOut.push(formulas[r][c] !== '' ? formulas[r][c] : values[r][c]);
+    }
+    restore.push(rowOut);
+  }
+  b.getRange(1, 1, restore.length, _MOP_BACKUP_COLS_).setValues(restore);
+  b.getRange(1, 1, notes.length, _MOP_BACKUP_COLS_).setNotes(notes);
+  b.getRange(1, 16).setValue('MOP backup of "' + _MOP_PERSONAL_ + '" rows 1..' + _MOP_BACKUP_ROWS_ + ' A..N at ' + new Date().toISOString());
+
+  // -- chunked Script Properties (belt-and-suspenders) --
+  var payload = JSON.stringify({ values: values, formulas: formulas, notes: notes });
+  // clear old chunks
+  var oldMeta = props.getProperty(_MOP_BACKUP_META_);
+  if (oldMeta) {
+    try { var om = JSON.parse(oldMeta); for (var k = 0; k < om.chunks; k++) props.deleteProperty(_MOP_BACKUP_PROP_ + '_' + k); } catch (e) {}
+  }
+  var nChunks = Math.ceil(payload.length / _MOP_PROP_CHUNK_);
+  for (var i = 0; i < nChunks; i++) {
+    props.setProperty(_MOP_BACKUP_PROP_ + '_' + i, payload.substr(i * _MOP_PROP_CHUNK_, _MOP_PROP_CHUNK_));
+  }
+  props.setProperty(_MOP_BACKUP_META_, JSON.stringify({ chunks: nChunks, rows: _MOP_BACKUP_ROWS_, cols: _MOP_BACKUP_COLS_, at: new Date().toISOString() }));
+}
+
+// ---- 6.3 ROLLBACK ------------------------------------------------------------
+function MIGRATE_OLD_PERSONAL_ROLLBACK() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
+  try {
+    var ss = _mop_ss_();
+    var sh = ss.getSheetByName(_MOP_PERSONAL_);
+    if (!sh) { Logger.log('!! personal tab not found.'); return 'no-tab'; }
+
+    // Prefer the hidden backup tab (preserves formulas/values/notes exactly).
+    var b = ss.getSheetByName(_MOP_BACKUP_TAB_);
+    if (b) {
+      var rows = _MOP_BACKUP_ROWS_, cols = _MOP_BACKUP_COLS_;
+      var restore = b.getRange(1, 1, rows, cols).getValues();   // formulas-or-values
+      var notes   = b.getRange(1, 1, rows, cols).getNotes();
+      // Ensure the live tab has at least `rows` rows.
+      if (sh.getMaxRows() < rows) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
+      var rng = sh.getRange(1, 1, rows, cols);
+      rng.clearContent();
+      rng.clearNote();
+      rng.setValues(restore);     // strings starting with "=" are re-interpreted as formulas
+      rng.setNotes(notes);
+      SpreadsheetApp.flush();
+      Logger.log('ROLLBACK from hidden tab "' + _MOP_BACKUP_TAB_ + '" (rows 1..' + rows + ' A..N restored).');
+      return 'ok';
+    }
+
+    // Fallback: chunked props.
+    var props = PropertiesService.getScriptProperties();
+    var metaRaw = props.getProperty(_MOP_BACKUP_META_);
+    if (!metaRaw) { Logger.log('!! no backup (no tab, no props).'); return 'no-backup'; }
+    var meta = JSON.parse(metaRaw);
+    var payload = '';
+    for (var k = 0; k < meta.chunks; k++) payload += (props.getProperty(_MOP_BACKUP_PROP_ + '_' + k) || '');
+    var data = JSON.parse(payload);
+    var rows2 = meta.rows, cols2 = meta.cols;
+    if (sh.getMaxRows() < rows2) sh.insertRowsAfter(sh.getMaxRows(), rows2 - sh.getMaxRows());
+    var rng2 = sh.getRange(1, 1, rows2, cols2);
+    rng2.clearContent(); rng2.clearNote();
+    // rebuild formulas-or-values
+    var restore2 = [];
+    for (var r = 0; r < data.values.length; r++) {
+      var rr = [];
+      for (var c = 0; c < data.values[r].length; c++) rr.push(data.formulas[r][c] !== '' ? data.formulas[r][c] : data.values[r][c]);
+      restore2.push(rr);
+    }
+    rng2.setValues(restore2);
+    rng2.setNotes(data.notes);
+    SpreadsheetApp.flush();
+    Logger.log('ROLLBACK from props "' + _MOP_BACKUP_PROP_ + '_*" (rows 1..' + rows2 + ' A..N restored).');
+    return 'ok';
+  } finally { lock.releaseLock(); }
+}
