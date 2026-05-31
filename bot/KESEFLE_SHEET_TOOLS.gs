@@ -380,7 +380,7 @@ function FPT_APPLY() {
     Logger.log('!! REFUSING: set Script Property ' + _FPT_CONFIRM_PROP_ + ' = ' + _FPT_CONFIRM_VAL_ + ' first.');
     return 'not-confirmed';
   }
-  var lock = LockService.getDocumentLock();
+  var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
   try {
     var sh = _fpt_ss_().getSheetByName(_FPT_PERSONAL_);
@@ -415,7 +415,7 @@ function FPT_ROLLBACK() {
   var raw = props.getProperty(_FPT_BACKUP_PROP_);
   if (!raw) { Logger.log('!! no backup found.'); return 'no-backup'; }
   var bak = JSON.parse(raw);
-  var lock = LockService.getDocumentLock();
+  var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
   try {
     var sh = _fpt_ss_().getSheetByName(_FPT_PERSONAL_);
@@ -538,7 +538,7 @@ function WEN_APPLY() {
     Logger.log('!! a backup already exists -- looks already applied. Run WEN_ROLLBACK first to re-apply.');
     return 'already-applied';
   }
-  var lock = LockService.getDocumentLock();
+  var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
   try {
     var ss = _wen_ss_();
@@ -586,7 +586,7 @@ function WEN_ROLLBACK() {
   var raw = props.getProperty(_WEN_BACKUP_PROP_);
   if (!raw) { Logger.log('!! no backup found.'); return 'no-backup'; }
   var bak = JSON.parse(raw);
-  var lock = LockService.getDocumentLock();
+  var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
   try {
     var ss = _wen_ss_();
@@ -668,7 +668,7 @@ function AYD_APPLY() {
     Logger.log('!! REFUSING: set Script Property ' + _AYD_CONFIRM_PROP_ + ' = ' + _AYD_CONFIRM_VAL_ + ' first.');
     return 'not-confirmed';
   }
-  var lock = LockService.getDocumentLock();
+  var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
   try {
     var sh = _ayd_ss_().getSheetByName(_AYD_PERSONAL_);
@@ -699,7 +699,7 @@ function AYD_ROLLBACK() {
   var raw = props.getProperty(_AYD_BACKUP_PROP_);
   if (!raw) { Logger.log('!! no backup found.'); return 'no-backup'; }
   var bak = JSON.parse(raw);
-  var lock = LockService.getDocumentLock();
+  var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) { Logger.log('!! could not acquire lock'); return 'locked'; }
   try {
     var sh = _ayd_ss_().getSheetByName(_AYD_PERSONAL_);
