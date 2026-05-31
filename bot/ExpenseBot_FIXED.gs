@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-29-bot-routes-and-hardcoded-fixes';
+const KFL_BUILD_VERSION = '2026-05-29-kolektziot-route-added';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -404,7 +404,10 @@ const CATEGORY_MAP = [
   // שונות. Subcategory strings match the EXISTING col-E values in Steven's NEW
   // תנועות tab (verified via AUDIT_APPENDED_ROWS — חצי איירון מן has 6 matches,
   // מרוץ - אוסטריה has 1 match, גיא has 3 matches via manual entry).
-  // קולקציות deferred — Steven asked "what is this?" — investigating col E hits.
+  // 2026-05-29 update: Steven confirmed קולקציות = his art canvas + glass collection
+  // hobby purchases (per docs/PERSONALIZED_CATEGORY_PROFILES.md:409). Group "תחביבים"
+  // (hobbies), Steven-only (default_for_new_users=FALSE in the master catalog).
+  {"keywords":["קולקציה","קולקציות","אספנות","art canvas","art collection","glass collection","זכוכית אומנותית","קנבס אומנותי","הדפס אמנותי","פסלון","ציור","הזמנת אמנות","art print","sculpture"],"category":"תחביבים","subcategory":"קולקציות"},
   {"keywords":["גיא","להעביר לגיא","להעביר ל-גיא","ל-גיא","תשלום לגיא"],"category":"הוצאות זמניות","subcategory":"גיא"},
   {"keywords":["חצי אירון מן","חצי איירון מן","איירון מן","ironman","half ironman","triathlon","טריאתלון","תחרות איירון מן","מרוץ איירון"],"category":"הוצאות זמניות","subcategory":"חצי איירון מן"},
   {"keywords":["חצי אוסטריה","מרוץ אוסטריה","אוסטריה מרוץ","austria race","austria marathon","austria triathlon"],"category":"הוצאות זמניות","subcategory":"מרוץ - אוסטריה"},
