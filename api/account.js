@@ -17,7 +17,7 @@ import { requireAuth } from '../lib/auth.js';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken, constantTimeEqual } from '../lib/crypto.js';
-import { getGoogleClientId } from '../lib/auth.js';
+import { exchangeRefreshForAccess } from '../lib/oauth.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -120,21 +120,8 @@ async function revokeGoogleToken(refreshToken) {
   } catch (e) { console.warn('google_revoke_failed', e.message); }
 }
 
-async function exchangeRefreshForAccess(refreshToken) {
-  const clientId = getGoogleClientId();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientSecret) throw new Error('GOOGLE_CLIENT_SECRET env var missing');
-  const params = new URLSearchParams({
-    client_id: clientId, client_secret: clientSecret,
-    refresh_token: refreshToken, grant_type: 'refresh_token',
-  });
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString(),
-  });
-  const j = await r.json();
-  if (!r.ok || !j.access_token) throw new Error('refresh_failed');
-  return j.access_token;
-}
+// exchangeRefreshForAccess now lives in lib/oauth.js (audit H1): it captures a
+// rotated refresh_token if Google returns one during the export's read.
 
 // =============================================================
 // Action: delete (GDPR Art.17 + Israeli Privacy Law Sec.14)
@@ -246,7 +233,7 @@ async function exportAccount(req, res) {
         ? decryptRefreshToken(userRec.refreshTokenEnvelope, userSub)
         : userRec.refreshToken;
       if (refreshToken) {
-        const accessToken = await exchangeRefreshForAccess(refreshToken);
+        const { accessToken } = await exchangeRefreshForAccess({ refreshToken, userSub });
         const range = encodeURIComponent("'תנועות'!A2:I10001");
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${userRec.spreadsheetId}/values/${range}`;
         const r = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
