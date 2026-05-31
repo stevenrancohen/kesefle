@@ -1,7 +1,7 @@
 import { requireUser } from '../_lib/session.js';
-import { getGoogleClientId } from '../../lib/auth.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { exchangeRefreshForAccess } from '../../lib/oauth.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -25,28 +25,14 @@ async function kvSet(key, value) {
   });
 }
 
-async function refreshAccessToken(refreshToken) {
-  const clientId = getGoogleClientId();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientSecret) throw new Error('GOOGLE_CLIENT_SECRET missing');
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: 'refresh_token',
-  });
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  });
-  const j = await r.json();
-  if (!r.ok || !j.access_token) {
-    throw new Error('refresh_failed: ' + (j.error_description || j.error || r.status));
-  }
+// refreshAccessToken now delegates to lib/oauth.js (audit H1) so a rotated
+// refresh_token is captured + persisted. We keep this thin wrapper to preserve
+// the local { accessToken, expiry } shape the handler writes back to token:{sub}.
+async function refreshAccessToken(refreshToken, userSub) {
+  const { accessToken, expiresIn } = await exchangeRefreshForAccess({ refreshToken, userSub });
   return {
-    accessToken: j.access_token,
-    expiry: Date.now() + (Number(j.expires_in || 3600) - 60) * 1000,
+    accessToken,
+    expiry: Date.now() + (Number(expiresIn || 3600) - 60) * 1000,
   };
 }
 
@@ -121,9 +107,14 @@ async function handlerImpl(req, res) {
       return res.status(403).json({ error: 'reauth_needed' });
     }
     try {
-      const refreshed = await refreshAccessToken(refreshTok);
+      const refreshed = await refreshAccessToken(refreshTok, userId);
       accessToken = refreshed.accessToken;
-      const updated = { ...record, accessToken, expiry: refreshed.expiry };
+      // refreshAccessToken may have rotated + persisted a NEW refreshTokenEnvelope
+      // into token:{userId} (audit H1). Re-read the current record so this write
+      // (accessToken + expiry) MERGES onto the freshly-rotated envelope instead of
+      // clobbering it with the stale one we read at the top of the handler.
+      const fresh = (await kvGet('token:' + userId)) || record;
+      const updated = { ...fresh, accessToken, expiry: refreshed.expiry };
       await kvSet('token:' + userId, updated);
     } catch (e) {
       return res.status(403).json({ error: 'reauth_needed', detail: e.message });

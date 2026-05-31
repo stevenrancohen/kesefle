@@ -21,31 +21,14 @@ async function kvGet(key) {
   return j?.result ? JSON.parse(j.result) : null;
 }
 
-async function exchangeRefreshForAccess(refreshToken) {
-  const clientId = getGoogleClientId();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientSecret) throw new Error('GOOGLE_CLIENT_SECRET env var missing');
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: 'refresh_token',
-  });
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  });
-  const j = await r.json();
-  if (!r.ok || !j.access_token) throw new Error('refresh_failed: ' + (j.error_description || j.error || r.status));
-  return j.access_token;
-}
+// exchangeRefreshForAccess now lives in lib/oauth.js (audit H1): it captures a
+// rotated refresh_token if Google returns one during this dashboard read.
 
 import { requireAuth } from '../../lib/auth.js';
 import { withRequestId } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
-import { getGoogleClientId } from '../../lib/auth.js';
+import { exchangeRefreshForAccess } from '../../lib/oauth.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
@@ -77,7 +60,7 @@ async function handlerImpl(req, res) {
 
   let accessToken;
   try {
-    accessToken = await exchangeRefreshForAccess(refreshToken);
+    ({ accessToken } = await exchangeRefreshForAccess({ refreshToken, userSub }));
   } catch (e) {
     return res.status(403).json({ ok: false, error: 'reauth_needed', detail: e.message });
   }

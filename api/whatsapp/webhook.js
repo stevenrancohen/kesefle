@@ -13,8 +13,8 @@
 import crypto from 'node:crypto';
 import { decryptRefreshToken, constantTimeEqual } from '../../lib/crypto.js';
 import { rateLimit } from '../../lib/ratelimit.js';
-import { getGoogleClientId } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
+import { exchangeRefreshForAccess } from '../../lib/oauth.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -387,7 +387,11 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
 
   let accessToken;
   try {
-    accessToken = await exchangeRefreshForAccess(refreshToken);
+    // exchangeRefreshForAccess (lib/oauth.js) also CAPTURES a rotated
+    // refresh_token if Google returns one (audit H1). userSub is required so the
+    // rotated token can be re-encrypted (AAD) + persisted; the persist is
+    // best-effort and never breaks this access-token return.
+    ({ accessToken } = await exchangeRefreshForAccess({ refreshToken, userSub: userRecord.userSub }));
   } catch (e) {
     // 2026-05-31 audit fix (F4): was raw console.error which bypasses lib/log.js
     // redactor. log.error wraps in redact() so any future PII addition is caught.
@@ -451,7 +455,7 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
   if (resp.status === 401) {
     // Refresh and retry once (re-derive a fresh access token from the same refresh token)
     try {
-      accessToken = await exchangeRefreshForAccess(refreshToken, true);
+      ({ accessToken } = await exchangeRefreshForAccess({ refreshToken, userSub: userRecord.userSub }));
       resp = await fetch(url, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -475,31 +479,9 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
   return { ok: true, rowIndex: j?.updates?.updatedRange || null };
 }
 
-// Exchanges a Google OAuth refresh token for a fresh access token.
-// Returns the access token string. Throws on failure.
-async function exchangeRefreshForAccess(refreshToken /*, forceRefresh */) {
-  const clientId = getGoogleClientId();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientSecret) {
-    throw new Error('GOOGLE_CLIENT_SECRET env var missing');
-  }
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: 'refresh_token',
-  });
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  });
-  const j = await r.json();
-  if (!r.ok || !j.access_token) {
-    throw new Error('refresh_failed: ' + (j.error_description || j.error || r.status));
-  }
-  return j.access_token;
-}
-
+// NOTE: the local exchangeRefreshForAccess() was removed 2026-05-31 (audit H1).
+// All refresh-for-access exchanges now go through lib/oauth.js, which ALSO
+// captures a rotated refresh_token (Google rotates grants > ~6 months old and
+// revokes the old token within hours). See docs/AUDIT_OAUTH_DRIVE_2026_05_31.md.
 
 export default withRequestId(handlerImpl);
