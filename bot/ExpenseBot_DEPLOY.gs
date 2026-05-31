@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-ai-providers-contract';
+const KFL_BUILD_VERSION = '2026-05-31-onboarding-sections-a-h';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2440,11 +2440,14 @@ function handleInteractiveReply_(fromPhone, interactive) {
     return { replyText: (r2 && r2.replyText) || '✅' };
   }
 
-  // Personalization questionnaire taps (q1_*/q2_*/q3_*/q_pets_*/q_car_*).
+  // Personalization questionnaire taps:
+  //   q1_*/q2_*/q3_* (tracking/recurring/autolog), q4_* (profession),
+  //   q_pets_*/q_car_* (lifestyle), sec_* (the extended A-H sections E-H).
   // The handler sends any follow-up question itself; it returns { replyText }
   // only when a TEXT reply is the next step (Q2 "yes" -> ask for recurring
   // items), else null.
-  if ((/^q[123]_/.test(String(picked)) || /^q_(pets|car)_/.test(String(picked))) &&
+  if ((/^q[1234]_/.test(String(picked)) || /^q_(pets|car)_/.test(String(picked)) ||
+       /^sec_/.test(String(picked))) &&
       typeof _surveyHandleInteractive_ === 'function') {
     return _surveyHandleInteractive_(fromPhone, picked);
   }
@@ -5312,13 +5315,19 @@ function _surveyFinish_(fromPhone) {
   var professionHuman = prof.profession
     ? (_KESEFLE_PROFESSION_HUMAN_[prof.profession] || prof.profession)
     : '—';
+  // The preset (profile_type) chosen by the A-H section block, if it ran.
+  var presetHuman = (prof.profileType && typeof _ONBOARDING_PRESETS_ === 'object')
+    ? (_ONBOARDING_PRESETS_[prof.profileType] || prof.profileType)
+    : '';
   var msg =
     '✅ *סיימנו! זה הפרופיל שלך:*\n' +
     '━━━━━━━━━━━━━━━━━━\n' +
     '• סוג מעקב: ' + trackingHuman + '\n' +
     '• הוצאות קבועות: ' + recurringHuman + '\n' +
     '• אופן הרישום: ' + autoLogHuman + '\n' +
-    '• מקצוע: ' + professionHuman + '\n\n' +
+    '• מקצוע: ' + professionHuman + '\n' +
+    (presetHuman ? ('• תבנית: ' + presetHuman + '\n') : '') +
+    '\n' +
     'אפשר לשנות בכל עת עם הפקודה *שאלון*';
   try { sendWhatsAppMessage(fromPhone, msg); } catch (_e) {}
   _surveyClearState_(fromPhone);
@@ -5331,6 +5340,12 @@ function _surveyFinish_(fromPhone) {
 // nothing more). Called from handleInteractiveReply_.
 function _surveyHandleInteractive_(fromPhone, picked) {
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  // --- Sections E-H (the extended A-H onboarding block). Their tap ids are
+  // namespaced "sec_*"; if this is one of them, consume it here and return.
+  if (typeof picked === 'string' && picked.indexOf('sec_') === 0 &&
+      typeof _onboardingHandleInteractive_ === 'function') {
+    if (_onboardingHandleInteractive_(fromPhone, picked)) return null;
+  }
   // --- Q1: tracking type ---
   if (_SURVEY_TRACKING_.hasOwnProperty(picked)) {
     var tt = _SURVEY_TRACKING_[picked];
@@ -5413,7 +5428,8 @@ function _surveyHandleInteractive_(fromPhone, picked) {
     if (/^[a-z0-9_]{1,64}$/.test(pid)) {
       _profileAPI_('set', { phone: clean, fields: { profession: pid } });
     }
-    _surveyFinish_(fromPhone);
+    // Q4 done -> run the extended A-H sections (E-H), then finish.
+    _onboardingStartSections_(fromPhone);
     return null;
   }
   return null;
@@ -5475,7 +5491,7 @@ function _surveyHandleText_(fromPhone, text) {
   if (_surveyGetState_(fromPhone) === 'await_profession_freetext') {
     if (/^(?:דלג|לא|אין|skip|no)\s*$/i.test(t)) {
       try { sendWhatsAppMessage(fromPhone, 'אין בעיה -- אפשר להוסיף מקצוע מאוחר יותר עם הפקודה *שאלון*.'); } catch (_e) {}
-      _surveyFinish_(fromPhone);
+      _onboardingStartSections_(fromPhone);
       return { handled: true };
     }
     var matchedId = _matchProfessionFromText_(t);
@@ -5495,7 +5511,7 @@ function _surveyHandleText_(fromPhone, text) {
       }
       try { sendWhatsAppMessage(fromPhone, 'תודה! שמרתי את *' + t.slice(0, 60) + '* כמקצוע. 👍'); } catch (_e) {}
     }
-    _surveyFinish_(fromPhone);
+    _onboardingStartSections_(fromPhone);
     return { handled: true };
   }
 
@@ -5552,6 +5568,265 @@ function _surveyHandleText_(fromPhone, text) {
   }
 
   return { handled: false };
+}
+
+// =====================================================================
+// ONBOARDING SECTIONS A-H (extends the Q1-Q4 questionnaire above).
+// ---------------------------------------------------------------------
+// The Q1-Q4 survey already collects the first four "sections":
+//   A user-type   -> profile.trackingType (Q1)
+//   B household   -> kids / pets rows      (family/group branch)
+//   C cars        -> רכב row               (car question)
+//   D home/fixed  -> hasRecurring + recurring rows (Q2)
+// This block adds the remaining FOUR sections, asked CONDITIONALLY after
+// the profession step (Q4) so a plain personal user is never dragged
+// through business/contractor questions:
+//   E business    -> osek type (only when trackingType=business)
+//   F contractor  -> per-project tracking (only when business OR a
+//                    construction/contractor profession)
+//   G budgets     -> wants a monthly budget cap (always)
+//   H import hist. -> wants to import past statements (always)
+// Each section's answer is persisted INSIDE the existing profile:<phone>
+// KV record, keyed by section letter, via _profileAPI_('set', { phone,
+// fields:{ onboarding:{ E:{...}, F:{...}, ... } } }). At the very end we
+// derive a template preset (profile_type) the NEXT step consumes, store
+// it on the profile, and hand off to the existing _surveyFinish_ summary.
+//
+// State strings used by this block (stored in CacheService like the rest
+// of the survey): sec_E_await, sec_F_await, sec_G_await, sec_H_await.
+// =====================================================================
+
+// Profession ids (from lib/professions.js) that imply construction /
+// trade contracting work, used to decide whether section F (per-project
+// tracking) is relevant for a NON-business tracker too. Kept ASCII so it
+// survives chat/clipboard intact.
+var _ONBOARDING_CONTRACTOR_PROFESSIONS_ = {
+  general_contractor: true, electrician: true, plumber: true,
+  painter_construction: true, handyman: true, architect: true,
+  gardener: true,
+};
+
+// The allowed preset ids. Mirrors docs/PERSONALIZED_CATEGORY_PROFILES.md
+// §7 (six presets). The NEXT step (sheet seeding) keys on these exact
+// strings, so they MUST stay snake_case ASCII and in sync with
+// api/profile.js PROFILE_TYPES.
+var _ONBOARDING_PRESETS_ = {
+  basic_personal: 'אישי בסיסי',
+  family: 'משפחתי',
+  business: 'עסק קטן',
+  contractor: 'קבלן / פרויקטים',
+  mixed: 'משולב (אישי + עסק)',
+  advanced_imported: 'מתקדם (ייבוא היסטוריה)',
+};
+
+// --- PURE branching logic (no I/O — unit-tested in test_onboarding_flow).
+// Given the profile collected so far, return the ORDERED list of section
+// letters STILL to ask in this A-H block. E and F are conditional; G and H
+// always run. The Q1-Q4 sections (A-D) are NOT included here — they ran
+// already — but their answers (trackingType, profession) drive the gates.
+function _onboardingSectionPlan_(profile) {
+  profile = profile || {};
+  var tt = String(profile.trackingType || '');
+  var prof = String(profile.profession || '');
+  var isBusiness = (tt === 'business');
+  var isContractorProf = !!_ONBOARDING_CONTRACTOR_PROFESSIONS_[prof];
+  var plan = [];
+  if (isBusiness) plan.push('E');            // business: osek details
+  if (isBusiness || isContractorProf) plan.push('F'); // contractor: projects
+  plan.push('G');                            // budgets: always
+  plan.push('H');                            // import history: always
+  return plan;
+}
+
+// PURE: given the plan + the section just finished (or null to get the
+// FIRST section), return the next section letter to ask, or null when the
+// A-H block is complete. Deterministic so the test can replay the sequence.
+function _onboardingNextSection_(profile, doneSection) {
+  var plan = _onboardingSectionPlan_(profile);
+  if (!plan.length) return null;
+  if (doneSection == null) return plan[0];
+  var idx = plan.indexOf(String(doneSection));
+  if (idx < 0) return null;            // unknown / not in plan -> stop
+  return (idx + 1 < plan.length) ? plan[idx + 1] : null;
+}
+
+// PURE: derive the template preset (profile_type) from the full set of
+// answers. Order of precedence is deliberate and tested:
+//   1. contractor  — a business that does project/construction work
+//   2. business    — any other עסק tracker
+//   3. family      — family / group household tracker
+//   4. advanced_imported — personal user importing historical data
+//   5. mixed       — personal user whose profession is self-employed
+//   6. basic_personal — the safe default
+function _onboardingPickPreset_(profile) {
+  profile = profile || {};
+  var ob = profile.onboarding || {};
+  var tt = String(profile.trackingType || '');
+  var prof = String(profile.profession || '');
+  var isBusiness = (tt === 'business');
+  var isContractorProf = !!_ONBOARDING_CONTRACTOR_PROFESSIONS_[prof];
+  var tracksProjects = !!(ob.F && ob.F.tracksProjects);
+  var wantsImport = !!(ob.H && ob.H.wantsImport);
+
+  if (isBusiness && (isContractorProf || tracksProjects)) return 'contractor';
+  if (isBusiness) return 'business';
+  if (tt === 'family' || tt === 'group') return 'family';
+  if (wantsImport) return 'advanced_imported';
+  // A self-employed-style profession on a personal tracker -> mixed.
+  if (prof && _PROFESSION_IS_SELF_EMPLOYED_(prof)) return 'mixed';
+  return 'basic_personal';
+}
+
+// PURE helper: does this profession id imply self-employment (so a
+// personal tracker who has it should get the "mixed" preset)? Salaried
+// roles (cashier, office_worker, other_employee) return false.
+function _PROFESSION_IS_SELF_EMPLOYED_(prof) {
+  var salaried = { cashier: true, office_worker: true, other_employee: true };
+  if (!prof) return false;
+  return !salaried[String(prof)];
+}
+
+// --- Persist one section's answer onto profile.onboarding[<letter>].
+// Merges (read-modify-write) so earlier sections aren't clobbered. Best
+// effort: any failure is logged and swallowed (onboarding must never wedge
+// on a transient network blip).
+function _onboardingStoreSection_(fromPhone, letter, answerObj) {
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return;
+  var existing = {};
+  try {
+    var g = _profileAPI_('get', { phone: clean });
+    if (g && g.ok && g.profile && g.profile.onboarding) existing = g.profile.onboarding;
+  } catch (_e) {}
+  existing = existing || {};
+  existing[letter] = answerObj || {};
+  try {
+    _profileAPI_('set', { phone: clean, fields: { onboarding: existing } });
+  } catch (_e2) { Logger.log('_onboardingStoreSection_ ' + letter + ' err: ' + (_e2 && _e2.message)); }
+}
+
+// --- Read the current profile (best effort, returns {} on any failure).
+function _onboardingGetProfile_(fromPhone) {
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return {};
+  try {
+    var g = _profileAPI_('get', { phone: clean });
+    if (g && g.ok && g.profile) return g.profile;
+  } catch (_e) {}
+  return {};
+}
+
+// --- Send the question for a given section letter. Returns true if a
+// question was actually sent (so the caller stays in the flow), false if
+// the section has no question (shouldn't happen for E-H).
+function _onboardingSendSection_(fromPhone, letter) {
+  if (letter === 'E') {
+    _surveySetState_(fromPhone, 'sec_E_await');
+    sendWhatsAppQuickButtons(fromPhone, 'איזה סוג עסק? אתאים את הקטגוריות.', [
+      { id: 'sec_e_patur',   title: 'עוסק פטור' },
+      { id: 'sec_e_morsheh', title: 'עוסק מורשה' },
+      { id: 'sec_e_company', title: 'חברה בע״מ' },
+    ]);
+    return true;
+  }
+  if (letter === 'F') {
+    _surveySetState_(fromPhone, 'sec_F_await');
+    sendWhatsAppQuickButtons(fromPhone, 'לעקוב אחרי רווח לכל פרויקט/לקוח בנפרד?', [
+      { id: 'sec_f_yes', title: 'כן, לפי פרויקט' },
+      { id: 'sec_f_no',  title: 'לא צריך' },
+    ]);
+    return true;
+  }
+  if (letter === 'G') {
+    _surveySetState_(fromPhone, 'sec_G_await');
+    sendWhatsAppQuickButtons(fromPhone, 'רוצה תקרת תקציב חודשית עם התראה כשמתקרבים?', [
+      { id: 'sec_g_yes', title: 'כן, תזכיר לי' },
+      { id: 'sec_g_no',  title: 'בלי תקציב' },
+    ]);
+    return true;
+  }
+  if (letter === 'H') {
+    _surveySetState_(fromPhone, 'sec_H_await');
+    sendWhatsAppQuickButtons(fromPhone, 'לייבא נתונים מהעבר (דפי אשראי/בנק)?', [
+      { id: 'sec_h_yes', title: 'כן, יש לי קבצים' },
+      { id: 'sec_h_no',  title: 'מתחיל מעכשיו' },
+    ]);
+    return true;
+  }
+  return false;
+}
+
+// --- Entry point: begin the A-H section block (called after Q4 instead of
+// jumping straight to _surveyFinish_). Reads the profile to decide the
+// plan; if nothing applies (can't happen — G/H always do) we just finish.
+function _onboardingStartSections_(fromPhone) {
+  var profile = _onboardingGetProfile_(fromPhone);
+  var next = _onboardingNextSection_(profile, null);
+  if (!next) { _onboardingFinishSections_(fromPhone); return; }
+  _onboardingSendSection_(fromPhone, next);
+}
+
+// --- Advance to the section AFTER `doneSection`, or finish the survey.
+function _onboardingAdvance_(fromPhone, doneSection) {
+  var profile = _onboardingGetProfile_(fromPhone);
+  var next = _onboardingNextSection_(profile, doneSection);
+  if (!next) { _onboardingFinishSections_(fromPhone); return; }
+  _onboardingSendSection_(fromPhone, next);
+}
+
+// --- Close out: pick the preset, persist it as profile.profileType (the
+// field the next step / sheet-seeding reads as profile_type), then hand
+// off to the existing _surveyFinish_ summary (which we extend to show it).
+function _onboardingFinishSections_(fromPhone) {
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  var profile = _onboardingGetProfile_(fromPhone);
+  var preset = _onboardingPickPreset_(profile);
+  try {
+    _profileAPI_('set', { phone: clean, fields: { profileType: preset } });
+  } catch (_e) { Logger.log('_onboardingFinishSections_ preset save err: ' + (_e && _e.message)); }
+  _surveyFinish_(fromPhone);
+}
+
+// --- Route an interactive tap that belongs to a section E-H question.
+// Returns true if the tap was consumed (caller sends nothing more), false
+// if it isn't a section tap. Wired from _surveyHandleInteractive_.
+function _onboardingHandleInteractive_(fromPhone, picked) {
+  picked = String(picked || '');
+  // Section E — osek type.
+  if (picked === 'sec_e_patur' || picked === 'sec_e_morsheh' || picked === 'sec_e_company') {
+    var osek = (picked === 'sec_e_patur') ? 'patur'
+             : (picked === 'sec_e_morsheh') ? 'morsheh' : 'company';
+    _onboardingStoreSection_(fromPhone, 'E', { osekType: osek });
+    _onboardingAdvance_(fromPhone, 'E');
+    return true;
+  }
+  // Section F — per-project tracking.
+  if (picked === 'sec_f_yes' || picked === 'sec_f_no') {
+    _onboardingStoreSection_(fromPhone, 'F', { tracksProjects: (picked === 'sec_f_yes') });
+    _onboardingAdvance_(fromPhone, 'F');
+    return true;
+  }
+  // Section G — monthly budget cap.
+  if (picked === 'sec_g_yes' || picked === 'sec_g_no') {
+    _onboardingStoreSection_(fromPhone, 'G', { wantsBudget: (picked === 'sec_g_yes') });
+    _onboardingAdvance_(fromPhone, 'G');
+    return true;
+  }
+  // Section H — import historical.
+  if (picked === 'sec_h_yes' || picked === 'sec_h_no') {
+    var wantsImport = (picked === 'sec_h_yes');
+    _onboardingStoreSection_(fromPhone, 'H', { wantsImport: wantsImport });
+    if (wantsImport) {
+      try {
+        sendWhatsAppMessage(fromPhone,
+          '📊 מעולה! לייבוא דפי אשראי/בנק היכנס ל-kesefle.com/account ואז *ייבוא*.\n' +
+          'אסיים כאן את ההתאמה ונמשיך משם.');
+      } catch (_e) {}
+    }
+    _onboardingAdvance_(fromPhone, 'H');
+    return true;
+  }
+  return false;
 }
 
 // Daily cron — asks the Vercel API to scan ALL users' templates and log

@@ -5,7 +5,14 @@
 // the recurring-expense autoLog default, which sheet template to favour, and
 // what the weekly digest emphasises.
 //
-// KV: profile:<phone> = { trackingType, hasRecurring, autoLogPref, taxId, companyName, profession, paymentDefault, updatedAt }
+// KV: profile:<phone> = { trackingType, hasRecurring, autoLogPref, taxId, companyName, profession, paymentDefault, onboarding, profileType, updatedAt }
+//   onboarding   : { A?,B?,C?,D?,E?,F?,G?,H? } — answers from the bot's A-H
+//                  onboarding questionnaire, keyed by section letter. Merged
+//                  on set. Each value is a small plain object.
+//   profileType  : template preset chosen at the end of onboarding
+//                  ('basic_personal'|'family'|'business'|'contractor'|
+//                  'mixed'|'advanced_imported'). Read as profile_type by the
+//                  downstream sheet-seeding step.
 //   trackingType  : 'personal' | 'family' | 'group' | 'business'
 //   hasRecurring  : boolean
 //   autoLogPref   : 'auto' | 'remind'
@@ -19,7 +26,7 @@
 //                  invoice client name uses this instead of the human name.
 //
 // POST (JSON, bot-secret via x-kesefle-bot-secret header or body.botSecret):
-//   { action:'set', phone, fields:{ trackingType?, hasRecurring?, autoLogPref?, taxId?, companyName?, profession?, paymentDefault? } } → { ok, profile }
+//   { action:'set', phone, fields:{ trackingType?, hasRecurring?, autoLogPref?, taxId?, companyName?, profession?, paymentDefault?, onboarding?, profileType? } } → { ok, profile }
 //   { action:'get', phone } → { ok, profile }
 
 import { withRequestId, log } from '../lib/log.js';
@@ -56,6 +63,13 @@ function normalizeE164(input) {
 
 const TRACKING_TYPES = ['personal', 'family', 'group', 'business'];
 const AUTOLOG_PREFS = ['auto', 'remind'];
+// Template presets the onboarding A-H section block can pick (profile_type).
+// MUST stay in sync with the bot's _ONBOARDING_PRESETS_ and the downstream
+// sheet-seeding step that reads profile_type. See
+// docs/PERSONALIZED_CATEGORY_PROFILES.md §7.
+const PROFILE_TYPES = ['basic_personal', 'family', 'business', 'contractor', 'mixed', 'advanced_imported'];
+// Section letters the onboarding questionnaire stores answers under.
+const ONBOARDING_SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -150,9 +164,59 @@ async function handlerImpl(req, res) {
         profile.paymentDefault = pm;
       }
     }
+    // Onboarding questionnaire answers, keyed by section letter (A-H). The
+    // bot's _onboardingStoreSection_ sends the WHOLE onboarding object (it
+    // read-modify-writes), so we MERGE here too and keep only known section
+    // letters with small plain-object values. Pass '' / null to clear all.
+    if (fields.onboarding !== undefined) {
+      if (fields.onboarding == null || fields.onboarding === '') {
+        delete profile.onboarding;
+      } else if (typeof fields.onboarding === 'object' && !Array.isArray(fields.onboarding)) {
+        const merged = (profile.onboarding && typeof profile.onboarding === 'object') ? profile.onboarding : {};
+        for (const k of ONBOARDING_SECTIONS) {
+          if (Object.prototype.hasOwnProperty.call(fields.onboarding, k)) {
+            const v = fields.onboarding[k];
+            if (v == null) { delete merged[k]; continue; }
+            if (typeof v === 'object' && !Array.isArray(v)) {
+              // Bound the answer: at most ~12 primitive fields, string values
+              // capped, so a malformed bot payload can't bloat the KV record.
+              const clean = {};
+              let n = 0;
+              for (const fk of Object.keys(v)) {
+                if (n++ >= 12) break;
+                const fv = v[fk];
+                if (fv == null) continue;
+                if (typeof fv === 'string') clean[String(fk).slice(0, 40)] = fv.slice(0, 200);
+                else if (typeof fv === 'number' || typeof fv === 'boolean') clean[String(fk).slice(0, 40)] = fv;
+              }
+              merged[k] = clean;
+            }
+          }
+        }
+        profile.onboarding = merged;
+      } else {
+        return res.status(400).json({ ok: false, error: 'invalid_onboarding' });
+      }
+    }
+
+    // Template preset chosen at the end of onboarding (a.k.a. profile_type).
+    // The downstream sheet-seeding step reads this. Accepts a known preset id
+    // or '' / null to clear.
+    if (fields.profileType !== undefined) {
+      if (fields.profileType == null || fields.profileType === '') {
+        delete profile.profileType;
+      } else {
+        const pt = String(fields.profileType).toLowerCase().trim();
+        if (!PROFILE_TYPES.includes(pt)) {
+          return res.status(400).json({ ok: false, error: 'invalid_profileType', allowed: PROFILE_TYPES });
+        }
+        profile.profileType = pt;
+      }
+    }
+
     profile.updatedAt = new Date().toISOString();
     await kvSet('profile:' + phone, profile);
-    log.info('profile.set', { reqId: req.reqId, trackingType: profile.trackingType, autoLogPref: profile.autoLogPref, hasTaxId: !!profile.taxId, hasCompanyName: !!profile.companyName, profession: profile.profession || null });
+    log.info('profile.set', { reqId: req.reqId, trackingType: profile.trackingType, autoLogPref: profile.autoLogPref, hasTaxId: !!profile.taxId, hasCompanyName: !!profile.companyName, profession: profile.profession || null, profileType: profile.profileType || null });
     return res.status(200).json({ ok: true, profile });
   }
 
