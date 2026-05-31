@@ -25,6 +25,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { constantTimeEqual } from '../../lib/crypto.js';
+import { createHash } from 'node:crypto';
 
 const MAX_USERS_PER_RUN = 500;     // safety cap
 const SEND_THROTTLE_MS  = 1000;    // 1s between sends
@@ -170,7 +171,11 @@ async function handlerImpl(req, res) {
     skipped,
     errors: errors.length,
     dryRun: !!dryRun,
-    messageHash: messageRec.body.slice(0, 40),
+    // 2026-05-31 audit fix: was `.slice(0, 40)` which leaked the first 40
+    // chars of message content into the 90-day audit log. Switched to a real
+    // sha256 prefix so we still get a stable per-message identifier without
+    // any content leakage.
+    messageHash: createHash('sha256').update(String(messageRec.body || '')).digest('hex').slice(0, 16),
   }, 60 * 60 * 24 * 90);  // 90-day TTL
 
   log.info('customer_digest.complete', {

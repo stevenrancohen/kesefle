@@ -16,7 +16,7 @@
 // Schedule: vercel.json `0 7 * * *` (07:00 UTC = 10:00 Asia/Jerusalem).
 // Auth: Vercel Cron sends Authorization: Bearer <CRON_SECRET>.
 
-import { withRequestId, log } from '../../lib/log.js';
+import { withRequestId, log, subHash } from '../../lib/log.js';
 import { sendTemplate } from '../../lib/email.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
@@ -260,7 +260,7 @@ async function handlerImpl(req, res) {
               scheduled++;
             }
           } catch (npsErr) {
-            log.warn('cron.lifecycle.nps_d60_failed', { userSub: u.userSub, error: npsErr.message });
+            log.warn('cron.lifecycle.nps_d60_failed', { sub: subHash(u.userSub), error: npsErr.message });
           }
         }
       }
@@ -309,7 +309,7 @@ async function handlerImpl(req, res) {
                   scheduled++;
                 }
               } catch (waErr) {
-                log.warn('cron.lifecycle.winback_wa_failed', { userSub: u.userSub, error: waErr.message });
+                log.warn('cron.lifecycle.winback_wa_failed', { sub: subHash(u.userSub), error: waErr.message });
               }
             }
           }
@@ -317,7 +317,7 @@ async function handlerImpl(req, res) {
       }
     } catch (e) {
       errors++;
-      log.warn('cron.lifecycle.user_failed', { userSub: u.userSub, error: e.message });
+      log.warn('cron.lifecycle.user_failed', { sub: subHash(u.userSub), error: e.message });
     }
   }
 
