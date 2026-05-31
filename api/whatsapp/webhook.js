@@ -11,7 +11,7 @@
 // IMPORTANT: This is the multi-tenant version. Each user's expenses go to THEIR sheet.
 
 import crypto from 'node:crypto';
-import { decryptRefreshToken } from '../../lib/crypto.js';
+import { decryptRefreshToken, constantTimeEqual } from '../../lib/crypto.js';
 import { rateLimit } from '../../lib/ratelimit.js';
 import { getGoogleClientId } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
@@ -85,14 +85,32 @@ async function sendReply(toPhone, text) {
 
 async function handlerImpl(req, res) {
   // 1. Verification handshake (GET) — Meta calls this when you set up the webhook.
+  //
+  // 2026-05-31 audit fix (docs/AUDIT_WHATSAPP_WEBHOOK_2026_05_31.md F1 CRITICAL):
+  // The previous strict-equality comparison failed OPEN when the verify-token
+  // env var was unset (undefined equals undefined, returns true), letting an
+  // attacker hijack webhook registration during any misconfig window. Mirrors
+  // the POST path's fail-closed 503 for unset META_APP_SECRET below. Also
+  // swapped strict-equality for constantTimeEqual to remove the timing leak.
   if (req.method === 'GET') {
+    const expectedToken = process.env.META_VERIFY_TOKEN;
+    if (!expectedToken) {
+      // Fail closed if the secret isn't configured — refuse to confirm any
+      // ownership claim until an operator sets the env var.
+      return res.status(503).json({ ok: false, error: 'verify_token_not_configured' });
+    }
     const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
+    // Reject anything other than the documented subscribe handshake BEFORE the
+    // token compare so probers can't fingerprint the endpoint by mode value.
+    if (mode !== 'subscribe') {
+      return res.status(403).json({ ok: false, error: 'mode_not_supported' });
+    }
+    const token = String(req.query['hub.verify_token'] || '');
     const challenge = req.query['hub.challenge'];
-    if (mode === 'subscribe' && token === process.env.META_VERIFY_TOKEN) {
+    if (constantTimeEqual(token, expectedToken)) {
       return res.status(200).send(challenge);
     }
-    return res.status(403).json({ ok: false, error: 'verify token mismatch' });
+    return res.status(403).json({ ok: false, error: 'verify_token_mismatch' });
   }
 
   if (req.method !== 'POST') {
@@ -371,7 +389,9 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
   try {
     accessToken = await exchangeRefreshForAccess(refreshToken);
   } catch (e) {
-    console.error('access_token_refresh_failed', e.message);
+    // 2026-05-31 audit fix (F4): was raw console.error which bypasses lib/log.js
+    // redactor. log.error wraps in redact() so any future PII addition is caught.
+    log.error('wa.access_token_refresh_failed', { error: e.message });
     return { ok: false, error: 'token_refresh_failed', detail: e.message };
   }
 
@@ -444,7 +464,10 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
 
   if (!resp.ok) {
     const errText = await resp.text().catch(() => '');
-    console.error('sheets_append_failed', resp.status, errText.slice(0, 300));
+    // 2026-05-31 audit fix (F4): raw console.error was leaking up to 300 chars
+    // of Sheets API error body (can contain spreadsheetId + Hebrew tab name).
+    // log.error redacts spreadsheet*/sheet* keys + truncates strings >200 chars.
+    log.error('wa.sheets_append_failed', { status: resp.status, errText: errText.slice(0, 200) });
     return { ok: false, error: 'sheets_append_status_' + resp.status, detail: errText.slice(0, 200) };
   }
 
