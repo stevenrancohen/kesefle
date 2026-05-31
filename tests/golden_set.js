@@ -146,15 +146,20 @@ const GOLDEN = [
   // 2026-05-31 — Steven OLD-sheet reconciliation anchors. These 4 named
   // subcategories already route in CATEGORY_MAP (lines ~410-413); the bot
   // writes the col-E string the parallel migration's dashboard rows expect.
-  // The signal is the SUB (top-level הוצאות זמניות / תחביבים are buckets), so
+  // The signal is the SUB (top-level הוצאות זמניות is a bucket), so
   // sub: locks the exact bucket name and trips the build if anyone regresses
   // a route back to שונות or flips its taxonomy. Categories are intentionally
   // per Steven's OLD-sheet sections (NOT בריאות/נסיעות): גיא + race expenses
-  // sit under הוצאות זמניות; קולקציות is his confirmed art-canvas/glass hobby
-  // under תחביבים (per docs/PERSONALIZED_CATEGORY_PROFILES.md line 409).
+  // sit under הוצאות זמניות.
   ['גיא 500', 'sub:גיא'],
   ['חצי איירון מן 1200', 'sub:חצי איירון מן'],
   ['מרוץ אוסטריה 800', 'sub:מרוץ - אוסטריה'],
+  // 2026-05-31: Steven CONFIRMED קולקציות = his SRC BUSINESS, rerouted from
+  // תחביבים to category "עסק" (per docs/PERSONALIZED_CATEGORY_PROFILES.md
+  // row #4). Two anchors guard the change: the bare-category row asserts the
+  // BUSINESS category "עסק" (FAILS if it ever falls back to שונות or תחביבים),
+  // the sub: row pins the exact bucket "קולקציות". Together: business cat + sub.
+  ['קולקציות 300', 'עסק'],
   ['קולקציות 300', 'sub:קולקציות'],
 
   // ── עסק: business (PR-B 2026-05-28 — canonical subs per docs section 4) ──
