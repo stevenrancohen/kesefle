@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-29-frozen-year-installers-and-kolektziot';
+const KFL_BUILD_VERSION = '2026-05-31-installments-and-llm-fixes';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -6108,7 +6108,18 @@ function _detectInstallments_(rawText, totalAmount) {
   }
   // Pattern B: "5 תשלומים" / "ב-10 תשלומים" / "10 תשלום" — N is the count,
   // per-payment = total / N. Most natural Hebrew phrasing.
-  m = t.match(/(?:ב[\-\s]?)?(\d{1,3})\s*תשלומים?\b/);
+  // 2026-05-31 fix (AUDIT_RECURRING_ENGINE F3 HIGH): the trailing anchor was
+  // JS `\b`, which is ASCII-only and NEVER forms a boundary on the right edge
+  // of a Hebrew letter — so "ספה 1000 שקל 5 תשלומים" matched nothing. Same
+  // class of bug the comment at _parseRecurringCommand_ already warns about
+  // ("JS \b word boundaries do NOT work around Hebrew letters"). Replace with
+  // a Hebrew-safe boundary: end-of-string, whitespace, or any non-Hebrew char
+  // (so trailing punctuation like .,! and "תשלום" mid-sentence still match).
+  // Also accept the SINGULAR "תשלום" (final-mem ם) in addition to plural
+  // "תשלומים" — the comment above lists "10 תשלום" as a target, but the old
+  // `תשלומים?` token only optional-ized the trailing ם of the plural and never
+  // matched the singular stem. `תשלו(?:ם|מים)` matches both.
+  m = t.match(/(?:ב[\-\s]?)?(\d{1,3})\s*תשלו(?:ם|מים)(?=\s|$|[^א-ת])/);
   if (m) {
     var nB = parseInt(m[1], 10);
     if (nB >= 2 && nB <= 60) {
@@ -6151,6 +6162,16 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
   // hardcoded to today, which is wrong for credit-card charges that hit
   // on 1/2/10/15 of the month). Fallback: today.
   var startISO = startISOArg || new Date().toISOString().slice(0, 10);
+  // 2026-05-31 fix (AUDIT_RECURRING_ENGINE F4 HIGH): the recurring API's
+  // addTemplate REQUIRES freq to be an OBJECT ({type:'monthly', day:N}) and
+  // 400s ("invalid_freq") on a bare string. We were posting freq:'monthly',
+  // so EVERY installments setup silently failed. Derive the charge day from
+  // the first-charge ISO date so the monthly recurrence fires on the same
+  // day-of-month the user picked. Clamp to 1..28 so it always exists in
+  // every month (matchesFreq also clamps to the month length on top of this).
+  var chargeDay = parseInt(String(startISO).slice(8, 10), 10);
+  if (!(chargeDay >= 1 && chargeDay <= 28)) chargeDay = Math.min(Math.max(chargeDay || 1, 1), 28);
+  var installFreq = { type: 'monthly', day: chargeDay };
   try {
     var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/recurring', {
       method: 'post',
@@ -6164,7 +6185,7 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
         description: label,
         category: category || 'אחר',
         subcategory: subcategory || '',
-        freq: 'monthly',
+        freq: installFreq,
         autoLog: true,
         startDate: startISO,
         installments: { total: inst.count, remaining: inst.count, productName: inst.productName },
@@ -10469,7 +10490,10 @@ function _handleCategoryCorrection_(fromPhone, text) {
 
     var llmTail = '';
     try {
-      var extracted = _learnExpandedKeywords_(pend.originalText, pend.newCategory);
+      // Pass the ALREADY-RESOLVED (category, subcategory) so learned rows carry
+      // the real subcategory (col E) — re-resolving pend.newCategory inside
+      // would double-match and corrupt the pair (AUDIT_BOT_LLM_SAFETY F1).
+      var extracted = _learnExpandedKeywords_(pend.originalText, __resolved.category, __resolved.subcategory);
       if (extracted && extracted.length) {
         llmTail = '\n🧠 למדתי גם: ' + extracted.join(', ');
       }
@@ -10485,9 +10509,63 @@ function _handleCategoryCorrection_(fromPhone, text) {
   }
 }
 
-function _learnExpandedKeywords_(text, category) {
+// 2026-05-31 (AUDIT_BOT_LLM_SAFETY Finding 1): canonical top-level category
+// whitelist. Derived at runtime from CATEGORY_MAP (the same source the תנועות
+// data-validation dropdown uses, line ~11170) + DEFAULT_CATEGORY + the static
+// list _aiCategorizeRich already validates against. Anything NOT in this set
+// is a category the dashboard SUMIFS can't sum, so the learned-keyword writers
+// must refuse to persist it (when unsure, do NOT write). Cached per execution.
+var _CANON_CATS_ = null;
+function _isCanonicalCategory_(cat) {
+  var c = String(cat || '').trim();
+  if (!c) return false;
+  if (!_CANON_CATS_) {
+    var set = {};
+    try {
+      if (typeof CATEGORY_MAP !== 'undefined' && Array.isArray(CATEGORY_MAP)) {
+        CATEGORY_MAP.forEach(function (e) { if (e && e.category) set[String(e.category).trim()] = true; });
+      }
+    } catch (_e) {}
+    try { if (typeof DEFAULT_CATEGORY !== 'undefined' && DEFAULT_CATEGORY.category) set[String(DEFAULT_CATEGORY.category).trim()] = true; } catch (_e2) {}
+    // Belt-and-suspenders: the same list _aiCategorizeRich gates AI output on.
+    ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','בריאות','עסק','שירותים','בידור','חינוך','ילדים','ממשלה ומיסים','פיננסים','בלתי מזוהה']
+      .forEach(function (x) { set[x] = true; });
+    _CANON_CATS_ = set;
+  }
+  return _CANON_CATS_[c] === true;
+}
+
+// 2026-05-31 fix (AUDIT_BOT_LLM_SAFETY Finding 1): `subcategoryArg` is the
+// ALREADY-RESOLVED subcategory (col E) from the correction flow. The caller
+// resolves the (category, subcategory) pair ONCE via _resolveCorrectionPair_
+// and passes both in — we must NOT re-run matchCategory on a value that is
+// already a chosen top-level category (that double-resolve substring-matches
+// junk like "category" → עסק). If a caller omits it (legacy), fall back to
+// resolving here, but never to subcategory==category.
+function _learnExpandedKeywords_(text, category, subcategoryArg) {
   var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   if (!apiKey) return [];
+
+  // 2026-05-31 fix (AUDIT_BOT_LLM_SAFETY Finding 1):
+  // (a) Write the REAL subcategory, never subcategory==category (which broke
+  //     dashboard SUMIFS that key on the real subcategory string).
+  // (b) Validate the category against the canonical set; if the correction
+  //     target isn't a category the dashboard can sum, refuse to learn
+  //     keywords from it — a poisoned learned row would silently mis-route
+  //     every future message that hits the keyword (when unsure, do NOT write).
+  var learnCategory = category;
+  var learnSubcategory = subcategoryArg;
+  if (learnSubcategory == null || learnSubcategory === '') {
+    // Legacy/standalone call: resolve the pair, but only from a raw freeform
+    // value (not an already-chosen category — caller should pass both).
+    var rp = (typeof _resolveCorrectionPair_ === 'function') ? _resolveCorrectionPair_(category) : null;
+    if (rp && rp.category) { learnCategory = rp.category; learnSubcategory = rp.subcategory; }
+  }
+  if (!learnSubcategory) learnSubcategory = learnCategory; // last resort, still better than nothing
+  if (!_isCanonicalCategory_(learnCategory)) {
+    Logger.log('_learnExpandedKeywords_: skip — non-canonical category "' + learnCategory + '" (from "' + category + '")');
+    return [];
+  }
 
   var prompt = 'משתמש כתב הוצאה בעברית: "' + text + '"\n' +
     'הוא תיקן את הקטגוריה ל-"' + category + '".\n' +
@@ -10534,7 +10612,8 @@ function _learnExpandedKeywords_(text, category) {
     rule.keywords.forEach(function (kw) {
       var k = String(kw || '').toLowerCase().trim();
       if (k.length < 2 || k.length > 30) return;
-      _learnedSave(k, { category: category, subcategory: category }, 'llm-extracted');
+      // 2026-05-31 fix: real subcategory (resolved above), not category==subcategory.
+      _learnedSave(k, { category: learnCategory, subcategory: learnSubcategory }, 'llm-extracted');
       saved.push(k);
     });
     return saved;
@@ -15609,6 +15688,14 @@ function cronSynonymExpansion() {
 
     for (var p = 0; p < list.length; p++) {
       var item = list[p];
+      // 2026-05-31 (AUDIT_BOT_LLM_SAFETY Finding 1): never seed synonyms into a
+      // category the dashboard can't sum. The (cat,sub) here come from the ML
+      // Audit's resolved finalCategory, but guard anyway so a corrupted audit
+      // row can't poison the Auto Synonyms map.
+      if (typeof _isCanonicalCategory_ === 'function' && !_isCanonicalCategory_(item.category)) {
+        Logger.log('cronSynonymExpansion: skip non-canonical category "' + item.category + '" for "' + item.text + '"');
+        continue;
+      }
       var synonyms = _llmHebrewSynonyms_(item.text, apiKey);
       llmCalls++;
       if (!synonyms || !synonyms.length) continue;
