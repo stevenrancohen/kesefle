@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-installments-and-llm-fixes';
+const KFL_BUILD_VERSION = '2026-05-31-multi-business-dash-recognition';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -11610,10 +11610,11 @@ function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, a
   var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   var monthLabel = hebMonths[monthIdx - 1];
 
-  var dashNames = ['מאזן חברה ' + year, 'מאזן חברה'];
-  for (var d = 0; d < dashNames.length; d++) {
-    var ds = ss.getSheetByName(dashNames[d]);
+  var dashTabs = _businessDashTabs_(ss, year);
+  for (var d = 0; d < dashTabs.length; d++) {
+    var ds = dashTabs[d];
     if (!ds) continue;
+    var dsName = ds.getName();
     var dvals = ds.getDataRange().getValues();
     // For each year-section in this tab, find the row labeled canonSub
     // whose section header (B-cell of an "X4" type row above it) === year.
@@ -11653,14 +11654,14 @@ function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, a
             // what counts as broken.
             if (_isBrokenBotDashFormula_(existingFormula)) {
               cell.setValue(fresh);
-              Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' had BROKEN formula -- cleaned to ₪' + fresh);
+              Logger.log('_updateBusinessDashboardInSheet_: ' + dsName + '!' + cell.getA1Notation() + ' had BROKEN formula -- cleaned to ₪' + fresh);
               return true;
             }
-            Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has clean formula - preserved');
+            Logger.log('_updateBusinessDashboardInSheet_: ' + dsName + '!' + cell.getA1Notation() + ' has clean formula - preserved');
             return false;
           }
           cell.setValue(fresh);
-          Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' recomputed -> ₪' + fresh + ' (sub=' + canonSub + ', month=' + monthLabel + ', year=' + year + ')');
+          Logger.log('_updateBusinessDashboardInSheet_: ' + dsName + '!' + cell.getA1Notation() + ' recomputed -> ₪' + fresh + ' (sub=' + canonSub + ', month=' + monthLabel + ', year=' + year + ')');
           return true;
         }
       }
@@ -12197,7 +12198,6 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
   if (!noteText) return false;
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var isBiz = (category === 'עסק');
-  var dashNames = isBiz ? ['מאזן חברה 2026', 'מאזן חברה'] : ['מאזן שנתי', 'מאזן אישי'];
   var rowLabel = String(subcategory || '').trim();
   if (isBiz && typeof _normalizeBizSub_ === 'function') {
     var canon = _normalizeBizSub_(subcategory);
@@ -12214,9 +12214,24 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
   if (!yearTag || isNaN(yearTag)) {
     yearTag = parseInt(Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy'), 10);
   }
-  for (var d = 0; d < dashNames.length; d++) {
-    var ds = ss.getSheetByName(dashNames[d]);
+  // Resolve the target dashboard tab(s). Business goes through the shared
+  // multi-business resolver (covers renamed "עסק תמונות" + "עסק 2/3"...);
+  // personal keeps its fixed two-name lookup. Both collapse to sheet objects.
+  var dashTabs;
+  if (isBiz) {
+    dashTabs = _businessDashTabs_(ss, yearTag);
+  } else {
+    dashTabs = [];
+    var _personalNames = ['מאזן שנתי', 'מאזן אישי'];
+    for (var _pn = 0; _pn < _personalNames.length; _pn++) {
+      var _psh = ss.getSheetByName(_personalNames[_pn]);
+      if (_psh) dashTabs.push(_psh);
+    }
+  }
+  for (var d = 0; d < dashTabs.length; d++) {
+    var ds = dashTabs[d];
     if (!ds) continue;
+    var dsName = ds.getName();
     var dvals = ds.getDataRange().getValues();
     for (var r = 0; r < dvals.length; r++) {
       for (var c = 0; c < dvals[r].length; c++) {
@@ -12228,7 +12243,7 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
                 var existing = cell.getNote();
                 var combined = _composeNoteWithYearSeparator_(existing, noteText, yearTag);
                 cell.setNote(combined);
-                Logger.log('setDashboardNoteForTransaction_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' += "' + noteText + '" (year ' + yearTag + ')');
+                Logger.log('setDashboardNoteForTransaction_: ' + dsName + '!' + cell.getA1Notation() + ' += "' + noteText + '" (year ' + yearTag + ')');
                 return true;
               }
             }
@@ -15889,6 +15904,40 @@ function _dashNormalizeLabel_(s) {
   return t;
 }
 
+// Helper: return EVERY sheet that is a business/company balance dashboard.
+// Steven renamed "מאזן חברה" -> "עסק תמונות" and may add "עסק 2"/"עסק 3"
+// per additional business (see the multi-business routing block above), so
+// the dashboard tab can no longer be found by a hardcoded name list. We match
+// any tab whose name starts with the canonical company-dashboard prefix
+// "מאזן חברה" OR the per-business prefix "עסק " (note the trailing space, so
+// the orders/transactions tabs and bare command keywords never match):
+//   'מאזן חברה', 'מאזן חברה 2026', 'עסק תמונות', 'עסק 1', 'עסק 2', ...
+// When a `year` is passed we put any tab whose name carries that exact year
+// (e.g. "מאזן חברה 2026") FIRST so a frozen-year snapshot tab is preferred
+// over the live bare tab, exactly like the old ['מאזן חברה ' + year,
+// 'מאזן חברה'] ordering. Original sheet order is preserved within each group,
+// so an org that owns ONLY the plain "מאזן חברה" tab gets back exactly
+// [that sheet] -- identical to the legacy behavior.
+function _businessDashTabs_(ss, year) {
+  if (!ss) return [];
+  var re = /^(מאזן חברה|עסק )/;
+  var yearStr = '';
+  var yNum = parseInt(year, 10);
+  if (yNum >= 2000 && yNum <= 2100) yearStr = String(yNum);
+  var withYear = [];   // name contains the requested year -> preferred
+  var rest = [];       // bare / no-year tabs and everything else
+  var all = ss.getSheets();
+  for (var i = 0; i < all.length; i++) {
+    var sh = all[i];
+    var name = '';
+    try { name = String(sh.getName() || ''); } catch (_nErr) { continue; }
+    if (!re.test(name.trim())) continue;
+    if (yearStr && name.indexOf(yearStr) !== -1) withYear.push(sh);
+    else rest.push(sh);
+  }
+  return withYear.concat(rest);
+}
+
 // Helper: figure out the year for a dashboard tab.
 //   1. tab name ends with 4-digit year (e.g. "מאזן חברה 2026") -> use it
 //   2. B2 of the dashboard is a year-like number -> use it
@@ -15936,15 +15985,19 @@ function _safeReplaceWithFormula_(cell, newFormula, ctxLabel) {
 // Returns counters + per-tab breakdown.
 function installCompanyDashboardFormulas() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
-  var dashNames = ['מאזן חברה 2026', 'מאזן חברה'];
+  // Resolve ALL company dashboard tabs (renamed "עסק תמונות", "עסק 2"...,
+  // year-suffixed snapshots, or the legacy bare "מאזן חברה"). Each tab's own
+  // year is still derived per-tab via _dashResolveYear_ below; passing the
+  // current year here just orders any year-suffixed snapshot tab first.
+  var dashTabs = _businessDashTabs_(ss, new Date().getFullYear());
   var summary = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0, perTab: {} };
   var anyFound = false;
 
-  for (var d = 0; d < dashNames.length; d++) {
-    var sheet = ss.getSheetByName(dashNames[d]);
+  for (var d = 0; d < dashTabs.length; d++) {
+    var sheet = dashTabs[d];
     if (!sheet) continue;
     anyFound = true;
-    var tabKey = dashNames[d];
+    var tabKey = sheet.getName();
     var tabStat = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0, derived: 0 };
     var year = _dashResolveYear_(sheet);
     var lastRow = sheet.getLastRow();
@@ -16114,7 +16167,7 @@ function installCompanyDashboardFormulas() {
   }
 
   if (!anyFound) {
-    Logger.log('[dashFx] no company dashboard tab found (looked for: ' + dashNames.join(', ') + ')');
+    Logger.log('[dashFx] no company dashboard tab found (matched none of /^(מאזן חברה|עסק )/)');
   }
 
   Logger.log('[dashFx] installCompanyDashboardFormulas DONE: ' +

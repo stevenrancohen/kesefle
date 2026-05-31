@@ -179,7 +179,12 @@ const _setNoteFn = extractFn(BOT, 'setDashboardNoteForTransaction_');
 ok('note writer uses setNote (not setValue — safe, never corrupts totals)',
    /\.setNote\(/.test(_setNoteFn) && !/\.setValue\(/.test(_setNoteFn) && !/setFormula\(/.test(_setNoteFn));
 ok('note writer routes business→company / else→personal',
-   /category === 'עסק'/.test(_setNoteFn) && /מאזן חברה/.test(_setNoteFn) && /מאזן אישי/.test(_setNoteFn));
+   // Business branch resolves the company dashboard via the shared
+   // multi-business resolver (covers renamed "עסק תמונות" + "עסק 2/3"...);
+   // the else branch still targets the personal dashboard by name.
+   /category === 'עסק'/.test(_setNoteFn) && /_businessDashTabs_\(/.test(_setNoteFn) && /מאזן אישי/.test(_setNoteFn));
+ok('multi-business dash resolver matches מאזן חברה + עסק-prefixed tabs',
+   /\/\^\(מאזן חברה\|עסק \)\//.test(extractFn(BOT, '_businessDashTabs_')));
 ok('all 3 owner expense paths mirror to the dashboard note',
    (BOT.match(/_dashboardDetailNote_\(/g) || []).length >= 3);
 ok('_dashboardDetailNote_ is best-effort (wrapped in try/catch at call sites)',
