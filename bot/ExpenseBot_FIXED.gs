@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-onboard-state-kv';
+const KFL_BUILD_VERSION = '2026-06-01-bot-state-kv-complete';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1266,9 +1266,12 @@ function _notifyOwnerNewLead_(fromPhone) {
   // Don't alert on the owner's own messages.
   var owner = String(props.getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
   if (owner && clean === owner) return;
+  // Lead-notified flag now lives in KV (key unchanged: 'leadNotified:'+phone)
+  // with a legacy Script-Property read fallback, so a customer already alerted
+  // before this migration is never alerted twice. Permanent dedup -> no TTL.
   var flagKey = 'leadNotified:' + clean;
-  if (props.getProperty(flagKey)) return; // already alerted for this customer
-  props.setProperty(flagKey, new Date().toISOString());
+  if (_seenFlag_(flagKey, 0)) return; // already alerted for this customer
+  _markFlag_(flagKey, new Date().toISOString(), 0);
 
   var when = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm');
   var displayPhone = '+' + clean;
@@ -1353,25 +1356,55 @@ function _sheetLinkLine_(fromPhone) {
 // re-welcomed/re-surveyed; writes fall back to a Script Property ONLY if KV
 // is unavailable, so dedup still holds during a KV outage. Config (creds,
 // gates) stays in Script Properties — only this per-phone state moved.
-function _onboardSeen_(kind, clean) {
-  if (!clean) return false;
-  var key = kind + ':' + clean;
+// Generalized per-user "seen/sent flag" storage. A flag is a presence-only
+// monotonic marker keyed by an opaque full key (e.g. 'welcomed:<phone>',
+// 'fxcel:<phone>', 'recsug_<hash>'). The value is never parsed — only its
+// presence matters. State lives in KV so the bot's Script-Property store does
+// not fill up against the Apps Script ~50-property UI cap as users accumulate.
+//
+// Read path: KV first, then FALL BACK to a legacy Script Property of the same
+// key, so any flag written before this state moved to KV (pre-#186 welcomed/
+// surveyed, or pre-migration fxcel/leadNotified/recsug) is still honoured and
+// the one-time action never re-fires.
+//
+// Write path: KV first. Fall back to a legacy Script-Property write ONLY if KV
+// is unreachable (creds unset / HTTP error -> kvSet returns false), so the
+// dedup still holds during a KV outage instead of silently re-firing. Once KV
+// is healthy again, MIGRATE_BOT_STATE_TO_KV() sweeps any such fallback writes
+// out of Script Properties.
+//
+// ttlDays: optional expiry in days (0 / omitted = never expire, matching the
+// Script-Property semantics these flags replaced). Permanent dedup flags
+// (welcomed/surveyed/fxcel/leadNotified/recsug) pass 0.
+function _seenFlag_(key, ttlDays) {
+  if (!key) return false;
   try { if (typeof kvGet === 'function' && kvGet(key)) return true; } catch (_e) {}
   try { if (PropertiesService.getScriptProperties().getProperty(key)) return true; } catch (_e2) {}
   return false;
 }
-function _onboardMark_(kind, clean) {
-  if (!clean) return;
-  var key = kind + ':' + clean;
-  var stamp = new Date().toISOString();
+function _markFlag_(key, value, ttlDays) {
+  if (!key) return;
+  var val = (value == null) ? new Date().toISOString() : value;
+  var ttlSec = (ttlDays && ttlDays > 0) ? Math.floor(ttlDays * 86400) : 0;
   var ok = false;
-  try { ok = (typeof kvSet === 'function') ? kvSet(key, stamp) : false; } catch (_e) { ok = false; }
+  try { ok = (typeof kvSet === 'function') ? kvSet(key, val, ttlSec) : false; } catch (_e) { ok = false; }
   if (!ok) {
     // KV unreachable (creds unset / error): keep the legacy Script-Property
-    // write so the user is never re-welcomed. This is the only remaining path
-    // that writes a per-phone key to Script Properties.
-    try { PropertiesService.getScriptProperties().setProperty(key, stamp); } catch (_e2) {}
+    // write so the one-time action is never repeated. This is the only
+    // remaining path that writes a per-user flag to Script Properties.
+    try { PropertiesService.getScriptProperties().setProperty(key, val); } catch (_e2) {}
   }
+}
+
+// Onboarding flags (welcomed:/surveyed:) keep their original kind+phone shape;
+// they delegate to the generalized helpers above so behavior is identical.
+function _onboardSeen_(kind, clean) {
+  if (!clean) return false;
+  return _seenFlag_(kind + ':' + clean, 0);
+}
+function _onboardMark_(kind, clean) {
+  if (!clean) return;
+  _markFlag_(kind + ':' + clean, new Date().toISOString(), 0);
 }
 
 function _maybeSendWelcome_(fromPhone) {
@@ -3933,15 +3966,18 @@ function installReEngagementTrigger() {
 // ─────────────────────────────────────────────────────────────────────
 function getMilestoneMessage_(fromPhone, totalExpensesAfter) {
   try {
-    var props = PropertiesService.getScriptProperties();
     // 100 / 250 / 500 / 1000 / 2500 milestones.
     var thresholds = [100, 250, 500, 1000, 2500];
     for (var i = 0; i < thresholds.length; i++) {
       var th = thresholds[i];
       if (totalExpensesAfter === th) {
+        // Milestone-fired flag now lives in KV (key unchanged:
+        // 'milestone:'+phone+':'+threshold) with a legacy Script-Property read
+        // fallback, so a milestone already celebrated before this migration is
+        // never re-fired. Presence-only -> no TTL.
         var key = 'milestone:' + fromPhone + ':' + th;
-        if (props.getProperty(key)) return null; // already fired
-        props.setProperty(key, new Date().toISOString());
+        if (_seenFlag_(key, 0)) return null; // already fired
+        _markFlag_(key, new Date().toISOString(), 0);
         if (th === 100) return '\n\n🎉 הוצאה מספר 100! מתחילה להראות תמונה מלאה. שלח "סיכום" לראות.';
         if (th === 250) return '\n\n📈 250 הוצאות. אתה בקצב מצוין.';
         if (th === 500) return '\n\n🏆 500 הוצאות! חצי דרך לאלף.';
@@ -10490,10 +10526,13 @@ function _recurringSuggestionLine_(fromPhone, history, current) {
   try {
     var cand = _detectRecurringCandidate_(history, current);
     if (!cand) return '';
+    // Recurring-suggestion-shown marker now lives in KV (key unchanged:
+    // 'recsug_'+sha256(phone|desc).slice(0,24), value '1') with a legacy
+    // Script-Property read fallback, so a suggestion already offered before
+    // this migration is never re-offered. Presence-only -> no TTL.
     var markerKey = 'recsug_' + _sha256Hex_((fromPhone || '') + '|' + _normForRecurring_(current.description)).slice(0, 24);
-    var props = PropertiesService.getScriptProperties();
-    if (props.getProperty(markerKey)) return '';   // already offered once
-    props.setProperty(markerKey, '1');
+    if (_seenFlag_(markerKey, 0)) return '';   // already offered once
+    _markFlag_(markerKey, '1', 0);
     return '\n\n🔁 שמתי לב ש"' + cand.desc + '" חוזר כבר ' + cand.count +
            ' חודשים (~' + _money_(cand.amount) + '). רוצה שאוסיף אותו כהוצאה קבועה?\n' +
            '👉 שלח: קבוע ' + cand.desc + ' ' + cand.amount;
@@ -15736,6 +15775,178 @@ function kvDel(key) {
   }
 }
 
+// ─── Bot-state KV migration + self-test ────────────────────────────────
+//
+// Background: Apps Script Script Properties are CONFIG storage with a ~50-item
+// editor cap. The bot historically wrote one monotonic per-user "seen/sent"
+// flag per phone/hash (welcomed:, surveyed:, fxcel:, leadNotified:, recsug_)
+// into Script Properties, which accumulate without bound and eventually fill
+// the store (Steven hit the cap 2026-05-31, blocking manual property edits).
+// PR #186 moved the welcomed/surveyed WRITE path to KV; the code paths for
+// fxcel/leadNotified/recsug followed (see _celebrateIfFirstExpense_ /
+// _notifyOwnerNewLead_ / _recurringSuggestionLine_). This one-shot tool
+// reclaims the slots already consumed by copying the legacy Script-Property
+// flags into KV, then deleting them from Script Properties.
+
+// The ONLY prefixes this tool will ever copy+delete. Every entry is a proven
+// presence-only monotonic flag whose value is never parsed (read sites check
+// presence only); copying then deleting cannot change any decision. Colon vs
+// underscore separators are intentional (matches the live key shapes); the
+// match is a prefix test so both shapes work.
+var BOT_STATE_KV_MIGRATE_PREFIXES = [
+  'welcomed:',      // one-time welcome sent (ISO ts) — presence-only
+  'surveyed:',      // onboarding survey kicked off (ISO ts) — presence-only
+  'fxcel:',         // first-expense celebration sent (ISO ts) — presence-only
+  'leadNotified:',  // owner alerted for this new lead (ISO ts) — presence-only
+  'milestone:',     // milestone (100/250/.. expenses) celebrated (ISO ts) — presence-only
+  'recsug_'         // recurring suggestion offered ('1') — presence-only
+];
+
+// Hard exclude-list: secrets + config + transient conversational state +
+// backups/snapshots. A key matching ANY of these is NEVER touched, even if it
+// somehow also matched a migrate prefix. Exact keys and active-state prefixes.
+var BOT_STATE_KV_NEVER_KEYS = {
+  'ANTHROPIC_API_KEY': 1, 'GEMINI_API_KEY': 1, 'KESEFLE_BOT_SECRET': 1,
+  'META_APP_SECRET': 1, 'WHATSAPP_TOKEN': 1, 'WHATSAPP_BUSINESS_ACCOUNT_ID': 1,
+  'WHATSAPP_PHONE_NUMBER_ID': 1, 'SHEET_OWNER_PHONE': 1, 'SUBSCRIBERS': 1,
+  'EXTRA_RULE_BANKING': 1, 'streak:default': 1, 'DIAG_TO': 1,
+  'KESEFLE_API_BASE': 1, 'VERCEL_KV_REST_URL': 1, 'VERCEL_KV_REST_TOKEN': 1,
+  'MOO_SNAPSHOT_LASTROW': 1, 'MOO_APPLIED_COUNT': 1,
+  'LEAD_ALERT_PHONE': 1, 'blacklist': 1, 'lastMotivationDate': 1
+};
+// Active/transient or per-user CONFIG prefixes whose VALUE is read (not a
+// presence flag) — left in Script Properties on purpose.
+var BOT_STATE_KV_NEVER_PREFIXES = [
+  'src_pending:', 'pending:', 'delPend:', 'clarPend:',  // active conversational state
+  'gender:', 'need:', 'settings:',                       // per-user config (value is read)
+  'CONFIRM_', 'MOO_'                                     // gated apply tokens / snapshots
+];
+
+function _botStateKvNeverTouch_(key) {
+  if (BOT_STATE_KV_NEVER_KEYS[key]) return true;
+  if (/_BACKUP_/.test(key)) return true;          // any *_BACKUP_* key
+  for (var i = 0; i < BOT_STATE_KV_NEVER_PREFIXES.length; i++) {
+    if (key.indexOf(BOT_STATE_KV_NEVER_PREFIXES[i]) === 0) return true;
+  }
+  return false;
+}
+
+// One-shot migration. dryRun=true (DEFAULT) logs what it WOULD do and writes/
+// deletes nothing. dryRun=false copies each allowlisted Script-Property flag
+// into KV (idempotent: skips the copy if KV already holds the key) and then
+// deletes it from Script Properties. Requires KV creds — aborts otherwise so
+// it can never delete a property it could not copy. Logs per-prefix counts and
+// total reclaimed.
+function MIGRATE_BOT_STATE_TO_KV(dryRun) {
+  if (dryRun !== false) dryRun = true; // default + guard: only an explicit false applies
+  Logger.log('MIGRATE_BOT_STATE_TO_KV: ' + (dryRun ? 'DRY RUN (no writes/deletes)' : 'APPLY (will move + delete)'));
+
+  if (!_kvCreds_()) {
+    Logger.log('ABORT: KV creds missing (set VERCEL_KV_REST_URL / VERCEL_KV_REST_TOKEN). ' +
+               'Refusing to run so no Script Property is deleted without a KV copy.');
+    return { ok: false, error: 'kv_creds_missing' };
+  }
+
+  var props = PropertiesService.getScriptProperties();
+  var keys;
+  try { keys = props.getKeys(); } catch (e) {
+    Logger.log('ABORT: could not read Script Properties: ' + (e && e.message));
+    return { ok: false, error: 'getKeys_failed' };
+  }
+
+  var perPrefix = {};   // prefix -> { copied, alreadyInKv, deleted, skippedNoCopy }
+  for (var p = 0; p < BOT_STATE_KV_MIGRATE_PREFIXES.length; p++) {
+    perPrefix[BOT_STATE_KV_MIGRATE_PREFIXES[p]] = { copied: 0, alreadyInKv: 0, deleted: 0, skippedNoCopy: 0 };
+  }
+  var totalReclaimed = 0, totalScanned = keys.length, neverTouched = 0;
+
+  for (var k = 0; k < keys.length; k++) {
+    var key = keys[k];
+
+    // Defense in depth: never touch a secret/config/transient/backup key.
+    if (_botStateKvNeverTouch_(key)) { neverTouched++; continue; }
+
+    // Only allowlisted migrate prefixes proceed.
+    var matched = null;
+    for (var m = 0; m < BOT_STATE_KV_MIGRATE_PREFIXES.length; m++) {
+      if (key.indexOf(BOT_STATE_KV_MIGRATE_PREFIXES[m]) === 0) { matched = BOT_STATE_KV_MIGRATE_PREFIXES[m]; break; }
+    }
+    if (!matched) continue;
+
+    var stat = perPrefix[matched];
+    var val = props.getProperty(key);
+
+    if (dryRun) {
+      // Report whether a copy would be needed, but change nothing.
+      var existsDry = false;
+      try { existsDry = (kvGet(key) != null); } catch (_eg) { existsDry = false; }
+      if (existsDry) stat.alreadyInKv++; else stat.copied++;
+      stat.deleted++; // would delete after a successful (or already-present) copy
+      totalReclaimed++;
+      Logger.log('  WOULD migrate ' + key + (existsDry ? ' (already in KV, would just delete SP)' : ' (copy -> KV, then delete SP)'));
+      continue;
+    }
+
+    // APPLY. Idempotent: only copy if KV does not already have it.
+    var inKv = false;
+    try { inKv = (kvGet(key) != null); } catch (_eg2) { inKv = false; }
+    if (inKv) {
+      stat.alreadyInKv++;
+    } else {
+      var wrote = false;
+      try { wrote = kvSet(key, (val == null ? '' : val), 0); } catch (_es) { wrote = false; }
+      if (!wrote) {
+        // Copy failed -> DO NOT delete (never lose the only copy). Leave the SP.
+        stat.skippedNoCopy++;
+        Logger.log('  SKIP (KV write failed, SP kept): ' + key);
+        continue;
+      }
+      stat.copied++;
+    }
+    // Copy is safe (just written or already present) -> reclaim the SP slot.
+    try { props.deleteProperty(key); stat.deleted++; totalReclaimed++; }
+    catch (_ed) { Logger.log('  WARN: KV has ' + key + ' but SP delete failed: ' + (_ed && _ed.message)); }
+  }
+
+  Logger.log('--- per-prefix ' + (dryRun ? '(dry run)' : '(applied)') + ' ---');
+  for (var rp = 0; rp < BOT_STATE_KV_MIGRATE_PREFIXES.length; rp++) {
+    var pf = BOT_STATE_KV_MIGRATE_PREFIXES[rp], s = perPrefix[pf];
+    Logger.log('  ' + pf + '  copied=' + s.copied + ' alreadyInKv=' + s.alreadyInKv +
+               ' deleted=' + s.deleted + ' skippedNoCopy=' + s.skippedNoCopy);
+  }
+  Logger.log('TOTAL: scanned=' + totalScanned + ' neverTouched(protected)=' + neverTouched +
+             ' reclaimed=' + totalReclaimed + (dryRun ? ' (DRY RUN — nothing changed)' : ''));
+  return { ok: true, dryRun: dryRun, scanned: totalScanned, reclaimed: totalReclaimed,
+           neverTouched: neverTouched, perPrefix: perPrefix };
+}
+
+// KV connectivity self-test. Round-trips a throwaway key and reports the
+// precise result. Run this before MIGRATE_BOT_STATE_TO_KV(false) to confirm KV
+// is reachable. Cleans up the throwaway key on the way out.
+function KV_SELFTEST() {
+  if (!_kvCreds_()) {
+    Logger.log('KV creds missing: set VERCEL_KV_REST_URL/TOKEN');
+    return { ok: false, error: 'kv_creds_missing' };
+  }
+  var probe = 'kv_selftest:' + Date.now() + ':' + Math.floor(Math.random() * 1e9);
+  var expected = 'ok-' + Date.now();
+  var wrote = false;
+  try { wrote = kvSet(probe, expected, 60); } catch (e) { wrote = false; }
+  if (!wrote) {
+    Logger.log('KV SELFTEST FAIL: kvSet returned false (HTTP non-200 or fetch error — see kvSet log above)');
+    return { ok: false, error: 'kvSet_failed' };
+  }
+  var got = null;
+  try { got = kvGet(probe); } catch (e2) { got = null; }
+  try { kvDel(probe); } catch (_ed) {}   // best-effort cleanup
+  if (got === expected) {
+    Logger.log('KV OK');
+    return { ok: true };
+  }
+  Logger.log('KV SELFTEST FAIL: round-trip mismatch (wrote "' + expected + '" got "' + got + '")');
+  return { ok: false, error: 'roundtrip_mismatch', expected: expected, got: got };
+}
+
 // --- Family dispatcher -------------------------------------------------
 
 function _handleFamilyMultiCommand_(fromPhone, text) {
@@ -16349,10 +16560,12 @@ function _celebrateIfFirstExpense_(fromPhone) {
   try {
     var p = String(fromPhone || '').replace(/[^0-9]/g, '');
     if (!p) return '';
-    var props = PropertiesService.getScriptProperties();
+    // First-expense flag now lives in KV (key unchanged: 'fxcel:'+phone) with a
+    // legacy Script-Property read fallback, so pre-migration users are never
+    // re-celebrated. Permanent dedup -> no TTL.
     var key = 'fxcel:' + p;
-    if (props.getProperty(key)) return '';
-    props.setProperty(key, new Date().toISOString());
+    if (_seenFlag_(key, 0)) return '';
+    _markFlag_(key, new Date().toISOString(), 0);
     var _aC = _addr_(fromPhone);
     return '\n\n🎉 זאת ההוצאה הראשונה שלך' + (_aC ? ' ' + _aC : '') + '! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
   } catch (_e) { return ''; }
