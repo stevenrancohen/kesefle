@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-31-onboard-state-kv';
+const KFL_BUILD_VERSION = '2026-06-01-night-bundle';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -356,7 +356,9 @@ const CATEGORY_MAP = [
     // Smartwatches + wearables
     "שעון חכם","smartwatch","apple watch","apple watch ultra","אפל ווטש","garmin","גרמין","fitbit","פיטביט","whoop","וופ",
     // Smart home
-    "אלקסה","alexa","amazon echo","google nest","נסט","smart speaker","רמקול חכם","sonos","סונוס","bose","שיאומי בית חכם","smart bulb","נורה חכמה","smart plug","שקע חכם"
+    "אלקסה","alexa","amazon echo","google nest","נסט","smart speaker","רמקול חכם","sonos","סונוס","bose","שיאומי בית חכם","smart bulb","נורה חכמה","smart plug","שקע חכם",
+    // Generic dashboard label (2026-06-01)
+    "אלקטרוניקה"
   ],"category":"קניות","subcategory":"אלקטרוניקה"},
   {"keywords":["איקאה","ביתילי","רהיט","רהיט חדש","מזרן חדש","מערכת ישיבה","שולחן אוכל"],"category":"קניות","subcategory":"רהיטים"},
   {"keywords":["פלאפל","חומוס","המבורגר","גלידה","קינוח","ארוחת בוקר עסקית","בראנץ"],"category":"אוכל","subcategory":"אוכל בחוץ"},
@@ -366,7 +368,7 @@ const CATEGORY_MAP = [
   {"keywords":["ביטוח רכב","ביטוח חובה","ביטוח מקיף"],"category":"תחבורה","subcategory":"ביטוח רכב"},
   {"keywords":["רב קו","טעינת רב קו","מטרונית","נסיעה ברכבת ישראל"],"category":"תחבורה","subcategory":"תחבורה ציבורית"},
   {"keywords":["יציאה עם חברים","ערב עם חברים","בילוי עם חברים","יצאנו עם חברים","יציאה עם חברות","ערב עם חברות","בילוי בעיר","ערב בעיר","יציאה לעיר","בילוי","בילויים","מסיבה","מסיבת","הופעה","הופעות","מופע","קולנוע","סרט בקולנוע","תיאטרון","סטנדאפ","קריוקי","מועדון","מועדון לילה","דרינק","דרינקים","ערב בילוי"],"category":"בידור","subcategory":"יציאות"},
-  {"keywords":["תשלום מס הכנסה","מס הכנסה","מקדמת מס","מקדמות מס","דמי ביטוח לאומי","ביטוח לאומי","תשלום מעמ","תשלום מע״מ","מס שבח","מס רכישה","שומת מס","אגרת מס","תשלום לרשות המיסים","רשות המיסים"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
+  {"keywords":["מיסים ואגרות","תשלום מס הכנסה","מס הכנסה","מקדמת מס","מקדמות מס","דמי ביטוח לאומי","ביטוח לאומי","תשלום מעמ","תשלום מע״מ","מס שבח","מס רכישה","שומת מס","אגרת מס","תשלום לרשות המיסים","רשות המיסים"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
   {"keywords":["ארוחה בחוץ","ארוחת צהריים","ארוחת בוקר","ארוחת ערב","ארוחה במסעדה","אוכל במשלוח","הזמנת אוכל","משלוח אוכל","אכלנו בחוץ","בית קפה","קפה ומאפה"],"category":"אוכל","subcategory":"אוכל בחוץ"},
   {"keywords":["קניות בסופר","קנייה בסופר","קניות לבית","קניות שבועיות","מצרכים","קניות במכולת"],"category":"אוכל","subcategory":"אוכל לבית"},
   {"keywords":["חשבון חשמל","תשלום חשמל"],"category":"הוצאות קבועות","subcategory":"חשמל"},
@@ -380,7 +382,7 @@ const CATEGORY_MAP = [
   {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["טיפול שיניים","רופא שיניים","ניקוי אבנית","סתימה אצל שיניים"],"category":"בריאות","subcategory":"שיניים"},
-  {"keywords":["גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
+  {"keywords":["בית הספר","בית ספר","גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
   {"keywords":["מתנה ליום הולדת","מתנה לחתונה","מתנה לחבר","מתנה לחברה","שי לחג","מתנת יום נישואין"],"category":"מתנות","subcategory":"מתנות"},
   {"keywords":["אוכל לכלב","אוכל לחתול","מזון לכלב","מזון לחתול","ביקור אצל וטרינר","חיסון לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
   {"keywords":["משכורת","שכר חודש","שכר עבודה"],"category":"הכנסות","subcategory":"הכנסה 1 — משכורת","isIncome":true},
@@ -429,7 +431,7 @@ const CATEGORY_MAP = [
   // keyword makes the bot file new "לימים" inputs into the dashboard's
   // לימודים row instead of the catch-all שונות.
   {"keywords":["coursera","edx","udemy","אוניברסיטה","חוברת לימוד","לימודים","לימים","מודל","מורה פרטי","מכללה","משכן הסטודנט","ספרי לימוד","קורס","שיעור פרטי","שכר לימוד"],"category":"הוצאות קבועות","subcategory":"לימודים"},
-  {"keywords":["אישי"],"category":"שונות ואחרים","subcategory":"אישי"},
+  {"keywords":["הוצאה אישית","קניה אישית","קנייה אישית"],"category":"שונות ואחרים","subcategory":"אישי"},
   {"keywords":["gift","מתנה","מתנות","צדקה","תרומה"],"category":"שונות ואחרים","subcategory":"מתנות"},
   {"keywords":["אירוע","בר מצווה","בת מצווה","חתונה","יום הולדת"],"category":"שונות ואחרים","subcategory":"אירועים"},
   {"keywords":["electricity","iec","חברת חשמל","חשמל"],"category":"הוצאות קבועות","subcategory":"חשמל"},
@@ -450,7 +452,7 @@ const CATEGORY_MAP = [
   {"keywords":["avis","hertz","אביס","באדג\\\\","הרץ"],"category":"תחבורה","subcategory":"רכב שכור"},
   {"keywords":["bank discount","bank leumi","beinleumi","discount","fibi","hapoalim","igud","leumi","massad","mercantile","mizrahi","otsar hahayal","poalim","tefahot","union bank","yahav","אוצר החייל","איגוד","בנק איגוד","בנק דיסקונט","בנק הבינלאומי","בנק הפועלים","בנק יהב","בנק לאומי","בנק מזרחי","בנק מסד","דיסקונט","הבינלאומי","הפועלים","יהב","לאומי","מזרחי טפחות","מסד","מרכנתיל","מרכנתיל דיסקונט","פאג"],"category":"הוצאות קבועות","subcategory":"בנקאות"},
   {"keywords":["altshuler","altshuler shaham","analyst","bitcoin","blender","clal finance","crypto","etf","excellence","ibi","interactive brokers","meitav","meitav dash","more investments","psagot","yelin lapidot","איי.בי.איי","אלטשולר","אנליסט","אקסלנס","ביטקוין","בלנדר","השקעה","ילין לפידות","כלל פיננסים","מור","מיטב דש","מניה","מניות","פסגות","קריפטו"],"category":"שונות ואחרים","subcategory":"השקעות"},
-  {"keywords":["aig","ayalon","clal","clal insurance","harel","harel insurance","menora","menorah","migdal","migdal insurance","mivtachim","phoenix","phoenix holdings","איי איי ג\\\\","איילון","הפניקס","הראל","כלל","מגדל","מנורה","מנורה מבטחים"],"category":"הוצאות קבועות","subcategory":"ביטוח אישי"},
+  {"keywords":["ביטוח אישי","מגדל ביטוח","ביטוח מגדל","aig","ayalon","clal","clal insurance","harel","harel insurance","menora","menorah","migdal","migdal insurance","mivtachim","phoenix","phoenix holdings","איי איי ג\\\\","איילון","הפניקס","הראל","כלל","מגדל","מנורה","מנורה מבטחים"],"category":"הוצאות קבועות","subcategory":"ביטוח אישי"},
   {"keywords":["apple istore","bug","bug multisystem","evergreen","idigital","itzik electric","ksp","machsanei chashmal","photo house","samsung","אוורגרין","איציק אלקטריק","אל ג\\\\","מחסני חשמל","סמסונג","פוטו האוס","קי אס פי"],"category":"קניות","subcategory":"אלקטרוניקה"},
   {"keywords":["agrah","bituach leumi","darkon","doar israel","fee","income tax","israel post","lawyer","machon rishuy","mas hachnasa","national insurance","notary","oreh din","passport","rishyon nehiga","teudat zehut","אגרה","ביטוח לאומי","דואר ישראל","דרכון","מכון רישוי","מס הכנסה","נוטריון","עורך דין","רישיון נהיגה","תעודת זהות"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
   {"keywords":["agoda","airbnb","booking","booking.com","expedia","hotels.com","kayak","trivago","אגודה","בוקינג"],"category":"שונות ואחרים","subcategory":"נסיעות"},
@@ -462,7 +464,7 @@ const CATEGORY_MAP = [
   {"keywords":["achlas dagim","birkat hayam","dagei castro","fish shop","sapir dagim","אכלס דגים","דג זהב","דגי אורנים","דגי איגוד","דגי אמן","דגי בית","דגי בית הסירות","דגי גליל","דגי גלים","דגי דן","דגי הגליל","דגי הים","דגי הים האדום","דגי הכרמל","דגי המלך","דגי הסירה","דגי הצוללים","דגי הצפון","דגי הצפון רעננה","דגי חבצלת","דגי טבריה","דגי כינרת","דגי כסיף","דגי מים מתוקים","דגי מרגנית","דגי קוסטר","דגי קיש","דגי קלאסיק","דגי תל אביב","ספיר דגים","שוק הדגים"],"category":"אוכל","subcategory":"אוכל לבית — דגים"},
   {"keywords":["abba","abulafia","alfi bakery","bakery","boulangerie","boureka","boureka bakery","brodenhaus","jachnun","lechem erez","lehem erez","lehmim","ofen","regev bakery","אבולעפיה","אופה הלחמים","אופן","אנג'ל מאפיה","אנג\\","בולנג'רי","בורקס","ברודנהאוס","ברמן מאפיה","ג'חנון","ירמיהו לחמים","לחמים","מאפה אלפי","מאפה רחל","מאפיית אבא","מאפיית אבולעפיה","מאפיית אופן","מאפיית אורן","מאפיית אחים סבו","מאפיית בורקס","מאפיית בורקס יוסי","מאפיית בורקסים","מאפיית בייקרי","מאפיית בית הלחם","מאפיית בית לבנו","מאפיית בית שאן","מאפיית בני ברק","מאפיית ברמן","מאפיית גליל עליון","מאפיית הזהב","מאפיית הר חברון","מאפיית הרים","מאפיית התימני","מאפיית חיים","מאפיית טוב","מאפיית ירושלים","מאפיית כהן","מאפיית כרם תימנים","מאפיית לחם","מאפיית לחם הכפר","מאפיית נחלת בנימין","מאפיית נעם","מאפיית סהרה","מאפיית סוטא","מאפיית סמדר","מאפיית עירית","מאפיית עץ הזית","מאפיית פאר","מאפיית פז","מאפיית קיבוץ","מאפיית קל בריא","מאפיית רגב","מאפיית רגיל","מאפיית רוטשילד","מאפיית רננה","מלכת הלחמניות","פיטה גינה","תכלת לחמים"],"category":"אוכל","subcategory":"אוכל לבית — מאפיות ולחם"},
   {"keywords":["eco food","herbet","naturalia","optim","organic bait","raw food","rimon health","super herbet","teva neto","tivoni","vegan friendly","vegan shop","vegetable shop","אגוזי גולן","אגוזי הגליל","אגוזי יקיר","אגוזים","אופטים","אורגני בית","אקו פוד","ארץ הטבע","ארץ הפרי","בית התבלינים","בריאות עכשיו","חנות אורגנית","חנות טבעונית","טבליסט","טבע 365","טבע גליל","טבע השדה","טבע ובריא","טבע ובריאות","טבע לחיים","טבע נטו","טבעוני","טבעוני שופ","ים פירות יבשים","ירק וטבע","ירק חי","ירק טרי","כל בו אורגני","כל פרי","מתוקי הצפון","נטורליה","סופר בריא","סופר הרברט","סופר טבע","עולם הטבע","פירות אדמה","פירות הגליל","פירות הים","פירות יבשים","פירות יבשים אחים אלון","פירות יבשים השוק","פירות יבשים יוסי","פירות יבשים שוק הכרמל","פירות יבשים שוק מחנה יהודה","פירות ירושלים","פרי הגליל","צמחוני שופ","רימון","רימון אורגני","תבל אורגני","תבליני המאה","תבליני העיר","תבליני הצפון","תבליני הקסם","תפוחי אדמה"],"category":"אוכל","subcategory":"אוכל לבית — אורגני ובריאות"},
-  {"keywords":["adir winery","alexander beer","anvey tirosh","barkan winery","becks","beer artzit","binyamina winery","carlsberg","carmel winery","corona","dalton","flam winery","gamla","golan heights winery","goldstar","hamivchar wines","heineken","macabbi beer","malka beer","merkaz hayayin","negev beer","recanati","stella","tabor","tishbi","tperberg","tuborg","tulip winery","vins de france","wine boutique","wine cellar","wine shop","yarden","yein bachevra","yikvei golan","אבק יין","אגף היין","אופיר","אינסטה ויין","אלכסנדר","ארץ היין","ארק ויין","בוטיק היין","בירה ארץ","בירה גולדסטאר","בירה הנגב","בקבוקייה","בקס","ג'מס בירות","היינקן","המבחר","ויין שופ","ויינות ביתן","ופיר","טוברג","טעם היין","טעמי היין","יין באתר","יין על השולחן","יקבי אדיר","יקבי אלפים","יקבי בית אל","יקבי בנימינה","יקבי בעלי הבית","יקבי ברקן","יקבי גולן","יקבי גוש עציון","יקבי גליל","יקבי גמלא","יקבי דלתון","יקבי הברון","יקבי טוליפ","יקבי טפרברג","יקבי ירדן","יקבי כרם","יקבי כרמל","יקבי עידן","יקבי פלם","יקבי רקנאטי","יקבי תבור","יקבי תשבי","כל היין","מבחר יינות","מבשלת ארמון","מבשלת בזלת","מבשלת בנימינה","מבשלת הצפון","מבשלת מלכה","מועדון היין","מקבת","מקס היין","מרכז היין","מרתף יין","סטלה","סנדרה","ענבי תירוש","פלאיון יינות","קורונה","קרלסברג"],"category":"אוכל","subcategory":"אוכל לבית — יין ואלכוהול"},
+  {"keywords":["בקבוק יין","adir winery","alexander beer","anvey tirosh","barkan winery","becks","beer artzit","binyamina winery","carlsberg","carmel winery","corona","dalton","flam winery","gamla","golan heights winery","goldstar","hamivchar wines","heineken","macabbi beer","malka beer","merkaz hayayin","negev beer","recanati","stella","tabor","tishbi","tperberg","tuborg","tulip winery","vins de france","wine boutique","wine cellar","wine shop","yarden","yein bachevra","yikvei golan","אבק יין","אגף היין","אופיר","אינסטה ויין","אלכסנדר","ארץ היין","ארק ויין","בוטיק היין","בירה ארץ","בירה גולדסטאר","בירה הנגב","בקבוקייה","בקס","ג'מס בירות","היינקן","המבחר","ויין שופ","ויינות ביתן","ופיר","טוברג","טעם היין","טעמי היין","יין באתר","יין על השולחן","יקבי אדיר","יקבי אלפים","יקבי בית אל","יקבי בנימינה","יקבי בעלי הבית","יקבי ברקן","יקבי גולן","יקבי גוש עציון","יקבי גליל","יקבי גמלא","יקבי דלתון","יקבי הברון","יקבי טוליפ","יקבי טפרברג","יקבי ירדן","יקבי כרם","יקבי כרמל","יקבי עידן","יקבי פלם","יקבי רקנאטי","יקבי תבור","יקבי תשבי","כל היין","מבחר יינות","מבשלת ארמון","מבשלת בזלת","מבשלת בנימינה","מבשלת הצפון","מבשלת מלכה","מועדון היין","מקבת","מקס היין","מרכז היין","מרתף יין","סטלה","סנדרה","ענבי תירוש","פלאיון יינות","קורונה","קרלסברג"],"category":"אוכל","subcategory":"אוכל לבית — יין ואלכוהול"},
   {"keywords":["deli market","delicatessen","gad dairy","mai dairy","moulin rouge","ארץ הגבינות","גבינות באר טוביה","גבינות הר ברכה","גבינות מאי","גבינות מבחר","גבינות ניר עציון","גבינות עמק","דלי","טריפל בי","טריפל בי בייגלס","מולין רוז","מחלבת איפרגן","מחלבת גד","מחלבת טרה","מחלבת יטבתה","מחלבת מאי","מחלבת רגב","מחלבת רמת הגולן","מחלבת שדה","מחלבת שטראוס","מחלבת תנובה","מלכת הגבינות","מעדנייה","מעדניית הזיתים","מעדניית הכרם","מעדניית הצפון","מעדניית הצפון יוסי","מעדניית כרמל","מעדניית פיצוצים","מעדניית פלורנטין","מעדניית פרנקפורט","מעדניית קצבים","מעדניית רוטשילד","מעדניית רחביה","פלאפל גינה"],"category":"אוכל","subcategory":"אוכל לבית — גבינות ומעדנים"},
   {"keywords":["angel lehem","lehem","אבן עזר","אהרון לחם","אופן מאפיות","אנג'ל לחם","אנג\\","ביצי גליל","ביצים טריות","ביצים מהמושב","ברמן לחם","החלב והלחם","לחם","מאפיית פז ירושלים","מאפיית פיתות","סוף הלחם","פיתות מסביר","פרוטרום","פרידמן לחם","ראם ראם","תות לחם","תפוז מאפיה"],"category":"אוכל","subcategory":"אוכל לבית — קמחנים ודברי מאפה"},
   {"keywords":["best buy supermarket","best market","easy market","eco 24","freezer market","kal market","panda market","pesculos","soda club","vivaworen","אקו 24","בסט מרקט","ויטוורן","ירמיהו 24","מותגי בית","מפיצי עוף הצפון","סודה קלאב","סופר עוף ברקן","סופר עוף הצפון","פאנדה","פנדה","פסקלוס","פריזר מרקט","קל מרקט"],"category":"אוכל","subcategory":"אוכל לבית — סופר מינים אחרים"},
@@ -620,7 +622,7 @@ const CATEGORY_MAP = [
   {"keywords":["tiktok ads","tiktok promote","tiktok shop ads","tiktok business","tiktok marketing","טיקטוק אדס","טיקטוק ads","טיקטוק פרסום","טיקטוק קמפיין","טיקטוק ממומן","טיקטוק שיווק","tik tok ads","tiktok ad","spark ad tiktok"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["linkedin ads","linkedin promote","linkedin marketing","linkedin business","sponsored content linkedin","לינקדאין אדס","לינקדאין ads","לינקדאין פרסום","לינקדאין קמפיין","לינקדאין ממומן","לינקדאין שיווק"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["twitter ads","x ads","x promote","twitter promote","twitter business","snapchat ads","pinterest ads","pinterest promote","reddit ads","spotify ads","discord ads","טוויטר אדס","טוויטר פרסום","איקס אדס","אקס אדס","אקס פרסום","סנאפצ'אט אדס","סנאפצ'אט פרסום","פינטרסט אדס","פינטרסט פרסום","רדיט אדס","רדיט פרסום","דיסקורד אדס"],"category":"עסק","subcategory":"שיווק"},
-  {"keywords":["שיווק דיגיטלי","פרסום ממומן","קמפיין שיווק","קמפיין ממומן","קמפיין פרסום","פרומו","prom","promo","ads","advert","advertising","advertise","advertisement","sponsored","sponsored post","sponsor","ממומן","מקדם מכירות","יח\"צ","יחצן","יחסי ציבור","pr agency","agency פרסום","משרד פרסום","משרד יח\"צ","גרילה מרקטינג","גרילה שיווק","אינפלואנסר","influencer","influencer marketing","שיווק משפיענים","משפיענים","אפיליאט","affiliate","affiliate marketing","newsletter ads","email marketing","דיוור","דיוור שיווקי","mailchimp","klaviyo","sendgrid","constant contact","hubspot marketing","salesforce marketing","מיילצימפ","קלוויו","הבספוט"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["שיווק דיגיטלי","פרסום ממומן","קמפיין שיווק","קמפיין ממומן","קמפיין פרסום","פרומו","prom","promo","ads","advert","advertising","advertise","advertisement","sponsored","sponsored post","sponsor","ממומן","מקדם מכירות","יח\"צ","יחצן","יחסי ציבור","pr agency","agency פרסום","משרד פרסום","משרד יח\"צ","גרילה מרקטינג","גרילה שיווק","אינפלואנסר","influencer","influencer marketing","שיווק משפיענים","משפיענים","משפיען","בוסט לפוסט","אפיליאט","affiliate","affiliate marketing","newsletter ads","email marketing","דיוור","דיוור שיווקי","mailchimp","klaviyo","sendgrid","constant contact","hubspot marketing","salesforce marketing","מיילצימפ","קלוויו","הבספוט"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["seo","sem","ppc","cpc","cpm","אופטימיזציה למנועי חיפוש","מיקום בגוגל","דירוג בגוגל","קידום אורגני","קידום ממומן","sem rush","semrush","ahrefs","moz","ubersuggest","serpstat","screaming frog","similarweb","simple analytics","plausible","fathom analytics","google analytics","google tag manager","gtm","mixpanel","amplitude","heap analytics","hotjar","fullstory","crazy egg","optimizely","vwo","google search console","bing webmaster"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["canva","canva pro","figma","figma pro","adobe creative cloud","adobe cc","photoshop","illustrator","after effects","premiere pro","lightroom","indesign","sketch","invision","webflow","wordpress","squarespace","wix","shopify","shopify plus","bigcommerce","magento","wordpress hosting","wp engine","cloudflare","siteground","bluehost","godaddy hosting","namecheap hosting","aws","amazon web services","gcp","google cloud","azure","digital ocean","linode","vultr","netlify","vercel","heroku","render","fly.io","railway","firebase","supabase","mongodb atlas","planetscale","neon","github","github copilot","gitlab","bitbucket","jira","confluence","trello","asana","monday.com","monday","clickup","notion business","slack pro","slack business","discord nitro","zoom pro","loom","loom pro","cal.com","calendly","doodle","typeform","tally","jotform","airtable pro","airtable business","zapier","make.com","integromat","n8n","pipedream","תוכנת עיצוב","תוכנת עריכה","תוכנה עסקית","שירות ענן עסקי","אחסון אתר","דומיין","דומיין עסקי","אחסון אתר עסקי","cms","cms עסקי","crm","crm עסקי","erp","erp עסקי"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["stripe","paypal business","square","tranzila","pelecard","pelekard","icount","green invoice","greeninvoice","rivhit","priority","sap business one","quickbooks","xero","wave","freshbooks","icount חשבונית","יבשבונית ירוקה","חשבונית ירוקה","גרין אינווייס","ריבחית","איקאונט","תרנזילה","פלאקארד","פלקארד","פלאסקארד","בית עסק stripe","בית עסק paypal","בית עסק tranzila","סליקה","תוכנת הנהלת חשבונות","הנה\"ח"],"category":"עסק","subcategory":"תפעוליות"},
@@ -628,7 +630,7 @@ const CATEGORY_MAP = [
   {"keywords":["accountant","cpa","bookkeeper","bookkeeping","יועץ עסקי","יועץ עסקים","יועץ שיווק","יועץ פיננסי עסקי","business consultant","business advisor","business coach","startup advisor","mentor עסקי","מנטור עסקי","מאמן עסקי","יועץ משפטי","עו\"ד","עו״ד","עורך דין עסקים","חוזה עסקי","עורך דין חוזים","עורך דין קניין רוחני","עורך דין מסחרי","יועץ מס נוסף","מורשה חתימה","רואה חשבון נוסף","הנה\"ח חיצונית","בודק שכר","בדיקת שכר עסקית","consultant fee","consultancy fee","legal fee","lawyer fee"],"category":"עסק","subcategory":"יועצים"},
   {"keywords":["shipping label","usps","fedex","dhl","dhl express","ups","tnt","aramex","doar","doar 24","doar shaliach","shaliach 24","shipping carrier","fulfillment","fulfillment service","shipbob","shipstation","pirate ship","pirateship","דואר 24","דואר ישראל עסקי","דואר שליחים","דואר שליח","שליח ישראל","שליחויות עסקיות","דאצ'ה","דצ'ה","דצה","משלוח עסקי","משלוחים עסקיים","התקנת מוצר","התקנה לקוח","אריזה ומשלוח","אריזה לעסק","חומרי אריזה","נייר אריזה","קרטונים","קרטוני אריזה","מדבקות משלוח","בועות אריזה","נייר בועות","bubble wrap","tape","אריזת מתנה"],"category":"עסק","subcategory":"משלוח"},
   {"keywords":["raw material","raw materials","wholesale","wholesaler","b2b supplier","supplier invoice","ספק חומרי גלם","ספק עסקי","ספקים עסקיים","מחסן ספקים","אתר ספקים","alibaba","alibaba.com","1688","1688.com","made in china","taobao","aliexpress עסקי","מנעולנים עסקי","נחושת","פלדה","מתכת","גומי","בדים","חוטים","יריעות","יריעות גומי","יריעות פלסטיק","דבק תעשייתי","מוטות","מסמרים תעשייה","ברגים תעשייה","אנקרים","תפסים","פינות מסגרת","זוויות מתכת","פרזול","חומרי דפוס","חומרי הדפסה","דיו הדפסה","דיו פלוטר","יריעות הדפסה","נייר אומנותי","נייר זהב","נייר צילום","נייר מאט","נייר ברק","glossy paper","matte paper","canvas roll","גליל קנבס","גלילי קנבס","דבק תרסיס","spray adhesive"],"category":"עסק","subcategory":"חומרי גלם"},
-  {"keywords":["invoice paid","payment received","customer payment","client payment","תקבול לקוח","תקבול עסקי","הוראת קבע מלקוח","קבלה ללקוח","תשלום מלקוח עסקי","מקדמה לקוח","מקדמה עסקית","מקדמת עבודה","מקדמת לקוח","order online","order placed","הזמנה אונליין","הזמנת לקוח","הזמנה אתר","הזמנת אתר","הזמנה עסקית","מכירה אונליין","מכירה אתר","מכירת מוצר","מכירת שירות","sale online","sale website","product sale","service sale","rebate","מע\"מ החזר","החזר מע\"מ","מע״מ החזר","vat refund","tax refund"],"category":"עסק","subcategory":"מחזור","isIncome":true},
+  {"keywords":["invoice paid","payment received","customer payment","client payment","תקבול לקוח","תקבול עסקי","הוראת קבע מלקוח","קבלה ללקוח","תשלום מלקוח עסקי","מקדמה לקוח","מקדמה עסקית","מקדמת עבודה","מקדמת לקוח","order online","order placed","הזמנה אונליין","הזמנת לקוח","הזמנה אתר","הזמנת אתר","הזמנה עסקית","מכירה אונליין","מכירה אתר","מכירת מוצר","מכירת שירות","sale online","sale website","product sale","service sale","rebate","החזר מעמ","מעמ החזר","מע\"מ החזר","החזר מע\"מ","מע״מ החזר","vat refund","tax refund"],"category":"עסק","subcategory":"מחזור","isIncome":true},
   {"keywords":["mac mini","mac studio","macbook pro","macbook air","imac","mac pro","monitor 27","monitor 4k","monitor 5k","lg ultrafine","dell ultrasharp","asus prophet","logitech mx","magic keyboard","magic mouse","magic trackpad","wacom","cintiq","huion","xp pen","מחשב לעבודה","מחשב משרדי","מחשב עסקי","מסך עבודה","מסך 4k","מסך עסקי","מקלדת מקצועית","עכבר עיצוב","טבלט עיצוב","טאבלט עיצוב","wacom intuos","wacom cintiq","מסך מגע גרפי","גרפיקת אומנים","ipad pro","ipad pro 12.9","apple pencil","apple pencil 2","מקרן עבודה","מקרן פגישות","מקרן עסקי","מצלמה מקצועית","מצלמת מקצוע","מצלמת dslr","מצלמת mirrorless","sony a7","canon 5d","lumix s5","sigma art","tamron art","tripod","gimbal","dji ronin","dji rs2","dji rs3","rode mic","rode microphone","shure sm7b","shure mv7","audio interface","focusrite scarlett","softlight","ring light","softbox","תאורת סטודיו"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["workspace google","google workspace","gsuite","g suite","microsoft 365 business","microsoft 365 enterprise","office 365 business","דומיין עסקי","מייל עסקי","g suite business","workspace business","starter workspace","workspace starter","workspace standard","workspace plus"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["שופרסל דיל","שופרסל אקספרס","שופרסל אונליין","שופרסל סופר","שופרסל איתי","שופרסל יחיאל","shufersal big","shufersal sheli","shufersal yesh","shufersal exists","מגה בעיר","מגה בעיר אונליין","מגה ברמת השרון","יוחננוף סופר","יוחננוף מאיר","יוחננוף און ליין","יוחננוף אונליין","יוחננוף שוקי","מחסני השוק חיפה","מחסני השוק ראשון","מחסני השוק רמת גן","מחסני השוק אזור","מחסני השוק רחובות","מחסני השוק קניון","מחסני להב","רמי לוי שוקי המזון","רמי לוי שיווק השקמה","רמי לוי קמפוס","רמי לוי אונליין","רמי לוי קמפוס און ליין","ויקטורי אונליין","ויקטורי שיווק","ויקטורי בעיר","ויקטורי אילת","ויקטורי באר שבע","כוורת שיווק","כוורת השרון","כוורת אונליין","חצי חינם אונליין","חצי חינם רעננה","חצי חינם שיווק","אושר עד אונליין","אושר עד בנימינה","אושר עד חיפה","סופר ביצ' צ'יפ","ביצ'יפ","ביצ'ה צ'יפ","super pharm market","סופר פארם מרקט","סופר פארם קמפוס","super yuda online","יודה אונליין","super deal online","סופר דיל אונליין","tiv taam","טיב טעם אונליין","טיב טעם רמת השרון","טיב טעם תל אביב","טיב טעם תל-אביב","יינות ביתן אונליין","יינות ביתן רחוב","יינות ביתן רב חן"],"category":"אוכל","subcategory":"אוכל לבית"},
@@ -685,8 +687,8 @@ const CATEGORY_MAP = [
   {"keywords":["תדלוק","דלק 95","דלק 98","בנזין","סולר","תחנת דלק","מילוי דלק","כביש אגרה","אגרת כביש","נסיעה ברכבת","כרטיס רכבת","נסיעה באוטובוס","כרטיס אוטובוס","רכבת קלה","טעינת רב קו","כרטיסיית נסיעות","נסיעת מונית","הזמנת מונית","השכרת אופניים","השכרת קורקינט","קורקינט חשמלי","אופניים חשמליים","טיסת פנים"],"category":"תחבורה","subcategory":"תחבורה"},
   {"keywords":["דמי חניה","חניה בתשלום","תשלום חניה","חניון יומי","דוח חניה","קנס חניה","חניה כחול לבן","מנוי חניה","אגרת חניה"],"category":"תחבורה","subcategory":"חניה"},
   {"keywords":["חשבון חשמל","חשבון מים","חשבון גז","חשבון טלפון","חשבון אינטרנט","חבילת אינטרנט","חבילת סלולר","חבילת גלישה","חבילת טלוויזיה","מנוי טלוויזיה","דמי ניהול","ועד בית","דמי ועד","שכר דירה","דמי שכירות","ארנונה חודשית","חשבון סלולרי","גלישה ניידת"],"category":"הוצאות קבועות","subcategory":"חשבונות"},
-  {"keywords":["ביטוח דירה","ביטוח רכב","ביטוח חובה","ביטוח מקיף","ביטוח צד שלישי","ביטוח בריאות","ביטוח חיים","ביטוח משכנתא","ביטוח נסיעות","ביטוח שיניים","פרמיית ביטוח","דמי ביטוח"],"category":"הוצאות קבועות","subcategory":"ביטוח"},
-  {"keywords":["ביקור רופא","רופא פרטי","השתתפות עצמית","קופת חולים","בדיקות דם","בדיקה רפואית","חיסון","ייעוץ רפואי","בדיקת עיניים","אופטומטריסט","משקפי ראייה","עדשות מגע","פיזיותרפיה","טיפול פסיכולוגי","דיאטנית","תזונאית"],"category":"בריאות","subcategory":"בריאות"},
+  {"keywords":["ביטוח דירה","ביטוח רכב","ביטוח חובה","ביטוח מקיף","ביטוח צד שלישי","ביטוח בריאות","ביטוח חיים","ביטוח משכנתא","ביטוח נסיעות","ביטוח שיניים","פרמיית ביטוח","דמי ביטוח","ביטוח"],"category":"הוצאות קבועות","subcategory":"ביטוח"},
+  {"keywords":["דמי טיפול רפואי","ביקור רופא","רופא פרטי","השתתפות עצמית","קופת חולים","בדיקות דם","בדיקה רפואית","חיסון","ייעוץ רפואי","בדיקת עיניים","אופטומטריסט","משקפי ראייה","עדשות מגע","פיזיותרפיה","טיפול פסיכולוגי","דיאטנית","תזונאית"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["תרופות","מרשם","בית מרקחת","כדורים","אנטיביוטיקה","משכך כאבים","אקמול","נורופן","ויטמינים","תוספי תזונה","מד חום","פלסטרים","קרם הגנה","משחה רפואית"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["רופא שיניים","טיפול שיניים","סתימה","עקירת שן","יישור שיניים","אורתודונט","ניקוי אבנית","כתר שן","שתל שן","הלבנת שיניים"],"category":"בריאות","subcategory":"שיניים"},
   {"keywords":["בגדים","חולצה","חולצת טי","מכנסיים","גינס","שמלה","חצאית","מעיל","סוודר","קפוצון","גופייה","גרביים","הלבשה תחתונה","תחתונים","חזייה","בגד ים","פיגמה","נעלי ספורט","סנדלים","מגפיים","כפכפים","נעלי עקב","תיק יד","ארנק","חגורה","כובע","צעיף","משקפי שמש"],"category":"קניות / ביגוד","subcategory":"ביגוד"},
@@ -1266,9 +1268,12 @@ function _notifyOwnerNewLead_(fromPhone) {
   // Don't alert on the owner's own messages.
   var owner = String(props.getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
   if (owner && clean === owner) return;
+  // Lead-notified flag now lives in KV (key unchanged: 'leadNotified:'+phone)
+  // with a legacy Script-Property read fallback, so a customer already alerted
+  // before this migration is never alerted twice. Permanent dedup -> no TTL.
   var flagKey = 'leadNotified:' + clean;
-  if (props.getProperty(flagKey)) return; // already alerted for this customer
-  props.setProperty(flagKey, new Date().toISOString());
+  if (_seenFlag_(flagKey, 0)) return; // already alerted for this customer
+  _markFlag_(flagKey, new Date().toISOString(), 0);
 
   var when = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm');
   var displayPhone = '+' + clean;
@@ -1353,25 +1358,55 @@ function _sheetLinkLine_(fromPhone) {
 // re-welcomed/re-surveyed; writes fall back to a Script Property ONLY if KV
 // is unavailable, so dedup still holds during a KV outage. Config (creds,
 // gates) stays in Script Properties — only this per-phone state moved.
-function _onboardSeen_(kind, clean) {
-  if (!clean) return false;
-  var key = kind + ':' + clean;
+// Generalized per-user "seen/sent flag" storage. A flag is a presence-only
+// monotonic marker keyed by an opaque full key (e.g. 'welcomed:<phone>',
+// 'fxcel:<phone>', 'recsug_<hash>'). The value is never parsed — only its
+// presence matters. State lives in KV so the bot's Script-Property store does
+// not fill up against the Apps Script ~50-property UI cap as users accumulate.
+//
+// Read path: KV first, then FALL BACK to a legacy Script Property of the same
+// key, so any flag written before this state moved to KV (pre-#186 welcomed/
+// surveyed, or pre-migration fxcel/leadNotified/recsug) is still honoured and
+// the one-time action never re-fires.
+//
+// Write path: KV first. Fall back to a legacy Script-Property write ONLY if KV
+// is unreachable (creds unset / HTTP error -> kvSet returns false), so the
+// dedup still holds during a KV outage instead of silently re-firing. Once KV
+// is healthy again, MIGRATE_BOT_STATE_TO_KV() sweeps any such fallback writes
+// out of Script Properties.
+//
+// ttlDays: optional expiry in days (0 / omitted = never expire, matching the
+// Script-Property semantics these flags replaced). Permanent dedup flags
+// (welcomed/surveyed/fxcel/leadNotified/recsug) pass 0.
+function _seenFlag_(key, ttlDays) {
+  if (!key) return false;
   try { if (typeof kvGet === 'function' && kvGet(key)) return true; } catch (_e) {}
   try { if (PropertiesService.getScriptProperties().getProperty(key)) return true; } catch (_e2) {}
   return false;
 }
-function _onboardMark_(kind, clean) {
-  if (!clean) return;
-  var key = kind + ':' + clean;
-  var stamp = new Date().toISOString();
+function _markFlag_(key, value, ttlDays) {
+  if (!key) return;
+  var val = (value == null) ? new Date().toISOString() : value;
+  var ttlSec = (ttlDays && ttlDays > 0) ? Math.floor(ttlDays * 86400) : 0;
   var ok = false;
-  try { ok = (typeof kvSet === 'function') ? kvSet(key, stamp) : false; } catch (_e) { ok = false; }
+  try { ok = (typeof kvSet === 'function') ? kvSet(key, val, ttlSec) : false; } catch (_e) { ok = false; }
   if (!ok) {
     // KV unreachable (creds unset / error): keep the legacy Script-Property
-    // write so the user is never re-welcomed. This is the only remaining path
-    // that writes a per-phone key to Script Properties.
-    try { PropertiesService.getScriptProperties().setProperty(key, stamp); } catch (_e2) {}
+    // write so the one-time action is never repeated. This is the only
+    // remaining path that writes a per-user flag to Script Properties.
+    try { PropertiesService.getScriptProperties().setProperty(key, val); } catch (_e2) {}
   }
+}
+
+// Onboarding flags (welcomed:/surveyed:) keep their original kind+phone shape;
+// they delegate to the generalized helpers above so behavior is identical.
+function _onboardSeen_(kind, clean) {
+  if (!clean) return false;
+  return _seenFlag_(kind + ':' + clean, 0);
+}
+function _onboardMark_(kind, clean) {
+  if (!clean) return;
+  _markFlag_(kind + ':' + clean, new Date().toISOString(), 0);
 }
 
 function _maybeSendWelcome_(fromPhone) {
@@ -2145,6 +2180,29 @@ function doPost(e) {
             } catch (_bizErr) {
               Logger.log('doPost: multi-biz error: ' + (_bizErr && _bizErr.stack || _bizErr));
             }
+          }
+        }
+
+        // === PENDING OBJECTIVE REPLY (2026-06-01 FIX) ===
+        // Must run BEFORE the expense fast-path below. After "יעד חדש" the bot
+        // asks the user to reply 1/2/3/4. That bare digit used to hit the
+        // fast-path and get written as a 1-shekel expense. This dispatcher
+        // intercepts an END-ANCHORED 1-4 reply (and the follow-up goal text)
+        // and routes it to objective-creation. "1 קפה" is NOT end-anchored,
+        // so it returns handled=false and books an expense exactly as before.
+        // Available to ALL tenants (objectives are not owner-gated).
+        if (typeof _handleObjectivePendingReply_ === "function") {
+          try {
+            var __objPendRes = _handleObjectivePendingReply_(__from_, __text_);
+            if (__objPendRes && __objPendRes.handled) {
+              if (__objPendRes.replyText && typeof sendWhatsAppMessage === "function") {
+                sendWhatsAppMessage(__from_, __objPendRes.replyText);
+              }
+              Logger.log('doPost: pending-objective reply handled');
+              return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+            }
+          } catch (_objPendErr) {
+            Logger.log('doPost: pending-objective error: ' + (_objPendErr && _objPendErr.stack || _objPendErr));
           }
         }
 
@@ -3933,15 +3991,18 @@ function installReEngagementTrigger() {
 // ─────────────────────────────────────────────────────────────────────
 function getMilestoneMessage_(fromPhone, totalExpensesAfter) {
   try {
-    var props = PropertiesService.getScriptProperties();
     // 100 / 250 / 500 / 1000 / 2500 milestones.
     var thresholds = [100, 250, 500, 1000, 2500];
     for (var i = 0; i < thresholds.length; i++) {
       var th = thresholds[i];
       if (totalExpensesAfter === th) {
+        // Milestone-fired flag now lives in KV (key unchanged:
+        // 'milestone:'+phone+':'+threshold) with a legacy Script-Property read
+        // fallback, so a milestone already celebrated before this migration is
+        // never re-fired. Presence-only -> no TTL.
         var key = 'milestone:' + fromPhone + ':' + th;
-        if (props.getProperty(key)) return null; // already fired
-        props.setProperty(key, new Date().toISOString());
+        if (_seenFlag_(key, 0)) return null; // already fired
+        _markFlag_(key, new Date().toISOString(), 0);
         if (th === 100) return '\n\n🎉 הוצאה מספר 100! מתחילה להראות תמונה מלאה. שלח "סיכום" לראות.';
         if (th === 250) return '\n\n📈 250 הוצאות. אתה בקצב מצוין.';
         if (th === 500) return '\n\n🏆 500 הוצאות! חצי דרך לאלף.';
@@ -4399,6 +4460,37 @@ function _surveyGetAutoLogPref_(fromPhone) {
 }
 function _surveySetAutoLogPref_(fromPhone, pref) {
   try { CacheService.getScriptCache().put(_surveyAutoLogKey_(fromPhone), String(pref), _SURVEY_TTL_SEC_); }
+  catch (_e) {}
+}
+
+// --- Objective ("יעד חדש") pending-state helpers (CacheService, 15-min TTL).
+// 2026-06-01 FIX: the bare "יעד חדש" prompt and the one-shot-missing-horizon
+// prompt ask the user to "reply 1/2/3/4" but used to set NO pending state.
+// The user's bare reply "1" then hit the doPost expense FAST-PATH (any text
+// starting with a digit) and was written as a 1-shekel expense. We now stamp
+// a short-lived pending-objective state when the prompt is shown, and a
+// dispatcher (run BEFORE the expense fast-path) routes an END-ANCHORED reply
+// of 1-4 into objective creation instead of processExpense. "1 קפה" still
+// books an expense because it is not end-anchored ^[1-4]$.
+//
+// State value shapes (plain strings, stored in the same per-phone cache the
+// rest of the bot uses):
+//   "horizon"      -> prompt was shown, waiting for the 1/2/3/4 pick
+//   "desc:<h>"     -> a horizon <h> was picked, waiting for the goal text
+var _OBJ_PEND_TTL_SEC_ = 900; // 15 minutes
+function _objPendKey_(fromPhone) {
+  return 'objPend:' + String(fromPhone).replace(/[^0-9]/g, '');
+}
+function _objPendGet_(fromPhone) {
+  try { return CacheService.getScriptCache().get(_objPendKey_(fromPhone)); }
+  catch (_e) { return null; }
+}
+function _objPendSet_(fromPhone, state) {
+  try { CacheService.getScriptCache().put(_objPendKey_(fromPhone), String(state), _OBJ_PEND_TTL_SEC_); }
+  catch (_e) {}
+}
+function _objPendClear_(fromPhone) {
+  try { CacheService.getScriptCache().remove(_objPendKey_(fromPhone)); }
   catch (_e) {}
 }
 
@@ -10490,10 +10582,13 @@ function _recurringSuggestionLine_(fromPhone, history, current) {
   try {
     var cand = _detectRecurringCandidate_(history, current);
     if (!cand) return '';
+    // Recurring-suggestion-shown marker now lives in KV (key unchanged:
+    // 'recsug_'+sha256(phone|desc).slice(0,24), value '1') with a legacy
+    // Script-Property read fallback, so a suggestion already offered before
+    // this migration is never re-offered. Presence-only -> no TTL.
     var markerKey = 'recsug_' + _sha256Hex_((fromPhone || '') + '|' + _normForRecurring_(current.description)).slice(0, 24);
-    var props = PropertiesService.getScriptProperties();
-    if (props.getProperty(markerKey)) return '';   // already offered once
-    props.setProperty(markerKey, '1');
+    if (_seenFlag_(markerKey, 0)) return '';   // already offered once
+    _markFlag_(markerKey, '1', 0);
     return '\n\n🔁 שמתי לב ש"' + cand.desc + '" חוזר כבר ' + cand.count +
            ' חודשים (~' + _money_(cand.amount) + '). רוצה שאוסיף אותו כהוצאה קבועה?\n' +
            '👉 שלח: קבוע ' + cand.desc + ' ' + cand.amount;
@@ -11065,13 +11160,29 @@ function _handleObjectiveCommand_(fromPhone, text) {
       }
     }
     if (!horizon || !rest) {
+      // 2026-06-01 FIX: stamp pending-objective state so the user's bare
+      // "1/2/3/4" reply routes to objective-creation (see
+      // _handleObjectivePendingReply_) instead of the expense fast-path.
+      // If a horizon WAS parsed but the description is missing, skip the
+      // horizon question and wait for the goal text directly.
+      if (typeof _objPendSet_ === 'function') {
+        _objPendSet_(clean, horizon ? ('desc:' + horizon) : 'horizon');
+      }
+      if (horizon && !rest) {
+        return { handled: true, replyText:
+          '🎯 מעולה! ומה היעד עצמו?\n\n' +
+          'כתוב לי במשפט אחד מה תרצה להשיג —\n' +
+          'לדוגמה: "לחסוך 1000 לטיול ביוני".'
+        };
+      }
       return { handled: true, replyText:
         '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
         '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
         '2️⃣ ל-6 חודשים   — בינוני (סגירת חוב, קרן חירום)\n' +
         '3️⃣ לשנה הקרובה  — גדול (משכנתא, השקעה, מטרת חיים)\n' +
         '4️⃣ אין לי יעד   — נדבר בהמשך\n\n' +
-        'דוגמה: "יעד חדש חודש לחסוך 1000 לטיול ביוני"'
+        'ענה במספר 1/2/3/4, או שלח בשורה אחת:\n' +
+        '"יעד חדש חודש לחסוך 1000 לטיול ביוני"'
       };
     }
     var r5 = _api_({ phone: clean, action: 'set', horizon: horizon, description: rest });
@@ -11091,6 +11202,9 @@ function _handleObjectiveCommand_(fromPhone, text) {
 
   // Bare "יעד חדש" — start the 2-step conversation
   if (/^יעד\s+חדש$/.test(t)) {
+    // 2026-06-01 FIX: stamp pending-objective state (see helper docs) so the
+    // user's "1/2/3/4" reply routes to objective-creation, not a 1₪ expense.
+    if (typeof _objPendSet_ === 'function') { _objPendSet_(clean, 'horizon'); }
     return { handled: true, replyText:
       '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
       '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
@@ -11102,6 +11216,120 @@ function _handleObjectiveCommand_(fromPhone, text) {
     };
   }
 
+  return { handled: false };
+}
+
+// 2026-06-01 FIX: pending-objective reply dispatcher. Called from doPost
+// BEFORE the expense fast-path. Handles the user's reply to the "יעד חדש"
+// 1/2/3/4 prompt, and the follow-up goal-description text.
+//
+// Returns { handled, replyText } when it consumes the message, or
+// { handled:false } to let normal routing (incl. the expense fast-path)
+// continue. Critically:
+//   - reply "1".."4" (END-ANCHORED) when state == "horizon" -> pick horizon
+//     (1/2/3) or decline (4); NEVER books an expense.
+//   - "1 קפה" is NOT end-anchored, so this returns {handled:false} and the
+//     message books an expense exactly as before.
+//   - cancel words (ביטול / לא / בטל) clear the pending state.
+//   - while waiting for the goal text (state "desc:<h>"), a NEW expense
+//     (text starting with a digit) drops the pending state and falls through
+//     so the user isn't trapped.
+function _handleObjectivePendingReply_(fromPhone, text) {
+  if (!fromPhone || !text) return { handled: false };
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return { handled: false };
+  var state = (typeof _objPendGet_ === 'function') ? _objPendGet_(clean) : null;
+  if (!state) return { handled: false };
+  var t = String(text).trim();
+  if (!t) return { handled: false };
+
+  // Cancel words clear the flow from any stage.
+  if (/^(ביטול|בטל|לא|עזוב|תעזוב|cancel)$/i.test(t)) {
+    if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+    return { handled: true, replyText: '👌 בוטל. כשתרצה לקבוע יעד, שלח "יעד חדש".' };
+  }
+
+  // Stage 1: waiting for the 1/2/3/4 horizon pick.
+  if (state === 'horizon') {
+    var m = t.match(/^([1-4])$/);
+    if (!m) {
+      // Not an end-anchored 1-4 pick (e.g. "1 קפה", or free text). Let it
+      // fall through so it books as an expense / hits other routers. We keep
+      // the pending state until TTL so a clean "1" right after still works.
+      return { handled: false };
+    }
+    var pick = m[1];
+    if (pick === '4') {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: true, replyText:
+        '👍 אין בעיה, נדבר על יעד בהמשך.\n' +
+        'מתי שתרצה — שלח "יעד חדש".'
+      };
+    }
+    var horizonByPick = { '1': 'month', '2': 'six_months', '3': 'year' };
+    var horizon = horizonByPick[pick];
+    if (typeof _objPendSet_ === 'function') { _objPendSet_(clean, 'desc:' + horizon); }
+    var horizonHe = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    return { handled: true, replyText:
+      '🎯 מעולה — יעד ' + horizonHe[horizon] + '.\n\n' +
+      'ומה היעד עצמו? כתוב לי במשפט אחד —\n' +
+      'לדוגמה: "לחסוך 1000 לטיול ביוני".'
+    };
+  }
+
+  // Stage 2: a horizon was picked; this message is the goal description.
+  var dm = String(state).match(/^desc:(month|six_months|year)$/);
+  if (dm) {
+    var h = dm[1];
+    // A new expense (leading digit) drops the pending objective so the user
+    // isn't trapped mid-flow — mirrors the pending-category hijack guard.
+    if (/^\s*\d/.test(t)) {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: false };
+    }
+    var desc = t.slice(0, 200);
+    // Reuse the same API the rest of _handleObjectiveCommand_ uses.
+    var base = (typeof KESEFLE_API_BASE !== 'undefined') ? KESEFLE_API_BASE : '';
+    var secret = '';
+    try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!base || !secret) {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: true, replyText: '😬 שגיאת קונפיגורציה (יעדים).' };
+    }
+    var resp;
+    try {
+      resp = UrlFetchApp.fetch(base + '/api/objectives/action', {
+        method: 'post', contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': secret },
+        payload: JSON.stringify({ phone: clean, action: 'set', horizon: h, description: desc }),
+        muteHttpExceptions: true,
+      });
+    } catch (e) {
+      // Keep state so the user can retry the description.
+      return { handled: true, replyText: '😬 שגיאה זמנית. נסה לשלוח את היעד שוב.' };
+    }
+    var code = resp.getResponseCode();
+    if (code !== 200) {
+      var je = {};
+      try { je = JSON.parse(resp.getContentText() || '{}'); } catch (_) {}
+      return { handled: true, replyText: '😬 ' + (je.error || ('שגיאה ' + code)) };
+    }
+    if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+    var j = {};
+    try { j = JSON.parse(resp.getContentText() || '{}'); } catch (_) {}
+    var horizonHe2 = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    var savedDesc = (j.objective && j.objective.description) || desc;
+    var savedHor = (j.objective && j.objective.horizon) || h;
+    return { handled: true, replyText:
+      '✅ יעד חדש נקבע ' + horizonHe2[savedHor] + ':\n\n' +
+      '"' + savedDesc + '"\n\n' +
+      '💡 שלח "יעד שלי" כדי לראות את הסטטוס בכל זמן.\n' +
+      '   "השגתי יעד" כשמסיימים, או "השתק יעד" כדי להפסיק תזכורות.'
+    };
+  }
+
+  // Unknown state — clear it defensively and let routing continue.
+  if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
   return { handled: false };
 }
 
@@ -15736,6 +15964,178 @@ function kvDel(key) {
   }
 }
 
+// ─── Bot-state KV migration + self-test ────────────────────────────────
+//
+// Background: Apps Script Script Properties are CONFIG storage with a ~50-item
+// editor cap. The bot historically wrote one monotonic per-user "seen/sent"
+// flag per phone/hash (welcomed:, surveyed:, fxcel:, leadNotified:, recsug_)
+// into Script Properties, which accumulate without bound and eventually fill
+// the store (Steven hit the cap 2026-05-31, blocking manual property edits).
+// PR #186 moved the welcomed/surveyed WRITE path to KV; the code paths for
+// fxcel/leadNotified/recsug followed (see _celebrateIfFirstExpense_ /
+// _notifyOwnerNewLead_ / _recurringSuggestionLine_). This one-shot tool
+// reclaims the slots already consumed by copying the legacy Script-Property
+// flags into KV, then deleting them from Script Properties.
+
+// The ONLY prefixes this tool will ever copy+delete. Every entry is a proven
+// presence-only monotonic flag whose value is never parsed (read sites check
+// presence only); copying then deleting cannot change any decision. Colon vs
+// underscore separators are intentional (matches the live key shapes); the
+// match is a prefix test so both shapes work.
+var BOT_STATE_KV_MIGRATE_PREFIXES = [
+  'welcomed:',      // one-time welcome sent (ISO ts) — presence-only
+  'surveyed:',      // onboarding survey kicked off (ISO ts) — presence-only
+  'fxcel:',         // first-expense celebration sent (ISO ts) — presence-only
+  'leadNotified:',  // owner alerted for this new lead (ISO ts) — presence-only
+  'milestone:',     // milestone (100/250/.. expenses) celebrated (ISO ts) — presence-only
+  'recsug_'         // recurring suggestion offered ('1') — presence-only
+];
+
+// Hard exclude-list: secrets + config + transient conversational state +
+// backups/snapshots. A key matching ANY of these is NEVER touched, even if it
+// somehow also matched a migrate prefix. Exact keys and active-state prefixes.
+var BOT_STATE_KV_NEVER_KEYS = {
+  'ANTHROPIC_API_KEY': 1, 'GEMINI_API_KEY': 1, 'KESEFLE_BOT_SECRET': 1,
+  'META_APP_SECRET': 1, 'WHATSAPP_TOKEN': 1, 'WHATSAPP_BUSINESS_ACCOUNT_ID': 1,
+  'WHATSAPP_PHONE_NUMBER_ID': 1, 'SHEET_OWNER_PHONE': 1, 'SUBSCRIBERS': 1,
+  'EXTRA_RULE_BANKING': 1, 'streak:default': 1, 'DIAG_TO': 1,
+  'KESEFLE_API_BASE': 1, 'VERCEL_KV_REST_URL': 1, 'VERCEL_KV_REST_TOKEN': 1,
+  'MOO_SNAPSHOT_LASTROW': 1, 'MOO_APPLIED_COUNT': 1,
+  'LEAD_ALERT_PHONE': 1, 'blacklist': 1, 'lastMotivationDate': 1
+};
+// Active/transient or per-user CONFIG prefixes whose VALUE is read (not a
+// presence flag) — left in Script Properties on purpose.
+var BOT_STATE_KV_NEVER_PREFIXES = [
+  'src_pending:', 'pending:', 'delPend:', 'clarPend:',  // active conversational state
+  'gender:', 'need:', 'settings:',                       // per-user config (value is read)
+  'CONFIRM_', 'MOO_'                                     // gated apply tokens / snapshots
+];
+
+function _botStateKvNeverTouch_(key) {
+  if (BOT_STATE_KV_NEVER_KEYS[key]) return true;
+  if (/_BACKUP_/.test(key)) return true;          // any *_BACKUP_* key
+  for (var i = 0; i < BOT_STATE_KV_NEVER_PREFIXES.length; i++) {
+    if (key.indexOf(BOT_STATE_KV_NEVER_PREFIXES[i]) === 0) return true;
+  }
+  return false;
+}
+
+// One-shot migration. dryRun=true (DEFAULT) logs what it WOULD do and writes/
+// deletes nothing. dryRun=false copies each allowlisted Script-Property flag
+// into KV (idempotent: skips the copy if KV already holds the key) and then
+// deletes it from Script Properties. Requires KV creds — aborts otherwise so
+// it can never delete a property it could not copy. Logs per-prefix counts and
+// total reclaimed.
+function MIGRATE_BOT_STATE_TO_KV(dryRun) {
+  if (dryRun !== false) dryRun = true; // default + guard: only an explicit false applies
+  Logger.log('MIGRATE_BOT_STATE_TO_KV: ' + (dryRun ? 'DRY RUN (no writes/deletes)' : 'APPLY (will move + delete)'));
+
+  if (!_kvCreds_()) {
+    Logger.log('ABORT: KV creds missing (set VERCEL_KV_REST_URL / VERCEL_KV_REST_TOKEN). ' +
+               'Refusing to run so no Script Property is deleted without a KV copy.');
+    return { ok: false, error: 'kv_creds_missing' };
+  }
+
+  var props = PropertiesService.getScriptProperties();
+  var keys;
+  try { keys = props.getKeys(); } catch (e) {
+    Logger.log('ABORT: could not read Script Properties: ' + (e && e.message));
+    return { ok: false, error: 'getKeys_failed' };
+  }
+
+  var perPrefix = {};   // prefix -> { copied, alreadyInKv, deleted, skippedNoCopy }
+  for (var p = 0; p < BOT_STATE_KV_MIGRATE_PREFIXES.length; p++) {
+    perPrefix[BOT_STATE_KV_MIGRATE_PREFIXES[p]] = { copied: 0, alreadyInKv: 0, deleted: 0, skippedNoCopy: 0 };
+  }
+  var totalReclaimed = 0, totalScanned = keys.length, neverTouched = 0;
+
+  for (var k = 0; k < keys.length; k++) {
+    var key = keys[k];
+
+    // Defense in depth: never touch a secret/config/transient/backup key.
+    if (_botStateKvNeverTouch_(key)) { neverTouched++; continue; }
+
+    // Only allowlisted migrate prefixes proceed.
+    var matched = null;
+    for (var m = 0; m < BOT_STATE_KV_MIGRATE_PREFIXES.length; m++) {
+      if (key.indexOf(BOT_STATE_KV_MIGRATE_PREFIXES[m]) === 0) { matched = BOT_STATE_KV_MIGRATE_PREFIXES[m]; break; }
+    }
+    if (!matched) continue;
+
+    var stat = perPrefix[matched];
+    var val = props.getProperty(key);
+
+    if (dryRun) {
+      // Report whether a copy would be needed, but change nothing.
+      var existsDry = false;
+      try { existsDry = (kvGet(key) != null); } catch (_eg) { existsDry = false; }
+      if (existsDry) stat.alreadyInKv++; else stat.copied++;
+      stat.deleted++; // would delete after a successful (or already-present) copy
+      totalReclaimed++;
+      Logger.log('  WOULD migrate ' + key + (existsDry ? ' (already in KV, would just delete SP)' : ' (copy -> KV, then delete SP)'));
+      continue;
+    }
+
+    // APPLY. Idempotent: only copy if KV does not already have it.
+    var inKv = false;
+    try { inKv = (kvGet(key) != null); } catch (_eg2) { inKv = false; }
+    if (inKv) {
+      stat.alreadyInKv++;
+    } else {
+      var wrote = false;
+      try { wrote = kvSet(key, (val == null ? '' : val), 0); } catch (_es) { wrote = false; }
+      if (!wrote) {
+        // Copy failed -> DO NOT delete (never lose the only copy). Leave the SP.
+        stat.skippedNoCopy++;
+        Logger.log('  SKIP (KV write failed, SP kept): ' + key);
+        continue;
+      }
+      stat.copied++;
+    }
+    // Copy is safe (just written or already present) -> reclaim the SP slot.
+    try { props.deleteProperty(key); stat.deleted++; totalReclaimed++; }
+    catch (_ed) { Logger.log('  WARN: KV has ' + key + ' but SP delete failed: ' + (_ed && _ed.message)); }
+  }
+
+  Logger.log('--- per-prefix ' + (dryRun ? '(dry run)' : '(applied)') + ' ---');
+  for (var rp = 0; rp < BOT_STATE_KV_MIGRATE_PREFIXES.length; rp++) {
+    var pf = BOT_STATE_KV_MIGRATE_PREFIXES[rp], s = perPrefix[pf];
+    Logger.log('  ' + pf + '  copied=' + s.copied + ' alreadyInKv=' + s.alreadyInKv +
+               ' deleted=' + s.deleted + ' skippedNoCopy=' + s.skippedNoCopy);
+  }
+  Logger.log('TOTAL: scanned=' + totalScanned + ' neverTouched(protected)=' + neverTouched +
+             ' reclaimed=' + totalReclaimed + (dryRun ? ' (DRY RUN — nothing changed)' : ''));
+  return { ok: true, dryRun: dryRun, scanned: totalScanned, reclaimed: totalReclaimed,
+           neverTouched: neverTouched, perPrefix: perPrefix };
+}
+
+// KV connectivity self-test. Round-trips a throwaway key and reports the
+// precise result. Run this before MIGRATE_BOT_STATE_TO_KV(false) to confirm KV
+// is reachable. Cleans up the throwaway key on the way out.
+function KV_SELFTEST() {
+  if (!_kvCreds_()) {
+    Logger.log('KV creds missing: set VERCEL_KV_REST_URL/TOKEN');
+    return { ok: false, error: 'kv_creds_missing' };
+  }
+  var probe = 'kv_selftest:' + Date.now() + ':' + Math.floor(Math.random() * 1e9);
+  var expected = 'ok-' + Date.now();
+  var wrote = false;
+  try { wrote = kvSet(probe, expected, 60); } catch (e) { wrote = false; }
+  if (!wrote) {
+    Logger.log('KV SELFTEST FAIL: kvSet returned false (HTTP non-200 or fetch error — see kvSet log above)');
+    return { ok: false, error: 'kvSet_failed' };
+  }
+  var got = null;
+  try { got = kvGet(probe); } catch (e2) { got = null; }
+  try { kvDel(probe); } catch (_ed) {}   // best-effort cleanup
+  if (got === expected) {
+    Logger.log('KV OK');
+    return { ok: true };
+  }
+  Logger.log('KV SELFTEST FAIL: round-trip mismatch (wrote "' + expected + '" got "' + got + '")');
+  return { ok: false, error: 'roundtrip_mismatch', expected: expected, got: got };
+}
+
 // --- Family dispatcher -------------------------------------------------
 
 function _handleFamilyMultiCommand_(fromPhone, text) {
@@ -16349,10 +16749,12 @@ function _celebrateIfFirstExpense_(fromPhone) {
   try {
     var p = String(fromPhone || '').replace(/[^0-9]/g, '');
     if (!p) return '';
-    var props = PropertiesService.getScriptProperties();
+    // First-expense flag now lives in KV (key unchanged: 'fxcel:'+phone) with a
+    // legacy Script-Property read fallback, so pre-migration users are never
+    // re-celebrated. Permanent dedup -> no TTL.
     var key = 'fxcel:' + p;
-    if (props.getProperty(key)) return '';
-    props.setProperty(key, new Date().toISOString());
+    if (_seenFlag_(key, 0)) return '';
+    _markFlag_(key, new Date().toISOString(), 0);
     var _aC = _addr_(fromPhone);
     return '\n\n🎉 זאת ההוצאה הראשונה שלך' + (_aC ? ' ' + _aC : '') + '! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
   } catch (_e) { return ''; }

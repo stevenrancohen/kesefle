@@ -88,6 +88,15 @@ const GOLDEN = [
   ['שכירות 4500', 'הוצאות קבועות'], ['שכר דירה 4500', 'הוצאות קבועות'],
   ['משכנתא 5200', 'הוצאות קבועות'], ['ועד בית 250', 'הוצאות קבועות'],
   ['ביטוח דירה 90', 'הוצאות קבועות'],
+  // ITEM 3 fix (2026-06-01): "ביטוח אישי" used to be swallowed by the bare
+  // "אישי" keyword and mis-filed under שונות. Now routes to its own sub.
+  ['ביטוח אישי 500', 'הוצאות קבועות'],
+  // ITEM 4 (2026-06-01): dashboard-vocabulary keywords — generic insurance
+  // and the tax-and-fees label map to recurring fixed costs. NOTE: bare "גז"
+  // was deliberately NOT added — the golden set already labels bare "גז" as
+  // ambiguous (DEFAULT, see below); only "חשבון גז"/"תשלום גז" route to גז.
+  ['ביטוח 300', 'הוצאות קבועות'],
+  ['מיסים ואגרות 400', 'הוצאות קבועות'],
   // income tax / national insurance → recurring obligations in this map (consistent)
   ['מס הכנסה 2000', 'הוצאות קבועות'], ['תשלום מס הכנסה 1500', 'הוצאות קבועות'],
   ['מקדמות מס 900', 'הוצאות קבועות'], ['ביטוח לאומי 500', 'הוצאות קבועות'],
@@ -119,6 +128,8 @@ const GOLDEN = [
   ['זארה 200', 'קניות'], ['קסטרו 180', 'קניות'], ['פוקס 140', 'קניות'],
   ['קניתי נעליים 300', 'קניות'], ['אייפון 4000', 'קניות'], ['אוזניות 250', 'קניות'],
   ['מחשב נייד 5500', 'קניות'], ['איקאה 800', 'קניות'], ['רהיט 1200', 'קניות'],
+  ['אלקטרוניקה 500', 'קניות'],   // ITEM 4 (2026-06-01): dashboard label
+  ['רהיטים 800', 'קניות'],       // ITEM 4: already routed; anchored as golden
   ['ספה 3000', 'קניות'], ['כיסא משרדי 600', 'קניות'], ['בגדים 350', 'קניות'],
   ['חולצה 90', 'קניות'], ['מתנה ליום הולדת 150', 'מתנות'],
 
@@ -191,6 +202,53 @@ const GOLDEN = [
   // name; גט = Gett app / divorce doc) → asking IS the correct behavior here.
   ['פז 280', 'DEFAULT'], ['גט 48', 'DEFAULT'],
   ['ספר 80', 'sub:ספרים'],   // the map files a lone "ספר" as a book
+
+  // ── 2026-06-01 classifier-accuracy fixes (ADDITIVE, length-sorted). Each
+  // anchor pins a GENUINE misroute fixed this cycle; the paired guard anchor
+  // proves the additive keyword did not relax an existing correct match. ──
+  //
+  // (1) Migdal INSURANCE was silently written to קניות/אלקטרוניקה because the
+  // bare "מגדל" (PC tower) tied the insurer "מגדל" on length-4 and won by map
+  // order. Added "מגדל ביטוח"/"ביטוח מגדל" (len 10) -> insurance. NEVER-CORRUPT
+  // note: this was a SILENT keyword write to the wrong category, now corrected.
+  ['מגדל ביטוח 280', 'הוצאות קבועות'],
+  ['ביטוח מגדל 280', 'הוצאות קבועות'],
+  // guard: the other insurers + bare-tower must be untouched.
+  ['הראל 280', 'הוצאות קבועות'], ['כלל 500', 'הוצאות קבועות'],
+  ['הפניקס 300', 'הוצאות קבועות'], ['מנורה 200', 'הוצאות קבועות'],
+  //
+  // (2) VAT REFUND with no geresh ("החזר מעמ") hit the bare 3-char "מעמ" in the
+  // business-tax EXPENSE row -> a refund (income) booked as an operating
+  // expense: a SIGN FLIP on the company P&L. Added the no-geresh "החזר מעמ"
+  // (len 8) to the canonical income/מחזור row. The signal is the sub.
+  ['החזר מעמ 900', 'sub:מחזור'],
+  // guard: a plain VAT PAYMENT stays an expense (must NOT flip to income).
+  ['תשלום מעמ 4500', 'sub:הוצאות תפעוליות'],
+  //
+  // (3) "בוסט לפוסט" (boost a post = ad spend) matched the 4-char restaurant
+  // keyword "פוסט" -> filed under dining-out, polluting both food AND marketing
+  // totals. Added "בוסט לפוסט" (len 9) to the marketing/שיווק row.
+  ['בוסט לפוסט 90', 'sub:שיווק'],
+  // (4) influencer SINGULAR "משפיען" fell through to DEFAULT (only the plural
+  // "משפיענים" routed). Added the singular for consistency. No competing kw.
+  ['משפיען 1500', 'sub:שיווק'],
+  // guard: the bare restaurant keyword still files dining-out correctly.
+  ['פוסט 60', 'אוכל'],
+  //
+  // (5) "בית ספר" (school fees) matched the bare 3-char "ספר" (book) -> filed
+  // under שונות/ספרים. Added "בית ספר"/"בית הספר" (len 7-8) -> חינוך.
+  ['בית ספר 2000', 'חינוך'], ['בית הספר 2000', 'חינוך'],
+  // guard above already pins ['ספר 80','sub:ספרים'] (a lone book stays a book).
+  //
+  // (6) "דמי טיפול רפואי" (a medical handling/treatment fee) was captured by the
+  // bank-fee "דמי טיפול" (len 9) -> בנקאות. Added the explicit 14-char medical
+  // phrase -> בריאות. The bare "דמי טיפול" still routes to bank (defensible).
+  ['דמי טיפול רפואי 200', 'בריאות'],
+  //
+  // (7) "בקבוק יין" (a wine bottle = retail alcohol for home) matched the bare
+  // 3-char "יין" in the restaurant row -> dining-out. Added "בקבוק יין" (len 9)
+  // -> the home alcohol bucket. Signal is the sub.
+  ['בקבוק יין 90', 'sub:אוכל לבית — יין ואלכוהול'],
 ];
 
 // ── Run ──────────────────────────────────────────────────────────────────────
