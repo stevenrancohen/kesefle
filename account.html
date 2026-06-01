@@ -27,8 +27,8 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#ecfeff', 100:'#cffafe', 200:'#a5f3fc', 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490', 800:'#155e75', 900:'#164e63' },
-          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 500:'#3b82f6', 600:'#60a5fa' }
         }
       }
     }
@@ -69,7 +69,7 @@
   button, .kfl-cta {
     display: inline-flex; align-items: center; justify-content: center;
     min-height: 44px; padding: 12px 20px;
-    background: #0e7490; color: white; border: none; border-radius: 14px;
+    background: #1d4ed8; color: white; border: none; border-radius: 14px;
     font-weight: 700; font-size: 15px; cursor: pointer;
     -webkit-appearance: none;
   }
@@ -605,7 +605,7 @@ function kesefleCelebrate() {
   // Confetti burst
   var host = document.getElementById('confetti-host');
   if (host) {
-    var colors = ['#0891b2', '#a855f7', '#f59e0b', '#3b82f6', '#ec4899', '#10b981'];
+    var colors = ['#2563eb', '#a855f7', '#f59e0b', '#3b82f6', '#ec4899', '#10b981'];
     for (var i = 0; i < 32; i++) {
       var c = document.createElement('span');
       c.className = 'confetti';
@@ -1191,7 +1191,7 @@ window.kesefleSubmitWaitlist = function (btn) {
         } else {
           statusEl.textContent = '✓ נרשמת! נחזור אליך תוך 24 שעות';
         }
-        statusEl.style.color = '#0e7490';
+        statusEl.style.color = '#1d4ed8';
         // Clear inputs after success.
         var p = document.getElementById('kfl-wait-phone');
         var e = document.getElementById('kfl-wait-email');
@@ -1217,8 +1217,8 @@ function kesefleShowInAppBrowserHelp() {
   var title = isDark ? '#ffffff' : '#0f1422';
   var body = isDark ? '#bcc4d6' : '#41506f';
   var muted = isDark ? '#8a95b3' : '#5d6b8f';
-  var brand = '#0e7490';
-  var brandHover = '#155e75';
+  var brand = '#1d4ed8';
+  var brandHover = '#1e40af';
   var url = window.location.href;
   // Strip the URL scheme so we can build x-safari-https:// / intent:// URIs.
   var noScheme = url.replace(/^https?:\/\//, '');
@@ -1490,7 +1490,7 @@ function kesefleShowConnecting() {
 }
 function kesefleShowSigninError(msg) {
   var isDark = document.documentElement.classList.contains('dark');
-  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#0e7490';
+  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#1d4ed8';
   _kflCardShell('<div style="font-size:40px;">😕</div><h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">ההתחברות לא הושלמה</h2><p style="margin-top:10px;font-size:13px;color:' + body + ';word-break:break-word;">' + String(msg || '').slice(0, 200) + '</p><button type="button" onclick="kesefleStartRedirectSignin()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה/י שוב</button>');
 }
 
@@ -1500,7 +1500,7 @@ function kesefleShowSigninError(msg) {
 // again, not restart OAuth.
 function kesefleShowProvisionError(msg) {
   var isDark = document.documentElement.classList.contains('dark');
-  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#0e7490';
+  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#1d4ed8';
   var safeMsg = String(msg || '').replace(/[<>&"']/g, '').slice(0, 200);
   _kflCardShell(
     '<div style="font-size:40px;">📋</div>' +
@@ -1558,7 +1558,7 @@ function kesefleShowSigninPrompt() {
   var title = isDark ? '#ffffff' : '#0f1422';
   var body = isDark ? '#bcc4d6' : '#2f3b54';
   var muted = isDark ? '#8a95b3' : '#41506f';
-  var brand = '#0e7490';
+  var brand = '#1d4ed8';
   var btnBg = isDark ? '#0f1422' : '#ffffff';
   var btnBorder = isDark ? '#41506f' : '#8a95b3';
   var btnText = isDark ? '#ffffff' : '#0f1422';
@@ -1568,7 +1568,7 @@ function kesefleShowSigninPrompt() {
   card.style.cssText = 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;';
   card.innerHTML =
     '<div style="border-radius:24px;border:1px solid ' + border + ';background:' + bg + ';padding:32px;box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);text-align:center;max-width:28rem;width:100%;">' +
-      '<div style="display:grid;place-items:center;height:56px;width:56px;border-radius:16px;background:linear-gradient(135deg,#0891b2,#155e75);color:#ffffff;font-size:24px;font-weight:900;margin:0 auto 20px;">₪</div>' +
+      '<div style="display:grid;place-items:center;height:56px;width:56px;border-radius:16px;background:linear-gradient(135deg,#2563eb,#1e40af);color:#ffffff;font-size:24px;font-weight:900;margin:0 auto 20px;">₪</div>' +
       '<h2 style="font-size:24px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:0;">התחברות לחשבון</h2>' +
       '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">התחבר עם Google כדי ליצור את הגיליון שלך ולהתחיל לעקוב אחרי הוצאות בוואטסאפ.</p>' +
       '<button id="account-signin-btn" type="button" onclick="kesefleAccountStartSignin()" style="margin-top:24px;display:inline-flex;align-items:center;justify-content:center;gap:12px;width:100%;border-radius:16px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';padding:14px 24px;font-size:16px;font-weight:700;color:' + btnText + ';box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);cursor:pointer;transition:background 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">' +
@@ -2104,8 +2104,8 @@ window.addEventListener('load', function () {
         '<div style="max-width:24rem;"><div style="font-size:44px;">🔄</div>' +
         '<h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2>' +
         '<p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב. אם זה ממשיך, פתח/י את הקישור ב-Safari או Chrome.</p>' +
-        '<button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#0e7490;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button>' +
-        '<a href="/account" style="display:block;margin-top:10px;color:#0e7490;font-size:13px;text-decoration:none;">חזרה להתחברות</a></div></div>';
+        '<button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#1d4ed8;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button>' +
+        '<a href="/account" style="display:block;margin-top:10px;color:#1d4ed8;font-size:13px;text-decoration:none;">חזרה להתחברות</a></div></div>';
     } catch (_e) {}
   }, 2500);
 });
