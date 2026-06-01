@@ -6,8 +6,8 @@ Generated for Steven, first thing in the morning. Hebrew terms inline; everythin
 
 ## 1. TL;DR (one screen)
 
-Tonight I opened **6 PRs**. All are **gate-green** (full QA + bot suites + security on the
-night diffs). **NOTHING was merged, and NOTHING was applied to your live sheet** — every
+Tonight I opened **8 PRs** (including this report PR #197 and the classifier PR #199). All are
+**gate-green** (full QA + bot suites + security on the night diffs). **NOTHING was merged, and NOTHING was applied to your live sheet** — every
 deploy, every sheet write, and every config change is left for you. That is deliberate: your
 standing rule is backup-first, propose-before-apply, and never touch the live financial sheet
 while you can't approve it.
@@ -18,8 +18,9 @@ night diff. Every bot branch reassembles byte-identical with exactly one `doPost
 **The 7 things you must do in the morning, in order:**
 
 1. **Merge the web PRs** — #191 (+ #188 webhook). They auto-deploy on Vercel. Do these first.
-2. **Merge the bot PRs** — #187 + #189 — then do **ONE** re-paste of `bot/ExpenseBot_DEPLOY.gs`
-   -> Deploy -> New Version (the single re-paste bundles both bot PRs).
+2. **Merge the bot PRs** — #187 + #189 + #199 — then do **ONE** re-paste of
+   `bot/ExpenseBot_DEPLOY.gs` -> Deploy -> New Version (the single re-paste bundles all three
+   bot PRs).
 3. **Add KV creds + reclaim Script-Property slots** — add `VERCEL_KV_REST_URL` +
    `VERCEL_KV_REST_TOKEN` to the bot Script Properties if missing, run `KV_SELFTEST` (expect
    `KV OK`), then run `MIGRATE_BOT_STATE_TO_KV` (dry, then real).
@@ -51,8 +52,11 @@ optional/cleanup.
 1. Merge **#187** (per-user state -> KV; completes #186; adds gated `MIGRATE_BOT_STATE_TO_KV`
    + `KV_SELFTEST`).
 2. Merge **#189** (`יעד חדש` -> ₪1 hijack fix + `ביטוח אישי` mis-route fix + safe keywords).
-3. After **both** are merged, reassemble `bot/ExpenseBot_DEPLOY.gs` from main **once** and do a
-   **single** re-paste into Apps Script -> **Deploy -> New Version**. One paste covers both PRs.
+3. Merge **#199** (classifier accuracy: 9 Hebrew mis-routes fixed, incl. the `החזר מעמ`
+   VAT-refund P&L sign-flip).
+4. After **all three** are merged, reassemble `bot/ExpenseBot_DEPLOY.gs` from main **once** and
+   do a **single** re-paste into Apps Script -> **Deploy -> New Version**. One paste covers
+   #187 + #189 + #199.
 
 ### (c) KV creds + reclaim Script-Property slots
 1. In the **bot** Script Properties, add `VERCEL_KV_REST_URL` + `VERCEL_KV_REST_TOKEN` if they
@@ -118,6 +122,12 @@ live sheet.
   https://github.com/stevenrancohen/kesefle/pull/191
 - **#196** — docs: design specs for the Bot-Intelligence epic. Docs only, no code.
   https://github.com/stevenrancohen/kesefle/pull/196
+- **#199** — bot: classifier accuracy — golden 95.3% -> 95.7%, 9 real Hebrew mis-routes fixed
+  (most important: VAT-refund `החזר מעמ` was booked as a company EXPENSE instead of revenue — a
+  P&L sign-flip — now revenue; plus מגדל insurance, בוסט לפוסט -> marketing, משפיען, בית ספר ->
+  חינוך, דמי טיפול רפואי -> בריאות, בקבוק יין -> food). Never-corrupt floor untouched.
+  **BOT** — bundles into the same re-paste as #187/#189.
+  https://github.com/stevenrancohen/kesefle/pull/199
 
 ---
 
@@ -159,6 +169,10 @@ These are NOT done and are waiting on a call from you:
   TODO; for now use dry-then-real on `MIGRATE_BOT_STATE_TO_KV`.
 - **Per-user keys still in Script Properties** — gender / need / settings per-user keys are not
   yet migrated to KV (only welcomed/surveyed/fxcel/leadNotified are, via #187). Follow-up.
+- **Classifier residuals (PR #199 audit)** — bare `מגדל` (sits in both the electronics PC-tower
+  row AND the insurance row) and bare `ksp` (home-maintenance AND electronics) mis-route on the
+  bare word; the correct fix is REMOVING the polluting token from the wrong row (not additive),
+  so it is left for your approval.
 
 ---
 
