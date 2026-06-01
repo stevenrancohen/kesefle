@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-01-night-bundle';
+const KFL_BUILD_VERSION = '2026-06-01-ux-batch';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1338,11 +1338,71 @@ function _userSheetUrl_(fromPhone) {
   }
 }
 
-// The compact "check it in your sheet" line appended to expense/order
-// confirmations so the user can verify the row landed correctly.
+// The compact "open your own sheet" line appended to every expense/order
+// confirmation so the user can tap straight through to their data. Steven
+// (2026-06-01, ask B) wants every "נרשם ✅" reply to carry a WORKING-ON-MOBILE
+// link to the user's OWN sheet, labelled "📊 הגיליון שלך:". The URL comes from
+// _userSheetUrl_, which (a) returns an absolute https docs.google.com/
+// spreadsheets/d/<id> URL that opens the Sheets app/browser on a phone, (b)
+// resolves the OWNING tenant only (a non-owner never gets the owner sheet), and
+// (c) returns '' on any error/unavailable -> we omit the line (no broken link).
 function _sheetLinkLine_(fromPhone) {
   var u = _userSheetUrl_(fromPhone);
-  return u ? ('\n\n📊 לבדיקה: ' + u) : '';
+  return u ? ('\n\n📊 הגיליון שלך: ' + u) : '';
+}
+
+// ───── NATURAL-LANGUAGE FIXED-EXPENSE INTENT (ask C, 2026-06-01) ─────
+// A user who writes a BARE intent like "הוצאה קבועה" / "הוצאות קבועות" /
+// "קבוע" / "הוצאה חודשית" (no slash, no amount, no name) means "how do I add
+// a recurring monthly expense?" — NOT a real expense. Without this guard such
+// a message falls through to the expense parser and gets booked into
+// DEFAULT/שונות (or, for a tenant, bounced to the concierge). Steven wants a
+// SHORT friendly guide instead, all-tenant, wired BEFORE the expense fast-path.
+//
+// STRICT match so we never swallow a real command:
+//   • the WHOLE trimmed message must be one of the bare intent phrases, and
+//   • it must contain NO digit — so a real add ("קבוע 2500 שכירות"), an
+//     installment, or an expense that merely mentions קבוע ("שכר דירה 3000
+//     קבוע") never matches here and keeps its existing behaviour.
+// Note: a "כספלה"-prefixed message ("כספלה הוצאה קבועה") is intentionally NOT
+// matched here — those are owned by the group-command router upstream, which
+// already returns its own guidance. This guard targets the un-prefixed bare
+// intent, which is the gap that previously fell through to the expense parser.
+function _isBareFixedExpenseIntent_(text) {
+  var t = String(text == null ? '' : text).trim();
+  if (!t) return false;
+  if (/[0-9٠-٩۰-۹]/.test(t)) return false; // any digit -> it's a real command/expense
+  // Allow a trailing ? and surrounding quotes/spaces only.
+  var core = t.replace(/[?؟"'“”\s]+$/g, '').replace(/^["'“”\s]+/g, '').trim();
+  // Bare Hebrew/English intent phrases that mean "set up a fixed monthly expense".
+  return (
+    core === 'הוצאה קבועה' ||   // "הוצאה קבועה"
+    core === 'הוצאות קבועות' || // "הוצאות קבועות"
+    core === 'קבוע' ||                                         // "קבוע"
+    core === 'קבועה' ||                                   // "קבועה"
+    core === 'הוצאה חודשית' || // "הוצאה חודשית"
+    core === 'הוצאות חודשיות' || // "הוצאות חודשיות"
+    core === 'הוצאה קבועה חודשית' || // "הוצאה קבועה חודשית"
+    core === 'הוראת קבע' ||                 // "הוראת קבע"
+    /^fixed expense$/i.test(core) ||
+    /^recurring( expense)?$/i.test(core) ||
+    /^monthly expense$/i.test(core)
+  );
+}
+
+// SHORT friendly guide (a child understands it) shown for the bare intent
+// above. It teaches the EXISTING recurring syntax — "קבוע <amount> <name>" —
+// using the same example the live _recurringAdd_ handler accepts, so the very
+// next message the user sends actually works. Reply style: warm, masculine,
+// brand כספ'לה, one emoji (bot-reply-style).
+function _fixedExpenseGuide_() {
+  return '🔁 הוצאה קבועה = הוצאה שחוזרת כל חודש (שכר דירה, מנוי, חשמל).\n' +
+    'פשוט כתוב לי: קבוע + סכום + שם.\n\n' +
+    'למשל:\n' +
+    '• קבוע 3000 שכר דירה\n' +
+    '• קבוע 49 נטפליקס\n\n' +
+    'רוצה תאריך חיוב קבוע? הוסף "כל 1 לחודש".\n' +
+    'לראות את כל הקבועות — כתוב "קבועות".';
 }
 
 // One-time welcome. The first time a phone messages the bot, send a
@@ -8005,6 +8065,18 @@ function processExpense(text, fromPhone) {
   var __catCreate = text.match(/^\s*(?:כספלה\s+)?(?:צור|הוסף|create|add)\s+קטגור(?:יה|יות)\s+(.+)$/i);
   if (__catCreate) {
     return { reply: _addCategoryRows_(fromPhone, __catCreate[1]) };
+  }
+
+  // ───── NATURAL-LANGUAGE FIXED-EXPENSE GUIDE (ask C, 2026-06-01) ─────
+  // A bare "הוצאה קבועה" / "קבוע" / "הוצאה חודשית" (no amount) must get a short
+  // how-to, NOT be booked as an expense / hit שונות / bounce to the concierge.
+  // Placed here so it runs for EVERY tenant (all-tenant) and BEFORE the expense
+  // fast-path — both the tenant write below and the owner legacy path. It only
+  // fires on the strict bare intent (no digits), so real recurring-add commands
+  // ("קבוע 2500 שכירות") still flow to _recurringAdd_ further down. No sheet
+  // write happens here, so the never-corrupt floor is respected.
+  if (typeof _isBareFixedExpenseIntent_ === 'function' && _isBareFixedExpenseIntent_(text)) {
+    return { reply: _fixedExpenseGuide_() };
   }
 
   // If the sender is NOT the script owner, route the write to that user's
