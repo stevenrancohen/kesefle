@@ -180,6 +180,30 @@ const GOLDEN = [
   ['accountant 1500', 'sub:יועצים'],
   ['רואה חשבון 800', 'sub:יועצים'],
 
+  // 2026-06-01 — business-owner audit (replay-based) mis-route fixes.
+  // Each anchor guards an ADDITIVE keyword added to a canonical CATEGORY_MAP
+  // business row so the genuine mis-route can't silently regress.
+  //
+  // (a) VAT REFUND was an income/expense SIGN FLIP. "החזר מעמ" (no geresh)
+  //     hit the 3-char "מעמ" keyword in the עסק/הוצאות תפעוליות row and was
+  //     booked as an EXPENSE, when a VAT refund is business REVENUE (מחזור,
+  //     isIncome). Added "החזר מעמ"/"החזר מע\"מ" to the מחזור income row; the
+  //     8/9-char keyword now wins over "מעמ" (3). sub:מחזור = the income row.
+  ['החזר מעמ 900', 'sub:מחזור'],
+  // GUARD: a VAT *payment* (not refund) must stay an expense bucket. If a
+  // future over-broad refund keyword ever swallowed plain "מעמ"/"תשלום מעמ"
+  // into מחזור (income), this trips — the payment must NOT be מחזור.
+  ['תשלום מעמ 4500', 'sub:הוצאות תפעוליות'],
+  // (b) "בוסט לפוסט" (boost a post = ad spend) matched the 4-char "פוסט"
+  //     keyword and landed in אוכל / שף ויוקרה (a restaurant bucket),
+  //     polluting both food and marketing totals. Added "בוסט לפוסט" (9) to
+  //     the canonical עלות שיווק row.
+  ['בוסט לפוסט 90', 'sub:עלות שיווק'],
+  // (c) "משפיען" (influencer, singular) fell through to שונות while the
+  //     plural "משפיענים" already routed to marketing. Added the singular for
+  //     consistency so an influencer payment files under עלות שיווק.
+  ['משפיען 1500', 'sub:עלות שיווק'],
+
   // ── DEFAULT: genuinely ambiguous → the bot SHOULD ask ──
   ['250', 'DEFAULT'], ['תשלום 500', 'DEFAULT'], ['העברה 1000', 'DEFAULT'],
   ['משהו 50', 'DEFAULT'], ['קניתי דברים 100', 'DEFAULT'], ['עוד הוצאה 30', 'DEFAULT'],
