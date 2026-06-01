@@ -191,6 +191,18 @@ const GOLDEN = [
   ['accountant 1500', 'sub:יועצים'],
   ['רואה חשבון 800', 'sub:יועצים'],
 
+  // ── 2026-06-01 NATURAL BUSINESS EXPENSE anchors. Steven's bug: a plain
+  // "עסק [business name] [amount] [category]" message (and the "הוצאה עסק ..."
+  // variant) must route to the BUSINESS top-level "עסק", never to a personal
+  // dropdown. matchCategory's standalone-עסק detection already yields category
+  // "עסק"; these anchors lock it so a future taxonomy change can't regress the
+  // natural business shape back to personal/שונות. (The processExpense write
+  // path is covered separately by the bot replay + harness in the PR.) ──
+  ['הוצאה עסק תמונות 288 שיווק', 'עסק'],
+  ['עסק תמונות 288 שיווק', 'עסק'],
+  ['עסק 288 שיווק', 'עסק'],
+  ['עסק תמונות 500 משלוחים', 'עסק'],
+
   // ── DEFAULT: genuinely ambiguous → the bot SHOULD ask ──
   ['250', 'DEFAULT'], ['תשלום 500', 'DEFAULT'], ['העברה 1000', 'DEFAULT'],
   ['משהו 50', 'DEFAULT'], ['קניתי דברים 100', 'DEFAULT'], ['עוד הוצאה 30', 'DEFAULT'],

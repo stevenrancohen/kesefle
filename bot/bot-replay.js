@@ -38,13 +38,29 @@ function extractFn(name) {
   return SRC.slice(start, j);
 }
 
+// ─── Balanced-bracket block extraction (for nested object/array literals like
+// BUSINESS_CATEGORY_MAP and the CATEGORY_MAP array). Loads the REAL source by
+// scanning from the declaration's opening bracket to its matching close, the
+// same approach bot/test_*.js + tests/golden_set.js use. ───
+function extractDecl(declStartMarker, open, close, rename) {
+  const s = SRC.indexOf(declStartMarker);
+  if (s < 0) throw new Error('declaration not found: ' + declStartMarker);
+  let i = SRC.indexOf(open, s), depth = 0, j = i;
+  for (; j < SRC.length; j++) {
+    if (SRC[j] === open) depth++;
+    else if (SRC[j] === close) { depth--; if (depth === 0) { j++; break; } }
+  }
+  // Include the trailing ";" if present so the statement is complete.
+  if (SRC[j] === ';') j++;
+  let block = SRC.slice(s, j);
+  if (rename) block = block.replace(rename.from, rename.to);
+  return block;
+}
+
 // ─── Extract CATEGORY_MAP (the const array of category objects) ───
 function extractCategoryMap() {
-  const re = /const\s+CATEGORY_MAP\s*=\s*\[[\s\S]*?\n\];/;
-  const m = SRC.match(re);
-  if (!m) throw new Error('CATEGORY_MAP not found');
-  // Rewrite const → var so it leaks into the vm context.
-  return m[0].replace(/^const\s+/m, 'var ');
+  // const CATEGORY_MAP = [ ... ];  → rewrite const → var so it leaks into the vm.
+  return extractDecl('const CATEGORY_MAP = [', '[', ']', { from: /^const\s+/, to: 'var ' });
 }
 
 // ─── Extract _ORDER_MATERIALS_ ───
@@ -61,14 +77,30 @@ const sandbox = {
   console,
 };
 
+// matchCategory depends on BUSINESS_CATEGORY_MAP + DEFAULT_CATEGORY + the
+// _matchCategory_long / _matchCategory_orig / _kflKwHit_ / _kflIsWordChar_ /
+// _coerceCategoryBySubcategory chain. Load them ALL from the real source (no
+// mock) so node bot/bot-replay.js prints a real matchCategory result, and load
+// the new _classifyBareBusinessExpense_ + _normalizeBizSub_ + _BIZ_DASH_SUBS so
+// the replay can show the bare-business routing too.
 const code = [
   matMatch[0],
   extractCategoryMap(),
+  extractDecl('var BUSINESS_CATEGORY_MAP = {', '{', '}'),
+  extractDecl('const DEFAULT_CATEGORY =', '{', '}', { from: /^const\s+/, to: 'var ' }),
+  extractDecl('var _BIZ_DASH_SUBS = {', '{', '}'),
+  extractFn('_kflIsWordChar_') || '',
+  extractFn('_kflKwHit_') || '',
+  extractFn('_matchCategory_orig') || '',
+  extractFn('_matchCategory_long') || '',
+  extractFn('_coerceCategoryBySubcategory') || '',
+  extractFn('_normalizeBizSub_') || '',
   extractFn('parseBusinessOrder_') || '',
   extractFn('_parseBusinessNumberPrefix_') || '',
   extractFn('matchCategory') || '',
+  extractFn('_classifyBareBusinessExpense_') || '',
   // Export the things we want to use
-  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, CATEGORY_MAP };',
+  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, CATEGORY_MAP };',
 ].join('\n\n');
 
 vm.createContext(sandbox);
@@ -161,6 +193,39 @@ function replay(input) {
     out.decisions.businessN = { _not_loaded: true };
   }
 
+  // 3.5) Bare business expense detector (2026-06-01). Runs only when neither the
+  // rich order nor עסק-N matched. Mirrors processExpense: forces category=עסק
+  // with a canonical dashboard bucket and writes directly (no personal dropdown).
+  const orderMatched = out.decisions.parseBusinessOrder && out.decisions.parseBusinessOrder.matched;
+  const bizNMatched = out.decisions.businessN && out.decisions.businessN.matched;
+  if (typeof bot._classifyBareBusinessExpense_ === 'function' && !orderMatched && !bizNMatched) {
+    try {
+      const bbe = bot._classifyBareBusinessExpense_(text);
+      if (bbe) {
+        out.decisions.bareBusiness = {
+          matched: true,
+          amount: bbe.amount,
+          category: bbe.category,
+          subcategory: bbe.subcategory,
+          cleanedDesc: bbe.cleanedDesc,
+        };
+        out.predicted_target = {
+          sheet: 'OWNER (single business → col D=עסק)',
+          tab: 'תנועות',
+          category: bbe.category,
+          subcategory: bbe.subcategory,
+          isIncome: !!bbe.isIncome,
+          col_H_expected: bbe.isIncome ? 'FALSE (income)' : 'TRUE (expense)',
+          dashboard_row: 'מאזן חברה (עסק) / ' + bbe.subcategory,
+        };
+      } else {
+        out.decisions.bareBusiness = { matched: false };
+      }
+    } catch (e) {
+      out.decisions.bareBusiness = { error: e.message };
+    }
+  }
+
   // 4) Categorize
   if (typeof bot.matchCategory === 'function') {
     try {
@@ -189,10 +254,14 @@ function replay(input) {
   if (out.decisions.matchCategory && out.decisions.matchCategory.isIncome) {
     out.risk_notes.push('Income detected — verify col H = FALSE (B1 fix pending)');
   }
-  if (/^עסק/.test(text) &&
+  // A bare "עסק [name] [amount] [token]" message is now caught by the
+  // bare-business detector and routed to category=עסק. Only warn about a fall-
+  // through to personal if that detector ALSO declined (e.g. no amount).
+  if (/(^|\s)עסק(\s|$)/.test(text) &&
       out.decisions.parseBusinessOrder && !out.decisions.parseBusinessOrder.matched &&
-      out.decisions.businessN && !out.decisions.businessN.matched) {
-    out.risk_notes.push('עסק prefix but no order/biz-N match — will fall through to personal');
+      out.decisions.businessN && !out.decisions.businessN.matched &&
+      !(out.decisions.bareBusiness && out.decisions.bareBusiness.matched)) {
+    out.risk_notes.push('עסק prefix but no order/biz-N/bare-business match — may fall through to personal');
   }
   if (out.decisions.matchCategory && out.decisions.matchCategory.subcategory === 'שונות') {
     out.risk_notes.push('Default subcategory שונות — bot should ASK before writing (task #189)');

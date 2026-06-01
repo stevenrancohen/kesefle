@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-01-ux-batch';
+const KFL_BUILD_VERSION = '2026-06-01-biz-expense';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -8232,6 +8232,59 @@ function processExpense(text, fromPhone) {
       }
     } catch (__hErr) {}
   }
+
+  // ───── BARE BUSINESS EXPENSE (2026-06-01) ─────
+  // Natural single business expense: "הוצאה עסק תמונות 288 שיווק" /
+  // "עסק תמונות 288 שיווק" / "עסק 1200 חומרים" / "עסק 2500 שכר". Runs AFTER the
+  // numbered-business route (doPost) and the rich-order route below have been
+  // ruled out (the detector itself re-checks both), and BEFORE the old עסק
+  // numbered-PICKER fallback / personal classifier. Forces category=עסק with a
+  // canonical dashboard bucket, writes the row, mirrors the business dashboard,
+  // and confirms with the normal business reply — never the blocking picker and
+  // never the personal "unsure" dropdown. Guarded to owner only (this path
+  // writes the owner SHEET_ID; tenants were already routed above).
+  try {
+    var __bbe = (typeof _classifyBareBusinessExpense_ === 'function')
+      ? _classifyBareBusinessExpense_(__hT) : null;
+    if (__bbe && (!fromPhone || _isOwnerPhone_(fromPhone))) {
+      __hProps.deleteProperty('smart_pending');
+      var __bbeSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+      if (__bbeSheet) {
+        var __bbeDate = (__dateInfo && __dateInfo.date) ? __dateInfo.date : new Date();
+        var __bbeMonth = Utilities.formatDate(__bbeDate, 'Asia/Jerusalem', 'yyyy-MM');
+        var __bbeCat = 'עסק';
+        var __bbeSub = __bbe.subcategory;
+        var __bbeDesc = __bbe.cleanedDesc || __bbeSub;
+        var __bbeIsInc = _resolveIsIncome_({ isIncome: __bbe.isIncome }, __hT, __bbeCat, __bbeSub);
+        __bbeSheet.appendRow([__bbeDate, __bbeMonth, __bbe.amount, sanitizeForSheet(__bbeCat), sanitizeForSheet(__bbeSub), sanitizeForSheet(__bbeDesc), 'WhatsApp', !__bbeIsInc]);
+        try {
+          var __bbeRowForNote = __bbeSheet.getLastRow();
+          _kfl_setRowOriginalNote(__bbeSheet, __bbeRowForNote, _kfl_buildOriginalNote('Original WhatsApp (business)', __hT));
+        } catch (__bbeNoteErr) { Logger.log('bare-biz note err: ' + (__bbeNoteErr && __bbeNoteErr.message)); }
+        try {
+          var __bbeLast = __bbeSheet.getLastRow();
+          if (__bbeLast > 2) __bbeSheet.getRange(2, 1, __bbeLast - 1, 8).sort({ column: 1, ascending: true });
+        } catch (__bbeSortErr) {}
+        try { _updateBusinessDashboard_(__bbeCat, __bbeSub, __bbeMonth, __bbe.amount); } catch (__bbeDashErr) { Logger.log('bare-biz dashboard err: ' + (__bbeDashErr && __bbeDashErr.message)); }
+        try { _dashboardDetailNote_(__bbeCat, __bbeSub, __bbeMonth, __bbe.amount, __bbeDesc, __bbeDate); } catch (__bbeDnErr) { Logger.log('bare-biz dashboard note err: ' + (__bbeDnErr && __bbeDnErr.message)); }
+        try { _saveLastExpense_(fromPhone, __bbeSheet.getLastRow(), { amount: __bbe.amount, description: __bbeDesc }, { category: __bbeCat, subcategory: __bbeSub }); } catch (__bbeSeErr) {}
+        // Non-blocking "change category?" affordance — same as every other
+        // single-item write. The row is ALREADY saved; the user can ignore it.
+        try { _sendChangeCategoryPicker_(fromPhone, __bbeCat); } catch (__bbePkErr) { Logger.log('bare-biz picker err: ' + (__bbePkErr && __bbePkErr.message)); }
+        Logger.log('bare-biz: wrote ₪' + __bbe.amount + ' עסק/' + __bbeSub);
+        return { reply:
+          '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון 📊' +
+          '\n📂 ' + __bbeCat +
+          (__bbeSub && __bbeSub !== __bbeCat ? '\n🏷️ ' + __bbeSub : '') +
+          '\n\n👇 לשנות קטגוריה — בחר מהרשימה למטה, או שלח "קטגוריה <שם>".' +
+          _sheetLinkLine_(fromPhone)
+        };
+      }
+    }
+  } catch (__bbeErr) {
+    Logger.log('bare-biz detector err (falling through): ' + (__bbeErr && __bbeErr.message));
+  }
+
   var __hIsBiz = /^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(__hT);
   if (__hIsBiz) {
     // First try the rich-order parser. If the message contains at least
@@ -9538,6 +9591,139 @@ function matchCategory(text) {
     return { category: "עסק", subcategory: "הוצאות תפעוליות", isIncome: false };
   }
   return _matchCategory_long(text);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BARE BUSINESS EXPENSE DETECTOR (2026-06-01)
+//
+// Steven's bug: a natural business expense like "הוצאה עסק תמונות 288 שיווק"
+// (or "עסק תמונות 288 שיווק", "עסק 1200 חומרים", "עסק 2500 שכר") sometimes
+// fell through to the BLOCKING numbered picker ("🏢 עסק — בחר קטגוריה") with
+// no row written, or — for "עובדים" — got mis-bucketed. The owner runs a SINGLE
+// business that writes col D='עסק', so any "עסק [name] [amount] [token]" message
+// should be classified into a canonical business bucket and written immediately,
+// NOT held behind a picker and NOT routed to the personal classifier.
+//
+// This helper is the SINGLE authority for that shape. It runs ONLY after the
+// numbered-business route ("עסק 2 ...", handled in doPost) and the rich-order
+// route ("עסקה יוסי הכנסה ...", parseBusinessOrder_) have both been ruled out.
+//
+// Returns { amount, category:'עסק', subcategory, cleanedDesc, isIncome } when it
+// can confidently treat the message as a bare business expense; else null.
+//
+// Subcategory is emitted as a CANONICAL dashboard bucket name (one of the keys
+// _normalizeBizSub_ recognizes) so the row both (a) writes col E the company
+// dashboard SUMIFS can sum and (b) lets _updateBusinessDashboard_ mirror it into
+// the עסק תמונות marketing/shipping/raw-materials/operations rows. Labor tokens
+// (עובד/שכר) and tax tokens (מס/מיסים) map to הוצאות תפעוליות — the company
+// dashboard's catch-all overhead bucket — because there is no dedicated labor or
+// tax dashboard row (verified against _BIZ_DASH_SUBS). Mapping them to a
+// non-existent bucket would silently drop the money, which we must never do.
+function _classifyBareBusinessExpense_(text) {
+  var raw = String(text || '').trim();
+  if (!raw) return null;
+
+  // Normalize odd whitespace (NBSP / narrow-NBSP / zero-width) to plain spaces.
+  var t = raw.replace(/[  ​]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Must contain the standalone Hebrew word עסק, optionally directly preceded by
+  // הוצאה / הוצאת. (Standalone = not glued to other letters, so "עסקה"/"עסקי"/
+  // "עסקים" do NOT trigger — those are order / adjective / list-command words.)
+  if (!/(^|\s)עסק(\s|$)/.test(t)) return null;
+
+  // GUARD 1: numbered business ("עסק 2 שיווק 300"). That route writes to its own
+  // tab and MUST win. Never hijack it here.
+  try {
+    if (typeof _parseBusinessNumberPrefix_ === 'function' && _parseBusinessNumberPrefix_(t)) return null;
+  } catch (_bnErr) {}
+
+  // GUARD 2: rich order ("עסקה יוסי הכנסה 10000 עובדים 2500 חומרים 1200"). That
+  // route writes a structured multi-row order and MUST win.
+  try {
+    if (typeof parseBusinessOrder_ === 'function' && parseBusinessOrder_(t)) return null;
+  } catch (_boErr) {}
+
+  // First positive amount anywhere in the message (integer or decimal). We use
+  // the same lenient scan the עסק block uses so word order is irrelevant
+  // ("עסק תמונות 288 שיווק" and "עסק תמונות שיווק 288" both work).
+  var amM = t.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)(?=$|[\s,.])/);
+  if (!amM) return null;
+  var amount = parseFloat(amM[1]);
+  if (!(amount > 0)) return null;
+
+  // Strip, in order: a leading הוצאה/הוצאת, the עסק token, an OPTIONAL single
+  // following business-NAME word (a Hebrew/Latin word that is NOT itself a known
+  // business-category token, e.g. "תמונות"), and the amount. Whatever remains is
+  // the subcategory phrase we classify.
+  var rest = t
+    .replace(/^\s*(?:הוצאה|הוצאת)\s+/, '')   // optional expense lead-in
+    .replace(/(^|\s)עסק(\s|$)/, ' ')          // the business marker
+    .replace(/,/g, ' ')
+    .replace(new RegExp('(^|\\s)' + amount.toString().replace('.', '\\.') + '(\\s|$)'), ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Canonical-bucket token map. Keys are the words a user types; values are the
+  // EXACT dashboard bucket names _normalizeBizSub_ recognizes.
+  var TOKEN_TO_CANON = {
+    'שיווק': 'עלות שיווק', 'פרסום': 'עלות שיווק', 'קמפיין': 'עלות שיווק',
+    'משלוח': 'משלוחים והתקנות', 'משלוחים': 'משלוחים והתקנות',
+    'התקנה': 'משלוחים והתקנות', 'התקנות': 'משלוחים והתקנות', 'אריזה': 'משלוחים והתקנות',
+    'חומר': 'עלות חומרי גלם', 'חומרים': 'עלות חומרי גלם',
+    'חומר גלם': 'עלות חומרי גלם', 'חומרי גלם': 'עלות חומרי גלם', 'רכש': 'עלות חומרי גלם',
+    // Labor + tax + generic ops all funnel to the operations overhead bucket,
+    // the only catch-all the company dashboard actually sums.
+    'עובד': 'הוצאות תפעוליות', 'עובדים': 'הוצאות תפעוליות', 'שכר': 'הוצאות תפעוליות',
+    'תפעול': 'הוצאות תפעוליות', 'תפעולי': 'הוצאות תפעוליות', 'תפעוליות': 'הוצאות תפעוליות',
+    'מס': 'הוצאות תפעוליות', 'מיסים': 'הוצאות תפעוליות', 'מסים': 'הוצאות תפעוליות',
+    'יועץ': 'יועצים', 'יועצים': 'יועצים'
+  };
+
+  var sub = null;
+
+  // (1) Explicit token map on the CLEANED remainder, longest token first so
+  // multi-word phrases like "חומר גלם" beat the bare "חומר". This runs BEFORE
+  // matchCategory on purpose: the cleaned remainder ("עובדים", "שכר") is the
+  // true subcategory phrase, whereas matchCategory scans the whole noisy string
+  // and can mis-hit on a substring accident (e.g. the materials keyword "בדים"
+  // is a substring of "עובדים"). The token map is the precise authority for the
+  // canonical business buckets.
+  if (rest) {
+    var lowRest = rest.toLowerCase();
+    var toks = Object.keys(TOKEN_TO_CANON).sort(function (a, b) { return b.length - a.length; });
+    for (var i = 0; i < toks.length; i++) {
+      if (typeof _kflKwHit_ === 'function' ? _kflKwHit_(lowRest, toks[i].toLowerCase())
+                                           : lowRest.indexOf(toks[i].toLowerCase()) >= 0) {
+        sub = TOKEN_TO_CANON[toks[i]];
+        break;
+      }
+    }
+  }
+
+  // (2) Fall back to the real classifier on the full message: if matchCategory
+  // sees a business keyword and returns a recognized עסק dashboard bucket, use
+  // it (covers business keywords not in the small token map, e.g. brand names
+  // like "פייסבוק" / "אדובי" -> שיווק / תפעוליות).
+  if (!sub) {
+    try {
+      var mc = (typeof matchCategory === 'function') ? matchCategory(t) : null;
+      if (mc && mc.category === 'עסק' && mc.subcategory &&
+          typeof _normalizeBizSub_ === 'function' && _normalizeBizSub_(mc.subcategory)) {
+        sub = mc.subcategory;
+      }
+    } catch (_mcErr) {}
+  }
+
+  // (3) Last resort: nothing recognizable. Keep the cleaned token as the
+  // subcategory but STILL force category=עסק (never fall through to personal).
+  if (!sub) sub = (rest || 'הוצאות תפעוליות');
+
+  var cleanedDesc = rest || sub;
+  // Income only if the matched bucket is revenue (מחזור) — bare business
+  // EXPENSES are never income here.
+  var isIncome = (sub === 'מחזור');
+
+  return { amount: amount, category: 'עסק', subcategory: sub, cleanedDesc: cleanedDesc, isIncome: isIncome };
 }
 
 // A char that can be part of a word (digit, Latin, or Hebrew letter).
