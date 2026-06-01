@@ -15,12 +15,16 @@ while you can't approve it.
 QA status: **full_qa 122/122, 32/32 bot suites, golden set 95.3%, security clean** on every
 night diff. Every bot branch reassembles byte-identical with exactly one `doPost`.
 
+**The bot work now merges as ONE PR (#200).** So the morning is: **merge #200 + #188 + #190**
+(sheet tools file) **+ #191 + #196 + #197**, do **one** bot re-paste, then run the Apps Script
+jobs (KV + MOE + MAAZAN_SRC_TOOLS).
+
 **The 7 things you must do in the morning, in order:**
 
 1. **Merge the web PRs** — #191 (+ #188 webhook). They auto-deploy on Vercel. Do these first.
-2. **Merge the bot PRs** — #187 + #189 + #199 — then do **ONE** re-paste of
-   `bot/ExpenseBot_DEPLOY.gs` -> Deploy -> New Version (the single re-paste bundles all three
-   bot PRs).
+2. **Merge the bot bundle** — **PR #200** (one conflict-free PR; supersedes #187/#189/#199) —
+   then do **ONE** re-paste of `bot/ExpenseBot_DEPLOY.gs` -> Deploy -> New Version, and close
+   #187/#189/#199.
 3. **Add KV creds + reclaim Script-Property slots** — add `VERCEL_KV_REST_URL` +
    `VERCEL_KV_REST_TOKEN` to the bot Script Properties if missing, run `KV_SELFTEST` (expect
    `KV OK`), then run `MIGRATE_BOT_STATE_TO_KV` (dry, then real).
@@ -48,15 +52,14 @@ optional/cleanup.
    `api/whatsapp/webhook.js`).
 3. Both auto-deploy via Vercel on push to main. No manual deploy needed.
 
-### (b) Merge the bot PRs, then ONE re-paste
-1. Merge **#187** (per-user state -> KV; completes #186; adds gated `MIGRATE_BOT_STATE_TO_KV`
-   + `KV_SELFTEST`).
-2. Merge **#189** (`יעד חדש` -> ₪1 hijack fix + `ביטוח אישי` mis-route fix + safe keywords).
-3. Merge **#199** (classifier accuracy: 9 Hebrew mis-routes fixed, incl. the `החזר מעמ`
-   VAT-refund P&L sign-flip).
-4. After **all three** are merged, reassemble `bot/ExpenseBot_DEPLOY.gs` from main **once** and
-   do a **single** re-paste into Apps Script -> **Deploy -> New Version**. One paste covers
-   #187 + #189 + #199.
+### (b) Merge the bot bundle, then ONE re-paste
+1. Merge **PR #200** (the night bundle — it already contains #187 KV-state + #189
+   objective/insurance + #199 classifier accuracy, conflict-free, golden 95.8%, gauntlet
+   green).
+2. Then **ONE** re-paste of `bot/ExpenseBot_DEPLOY.gs` -> Deploy -> New Version
+   (`KFL_BUILD_VERSION = 2026-06-01-night-bundle`).
+3. Then close **#187**, **#189**, **#199** (superseded by #200) — do **NOT** merge them
+   separately, they mutually conflict.
 
 ### (c) KV creds + reclaim Script-Property slots
 1. In the **bot** Script Properties, add `VERCEL_KV_REST_URL` + `VERCEL_KV_REST_TOKEN` if they
@@ -104,14 +107,16 @@ live sheet.
 
 ## 3. What each PR does (one line each)
 
+- **#200** — bot: NIGHT BUNDLE — the single bot PR to merge (supersedes #187/#189/#199).
+  https://github.com/stevenrancohen/kesefle/pull/200
 - **#187** — bot: per-user state -> KV (completes #186) + gated `MIGRATE_BOT_STATE_TO_KV` +
-  `KV_SELFTEST`. Needs a bot re-paste.
+  `KV_SELFTEST`. (folded into #200 — close after merging #200)
   https://github.com/stevenrancohen/kesefle/pull/187
 - **#188** — webhook: canonicalize the dead corrupt-column write in `api/whatsapp/webhook.js`.
   Auto-deploys.
   https://github.com/stevenrancohen/kesefle/pull/188
 - **#189** — bot: `יעד חדש` -> ₪1 hijack fix + `ביטוח אישי` mis-route fix + safe keywords.
-  Needs a bot re-paste (bundled with #187).
+  (folded into #200 — close after merging #200)
   https://github.com/stevenrancohen/kesefle/pull/189
 - **#190** — tools: NEW file `bot/MAAZAN_SRC_TOOLS.gs` (`FMC_` cross-year leak + `$B$2` company
   net, `ES2_` SRC P&L wiring, `FOM_` orphan marketing row). 3/3 financial + safety + blast
@@ -126,7 +131,7 @@ live sheet.
   (most important: VAT-refund `החזר מעמ` was booked as a company EXPENSE instead of revenue — a
   P&L sign-flip — now revenue; plus מגדל insurance, בוסט לפוסט -> marketing, משפיען, בית ספר ->
   חינוך, דמי טיפול רפואי -> בריאות, בקבוק יין -> food). Never-corrupt floor untouched.
-  **BOT** — bundles into the same re-paste as #187/#189.
+  **BOT** — (folded into #200 — close after merging #200)
   https://github.com/stevenrancohen/kesefle/pull/199
 
 ---
