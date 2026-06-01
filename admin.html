@@ -1091,7 +1091,7 @@
     }
     localStorage.setItem('kesefle_theme', mode);
   }
-  applyTheme(localStorage.getItem('kesefle_theme') || 'dark');
+  applyTheme(localStorage.getItem('kesefle_theme') || 'light');
   themeBtn.addEventListener('click', () => {
     const cur = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     applyTheme(cur === 'dark' ? 'light' : 'dark');
