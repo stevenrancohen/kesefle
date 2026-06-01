@@ -3304,7 +3304,14 @@ function generatePseudoSeries(target, n, intLike) {
   }
 
   function renderTable(rows) {
-    var anyMember = rows.some(function(r){ return r && r.member && String(r.member).trim() !== ''; });
+    // Newest-first: sort by real parsed date (nulls last) so the latest entries
+    // always show on top, regardless of the sheet's append order.
+    rows = (rows || []).slice().sort(function(a, b){
+      var da = parseDate(a && a.date), db = parseDate(b && b.date);
+      if (da && db) return db - da;
+      if (da) return -1; if (db) return 1; return 0;
+    });
+    var anyMember = rows.some(function(r){ var v = r && String(r.member || '').trim(); return v && !/^(false|0|לא)$/i.test(v); });
     var thMember = document.getElementById('live-th-member');
     if (thMember) thMember.style.display = anyMember ? '' : 'none';
 
@@ -3321,8 +3328,13 @@ function generatePseudoSeries(target, n, intLike) {
       var amtCell = '<td class="num-cell px-4 py-2.5 font-black ' + amtClass + '">' + money(Math.abs(amt)) + '</td>';
       var catCell = '<td class="px-4 py-2.5 text-ink-700 dark:text-ink-200">' + escapeHtml(r.category || '—') + '</td>';
       var descCell = '<td class="px-4 py-2.5 text-ink-700 dark:text-ink-200">' + escapeHtml(r.description || '') + '</td>';
+      // Consistent status/member rendering: a checkmark for a positive flag,
+      // the member name if it's a name, blank for empty/false -- never raw "TRUE".
+      var __mv = String(r.member || '').trim();
+      var __mShow = (__mv === '' || /^(false|0|לא)$/i.test(__mv)) ? ''
+        : (/^(true|1|כן|✅|v|yes)$/i.test(__mv) ? '✅' : escapeHtml(__mv));
       var memberCell = anyMember
-        ? '<td class="px-4 py-2.5 text-ink-600 dark:text-ink-300">' + escapeHtml(r.member || '') + '</td>'
+        ? '<td class="px-4 py-2.5 text-center text-ink-600 dark:text-ink-300">' + __mShow + '</td>'
         : '';
       tr.innerHTML = dateCell + amtCell + catCell + descCell + memberCell;
       frag.appendChild(tr);
