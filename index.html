@@ -217,7 +217,7 @@
   }
   .kfl-curtain-logo {
     width: 64px; height: 64px; border-radius: 16px;
-    background: linear-gradient(135deg, #0891b2, #0e7490);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     display: grid; place-items: center;
     color: white; font-size: 28px; font-weight: 900;
     transform: scale(0.9);
@@ -289,8 +289,8 @@
         },
         colors: {
           ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
-          brand:   { 50:'#ecfeff', 100:'#cffafe', 200:'#a5f3fc', 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490', 800:'#155e75', 900:'#164e63' },
-          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 500:'#3b82f6', 600:'#60a5fa' }
         },
         boxShadow: {
           glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
@@ -389,7 +389,7 @@
   /* holographic gradient sweep */
   @keyframes holo-sweep { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
   .holo-text {
-    background-image: linear-gradient(110deg, #0891b2 0%, #a855f7 25%, #06b6d4 50%, #a855f7 75%, #0891b2 100%);
+    background-image: linear-gradient(110deg, #2563eb 0%, #a855f7 25%, #3b82f6 50%, #a855f7 75%, #2563eb 100%);
     background-size: 200% 100%;
     -webkit-background-clip: text; background-clip: text; color: transparent;
     animation: holo-sweep 5s linear infinite;
@@ -425,7 +425,7 @@
   .live-dot { animation: live-blink 1.3s ease-in-out infinite; }
   /* typing cursor */
   @keyframes type-cursor { 0%,100% { opacity:1 } 50% { opacity:0 } }
-  .type-cursor::after { content:"▌"; margin-right:2px; animation: type-cursor 0.9s steps(2) infinite; color:#0891b2; }
+  .type-cursor::after { content:"▌"; margin-right:2px; animation: type-cursor 0.9s steps(2) infinite; color:#2563eb; }
   /* tilt 3d on hover (smaller cards) */
   .tilt-soft { transition: transform 0.3s cubic-bezier(0.22,0.61,0.36,1); }
   .tilt-soft:hover { transform: perspective(900px) rotateX(2deg) rotateY(-2deg) translateY(-4px); }
@@ -433,7 +433,7 @@
   .btn-neon { position: relative; overflow: hidden; }
   .btn-neon::after {
     content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px;
-    background: linear-gradient(110deg, #0891b2, #a855f7, #06b6d4, #0891b2);
+    background: linear-gradient(110deg, #2563eb, #a855f7, #3b82f6, #2563eb);
     background-size: 200% 100%; animation: holo-sweep 4s linear infinite;
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor; mask-composite: exclude;
@@ -2092,7 +2092,7 @@ function kesefleToggleDark() { /* no-op: dark only */ }
     align-items: center;
     gap: 10px;
     padding: 11px 16px 11px 14px;
-    background: linear-gradient(135deg, #0891b2, #0e7490);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: #fff;
     border: 0;
     border-radius: 9999px;
@@ -2227,7 +2227,7 @@ function kesefleToggleDark() { /* no-op: dark only */ }
 
 <!-- Scroll progress bar (continuous visual flow across sections) -->
 <div id="kfl-scroll-bar" style="position:fixed;top:0;left:0;right:0;height:2px;z-index:100;pointer-events:none">
-  <div id="kfl-scroll-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#0891b2 0%,#0e7490 50%,#84cc16 100%);transition:width 60ms linear;box-shadow:0 0 8px rgba(79,70,229,0.5)"></div>
+  <div id="kfl-scroll-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#2563eb 0%,#1d4ed8 50%,#84cc16 100%);transition:width 60ms linear;box-shadow:0 0 8px rgba(79,70,229,0.5)"></div>
 </div>
 
 <!-- Sticky mobile bottom CTA with live heartbeat (mobile only, after hero) -->
@@ -2235,11 +2235,11 @@ function kesefleToggleDark() { /* no-op: dark only */ }
   <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:#cbd5e1;flex:1;min-width:0">
     <span style="position:relative;display:inline-flex;width:8px;height:8px;flex-shrink:0">
       <span style="position:absolute;inset:0;background:#4ade80;border-radius:9999px;opacity:0.7;animation:kflPing 1.5s cubic-bezier(0,0,0.2,1) infinite"></span>
-      <span style="position:relative;width:8px;height:8px;background:#0891b2;border-radius:9999px"></span>
+      <span style="position:relative;width:8px;height:8px;background:#2563eb;border-radius:9999px"></span>
     </span>
     <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">הבוט פעיל • זמן תגובה ~<span class="num">2</span>s</span>
   </div>
-  <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'mobile_sticky' });" style="display:inline-flex;align-items:center;gap:6px;background:#0891b2;color:white;padding:9px 14px;border-radius:12px;font-weight:800;font-size:13.5px;text-decoration:none;flex-shrink:0">
+  <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'mobile_sticky' });" style="display:inline-flex;align-items:center;gap:6px;background:#2563eb;color:white;padding:9px 14px;border-radius:12px;font-weight:800;font-size:13.5px;text-decoration:none;flex-shrink:0">
     התחל
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
   </a>
