@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize';
+const KFL_BUILD_VERSION = '2026-06-02-labeled-orders';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -3175,6 +3175,146 @@ function parseBusinessOrder_(text) {
     installLabel:   _installAsRevenue ? _installLabelHe : '',
     productPrice:   _installAsRevenue ? (salePrice - installReverse) : null,
     descNote:       descNote || '',
+  };
+}
+
+// ============================================================
+// LABELED-TEMPLATE ORDER PARSER (2026-06-02)
+// ============================================================
+// Owner-only, deterministic parser for the clean structured order template
+// Steven types by hand, e.g.:
+//
+//   הזמנה              (header: "order")
+//   לקוחה: דנה      (customer: Dana)
+//   מוצר: תמונה 80-120 זכוכית   (product: picture 80-120 glass)
+//   מכירה: 1700        (sale / income the customer paid)
+//   חומר גלם: 240     (raw-material cost)
+//   משלוח/התקנה: 450  (shipping/installation = INCOME, customer paid)
+//
+// Steven confirmed (2026-06-02): משלוח/התקנה is INCOME the customer
+// paid, NOT a cost. So revenue = sale + install; production cost = material;
+// shipping(cost) = 0; profit = revenue - production cost.
+//
+// Returns
+//   { customer, product, sale, material, install,
+//     salePrice, prodCost, shipping, profit }
+// or null when the text is not a labeled order.
+//
+// Detection: fires when the text contains the header word "הזמנה" OR at
+// least 2 of the labeled fields below (a label followed by ":" or "-" then a
+// number/value). This is tried FIRST in the owner order path (before the
+// free-text parseBusinessOrder_) so a clean template is handled
+// deterministically and never falls to the personal picker.
+function parseLabeledOrder_(text) {
+  if (!text) return null;
+  var s = String(text).replace(/\r\n/g, '\n').trim();
+  if (!s) return null;
+
+  // ----- Label groups (Hebrew, longest/most-specific first within a group so
+  // a multi-word label is consumed before its bare component). All comments
+  // ASCII-only; Hebrew is written as \uXXXX escapes consistent with the file.
+  // customer  = לקוח | לקוחה | שם לקוח | שם
+  var L_CUSTOMER = ['שם לקוח', 'לקוחה', 'לקוח', 'שם', 'customer'];
+  // product   = מוצר | פריט | תיאור
+  var L_PRODUCT = ['מוצר', 'פריט', 'תיאור'];
+  // sale(income) = מכירה | מחיר מכירה | שילם | שילמה | סכום | סכום ששילמה
+  var L_SALE     = ['סכום ששילמה', 'מחיר מכירה', 'מכירה', 'שילמה', 'שילם', 'סכום'];
+  // material cost = חומר גלם | עלות חומר גלם | עלות חומרים | חומר | גלם
+  var L_MATERIAL = ['עלות חומר גלם', 'עלות חומרים', 'חומר גלם', 'חומר', 'גלם'];
+  // install/shipping INCOME = משלוח | התקנה | משלוח/התקנה | משלוחים | התקנות | משלוחים והתקנות
+  var L_INSTALL  = ['משלוחים והתקנות', 'משלוח/התקנה', 'משלוחים', 'התקנות', 'משלוח', 'התקנה'];
+
+  // Header word that flags an order even with <2 labeled fields.
+  var HEADER_RE = /(^|\s)הזמנה(\s|$|[:\-,])/;
+
+  // Escape a label for use in a RegExp (labels may contain "/").
+  function _esc(str) { return String(str).replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&'); }
+
+  // Build a single alternation of all label variants in a group, longest
+  // first (the arrays above are already ordered longest-first per group).
+  function _grpAlt(group) { return group.map(_esc).join('|'); }
+
+  // Pull the VALUE for the first label in `group` that appears as a labeled
+  // field. A labeled field is: label, then ":" or "-" (optionally spaced) OR
+  // just whitespace, then the value up to end-of-line. Anchored at a line
+  // boundary / start-of-string so a label inside a product description
+  // ("תמונה ... זכוכית") is not mistaken for a field.
+  function _field(group) {
+    var alt = _grpAlt(group);
+    // (?:^|\n)\s*(LABEL)\s*[:\-]\s*(VALUE)   -> colon/dash separated
+    var reSep = new RegExp('(?:^|\\n)\\s*(?:' + alt + ')\\s*[:\\-]\\s*([^\\n]+)', 'i');
+    var m = s.match(reSep);
+    if (m && m[1] != null && String(m[1]).trim()) return String(m[1]).trim();
+    return null;
+  }
+
+  // Numeric value variant: same as _field but coerces to a positive number.
+  // Accepts thousands separators and decimals; grabs the first number in the
+  // value so trailing currency words ("450 ש״ח") are tolerated.
+  function _fieldNum(group) {
+    var v = _field(group);
+    if (v == null) return null;
+    var nm = String(v).replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
+    if (!nm) return null;
+    var n = parseFloat(nm[0]);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+
+  var customer = _field(L_CUSTOMER);
+  var product  = _field(L_PRODUCT);
+  var sale     = _fieldNum(L_SALE);
+  var material = _fieldNum(L_MATERIAL);
+  var install  = _fieldNum(L_INSTALL);
+
+  // Count distinct labeled fields actually found (any of the five groups).
+  var fieldsFound = 0;
+  if (customer != null) fieldsFound++;
+  if (product  != null) fieldsFound++;
+  if (sale     != null) fieldsFound++;
+  if (material != null) fieldsFound++;
+  if (install  != null) fieldsFound++;
+
+  var hasHeader = HEADER_RE.test(s);
+
+  // Detection gate: header word OR at least 2 labeled fields.
+  if (!hasHeader && fieldsFound < 2) return null;
+  // Guard: even with the header, we need at least a sale OR a product to make
+  // a meaningful order row (a lone "הזמנה" is not an order).
+  if (sale == null && product == null) return null;
+
+  // ----- Money semantics (Steven-confirmed):
+  //   salePrice (revenue) = sale + install  (both customer-paid income)
+  //   prodCost            = material
+  //   shipping(cost)      = 0  (install is INCOME, never a cost here)
+  //   profit              = salePrice - prodCost
+  var saleN    = sale    != null ? sale    : 0;
+  var installN = install != null ? install : 0;
+  var prodCost = material != null ? material : 0;
+  var salePrice = saleN + installN;
+  var shipping = 0;
+  var profit = salePrice - prodCost;
+
+  // ----- Material keyword for the order's material column (col E). Pulled from
+  // the product string if one of the known materials appears there.
+  // materials = זכוכית | אקריליק | קנבס | עץ | מתכת | אלומיניום | פלקסי
+  var matKw = '';
+  var MATERIAL_KEYWORDS = ['זכוכית', 'אקריליק', 'קנבס', 'עץ', 'מתכת', 'אלומיניום', 'פלקסי'];
+  var prodForKw = String(product || '');
+  for (var i = 0; i < MATERIAL_KEYWORDS.length; i++) {
+    var kw = MATERIAL_KEYWORDS[i];
+    if (new RegExp('(?:^|\\s)' + kw + '(?:\\s|$)').test(prodForKw)) { matKw = kw; break; }
+  }
+
+  return {
+    customer:  customer ? String(customer).trim() : '',
+    product:   product  ? String(product).trim()  : '',
+    sale:      sale     != null ? sale    : 0,
+    material:  matKw,            // material KEYWORD for the order material column
+    install:   install  != null ? install : 0,
+    salePrice: salePrice,        // revenue = sale + install
+    prodCost:  prodCost,         // material cost
+    shipping:  shipping,         // always 0 (install is income)
+    profit:    profit,           // salePrice - prodCost
   };
 }
 
@@ -8418,6 +8558,72 @@ function processExpense(text, fromPhone) {
     }
   } catch (__bbeErr) {
     Logger.log('bare-biz detector err (falling through): ' + (__bbeErr && __bbeErr.message));
+  }
+
+  // ───── LABELED-TEMPLATE ORDER (2026-06-02) ─────
+  // Owner types a clean structured template:
+  //   הזמנה / לקוחה: X / מוצר: ... / מכירה: N / חומר גלם: N / משלוח/התקנה: N
+  // parseLabeledOrder_ handles it DETERMINISTICALLY and writes a full הזמנות
+  // row, so a labeled template never falls through to the free-text
+  // parseBusinessOrder_ or the personal picker. Steven confirmed (2026-06-02)
+  // that משלוח/התקנה here is INCOME the customer paid (NOT a cost): revenue =
+  // sale + install, prodCost = material, shipping(cost) = 0, profit =
+  // revenue - prodCost.
+  //
+  // OWNER-ONLY: this block sits AFTER the tenant-return guard and the
+  // non-owner abort above, exactly like the parseBusinessOrder_ block below,
+  // so it always writes the owner SHEET_ID and no tenant can reach it. Tried
+  // FIRST in the owner order path (before parseBusinessOrder_).
+  try {
+    var __lblOrder = (typeof parseLabeledOrder_ === 'function') ? parseLabeledOrder_(__hT) : null;
+    if (__lblOrder && (!fromPhone || _isOwnerPhone_(fromPhone))) {
+      __hProps.deleteProperty('smart_pending');
+      // Map the labeled-order shape onto the _writeOrderRow_ contract:
+      //   size  = full product string (description column D)
+      //   material = material keyword (column E)
+      //   productionCost = prodCost, salePrice = revenue, shipping = 0
+      var __lblWrite = {
+        customer:       __lblOrder.customer || '',
+        size:           __lblOrder.product || '',
+        material:       __lblOrder.material || '',
+        productionCost: __lblOrder.prodCost || 0,
+        salePrice:      __lblOrder.salePrice || 0,
+        shipping:       0,
+        profit:         __lblOrder.profit != null ? __lblOrder.profit : '',
+        rawText:        text,
+      };
+      var __lblRes = _writeOrderRow_(__lblWrite);
+      if (__lblRes && __lblRes.ok) {
+        var __lblSale    = Number(__lblOrder.sale) || 0;
+        var __lblInstall = Number(__lblOrder.install) || 0;
+        var __lblTotal   = Number(__lblOrder.salePrice) || 0;
+        var __lblMat     = Number(__lblOrder.prodCost) || 0;
+        var __lblProfit  = __lblOrder.profit != null ? Number(__lblOrder.profit) : null;
+        var __lblLn = [];
+        __lblLn.push('✅ רשמתי הזמנה');
+        if (__lblOrder.customer) __lblLn.push('👤 ' + __lblOrder.customer);
+        if (__lblOrder.product)  __lblLn.push('🖼 ' + __lblOrder.product);
+        // Total sale line. When the customer paid an install/shipping add-on,
+        // spell out מוצר + התקנה = total so the income breakdown is clear.
+        if (__lblInstall > 0) {
+          __lblLn.push('מכירה: מוצר ₪' + __lblSale.toLocaleString('he-IL') +
+                       ' + התקנה ₪' + __lblInstall.toLocaleString('he-IL') +
+                       ' = ₪' + __lblTotal.toLocaleString('he-IL'));
+        } else {
+          __lblLn.push('מכירה: ₪' + __lblTotal.toLocaleString('he-IL'));
+        }
+        if (__lblMat > 0) __lblLn.push('חומר גלם: ₪' + __lblMat.toLocaleString('he-IL'));
+        if (__lblProfit != null) __lblLn.push('רווח: ₪' + __lblProfit.toLocaleString('he-IL'));
+        __lblLn.push('נכנס להזמנות ולעסק תמונות.');
+        if (!__lblOrder.customer) __lblLn.push('רוצה? שלח "לקוח <שם>" ואשייך.');
+        return { reply: __lblLn.join('\n') };
+      }
+      Logger.log('labeled-order parse OK but write failed: ' + (__lblRes && __lblRes.error));
+      // Fall through to the free-text order / classifier path if the write
+      // blew up (e.g. orders tab missing), rather than dropping the message.
+    }
+  } catch (__lblErr) {
+    Logger.log('parseLabeledOrder_ THREW (falling through): ' + (__lblErr && __lblErr.message));
   }
 
   // 2026-06-02 NL-income routing fix.

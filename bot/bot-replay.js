@@ -95,12 +95,13 @@ const code = [
   extractFn('_matchCategory_long') || '',
   extractFn('_coerceCategoryBySubcategory') || '',
   extractFn('_normalizeBizSub_') || '',
+  extractFn('parseLabeledOrder_') || '',
   extractFn('parseBusinessOrder_') || '',
   extractFn('_parseBusinessNumberPrefix_') || '',
   extractFn('matchCategory') || '',
   extractFn('_classifyBareBusinessExpense_') || '',
   // Export the things we want to use
-  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, CATEGORY_MAP };',
+  'this.__bot = { parseLabeledOrder_, parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, CATEGORY_MAP };',
 ].join('\n\n');
 
 vm.createContext(sandbox);
@@ -136,6 +137,40 @@ function replay(input) {
     rest: amountMatch[2] || '',
     leadChar: amountMatch[1] ? amountMatch[1].charAt(0) : null,
   } : null;
+
+  // 1.5) Labeled-template order parse (2026-06-02). Mirrors processExpense:
+  // tried FIRST in the owner order path, before the free-text parseBusinessOrder_.
+  // A clean structured template ("הזמנה / לקוחה: X / מוצר: ... / מכירה: N /
+  // חומר גלם: N / משלוח/התקנה: N") is handled deterministically here.
+  if (typeof bot.parseLabeledOrder_ === 'function') {
+    try {
+      const lbl = bot.parseLabeledOrder_(text);
+      if (lbl) {
+        out.decisions.parseLabeledOrder = {
+          matched: true,
+          customer: lbl.customer || null,
+          product: lbl.product || null,
+          sale: lbl.sale || null,
+          install: lbl.install || null,
+          material: lbl.material || null,
+          salePrice: lbl.salePrice || null,
+          prodCost: lbl.prodCost || null,
+          shipping: lbl.shipping,
+          profit: lbl.profit != null ? lbl.profit : null,
+        };
+        out.predicted_target = {
+          sheet: 'OWNER (or per-tenant)',
+          tab: 'הזמנות',
+          dashboard_row: 'מאזן חברה revenue + per-sub expense',
+        };
+        return out;
+      } else {
+        out.decisions.parseLabeledOrder = { matched: false };
+      }
+    } catch (e) {
+      out.decisions.parseLabeledOrder = { error: e.message };
+    }
+  }
 
   // 2) Business order parse
   if (typeof bot.parseBusinessOrder_ === 'function') {
