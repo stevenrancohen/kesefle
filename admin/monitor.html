@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="he" dir="rtl" class="dark">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>מוניטור — כספ'לה Admin</title>
 <meta name="robots" content="noindex,nofollow" />
-<meta name="theme-color" content="#0f1422" />
+<meta name="theme-color" content="#f7f8fb" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=Rubik:wght@600;700;800;900&display=swap" />
@@ -31,16 +31,16 @@
   .num, .mono { direction: ltr; unicode-bidi: isolate; font-family: 'Inter', ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
   .gate-blur { filter: blur(8px); pointer-events: none; user-select: none; }
   .lift { transition: transform 0.25s cubic-bezier(0.22,0.61,0.36,1), box-shadow 0.25s, border-color 0.25s; }
-  .lift:hover { transform: translateY(-2px); box-shadow: 0 18px 50px -18px rgba(15,20,34,0.45); }
+  .lift:hover { transform: translateY(-2px); box-shadow: 0 18px 50px -18px rgba(15,20,34,0.18); }
   @keyframes pulse-dot { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
   .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
   @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .fade-up { animation: fade-up 0.45s cubic-bezier(0.22,0.61,0.36,1) both; }
-  .stat-card { background: linear-gradient(160deg, rgba(34,197,94,0.06), rgba(15,20,34,0.6)); }
-  .stat-card-accent { background: linear-gradient(160deg, rgba(168,85,247,0.08), rgba(15,20,34,0.6)); }
+  .stat-card { background: linear-gradient(160deg, rgba(34,197,94,0.10), #ffffff); }
+  .stat-card-accent { background: linear-gradient(160deg, rgba(168,85,247,0.10), #ffffff); }
 </style>
 </head>
-<body class="bg-ink-900 text-white antialiased">
+<body class="bg-ink-50 text-ink-900 antialiased">
 
 <!-- gate overlay -->
 <div id="gate" class="fixed inset-0 z-50 grid place-items-center bg-ink-900/95 backdrop-blur-xl">
@@ -57,79 +57,79 @@
 </div>
 
 <!-- header -->
-<header class="border-b border-ink-700/60 bg-ink-900/70 backdrop-blur sticky top-0 z-30">
+<header class="border-b border-ink-200 bg-white/80 backdrop-blur sticky top-0 z-30">
   <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
     <div class="flex items-center gap-3">
-      <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black">₪</span>
+      <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white">₪</span>
       <div>
-        <div class="text-base font-bold">כספ'לה — Monitor</div>
-        <div class="text-[11px] text-ink-400">נתוני מערכת בזמן אמת</div>
+        <div class="text-base font-bold text-ink-900">כספ'לה — Monitor</div>
+        <div class="text-[11px] text-ink-500">נתוני מערכת בזמן אמת</div>
       </div>
     </div>
     <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 text-xs font-mono">
-        <span class="pulse-dot inline-block h-2 w-2 rounded-full bg-brand-400"></span>
+      <div class="flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 text-xs font-mono text-ink-700">
+        <span class="pulse-dot inline-block h-2 w-2 rounded-full bg-brand-500"></span>
         <span id="last-update">—</span>
       </div>
-      <button id="refresh-btn" class="rounded-xl border border-ink-700 bg-ink-800 px-3 py-1.5 text-xs font-bold transition hover:border-brand-500 hover:text-brand-300">🔄 רענן</button>
-      <a href="/admin/diagnostics" class="rounded-xl border border-ink-700 bg-ink-800 px-3 py-1.5 text-xs font-bold transition hover:border-accent-500 hover:text-accent-400">🩺 אבחון</a>
+      <button id="refresh-btn" class="rounded-xl border border-ink-200 bg-white px-3 py-1.5 text-xs font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-600">🔄 רענן</button>
+      <a href="/admin/diagnostics" class="rounded-xl border border-ink-200 bg-white px-3 py-1.5 text-xs font-bold text-ink-700 transition hover:border-accent-500 hover:text-accent-600">🩺 אבחון</a>
     </div>
   </div>
 </header>
 
 <main class="mx-auto max-w-6xl px-5 py-8">
   <!-- error banner -->
-  <div id="error-banner" class="mb-6 hidden rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+  <div id="error-banner" class="mb-6 hidden rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
     <span id="error-text">—</span>
   </div>
 
   <!-- top stat row -->
   <section class="grid gap-4 md:grid-cols-4">
-    <div class="stat-card lift rounded-2xl border border-ink-700/70 p-5">
-      <div class="text-[11px] font-bold uppercase tracking-wider text-brand-300">משתמשים פעילים</div>
-      <div class="mt-2 text-4xl font-black num" id="stat-users">—</div>
-      <div class="mt-1 text-xs text-ink-400">טלפונים מקושרים</div>
+    <div class="stat-card lift rounded-2xl border border-ink-200 p-5 shadow-sm">
+      <div class="text-[11px] font-bold uppercase tracking-wider text-brand-700">משתמשים פעילים</div>
+      <div class="mt-2 text-4xl font-black num text-ink-900" id="stat-users">—</div>
+      <div class="mt-1 text-xs text-ink-500">טלפונים מקושרים</div>
     </div>
-    <div class="stat-card lift rounded-2xl border border-ink-700/70 p-5">
-      <div class="text-[11px] font-bold uppercase tracking-wider text-brand-300">משפחות</div>
-      <div class="mt-2 text-4xl font-black num" id="stat-families">—</div>
-      <div class="mt-1 text-xs text-ink-400">קבוצות פעילות</div>
+    <div class="stat-card lift rounded-2xl border border-ink-200 p-5 shadow-sm">
+      <div class="text-[11px] font-bold uppercase tracking-wider text-brand-700">משפחות</div>
+      <div class="mt-2 text-4xl font-black num text-ink-900" id="stat-families">—</div>
+      <div class="mt-1 text-xs text-ink-500">קבוצות פעילות</div>
     </div>
-    <div class="stat-card-accent lift rounded-2xl border border-ink-700/70 p-5">
-      <div class="text-[11px] font-bold uppercase tracking-wider text-accent-400">פרימיום</div>
-      <div class="mt-2 text-4xl font-black num" id="stat-premium">—</div>
-      <div class="mt-1 text-xs text-ink-400">מנויים פעילים</div>
+    <div class="stat-card-accent lift rounded-2xl border border-ink-200 p-5 shadow-sm">
+      <div class="text-[11px] font-bold uppercase tracking-wider text-accent-600">פרימיום</div>
+      <div class="mt-2 text-4xl font-black num text-ink-900" id="stat-premium">—</div>
+      <div class="mt-1 text-xs text-ink-500">מנויים פעילים</div>
     </div>
-    <div class="stat-card lift rounded-2xl border border-ink-700/70 p-5">
-      <div class="text-[11px] font-bold uppercase tracking-wider text-brand-300">למידה גלובלית</div>
-      <div class="mt-2 text-4xl font-black num" id="stat-learning">—</div>
-      <div class="mt-1 text-xs text-ink-400">מילים בזיכרון המשותף</div>
+    <div class="stat-card lift rounded-2xl border border-ink-200 p-5 shadow-sm">
+      <div class="text-[11px] font-bold uppercase tracking-wider text-brand-700">למידה גלובלית</div>
+      <div class="mt-2 text-4xl font-black num text-ink-900" id="stat-learning">—</div>
+      <div class="mt-1 text-xs text-ink-500">מילים בזיכרון המשותף</div>
     </div>
   </section>
 
   <!-- secondary row -->
   <section class="mt-6 grid gap-4 md:grid-cols-2">
-    <div class="lift rounded-2xl border border-ink-700/70 bg-ink-800/40 p-5">
-      <div class="mb-3 text-sm font-bold text-ink-200">מצב הבוט</div>
+    <div class="lift rounded-2xl border border-ink-200 bg-white p-5 shadow-sm">
+      <div class="mb-3 text-sm font-bold text-ink-900">מצב הבוט</div>
       <div class="space-y-2 text-sm">
         <div class="flex items-center justify-between">
-          <span class="text-ink-400">פינג אחרון</span>
-          <span class="font-mono text-brand-300" id="bot-last-ping">—</span>
+          <span class="text-ink-500">פינג אחרון</span>
+          <span class="font-mono text-brand-700" id="bot-last-ping">—</span>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-ink-400">סה״כ הרשמות</span>
-          <span class="font-mono text-brand-300 num" id="bot-signups">—</span>
+          <span class="text-ink-500">סה״כ הרשמות</span>
+          <span class="font-mono text-brand-700 num" id="bot-signups">—</span>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-ink-400">יחס המרה לפרימיום</span>
-          <span class="font-mono text-brand-300 num" id="bot-conversion">—</span>
+          <span class="text-ink-500">יחס המרה לפרימיום</span>
+          <span class="font-mono text-brand-700 num" id="bot-conversion">—</span>
         </div>
       </div>
     </div>
 
-    <div class="lift rounded-2xl border border-ink-700/70 bg-ink-800/40 p-5">
-      <div class="mb-3 text-sm font-bold text-ink-200">הוראות שימוש</div>
-      <div class="space-y-2 text-xs text-ink-300">
+    <div class="lift rounded-2xl border border-ink-200 bg-white p-5 shadow-sm">
+      <div class="mb-3 text-sm font-bold text-ink-900">הוראות שימוש</div>
+      <div class="space-y-2 text-xs text-ink-600">
         <div>• הדף מתרענן אוטומטית כל <span class="num">30</span> שניות.</div>
         <div>• הסיסמה מאוחסנת ב-localStorage אחרי כניסה ראשונה.</div>
         <div>• כל הספירות מבוצעות עם KV SCAN — מהיר עד ~5,000 משתמשים.</div>
@@ -139,10 +139,10 @@
   </section>
 
   <!-- raw stats footer -->
-  <section class="mt-6 rounded-2xl border border-ink-700/70 bg-ink-800/30 p-4">
+  <section class="mt-6 rounded-2xl border border-ink-200 bg-white p-4 shadow-sm">
     <details class="text-sm">
-      <summary class="cursor-pointer font-bold text-ink-300">📦 Raw JSON (debug)</summary>
-      <pre id="raw-json" class="mt-3 overflow-x-auto rounded-xl bg-ink-900/80 p-3 text-[11px] font-mono text-ink-300" dir="ltr">—</pre>
+      <summary class="cursor-pointer font-bold text-ink-600">📦 Raw JSON (debug)</summary>
+      <pre id="raw-json" class="mt-3 overflow-x-auto rounded-xl border border-ink-200 bg-ink-50 p-3 text-[11px] font-mono text-ink-700" dir="ltr">—</pre>
     </details>
   </section>
 </main>
