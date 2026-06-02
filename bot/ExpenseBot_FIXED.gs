@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-02-nl-biz-orders';
+const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2616,7 +2616,11 @@ function handleInteractiveReply_(fromPhone, interactive) {
     // isIncome from the chosen category + the pending raw text (which may
     // start with '+') so income picks land FALSE in col H.
     var __interIsInc = _resolveIsIncome_(null, (pending && pending.rawText) || '', category, subcategory);
-    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', !__interIsInc]);
+    // Canonicalize col E to a dashboard row label (idempotent for the picker's
+    // already-canonical labels; safety net if a granular option slips through).
+    var __interSub = (typeof _normalizeSubForDashboard_ === 'function')
+      ? _normalizeSubForDashboard_(subcategory, category) : subcategory;
+    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(__interSub), sanitizeForSheet(description), 'WhatsApp (interactive)', !__interIsInc]);
     // Original-text cell note — capture the raw user message that triggered
     // this categorization (preserves provenance even after corrections).
     try {
@@ -8331,7 +8335,11 @@ function processExpense(text, fromPhone) {
               // 'מחזור' (business revenue) or the raw input had '+', flip col
               // H to FALSE (income). Old code hardcoded TRUE here too.
               var __hPIsInc = _resolveIsIncome_(__hPicked, __hP.rawText, __hPCategory, __hPSubcategory);
-              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', !__hPIsInc]);
+              // Canonicalize col E to a company-dashboard bucket (this path is
+              // always business) so the cost is visible on מאזן חברה.
+              var __hPDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+                ? _normalizeSubForDashboard_(__hPSubcategory, __hPCategory) : __hPSubcategory;
+              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPDashSub), sanitizeForSheet(__hPDesc), 'WhatsApp', !__hPIsInc]);
               // Original-text cell note — preserves the business amount input + picked category.
               try {
                 var __hPLastForNote = __hPSheet.getLastRow();
@@ -8380,7 +8388,10 @@ function processExpense(text, fromPhone) {
         var __bbeSub = __bbe.subcategory;
         var __bbeDesc = __bbe.cleanedDesc || __bbeSub;
         var __bbeIsInc = _resolveIsIncome_({ isIncome: __bbe.isIncome }, __hT, __bbeCat, __bbeSub);
-        __bbeSheet.appendRow([__bbeDate, __bbeMonth, __bbe.amount, sanitizeForSheet(__bbeCat), sanitizeForSheet(__bbeSub), sanitizeForSheet(__bbeDesc), 'WhatsApp', !__bbeIsInc]);
+        // Canonicalize col E to a company-dashboard bucket so it is visible.
+        var __bbeDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+          ? _normalizeSubForDashboard_(__bbeSub, __bbeCat) : __bbeSub;
+        __bbeSheet.appendRow([__bbeDate, __bbeMonth, __bbe.amount, sanitizeForSheet(__bbeCat), sanitizeForSheet(__bbeDashSub), sanitizeForSheet(__bbeDesc), 'WhatsApp', !__bbeIsInc]);
         try {
           var __bbeRowForNote = __bbeSheet.getLastRow();
           _kfl_setRowOriginalNote(__bbeSheet, __bbeRowForNote, _kfl_buildOriginalNote('Original WhatsApp (business)', __hT));
@@ -9312,8 +9323,13 @@ function processExpense(text, fromPhone) {
       // signals (matched.isIncome, '+' prefix, categorical fallback) so
       // income rows write FALSE in col H, keeping dashboards correct.
       var __isInc = _resolveIsIncome_(matched, item.originalText || text, matched.category, matched.subcategory);
-      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory + ' isIncome=' + __isInc);
-      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', !__isInc]);
+      // ROOT-CAUSE FIX (disappearing money): canonicalize the granular sub to a
+      // dashboard ROW LABEL before writing col E, else the SUMIFS misses it.
+      var __dashSub = (typeof _normalizeSubForDashboard_ === 'function')
+        ? _normalizeSubForDashboard_(matched.subcategory, matched.category)
+        : matched.subcategory;
+      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory + ' dashSub=' + __dashSub + ' isIncome=' + __isInc);
+      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(__dashSub), sanitizeForSheet(item.description), 'WhatsApp', !__isInc]);
       Logger.log('processExpense: appendRow DONE, lastRow=' + sheet.getLastRow());
       // ── Original-text cell note (column F = פירוט). Records the raw user
       // message + optional FX conversion line. Capture row number BEFORE the
@@ -11235,12 +11251,15 @@ function _handleReceiptImage_(fromPhone, image) {
   }
   var monthKey = Utilities.formatDate(rowDate, 'Asia/Jerusalem', 'yyyy-MM');
   var rowDescription = vendor ? (vendor + ' — ' + description) : description;
+  // Canonicalize col E to a dashboard row label so the receipt amount is visible.
+  var __rcptDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+    ? _normalizeSubForDashboard_(matched.subcategory, matched.category) : matched.subcategory;
   sheet.appendRow([
     rowDate,
     monthKey,
     amount,
     sanitizeForSheet(matched.category),
-    sanitizeForSheet(matched.subcategory),
+    sanitizeForSheet(__rcptDashSub),
     sanitizeForSheet(rowDescription),
     'WhatsApp (receipt)',
     true
@@ -13031,12 +13050,222 @@ var _BIZ_DASH_SUBS = {
   'מיסים': 'הוצאות תפעוליות',
   'אחר': 'הוצאות תפעוליות',
   'שונות': 'הוצאות תפעוליות',
-  'שונות עסק': 'הוצאות תפעוליות'
+  'שונות עסק': 'הוצאות תפעוליות',
+  // 2026-06-02 taxonomy-normalize: product collections roll into the ops bucket
+  // (the company dashboard ops criteria also match *קולקצי*).
+  'קולקציות': 'הוצאות תפעוליות'
 };
 
 function _normalizeBizSub_(subcategory) {
   var s = String(subcategory || '').trim();
   return _BIZ_DASH_SUBS[s] || null;
+}
+
+// ─── Taxonomy normalization (col E -> dashboard row label) ──────────────────
+//
+// ROOT-CAUSE FIX (the "disappearing money" bug): the classifier emits a
+// GRANULAR subcategory into col E (e.g. "אוכל לבית — שופרסל וריאציות",
+// "Electronics - big chains", "שיניים"), but the per-tenant dashboards
+// exact/wildcard-match col E against a much SMALLER set of row labels -- any
+// granular sub that is not a substring of a row label hits NO row and the
+// amount is silently invisible. This MIRRORS normalizeSubcategoryForDashboard
+// in lib/sheet-writer.js (the Vercel write path); keep the two in lock-step.
+//
+// _normalizeSubForDashboard_(sub, category) returns the canonical row label.
+// Pipeline (first match wins) so money is NEVER invisible:
+//   1. business (category === "עסק") -> _BIZ_DASH_SUBS, ops catch-all otherwise.
+//   2. exact personal mapping in _KFL_SUB_TO_DASHBOARD_ROW.
+//   3. split on " — " (U+2014) and retry the prefix.
+//   4. if the value already CONTAINS a personal row label, leave it unchanged.
+//   5. ultimate catch-all "שונות".
+var _KFL_PERSONAL_DASH_ROWS = ['הכנסה 1 — משכורת', 'הכנסה 2 — עסק', 'הכנסה 3 — נוסף', 'שונות (הכנסות)', 'בית', 'מכון כושר', 'אפליקציות', 'תקשורת', 'לימודים', 'ביטוח אישי', 'בנקאות', 'מנויים דיגיטליים', 'חשמל', 'מים', 'תחזוקת בית', 'תינוק', 'מתנות', 'חיות מחמד', 'תרופות', 'חופשות', 'אוכל לבית', 'אוכל בחוץ', 'דלק', 'חניה', 'מונית', 'ליים', 'אחזקת רכב', 'תחבורה ציבורית', 'ביטוח רכב', 'מוסך', 'ביגוד', 'טיפוח', 'בריאות', 'בילויים', 'שונות'];
+
+var _KFL_SUB_TO_DASHBOARD_ROW = {
+  'אוכל בחוץ — אפליקציות משלוח': 'אוכל בחוץ',
+  'מזון רחוב / קיוסקים / חטיפים': 'אוכל בחוץ',
+  'משקאות — מותגים שמופיעים בהוצאות': 'אוכל בחוץ',
+  'אוכל לבית — אורגני ובריאות': 'אוכל לבית',
+  'אוכל לבית — גבינות ומעדנים': 'אוכל לבית',
+  'אוכל לבית — דגים': 'אוכל לבית',
+  'אוכל לבית — חנויות נוחות 24/7': 'אוכל לבית',
+  'אוכל לבית — יין ואלכוהול': 'אוכל לבית',
+  'אוכל לבית — מאפיות ולחם': 'אוכל לבית',
+  'אוכל לבית — סופר מינים אחרים': 'אוכל לבית',
+  'אוכל לבית — סופרמרקטים ארציים': 'אוכל לבית',
+  'אוכל לבית — קמחנים ודברי מאפה': 'אוכל לבית',
+  'אוכל לבית — קצביות': 'אוכל לבית',
+  'אוכל לבית — שווקים פתוחים': 'אוכל לבית',
+  'אוכל לבית — שופרסל וריאציות': 'אוכל לבית',
+  'השכרת רכב': 'אחזקת רכב',
+  'רישוי': 'אחזקת רכב',
+  'רכב שכור': 'אחזקת רכב',
+  'BMW s1000': 'אחזקת רכב',
+  'Accessories': 'ביגוד',
+  'Baby and children stores': 'ביגוד',
+  'International fashion chains': 'ביגוד',
+  'Israeli fashion chains - men': 'ביגוד',
+  'Israeli fashion chains - women': 'ביגוד',
+  'Israeli kids fashion': 'ביגוד',
+  'Luxury and designer brands': 'ביגוד',
+  'Online shopping additional': 'ביגוד',
+  'Shoes - Israeli chains': 'ביגוד',
+  'Specialty retail': 'ביגוד',
+  'Sportswear chains': 'ביגוד',
+  'Toys and games': 'ביגוד',
+  'Travel goods': 'ביגוד',
+  'Underwear and swimwear': 'ביגוד',
+  'ביטוח': 'ביטוח אישי',
+  'ביטוח בנייני ועסקים': 'ביטוח אישי',
+  'ביטוח כללי - חברות נוספות': 'ביטוח אישי',
+  'ביטוחי חיים וחיסכון - מותגי משנה': 'ביטוח אישי',
+  'ספקי אבטחה ואזעקות': 'ביטוח אישי',
+  'אירועים': 'בילויים',
+  'בילוי ויציאה': 'בילויים',
+  'חצי איירון מן': 'בילויים',
+  'יציאות': 'בילויים',
+  'לוטו': 'בילויים',
+  'משחקי מחשב וקונסולה': 'בילויים',
+  'משחקים': 'בילויים',
+  'פלייסטיישן': 'בילויים',
+  'נדל': 'בית',
+  'נדל"ן - אגרות בנייה והיתרים': 'בית',
+  'ספקי מנעולים ושירות חירום': 'בית',
+  'תיווך ונדל': 'בית',
+  'תיווך ונדל"ן - תשלומי שכירות': 'בית',
+  'השקעות': 'בנקאות',
+  'חיסכון ופנסיה - גמל וקרנות השתלמות': 'בנקאות',
+  'פיקדונות, ניהול חשבון ועמלות בנקאיות': 'בנקאות',
+  'שירותים מקצועיים - רואי חשבון ומיסים': 'בנקאות',
+  'שירותים מקצועיים נוספים - יעוץ': 'בנקאות',
+  'שירותים פיננסיים - ברוקרים והשקעות': 'בנקאות',
+  'תוכנות חשבונאות וניהול': 'בנקאות',
+  'תכנון פנסיוני וזכויות': 'בנקאות',
+  'ביטוח רפואי - השלמות וביטוחים פרטיים': 'בריאות',
+  'הוצאות לבעלי חיים - וטרינר ושירותים': 'בריאות',
+  'ספורט ותוספים': 'בריאות',
+  'שיניים': 'בריאות',
+  'שירותי דיור מוגן וגיל הזהב': 'בריאות',
+  'שירותי קלינאות והעצמה': 'בריאות',
+  'שירותי שיקום וגיל הזהב': 'בריאות',
+  'שכר טיפול ושיניים בילדים': 'בריאות',
+  'כביש 6': 'דלק',
+  'טיסות': 'חופשות',
+  'מלונות': 'חופשות',
+  'מרוץ - אוסטריה': 'חופשות',
+  'תיירות': 'חופשות',
+  'Pet food brands': 'חיות מחמד',
+  'Pet stores - chains': 'חיות מחמד',
+  'Veterinary': 'חיות מחמד',
+  'גז': 'חשמל',
+  'Beauty and cosmetics chains': 'טיפוח',
+  'Hair salons and styling': 'טיפוח',
+  'קורקינט': 'ליים',
+  'אקדמיה - אגרות וביטוחי סטודנט': 'לימודים',
+  'חינוך': 'לימודים',
+  'חינוך - אוניברסיטאות ומכללות': 'לימודים',
+  'חינוך - גנים ובתי ספר פרטיים': 'לימודים',
+  'חינוך - חוגים והעשרה': 'לימודים',
+  'חינוך - שיעורים פרטיים ובגרות': 'לימודים',
+  'חינוך וטיפול': 'לימודים',
+  'מוסדות אקדמיים - תקצוב מדינה': 'לימודים',
+  'מוסדות חינוך - מקצועות הרפואה': 'לימודים',
+  'מסלולי לימוד מבוגרים והעצמה': 'לימודים',
+  'מסלולי לימוד מקצועיים ותעודות': 'לימודים',
+  'קורסים מקוונים': 'לימודים',
+  'כושר': 'מכון כושר',
+  'כושר ומנויים': 'מכון כושר',
+  'אפולו': 'מנויים דיגיטליים',
+  'חדשות ומגזינים': 'מנויים דיגיטליים',
+  'סטרימינג': 'מנויים דיגיטליים',
+  'AI ובינה': 'מנויים דיגיטליים',
+  'אבא': 'שונות',
+  'אגרות תעבורה - לרכב ולמשאיות': 'שונות',
+  'אישי': 'שונות',
+  'אלקטרוניקה': 'שונות',
+  'ביטוח לאומי - קצבאות וניכויים מיוחדים': 'שונות',
+  'ביטוח לאומי - שירותים מקוונים': 'שונות',
+  'גיא': 'שונות',
+  'ועדת מנהלת ואיגוד מקצועי': 'שונות',
+  'מוסדות תרבות וטריבליות': 'שונות',
+  'מיסי חברה - תאגידי וניהול': 'שונות',
+  'מיסים ואגרות': 'שונות',
+  'ממשלה - מיסים, אגרות ודוחות': 'שונות',
+  'נסיעות': 'שונות',
+  'ספרים': 'שונות',
+  'קניות מקוונות': 'שונות',
+  'רהיטים': 'שונות',
+  'רוביקון': 'שונות',
+  'שירותי דת והלכה - גמ': 'שונות',
+  'שירותי דת והלכה - גמ"חים': 'שונות',
+  'שירותי דת ומועצות דתיות': 'שונות',
+  'שירותים מיוחדים - גמלאים ונכים': 'שונות',
+  'שירותים מקצועיים - עורכי דין': 'שונות',
+  'תוכניות ושוברי תרבות': 'שונות',
+  'תיירות, אגרות וביטוחי נסיעות': 'שונות',
+  'Bedding and textiles': 'שונות',
+  'Books and culture': 'שונות',
+  'Computer and gaming': 'שונות',
+  'Electronics - big chains': 'שונות',
+  'Eyewear and optics': 'שונות',
+  'Furniture additional': 'שונות',
+  'Furniture and home decor chains': 'שונות',
+  'Garden and plants': 'שונות',
+  'Hardware and DIY': 'שונות',
+  'Home appliances brands': 'שונות',
+  'Home decor and accessories': 'שונות',
+  'Home goods small chains': 'שונות',
+  'Jewelry and watches': 'שונות',
+  'Mobile phones and accessories': 'שונות',
+  'Music stores': 'שונות',
+  'Stationery and office supplies': 'שונות',
+  'Watches additional': 'שונות',
+  'אגף הרישוי - מבחנים לרכב': 'תחבורה ציבורית',
+  'שירותי הסעות פרטיות וצי רכבים': 'תחבורה ציבורית',
+  'תחבורה': 'תחבורה ציבורית',
+  'תחבורה - אגד, דן וחברות אוטובוסים': 'תחבורה ציבורית',
+  'תחבורה - נסיעות לחו': 'תחבורה ציבורית',
+  'תחבורה - נסיעות לחו"ל וטיסות פנים ארץ': 'תחבורה ציבורית',
+  'כלי עבודה': 'תחזוקת בית',
+  'כסאות בטיחות לילדים': 'תינוק',
+  'צעצועים ומשחקי ילדים': 'תינוק',
+  'חשבונות': 'תקשורת',
+  'מוקדי שירות וטלפוניה לעסקים': 'תקשורת',
+  'שירותים אדמיניסטרטיביים': 'תקשורת',
+  'שירותים מקצועיים - SaaS עסקי וIT': 'תקשורת',
+  'Cosmetic supplements': 'תרופות',
+  'Pharmacies extended': 'תרופות',
+};
+
+function _normalizeSubForDashboard_(subcategory, category) {
+  var raw = String(subcategory == null ? '' : subcategory)
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '')
+    .trim();
+  if (!raw) return raw;
+  var cat = String(category == null ? '' : category).trim();
+
+  // 1. business -> canonical company bucket (ops catch-all if unmapped).
+  if (cat === 'עסק') {
+    return _BIZ_DASH_SUBS[raw] || 'הוצאות תפעוליות';
+  }
+  // 2. exact personal mapping.
+  if (Object.prototype.hasOwnProperty.call(_KFL_SUB_TO_DASHBOARD_ROW, raw)) {
+    return _KFL_SUB_TO_DASHBOARD_ROW[raw];
+  }
+  // 3. " — " split.
+  var dash = raw.indexOf(' \u2014 ');
+  if (dash >= 0) {
+    var prefix = raw.slice(0, dash).trim();
+    if (Object.prototype.hasOwnProperty.call(_KFL_SUB_TO_DASHBOARD_ROW, prefix)) {
+      return _KFL_SUB_TO_DASHBOARD_ROW[prefix];
+    }
+    if (_KFL_PERSONAL_DASH_ROWS.indexOf(prefix) >= 0) return prefix;
+  }
+  // 4. already-visible (a row label is a substring of the written value).
+  for (var i = 0; i < _KFL_PERSONAL_DASH_ROWS.length; i++) {
+    if (raw.indexOf(_KFL_PERSONAL_DASH_ROWS[i]) >= 0) return raw;
+  }
+  // 5. ultimate catch-all so the amount is never invisible.
+  return 'שונות';
 }
 
 // Steven 2026-05-25: rewritten to RECOMPUTE the (sub-row x month-col) cell
@@ -13505,14 +13734,18 @@ function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId, bypassG
     }
     var now = new Date();
     var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    // Canonicalize col E to a company-dashboard bucket so the SUMIFS picks it up
+    // (keeps the append + the dashboard recompute below on the same row label).
+    var __ordDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+      ? _normalizeSubForDashboard_(sub, 'עסק') : sub;
     // 8-column schema matches the main 'תנועות' tab exactly so all
     // existing dashboard formulas keep working.
-    tx.appendRow([now, monthKey, amount, 'עסק', sub, description, 'WhatsApp', !isIncome]);
+    tx.appendRow([now, monthKey, amount, 'עסק', __ordDashSub, description, 'WhatsApp', !isIncome]);
 
     // For n=1 only, recompute the per-N dashboard. n>=2 tabs don't have
     // their own dashboard rows yet (next iteration).
     if (n === 1) {
-      try { _updateBusinessDashboardInSheet_(ss, 'עסק', sub, monthKey, amount); }
+      try { _updateBusinessDashboardInSheet_(ss, 'עסק', __ordDashSub, monthKey, amount); }
       catch (_dErr) { Logger.log('biz dash err: ' + (_dErr && _dErr.message)); }
     }
 
