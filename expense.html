@@ -7,7 +7,7 @@
 <meta name="description" content="הוסף הוצאה ישירות מהאתר — בלי לפתוח וואטסאפ." />
 <meta name="robots" content="noindex,nofollow">
 <link rel="manifest" href="/manifest.webmanifest" />
-<meta name="theme-color" content="#0891b2" />
+<meta name="theme-color" content="#6366F1" />
 <link rel="icon" type="image/png" href="/logo.png" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -21,8 +21,8 @@ tailwind.config = {
   theme: { extend: {
     fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
     colors: {
-      ink: { 50:'#f7f8fb', 100:'#eef0f6', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-      brand: { 400:'#22d3ee', 500:'#0891b2', 600:'#0e7490', 700:'#155e75' }
+      ink: { 50:'#f7f8fb', 100:'#eef0f6', 300:'#bcc4d6', 500:'#5d6b8f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 200:'#dde1ec', 400:'#8a95b3', 600:'#41506f', 950:'#070b16' },
+      brand: { 400:'#38bdf8', 500:'#2563eb', 600:'#1d4ed8', 700:'#1e40af' }
     }
   }}
 };
@@ -54,7 +54,7 @@ tailwind.config = {
   <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
     <a href="/" class="flex items-center gap-2 font-extrabold text-lg">
       <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">&#x20aa;</span>
-      <span>כספ'לה</span>
+      <span class="kfl-logo-text">כספ'לה</span>
     </a>
     <a href="/dashboard" class="text-sm font-semibold text-brand-600 dark:text-brand-400">דשבורד →</a>
   </nav>
@@ -64,8 +64,8 @@ tailwind.config = {
   <div class="mx-auto max-w-md">
     <div class="text-center mb-8">
       <p class="text-xs font-extrabold uppercase tracking-widest text-brand-600 dark:text-brand-400">קלט מהיר</p>
-      <h1 class="mt-2 text-3xl md:text-4xl font-black">הוסף הוצאה</h1>
-      <p class="mt-2 text-sm text-ink-500 dark:text-ink-400">
+      <h1 class="mt-2 text-3xl md:text-4xl font-black text-ink-900 dark:text-white">הוסף הוצאה</h1>
+      <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
         ישירות לגיליון שלך — בלי לפתוח וואטסאפ. נשמר תוך שנייה.
       </p>
     </div>
@@ -96,22 +96,112 @@ tailwind.config = {
           class="w-full text-base bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2" />
       </div>
 
-      <!-- Category (datalist suggests Pa'amonim main categories) -->
+      <!-- Category: grouped picker matching the WhatsApp bot + sheet taxonomy
+           (bot _sendChangeCategoryPicker_ / lib/categories.js). Values are the
+           exact col-D category strings the dashboard SUMIFS understands, so
+           the website matches WhatsApp and the sheet. Picking "אחר" reveals a
+           free-text field for a brand-new category. -->
       <div>
-        <label for="kfl-cat" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">קטגוריה <span class="text-ink-500">(אופציונלי)</span></label>
-        <input id="kfl-cat" type="text" maxlength="60" list="kfl-cat-list" placeholder="מזון ופארמה" autocomplete="off"
-          class="w-full text-base bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2" />
-        <datalist id="kfl-cat-list">
-          <option value="מזון ופארמה"></option>
-          <option value="הוצאות קבועות"></option>
-          <option value="תחבורה"></option>
-          <option value="בריאות"></option>
-          <option value="חינוך וילדים"></option>
-          <option value="ביגוד והנעלה"></option>
-          <option value="פנאי ובידור"></option>
-          <option value="שונות"></option>
-          <option value="הכנסות"></option>
-        </datalist>
+        <label for="kfl-cat-select" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">קטגוריה <span class="text-ink-500">(אופציונלי)</span></label>
+        <select id="kfl-cat-select"
+          class="w-full text-base bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2 text-ink-900 dark:text-white">
+          <option value="">— בחר/י קטגוריה —</option>
+          <optgroup label="🍞 אוכל ופארמה">
+            <option value="אוכל">אוכל</option>
+            <option value="אוכל בכללי">אוכל בכללי</option>
+            <option value="אוכל לבית">אוכל לבית (סופר ומכולת)</option>
+            <option value="אוכל בחוץ">אוכל בחוץ (מסעדות)</option>
+            <option value="קפה">קפה</option>
+            <option value="אוכל מהיר">אוכל מהיר</option>
+            <option value="אוכל מוכן">אוכל מוכן</option>
+            <option value="אלכוהול">אלכוהול</option>
+            <option value="פארמה">פארמה וטואלטיקה</option>
+          </optgroup>
+          <optgroup label="🏠 בית">
+            <option value="חשמל">חשמל</option>
+            <option value="מים וביוב">מים וביוב</option>
+            <option value="גז">גז</option>
+            <option value="ארנונה">ארנונה</option>
+            <option value="שכר דירה">שכר דירה</option>
+            <option value="משכנתה">משכנתה</option>
+            <option value="ועד בית">ועד בית</option>
+            <option value="תיקונים בבית">תיקונים בבית</option>
+          </optgroup>
+          <optgroup label="🚗 תחבורה">
+            <option value="דלק">דלק</option>
+            <option value="חניה">חניה</option>
+            <option value="כבישי אגרה">כבישי אגרה</option>
+            <option value="תחבורה ציבורית">תחבורה ציבורית</option>
+            <option value="מוניות">מוניות</option>
+            <option value="ביטוח רכב">ביטוח רכב</option>
+            <option value="תחזוקת רכב">תחזוקת רכב</option>
+            <option value="רישוי רכב">רישוי רכב</option>
+          </optgroup>
+          <optgroup label="🧍 אישי">
+            <option value="ביגוד">ביגוד והנעלה</option>
+            <option value="נעליים">נעליים</option>
+            <option value="מספרה">מספרה</option>
+            <option value="קוסמטיקה">קוסמטיקה</option>
+            <option value="בריאות">בריאות</option>
+            <option value="תרופות">תרופות</option>
+            <option value="ספורט">ספורט</option>
+            <option value="אופטיקה">אופטיקה</option>
+          </optgroup>
+          <optgroup label="🎓 חינוך וילדים">
+            <option value="בית ספר">בית ספר</option>
+            <option value="חוגים">חוגים</option>
+            <option value="צהרון">צהרון</option>
+            <option value="שיעור פרטי">שיעור פרטי</option>
+            <option value="בייביסיטר">בייביסיטר</option>
+            <option value="ביגוד ילדים">ביגוד ילדים</option>
+            <option value="צעצועים">צעצועים</option>
+            <option value="דמי כיס">דמי כיס</option>
+          </optgroup>
+          <optgroup label="🎬 פנאי ובידור">
+            <option value="בידור">בידור</option>
+            <option value="חופשות">חופשות</option>
+            <option value="מתנות">מתנות</option>
+            <option value="אירועים">אירועים</option>
+            <option value="מנויים">מנויים</option>
+            <option value="חיות מחמד">חיות מחמד</option>
+          </optgroup>
+          <optgroup label="💼 עסק">
+            <option value="הכנסה מעסק">הכנסה מעסק</option>
+            <option value="שיווק ופרסום">שיווק ופרסום</option>
+            <option value="שכר עובדים">שכר עובדים</option>
+            <option value="קבלן משנה">קבלן משנה</option>
+            <option value="חומרי גלם">חומרי גלם</option>
+            <option value="תוכנות וציוד">תוכנות וציוד</option>
+            <option value="רואה חשבון">רואה חשבון</option>
+            <option value="מיסים">מיסים</option>
+            <option value="משלוחים עסקיים">משלוחים עסקיים</option>
+            <option value="שכירות משרד">שכירות משרד</option>
+          </optgroup>
+          <optgroup label="💰 פיננסי">
+            <option value="עמלות בנק">עמלות בנק</option>
+            <option value="ריבית">ריבית</option>
+            <option value="ביטוח חיים">ביטוח חיים</option>
+            <option value="ביטוח לאומי">ביטוח לאומי</option>
+            <option value="חיסכון">חיסכון</option>
+            <option value="השקעות">השקעות</option>
+            <option value="החזר הלוואה">החזר הלוואה</option>
+          </optgroup>
+          <optgroup label="📈 הכנסות">
+            <option value="משכורת">משכורת</option>
+            <option value="בונוס">בונוס</option>
+            <option value="שכר דירה (הכנסה)">שכר דירה (הכנסה)</option>
+            <option value="קצבאות">קצבאות</option>
+            <option value="דיבידנדים">דיבידנדים</option>
+            <option value="החזר מס">החזר מס</option>
+          </optgroup>
+          <optgroup label="✨ אחר">
+            <option value="שונות">שונות</option>
+            <option value="תרומות">תרומות</option>
+            <option value="__custom__">➕ קטגוריה אחרת (כתוב/י)…</option>
+          </optgroup>
+        </select>
+        <input id="kfl-cat" type="text" maxlength="60" placeholder="שם קטגוריה חופשי" autocomplete="off"
+          class="mt-2 hidden w-full text-base bg-transparent border-b-2 border-ink-200 dark:border-ink-700 focus:border-brand-500 outline-none py-2 text-ink-900 dark:text-white" />
       </div>
 
       <!-- Date (default today) -->
@@ -137,6 +227,16 @@ tailwind.config = {
 
       <p id="kfl-status" class="text-center text-sm min-h-[20px]"></p>
     </form>
+
+    <!-- Recent entries saved this session — instant confirmation that the
+         expense reached the sheet (the form resets after each save). -->
+    <div id="kfl-recent-wrap" class="mt-6 hidden">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-extrabold text-ink-700 dark:text-ink-200">נשמרו עכשיו</h2>
+        <a id="kfl-recent-sheet" href="/dashboard" target="_blank" rel="noopener" class="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline">פתח גיליון →</a>
+      </div>
+      <ul id="kfl-recent" class="space-y-2"></ul>
+    </div>
 
     <p class="mt-6 text-center text-xs text-ink-500 dark:text-ink-400">
       💡 הוצאות הולכות לטאב <span class="font-mono font-bold">תנועות</span> בגיליון Google Sheets שלך.
@@ -167,6 +267,60 @@ tailwind.config = {
     }
   };
 
+  // Category picker: "__custom__" reveals the free-text field; any other
+  // pick hides it. The chosen value is the col-D string the dashboard sums.
+  var catSelect = document.getElementById('kfl-cat-select');
+  var catCustom = document.getElementById('kfl-cat');
+  catSelect.addEventListener('change', function () {
+    if (catSelect.value === '__custom__') {
+      catCustom.classList.remove('hidden');
+      catCustom.focus();
+    } else {
+      catCustom.classList.add('hidden');
+    }
+  });
+  // Resolve the effective category string from the picker (or free text).
+  function kflResolveCategory() {
+    if (catSelect.value === '__custom__') return catCustom.value.trim();
+    return catSelect.value.trim();
+  }
+
+  // Prepend a saved entry to the "saved now" list. Built with DOM nodes +
+  // textContent so user-supplied description/category can't inject HTML.
+  function kflAddRecent(item) {
+    var wrap = document.getElementById('kfl-recent-wrap');
+    var list = document.getElementById('kfl-recent');
+    if (item.sheetUrl) {
+      var sheetLink = document.getElementById('kfl-recent-sheet');
+      sheetLink.href = item.sheetUrl;
+    }
+    var li = document.createElement('li');
+    li.className = 'flex items-center justify-between gap-3 rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 px-4 py-2.5';
+
+    var left = document.createElement('div');
+    left.className = 'min-w-0';
+    var desc = document.createElement('div');
+    desc.className = 'truncate text-sm font-bold text-ink-900 dark:text-white';
+    desc.textContent = item.rawText;
+    var cat = document.createElement('div');
+    cat.className = 'truncate text-xs text-ink-500 dark:text-ink-400';
+    cat.textContent = item.category;
+    left.appendChild(desc);
+    left.appendChild(cat);
+
+    var amt = document.createElement('div');
+    amt.className = 'num shrink-0 text-sm font-black ' + (item.isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-ink-900 dark:text-white');
+    var n = Math.round(item.amount * 100) / 100;
+    amt.textContent = (item.isIncome ? '+' : '') + '‎₪' + n.toLocaleString('en-US');
+
+    li.appendChild(left);
+    li.appendChild(amt);
+    list.insertBefore(li, list.firstChild);
+    wrap.classList.remove('hidden');
+    // Keep the list short — last 8 entries this session.
+    while (list.children.length > 8) list.removeChild(list.lastChild);
+  }
+
   // Default date = today (local).
   var d = new Date();
   var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -178,7 +332,7 @@ tailwind.config = {
     var status = document.getElementById('kfl-status');
     var amount = parseFloat(document.getElementById('kfl-amount').value);
     var rawText = document.getElementById('kfl-desc').value.trim();
-    var category = document.getElementById('kfl-cat').value.trim();
+    var category = kflResolveCategory();
     var date = document.getElementById('kfl-date').value;
     var vatDeductible = document.getElementById('kfl-vat').checked;
     if (!isFinite(amount) || amount <= 0) {
@@ -209,7 +363,15 @@ tailwind.config = {
       });
       var j = await r.json().catch(function () { return { ok: false }; });
       if (j.ok) {
-        status.innerHTML = '<span style="color:#0e7490;font-weight:bold">✓ נשמר בגיליון!</span>';
+        status.innerHTML = '<span style="color:#1d4ed8;font-weight:bold">✓ נשמר בגיליון!</span>';
+        // Show it in the "saved now" list for instant confirmation.
+        kflAddRecent({
+          amount: amount,
+          isIncome: isIncome,
+          category: category || (isIncome ? 'הכנסות' : 'שונות'),
+          rawText: rawText,
+          sheetUrl: j.spreadsheetUrl || null,
+        });
         // Reset for next entry (keep date, type, category for fast repeat).
         document.getElementById('kfl-amount').value = '';
         document.getElementById('kfl-desc').value = '';

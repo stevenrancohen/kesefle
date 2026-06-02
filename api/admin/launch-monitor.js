@@ -13,6 +13,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { requireAdmin } from '../../lib/auth.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -184,4 +185,12 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(requireAdmin(handlerImpl));
+// Steven 2026-05-30 (deep-review PR #152 WS4 follow-up): defense-in-depth
+// rate limit. The dashboard polls every 30-60s, so 30/min is plenty for one
+// admin tab. Multiple tabs / faster polling will hit 429 but that's the
+// signal to slow down, not a real outage.
+export default withRequestId(
+  withRateLimit({ key: 'admin_launch_monitor', limit: 30, windowSec: 60 })(
+    requireAdmin(handlerImpl)
+  )
+);

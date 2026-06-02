@@ -86,6 +86,13 @@ async function handlerImpl(req, res) {
   const canonicalSheetId = sheetRec?.spreadsheetId || null;
   const phoneSheetId = phoneRec.spreadsheetId || null;
   if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
+    // PR-S2: structured log emit so admin alerting can see mismatches
+    // here too (was silent before — only the 409 response carried the
+    // signal). Matches the shape of append.js / bot-query.js / etc.
+    log.error('stats.sheet_ownership_mismatch', {
+      reqId: req.reqId, phone, userSub: phoneRec.userSub,
+      phoneRecordSheet: phoneSheetId, canonicalSheet: canonicalSheetId,
+    });
     return res.status(409).json({ ok: false, error: 'sheet_ownership_mismatch' });
   }
   const spreadsheetId = canonicalSheetId || phoneSheetId || userRec.spreadsheetId || null;

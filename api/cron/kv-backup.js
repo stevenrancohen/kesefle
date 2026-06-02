@@ -102,25 +102,27 @@ async function getDriveAccessToken() {
   const refresh = admin.refreshToken || decryptRefreshToken(admin.refreshTokenEnvelope, adminSub);
   if (!refresh) return { ok: false, error: 'refresh_token_decrypt_failed' };
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return { ok: false, error: 'google_oauth_env_missing' };
-
-  const tokRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refresh,
-      grant_type: 'refresh_token',
-    }).toString(),
-  });
-  const tokJson = await tokRes.json().catch(() => ({}));
-  if (!tokRes.ok || !tokJson.access_token) {
-    return { ok: false, error: 'token_exchange_failed', detail: tokJson.error || tokRes.status };
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return { ok: false, error: 'google_oauth_env_missing' };
   }
-  return { ok: true, accessToken: tokJson.access_token };
+
+  // exchangeRefreshForAccess (lib/oauth.js) also CAPTURES a rotated refresh_token
+  // (audit H1). This nightly cron is a likely place to first hit a >6-month-old
+  // admin grant's rotation, so persisting it here (under the SETNX lock, into
+  // user:{adminSub}) keeps the daily backup from silently breaking. Pass the
+  // cron's resolved KV creds explicitly. Persist is best-effort.
+  try {
+    const { exchangeRefreshForAccess } = await import('../../lib/oauth.js');
+    const { accessToken } = await exchangeRefreshForAccess({
+      refreshToken: refresh,
+      userSub: adminSub,
+      kvUrl: KV_URL,
+      kvToken: KV_TOKEN,
+    });
+    return { ok: true, accessToken };
+  } catch (e) {
+    return { ok: false, error: 'token_exchange_failed', detail: e.message };
+  }
 }
 
 async function uploadToDrive(accessToken, filename, jsonBody) {

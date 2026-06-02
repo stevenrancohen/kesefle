@@ -25,6 +25,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { constantTimeEqual } from '../../lib/crypto.js';
+import { createHash } from 'node:crypto';
 
 const MAX_USERS_PER_RUN = 500;     // safety cap
 const SEND_THROTTLE_MS  = 1000;    // 1s between sends
@@ -144,8 +145,13 @@ async function handlerImpl(req, res) {
       const user = await kvGet('user:google:' + sub);
       if (!user || !user.phoneE164) { skipped++; continue; }
 
-      // opt-out check
-      const optOut = await kvGet('opt_out:' + user.phoneE164);
+      // opt-out check.
+      // 2026-05-31 audit fix (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md
+      // bug #1 CRITICAL): was 'opt_out:' (underscore) — webhook.js writes
+      // 'optout:' (no underscore) on STOP/UNSUBSCRIBE, so EVERY user who
+      // typed STOP was still being sent the weekly digest. Israeli direct-
+      // marketing law + GDPR Art.21 issue. Aligned to the canonical key.
+      const optOut = await kvGet('optout:' + user.phoneE164);
       if (optOut) { skipped++; continue; }
 
       if (dryRun) {
@@ -170,7 +176,11 @@ async function handlerImpl(req, res) {
     skipped,
     errors: errors.length,
     dryRun: !!dryRun,
-    messageHash: messageRec.body.slice(0, 40),
+    // 2026-05-31 audit fix: was `.slice(0, 40)` which leaked the first 40
+    // chars of message content into the 90-day audit log. Switched to a real
+    // sha256 prefix so we still get a stable per-message identifier without
+    // any content leakage.
+    messageHash: createHash('sha256').update(String(messageRec.body || '')).digest('hex').slice(0, 16),
   }, 60 * 60 * 24 * 90);  // 90-day TTL
 
   log.info('customer_digest.complete', {

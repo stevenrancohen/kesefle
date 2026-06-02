@@ -90,12 +90,13 @@ assert(traceCallCount >= 10,
   '>= 10 trace call sites total (saw ' + traceCallCount + ')');
 
 // --- Build version sanity ---
-// Loosened from strict "trace-instrumented" to "2026-05-26" so subsequent
-// PRs can rebump the version freely without breaking this guard. The
-// trace helper + 10+ call sites are verified above.
+// Loosened from "2026-05-26" hardcode to any YYYY-MM-DD prefix so
+// subsequent PRs can rebump the version freely. The trace helper +
+// 10+ call sites are verified above. (Same fix-class as
+// test_pending_state_hijack.js / test_objective_commands.js.)
 const v = (SRC.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/2026-05-26/.test(v || ''),
-  'KFL_BUILD_VERSION is from today or later (currently: ' + v + ')');
+assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
+  'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 
 console.log('');
 if (failures.length) {

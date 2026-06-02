@@ -5,8 +5,9 @@
 // Auth: the request must include a header `X-User-Sub: <google-sub>` matching the user record in KV.
 // The user record holds the refreshToken used to call Sheets API.
 //
-// Sheet schema (matches the writer in webhook.js):
-//   A timestamp | B amount | C currency | D type | E category | F subcategory | G raw | H source | I message_id
+// Sheet schema (canonical, matches buildExpenseRow in lib/sheet-writer.js):
+//   A date(ISO) | B month(YYYY-MM) | C amount(number) | D category | E subcategory |
+//   F detail | G source | H status(true=expense / false=income) | I VAT-flag
 //
 // Env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, KV_REST_API_URL, KV_REST_API_TOKEN
 
@@ -21,31 +22,14 @@ async function kvGet(key) {
   return j?.result ? JSON.parse(j.result) : null;
 }
 
-async function exchangeRefreshForAccess(refreshToken) {
-  const clientId = getGoogleClientId();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientSecret) throw new Error('GOOGLE_CLIENT_SECRET env var missing');
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: 'refresh_token',
-  });
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  });
-  const j = await r.json();
-  if (!r.ok || !j.access_token) throw new Error('refresh_failed: ' + (j.error_description || j.error || r.status));
-  return j.access_token;
-}
+// exchangeRefreshForAccess now lives in lib/oauth.js (audit H1): it captures a
+// rotated refresh_token if Google returns one during this dashboard read.
 
 import { requireAuth } from '../../lib/auth.js';
 import { withRequestId } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
-import { getGoogleClientId } from '../../lib/auth.js';
+import { exchangeRefreshForAccess } from '../../lib/oauth.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
@@ -77,7 +61,7 @@ async function handlerImpl(req, res) {
 
   let accessToken;
   try {
-    accessToken = await exchangeRefreshForAccess(refreshToken);
+    ({ accessToken } = await exchangeRefreshForAccess({ refreshToken, userSub }));
   } catch (e) {
     return res.status(403).json({ ok: false, error: 'reauth_needed', detail: e.message });
   }
@@ -111,12 +95,20 @@ async function handlerImpl(req, res) {
   for (const row of rows) {
     const ts = row[0] ? new Date(row[0]) : null;
     if (!ts || isNaN(ts.getTime())) continue;
-    const amount = parseFloat(row[1] || '0') || 0;
-    const type = (row[3] || '').toLowerCase();
-    const category = row[4] || 'אחר';
-    const subcategory = row[5] || '';
-    const raw = row[6] || '';
-    const isIncome = type === 'income';
+    // Canonical columns (lib/sheet-writer.js buildExpenseRow): C=amount,
+    // D=category, E=subcategory, F=detail, H=status. Strip any stray
+    // non-numeric chars (currency symbols / commas) so a "₪1,200"-style cell
+    // still parses, matching bot-query.js / stats.js.
+    const amount = parseFloat(String(row[2] || '0').replace(/[^\d.\-]/g, '')) || 0;
+    const category = row[3] || 'אחר';
+    const subcategory = row[4] || '';
+    const raw = row[5] || '';
+    // Income detection reads col H (status), where the writer/bot store a
+    // boolean: true = expense, false = income. Accept the boolean, its string
+    // forms, and the Hebrew income-category fallback for legacy rows --
+    // identical to monthly-statement.js / bot-query.js.
+    const flagStr = String(row[7] == null ? '' : row[7]).trim().toLowerCase();
+    const isIncome = flagStr === 'false' || category === 'הכנסות' || category === 'הכנסה';
 
     if (ts >= monthStart) {
       if (isIncome) monthIncome += amount;

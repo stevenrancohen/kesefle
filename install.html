@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>התקנה — איך להוסיף את כספ'לה למסך הבית · Kesefle</title>
 <meta name="description" content="התקן את כספ'לה כאפליקציה בטלפון או במחשב — Android, iPhone, iPad, macOS, Windows. ללא חנות אפליקציות." />
-<meta name="theme-color" content="#0891b2" />
+<meta name="theme-color" content="#6366F1" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" href="/logo.png" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -39,8 +39,8 @@ tailwind.config = {
   theme: { extend: {
     fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
     colors: {
-      ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-      brand:   { 50:'#ecfeff', 100:'#cffafe', 200:'#a5f3fc', 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490', 800:'#155e75', 900:'#164e63' },
+      ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+      brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
     }
   }}
 };
@@ -60,9 +60,9 @@ tailwind.config = {
     letter-spacing: -0.02em;
   }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
-  .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0891b2,#155e75); color:white; font-weight:900; font-size:18px; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#2563eb,#1e40af); color:white; font-weight:900; font-size:18px; }
   .device-tab { transition: all 0.2s; }
-  .device-tab.active { background: #0891b2; color: white; }
+  .device-tab.active { background: #2563eb; color: white; }
   .device-content { display: none; }
   .device-content.active { display: block; }
 </style>
@@ -75,7 +75,7 @@ tailwind.config = {
   <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
     <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
       <img src="/logo.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
-      <span>כספ'לה</span>
+      <span class="kfl-logo-text">כספ'לה</span>
     </a>
 
     <!-- Desktop dropdown menu (6 categories) -->

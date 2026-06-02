@@ -20,3 +20,5 @@ bot/ExpenseBot_FIXED.gs.bak.*
 # Exports from scripts/export-for-deepseek.mjs — too large to track
 kesefle_export_*
 
+
+.claude/worktrees/

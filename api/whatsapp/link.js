@@ -181,12 +181,40 @@ function gen6DigitCode() {
 async function handlerImpl(req, res) {
   // Per-method/action rate limiting. The status-check GET is POLLED by the
   // browser while waiting for code confirmation -- with the adaptive cadence
-  // (6s fast / 15s slow / 3min cap) that's ~15 polls per user. We SKIP the
-  // KV-backed rate limit for GET to save ~30 KV commands per user since the
-  // GET is read-only and already returns minimal info to anonymous callers
-  // (only {linked} -- see auth-gate added 2026-05-23 for billing fields).
-  // The mint (POST) and confirm (POST + bot-secret) paths keep their limits.
-  if (req.method !== 'GET') {
+  // (6s fast / 15s slow / 3min cap) that's ~15 polls per user.
+  //
+  // PR-S6 (2026-05-27 backend audit Bug #2): the GET path used to skip the
+  // rate limit entirely to save ~30 KV commands per onboarding. That made
+  // the endpoint a phone-number enumeration oracle -- iterate phones, see
+  // who returns {linked:true}, harvest a competitor's user list.
+  //
+  // Fix: GET still skips the limit for bot-secret callers (server-side
+  // lookups, trusted) but enforces a generous IP cap for anonymous callers.
+  // 60/min/IP is 4x the legitimate poll cadence; a sweep attempting more
+  // gets 429'd. The single-onboarding browser polls under this cap easily.
+  if (req.method === 'GET') {
+    const presentedSecret = req.headers['x-kesefle-bot-secret'] || '';
+    const botSecret = process.env.KESEFLE_BOT_SECRET;
+    const isBotCallerForLimit = !!botSecret &&
+      constantTimeEqual(String(presentedSecret), String(botSecret));
+    if (!isBotCallerForLimit) {
+      const conf = { key: 'wa_link_status', limit: 60, windowSec: 60 };
+      const rl = await rateLimit(req, conf);
+      res.setHeader('X-RateLimit-Limit', String(conf.limit));
+      if (!rl.ok) {
+        res.setHeader('Retry-After', String(rl.retryAfter || conf.windowSec));
+        log.warn('wa_link.status_rate_limit', {
+          reqId: req.reqId,
+          ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
+        });
+        return res.status(429).json({
+          ok: false,
+          error: 'rate_limit_exceeded',
+          retry_after: rl.retryAfter || conf.windowSec,
+        });
+      }
+    }
+  } else {
     const act = (req.query.action || 'request').toLowerCase();
     const conf = act === 'confirm'
       ? { key: 'wa_link_confirm', limit: 120, windowSec: 600 }   // bot-secret gated
