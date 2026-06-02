@@ -82,14 +82,22 @@ global.fetch = async (url, opts = {}) => {
 };
 
 // Import the REAL module under test (after fetch is mocked + env set).
-const { exchangeRefreshForAccess, persistRotatedRefreshToken } = await import('../lib/oauth.js');
+const { exchangeRefreshForAccess, persistRotatedRefreshToken, __clearAccessTokenCache } = await import('../lib/oauth.js');
 
 let pass = 0, fail = 0;
 function check(label, cond, detail) {
   if (cond) { pass++; console.log('  PASS ' + label); }
   else { fail++; console.log('  FAIL ' + label + (detail ? ' — ' + detail : '')); }
 }
-function resetCounters() { counters.setnx = 0; counters.set = 0; counters.get = 0; counters.tokenExchange = 0; }
+// Each scenario below reuses the SAME (sub, refreshToken) to simulate a fresh
+// logical exchange. lib/oauth.js now caches the minted access token per warm
+// instance, so without clearing it the 2nd+ scenarios would short-circuit on a
+// cache hit (skipping the Google exchange + SETNX this test asserts on). Clear
+// it as part of the per-scenario reset — this exercises the new cache hook too.
+function resetCounters() {
+  counters.setnx = 0; counters.set = 0; counters.get = 0; counters.tokenExchange = 0;
+  __clearAccessTokenCache();
+}
 
 const SUB = 'google-sub-12345';
 const OLD_REFRESH = '1//0-old-refresh-token';

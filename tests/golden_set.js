@@ -88,6 +88,15 @@ const GOLDEN = [
   ['שכירות 4500', 'הוצאות קבועות'], ['שכר דירה 4500', 'הוצאות קבועות'],
   ['משכנתא 5200', 'הוצאות קבועות'], ['ועד בית 250', 'הוצאות קבועות'],
   ['ביטוח דירה 90', 'הוצאות קבועות'],
+  // ITEM 3 fix (2026-06-01): "ביטוח אישי" used to be swallowed by the bare
+  // "אישי" keyword and mis-filed under שונות. Now routes to its own sub.
+  ['ביטוח אישי 500', 'הוצאות קבועות'],
+  // ITEM 4 (2026-06-01): dashboard-vocabulary keywords — generic insurance
+  // and the tax-and-fees label map to recurring fixed costs. NOTE: bare "גז"
+  // was deliberately NOT added — the golden set already labels bare "גז" as
+  // ambiguous (DEFAULT, see below); only "חשבון גז"/"תשלום גז" route to גז.
+  ['ביטוח 300', 'הוצאות קבועות'],
+  ['מיסים ואגרות 400', 'הוצאות קבועות'],
   // income tax / national insurance → recurring obligations in this map (consistent)
   ['מס הכנסה 2000', 'הוצאות קבועות'], ['תשלום מס הכנסה 1500', 'הוצאות קבועות'],
   ['מקדמות מס 900', 'הוצאות קבועות'], ['ביטוח לאומי 500', 'הוצאות קבועות'],
@@ -119,6 +128,8 @@ const GOLDEN = [
   ['זארה 200', 'קניות'], ['קסטרו 180', 'קניות'], ['פוקס 140', 'קניות'],
   ['קניתי נעליים 300', 'קניות'], ['אייפון 4000', 'קניות'], ['אוזניות 250', 'קניות'],
   ['מחשב נייד 5500', 'קניות'], ['איקאה 800', 'קניות'], ['רהיט 1200', 'קניות'],
+  ['אלקטרוניקה 500', 'קניות'],   // ITEM 4 (2026-06-01): dashboard label
+  ['רהיטים 800', 'קניות'],       // ITEM 4: already routed; anchored as golden
   ['ספה 3000', 'קניות'], ['כיסא משרדי 600', 'קניות'], ['בגדים 350', 'קניות'],
   ['חולצה 90', 'קניות'], ['מתנה ליום הולדת 150', 'מתנות'],
 
@@ -204,6 +215,18 @@ const GOLDEN = [
   //     consistency so an influencer payment files under עלות שיווק.
   ['משפיען 1500', 'sub:עלות שיווק'],
 
+  // ── 2026-06-01 NATURAL BUSINESS EXPENSE anchors. Steven's bug: a plain
+  // "עסק [business name] [amount] [category]" message (and the "הוצאה עסק ..."
+  // variant) must route to the BUSINESS top-level "עסק", never to a personal
+  // dropdown. matchCategory's standalone-עסק detection already yields category
+  // "עסק"; these anchors lock it so a future taxonomy change can't regress the
+  // natural business shape back to personal/שונות. (The processExpense write
+  // path is covered separately by the bot replay + harness in the PR.) ──
+  ['הוצאה עסק תמונות 288 שיווק', 'עסק'],
+  ['עסק תמונות 288 שיווק', 'עסק'],
+  ['עסק 288 שיווק', 'עסק'],
+  ['עסק תמונות 500 משלוחים', 'עסק'],
+
   // ── DEFAULT: genuinely ambiguous → the bot SHOULD ask ──
   ['250', 'DEFAULT'], ['תשלום 500', 'DEFAULT'], ['העברה 1000', 'DEFAULT'],
   ['משהו 50', 'DEFAULT'], ['קניתי דברים 100', 'DEFAULT'], ['עוד הוצאה 30', 'DEFAULT'],
@@ -215,6 +238,103 @@ const GOLDEN = [
   // name; גט = Gett app / divorce doc) → asking IS the correct behavior here.
   ['פז 280', 'DEFAULT'], ['גט 48', 'DEFAULT'],
   ['ספר 80', 'sub:ספרים'],   // the map files a lone "ספר" as a book
+
+  // ── 2026-06-01 classifier-accuracy fixes (ADDITIVE, length-sorted). Each
+  // anchor pins a GENUINE misroute fixed this cycle; the paired guard anchor
+  // proves the additive keyword did not relax an existing correct match. ──
+  //
+  // (1) Migdal INSURANCE was silently written to קניות/אלקטרוניקה because the
+  // bare "מגדל" (PC tower) tied the insurer "מגדל" on length-4 and won by map
+  // order. Added "מגדל ביטוח"/"ביטוח מגדל" (len 10) -> insurance. NEVER-CORRUPT
+  // note: this was a SILENT keyword write to the wrong category, now corrected.
+  ['מגדל ביטוח 280', 'הוצאות קבועות'],
+  ['ביטוח מגדל 280', 'הוצאות קבועות'],
+  // guard: the other insurers + bare-tower must be untouched.
+  ['הראל 280', 'הוצאות קבועות'], ['כלל 500', 'הוצאות קבועות'],
+  ['הפניקס 300', 'הוצאות קבועות'], ['מנורה 200', 'הוצאות קבועות'],
+  //
+  // (2) VAT REFUND with no geresh ("החזר מעמ") hit the bare 3-char "מעמ" in the
+  // business-tax EXPENSE row -> a refund (income) booked as an operating
+  // expense: a SIGN FLIP on the company P&L. Added the no-geresh "החזר מעמ"
+  // (len 8) to the canonical income/מחזור row. The signal is the sub.
+  ['החזר מעמ 900', 'sub:מחזור'],
+  // guard: a plain VAT PAYMENT stays an expense (must NOT flip to income).
+  ['תשלום מעמ 4500', 'sub:הוצאות תפעוליות'],
+  //
+  // (3) "בוסט לפוסט" (boost a post = ad spend) matched the 4-char restaurant
+  // keyword "פוסט" -> filed under dining-out, polluting both food AND marketing
+  // totals. Added "בוסט לפוסט" (len 9) to the marketing/שיווק row.
+  ['בוסט לפוסט 90', 'sub:שיווק'],
+  // (4) influencer SINGULAR "משפיען" fell through to DEFAULT (only the plural
+  // "משפיענים" routed). Added the singular for consistency. No competing kw.
+  ['משפיען 1500', 'sub:שיווק'],
+  // guard: the bare restaurant keyword still files dining-out correctly.
+  ['פוסט 60', 'אוכל'],
+  //
+  // (5) "בית ספר" (school fees) matched the bare 3-char "ספר" (book) -> filed
+  // under שונות/ספרים. Added "בית ספר"/"בית הספר" (len 7-8) -> חינוך.
+  ['בית ספר 2000', 'חינוך'], ['בית הספר 2000', 'חינוך'],
+  // guard above already pins ['ספר 80','sub:ספרים'] (a lone book stays a book).
+  //
+  // (6) "דמי טיפול רפואי" (a medical handling/treatment fee) was captured by the
+  // bank-fee "דמי טיפול" (len 9) -> בנקאות. Added the explicit 14-char medical
+  // phrase -> בריאות. The bare "דמי טיפול" still routes to bank (defensible).
+  ['דמי טיפול רפואי 200', 'בריאות'],
+  //
+  // (7) "בקבוק יין" (a wine bottle = retail alcohol for home) matched the bare
+  // 3-char "יין" in the restaurant row -> dining-out. Added "בקבוק יין" (len 9)
+  // -> the home alcohol bucket. Signal is the sub.
+  ['בקבוק יין 90', 'sub:אוכל לבית — יין ואלכוהול'],
+
+  // ── 2026-06-02 SIGN-FLIP + INCOME/INSTALLMENT coverage (ADDITIVE). A 45-msg
+  // Hebrew corpus was replayed through the REAL classifier (bot/bot-replay.js)
+  // hunting income/expense sign-flips; see bot/BOT_IMPROVEMENTS.md for the full
+  // report. Every anchor below ALREADY passes on current source — they lock the
+  // classifier's correct income/expense polarity so a future taxonomy edit that
+  // quietly flips a refund into an expense (or a payment into income) trips the
+  // build. The 4 GENUINE misroutes the corpus found are NOT anchored here yet
+  // (they fail today); BOT_IMPROVEMENTS.md carries the exact additive fix + the
+  // anchor to add the moment that fix lands in ExpenseBot_FIXED.gs.
+  //
+  // (A) VAT/tax REFUNDS are revenue (מחזור, isIncome) — must NOT book as an
+  // operating expense (a sign-flip on the company P&L). The geresh + no-geresh +
+  // English forms all route income today; pinned so they stay income.
+  ['החזר מע"מ 900', 'sub:מחזור'],
+  ['החזר מעמ 900', 'sub:מחזור'],
+  ['vat refund 900', 'sub:מחזור'],
+  ['tax refund 900', 'sub:מחזור'],
+  ['rebate 300', 'sub:מחזור'],
+  // (A-guard) the OPPOSITE polarity: a VAT PAYMENT is an expense and must stay
+  // one — the matching guard that proves the refund keywords above did not
+  // relax the payment route.
+  ['תשלום מעמ 4500', 'sub:הוצאות תפעוליות'],
+  ['עסק תשלום מעמ 4500', 'עסק'],
+  //
+  // (B) business REVENUE phrases (customer receipt, product/service sale) route
+  // to מחזור income; pinned so the company top-line can't silently lose a sale.
+  ['תקבול לקוח 5000', 'sub:מחזור'],
+  ['מכירת מוצר 1500', 'sub:מחזור'],
+  ['מכירת שירות 1200', 'sub:מחזור'],
+  // business revenue via the עסק prefix (BUSINESS_CATEGORY_MAP path).
+  ['עסק הכנסה 10000', 'עסק'],
+  ['עסק תמונות הכנסה 8000', 'עסק'],
+  //
+  // (C) PERSONAL income: salary (incl. the natural "קיבלתי משכורת") and the
+  // business-income personal row stay income, top-level הכנסות.
+  ['קיבלתי משכורת 9000', 'הכנסות'],
+  ['הכנסה עסקית 10000', 'הכנסות'],
+  //
+  // (D) INSTALLMENTS (תשלומים / "N תשלומים" / "תשלום X מתוך Y"): the multi-
+  // payment phrasing must NOT change the category or flip the sign — each stays
+  // an expense in its real domain (a fridge/iphone is shopping, car insurance is
+  // transport), the amount handling is covered by bot/test_installments_hebrew.js.
+  ['תשלום 1 מתוך 12 על אייפון 400', 'קניות'],
+  ['רהיטים 6 תשלומים 1800', 'קניות'],
+  ['ביטוח רכב 12 תשלומים 320', 'תחבורה'],
+  //
+  // (E) a pro-equipment purchase carrying the עסק prefix routes business opex,
+  // not a personal electronics buy.
+  ['מצלמה מקצועית לעסק 4000', 'עסק'],
 ];
 
 // ── Run ──────────────────────────────────────────────────────────────────────

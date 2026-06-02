@@ -5,8 +5,9 @@
 // Auth: the request must include a header `X-User-Sub: <google-sub>` matching the user record in KV.
 // The user record holds the refreshToken used to call Sheets API.
 //
-// Sheet schema (matches the writer in webhook.js):
-//   A timestamp | B amount | C currency | D type | E category | F subcategory | G raw | H source | I message_id
+// Sheet schema (canonical, matches buildExpenseRow in lib/sheet-writer.js):
+//   A date(ISO) | B month(YYYY-MM) | C amount(number) | D category | E subcategory |
+//   F detail | G source | H status(true=expense / false=income) | I VAT-flag
 //
 // Env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, KV_REST_API_URL, KV_REST_API_TOKEN
 
@@ -94,12 +95,20 @@ async function handlerImpl(req, res) {
   for (const row of rows) {
     const ts = row[0] ? new Date(row[0]) : null;
     if (!ts || isNaN(ts.getTime())) continue;
-    const amount = parseFloat(row[1] || '0') || 0;
-    const type = (row[3] || '').toLowerCase();
-    const category = row[4] || 'אחר';
-    const subcategory = row[5] || '';
-    const raw = row[6] || '';
-    const isIncome = type === 'income';
+    // Canonical columns (lib/sheet-writer.js buildExpenseRow): C=amount,
+    // D=category, E=subcategory, F=detail, H=status. Strip any stray
+    // non-numeric chars (currency symbols / commas) so a "₪1,200"-style cell
+    // still parses, matching bot-query.js / stats.js.
+    const amount = parseFloat(String(row[2] || '0').replace(/[^\d.\-]/g, '')) || 0;
+    const category = row[3] || 'אחר';
+    const subcategory = row[4] || '';
+    const raw = row[5] || '';
+    // Income detection reads col H (status), where the writer/bot store a
+    // boolean: true = expense, false = income. Accept the boolean, its string
+    // forms, and the Hebrew income-category fallback for legacy rows --
+    // identical to monthly-statement.js / bot-query.js.
+    const flagStr = String(row[7] == null ? '' : row[7]).trim().toLowerCase();
+    const isIncome = flagStr === 'false' || category === 'הכנסות' || category === 'הכנסה';
 
     if (ts >= monthStart) {
       if (isIncome) monthIncome += amount;
