@@ -17,6 +17,7 @@ import crypto from 'node:crypto';
 import { requireAuth, requireAdmin } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { auditLog } from '../../lib/secure-kv.js';
 import {
   activatePremium, notifyOwner, getUserPhone,
   priceILS, periodMonths, normalizePlan, PLAN_LABELS,
@@ -24,6 +25,14 @@ import {
 } from '../../lib/billing.js';
 
 const PENDING_INDEX = 'billing:pending';
+
+// Keep only the last 4 phone digits in audit metadata so the append-only
+// trail does not store full numbers. (auditLog already one-way-hashes the
+// userSub; this avoids parking a second raw identifier next to it.)
+function phoneTail(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  return digits ? '...' + digits.slice(-4) : null;
+}
 
 // Reference code like KFL-7K3Q9F (CSPRNG, no ambiguous chars).
 function makeRef() {
@@ -89,6 +98,12 @@ async function requestImpl(req, res) {
     : `העבר/י ${amountILS}₪ לחשבון:\n${bankDetails}\nוציין/י בהעברה את הקוד: ${code}`;
 
   log.info('manual.payment_requested', { reqId: req.reqId, userSub, plan, period, method, code });
+  // Audit trail: a customer opened a manual (Bit/bank) payment request. Same
+  // append-only audit:* keyspace the admin dashboard reads, so manual billing
+  // is traceable like the other billing endpoints. Non-fatal on KV outage.
+  await auditLog('manual_payment_requested', userSub, {
+    code, plan, period, months, amountILS, method, phoneTail: phoneTail(phone),
+  }, { reqId: req.reqId }).catch(() => {});
   return res.status(200).json({
     ok: true,
     code,
@@ -126,6 +141,14 @@ async function adminImpl(req, res) {
     pending.rejectedAt = new Date().toISOString();
     await billingKvSet(`pendingPayment:${code}`, pending);
     await indexRemove(code);
+    log.info('manual.payment_rejected', { reqId: req.reqId, code, userSub: pending.userSub, by: req.user.email });
+    // Audit: admin dropped a pending manual payment. Hash the affected
+    // customer's sub (not the admin's) so the trail joins to the user; record
+    // the acting admin's email as the actor.
+    await auditLog('manual_payment_rejected', pending.userSub, {
+      code, plan: pending.plan, period: pending.period, method: pending.method,
+      amountILS: pending.amountILS, by: req.user.email,
+    }, { reqId: req.reqId }).catch(() => {});
     return res.status(200).json({ ok: true, code, status: 'rejected' });
   }
 
@@ -142,6 +165,15 @@ async function adminImpl(req, res) {
     await billingKvSet(`pendingPayment:${code}`, pending);
     await indexRemove(code);
     log.info('manual.payment_confirmed', { reqId: req.reqId, code, userSub: pending.userSub, by: req.user.email });
+    // Audit: admin confirmed a manual payment -> premium activated. This is the
+    // money-moving event, so it MUST leave a forensic row in audit:* (the
+    // dashboard's audit view + Amendment-13 trail) like every other billing
+    // path. Hash the customer's sub; record the acting admin as `by`.
+    await auditLog('manual_payment_confirmed', pending.userSub, {
+      code, plan: pending.plan, period: pending.period, months: pending.months,
+      amountILS: pending.amountILS, method: pending.method,
+      by: req.user.email, accessUntil: rec?.accessUntil || null,
+    }, { reqId: req.reqId }).catch(() => {});
     return res.status(200).json({ ok: true, code, status: 'confirmed', plan: rec?.plan, accessUntil: rec?.accessUntil });
   }
 
