@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize-biz-misroute-keywords';
+const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize-biz-misroute-keywords-menu-first-wizard';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2409,6 +2409,27 @@ function doPost(e) {
               }
             } catch (_lrnErr) {
               Logger.log('doPost: learning command error: ' + (_lrnErr && _lrnErr.stack || _lrnErr));
+            }
+          }
+
+          // STATEFUL PENDING FLOW (docs/BOT_MENU_FIRST_POLICY.md, 2026-05-26).
+          // If the user is mid-wizard (e.g. step 2 of "יעד חדש"), their reply
+          // routes to the active flow's step handler BEFORE any free-text
+          // parser sees it. This prevents the live bug where "2000 שח" got
+          // parsed as a ₪2 expense — the user was answering step 2 of the
+          // goal wizard, not logging a new expense.
+          if (typeof _handlePendingFlowStep_ === "function") {
+            try {
+              var __flowRes = _handlePendingFlowStep_(__from_, __text_);
+              if (__flowRes && __flowRes.handled) {
+                if (__flowRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __flowRes.replyText);
+                }
+                Logger.log('doPost: pending flow step handled');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_flowErr) {
+              Logger.log('doPost: pending flow error: ' + (_flowErr && _flowErr.stack || _flowErr));
             }
           }
 
@@ -11590,6 +11611,181 @@ function _resolveCorrectionPair_(raw) {
 // API enforces tenant isolation (phone -> userSub -> objective:{userSub}).
 // Reminder cron + onboarding-question integration come in PR-G2-cron /
 // PR-G2-onboarding once Steven answers Q6-Q10 from the design doc.
+// ═══════════════════════════════════════════════════════════════════════════
+// STATEFUL MENU-FIRST FLOWS (docs/BOT_MENU_FIRST_POLICY.md, 2026-05-26)
+//
+// Stores pending wizard state in CacheService keyed by phone. Each flow has
+// a small state machine: "step" advances, "collected" accumulates values.
+// The doPost dispatcher checks `pendingFlow:{phone}` BEFORE the normal
+// command routers, so once a wizard is active, plain text replies route to
+// the wizard rather than being misinterpreted as expenses or commands.
+//
+// Supported flows in PR-2:
+//   objective-new — 3-step wizard for setting a long-horizon objective.
+//                   step 1: horizon (1/2/3/4)
+//                   step 2: description (free text)
+//                   step 3: confirm (1=yes / 2=cancel)
+//
+// Cache TTL: 600s (10 min). Reply "בטל" / "cancel" / "חזור" at any step
+// aborts the wizard and clears the cache key.
+
+function _pendingFlowKey_(fromPhone) {
+  return 'pendingFlow:' + String(fromPhone).replace(/[^0-9]/g, '');
+}
+
+function _setPendingFlow_(fromPhone, flowName, step, collected) {
+  var cache = CacheService.getScriptCache();
+  var rec = {
+    flow: flowName,
+    step: step,
+    collected: collected || {},
+    startedAt: Date.now(),
+  };
+  cache.put(_pendingFlowKey_(fromPhone), JSON.stringify(rec), 600);
+}
+
+function _getPendingFlow_(fromPhone) {
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(_pendingFlowKey_(fromPhone));
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (_) { return null; }
+}
+
+function _clearPendingFlow_(fromPhone) {
+  CacheService.getScriptCache().remove(_pendingFlowKey_(fromPhone));
+}
+
+function _handlePendingFlowStep_(fromPhone, text) {
+  if (!fromPhone || !text) return { handled: false };
+  var rec = _getPendingFlow_(fromPhone);
+  if (!rec) return { handled: false };
+
+  var t = String(text).trim();
+
+  // Universal escape: cancel at any step.
+  if (/^(בטל|cancel|חזור|stop|דלג)$/i.test(t)) {
+    _clearPendingFlow_(fromPhone);
+    return { handled: true, replyText: '✓ ביטלתי. נמשיך בפעם אחרת.' };
+  }
+
+  if (rec.flow === 'objective-new') {
+    return _objectiveNewStep_(fromPhone, t, rec);
+  }
+  // Future: budget-set, recurring-add, transfer, etc.
+
+  // Unknown flow — clear it and let normal routing take over.
+  _clearPendingFlow_(fromPhone);
+  return { handled: false };
+}
+
+// ── objective-new wizard ───────────────────────────────────────────────────
+function _objectiveNewStep_(fromPhone, t, rec) {
+  var step = rec.step;
+  var collected = rec.collected || {};
+
+  if (step === 'choose-horizon') {
+    // User should reply 1 / 2 / 3 / 4. Be lenient and also accept the
+    // horizon words directly.
+    var horizon = null;
+    if (/^1$/.test(t) || /^חודש/.test(t))     horizon = 'month';
+    else if (/^2$/.test(t) || /חצי\s*שנה/.test(t)) horizon = 'six_months';
+    else if (/^3$/.test(t) || /^שנה/.test(t))     horizon = 'year';
+    else if (/^4$/.test(t) || /אין\s+לי/.test(t)) {
+      _clearPendingFlow_(fromPhone);
+      return { handled: true, replyText: '👍 בסדר, אין יעד כרגע. כשתרצה — שלח "יעד חדש".' };
+    }
+    if (!horizon) {
+      return { handled: true, replyText:
+        '🤔 לא הבנתי. ענה במספר 1/2/3/4:\n' +
+        '1️⃣ לחודש הקרוב\n' +
+        '2️⃣ ל-6 חודשים\n' +
+        '3️⃣ לשנה הקרובה\n' +
+        '4️⃣ אין לי יעד\n\n' +
+        '(או שלח "בטל" כדי להפסיק)'
+      };
+    }
+    collected.horizon = horizon;
+    _setPendingFlow_(fromPhone, 'objective-new', 'describe', collected);
+    var horizonHe = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    return { handled: true, replyText:
+      '✅ הבנתי — יעד ' + horizonHe[horizon] + '.\n\n' +
+      'עכשיו במשפט אחד — *מה היעד?*\n' +
+      'לדוגמה:\n' +
+      '• "לחסוך 5,000 ש״ח לטיול ביוני"\n' +
+      '• "להוריד הוצאות אוכל ל-2,000 בחודש"\n' +
+      '• "להחזיר את ההלוואה של 12,000 עד סוף השנה"\n\n' +
+      '(או שלח "בטל" כדי להפסיק)'
+    };
+  }
+
+  if (step === 'describe') {
+    var desc = t.slice(0, 200);
+    if (desc.length < 5) {
+      return { handled: true, replyText:
+        '🤔 קצר מדי. נסה משפט שלם כמו:\n' +
+        '"לחסוך 5000 לטיול ביוני"\n\n' +
+        '(או "בטל")'
+      };
+    }
+    collected.description = desc;
+    _setPendingFlow_(fromPhone, 'objective-new', 'confirm', collected);
+    var horizonHe = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    return { handled: true, replyText:
+      '🎯 רק לוודא לפני שאני שומר:\n\n' +
+      '• יעד ' + horizonHe[collected.horizon] + '\n' +
+      '• "' + desc + '"\n\n' +
+      '1️⃣ אישור\n' +
+      '2️⃣ בטל'
+    };
+  }
+
+  if (step === 'confirm') {
+    if (/^1$|^אישור$|^כן$|^ok$|^אוקיי$/i.test(t)) {
+      // Call /api/objectives/action set
+      var base = (typeof KESEFLE_API_BASE !== 'undefined') ? KESEFLE_API_BASE : '';
+      var secret = '';
+      try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_) {}
+      var clean = String(fromPhone).replace(/[^0-9]/g, '');
+      try {
+        var resp = UrlFetchApp.fetch(base + '/api/objectives/action', {
+          method: 'post', contentType: 'application/json',
+          headers: { 'x-kesefle-bot-secret': secret },
+          payload: JSON.stringify({
+            phone: clean, action: 'set',
+            horizon: collected.horizon,
+            description: collected.description,
+          }),
+          muteHttpExceptions: true,
+        });
+        var code = resp.getResponseCode();
+        _clearPendingFlow_(fromPhone);
+        if (code === 200) {
+          return { handled: true, replyText:
+            '✅ נשמר! היעד פעיל ומופיע ב"יעד שלי".\n' +
+            '💡 אזכיר אותך בערב יום ראשון/שלישי/חמישי.'
+          };
+        }
+        return { handled: true, replyText: '😬 שגיאה בשמירה (' + code + '). נסה שוב.' };
+      } catch (e) {
+        _clearPendingFlow_(fromPhone);
+        return { handled: true, replyText: '😬 שגיאת רשת: ' + (e && e.message) };
+      }
+    }
+    if (/^2$|^בטל|^cancel/i.test(t)) {
+      _clearPendingFlow_(fromPhone);
+      return { handled: true, replyText: '✓ ביטלתי. נמשיך בפעם אחרת.' };
+    }
+    return { handled: true, replyText:
+      '🤔 ענה 1 לאישור, 2 לביטול.'
+    };
+  }
+
+  // Unknown step — defensive: clear + abort
+  _clearPendingFlow_(fromPhone);
+  return { handled: false };
+}
+// ═══════════════════════════════════════════════════════════════════════════
+
 function _handleObjectiveCommand_(fromPhone, text) {
   if (!fromPhone || !text) return { handled: false };
   var t = String(text).trim();
@@ -11730,19 +11926,29 @@ function _handleObjectiveCommand_(fromPhone, text) {
     };
   }
 
-  // Bare "יעד חדש" — start the 2-step conversation
+  // Bare "יעד חדש" — start the stateful wizard (docs/BOT_MENU_FIRST_POLICY.md).
+  // The user's NEXT message routes to _objectiveNewStep_ via the cache state,
+  // so we don't accidentally parse "2000 שח" as an expense like in the live
+  // bug Steven hit on 2026-05-26.
   if (/^יעד\s+חדש$/.test(t)) {
-    // 2026-06-01 FIX: stamp pending-objective state (see helper docs) so the
-    // user's "1/2/3/4" reply routes to objective-creation, not a 1₪ expense.
+    // Stamp BOTH pending-state machines so the user's next reply routes to
+    // objective-creation no matter which dispatcher fires first.
+    // (a) _setPendingFlow_ drives the menu-first wizard's non-digit follow-ups
+    //     (objective-new: choose-horizon -> describe -> confirm).
+    if (typeof _setPendingFlow_ === 'function') {
+      _setPendingFlow_(fromPhone, 'objective-new', 'choose-horizon', {});
+    }
+    // (b) _objPendSet_ drives the end-anchored "1/2/3/4" digit reply, which the
+    //     doPost objective-pending router intercepts BEFORE the expense
+    //     fast-path (2026-06-01 fix: stops "1" becoming a 1-shekel expense).
     if (typeof _objPendSet_ === 'function') { _objPendSet_(clean, 'horizon'); }
     return { handled: true, replyText:
-      '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
+      '🎯 בוא נקבע יעד פיננסי. בחר טווח זמן:\n\n' +
       '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
       '2️⃣ ל-6 חודשים   — בינוני (סגירת חוב, קרן חירום)\n' +
       '3️⃣ לשנה הקרובה  — גדול (משכנתא, השקעה, מטרת חיים)\n' +
-      '4️⃣ אין לי יעד   — נדבר בהמשך\n\n' +
-      'ענה במספר 1/2/3/4, או שלח בשורה אחת:\n' +
-      '"יעד חדש חודש לחסוך 1000 לטיול ביוני"'
+      '4️⃣ אין לי יעד   — לא עכשיו\n\n' +
+      '(ענה במספר 1/2/3/4, או "בטל" כדי להפסיק)'
     };
   }
 
