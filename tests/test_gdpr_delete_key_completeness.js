@@ -94,6 +94,31 @@ ok('deleteByPhone still revokes Google grant before deleting',
   /async function deleteByPhone[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC),
   'same: revoke before delete');
 
+console.log('\n=== users_all index SET eviction (SREM, not DEL) ===');
+
+// api/auth/google.js does `SADD users_all google:<sub>` on signup, and the
+// morning-nudge + customer-weekly-digest crons read that set via SMEMBERS.
+// A DEL of user:* cannot remove the member from the set — only SREM can.
+// Without it the deleted user lingers in the index forever (stale entry the
+// crons iterate on every run). Both delete paths must SREM the member.
+ok('has a set-member removal helper (SREM)',
+  /\/srem\//.test(SRC),
+  'need a kvSetRemove()-style helper that hits Upstash /srem/');
+
+ok('deleteAccount removes the user from users_all',
+  /async function deleteAccount[\s\S]*?kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub/.test(SRC),
+  "web delete path must SREM 'google:'+userSub from users_all");
+
+ok('deleteByPhone removes the user from users_all',
+  /async function deleteByPhone[\s\S]*?kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub/.test(SRC),
+  "bot delete path must SREM 'google:'+userSub from users_all");
+
+// The member format must match the SADD in api/auth/google.js exactly
+// ('google:' + raw sub) or the SREM silently removes nothing.
+ok("eviction member is 'google:'+userSub (matches the SADD writer)",
+  /kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub\s*\)/.test(SRC),
+  'must mirror api/auth/google.js sadd/users_all/google:<sub>');
+
 if (failed > 0) {
   console.error('\n❌ ' + failed + ' assertion(s) failed');
   process.exit(1);
