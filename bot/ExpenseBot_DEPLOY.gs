@@ -3068,15 +3068,32 @@ function parseBusinessOrder_(text) {
   // single-number message parses as a "rich order").
   var salePriceLabeled = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירת|מכירה|מחיר|sold|sale)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   var salePrice      = salePriceLabeled;
+  // Shipping/installation has TWO distinct meanings depending on who paid:
+  //   • A COST Steven incurred ("משלוח 45", "שילמתי 80 משלוח") — reduces profit
+  //     and feeds the company dashboard's משלוחים והתקנות EXPENSE row.
+  //   • REVENUE the customer paid ("...שילמה 1700 ... + 450 להתקנה") — part of
+  //     the sale, must NOT be booked as a cost.
+  // The keyword-FIRST labeled form ("משלוח 45" / "התקנה 450" / "שילמתי 80
+  // משלוח") is treated as a stated cost (unchanged behaviour, covers the
+  // prefix-order path). The reverse NL form ("<amount> [שח] ל<keyword>",
+  // e.g. "+ 450 שח להתקנה") is captured SEPARATELY as `installReverse` and
+  // its destination (revenue vs cost) is decided below by _customerPaidOrder.
   var shipping       = _num(/(?:דמי\s+משלוח|משלוח\s+(?:והתקנה|והובלה|והתקנות)|משלוח|שילוח|התקנה|התקנות|shipping|delivery)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
-  // 2026-06-02: also catch the NL "<amount> [שח] ל<keyword>" order, where the
-  // number comes BEFORE the shipping/install keyword — e.g. "+ 450 שח להתקנה"
-  // or "30 שקל למשלוח". The keyword-first regex above only handles
-  // "התקנה 450"; this fallback handles "450 ... התקנה" without misreading a
-  // size token (sizes are NxN, never a lone number directly before the
-  // keyword). Only used when the keyword-first pass found nothing.
-  if (shipping == null) {
-    shipping = _num(/(\d+(?:[.,]\d+)?)\s*(?:ש["׳']?ח|שקל(?:ים)?|nis|₪)?\s*ל?(?:משלוח|שילוח|התקנה|התקנות|הובלה)(?:\s|$|[.,])/i);
+  var installReverse = _num(/(\d+(?:[.,]\d+)?)\s*(?:ש["׳']?ח|שקל(?:ים)?|nis|₪)?\s*ל?(?:משלוח|שילוח|התקנה|התקנות|הובלה)(?:\s|$|[.,])/i);
+  // 2026-06-02 money-semantics fix: detect a CUSTOMER-paid / income order.
+  // Fires only on the new NL trigger (business marker mid-sentence, not the
+  // עסק-prefix form) with an income/customer-payment signal, and only when
+  // Steven did NOT explicitly say HE paid the shipping/installation.
+  var _stevenPaidShip = /שילמתי(?:\s+\S+){0,3}?\s*(?:על\s+)?(?:משלוח|שילוח|התקנה|התקנות|הובלה)/.test(s);
+  var _incomeSignal   = /(?:הכנסה|הכנסות|שילמ(?:ה|ו|תם)?|שילם|מכר(?:תי|נו|ה)?|מכירה|קיבלתי\s+תשלום|לקוח[ה]?\s+שילמ)/.test(s);
+  var _customerPaidOrder = _bizMarkerAnywhere && !_bizStartsPrefix && _incomeSignal && !_stevenPaidShip;
+  var _installAsRevenue = false; // set true below when we fold the add-on into the sale
+  if (!_customerPaidOrder) {
+    // Cost-phrasing path (prefix orders, or Steven explicitly paid): the
+    // reverse NL form is also a shipping COST when the keyword-first pass
+    // found nothing. Preserves the prior behaviour for "+ 450 להתקנה" in a
+    // Steven-paid / prefix context.
+    if (shipping == null && installReverse != null) shipping = installReverse;
   }
 
   // Customer name: try the explicit label first ("שם לקוח X" / "לקוח X").
@@ -3144,6 +3161,34 @@ function parseBusinessOrder_(text) {
   }
   if (salePrice == null && headline != null) salePrice = headline;
 
+  // 2026-06-02 money-semantics fix — CUSTOMER-paid / income order.
+  // Every amount the customer paid is REVENUE, so the sale price is the
+  // headline/labeled product price PLUS any "+ X" add-on like installation.
+  // The add-on (installReverse) is folded into salePrice and shipping(cost)
+  // is forced to 0 — it must never reduce revenue or profit. The add-on
+  // label is remembered so the description reads e.g. "תמונה 80×120 זכוכית
+  // + התקנה". Example: "הלקוחה שילמה 1700 ... + 450 שח להתקנה"
+  //   → salePrice 2150, shipping 0, profit 2150 (no cost stated).
+  var _installLabelHe = '';
+  if (_customerPaidOrder) {
+    if (installReverse != null && installReverse > 0) {
+      // Identify what the add-on was called (installation vs shipping) for
+      // the description note.
+      if (/(?:התקנה|התקנות)/.test(s))      _installLabelHe = 'התקנה';
+      else if (/(?:משלוח|שילוח|הובלה)/.test(s)) _installLabelHe = 'משלוח';
+      // Fold the add-on into the sale (revenue). salePrice here is the
+      // product headline (or a labeled מכירה price); the add-on is a
+      // distinct number captured by installReverse, so summing is correct.
+      var _base = (salePrice != null) ? salePrice : 0;
+      salePrice = _base + installReverse;
+      _installAsRevenue = true;
+    }
+    // Customer-paid orders never carry a shipping COST inferred from the
+    // customer's payment. (An explicit Steven-paid cost would have set
+    // _customerPaidOrder=false above.)
+    shipping = null;
+  }
+
   // Only treat as a "rich order" when we got at least 2 distinct fields
   // beyond a bare amount. Otherwise the caller falls back to the existing
   // dropdown flow (which serves "עסק 24 שיווק" style messages).
@@ -3158,11 +3203,31 @@ function parseBusinessOrder_(text) {
   if (productionCost)   fieldsFound++;
   if (shipping)         fieldsFound++;
   if (salePriceLabeled != null) fieldsFound++;
+  // 2026-06-02: a customer-paid income order counts its add-on (installation/
+  // shipping the customer paid) as a field, and a customer-payment signal
+  // together with a sale price is itself a strong order signal. This keeps a
+  // genuine NL income order (e.g. "...שילמה 1700 ... + 450 התקנה") from
+  // failing the ≥2-fields gate when it lacks an explicit size/material. It
+  // does NOT affect the prefix path (_customerPaidOrder is false there).
+  if (_installAsRevenue) fieldsFound++;
+  if (_customerPaidOrder && salePrice != null) fieldsFound++;
   if (fieldsFound < 2) return null;
 
   var profit = null;
   if (salePrice != null) {
     profit = salePrice - (productionCost || 0) - (shipping || 0);
+  }
+
+  // Build a human description that carries the product + the customer-paid
+  // add-on (e.g. "תמונה 80×120 זכוכית + התקנה"), so the order row and the
+  // reply both spell out what the revenue covered.
+  var _prodBits = [];
+  if (size || material) _prodBits.push('תמונה');
+  if (size)     _prodBits.push(size);
+  if (material) _prodBits.push(material);
+  var descNote = _prodBits.join(' ');
+  if (_installAsRevenue && _installLabelHe) {
+    descNote = (descNote ? descNote + ' + ' : '+ ') + _installLabelHe;
   }
 
   return {
@@ -3175,6 +3240,12 @@ function parseBusinessOrder_(text) {
     profit:         profit,
     rawText:        text,
     amount:         salePrice || headline || 0,
+    // 2026-06-02 customer-paid breakdown fields (empty/false on the
+    // prefix-order path, so it is unchanged):
+    installRevenue: _installAsRevenue ? installReverse : null,
+    installLabel:   _installAsRevenue ? _installLabelHe : '',
+    productPrice:   _installAsRevenue ? (salePrice - installReverse) : null,
+    descNote:       descNote || '',
   };
 }
 
@@ -3202,11 +3273,19 @@ function _writeOrderRow_(parsed) {
     }
     var now = new Date();
     var month = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    // Column D (size/description): for a customer-paid income order we write
+    // the full human breakdown ("תמונה 80×120 זכוכית + התקנה") so the order
+    // log spells out what the revenue covered. For the prefix-order path
+    // parsed.descNote is just the size/material, and we keep the plain size
+    // here to avoid changing that column's prior content.
+    var _sizeCol = (parsed.installRevenue && parsed.descNote)
+      ? parsed.descNote
+      : (parsed.size || '');
     var row = [
       now,
       month,
       sanitizeForSheet(parsed.customer),
-      sanitizeForSheet(parsed.size),
+      sanitizeForSheet(_sizeCol),
       sanitizeForSheet(parsed.material),
       parsed.productionCost || 0,
       parsed.salePrice || 0,
@@ -8438,21 +8517,34 @@ function processExpense(text, fromPhone) {
         var __orderRes = _writeOrderRow_(__order);
         if (__orderRes.ok) {
           // Warm Hebrew confirmation (Steven's voice). Mentions product /
-          // size / material, sale price, installation (shipping), total, and
-          // that it landed in הזמנות + מאזן חברה. If no customer name was
-          // parsed, record it blank and invite the user to add one.
+          // size / material, the sale, and that it landed in הזמנות + מאזן
+          // חברה. If no customer name was parsed, record it blank and invite
+          // the user to add one.
           var __saleN  = __order.salePrice ? Number(__order.salePrice) : 0;
-          var __shipN  = __order.shipping ? Number(__order.shipping) : 0;
-          var __totalN = __saleN + __shipN;
           var __ln = [];
           __ln.push('✅ רשמתי הזמנה');
           if (__order.customer) __ln.push('👤 ' + __order.customer);
           var __desc = [__order.size, __order.material].filter(Boolean).join(' · ');
           if (__desc) __ln.push('🖼 ' + __desc);
-          if (__saleN)  __ln.push('מכירה: ₪' + __saleN.toLocaleString('he-IL'));
-          if (__shipN)  __ln.push('התקנה/משלוח: ₪' + __shipN.toLocaleString('he-IL'));
-          if (__order.productionCost) __ln.push('עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
-          if (__totalN) __ln.push('סה"כ: ₪' + __totalN.toLocaleString('he-IL'));
+          if (__order.installRevenue) {
+            // Customer-paid breakdown: product + add-on (installation/shipping
+            // the customer paid) = total revenue. No cost was stated, so this
+            // is the full sale. e.g. "תמונה ₪1,700 + התקנה ₪450 = ₪2,150".
+            var __prodN  = __order.productPrice ? Number(__order.productPrice) : (__saleN - Number(__order.installRevenue));
+            var __addN   = Number(__order.installRevenue);
+            var __addLbl = __order.installLabel || 'תוספת';
+            __ln.push('מכירה: ₪' + __prodN.toLocaleString('he-IL') + ' + ' + __addLbl + ' ₪' + __addN.toLocaleString('he-IL') + ' = ₪' + __saleN.toLocaleString('he-IL'));
+            if (__order.productionCost) __ln.push('עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
+            if (__order.profit != null) __ln.push('רווח: ₪' + Number(__order.profit).toLocaleString('he-IL'));
+          } else {
+            // Prefix/cost-phrasing path: sale price, an explicit shipping COST
+            // if Steven stated one, production cost, and total revenue.
+            var __shipN  = __order.shipping ? Number(__order.shipping) : 0;
+            if (__saleN)  __ln.push('מכירה: ₪' + __saleN.toLocaleString('he-IL'));
+            if (__shipN)  __ln.push('משלוח (עלות): ₪' + __shipN.toLocaleString('he-IL'));
+            if (__order.productionCost) __ln.push('עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
+            if (__order.profit != null) __ln.push('רווח: ₪' + Number(__order.profit).toLocaleString('he-IL'));
+          }
           __ln.push('נכנס להזמנות ולמאזן חברה.');
           if (!__order.customer) __ln.push('רוצה? שלח "לקוח <שם>" ואשייך.');
           return { reply: __ln.join('\n') };
