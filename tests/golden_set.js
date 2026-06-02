@@ -261,6 +261,56 @@ const GOLDEN = [
   // 3-char "יין" in the restaurant row -> dining-out. Added "בקבוק יין" (len 9)
   // -> the home alcohol bucket. Signal is the sub.
   ['בקבוק יין 90', 'sub:אוכל לבית — יין ואלכוהול'],
+
+  // ── 2026-06-02 SIGN-FLIP + INCOME/INSTALLMENT coverage (ADDITIVE). A 45-msg
+  // Hebrew corpus was replayed through the REAL classifier (bot/bot-replay.js)
+  // hunting income/expense sign-flips; see bot/BOT_IMPROVEMENTS.md for the full
+  // report. Every anchor below ALREADY passes on current source — they lock the
+  // classifier's correct income/expense polarity so a future taxonomy edit that
+  // quietly flips a refund into an expense (or a payment into income) trips the
+  // build. The 4 GENUINE misroutes the corpus found are NOT anchored here yet
+  // (they fail today); BOT_IMPROVEMENTS.md carries the exact additive fix + the
+  // anchor to add the moment that fix lands in ExpenseBot_FIXED.gs.
+  //
+  // (A) VAT/tax REFUNDS are revenue (מחזור, isIncome) — must NOT book as an
+  // operating expense (a sign-flip on the company P&L). The geresh + no-geresh +
+  // English forms all route income today; pinned so they stay income.
+  ['החזר מע"מ 900', 'sub:מחזור'],
+  ['החזר מעמ 900', 'sub:מחזור'],
+  ['vat refund 900', 'sub:מחזור'],
+  ['tax refund 900', 'sub:מחזור'],
+  ['rebate 300', 'sub:מחזור'],
+  // (A-guard) the OPPOSITE polarity: a VAT PAYMENT is an expense and must stay
+  // one — the matching guard that proves the refund keywords above did not
+  // relax the payment route.
+  ['תשלום מעמ 4500', 'sub:הוצאות תפעוליות'],
+  ['עסק תשלום מעמ 4500', 'עסק'],
+  //
+  // (B) business REVENUE phrases (customer receipt, product/service sale) route
+  // to מחזור income; pinned so the company top-line can't silently lose a sale.
+  ['תקבול לקוח 5000', 'sub:מחזור'],
+  ['מכירת מוצר 1500', 'sub:מחזור'],
+  ['מכירת שירות 1200', 'sub:מחזור'],
+  // business revenue via the עסק prefix (BUSINESS_CATEGORY_MAP path).
+  ['עסק הכנסה 10000', 'עסק'],
+  ['עסק תמונות הכנסה 8000', 'עסק'],
+  //
+  // (C) PERSONAL income: salary (incl. the natural "קיבלתי משכורת") and the
+  // business-income personal row stay income, top-level הכנסות.
+  ['קיבלתי משכורת 9000', 'הכנסות'],
+  ['הכנסה עסקית 10000', 'הכנסות'],
+  //
+  // (D) INSTALLMENTS (תשלומים / "N תשלומים" / "תשלום X מתוך Y"): the multi-
+  // payment phrasing must NOT change the category or flip the sign — each stays
+  // an expense in its real domain (a fridge/iphone is shopping, car insurance is
+  // transport), the amount handling is covered by bot/test_installments_hebrew.js.
+  ['תשלום 1 מתוך 12 על אייפון 400', 'קניות'],
+  ['רהיטים 6 תשלומים 1800', 'קניות'],
+  ['ביטוח רכב 12 תשלומים 320', 'תחבורה'],
+  //
+  // (E) a pro-equipment purchase carrying the עסק prefix routes business opex,
+  // not a personal electronics buy.
+  ['מצלמה מקצועית לעסק 4000', 'עסק'],
 ];
 
 // ── Run ──────────────────────────────────────────────────────────────────────
