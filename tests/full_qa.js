@@ -46,7 +46,7 @@ function extractFn(src, name) {
 
 // ── 1. Existing unit suites ─────────────────────────────────────────────────
 console.log('\n══ 1. Unit suites (isolation + parser) ══');
-for (const f of ['bot/test_isolation.js', 'bot/test_parser.js', 'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js', 'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js', 'bot/test_objective_commands.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js']) {
+for (const f of ['bot/test_isolation.js', 'bot/test_isolation_edge_cases.js', 'bot/test_parser.js', 'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_classifier_primitives.js', 'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js', 'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js', 'bot/test_objective_commands.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js', 'tests/test_sheet_writer_row_building.js', 'tests/test_summary_column_schema.js']) {
   try { execFileSync('node', [path.join(ROOT, f)], { stdio: 'pipe' }); ok(f + ' passed', true); }
   catch (e) { ok(f + ' passed', false); }
 }
@@ -140,7 +140,11 @@ console.log('\n══ 5b. Cross-user global learning ══');
 const _mcs = extractFn(BOT, 'matchCategorySmart');
 const _iDict = _mcs.indexOf('matchCategory(text)');
 const _iGlobal = _mcs.indexOf('_globalLearnLookup_(');
-const _iLLM = _mcs.indexOf('_aiCategorize(');
+// LLM tier: matchCategorySmart Step-3 now calls _aiCategorizeRich directly
+// (multi-item-guard, 2026-05-31) so it can enforce the classify contract
+// (should_ask_user + 0.6 floor) instead of the old thin _aiCategorize wrapper
+// that silently dropped it. The latency-safe ordering invariant is unchanged.
+const _iLLM = _mcs.indexOf('_aiCategorizeRich(');
 ok('global tier sits AFTER dictionary, BEFORE LLM (latency-safe order)',
    _iDict > -1 && _iGlobal > _iDict && _iLLM > _iGlobal);
 // The hot in-memory lookup must NOT itself make the HTTP call (would add a hop
@@ -179,7 +183,12 @@ const _setNoteFn = extractFn(BOT, 'setDashboardNoteForTransaction_');
 ok('note writer uses setNote (not setValue — safe, never corrupts totals)',
    /\.setNote\(/.test(_setNoteFn) && !/\.setValue\(/.test(_setNoteFn) && !/setFormula\(/.test(_setNoteFn));
 ok('note writer routes business→company / else→personal',
-   /category === 'עסק'/.test(_setNoteFn) && /מאזן חברה/.test(_setNoteFn) && /מאזן אישי/.test(_setNoteFn));
+   // Business branch resolves the company dashboard via the shared
+   // multi-business resolver (covers renamed "עסק תמונות" + "עסק 2/3"...);
+   // the else branch still targets the personal dashboard by name.
+   /category === 'עסק'/.test(_setNoteFn) && /_businessDashTabs_\(/.test(_setNoteFn) && /מאזן אישי/.test(_setNoteFn));
+ok('multi-business dash resolver matches מאזן חברה + עסק-prefixed tabs',
+   /\/\^\(מאזן חברה\|עסק \)\//.test(extractFn(BOT, '_businessDashTabs_')));
 ok('all 3 owner expense paths mirror to the dashboard note',
    (BOT.match(/_dashboardDetailNote_\(/g) || []).length >= 3);
 ok('_dashboardDetailNote_ is best-effort (wrapped in try/catch at call sites)',

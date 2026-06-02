@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-05-29-kolektziot-route-added';
+const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -431,7 +431,9 @@ const CATEGORY_MAP = [
     // Smartwatches + wearables
     "שעון חכם","smartwatch","apple watch","apple watch ultra","אפל ווטש","garmin","גרמין","fitbit","פיטביט","whoop","וופ",
     // Smart home
-    "אלקסה","alexa","amazon echo","google nest","נסט","smart speaker","רמקול חכם","sonos","סונוס","bose","שיאומי בית חכם","smart bulb","נורה חכמה","smart plug","שקע חכם"
+    "אלקסה","alexa","amazon echo","google nest","נסט","smart speaker","רמקול חכם","sonos","סונוס","bose","שיאומי בית חכם","smart bulb","נורה חכמה","smart plug","שקע חכם",
+    // Generic dashboard label (2026-06-01)
+    "אלקטרוניקה"
   ],"category":"קניות","subcategory":"אלקטרוניקה"},
   {"keywords":["איקאה","ביתילי","רהיט","רהיט חדש","מזרן חדש","מערכת ישיבה","שולחן אוכל"],"category":"קניות","subcategory":"רהיטים"},
   {"keywords":["פלאפל","חומוס","המבורגר","גלידה","קינוח","ארוחת בוקר עסקית","בראנץ"],"category":"אוכל","subcategory":"אוכל בחוץ"},
@@ -441,7 +443,7 @@ const CATEGORY_MAP = [
   {"keywords":["ביטוח רכב","ביטוח חובה","ביטוח מקיף"],"category":"תחבורה","subcategory":"ביטוח רכב"},
   {"keywords":["רב קו","טעינת רב קו","מטרונית","נסיעה ברכבת ישראל"],"category":"תחבורה","subcategory":"תחבורה ציבורית"},
   {"keywords":["יציאה עם חברים","ערב עם חברים","בילוי עם חברים","יצאנו עם חברים","יציאה עם חברות","ערב עם חברות","בילוי בעיר","ערב בעיר","יציאה לעיר","בילוי","בילויים","מסיבה","מסיבת","הופעה","הופעות","מופע","קולנוע","סרט בקולנוע","תיאטרון","סטנדאפ","קריוקי","מועדון","מועדון לילה","דרינק","דרינקים","ערב בילוי"],"category":"בידור","subcategory":"יציאות"},
-  {"keywords":["תשלום מס הכנסה","מס הכנסה","מקדמת מס","מקדמות מס","דמי ביטוח לאומי","ביטוח לאומי","תשלום מעמ","תשלום מע״מ","מס שבח","מס רכישה","שומת מס","אגרת מס","תשלום לרשות המיסים","רשות המיסים"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
+  {"keywords":["מיסים ואגרות","תשלום מס הכנסה","מס הכנסה","מקדמת מס","מקדמות מס","דמי ביטוח לאומי","ביטוח לאומי","תשלום מעמ","תשלום מע״מ","מס שבח","מס רכישה","שומת מס","אגרת מס","תשלום לרשות המיסים","רשות המיסים"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
   {"keywords":["ארוחה בחוץ","ארוחת צהריים","ארוחת בוקר","ארוחת ערב","ארוחה במסעדה","אוכל במשלוח","הזמנת אוכל","משלוח אוכל","אכלנו בחוץ","בית קפה","קפה ומאפה"],"category":"אוכל","subcategory":"אוכל בחוץ"},
   {"keywords":["קניות בסופר","קנייה בסופר","קניות לבית","קניות שבועיות","מצרכים","קניות במכולת"],"category":"אוכל","subcategory":"אוכל לבית"},
   {"keywords":["חשבון חשמל","תשלום חשמל"],"category":"הוצאות קבועות","subcategory":"חשמל"},
@@ -455,7 +457,7 @@ const CATEGORY_MAP = [
   {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["טיפול שיניים","רופא שיניים","ניקוי אבנית","סתימה אצל שיניים"],"category":"בריאות","subcategory":"שיניים"},
-  {"keywords":["גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
+  {"keywords":["בית הספר","בית ספר","גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
   {"keywords":["מתנה ליום הולדת","מתנה לחתונה","מתנה לחבר","מתנה לחברה","שי לחג","מתנת יום נישואין"],"category":"מתנות","subcategory":"מתנות"},
   {"keywords":["אוכל לכלב","אוכל לחתול","מזון לכלב","מזון לחתול","ביקור אצל וטרינר","חיסון לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
   {"keywords":["משכורת","שכר חודש","שכר עבודה"],"category":"הכנסות","subcategory":"הכנסה 1 — משכורת","isIncome":true},
@@ -479,10 +481,15 @@ const CATEGORY_MAP = [
   // שונות. Subcategory strings match the EXISTING col-E values in Steven's NEW
   // תנועות tab (verified via AUDIT_APPENDED_ROWS — חצי איירון מן has 6 matches,
   // מרוץ - אוסטריה has 1 match, גיא has 3 matches via manual entry).
-  // 2026-05-29 update: Steven confirmed קולקציות = his art canvas + glass collection
-  // hobby purchases (per docs/PERSONALIZED_CATEGORY_PROFILES.md:409). Group "תחביבים"
-  // (hobbies), Steven-only (default_for_new_users=FALSE in the master catalog).
-  {"keywords":["קולקציה","קולקציות","אספנות","art canvas","art collection","glass collection","זכוכית אומנותית","קנבס אומנותי","הדפס אמנותי","פסלון","ציור","הזמנת אמנות","art print","sculpture"],"category":"תחביבים","subcategory":"קולקציות"},
+  // 2026-05-31 update: Steven CONFIRMED קולקציות = his SRC BUSINESS (SRC
+  // Collection), NOT a personal hobby. Rerouted category תחביבים -> "עסק"
+  // (the canonical business category every other עסק row uses + the company
+  // dashboard keys on, see cat==='עסק' paths). Subcategory stays "קולקציות".
+  // The עסק tag is the correct change now; the SRC dashboard row is the
+  // future 'עסק 2' tab (separate work). Until that row exists, this sub has
+  // no _BIZ_DASH_SUBS mapping, so _updateBusinessDashboardInSheet_ logs +
+  // skips the dashboard increment while still filing the תנועות row as עסק.
+  {"keywords":["קולקציה","קולקציות","src collection","srccollection","אספנות","art canvas","art collection","glass collection","זכוכית אומנותית","קנבס אומנותי","הדפס אמנותי","פסלון","ציור","הזמנת אמנות","art print","sculpture"],"category":"עסק","subcategory":"קולקציות"},
   {"keywords":["גיא","להעביר לגיא","להעביר ל-גיא","ל-גיא","תשלום לגיא"],"category":"הוצאות זמניות","subcategory":"גיא"},
   {"keywords":["חצי אירון מן","חצי איירון מן","איירון מן","ironman","half ironman","triathlon","טריאתלון","תחרות איירון מן","מרוץ איירון"],"category":"הוצאות זמניות","subcategory":"חצי איירון מן"},
   {"keywords":["חצי אוסטריה","מרוץ אוסטריה","אוסטריה מרוץ","austria race","austria marathon","austria triathlon"],"category":"הוצאות זמניות","subcategory":"מרוץ - אוסטריה"},
@@ -499,7 +506,7 @@ const CATEGORY_MAP = [
   // keyword makes the bot file new "לימים" inputs into the dashboard's
   // לימודים row instead of the catch-all שונות.
   {"keywords":["coursera","edx","udemy","אוניברסיטה","חוברת לימוד","לימודים","לימים","מודל","מורה פרטי","מכללה","משכן הסטודנט","ספרי לימוד","קורס","שיעור פרטי","שכר לימוד"],"category":"הוצאות קבועות","subcategory":"לימודים"},
-  {"keywords":["אישי"],"category":"שונות ואחרים","subcategory":"אישי"},
+  {"keywords":["הוצאה אישית","קניה אישית","קנייה אישית"],"category":"שונות ואחרים","subcategory":"אישי"},
   {"keywords":["gift","מתנה","מתנות","צדקה","תרומה"],"category":"שונות ואחרים","subcategory":"מתנות"},
   {"keywords":["אירוע","בר מצווה","בת מצווה","חתונה","יום הולדת"],"category":"שונות ואחרים","subcategory":"אירועים"},
   {"keywords":["electricity","iec","חברת חשמל","חשמל"],"category":"הוצאות קבועות","subcategory":"חשמל"},
@@ -520,7 +527,7 @@ const CATEGORY_MAP = [
   {"keywords":["avis","hertz","אביס","באדג\\\\","הרץ"],"category":"תחבורה","subcategory":"רכב שכור"},
   {"keywords":["bank discount","bank leumi","beinleumi","discount","fibi","hapoalim","igud","leumi","massad","mercantile","mizrahi","otsar hahayal","poalim","tefahot","union bank","yahav","אוצר החייל","איגוד","בנק איגוד","בנק דיסקונט","בנק הבינלאומי","בנק הפועלים","בנק יהב","בנק לאומי","בנק מזרחי","בנק מסד","דיסקונט","הבינלאומי","הפועלים","יהב","לאומי","מזרחי טפחות","מסד","מרכנתיל","מרכנתיל דיסקונט","פאג"],"category":"הוצאות קבועות","subcategory":"בנקאות"},
   {"keywords":["altshuler","altshuler shaham","analyst","bitcoin","blender","clal finance","crypto","etf","excellence","ibi","interactive brokers","meitav","meitav dash","more investments","psagot","yelin lapidot","איי.בי.איי","אלטשולר","אנליסט","אקסלנס","ביטקוין","בלנדר","השקעה","ילין לפידות","כלל פיננסים","מור","מיטב דש","מניה","מניות","פסגות","קריפטו"],"category":"שונות ואחרים","subcategory":"השקעות"},
-  {"keywords":["aig","ayalon","clal","clal insurance","harel","harel insurance","menora","menorah","migdal","migdal insurance","mivtachim","phoenix","phoenix holdings","איי איי ג\\\\","איילון","הפניקס","הראל","כלל","מגדל","מנורה","מנורה מבטחים"],"category":"הוצאות קבועות","subcategory":"ביטוח אישי"},
+  {"keywords":["ביטוח אישי","מגדל ביטוח","ביטוח מגדל","aig","ayalon","clal","clal insurance","harel","harel insurance","menora","menorah","migdal","migdal insurance","mivtachim","phoenix","phoenix holdings","איי איי ג\\\\","איילון","הפניקס","הראל","כלל","מגדל","מנורה","מנורה מבטחים"],"category":"הוצאות קבועות","subcategory":"ביטוח אישי"},
   {"keywords":["apple istore","bug","bug multisystem","evergreen","idigital","itzik electric","ksp","machsanei chashmal","photo house","samsung","אוורגרין","איציק אלקטריק","אל ג\\\\","מחסני חשמל","סמסונג","פוטו האוס","קי אס פי"],"category":"קניות","subcategory":"אלקטרוניקה"},
   {"keywords":["agrah","bituach leumi","darkon","doar israel","fee","income tax","israel post","lawyer","machon rishuy","mas hachnasa","national insurance","notary","oreh din","passport","rishyon nehiga","teudat zehut","אגרה","ביטוח לאומי","דואר ישראל","דרכון","מכון רישוי","מס הכנסה","נוטריון","עורך דין","רישיון נהיגה","תעודת זהות"],"category":"הוצאות קבועות","subcategory":"מיסים ואגרות"},
   {"keywords":["agoda","airbnb","booking","booking.com","expedia","hotels.com","kayak","trivago","אגודה","בוקינג"],"category":"שונות ואחרים","subcategory":"נסיעות"},
@@ -532,7 +539,7 @@ const CATEGORY_MAP = [
   {"keywords":["achlas dagim","birkat hayam","dagei castro","fish shop","sapir dagim","אכלס דגים","דג זהב","דגי אורנים","דגי איגוד","דגי אמן","דגי בית","דגי בית הסירות","דגי גליל","דגי גלים","דגי דן","דגי הגליל","דגי הים","דגי הים האדום","דגי הכרמל","דגי המלך","דגי הסירה","דגי הצוללים","דגי הצפון","דגי הצפון רעננה","דגי חבצלת","דגי טבריה","דגי כינרת","דגי כסיף","דגי מים מתוקים","דגי מרגנית","דגי קוסטר","דגי קיש","דגי קלאסיק","דגי תל אביב","ספיר דגים","שוק הדגים"],"category":"אוכל","subcategory":"אוכל לבית — דגים"},
   {"keywords":["abba","abulafia","alfi bakery","bakery","boulangerie","boureka","boureka bakery","brodenhaus","jachnun","lechem erez","lehem erez","lehmim","ofen","regev bakery","אבולעפיה","אופה הלחמים","אופן","אנג'ל מאפיה","אנג\\","בולנג'רי","בורקס","ברודנהאוס","ברמן מאפיה","ג'חנון","ירמיהו לחמים","לחמים","מאפה אלפי","מאפה רחל","מאפיית אבא","מאפיית אבולעפיה","מאפיית אופן","מאפיית אורן","מאפיית אחים סבו","מאפיית בורקס","מאפיית בורקס יוסי","מאפיית בורקסים","מאפיית בייקרי","מאפיית בית הלחם","מאפיית בית לבנו","מאפיית בית שאן","מאפיית בני ברק","מאפיית ברמן","מאפיית גליל עליון","מאפיית הזהב","מאפיית הר חברון","מאפיית הרים","מאפיית התימני","מאפיית חיים","מאפיית טוב","מאפיית ירושלים","מאפיית כהן","מאפיית כרם תימנים","מאפיית לחם","מאפיית לחם הכפר","מאפיית נחלת בנימין","מאפיית נעם","מאפיית סהרה","מאפיית סוטא","מאפיית סמדר","מאפיית עירית","מאפיית עץ הזית","מאפיית פאר","מאפיית פז","מאפיית קיבוץ","מאפיית קל בריא","מאפיית רגב","מאפיית רגיל","מאפיית רוטשילד","מאפיית רננה","מלכת הלחמניות","פיטה גינה","תכלת לחמים"],"category":"אוכל","subcategory":"אוכל לבית — מאפיות ולחם"},
   {"keywords":["eco food","herbet","naturalia","optim","organic bait","raw food","rimon health","super herbet","teva neto","tivoni","vegan friendly","vegan shop","vegetable shop","אגוזי גולן","אגוזי הגליל","אגוזי יקיר","אגוזים","אופטים","אורגני בית","אקו פוד","ארץ הטבע","ארץ הפרי","בית התבלינים","בריאות עכשיו","חנות אורגנית","חנות טבעונית","טבליסט","טבע 365","טבע גליל","טבע השדה","טבע ובריא","טבע ובריאות","טבע לחיים","טבע נטו","טבעוני","טבעוני שופ","ים פירות יבשים","ירק וטבע","ירק חי","ירק טרי","כל בו אורגני","כל פרי","מתוקי הצפון","נטורליה","סופר בריא","סופר הרברט","סופר טבע","עולם הטבע","פירות אדמה","פירות הגליל","פירות הים","פירות יבשים","פירות יבשים אחים אלון","פירות יבשים השוק","פירות יבשים יוסי","פירות יבשים שוק הכרמל","פירות יבשים שוק מחנה יהודה","פירות ירושלים","פרי הגליל","צמחוני שופ","רימון","רימון אורגני","תבל אורגני","תבליני המאה","תבליני העיר","תבליני הצפון","תבליני הקסם","תפוחי אדמה"],"category":"אוכל","subcategory":"אוכל לבית — אורגני ובריאות"},
-  {"keywords":["adir winery","alexander beer","anvey tirosh","barkan winery","becks","beer artzit","binyamina winery","carlsberg","carmel winery","corona","dalton","flam winery","gamla","golan heights winery","goldstar","hamivchar wines","heineken","macabbi beer","malka beer","merkaz hayayin","negev beer","recanati","stella","tabor","tishbi","tperberg","tuborg","tulip winery","vins de france","wine boutique","wine cellar","wine shop","yarden","yein bachevra","yikvei golan","אבק יין","אגף היין","אופיר","אינסטה ויין","אלכסנדר","ארץ היין","ארק ויין","בוטיק היין","בירה ארץ","בירה גולדסטאר","בירה הנגב","בקבוקייה","בקס","ג'מס בירות","היינקן","המבחר","ויין שופ","ויינות ביתן","ופיר","טוברג","טעם היין","טעמי היין","יין באתר","יין על השולחן","יקבי אדיר","יקבי אלפים","יקבי בית אל","יקבי בנימינה","יקבי בעלי הבית","יקבי ברקן","יקבי גולן","יקבי גוש עציון","יקבי גליל","יקבי גמלא","יקבי דלתון","יקבי הברון","יקבי טוליפ","יקבי טפרברג","יקבי ירדן","יקבי כרם","יקבי כרמל","יקבי עידן","יקבי פלם","יקבי רקנאטי","יקבי תבור","יקבי תשבי","כל היין","מבחר יינות","מבשלת ארמון","מבשלת בזלת","מבשלת בנימינה","מבשלת הצפון","מבשלת מלכה","מועדון היין","מקבת","מקס היין","מרכז היין","מרתף יין","סטלה","סנדרה","ענבי תירוש","פלאיון יינות","קורונה","קרלסברג"],"category":"אוכל","subcategory":"אוכל לבית — יין ואלכוהול"},
+  {"keywords":["בקבוק יין","adir winery","alexander beer","anvey tirosh","barkan winery","becks","beer artzit","binyamina winery","carlsberg","carmel winery","corona","dalton","flam winery","gamla","golan heights winery","goldstar","hamivchar wines","heineken","macabbi beer","malka beer","merkaz hayayin","negev beer","recanati","stella","tabor","tishbi","tperberg","tuborg","tulip winery","vins de france","wine boutique","wine cellar","wine shop","yarden","yein bachevra","yikvei golan","אבק יין","אגף היין","אופיר","אינסטה ויין","אלכסנדר","ארץ היין","ארק ויין","בוטיק היין","בירה ארץ","בירה גולדסטאר","בירה הנגב","בקבוקייה","בקס","ג'מס בירות","היינקן","המבחר","ויין שופ","ויינות ביתן","ופיר","טוברג","טעם היין","טעמי היין","יין באתר","יין על השולחן","יקבי אדיר","יקבי אלפים","יקבי בית אל","יקבי בנימינה","יקבי בעלי הבית","יקבי ברקן","יקבי גולן","יקבי גוש עציון","יקבי גליל","יקבי גמלא","יקבי דלתון","יקבי הברון","יקבי טוליפ","יקבי טפרברג","יקבי ירדן","יקבי כרם","יקבי כרמל","יקבי עידן","יקבי פלם","יקבי רקנאטי","יקבי תבור","יקבי תשבי","כל היין","מבחר יינות","מבשלת ארמון","מבשלת בזלת","מבשלת בנימינה","מבשלת הצפון","מבשלת מלכה","מועדון היין","מקבת","מקס היין","מרכז היין","מרתף יין","סטלה","סנדרה","ענבי תירוש","פלאיון יינות","קורונה","קרלסברג"],"category":"אוכל","subcategory":"אוכל לבית — יין ואלכוהול"},
   {"keywords":["deli market","delicatessen","gad dairy","mai dairy","moulin rouge","ארץ הגבינות","גבינות באר טוביה","גבינות הר ברכה","גבינות מאי","גבינות מבחר","גבינות ניר עציון","גבינות עמק","דלי","טריפל בי","טריפל בי בייגלס","מולין רוז","מחלבת איפרגן","מחלבת גד","מחלבת טרה","מחלבת יטבתה","מחלבת מאי","מחלבת רגב","מחלבת רמת הגולן","מחלבת שדה","מחלבת שטראוס","מחלבת תנובה","מלכת הגבינות","מעדנייה","מעדניית הזיתים","מעדניית הכרם","מעדניית הצפון","מעדניית הצפון יוסי","מעדניית כרמל","מעדניית פיצוצים","מעדניית פלורנטין","מעדניית פרנקפורט","מעדניית קצבים","מעדניית רוטשילד","מעדניית רחביה","פלאפל גינה"],"category":"אוכל","subcategory":"אוכל לבית — גבינות ומעדנים"},
   {"keywords":["angel lehem","lehem","אבן עזר","אהרון לחם","אופן מאפיות","אנג'ל לחם","אנג\\","ביצי גליל","ביצים טריות","ביצים מהמושב","ברמן לחם","החלב והלחם","לחם","מאפיית פז ירושלים","מאפיית פיתות","סוף הלחם","פיתות מסביר","פרוטרום","פרידמן לחם","ראם ראם","תות לחם","תפוז מאפיה"],"category":"אוכל","subcategory":"אוכל לבית — קמחנים ודברי מאפה"},
   {"keywords":["best buy supermarket","best market","easy market","eco 24","freezer market","kal market","panda market","pesculos","soda club","vivaworen","אקו 24","בסט מרקט","ויטוורן","ירמיהו 24","מותגי בית","מפיצי עוף הצפון","סודה קלאב","סופר עוף ברקן","סופר עוף הצפון","פאנדה","פנדה","פסקלוס","פריזר מרקט","קל מרקט"],"category":"אוכל","subcategory":"אוכל לבית — סופר מינים אחרים"},
@@ -690,7 +697,7 @@ const CATEGORY_MAP = [
   {"keywords":["tiktok ads","tiktok promote","tiktok shop ads","tiktok business","tiktok marketing","טיקטוק אדס","טיקטוק ads","טיקטוק פרסום","טיקטוק קמפיין","טיקטוק ממומן","טיקטוק שיווק","tik tok ads","tiktok ad","spark ad tiktok"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["linkedin ads","linkedin promote","linkedin marketing","linkedin business","sponsored content linkedin","לינקדאין אדס","לינקדאין ads","לינקדאין פרסום","לינקדאין קמפיין","לינקדאין ממומן","לינקדאין שיווק"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["twitter ads","x ads","x promote","twitter promote","twitter business","snapchat ads","pinterest ads","pinterest promote","reddit ads","spotify ads","discord ads","טוויטר אדס","טוויטר פרסום","איקס אדס","אקס אדס","אקס פרסום","סנאפצ'אט אדס","סנאפצ'אט פרסום","פינטרסט אדס","פינטרסט פרסום","רדיט אדס","רדיט פרסום","דיסקורד אדס"],"category":"עסק","subcategory":"שיווק"},
-  {"keywords":["שיווק דיגיטלי","פרסום ממומן","קמפיין שיווק","קמפיין ממומן","קמפיין פרסום","פרומו","prom","promo","ads","advert","advertising","advertise","advertisement","sponsored","sponsored post","sponsor","ממומן","מקדם מכירות","יח\"צ","יחצן","יחסי ציבור","pr agency","agency פרסום","משרד פרסום","משרד יח\"צ","גרילה מרקטינג","גרילה שיווק","אינפלואנסר","influencer","influencer marketing","שיווק משפיענים","משפיענים","אפיליאט","affiliate","affiliate marketing","newsletter ads","email marketing","דיוור","דיוור שיווקי","mailchimp","klaviyo","sendgrid","constant contact","hubspot marketing","salesforce marketing","מיילצימפ","קלוויו","הבספוט"],"category":"עסק","subcategory":"שיווק"},
+  {"keywords":["שיווק דיגיטלי","פרסום ממומן","קמפיין שיווק","קמפיין ממומן","קמפיין פרסום","פרומו","prom","promo","ads","advert","advertising","advertise","advertisement","sponsored","sponsored post","sponsor","ממומן","מקדם מכירות","יח\"צ","יחצן","יחסי ציבור","pr agency","agency פרסום","משרד פרסום","משרד יח\"צ","גרילה מרקטינג","גרילה שיווק","אינפלואנסר","influencer","influencer marketing","שיווק משפיענים","משפיענים","משפיען","בוסט לפוסט","אפיליאט","affiliate","affiliate marketing","newsletter ads","email marketing","דיוור","דיוור שיווקי","mailchimp","klaviyo","sendgrid","constant contact","hubspot marketing","salesforce marketing","מיילצימפ","קלוויו","הבספוט"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["seo","sem","ppc","cpc","cpm","אופטימיזציה למנועי חיפוש","מיקום בגוגל","דירוג בגוגל","קידום אורגני","קידום ממומן","sem rush","semrush","ahrefs","moz","ubersuggest","serpstat","screaming frog","similarweb","simple analytics","plausible","fathom analytics","google analytics","google tag manager","gtm","mixpanel","amplitude","heap analytics","hotjar","fullstory","crazy egg","optimizely","vwo","google search console","bing webmaster"],"category":"עסק","subcategory":"שיווק"},
   {"keywords":["canva","canva pro","figma","figma pro","adobe creative cloud","adobe cc","photoshop","illustrator","after effects","premiere pro","lightroom","indesign","sketch","invision","webflow","wordpress","squarespace","wix","shopify","shopify plus","bigcommerce","magento","wordpress hosting","wp engine","cloudflare","siteground","bluehost","godaddy hosting","namecheap hosting","aws","amazon web services","gcp","google cloud","azure","digital ocean","linode","vultr","netlify","vercel","heroku","render","fly.io","railway","firebase","supabase","mongodb atlas","planetscale","neon","github","github copilot","gitlab","bitbucket","jira","confluence","trello","asana","monday.com","monday","clickup","notion business","slack pro","slack business","discord nitro","zoom pro","loom","loom pro","cal.com","calendly","doodle","typeform","tally","jotform","airtable pro","airtable business","zapier","make.com","integromat","n8n","pipedream","תוכנת עיצוב","תוכנת עריכה","תוכנה עסקית","שירות ענן עסקי","אחסון אתר","דומיין","דומיין עסקי","אחסון אתר עסקי","cms","cms עסקי","crm","crm עסקי","erp","erp עסקי"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["stripe","paypal business","square","tranzila","pelecard","pelekard","icount","green invoice","greeninvoice","rivhit","priority","sap business one","quickbooks","xero","wave","freshbooks","icount חשבונית","יבשבונית ירוקה","חשבונית ירוקה","גרין אינווייס","ריבחית","איקאונט","תרנזילה","פלאקארד","פלקארד","פלאסקארד","בית עסק stripe","בית עסק paypal","בית עסק tranzila","סליקה","תוכנת הנהלת חשבונות","הנה\"ח"],"category":"עסק","subcategory":"תפעוליות"},
@@ -698,7 +705,7 @@ const CATEGORY_MAP = [
   {"keywords":["accountant","cpa","bookkeeper","bookkeeping","יועץ עסקי","יועץ עסקים","יועץ שיווק","יועץ פיננסי עסקי","business consultant","business advisor","business coach","startup advisor","mentor עסקי","מנטור עסקי","מאמן עסקי","יועץ משפטי","עו\"ד","עו״ד","עורך דין עסקים","חוזה עסקי","עורך דין חוזים","עורך דין קניין רוחני","עורך דין מסחרי","יועץ מס נוסף","מורשה חתימה","רואה חשבון נוסף","הנה\"ח חיצונית","בודק שכר","בדיקת שכר עסקית","consultant fee","consultancy fee","legal fee","lawyer fee"],"category":"עסק","subcategory":"יועצים"},
   {"keywords":["shipping label","usps","fedex","dhl","dhl express","ups","tnt","aramex","doar","doar 24","doar shaliach","shaliach 24","shipping carrier","fulfillment","fulfillment service","shipbob","shipstation","pirate ship","pirateship","דואר 24","דואר ישראל עסקי","דואר שליחים","דואר שליח","שליח ישראל","שליחויות עסקיות","דאצ'ה","דצ'ה","דצה","משלוח עסקי","משלוחים עסקיים","התקנת מוצר","התקנה לקוח","אריזה ומשלוח","אריזה לעסק","חומרי אריזה","נייר אריזה","קרטונים","קרטוני אריזה","מדבקות משלוח","בועות אריזה","נייר בועות","bubble wrap","tape","אריזת מתנה"],"category":"עסק","subcategory":"משלוח"},
   {"keywords":["raw material","raw materials","wholesale","wholesaler","b2b supplier","supplier invoice","ספק חומרי גלם","ספק עסקי","ספקים עסקיים","מחסן ספקים","אתר ספקים","alibaba","alibaba.com","1688","1688.com","made in china","taobao","aliexpress עסקי","מנעולנים עסקי","נחושת","פלדה","מתכת","גומי","בדים","חוטים","יריעות","יריעות גומי","יריעות פלסטיק","דבק תעשייתי","מוטות","מסמרים תעשייה","ברגים תעשייה","אנקרים","תפסים","פינות מסגרת","זוויות מתכת","פרזול","חומרי דפוס","חומרי הדפסה","דיו הדפסה","דיו פלוטר","יריעות הדפסה","נייר אומנותי","נייר זהב","נייר צילום","נייר מאט","נייר ברק","glossy paper","matte paper","canvas roll","גליל קנבס","גלילי קנבס","דבק תרסיס","spray adhesive"],"category":"עסק","subcategory":"חומרי גלם"},
-  {"keywords":["invoice paid","payment received","customer payment","client payment","תקבול לקוח","תקבול עסקי","הוראת קבע מלקוח","קבלה ללקוח","תשלום מלקוח עסקי","מקדמה לקוח","מקדמה עסקית","מקדמת עבודה","מקדמת לקוח","order online","order placed","הזמנה אונליין","הזמנת לקוח","הזמנה אתר","הזמנת אתר","הזמנה עסקית","מכירה אונליין","מכירה אתר","מכירת מוצר","מכירת שירות","sale online","sale website","product sale","service sale","rebate","מע\"מ החזר","החזר מע\"מ","מע״מ החזר","vat refund","tax refund"],"category":"עסק","subcategory":"מחזור","isIncome":true},
+  {"keywords":["invoice paid","payment received","customer payment","client payment","תקבול לקוח","תקבול עסקי","הוראת קבע מלקוח","קבלה ללקוח","תשלום מלקוח עסקי","מקדמה לקוח","מקדמה עסקית","מקדמת עבודה","מקדמת לקוח","order online","order placed","הזמנה אונליין","הזמנת לקוח","הזמנה אתר","הזמנת אתר","הזמנה עסקית","מכירה אונליין","מכירה אתר","מכירת מוצר","מכירת שירות","sale online","sale website","product sale","service sale","rebate","החזר מעמ","מעמ החזר","מע\"מ החזר","החזר מע\"מ","מע״מ החזר","vat refund","tax refund"],"category":"עסק","subcategory":"מחזור","isIncome":true},
   {"keywords":["mac mini","mac studio","macbook pro","macbook air","imac","mac pro","monitor 27","monitor 4k","monitor 5k","lg ultrafine","dell ultrasharp","asus prophet","logitech mx","magic keyboard","magic mouse","magic trackpad","wacom","cintiq","huion","xp pen","מחשב לעבודה","מחשב משרדי","מחשב עסקי","מסך עבודה","מסך 4k","מסך עסקי","מקלדת מקצועית","עכבר עיצוב","טבלט עיצוב","טאבלט עיצוב","wacom intuos","wacom cintiq","מסך מגע גרפי","גרפיקת אומנים","ipad pro","ipad pro 12.9","apple pencil","apple pencil 2","מקרן עבודה","מקרן פגישות","מקרן עסקי","מצלמה מקצועית","מצלמת מקצוע","מצלמת dslr","מצלמת mirrorless","sony a7","canon 5d","lumix s5","sigma art","tamron art","tripod","gimbal","dji ronin","dji rs2","dji rs3","rode mic","rode microphone","shure sm7b","shure mv7","audio interface","focusrite scarlett","softlight","ring light","softbox","תאורת סטודיו"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["workspace google","google workspace","gsuite","g suite","microsoft 365 business","microsoft 365 enterprise","office 365 business","דומיין עסקי","מייל עסקי","g suite business","workspace business","starter workspace","workspace starter","workspace standard","workspace plus"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["שופרסל דיל","שופרסל אקספרס","שופרסל אונליין","שופרסל סופר","שופרסל איתי","שופרסל יחיאל","shufersal big","shufersal sheli","shufersal yesh","shufersal exists","מגה בעיר","מגה בעיר אונליין","מגה ברמת השרון","יוחננוף סופר","יוחננוף מאיר","יוחננוף און ליין","יוחננוף אונליין","יוחננוף שוקי","מחסני השוק חיפה","מחסני השוק ראשון","מחסני השוק רמת גן","מחסני השוק אזור","מחסני השוק רחובות","מחסני השוק קניון","מחסני להב","רמי לוי שוקי המזון","רמי לוי שיווק השקמה","רמי לוי קמפוס","רמי לוי אונליין","רמי לוי קמפוס און ליין","ויקטורי אונליין","ויקטורי שיווק","ויקטורי בעיר","ויקטורי אילת","ויקטורי באר שבע","כוורת שיווק","כוורת השרון","כוורת אונליין","חצי חינם אונליין","חצי חינם רעננה","חצי חינם שיווק","אושר עד אונליין","אושר עד בנימינה","אושר עד חיפה","סופר ביצ' צ'יפ","ביצ'יפ","ביצ'ה צ'יפ","super pharm market","סופר פארם מרקט","סופר פארם קמפוס","super yuda online","יודה אונליין","super deal online","סופר דיל אונליין","tiv taam","טיב טעם אונליין","טיב טעם רמת השרון","טיב טעם תל אביב","טיב טעם תל-אביב","יינות ביתן אונליין","יינות ביתן רחוב","יינות ביתן רב חן"],"category":"אוכל","subcategory":"אוכל לבית"},
@@ -755,8 +762,8 @@ const CATEGORY_MAP = [
   {"keywords":["תדלוק","דלק 95","דלק 98","בנזין","סולר","תחנת דלק","מילוי דלק","כביש אגרה","אגרת כביש","נסיעה ברכבת","כרטיס רכבת","נסיעה באוטובוס","כרטיס אוטובוס","רכבת קלה","טעינת רב קו","כרטיסיית נסיעות","נסיעת מונית","הזמנת מונית","השכרת אופניים","השכרת קורקינט","קורקינט חשמלי","אופניים חשמליים","טיסת פנים"],"category":"תחבורה","subcategory":"תחבורה"},
   {"keywords":["דמי חניה","חניה בתשלום","תשלום חניה","חניון יומי","דוח חניה","קנס חניה","חניה כחול לבן","מנוי חניה","אגרת חניה"],"category":"תחבורה","subcategory":"חניה"},
   {"keywords":["חשבון חשמל","חשבון מים","חשבון גז","חשבון טלפון","חשבון אינטרנט","חבילת אינטרנט","חבילת סלולר","חבילת גלישה","חבילת טלוויזיה","מנוי טלוויזיה","דמי ניהול","ועד בית","דמי ועד","שכר דירה","דמי שכירות","ארנונה חודשית","חשבון סלולרי","גלישה ניידת"],"category":"הוצאות קבועות","subcategory":"חשבונות"},
-  {"keywords":["ביטוח דירה","ביטוח רכב","ביטוח חובה","ביטוח מקיף","ביטוח צד שלישי","ביטוח בריאות","ביטוח חיים","ביטוח משכנתא","ביטוח נסיעות","ביטוח שיניים","פרמיית ביטוח","דמי ביטוח"],"category":"הוצאות קבועות","subcategory":"ביטוח"},
-  {"keywords":["ביקור רופא","רופא פרטי","השתתפות עצמית","קופת חולים","בדיקות דם","בדיקה רפואית","חיסון","ייעוץ רפואי","בדיקת עיניים","אופטומטריסט","משקפי ראייה","עדשות מגע","פיזיותרפיה","טיפול פסיכולוגי","דיאטנית","תזונאית"],"category":"בריאות","subcategory":"בריאות"},
+  {"keywords":["ביטוח דירה","ביטוח רכב","ביטוח חובה","ביטוח מקיף","ביטוח צד שלישי","ביטוח בריאות","ביטוח חיים","ביטוח משכנתא","ביטוח נסיעות","ביטוח שיניים","פרמיית ביטוח","דמי ביטוח","ביטוח"],"category":"הוצאות קבועות","subcategory":"ביטוח"},
+  {"keywords":["דמי טיפול רפואי","ביקור רופא","רופא פרטי","השתתפות עצמית","קופת חולים","בדיקות דם","בדיקה רפואית","חיסון","ייעוץ רפואי","בדיקת עיניים","אופטומטריסט","משקפי ראייה","עדשות מגע","פיזיותרפיה","טיפול פסיכולוגי","דיאטנית","תזונאית"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["תרופות","מרשם","בית מרקחת","כדורים","אנטיביוטיקה","משכך כאבים","אקמול","נורופן","ויטמינים","תוספי תזונה","מד חום","פלסטרים","קרם הגנה","משחה רפואית"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["רופא שיניים","טיפול שיניים","סתימה","עקירת שן","יישור שיניים","אורתודונט","ניקוי אבנית","כתר שן","שתל שן","הלבנת שיניים"],"category":"בריאות","subcategory":"שיניים"},
   {"keywords":["בגדים","חולצה","חולצת טי","מכנסיים","גינס","שמלה","חצאית","מעיל","סוודר","קפוצון","גופייה","גרביים","הלבשה תחתונה","תחתונים","חזייה","בגד ים","פיגמה","נעלי ספורט","סנדלים","מגפיים","כפכפים","נעלי עקב","תיק יד","ארנק","חגורה","כובע","צעיף","משקפי שמש"],"category":"קניות / ביגוד","subcategory":"ביגוד"},
@@ -1336,9 +1343,12 @@ function _notifyOwnerNewLead_(fromPhone) {
   // Don't alert on the owner's own messages.
   var owner = String(props.getProperty('SHEET_OWNER_PHONE') || '').replace(/[^0-9]/g, '');
   if (owner && clean === owner) return;
+  // Lead-notified flag now lives in KV (key unchanged: 'leadNotified:'+phone)
+  // with a legacy Script-Property read fallback, so a customer already alerted
+  // before this migration is never alerted twice. Permanent dedup -> no TTL.
   var flagKey = 'leadNotified:' + clean;
-  if (props.getProperty(flagKey)) return; // already alerted for this customer
-  props.setProperty(flagKey, new Date().toISOString());
+  if (_seenFlag_(flagKey, 0)) return; // already alerted for this customer
+  _markFlag_(flagKey, new Date().toISOString(), 0);
 
   var when = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'dd/MM/yyyy HH:mm');
   var displayPhone = '+' + clean;
@@ -1403,11 +1413,71 @@ function _userSheetUrl_(fromPhone) {
   }
 }
 
-// The compact "check it in your sheet" line appended to expense/order
-// confirmations so the user can verify the row landed correctly.
+// The compact "open your own sheet" line appended to every expense/order
+// confirmation so the user can tap straight through to their data. Steven
+// (2026-06-01, ask B) wants every "נרשם ✅" reply to carry a WORKING-ON-MOBILE
+// link to the user's OWN sheet, labelled "📊 הגיליון שלך:". The URL comes from
+// _userSheetUrl_, which (a) returns an absolute https docs.google.com/
+// spreadsheets/d/<id> URL that opens the Sheets app/browser on a phone, (b)
+// resolves the OWNING tenant only (a non-owner never gets the owner sheet), and
+// (c) returns '' on any error/unavailable -> we omit the line (no broken link).
 function _sheetLinkLine_(fromPhone) {
   var u = _userSheetUrl_(fromPhone);
-  return u ? ('\n\n📊 לבדיקה: ' + u) : '';
+  return u ? ('\n\n📊 הגיליון שלך: ' + u) : '';
+}
+
+// ───── NATURAL-LANGUAGE FIXED-EXPENSE INTENT (ask C, 2026-06-01) ─────
+// A user who writes a BARE intent like "הוצאה קבועה" / "הוצאות קבועות" /
+// "קבוע" / "הוצאה חודשית" (no slash, no amount, no name) means "how do I add
+// a recurring monthly expense?" — NOT a real expense. Without this guard such
+// a message falls through to the expense parser and gets booked into
+// DEFAULT/שונות (or, for a tenant, bounced to the concierge). Steven wants a
+// SHORT friendly guide instead, all-tenant, wired BEFORE the expense fast-path.
+//
+// STRICT match so we never swallow a real command:
+//   • the WHOLE trimmed message must be one of the bare intent phrases, and
+//   • it must contain NO digit — so a real add ("קבוע 2500 שכירות"), an
+//     installment, or an expense that merely mentions קבוע ("שכר דירה 3000
+//     קבוע") never matches here and keeps its existing behaviour.
+// Note: a "כספלה"-prefixed message ("כספלה הוצאה קבועה") is intentionally NOT
+// matched here — those are owned by the group-command router upstream, which
+// already returns its own guidance. This guard targets the un-prefixed bare
+// intent, which is the gap that previously fell through to the expense parser.
+function _isBareFixedExpenseIntent_(text) {
+  var t = String(text == null ? '' : text).trim();
+  if (!t) return false;
+  if (/[0-9٠-٩۰-۹]/.test(t)) return false; // any digit -> it's a real command/expense
+  // Allow a trailing ? and surrounding quotes/spaces only.
+  var core = t.replace(/[?؟"'“”\s]+$/g, '').replace(/^["'“”\s]+/g, '').trim();
+  // Bare Hebrew/English intent phrases that mean "set up a fixed monthly expense".
+  return (
+    core === 'הוצאה קבועה' ||   // "הוצאה קבועה"
+    core === 'הוצאות קבועות' || // "הוצאות קבועות"
+    core === 'קבוע' ||                                         // "קבוע"
+    core === 'קבועה' ||                                   // "קבועה"
+    core === 'הוצאה חודשית' || // "הוצאה חודשית"
+    core === 'הוצאות חודשיות' || // "הוצאות חודשיות"
+    core === 'הוצאה קבועה חודשית' || // "הוצאה קבועה חודשית"
+    core === 'הוראת קבע' ||                 // "הוראת קבע"
+    /^fixed expense$/i.test(core) ||
+    /^recurring( expense)?$/i.test(core) ||
+    /^monthly expense$/i.test(core)
+  );
+}
+
+// SHORT friendly guide (a child understands it) shown for the bare intent
+// above. It teaches the EXISTING recurring syntax — "קבוע <amount> <name>" —
+// using the same example the live _recurringAdd_ handler accepts, so the very
+// next message the user sends actually works. Reply style: warm, masculine,
+// brand כספ'לה, one emoji (bot-reply-style).
+function _fixedExpenseGuide_() {
+  return '🔁 הוצאה קבועה = הוצאה שחוזרת כל חודש (שכר דירה, מנוי, חשמל).\n' +
+    'פשוט כתוב לי: קבוע + סכום + שם.\n\n' +
+    'למשל:\n' +
+    '• קבוע 3000 שכר דירה\n' +
+    '• קבוע 49 נטפליקס\n\n' +
+    'רוצה תאריך חיוב קבוע? הוסף "כל 1 לחודש".\n' +
+    'לראות את כל הקבועות — כתוב "קבועות".';
 }
 
 // One-time welcome. The first time a phone messages the bot, send a
@@ -1416,14 +1486,70 @@ function _sheetLinkLine_(fromPhone) {
 // welcomed:<phone>. NOTE: WhatsApp Cloud API has no programmatic
 // "pin message" button — pinning is a user gesture — so we instruct the
 // user how to pin (long-press → Pin) rather than fake a button.
+// Onboarding "seen" flags (welcomed:/surveyed:) live in KV, not Script
+// Properties, so the bot's property store does not fill up against the Apps
+// Script ~50-property UI cap as users sign up. Reads fall back to the legacy
+// Script Property so anyone onboarded before this change is never
+// re-welcomed/re-surveyed; writes fall back to a Script Property ONLY if KV
+// is unavailable, so dedup still holds during a KV outage. Config (creds,
+// gates) stays in Script Properties — only this per-phone state moved.
+// Generalized per-user "seen/sent flag" storage. A flag is a presence-only
+// monotonic marker keyed by an opaque full key (e.g. 'welcomed:<phone>',
+// 'fxcel:<phone>', 'recsug_<hash>'). The value is never parsed — only its
+// presence matters. State lives in KV so the bot's Script-Property store does
+// not fill up against the Apps Script ~50-property UI cap as users accumulate.
+//
+// Read path: KV first, then FALL BACK to a legacy Script Property of the same
+// key, so any flag written before this state moved to KV (pre-#186 welcomed/
+// surveyed, or pre-migration fxcel/leadNotified/recsug) is still honoured and
+// the one-time action never re-fires.
+//
+// Write path: KV first. Fall back to a legacy Script-Property write ONLY if KV
+// is unreachable (creds unset / HTTP error -> kvSet returns false), so the
+// dedup still holds during a KV outage instead of silently re-firing. Once KV
+// is healthy again, MIGRATE_BOT_STATE_TO_KV() sweeps any such fallback writes
+// out of Script Properties.
+//
+// ttlDays: optional expiry in days (0 / omitted = never expire, matching the
+// Script-Property semantics these flags replaced). Permanent dedup flags
+// (welcomed/surveyed/fxcel/leadNotified/recsug) pass 0.
+function _seenFlag_(key, ttlDays) {
+  if (!key) return false;
+  try { if (typeof kvGet === 'function' && kvGet(key)) return true; } catch (_e) {}
+  try { if (PropertiesService.getScriptProperties().getProperty(key)) return true; } catch (_e2) {}
+  return false;
+}
+function _markFlag_(key, value, ttlDays) {
+  if (!key) return;
+  var val = (value == null) ? new Date().toISOString() : value;
+  var ttlSec = (ttlDays && ttlDays > 0) ? Math.floor(ttlDays * 86400) : 0;
+  var ok = false;
+  try { ok = (typeof kvSet === 'function') ? kvSet(key, val, ttlSec) : false; } catch (_e) { ok = false; }
+  if (!ok) {
+    // KV unreachable (creds unset / error): keep the legacy Script-Property
+    // write so the one-time action is never repeated. This is the only
+    // remaining path that writes a per-user flag to Script Properties.
+    try { PropertiesService.getScriptProperties().setProperty(key, val); } catch (_e2) {}
+  }
+}
+
+// Onboarding flags (welcomed:/surveyed:) keep their original kind+phone shape;
+// they delegate to the generalized helpers above so behavior is identical.
+function _onboardSeen_(kind, clean) {
+  if (!clean) return false;
+  return _seenFlag_(kind + ':' + clean, 0);
+}
+function _onboardMark_(kind, clean) {
+  if (!clean) return;
+  _markFlag_(kind + ':' + clean, new Date().toISOString(), 0);
+}
+
 function _maybeSendWelcome_(fromPhone) {
   if (!fromPhone) return false;
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
   if (!clean) return false;
-  var props = PropertiesService.getScriptProperties();
-  var key = 'welcomed:' + clean;
-  if (props.getProperty(key)) return false;
-  props.setProperty(key, new Date().toISOString());
+  if (_onboardSeen_('welcomed', clean)) return false;
+  _onboardMark_('welcomed', clean);
 
   var sheetUrl = _userSheetUrl_(fromPhone);
   var msg =
@@ -1456,9 +1582,8 @@ function _maybeSendWelcome_(fromPhone) {
   // Guarded by its own Script Property so re-welcomes (if the welcomed guard
   // is ever cleared) never re-trigger Q1 on a user mid-flow.
   try {
-    var surveyedKey = 'surveyed:' + clean;
-    if (!props.getProperty(surveyedKey) && typeof _surveyStart_ === 'function') {
-      props.setProperty(surveyedKey, new Date().toISOString());
+    if (!_onboardSeen_('surveyed', clean) && typeof _surveyStart_ === 'function') {
+      _onboardMark_('surveyed', clean);
       _surveyStart_(fromPhone);
     }
   } catch (_sErr) { Logger.log('welcome survey kickoff err: ' + (_sErr && _sErr.message)); }
@@ -2193,6 +2318,29 @@ function doPost(e) {
           }
         }
 
+        // === PENDING OBJECTIVE REPLY (2026-06-01 FIX) ===
+        // Must run BEFORE the expense fast-path below. After "יעד חדש" the bot
+        // asks the user to reply 1/2/3/4. That bare digit used to hit the
+        // fast-path and get written as a 1-shekel expense. This dispatcher
+        // intercepts an END-ANCHORED 1-4 reply (and the follow-up goal text)
+        // and routes it to objective-creation. "1 קפה" is NOT end-anchored,
+        // so it returns handled=false and books an expense exactly as before.
+        // Available to ALL tenants (objectives are not owner-gated).
+        if (typeof _handleObjectivePendingReply_ === "function") {
+          try {
+            var __objPendRes = _handleObjectivePendingReply_(__from_, __text_);
+            if (__objPendRes && __objPendRes.handled) {
+              if (__objPendRes.replyText && typeof sendWhatsAppMessage === "function") {
+                sendWhatsAppMessage(__from_, __objPendRes.replyText);
+              }
+              Logger.log('doPost: pending-objective reply handled');
+              return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+            }
+          } catch (_objPendErr) {
+            Logger.log('doPost: pending-objective error: ' + (_objPendErr && _objPendErr.stack || _objPendErr));
+          }
+        }
+
         // FAST PATH: any message starting with a digit goes straight to
         // _doPost_orig → processExpense. Skip all routers to avoid silent drops.
         var __looksLikeExpense = /^\s*\d/.test(__text_);
@@ -2440,11 +2588,15 @@ function handleInteractiveReply_(fromPhone, interactive) {
     return { replyText: (r2 && r2.replyText) || '✅' };
   }
 
-  // Personalization questionnaire taps (q1_*/q2_*/q3_*/q_pets_*/q_car_*).
+  // Personalization questionnaire taps:
+  //   q0_* (gender), q1_*/q2_*/q3_* (tracking/recurring/autolog),
+  //   q4_* (profession), q_pets_*/q_car_* (lifestyle),
+  //   sec_* (the extended A-H sections E-H).
   // The handler sends any follow-up question itself; it returns { replyText }
   // only when a TEXT reply is the next step (Q2 "yes" -> ask for recurring
   // items), else null.
-  if ((/^q[123]_/.test(String(picked)) || /^q_(pets|car)_/.test(String(picked))) &&
+  if ((/^q[01234]_/.test(String(picked)) || /^q_(pets|car)_/.test(String(picked)) ||
+       /^sec_/.test(String(picked))) &&
       typeof _surveyHandleInteractive_ === 'function') {
     return _surveyHandleInteractive_(fromPhone, picked);
   }
@@ -2539,7 +2691,11 @@ function handleInteractiveReply_(fromPhone, interactive) {
     // isIncome from the chosen category + the pending raw text (which may
     // start with '+') so income picks land FALSE in col H.
     var __interIsInc = _resolveIsIncome_(null, (pending && pending.rawText) || '', category, subcategory);
-    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(subcategory), sanitizeForSheet(description), 'WhatsApp (interactive)', !__interIsInc]);
+    // Canonicalize col E to a dashboard row label (idempotent for the picker's
+    // already-canonical labels; safety net if a granular option slips through).
+    var __interSub = (typeof _normalizeSubForDashboard_ === 'function')
+      ? _normalizeSubForDashboard_(subcategory, category) : subcategory;
+    sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(__interSub), sanitizeForSheet(description), 'WhatsApp (interactive)', !__interIsInc]);
     // Original-text cell note — capture the raw user message that triggered
     // this categorization (preserves provenance even after corrections).
     try {
@@ -2851,7 +3007,29 @@ function parseBusinessOrder_(text) {
   // (so the ה or ת suffix failed the test).
   // ORDER MATTERS: עסקה / עסקת before עסק so the longer prefix matches
   // first and gets stripped fully.
-  if (!/^(עסקה|עסקת|עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s)) return null;
+  //
+  // 2026-06-02 NL-income fix: the original gate ONLY fired when the message
+  // STARTED with עסק/עסקה/biz, so a natural sentence like
+  //   "יש לי הכנסה בעסק של התמונות ... הלקוחה שילמה 1700 ... + 450 להתקנה"
+  // was dropped (it starts with "יש", and "בעסק" is the clitic ב+עסק form
+  // that the standalone gate never recognised) — it fell to the PERSONAL
+  // classifier. We now ALSO accept the order shape when a business marker
+  // appears ANYWHERE in the text, in standalone OR clitic form
+  // ([בלמ]?עסק with an optional ה/ת suffix → covers עסק / בעסק / לעסק /
+  // מעסק / עסקה / עסקת / בעסקה). This is ANCHORED on the עסק token by
+  // design: an income verb alone ("קיבלתי 1700 מתנה") must NOT enter the
+  // order path. The existing fieldsFound<2 guard below still protects a
+  // bare chat line that merely mentions the business but carries no order
+  // fields (size/material/cost/labelled-sale) from becoming a spurious
+  // order. We deliberately exclude the bare adjective/list forms
+  // עסקי/עסקים from the anywhere-trigger to avoid false positives.
+  var _bizStartsPrefix = /^(עסקה|עסקת|עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s);
+  var _bizMarkerAnywhere = /(^|\s)[בלמ]?עסק(ה|ת)?(\s|$|[:,\-])/.test(s) ||
+                           /(^|\s)(biz|business)(\s|$|[:,\-])/i.test(s);
+  if (!_bizStartsPrefix && !_bizMarkerAnywhere) return null;
+  // Strip a LEADING prefix only (no-op for the NL form, where the marker is
+  // mid-sentence — there we keep the full text so the field parsers below
+  // can read the headline amount, size, material and shipping in place).
   s = s.replace(/^(עסקה|עסקת|עסק|biz|business)\s*[:\-]?\s*/i, '');
 
   function _num(re) {
@@ -2894,16 +3072,56 @@ function parseBusinessOrder_(text) {
   // single-number message parses as a "rich order").
   var salePriceLabeled = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירת|מכירה|מחיר|sold|sale)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   var salePrice      = salePriceLabeled;
+  // Shipping/installation has TWO distinct meanings depending on who paid:
+  //   • A COST Steven incurred ("משלוח 45", "שילמתי 80 משלוח") — reduces profit
+  //     and feeds the company dashboard's משלוחים והתקנות EXPENSE row.
+  //   • REVENUE the customer paid ("...שילמה 1700 ... + 450 להתקנה") — part of
+  //     the sale, must NOT be booked as a cost.
+  // The keyword-FIRST labeled form ("משלוח 45" / "התקנה 450" / "שילמתי 80
+  // משלוח") is treated as a stated cost (unchanged behaviour, covers the
+  // prefix-order path). The reverse NL form ("<amount> [שח] ל<keyword>",
+  // e.g. "+ 450 שח להתקנה") is captured SEPARATELY as `installReverse` and
+  // its destination (revenue vs cost) is decided below by _customerPaidOrder.
   var shipping       = _num(/(?:דמי\s+משלוח|משלוח\s+(?:והתקנה|והובלה|והתקנות)|משלוח|שילוח|התקנה|התקנות|shipping|delivery)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  var installReverse = _num(/(\d+(?:[.,]\d+)?)\s*(?:ש["׳']?ח|שקל(?:ים)?|nis|₪)?\s*ל?(?:משלוח|שילוח|התקנה|התקנות|הובלה)(?:\s|$|[.,])/i);
+  // 2026-06-02 money-semantics fix: detect a CUSTOMER-paid / income order.
+  // Fires only on the new NL trigger (business marker mid-sentence, not the
+  // עסק-prefix form) with an income/customer-payment signal, and only when
+  // Steven did NOT explicitly say HE paid the shipping/installation.
+  var _stevenPaidShip = /שילמתי(?:\s+\S+){0,3}?\s*(?:על\s+)?(?:משלוח|שילוח|התקנה|התקנות|הובלה)/.test(s);
+  var _incomeSignal   = /(?:הכנסה|הכנסות|שילמ(?:ה|ו|תם)?|שילם|מכר(?:תי|נו|ה)?|מכירה|קיבלתי\s+תשלום|לקוח[ה]?\s+שילמ)/.test(s);
+  var _customerPaidOrder = _bizMarkerAnywhere && !_bizStartsPrefix && _incomeSignal && !_stevenPaidShip;
+  var _installAsRevenue = false; // set true below when we fold the add-on into the sale
+  if (!_customerPaidOrder) {
+    // Cost-phrasing path (prefix orders, or Steven explicitly paid): the
+    // reverse NL form is also a shipping COST when the keyword-first pass
+    // found nothing. Preserves the prior behaviour for "+ 450 להתקנה" in a
+    // Steven-paid / prefix context.
+    if (shipping == null && installReverse != null) shipping = installReverse;
+  }
 
   // Customer name: try the explicit label first ("שם לקוח X" / "לקוח X").
-  var customer = _word(/(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s*([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,})|$)/i);
+  //
+  // 2026-06-02: anchor the לקוח label on a word boundary ((^|\s) before, and a
+  // space/colon after) so it does NOT match the substring "לקוח" inside the
+  // NL word "הלקוחה" ("the customer paid"), which used to capture a junk
+  // customer of "ה שילמה". A genuine "לקוח דני" (space-separated) still
+  // matches. The capture must also start with a Hebrew/Latin letter so we
+  // never grab a stray verb fragment.
+  var customer = _word(/(?:^|\s)(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s+([A-Za-z֐-׿][^\d\n]*?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,})|$)/i);
   // Fallback: if no explicit label, grab the leading Hebrew text right
   // after the "עסק" prefix up to the first labelled field or number.
   // Lets the user write "עסק ליה מרמת גן גודל ..." without forcing the
   // "לקוח" keyword. Capped at 40 chars to avoid grabbing the whole
   // message when no labelled field appears later.
-  if (!customer) {
+  //
+  // 2026-06-02: ONLY apply this leading-text heuristic for the prefix form
+  // (message STARTED with עסק). In the NL form the marker sits mid-sentence
+  // ("יש לי הכנסה בעסק ... הלקוחה שילמה 1700"), so the leading words are
+  // narration, not a name — grabbing them produced a junk customer like
+  // "ה שילמה". For NL we leave customer blank (the explicit "לקוח X" label
+  // above still works) and let the reply invite the user to add a name.
+  if (!customer && _bizStartsPrefix) {
     var leadM = s.match(/^([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,}))/);
     if (leadM) {
       var lead = leadM[1].trim();
@@ -2947,6 +3165,34 @@ function parseBusinessOrder_(text) {
   }
   if (salePrice == null && headline != null) salePrice = headline;
 
+  // 2026-06-02 money-semantics fix — CUSTOMER-paid / income order.
+  // Every amount the customer paid is REVENUE, so the sale price is the
+  // headline/labeled product price PLUS any "+ X" add-on like installation.
+  // The add-on (installReverse) is folded into salePrice and shipping(cost)
+  // is forced to 0 — it must never reduce revenue or profit. The add-on
+  // label is remembered so the description reads e.g. "תמונה 80×120 זכוכית
+  // + התקנה". Example: "הלקוחה שילמה 1700 ... + 450 שח להתקנה"
+  //   → salePrice 2150, shipping 0, profit 2150 (no cost stated).
+  var _installLabelHe = '';
+  if (_customerPaidOrder) {
+    if (installReverse != null && installReverse > 0) {
+      // Identify what the add-on was called (installation vs shipping) for
+      // the description note.
+      if (/(?:התקנה|התקנות)/.test(s))      _installLabelHe = 'התקנה';
+      else if (/(?:משלוח|שילוח|הובלה)/.test(s)) _installLabelHe = 'משלוח';
+      // Fold the add-on into the sale (revenue). salePrice here is the
+      // product headline (or a labeled מכירה price); the add-on is a
+      // distinct number captured by installReverse, so summing is correct.
+      var _base = (salePrice != null) ? salePrice : 0;
+      salePrice = _base + installReverse;
+      _installAsRevenue = true;
+    }
+    // Customer-paid orders never carry a shipping COST inferred from the
+    // customer's payment. (An explicit Steven-paid cost would have set
+    // _customerPaidOrder=false above.)
+    shipping = null;
+  }
+
   // Only treat as a "rich order" when we got at least 2 distinct fields
   // beyond a bare amount. Otherwise the caller falls back to the existing
   // dropdown flow (which serves "עסק 24 שיווק" style messages).
@@ -2961,11 +3207,31 @@ function parseBusinessOrder_(text) {
   if (productionCost)   fieldsFound++;
   if (shipping)         fieldsFound++;
   if (salePriceLabeled != null) fieldsFound++;
+  // 2026-06-02: a customer-paid income order counts its add-on (installation/
+  // shipping the customer paid) as a field, and a customer-payment signal
+  // together with a sale price is itself a strong order signal. This keeps a
+  // genuine NL income order (e.g. "...שילמה 1700 ... + 450 התקנה") from
+  // failing the ≥2-fields gate when it lacks an explicit size/material. It
+  // does NOT affect the prefix path (_customerPaidOrder is false there).
+  if (_installAsRevenue) fieldsFound++;
+  if (_customerPaidOrder && salePrice != null) fieldsFound++;
   if (fieldsFound < 2) return null;
 
   var profit = null;
   if (salePrice != null) {
     profit = salePrice - (productionCost || 0) - (shipping || 0);
+  }
+
+  // Build a human description that carries the product + the customer-paid
+  // add-on (e.g. "תמונה 80×120 זכוכית + התקנה"), so the order row and the
+  // reply both spell out what the revenue covered.
+  var _prodBits = [];
+  if (size || material) _prodBits.push('תמונה');
+  if (size)     _prodBits.push(size);
+  if (material) _prodBits.push(material);
+  var descNote = _prodBits.join(' ');
+  if (_installAsRevenue && _installLabelHe) {
+    descNote = (descNote ? descNote + ' + ' : '+ ') + _installLabelHe;
   }
 
   return {
@@ -2978,6 +3244,12 @@ function parseBusinessOrder_(text) {
     profit:         profit,
     rawText:        text,
     amount:         salePrice || headline || 0,
+    // 2026-06-02 customer-paid breakdown fields (empty/false on the
+    // prefix-order path, so it is unchanged):
+    installRevenue: _installAsRevenue ? installReverse : null,
+    installLabel:   _installAsRevenue ? _installLabelHe : '',
+    productPrice:   _installAsRevenue ? (salePrice - installReverse) : null,
+    descNote:       descNote || '',
   };
 }
 
@@ -3005,11 +3277,19 @@ function _writeOrderRow_(parsed) {
     }
     var now = new Date();
     var month = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    // Column D (size/description): for a customer-paid income order we write
+    // the full human breakdown ("תמונה 80×120 זכוכית + התקנה") so the order
+    // log spells out what the revenue covered. For the prefix-order path
+    // parsed.descNote is just the size/material, and we keep the plain size
+    // here to avoid changing that column's prior content.
+    var _sizeCol = (parsed.installRevenue && parsed.descNote)
+      ? parsed.descNote
+      : (parsed.size || '');
     var row = [
       now,
       month,
       sanitizeForSheet(parsed.customer),
-      sanitizeForSheet(parsed.size),
+      sanitizeForSheet(_sizeCol),
       sanitizeForSheet(parsed.material),
       parsed.productionCost || 0,
       parsed.salePrice || 0,
@@ -3974,15 +4254,18 @@ function installReEngagementTrigger() {
 // ─────────────────────────────────────────────────────────────────────
 function getMilestoneMessage_(fromPhone, totalExpensesAfter) {
   try {
-    var props = PropertiesService.getScriptProperties();
     // 100 / 250 / 500 / 1000 / 2500 milestones.
     var thresholds = [100, 250, 500, 1000, 2500];
     for (var i = 0; i < thresholds.length; i++) {
       var th = thresholds[i];
       if (totalExpensesAfter === th) {
+        // Milestone-fired flag now lives in KV (key unchanged:
+        // 'milestone:'+phone+':'+threshold) with a legacy Script-Property read
+        // fallback, so a milestone already celebrated before this migration is
+        // never re-fired. Presence-only -> no TTL.
         var key = 'milestone:' + fromPhone + ':' + th;
-        if (props.getProperty(key)) return null; // already fired
-        props.setProperty(key, new Date().toISOString());
+        if (_seenFlag_(key, 0)) return null; // already fired
+        _markFlag_(key, new Date().toISOString(), 0);
         if (th === 100) return '\n\n🎉 הוצאה מספר 100! מתחילה להראות תמונה מלאה. שלח "סיכום" לראות.';
         if (th === 250) return '\n\n📈 250 הוצאות. אתה בקצב מצוין.';
         if (th === 500) return '\n\n🏆 500 הוצאות! חצי דרך לאלף.';
@@ -4443,6 +4726,95 @@ function _surveySetAutoLogPref_(fromPhone, pref) {
   catch (_e) {}
 }
 
+// --- Objective ("יעד חדש") pending-state helpers (CacheService, 15-min TTL).
+// 2026-06-01 FIX: the bare "יעד חדש" prompt and the one-shot-missing-horizon
+// prompt ask the user to "reply 1/2/3/4" but used to set NO pending state.
+// The user's bare reply "1" then hit the doPost expense FAST-PATH (any text
+// starting with a digit) and was written as a 1-shekel expense. We now stamp
+// a short-lived pending-objective state when the prompt is shown, and a
+// dispatcher (run BEFORE the expense fast-path) routes an END-ANCHORED reply
+// of 1-4 into objective creation instead of processExpense. "1 קפה" still
+// books an expense because it is not end-anchored ^[1-4]$.
+//
+// State value shapes (plain strings, stored in the same per-phone cache the
+// rest of the bot uses):
+//   "horizon"      -> prompt was shown, waiting for the 1/2/3/4 pick
+//   "desc:<h>"     -> a horizon <h> was picked, waiting for the goal text
+var _OBJ_PEND_TTL_SEC_ = 900; // 15 minutes
+function _objPendKey_(fromPhone) {
+  return 'objPend:' + String(fromPhone).replace(/[^0-9]/g, '');
+}
+function _objPendGet_(fromPhone) {
+  try { return CacheService.getScriptCache().get(_objPendKey_(fromPhone)); }
+  catch (_e) { return null; }
+}
+function _objPendSet_(fromPhone, state) {
+  try { CacheService.getScriptCache().put(_objPendKey_(fromPhone), String(state), _OBJ_PEND_TTL_SEC_); }
+  catch (_e) {}
+}
+function _objPendClear_(fromPhone) {
+  try { CacheService.getScriptCache().remove(_objPendKey_(fromPhone)); }
+  catch (_e) {}
+}
+
+// --- Gender + need (personal/business/both) — stored in Script Properties so
+// they PERSIST per tenant beyond the 1h survey cache and need no api/profile
+// change (api/profile.js whitelists fields and would silently drop a gender
+// field). Keyed by phone digits only, fully bot-local. gender:'m'|'f',
+// need:'personal'|'business'|'both'. Used to address the user with a gendered
+// brother/sister + well-done encouragement, and (need) to note which tabs to
+// provision.
+function _genderKey_(fromPhone) { return 'gender:' + String(fromPhone).replace(/[^0-9]/g, ''); }
+function _setGender_(fromPhone, g) {
+  if (g !== 'm' && g !== 'f') return;
+  try { PropertiesService.getScriptProperties().setProperty(_genderKey_(fromPhone), g); } catch (_e) {}
+}
+function _getGender_(fromPhone) {
+  try { return PropertiesService.getScriptProperties().getProperty(_genderKey_(fromPhone)) || ''; }
+  catch (_e) { return ''; }
+}
+function _needKey_(fromPhone) { return 'need:' + String(fromPhone).replace(/[^0-9]/g, ''); }
+function _setNeed_(fromPhone, n) {
+  if (n !== 'personal' && n !== 'business' && n !== 'both') return;
+  try { PropertiesService.getScriptProperties().setProperty(_needKey_(fromPhone), n); } catch (_e) {}
+}
+function _getNeed_(fromPhone) {
+  try { return PropertiesService.getScriptProperties().getProperty(_needKey_(fromPhone)) || ''; }
+  catch (_e) { return ''; }
+}
+
+// Gendered second-person address: brother (m) / sister (f) / '' (unknown).
+// Caller decides where to place it so we never double-gender a sentence.
+function _addr_(fromPhone) {
+  var g = _getGender_(fromPhone);
+  if (g === 'm') return 'אחי';
+  if (g === 'f') return 'אחותי';
+  return '';
+}
+// A short, warm, gendered well-done tail (one emoji). Empty until we know
+// the gender, so we never guess. Throttled to once per Israel-calendar-day
+// per user (via CacheService) so confirmations stay warm, not spammy.
+// Appended to expense confirmations.
+function _kudosTail_(fromPhone) {
+  var a = _addr_(fromPhone);
+  if (!a) return '';
+  try {
+    var clean = String(fromPhone).replace(/[^0-9]/g, '');
+    var dayKey = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy-MM-dd');
+    var ck = 'kudos:' + clean + ':' + dayKey;
+    var cache = CacheService.getScriptCache();
+    if (cache.get(ck)) return '';        // already encouraged today
+    cache.put(ck, '1', 86400);           // 24h
+  } catch (_e) { /* on cache failure, allow the kudos rather than suppress it */ }
+  // Rotate a few phrasings so it doesn't read like a canned string. Keep the
+  // champion noun gender-correct using the stored gender.
+  var champ = (_getGender_(fromPhone) === 'f') ? 'אלופה' : 'אלוף';
+  var lines = ['כל הכבוד ' + a + '! 👏', 'יפה ' + a + ', ככה ממשיכים! 💪', champ + ' ' + a + '! 👏'];
+  var idx = 0;
+  try { idx = (new Date()).getDate() % lines.length; } catch (_e2) {}
+  return '\n\n' + lines[idx];
+}
+
 // --- Interactive List sender for the questionnaire. Wraps the existing,
 // proven low-level sender (sendWhatsAppInteractiveList) which already uses
 // the right token / phoneId / Graph URL. Each row id is namespaced so the
@@ -4466,18 +4838,31 @@ function _surveySendList_(fromPhone, bodyText, buttonText, rows, headerText) {
   );
 }
 
+// --- Q0: gender. ASKED FIRST so every later reply can address the user with
+// a gendered brother/sister + genuine well-done. Two quick-reply buttons
+// (cleaner than a list). Answer handled in _surveyHandleInteractive_ (ids
+// q0_male/q0_female), or as free text in _surveyHandleText_ while state=q0.
+function _surveySendQ0_(fromPhone) {
+  _surveySetState_(fromPhone, 'q0');
+  sendWhatsAppQuickButtons(fromPhone, 'רגע לפני שמתחילים — אתה או את? ככה אדבר אליך נכון 😊', [
+    { id: 'q0_male',   title: 'אני בן' },
+    { id: 'q0_female', title: 'אני בת' },
+  ]);
+}
+
 // --- The three questions (each sends one interactive message). ---
 function _surveySendQ1_(fromPhone) {
   _surveySetState_(fromPhone, 'q1');
   _surveySendList_(
     fromPhone,
-    'מהו סוג המעקב העיקרי שלך?',
+    'על מה תרצה לעקוב?',
     'בחר סוג',
     [
-      { id: 'q1_personal', title: 'אישי בלבד', description: 'מעקב על ההוצאות שלך' },
+      { id: 'q1_personal', title: 'אישי בלבד', description: 'ההוצאות הפרטיות שלך' },
+      { id: 'q1_business', title: 'עסק בלבד', description: 'הכנסות והוצאות עסקיות' },
+      { id: 'q1_both', title: 'אישי + עסק', description: 'גם פרטי וגם עסקי' },
       { id: 'q1_family', title: 'משפחתי', description: 'הוצאות משק הבית' },
       { id: 'q1_group', title: 'שותפים/קבוצה', description: 'חלוקת הוצאות בקבוצה' },
-      { id: 'q1_business', title: 'עסק קטן/עוסק פטור', description: 'הכנסות והוצאות עסקיות' },
     ]
   );
 }
@@ -4673,15 +5058,24 @@ function _surveySendCarQuestion_(fromPhone) {
   } catch (_e) { Logger.log('car question send err: ' + (_e && _e.message)); }
 }
 
-// Public entry: start the questionnaire at Q1.
+// Public entry: start the questionnaire at Q0 (gender), then Q1 (need).
 function _surveyStart_(fromPhone) {
-  _surveySendQ1_(fromPhone);
+  _surveySendQ0_(fromPhone);
 }
 
-// Map a q1_* id to the trackingType value persisted server-side.
+// Map a q1_* id to the trackingType value persisted server-side. NOTE:
+// api/profile.js whitelists trackingType to personal|family|group|business,
+// so the "both" pick (אישי+עסק) is sent as 'business' for provisioning while
+// the precise need ('both') is kept bot-local via _setNeed_.
 var _SURVEY_TRACKING_ = {
   q1_personal: 'personal', q1_family: 'family',
   q1_group: 'group', q1_business: 'business',
+  q1_both: 'business',
+};
+// q1_* id -> bot-local need ('personal'|'business'|'both') for Q2 of the spec.
+var _SURVEY_NEED_ = {
+  q1_personal: 'personal', q1_business: 'business', q1_both: 'both',
+  q1_family: 'personal', q1_group: 'personal',
 };
 var _SURVEY_TRACKING_HUMAN_ = {
   personal: 'אישי בלבד', family: 'משפחתי',
@@ -5312,15 +5706,34 @@ function _surveyFinish_(fromPhone) {
   var professionHuman = prof.profession
     ? (_KESEFLE_PROFESSION_HUMAN_[prof.profession] || prof.profession)
     : '—';
+  // The preset (profile_type) chosen by the A-H section block, if it ran.
+  var presetHuman = (prof.profileType && typeof _ONBOARDING_PRESETS_ === 'object')
+    ? (_ONBOARDING_PRESETS_[prof.profileType] || prof.profileType)
+    : '';
+  var _aF = _addr_(fromPhone);
+  var _hi = _aF ? (' ' + _aF) : '';
   var msg =
-    '✅ *סיימנו! זה הפרופיל שלך:*\n' +
+    '✅ *סיימנו' + _hi + '! זה הפרופיל שלך:*\n' +
     '━━━━━━━━━━━━━━━━━━\n' +
     '• סוג מעקב: ' + trackingHuman + '\n' +
     '• הוצאות קבועות: ' + recurringHuman + '\n' +
     '• אופן הרישום: ' + autoLogHuman + '\n' +
-    '• מקצוע: ' + professionHuman + '\n\n' +
+    '• מקצוע: ' + professionHuman + '\n' +
+    (presetHuman ? ('• תבנית: ' + presetHuman + '\n') : '') +
+    '\n' +
     'אפשר לשנות בכל עת עם הפקודה *שאלון*';
   try { sendWhatsAppMessage(fromPhone, msg); } catch (_e) {}
+
+  // Spec Q3 — fixed monthly expenses live on the WEBSITE (working link, mobile-
+  // safe https). Then immediately ask for the FIRST real expense, one per
+  // message. This is the hand-off from onboarding to everyday use.
+  var fixedMsg =
+    '💡 הוצאות קבועות (שכירות, ארנונה, מנויים) — תזין פעם אחת באתר והן יירשמו לבד בכל חודש:\n' +
+    'https://kesefle.com/dashboard#/recurring\n\n' +
+    'ועכשיו' + _hi + ' — מה הוצאת היום או השבוע?\n' +
+    'שלח לי הוצאה אחת בכל הודעה, לדוגמה: *45 קפה* ☕';
+  try { sendWhatsAppMessage(fromPhone, fixedMsg); } catch (_e2) {}
+
   _surveyClearState_(fromPhone);
   try { CacheService.getScriptCache().remove(_surveyAutoLogKey_(fromPhone)); } catch (_e) {}
 }
@@ -5331,10 +5744,27 @@ function _surveyFinish_(fromPhone) {
 // nothing more). Called from handleInteractiveReply_.
 function _surveyHandleInteractive_(fromPhone, picked) {
   var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  // --- Sections E-H (the extended A-H onboarding block). Their tap ids are
+  // namespaced "sec_*"; if this is one of them, consume it here and return.
+  if (typeof picked === 'string' && picked.indexOf('sec_') === 0 &&
+      typeof _onboardingHandleInteractive_ === 'function') {
+    if (_onboardingHandleInteractive_(fromPhone, picked)) return null;
+  }
+  // --- Q0: gender (asked first). Store it, then continue to Q1 (need). ---
+  if (picked === 'q0_male' || picked === 'q0_female') {
+    _setGender_(fromPhone, picked === 'q0_male' ? 'm' : 'f');
+    var _a0 = _addr_(fromPhone);
+    try { sendWhatsAppMessage(fromPhone, 'מעולה' + (_a0 ? ' ' + _a0 : '') + '! 👊'); } catch (_g0e) {}
+    _surveySendQ1_(fromPhone);
+    return null;
+  }
   // --- Q1: tracking type ---
   if (_SURVEY_TRACKING_.hasOwnProperty(picked)) {
     var tt = _SURVEY_TRACKING_[picked];
     _profileAPI_('set', { phone: clean, fields: { trackingType: tt } });
+    // Spec Q2: record the precise need (personal / business / both) bot-local
+    // for tab provisioning, even where trackingType collapses 'both'->business.
+    try { if (_SURVEY_NEED_.hasOwnProperty(picked)) _setNeed_(fromPhone, _SURVEY_NEED_[picked]); } catch (_nErr) {}
     // For family / group trackers we ask about kids' names FIRST -- if they
     // give names we'll create one dashboard row per child (real work, not
     // fake). Anyone else jumps straight to Q2. Steven's request 2026-05-24.
@@ -5413,7 +5843,8 @@ function _surveyHandleInteractive_(fromPhone, picked) {
     if (/^[a-z0-9_]{1,64}$/.test(pid)) {
       _profileAPI_('set', { phone: clean, fields: { profession: pid } });
     }
-    _surveyFinish_(fromPhone);
+    // Q4 done -> run the extended A-H sections (E-H), then finish.
+    _onboardingStartSections_(fromPhone);
     return null;
   }
   return null;
@@ -5442,6 +5873,25 @@ function _surveyHandleText_(fromPhone, text) {
     if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
     if (!r.logged) return { handled: true, replyText: 'אין מה לאשר כרגע.' };
     return { handled: true, replyText: '✅ נרשם: ' + _money_(r.logged.amount) + ' ' + (r.logged.description || '') };
+  }
+
+  // Q0 typed-gender capture (only while the survey is in the gender step).
+  // Robustness for users who type instead of tapping the button. Recognised
+  // male/female words (see regexes below). Unrecognised text re-asks once.
+  if (_surveyGetState_(fromPhone) === 'q0') {
+    if (/^(?:אני\s+)?(?:בן|זכר|גבר|בחור|m|male|man)\s*$/i.test(t)) {
+      _setGender_(fromPhone, 'm');
+      try { sendWhatsAppMessage(fromPhone, 'מעולה ' + _addr_(fromPhone) + '! 👊'); } catch (_e) {}
+      _surveySendQ1_(fromPhone);
+      return { handled: true };
+    }
+    if (/^(?:אני\s+)?(?:בת|נקבה|אישה|אשה|בחורה|f|female|woman)\s*$/i.test(t)) {
+      _setGender_(fromPhone, 'f');
+      try { sendWhatsAppMessage(fromPhone, 'מעולה ' + _addr_(fromPhone) + '! 👊'); } catch (_e) {}
+      _surveySendQ1_(fromPhone);
+      return { handled: true };
+    }
+    return { handled: true, replyText: 'רק שאדע איך לפנות אליך — כתוב *בן* או *בת* 🙂' };
   }
 
   // Free-text kids capture (only while the survey is in that step). Steven's
@@ -5475,7 +5925,7 @@ function _surveyHandleText_(fromPhone, text) {
   if (_surveyGetState_(fromPhone) === 'await_profession_freetext') {
     if (/^(?:דלג|לא|אין|skip|no)\s*$/i.test(t)) {
       try { sendWhatsAppMessage(fromPhone, 'אין בעיה -- אפשר להוסיף מקצוע מאוחר יותר עם הפקודה *שאלון*.'); } catch (_e) {}
-      _surveyFinish_(fromPhone);
+      _onboardingStartSections_(fromPhone);
       return { handled: true };
     }
     var matchedId = _matchProfessionFromText_(t);
@@ -5495,7 +5945,7 @@ function _surveyHandleText_(fromPhone, text) {
       }
       try { sendWhatsAppMessage(fromPhone, 'תודה! שמרתי את *' + t.slice(0, 60) + '* כמקצוע. 👍'); } catch (_e) {}
     }
-    _surveyFinish_(fromPhone);
+    _onboardingStartSections_(fromPhone);
     return { handled: true };
   }
 
@@ -5552,6 +6002,488 @@ function _surveyHandleText_(fromPhone, text) {
   }
 
   return { handled: false };
+}
+
+// =====================================================================
+// ONBOARDING SECTIONS A-H (extends the Q1-Q4 questionnaire above).
+// ---------------------------------------------------------------------
+// The Q1-Q4 survey already collects the first four "sections":
+//   A user-type   -> profile.trackingType (Q1)
+//   B household   -> kids / pets rows      (family/group branch)
+//   C cars        -> רכב row               (car question)
+//   D home/fixed  -> hasRecurring + recurring rows (Q2)
+// This block adds the remaining FOUR sections, asked CONDITIONALLY after
+// the profession step (Q4) so a plain personal user is never dragged
+// through business/contractor questions:
+//   E business    -> osek type (only when trackingType=business)
+//   F contractor  -> per-project tracking (only when business OR a
+//                    construction/contractor profession)
+//   G budgets     -> wants a monthly budget cap (always)
+//   H import hist. -> wants to import past statements (always)
+// Each section's answer is persisted INSIDE the existing profile:<phone>
+// KV record, keyed by section letter, via _profileAPI_('set', { phone,
+// fields:{ onboarding:{ E:{...}, F:{...}, ... } } }). At the very end we
+// derive a template preset (profile_type) the NEXT step consumes, store
+// it on the profile, and hand off to the existing _surveyFinish_ summary.
+//
+// State strings used by this block (stored in CacheService like the rest
+// of the survey): sec_E_await, sec_F_await, sec_G_await, sec_H_await.
+// =====================================================================
+
+// Profession ids (from lib/professions.js) that imply construction /
+// trade contracting work, used to decide whether section F (per-project
+// tracking) is relevant for a NON-business tracker too. Kept ASCII so it
+// survives chat/clipboard intact.
+var _ONBOARDING_CONTRACTOR_PROFESSIONS_ = {
+  general_contractor: true, electrician: true, plumber: true,
+  painter_construction: true, handyman: true, architect: true,
+  gardener: true,
+};
+
+// The allowed preset ids -> Hebrew display label (shown in the onboarding
+// summary). Extended from the original 6 (docs/PERSONALIZED_CATEGORY_PROFILES.md
+// §7) to the full TEN templates the epic asks for. The sheet-seeding step
+// (applyTemplatePreset_ below) keys on these exact ids, so they MUST stay
+// snake_case ASCII and in sync with api/profile.js PROFILE_TYPES and the
+// _TEMPLATE_PRESETS_ table.
+var _ONBOARDING_PRESETS_ = {
+  basic_personal:    'אישי בסיסי',
+  couple:            'זוג',
+  family:            'משפחתי (ילדים)',
+  divorced:          'גרוש/ה',
+  employee:          'שכיר/ה',
+  freelancer:        'עצמאי/ת (פרילנס)',
+  business:          'בעל עסק',
+  contractor:        'קבלן / פרויקטים',
+  mixed:             'משולב (אישי + עסק)',
+  advanced_imported: 'מתקדם (ייבוא היסטוריה)',
+};
+
+// --- PURE branching logic (no I/O — unit-tested in test_onboarding_flow).
+// Given the profile collected so far, return the ORDERED list of section
+// letters STILL to ask in this A-H block. E and F are conditional; G and H
+// always run. The Q1-Q4 sections (A-D) are NOT included here — they ran
+// already — but their answers (trackingType, profession) drive the gates.
+function _onboardingSectionPlan_(profile) {
+  profile = profile || {};
+  var tt = String(profile.trackingType || '');
+  var prof = String(profile.profession || '');
+  var isBusiness = (tt === 'business');
+  var isContractorProf = !!_ONBOARDING_CONTRACTOR_PROFESSIONS_[prof];
+  var plan = [];
+  if (isBusiness) plan.push('E');            // business: osek details
+  if (isBusiness || isContractorProf) plan.push('F'); // contractor: projects
+  plan.push('G');                            // budgets: always
+  plan.push('H');                            // import history: always
+  return plan;
+}
+
+// PURE: given the plan + the section just finished (or null to get the
+// FIRST section), return the next section letter to ask, or null when the
+// A-H block is complete. Deterministic so the test can replay the sequence.
+function _onboardingNextSection_(profile, doneSection) {
+  var plan = _onboardingSectionPlan_(profile);
+  if (!plan.length) return null;
+  if (doneSection == null) return plan[0];
+  var idx = plan.indexOf(String(doneSection));
+  if (idx < 0) return null;            // unknown / not in plan -> stop
+  return (idx + 1 < plan.length) ? plan[idx + 1] : null;
+}
+
+// PURE: derive the template preset (profile_type) from the full set of
+// answers. Order of precedence is deliberate and tested:
+//   1. contractor  — a business that does project/construction work
+//   2. freelancer  — an עוסק פטור (section E osek=patur), i.e. a solo
+//                    freelancer who is NOT a construction contractor
+//   3. business    — any other עסק tracker (morsheh / company)
+//   4. family      — family / group household tracker
+//   5. advanced_imported — personal user importing historical data
+//   6. mixed       — personal user whose profession is self-employed
+//   7. basic_personal — the safe default
+// NOTE: the finer presets that the CURRENT Q1-Q4+E-H questionnaire has no
+// dedicated signal for yet (couple / divorced / employee) are still fully
+// defined in _TEMPLATE_PRESETS_ and seedable via applyTemplatePreset_; they
+// just aren't auto-derived here until onboarding grows a question for them.
+function _onboardingPickPreset_(profile) {
+  profile = profile || {};
+  var ob = profile.onboarding || {};
+  var tt = String(profile.trackingType || '');
+  var prof = String(profile.profession || '');
+  var isBusiness = (tt === 'business');
+  var isContractorProf = !!_ONBOARDING_CONTRACTOR_PROFESSIONS_[prof];
+  var tracksProjects = !!(ob.F && ob.F.tracksProjects);
+  var wantsImport = !!(ob.H && ob.H.wantsImport);
+  var osekType = (ob.E && ob.E.osekType) ? String(ob.E.osekType) : '';
+
+  if (isBusiness && (isContractorProf || tracksProjects)) return 'contractor';
+  // עוסק פטור with no project tracking and not a construction trade -> the
+  // lighter "freelancer" ledger rather than the full business one.
+  if (isBusiness && osekType === 'patur') return 'freelancer';
+  if (isBusiness) return 'business';
+  if (tt === 'family' || tt === 'group') return 'family';
+  if (wantsImport) return 'advanced_imported';
+  // A self-employed-style profession on a personal tracker -> mixed.
+  if (prof && _PROFESSION_IS_SELF_EMPLOYED_(prof)) return 'mixed';
+  return 'basic_personal';
+}
+
+// PURE helper: does this profession id imply self-employment (so a
+// personal tracker who has it should get the "mixed" preset)? Salaried
+// roles (cashier, office_worker, other_employee) return false.
+function _PROFESSION_IS_SELF_EMPLOYED_(prof) {
+  var salaried = { cashier: true, office_worker: true, other_employee: true };
+  if (!prof) return false;
+  return !salaried[String(prof)];
+}
+
+// --- Persist one section's answer onto profile.onboarding[<letter>].
+// Merges (read-modify-write) so earlier sections aren't clobbered. Best
+// effort: any failure is logged and swallowed (onboarding must never wedge
+// on a transient network blip).
+function _onboardingStoreSection_(fromPhone, letter, answerObj) {
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return;
+  var existing = {};
+  try {
+    var g = _profileAPI_('get', { phone: clean });
+    if (g && g.ok && g.profile && g.profile.onboarding) existing = g.profile.onboarding;
+  } catch (_e) {}
+  existing = existing || {};
+  existing[letter] = answerObj || {};
+  try {
+    _profileAPI_('set', { phone: clean, fields: { onboarding: existing } });
+  } catch (_e2) { Logger.log('_onboardingStoreSection_ ' + letter + ' err: ' + (_e2 && _e2.message)); }
+}
+
+// --- Read the current profile (best effort, returns {} on any failure).
+function _onboardingGetProfile_(fromPhone) {
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return {};
+  try {
+    var g = _profileAPI_('get', { phone: clean });
+    if (g && g.ok && g.profile) return g.profile;
+  } catch (_e) {}
+  return {};
+}
+
+// --- Send the question for a given section letter. Returns true if a
+// question was actually sent (so the caller stays in the flow), false if
+// the section has no question (shouldn't happen for E-H).
+function _onboardingSendSection_(fromPhone, letter) {
+  if (letter === 'E') {
+    _surveySetState_(fromPhone, 'sec_E_await');
+    sendWhatsAppQuickButtons(fromPhone, 'איזה סוג עסק? אתאים את הקטגוריות.', [
+      { id: 'sec_e_patur',   title: 'עוסק פטור' },
+      { id: 'sec_e_morsheh', title: 'עוסק מורשה' },
+      { id: 'sec_e_company', title: 'חברה בע״מ' },
+    ]);
+    return true;
+  }
+  if (letter === 'F') {
+    _surveySetState_(fromPhone, 'sec_F_await');
+    sendWhatsAppQuickButtons(fromPhone, 'לעקוב אחרי רווח לכל פרויקט/לקוח בנפרד?', [
+      { id: 'sec_f_yes', title: 'כן, לפי פרויקט' },
+      { id: 'sec_f_no',  title: 'לא צריך' },
+    ]);
+    return true;
+  }
+  if (letter === 'G') {
+    _surveySetState_(fromPhone, 'sec_G_await');
+    sendWhatsAppQuickButtons(fromPhone, 'רוצה תקרת תקציב חודשית עם התראה כשמתקרבים?', [
+      { id: 'sec_g_yes', title: 'כן, תזכיר לי' },
+      { id: 'sec_g_no',  title: 'בלי תקציב' },
+    ]);
+    return true;
+  }
+  if (letter === 'H') {
+    _surveySetState_(fromPhone, 'sec_H_await');
+    sendWhatsAppQuickButtons(fromPhone, 'לייבא נתונים מהעבר (דפי אשראי/בנק)?', [
+      { id: 'sec_h_yes', title: 'כן, יש לי קבצים' },
+      { id: 'sec_h_no',  title: 'מתחיל מעכשיו' },
+    ]);
+    return true;
+  }
+  return false;
+}
+
+// --- Entry point: begin the A-H section block (called after Q4 instead of
+// jumping straight to _surveyFinish_). Reads the profile to decide the
+// plan; if nothing applies (can't happen — G/H always do) we just finish.
+function _onboardingStartSections_(fromPhone) {
+  var profile = _onboardingGetProfile_(fromPhone);
+  var next = _onboardingNextSection_(profile, null);
+  if (!next) { _onboardingFinishSections_(fromPhone); return; }
+  _onboardingSendSection_(fromPhone, next);
+}
+
+// --- Advance to the section AFTER `doneSection`, or finish the survey.
+function _onboardingAdvance_(fromPhone, doneSection) {
+  var profile = _onboardingGetProfile_(fromPhone);
+  var next = _onboardingNextSection_(profile, doneSection);
+  if (!next) { _onboardingFinishSections_(fromPhone); return; }
+  _onboardingSendSection_(fromPhone, next);
+}
+
+// --- Close out: pick the preset, persist it as profile.profileType (the
+// field the seeding step reads as profile_type), SEED that preset's extra
+// category rows into the user's sheet (idempotent add-category-row path),
+// then hand off to the existing _surveyFinish_ summary (which shows it).
+function _onboardingFinishSections_(fromPhone) {
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  var profile = _onboardingGetProfile_(fromPhone);
+  var preset = _onboardingPickPreset_(profile);
+  try {
+    _profileAPI_('set', { phone: clean, fields: { profileType: preset } });
+  } catch (_e) { Logger.log('_onboardingFinishSections_ preset save err: ' + (_e && _e.message)); }
+  // Seed the preset's extra rows. Best-effort + idempotent (server dedups);
+  // a hiccup here must never block the summary or wedge onboarding.
+  try {
+    if (typeof applyTemplatePreset_ === 'function') {
+      var seedRes = applyTemplatePreset_(preset, clean);
+      Logger.log('applyTemplatePreset_ ' + preset + ': seeded=' +
+        (seedRes.seeded || []).length + ' dup=' + (seedRes.duplicates || []).length +
+        ' failed=' + (seedRes.failed || []).length);
+    }
+  } catch (_e2) { Logger.log('_onboardingFinishSections_ seed err: ' + (_e2 && _e2.message)); }
+  _surveyFinish_(fromPhone);
+}
+
+// --- Route an interactive tap that belongs to a section E-H question.
+// Returns true if the tap was consumed (caller sends nothing more), false
+// if it isn't a section tap. Wired from _surveyHandleInteractive_.
+function _onboardingHandleInteractive_(fromPhone, picked) {
+  picked = String(picked || '');
+  // Section E — osek type.
+  if (picked === 'sec_e_patur' || picked === 'sec_e_morsheh' || picked === 'sec_e_company') {
+    var osek = (picked === 'sec_e_patur') ? 'patur'
+             : (picked === 'sec_e_morsheh') ? 'morsheh' : 'company';
+    _onboardingStoreSection_(fromPhone, 'E', { osekType: osek });
+    _onboardingAdvance_(fromPhone, 'E');
+    return true;
+  }
+  // Section F — per-project tracking.
+  if (picked === 'sec_f_yes' || picked === 'sec_f_no') {
+    _onboardingStoreSection_(fromPhone, 'F', { tracksProjects: (picked === 'sec_f_yes') });
+    _onboardingAdvance_(fromPhone, 'F');
+    return true;
+  }
+  // Section G — monthly budget cap.
+  if (picked === 'sec_g_yes' || picked === 'sec_g_no') {
+    _onboardingStoreSection_(fromPhone, 'G', { wantsBudget: (picked === 'sec_g_yes') });
+    _onboardingAdvance_(fromPhone, 'G');
+    return true;
+  }
+  // Section H — import historical.
+  if (picked === 'sec_h_yes' || picked === 'sec_h_no') {
+    var wantsImport = (picked === 'sec_h_yes');
+    _onboardingStoreSection_(fromPhone, 'H', { wantsImport: wantsImport });
+    if (wantsImport) {
+      try {
+        sendWhatsAppMessage(fromPhone,
+          '📊 מעולה! לייבוא דפי אשראי/בנק היכנס ל-kesefle.com/account ואז *ייבוא*.\n' +
+          'אסיים כאן את ההתאמה ונמשיך משם.');
+      } catch (_e) {}
+    }
+    _onboardingAdvance_(fromPhone, 'H');
+    return true;
+  }
+  return false;
+}
+
+// =====================================================================
+// TEMPLATE PRESETS (10) — extends the existing add-category-row seeding.
+// ---------------------------------------------------------------------
+// The base tenant sheet (lib/sheet-writer.js) already materialises the
+// standard "מאזן אישי" dashboard with ~30 default personal rows (income,
+// בית/חשמל/מים, דלק/אחזקת רכב, אוכל, ביגוד/בריאות, ...). A PRESET does NOT
+// restructure that template; it just SEEDS the EXTRA category rows that a
+// given profile needs, through the SAME idempotent add-category-row path
+// the bot already uses for "צור קטגוריה X" and the kids/pets/car steps
+// (POST /api/sheet/add-category-row -> _addCategoryRows_). That endpoint
+// dedups by exact label, so re-seeding a row the default template already
+// has (or seeding the same preset twice) returns {duplicate:true} and
+// NEVER creates a second row. This file is the single source of which rows
+// each of the ten templates adds + which dashboard sections it lights up.
+//
+// `sections` is metadata only here — it names the dashboard areas the
+// preset expects to be visible (personal is always on; business/projects/
+// historical gate the company + project + historical blocks). The seeding
+// step records it on the result so a downstream dashboard renderer / the
+// admin user-template audit can verify the user got the right shape. We do
+// not toggle dashboard sections from the bot directly (that is the sheet
+// builder's job); listing them keeps the contract explicit + testable.
+//
+// Row labels are Hebrew and chosen to match what the classifier actually
+// writes into תנועות col D/E (the add-category-row formula is a fuzzy
+// SUMPRODUCT over category+subcategory+description), so a seeded row sweeps
+// up the real transactions. Kept here as ASCII-commented Hebrew literals.
+// =====================================================================
+var _TEMPLATE_PRESETS_ = {
+  // 1. Basic Personal — the safe default. Adds nothing beyond the standard
+  //    template (which already covers income / housing / food / transport /
+  //    personal). Listed explicitly so applyTemplatePreset_ is total.
+  basic_personal: {
+    label: 'אישי בסיסי',
+    sections: ['personal'],
+    extraRows: [],
+  },
+  // 2. Couple — two earners sharing a household. Adds a second income line
+  //    + shared-bill buckets a single-person default doesn't surface.
+  couple: {
+    label: 'זוג',
+    sections: ['personal'],
+    extraRows: ['הכנסת בן/בת זוג', 'הוצאות משותפות', 'מתנות וזוגיות'],
+  },
+  // 3. Family with kids — kid-specific buckets on top of the household.
+  family: {
+    label: 'משפחתי (ילדים)',
+    sections: ['personal'],
+    extraRows: ['חינוך וגן', 'חוגים', 'ביגוד ילדים', 'צעצועים', 'רופא ילדים', 'תינוק'],
+  },
+  // 4. Divorced — single parent / post-divorce. Child-support + alimony +
+  //    a second-household bucket that the plain personal template lacks.
+  divorced: {
+    label: 'גרוש/ה',
+    sections: ['personal'],
+    extraRows: ['מזונות ילדים', 'דמי מזונות', 'חינוך וגן', 'משק בית שני'],
+  },
+  // 5. Employee — salaried. Surfaces pension/keren-hishtalmut + commute as
+  //    distinct lines so a payslip-driven user sees them separately.
+  employee: {
+    label: 'שכיר/ה',
+    sections: ['personal'],
+    extraRows: ['פנסיה', 'קרן השתלמות', 'נסיעות לעבודה', 'ביטוח בריאות'],
+  },
+  // 6. Freelancer — עוסק פטור, solo, no employees. Income + the light
+  //    business-expense set (tools/software/marketing) WITHOUT the full
+  //    employer/VAT-morsheh ledger.
+  freelancer: {
+    label: 'עצמאי/ת (פרילנס)',
+    sections: ['personal', 'business'],
+    extraRows: ['הכנסה מעסק', 'עלות שיווק', 'תוכנות ומנויים', 'ציוד עסקי', 'יועצים ושירותים'],
+  },
+  // 7. Business owner — עוסק מורשה, full ledger. The four canonical company
+  //    buckets the company dashboard sums + tax + admin rows.
+  business: {
+    label: 'בעל עסק',
+    sections: ['personal', 'business'],
+    extraRows: [
+      'הכנסה מעסק', 'עלות חומרי גלם', 'עלות שיווק', 'משלוחים והתקנות',
+      'הוצאות תפעוליות', 'יועצים ושירותים', 'תוכנות ומנויים', 'ציוד עסקי',
+      'מיסים', 'שכר עובדים',
+    ],
+  },
+  // 8. Contractor — per-project / per-client profit tracking on top of the
+  //    business set. Project rows so each job's margin is visible.
+  contractor: {
+    label: 'קבלן / פרויקטים',
+    sections: ['personal', 'business', 'projects'],
+    extraRows: [
+      'הכנסה מפרויקט', 'הכנסה מריטיינר', 'עלות חומרי גלם', 'קבלני משנה',
+      'עלות שיווק', 'ציוד וכלים', 'יועצים ושירותים', 'מיסים',
+    ],
+  },
+  // 9. Mixed (Advanced — Steven's everyday) — a salaried/personal user WITH
+  //    a side business. Personal household + a compact side-business block.
+  mixed: {
+    label: 'משולב (אישי + עסק)',
+    sections: ['personal', 'business'],
+    extraRows: [
+      'הכנסה מעסק צדדי', 'עלות שיווק', 'תוכנות ומנויים', 'ציוד עסקי',
+      'יועצים ושירותים', 'הוצאות תפעוליות',
+    ],
+  },
+  // 10. Imported historical — power-user / migrant with an OLD sheet. The
+  //     "everything" preset: personal + business + the historical block.
+  //     Most real rows arrive via the migration importer; here we seed the
+  //     business baseline so the company dashboard is non-empty on day one.
+  advanced_imported: {
+    label: 'מתקדם (ייבוא היסטוריה)',
+    sections: ['personal', 'business', 'historical'],
+    extraRows: [
+      'הכנסה מעסק', 'עלות חומרי גלם', 'עלות שיווק', 'משלוחים והתקנות',
+      'הוצאות תפעוליות', 'מיסים',
+    ],
+  },
+};
+
+// Normalize an arbitrary profile_type string to a known preset id, falling
+// back to basic_personal. Tolerant of casing/whitespace so a value read
+// back from the profile KV ('Business', ' contractor ') still resolves.
+function _resolveTemplatePresetId_(profileType) {
+  var id = String(profileType == null ? '' : profileType).toLowerCase().trim();
+  if (_TEMPLATE_PRESETS_.hasOwnProperty(id)) return id;
+  return 'basic_personal';
+}
+
+// Seed the EXTRA category rows for `profile_type` into the user's sheet via
+// the existing add-category-row path. `userSheet` is the phone/E.164 (the
+// add-category-row endpoint resolves phone -> userSub -> sheet; the bot
+// never opens the tenant sheet directly). Idempotent: the endpoint dedups
+// by label, so rows already present (default template OR a prior run) come
+// back as duplicates and are NOT re-created.
+//
+// `opts.seedFn(phone, name)` may be injected (tests pass a stub) — it must
+// have the _addCategoryRows_ signature and return its reply string; when a
+// row already exists the endpoint reports it (the reply contains "כבר
+// קיים") and we count it as a duplicate, never a new row. Defaults to the
+// real _addCategoryRows_.
+//
+// Returns a STRUCTURED result (also used by the test):
+//   { ok, profileType, sections, requested, seeded:[...], duplicates:[...],
+//     failed:[...] }
+// Best-effort: a failure on one row never aborts the rest, and the whole
+// thing is wrapped so onboarding never wedges if seeding hiccups.
+function applyTemplatePreset_(profile_type, userSheet, opts) {
+  opts = opts || {};
+  var id = _resolveTemplatePresetId_(profile_type);
+  var preset = _TEMPLATE_PRESETS_[id];
+  var rows = (preset && preset.extraRows) || [];
+  var sections = (preset && preset.sections) || ['personal'];
+  var phone = String(userSheet == null ? '' : userSheet).replace(/[^0-9]/g, '');
+
+  var result = {
+    ok: false, profileType: id, sections: sections.slice(),
+    requested: rows.slice(), seeded: [], duplicates: [], failed: [],
+  };
+  if (!phone) { result.failed = rows.slice(); return result; }
+  if (!rows.length) { result.ok = true; return result; }
+
+  var seedFn = (typeof opts.seedFn === 'function') ? opts.seedFn : _addCategoryRows_;
+
+  // De-dup the request itself so the SAME label is never asked twice in one
+  // call (cheap guard on top of the server-side dedup).
+  var seen = {};
+  for (var i = 0; i < rows.length; i++) {
+    var name = String(rows[i] || '').trim();
+    if (!name || seen[name]) continue;
+    seen[name] = true;
+    var reply = '';
+    try {
+      reply = String(seedFn(phone, name) || '');
+    } catch (e) {
+      try { Logger.log('applyTemplatePreset_ "' + name + '" threw: ' + (e && e.message)); } catch (_le) {}
+      result.failed.push(name);
+      continue;
+    }
+    // Interpret the human reply from _addCategoryRows_: it lists newly-added
+    // names after "נוספו לגיליון", duplicates after "כבר קיים", failures
+    // after "לא הצליח". We classify per-row by which bucket mentions it.
+    if (reply.indexOf('כבר קיים') >= 0 && reply.indexOf(name) >= 0 &&
+        reply.indexOf('נוספו לגיליון') < 0) {
+      result.duplicates.push(name);
+    } else if (reply.indexOf('לא הצליח') >= 0 && reply.indexOf('נוספו') < 0) {
+      result.failed.push(name);
+    } else if (reply.indexOf('נוספו') >= 0 || reply.indexOf('✅') >= 0) {
+      result.seeded.push(name);
+    } else {
+      // Unrecognized reply (e.g. an error hint). Treat as failed so the
+      // caller/test can see it, but don't throw.
+      result.failed.push(name);
+    }
+  }
+  result.ok = (result.failed.length === 0);
+  return result;
 }
 
 // Daily cron — asks the Vercel API to scan ALL users' templates and log
@@ -6183,7 +7115,18 @@ function _detectInstallments_(rawText, totalAmount) {
   }
   // Pattern B: "5 תשלומים" / "ב-10 תשלומים" / "10 תשלום" — N is the count,
   // per-payment = total / N. Most natural Hebrew phrasing.
-  m = t.match(/(?:ב[\-\s]?)?(\d{1,3})\s*תשלומים?\b/);
+  // 2026-05-31 fix (AUDIT_RECURRING_ENGINE F3 HIGH): the trailing anchor was
+  // JS `\b`, which is ASCII-only and NEVER forms a boundary on the right edge
+  // of a Hebrew letter — so "ספה 1000 שקל 5 תשלומים" matched nothing. Same
+  // class of bug the comment at _parseRecurringCommand_ already warns about
+  // ("JS \b word boundaries do NOT work around Hebrew letters"). Replace with
+  // a Hebrew-safe boundary: end-of-string, whitespace, or any non-Hebrew char
+  // (so trailing punctuation like .,! and "תשלום" mid-sentence still match).
+  // Also accept the SINGULAR "תשלום" (final-mem ם) in addition to plural
+  // "תשלומים" — the comment above lists "10 תשלום" as a target, but the old
+  // `תשלומים?` token only optional-ized the trailing ם of the plural and never
+  // matched the singular stem. `תשלו(?:ם|מים)` matches both.
+  m = t.match(/(?:ב[\-\s]?)?(\d{1,3})\s*תשלו(?:ם|מים)(?=\s|$|[^א-ת])/);
   if (m) {
     var nB = parseInt(m[1], 10);
     if (nB >= 2 && nB <= 60) {
@@ -6226,6 +7169,16 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
   // hardcoded to today, which is wrong for credit-card charges that hit
   // on 1/2/10/15 of the month). Fallback: today.
   var startISO = startISOArg || new Date().toISOString().slice(0, 10);
+  // 2026-05-31 fix (AUDIT_RECURRING_ENGINE F4 HIGH): the recurring API's
+  // addTemplate REQUIRES freq to be an OBJECT ({type:'monthly', day:N}) and
+  // 400s ("invalid_freq") on a bare string. We were posting freq:'monthly',
+  // so EVERY installments setup silently failed. Derive the charge day from
+  // the first-charge ISO date so the monthly recurrence fires on the same
+  // day-of-month the user picked. Clamp to 1..28 so it always exists in
+  // every month (matchesFreq also clamps to the month length on top of this).
+  var chargeDay = parseInt(String(startISO).slice(8, 10), 10);
+  if (!(chargeDay >= 1 && chargeDay <= 28)) chargeDay = Math.min(Math.max(chargeDay || 1, 1), 28);
+  var installFreq = { type: 'monthly', day: chargeDay };
   try {
     var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/recurring', {
       method: 'post',
@@ -6239,7 +7192,7 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
         description: label,
         category: category || 'אחר',
         subcategory: subcategory || '',
-        freq: 'monthly',
+        freq: installFreq,
         autoLog: true,
         startDate: startISO,
         installments: { total: inst.count, remaining: inst.count, productName: inst.productName },
@@ -6957,11 +7910,15 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
       // after the confirmation. Done inline (Apps Script has no real timers)
       // so users see ✅ → tap option to change.
       try { _sendChangeCategoryPicker_(fromPhone, category); } catch (_pkErr) {}
+      var __firstCel = _celebrateIfFirstExpense_(fromPhone);
       return { reply:
         '✅ נרשם: ' + nice +
         (__mtdLine ? '\n' + __mtdLine : '') +
         _sheetLinkLine_(fromPhone) +
-        _celebrateIfFirstExpense_(fromPhone)
+        __firstCel +
+        // Gendered encouragement (throttled to once/day) — skip on the first-
+        // expense message, which already carries its own celebration line.
+        (__firstCel ? '' : _kudosTail_(fromPhone))
       };
     }
     Logger.log('_tenantWriteExpense_ HTTP ' + code + ' ' + body.slice(0, 300));
@@ -7313,6 +8270,18 @@ function processExpense(text, fromPhone) {
     return { reply: _addCategoryRows_(fromPhone, __catCreate[1]) };
   }
 
+  // ───── NATURAL-LANGUAGE FIXED-EXPENSE GUIDE (ask C, 2026-06-01) ─────
+  // A bare "הוצאה קבועה" / "קבוע" / "הוצאה חודשית" (no amount) must get a short
+  // how-to, NOT be booked as an expense / hit שונות / bounce to the concierge.
+  // Placed here so it runs for EVERY tenant (all-tenant) and BEFORE the expense
+  // fast-path — both the tenant write below and the owner legacy path. It only
+  // fires on the strict bare intent (no digits), so real recurring-add commands
+  // ("קבוע 2500 שכירות") still flow to _recurringAdd_ further down. No sheet
+  // write happens here, so the never-corrupt floor is respected.
+  if (typeof _isBareFixedExpenseIntent_ === 'function' && _isBareFixedExpenseIntent_(text)) {
+    return { reply: _fixedExpenseGuide_() };
+  }
+
   // If the sender is NOT the script owner, route the write to that user's
   // own Google Sheet via the Kesefle Vercel bridge. We still run the rich
   // parsers below for category/subcategory, then post the parsed expense
@@ -7441,7 +8410,11 @@ function processExpense(text, fromPhone) {
               // 'מחזור' (business revenue) or the raw input had '+', flip col
               // H to FALSE (income). Old code hardcoded TRUE here too.
               var __hPIsInc = _resolveIsIncome_(__hPicked, __hP.rawText, __hPCategory, __hPSubcategory);
-              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPSubcategory), sanitizeForSheet(__hPDesc), 'WhatsApp', !__hPIsInc]);
+              // Canonicalize col E to a company-dashboard bucket (this path is
+              // always business) so the cost is visible on מאזן חברה.
+              var __hPDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+                ? _normalizeSubForDashboard_(__hPSubcategory, __hPCategory) : __hPSubcategory;
+              __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPDashSub), sanitizeForSheet(__hPDesc), 'WhatsApp', !__hPIsInc]);
               // Original-text cell note — preserves the business amount input + picked category.
               try {
                 var __hPLastForNote = __hPSheet.getLastRow();
@@ -7466,7 +8439,82 @@ function processExpense(text, fromPhone) {
       }
     } catch (__hErr) {}
   }
-  var __hIsBiz = /^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(__hT);
+
+  // ───── BARE BUSINESS EXPENSE (2026-06-01) ─────
+  // Natural single business expense: "הוצאה עסק תמונות 288 שיווק" /
+  // "עסק תמונות 288 שיווק" / "עסק 1200 חומרים" / "עסק 2500 שכר". Runs AFTER the
+  // numbered-business route (doPost) and the rich-order route below have been
+  // ruled out (the detector itself re-checks both), and BEFORE the old עסק
+  // numbered-PICKER fallback / personal classifier. Forces category=עסק with a
+  // canonical dashboard bucket, writes the row, mirrors the business dashboard,
+  // and confirms with the normal business reply — never the blocking picker and
+  // never the personal "unsure" dropdown. Guarded to owner only (this path
+  // writes the owner SHEET_ID; tenants were already routed above).
+  try {
+    var __bbe = (typeof _classifyBareBusinessExpense_ === 'function')
+      ? _classifyBareBusinessExpense_(__hT) : null;
+    if (__bbe && (!fromPhone || _isOwnerPhone_(fromPhone))) {
+      __hProps.deleteProperty('smart_pending');
+      var __bbeSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+      if (__bbeSheet) {
+        var __bbeDate = (__dateInfo && __dateInfo.date) ? __dateInfo.date : new Date();
+        var __bbeMonth = Utilities.formatDate(__bbeDate, 'Asia/Jerusalem', 'yyyy-MM');
+        var __bbeCat = 'עסק';
+        var __bbeSub = __bbe.subcategory;
+        var __bbeDesc = __bbe.cleanedDesc || __bbeSub;
+        var __bbeIsInc = _resolveIsIncome_({ isIncome: __bbe.isIncome }, __hT, __bbeCat, __bbeSub);
+        // Canonicalize col E to a company-dashboard bucket so it is visible.
+        var __bbeDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+          ? _normalizeSubForDashboard_(__bbeSub, __bbeCat) : __bbeSub;
+        __bbeSheet.appendRow([__bbeDate, __bbeMonth, __bbe.amount, sanitizeForSheet(__bbeCat), sanitizeForSheet(__bbeDashSub), sanitizeForSheet(__bbeDesc), 'WhatsApp', !__bbeIsInc]);
+        try {
+          var __bbeRowForNote = __bbeSheet.getLastRow();
+          _kfl_setRowOriginalNote(__bbeSheet, __bbeRowForNote, _kfl_buildOriginalNote('Original WhatsApp (business)', __hT));
+        } catch (__bbeNoteErr) { Logger.log('bare-biz note err: ' + (__bbeNoteErr && __bbeNoteErr.message)); }
+        try {
+          var __bbeLast = __bbeSheet.getLastRow();
+          if (__bbeLast > 2) __bbeSheet.getRange(2, 1, __bbeLast - 1, 8).sort({ column: 1, ascending: true });
+        } catch (__bbeSortErr) {}
+        try { _updateBusinessDashboard_(__bbeCat, __bbeSub, __bbeMonth, __bbe.amount); } catch (__bbeDashErr) { Logger.log('bare-biz dashboard err: ' + (__bbeDashErr && __bbeDashErr.message)); }
+        try { _dashboardDetailNote_(__bbeCat, __bbeSub, __bbeMonth, __bbe.amount, __bbeDesc, __bbeDate); } catch (__bbeDnErr) { Logger.log('bare-biz dashboard note err: ' + (__bbeDnErr && __bbeDnErr.message)); }
+        try { _saveLastExpense_(fromPhone, __bbeSheet.getLastRow(), { amount: __bbe.amount, description: __bbeDesc }, { category: __bbeCat, subcategory: __bbeSub }); } catch (__bbeSeErr) {}
+        // Non-blocking "change category?" affordance — same as every other
+        // single-item write. The row is ALREADY saved; the user can ignore it.
+        try { _sendChangeCategoryPicker_(fromPhone, __bbeCat); } catch (__bbePkErr) { Logger.log('bare-biz picker err: ' + (__bbePkErr && __bbePkErr.message)); }
+        Logger.log('bare-biz: wrote ₪' + __bbe.amount + ' עסק/' + __bbeSub);
+        return { reply:
+          '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון 📊' +
+          '\n📂 ' + __bbeCat +
+          (__bbeSub && __bbeSub !== __bbeCat ? '\n🏷️ ' + __bbeSub : '') +
+          '\n\n👇 לשנות קטגוריה — בחר מהרשימה למטה, או שלח "קטגוריה <שם>".' +
+          _sheetLinkLine_(fromPhone)
+        };
+      }
+    }
+  } catch (__bbeErr) {
+    Logger.log('bare-biz detector err (falling through): ' + (__bbeErr && __bbeErr.message));
+  }
+
+  // 2026-06-02 NL-income routing fix.
+  // Original gate only entered this block when the message STARTED with
+  // עסק/biz, so a natural business-income sentence ("יש לי הכנסה בעסק של
+  // התמונות ... הלקוחה שילמה 1700 ... + 450 להתקנה") never reached the order
+  // writer and fell to the personal category picker. We now ALSO enter when
+  // parseBusinessOrder_ recognises the message as an order (it is anchored on
+  // the עסק/בעסק token + order fields, so a personal income like
+  // "קיבלתי 1700 מתנה" still returns null and never enters here).
+  //
+  // This whole block already sits AFTER the tenant-return above, so it is
+  // owner-only and writes the owner SHEET_ID — no tenant can reach
+  // _writeOrderRow_. The legacy numbered-PICKER fallback further below stays
+  // guarded to the prefix form (__hStartsBiz) because it strips a leading
+  // עסק prefix and is tuned for the "עסק <amount> <token>" shape — NL text
+  // must never be run through it.
+  var __hStartsBiz = /^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(__hT);
+  var __hOrder = null;
+  try { __hOrder = parseBusinessOrder_(__hT); }
+  catch (__hOrderPreErr) { Logger.log('parseBusinessOrder_ pre-check THREW: ' + (__hOrderPreErr && __hOrderPreErr.message)); }
+  var __hIsBiz = __hStartsBiz || !!__hOrder;
   if (__hIsBiz) {
     // First try the rich-order parser. If the message contains at least
     // 2 labelled fields (customer, size, material, costs, shipping…) we
@@ -7474,21 +8522,42 @@ function processExpense(text, fromPhone) {
     // flow entirely. Simpler "עסק 24 שיווק" messages return null here
     // and continue to the existing categoriser below.
     try {
-      var __order = parseBusinessOrder_(__hT);
+      var __order = __hOrder;
       if (__order) {
         __hProps.deleteProperty('smart_pending');
         var __orderRes = _writeOrderRow_(__order);
         if (__orderRes.ok) {
+          // Warm Hebrew confirmation (Steven's voice). Mentions product /
+          // size / material, the sale, and that it landed in הזמנות + מאזן
+          // חברה. If no customer name was parsed, record it blank and invite
+          // the user to add one.
+          var __saleN  = __order.salePrice ? Number(__order.salePrice) : 0;
           var __ln = [];
-          __ln.push('✅ הזמנה נרשמה');
+          __ln.push('✅ רשמתי הזמנה');
           if (__order.customer) __ln.push('👤 ' + __order.customer);
-          if (__order.size || __order.material) {
-            __ln.push('🖼 ' + [__order.size, __order.material].filter(Boolean).join(' · '));
+          var __desc = [__order.size, __order.material].filter(Boolean).join(' · ');
+          if (__desc) __ln.push('🖼 ' + __desc);
+          if (__order.installRevenue) {
+            // Customer-paid breakdown: product + add-on (installation/shipping
+            // the customer paid) = total revenue. No cost was stated, so this
+            // is the full sale. e.g. "תמונה ₪1,700 + התקנה ₪450 = ₪2,150".
+            var __prodN  = __order.productPrice ? Number(__order.productPrice) : (__saleN - Number(__order.installRevenue));
+            var __addN   = Number(__order.installRevenue);
+            var __addLbl = __order.installLabel || 'תוספת';
+            __ln.push('מכירה: ₪' + __prodN.toLocaleString('he-IL') + ' + ' + __addLbl + ' ₪' + __addN.toLocaleString('he-IL') + ' = ₪' + __saleN.toLocaleString('he-IL'));
+            if (__order.productionCost) __ln.push('עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
+            if (__order.profit != null) __ln.push('רווח: ₪' + Number(__order.profit).toLocaleString('he-IL'));
+          } else {
+            // Prefix/cost-phrasing path: sale price, an explicit shipping COST
+            // if Steven stated one, production cost, and total revenue.
+            var __shipN  = __order.shipping ? Number(__order.shipping) : 0;
+            if (__saleN)  __ln.push('מכירה: ₪' + __saleN.toLocaleString('he-IL'));
+            if (__shipN)  __ln.push('משלוח (עלות): ₪' + __shipN.toLocaleString('he-IL'));
+            if (__order.productionCost) __ln.push('עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
+            if (__order.profit != null) __ln.push('רווח: ₪' + Number(__order.profit).toLocaleString('he-IL'));
           }
-          if (__order.salePrice)      __ln.push('💰 מחזור: ₪' + Number(__order.salePrice).toLocaleString('he-IL'));
-          if (__order.productionCost) __ln.push('🏭 עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
-          if (__order.shipping)       __ln.push('🚚 משלוח: ₪' + Number(__order.shipping).toLocaleString('he-IL'));
-          if (__order.profit != null) __ln.push('📈 רווח: ₪' + Number(__order.profit).toLocaleString('he-IL'));
+          __ln.push('נכנס להזמנות ולמאזן חברה.');
+          if (!__order.customer) __ln.push('רוצה? שלח "לקוח <שם>" ואשייך.');
           return { reply: __ln.join('\n') };
         }
         Logger.log('order parse OK but write failed: ' + (__orderRes && __orderRes.error));
@@ -7498,6 +8567,11 @@ function processExpense(text, fromPhone) {
       Logger.log('parseBusinessOrder_ THREW: ' + (__orderErr && __orderErr.message));
     }
 
+    // Legacy numbered-PICKER fallback — ONLY for the prefix form. For an NL
+    // message that produced an order but whose write failed above, we do NOT
+    // strip-and-pick (that regex assumes a leading עסק prefix); we let it fall
+    // through to the normal classifier below instead.
+    if (__hStartsBiz) {
     var __hAM = __hT.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)/);
     var __hA = __hAM ? parseFloat(__hAM[1]) : null;
     if (__hA && __hA > 0) {
@@ -7585,6 +8659,7 @@ function processExpense(text, fromPhone) {
         return { reply: __hLnBare.join('\n') };
       }
     }
+    } // end legacy numbered-PICKER fallback (__hStartsBiz only)
   }
 
   const trimmed = text.trim().toLowerCase();
@@ -7730,10 +8805,8 @@ function processExpense(text, fromPhone) {
     try {
       var __gcl = String(fromPhone || '').replace(/[^0-9]/g, '');
       if (__gcl) {
-        var __gprops = PropertiesService.getScriptProperties();
-        var __gkey = 'surveyed:' + __gcl;
-        if (!__gprops.getProperty(__gkey) && typeof _surveyStart_ === 'function') {
-          __gprops.setProperty(__gkey, new Date().toISOString());
+        if (!_onboardSeen_('surveyed', __gcl) && typeof _surveyStart_ === 'function') {
+          _onboardMark_('surveyed', __gcl);
           // Schedule the first survey question for ~1.5 sec after the
           // greeting so the user reads the intro first. Apps Script has
           // no real setTimeout — just send both synchronously, WhatsApp
@@ -8197,7 +9270,10 @@ function processExpense(text, fromPhone) {
       }
 
       if (!keywordOrCached) {
-        var apiKeyAvail = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+        // Provider availability is now provider-agnostic: any configured AI key
+        // (OpenAI/Gemini/xAI/Anthropic/OpenRouter) enables the fallback. No
+        // hardcoded ANTHROPIC dependency.
+        var apiKeyAvail = !!_aiProviderResolve_();
         var aiRich = null;
         if (apiKeyAvail) {
           try { sendWhatsAppMessage(fromPhone, '🤖 מנתח את ההוצאה...'); } catch (_pmErr) {}
@@ -8220,7 +9296,16 @@ function processExpense(text, fromPhone) {
         var TIER_SOFT       = 0.70;
         var TIER_LIST_SMALL = 0.40;
 
-        if (aiOK && aiConf >= TIER_DIRECT) {
+        // NEVER-silently-corrupt invariant: the normalized contract decides
+        // whether this result may be auto-written. should_ask_user is true
+        // whenever confidence < max(0.6 hard floor, env threshold) OR the
+        // category is the misc/unknown bucket. We REQUIRE !should_ask_user to
+        // write — so a low-confidence/ambiguous AI result can never write a
+        // financial row, regardless of how TIER_DIRECT is tuned.
+        var aiShouldAsk = aiRich && aiRich.contract ? !!aiRich.contract.should_ask_user : true;
+        var aiMayWrite  = aiOK && aiConf >= TIER_DIRECT && !aiShouldAsk;
+
+        if (aiMayWrite) {
           // Tier A: write directly, no preliminary, no soft hint.
           try { _learnedSave(soleItem.description, { category: aiRich.category, subcategory: aiRich.subcategory }, 'ai'); } catch (_lsErr) {}
           try {
@@ -8287,10 +9372,13 @@ function processExpense(text, fromPhone) {
                 ai_category: aiRich ? aiRich.category : '',
                 ai_confidence: aiConf,
                 via: 'ambiguity_list_sent',
+                // Held for the user to confirm — flagged needs_review so the
+                // ML-audit trail records that nothing was auto-written.
+                needs_review: true,
                 from_phone: fromPhone
               });
             } catch (_e) {}
-            Logger.log('processExpense: sent interactive list (' + listSize + ' opts) for "' + soleItem.description + '" aiConf=' + aiConf);
+            Logger.log('processExpense: sent interactive list (' + listSize + ' opts) for "' + soleItem.description + '" aiConf=' + aiConf + ' shouldAsk=' + aiShouldAsk);
             return { ambiguousSent: true };
           } catch (ambErr) {
             Logger.log('processExpense: ambiguity-list failed, falling through: ' + (ambErr && ambErr.stack || ambErr));
@@ -8310,8 +9398,13 @@ function processExpense(text, fromPhone) {
       // signals (matched.isIncome, '+' prefix, categorical fallback) so
       // income rows write FALSE in col H, keeping dashboards correct.
       var __isInc = _resolveIsIncome_(matched, item.originalText || text, matched.category, matched.subcategory);
-      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory + ' isIncome=' + __isInc);
-      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(matched.subcategory), sanitizeForSheet(item.description), 'WhatsApp', !__isInc]);
+      // ROOT-CAUSE FIX (disappearing money): canonicalize the granular sub to a
+      // dashboard ROW LABEL before writing col E, else the SUMIFS misses it.
+      var __dashSub = (typeof _normalizeSubForDashboard_ === 'function')
+        ? _normalizeSubForDashboard_(matched.subcategory, matched.category)
+        : matched.subcategory;
+      Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory + ' dashSub=' + __dashSub + ' isIncome=' + __isInc);
+      sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(__dashSub), sanitizeForSheet(item.description), 'WhatsApp', !__isInc]);
       Logger.log('processExpense: appendRow DONE, lastRow=' + sheet.getLastRow());
       // ── Original-text cell note (column F = פירוט). Records the raw user
       // message + optional FX conversion line. Capture row number BEFORE the
@@ -8732,7 +9825,12 @@ function matchCategory(text) {
   if (!text) return _matchCategory_long(text);
   var t = String(text).toLowerCase().trim();
   t = t.replace(/[   ​]/g, ' ').replace(/\s+/g, ' ');
-  var hasBusinessPrefix = /(^|\s)עסק($|\s)/.test(t);
+  // 2026-06-02: accept the clitic prefix forms (בעסק / לעסק / מעסק / העסק /
+  // ועסק) in addition to the standalone עסק, so a natural sentence like
+  // "...הכנסה בעסק..." routes business (e.g. "הכנסה" -> מחזור income). The
+  // boundary anchors ((^|\s) before the optional clitic, ($|\s) after עסק)
+  // keep this tight: "מעסיק" (employer) and "בעסקים" do NOT match.
+  var hasBusinessPrefix = /(^|\s)[בלמהו]?עסק($|\s)/.test(t);
   if (hasBusinessPrefix) {
     var entries = [];
     for (var cat in BUSINESS_CATEGORY_MAP) {
@@ -8759,6 +9857,142 @@ function matchCategory(text) {
     return { category: "עסק", subcategory: "הוצאות תפעוליות", isIncome: false };
   }
   return _matchCategory_long(text);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BARE BUSINESS EXPENSE DETECTOR (2026-06-01)
+//
+// Steven's bug: a natural business expense like "הוצאה עסק תמונות 288 שיווק"
+// (or "עסק תמונות 288 שיווק", "עסק 1200 חומרים", "עסק 2500 שכר") sometimes
+// fell through to the BLOCKING numbered picker ("🏢 עסק — בחר קטגוריה") with
+// no row written, or — for "עובדים" — got mis-bucketed. The owner runs a SINGLE
+// business that writes col D='עסק', so any "עסק [name] [amount] [token]" message
+// should be classified into a canonical business bucket and written immediately,
+// NOT held behind a picker and NOT routed to the personal classifier.
+//
+// This helper is the SINGLE authority for that shape. It runs ONLY after the
+// numbered-business route ("עסק 2 ...", handled in doPost) and the rich-order
+// route ("עסקה יוסי הכנסה ...", parseBusinessOrder_) have both been ruled out.
+//
+// Returns { amount, category:'עסק', subcategory, cleanedDesc, isIncome } when it
+// can confidently treat the message as a bare business expense; else null.
+//
+// Subcategory is emitted as a CANONICAL dashboard bucket name (one of the keys
+// _normalizeBizSub_ recognizes) so the row both (a) writes col E the company
+// dashboard SUMIFS can sum and (b) lets _updateBusinessDashboard_ mirror it into
+// the עסק תמונות marketing/shipping/raw-materials/operations rows. Labor tokens
+// (עובד/שכר) and tax tokens (מס/מיסים) map to הוצאות תפעוליות — the company
+// dashboard's catch-all overhead bucket — because there is no dedicated labor or
+// tax dashboard row (verified against _BIZ_DASH_SUBS). Mapping them to a
+// non-existent bucket would silently drop the money, which we must never do.
+function _classifyBareBusinessExpense_(text) {
+  var raw = String(text || '').trim();
+  if (!raw) return null;
+
+  // Normalize odd whitespace (NBSP / narrow-NBSP / zero-width) to plain spaces.
+  var t = raw.replace(/[  ​]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Must contain the Hebrew word עסק, standalone OR in a clitic prefix form
+  // (בעסק / לעסק / מעסק / העסק / ועסק), optionally directly preceded by
+  // הוצאה / הוצאת. The trailing boundary keeps the suffix forms out: "עסקה"
+  // / "עסקי" / "עסקים" still do NOT trigger (those are order / adjective /
+  // list-command words). 2026-06-02: clitic prefix added so "בעסק 288 שיווק"
+  // is recognised as a bare business expense too.
+  if (!/(^|\s)[בלמהו]?עסק(\s|$)/.test(t)) return null;
+
+  // GUARD 1: numbered business ("עסק 2 שיווק 300"). That route writes to its own
+  // tab and MUST win. Never hijack it here.
+  try {
+    if (typeof _parseBusinessNumberPrefix_ === 'function' && _parseBusinessNumberPrefix_(t)) return null;
+  } catch (_bnErr) {}
+
+  // GUARD 2: rich order ("עסקה יוסי הכנסה 10000 עובדים 2500 חומרים 1200"). That
+  // route writes a structured multi-row order and MUST win.
+  try {
+    if (typeof parseBusinessOrder_ === 'function' && parseBusinessOrder_(t)) return null;
+  } catch (_boErr) {}
+
+  // First positive amount anywhere in the message (integer or decimal). We use
+  // the same lenient scan the עסק block uses so word order is irrelevant
+  // ("עסק תמונות 288 שיווק" and "עסק תמונות שיווק 288" both work).
+  var amM = t.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)(?=$|[\s,.])/);
+  if (!amM) return null;
+  var amount = parseFloat(amM[1]);
+  if (!(amount > 0)) return null;
+
+  // Strip, in order: a leading הוצאה/הוצאת, the עסק token, an OPTIONAL single
+  // following business-NAME word (a Hebrew/Latin word that is NOT itself a known
+  // business-category token, e.g. "תמונות"), and the amount. Whatever remains is
+  // the subcategory phrase we classify.
+  var rest = t
+    .replace(/^\s*(?:הוצאה|הוצאת)\s+/, '')   // optional expense lead-in
+    .replace(/(^|\s)[בלמהו]?עסק(\s|$)/, ' ')  // the business marker (+clitic prefix)
+    .replace(/,/g, ' ')
+    .replace(new RegExp('(^|\\s)' + amount.toString().replace('.', '\\.') + '(\\s|$)'), ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Canonical-bucket token map. Keys are the words a user types; values are the
+  // EXACT dashboard bucket names _normalizeBizSub_ recognizes.
+  var TOKEN_TO_CANON = {
+    'שיווק': 'עלות שיווק', 'פרסום': 'עלות שיווק', 'קמפיין': 'עלות שיווק',
+    'משלוח': 'משלוחים והתקנות', 'משלוחים': 'משלוחים והתקנות',
+    'התקנה': 'משלוחים והתקנות', 'התקנות': 'משלוחים והתקנות', 'אריזה': 'משלוחים והתקנות',
+    'חומר': 'עלות חומרי גלם', 'חומרים': 'עלות חומרי גלם',
+    'חומר גלם': 'עלות חומרי גלם', 'חומרי גלם': 'עלות חומרי גלם', 'רכש': 'עלות חומרי גלם',
+    // Labor + tax + generic ops all funnel to the operations overhead bucket,
+    // the only catch-all the company dashboard actually sums.
+    'עובד': 'הוצאות תפעוליות', 'עובדים': 'הוצאות תפעוליות', 'שכר': 'הוצאות תפעוליות',
+    'תפעול': 'הוצאות תפעוליות', 'תפעולי': 'הוצאות תפעוליות', 'תפעוליות': 'הוצאות תפעוליות',
+    'מס': 'הוצאות תפעוליות', 'מיסים': 'הוצאות תפעוליות', 'מסים': 'הוצאות תפעוליות',
+    'יועץ': 'יועצים', 'יועצים': 'יועצים'
+  };
+
+  var sub = null;
+
+  // (1) Explicit token map on the CLEANED remainder, longest token first so
+  // multi-word phrases like "חומר גלם" beat the bare "חומר". This runs BEFORE
+  // matchCategory on purpose: the cleaned remainder ("עובדים", "שכר") is the
+  // true subcategory phrase, whereas matchCategory scans the whole noisy string
+  // and can mis-hit on a substring accident (e.g. the materials keyword "בדים"
+  // is a substring of "עובדים"). The token map is the precise authority for the
+  // canonical business buckets.
+  if (rest) {
+    var lowRest = rest.toLowerCase();
+    var toks = Object.keys(TOKEN_TO_CANON).sort(function (a, b) { return b.length - a.length; });
+    for (var i = 0; i < toks.length; i++) {
+      if (typeof _kflKwHit_ === 'function' ? _kflKwHit_(lowRest, toks[i].toLowerCase())
+                                           : lowRest.indexOf(toks[i].toLowerCase()) >= 0) {
+        sub = TOKEN_TO_CANON[toks[i]];
+        break;
+      }
+    }
+  }
+
+  // (2) Fall back to the real classifier on the full message: if matchCategory
+  // sees a business keyword and returns a recognized עסק dashboard bucket, use
+  // it (covers business keywords not in the small token map, e.g. brand names
+  // like "פייסבוק" / "אדובי" -> שיווק / תפעוליות).
+  if (!sub) {
+    try {
+      var mc = (typeof matchCategory === 'function') ? matchCategory(t) : null;
+      if (mc && mc.category === 'עסק' && mc.subcategory &&
+          typeof _normalizeBizSub_ === 'function' && _normalizeBizSub_(mc.subcategory)) {
+        sub = mc.subcategory;
+      }
+    } catch (_mcErr) {}
+  }
+
+  // (3) Last resort: nothing recognizable. Keep the cleaned token as the
+  // subcategory but STILL force category=עסק (never fall through to personal).
+  if (!sub) sub = (rest || 'הוצאות תפעוליות');
+
+  var cleanedDesc = rest || sub;
+  // Income only if the matched bucket is revenue (מחזור) — bare business
+  // EXPENSES are never income here.
+  var isIncome = (sub === 'מחזור');
+
+  return { amount: amount, category: 'עסק', subcategory: sub, cleanedDesc: cleanedDesc, isIncome: isIncome };
 }
 
 // A char that can be part of a word (digit, Latin, or Hebrew letter).
@@ -8907,15 +10141,42 @@ function matchCategorySmart(text, fromPhone) {
     }
   } catch (_glLookErr) { Logger.log('matchCategorySmart global err: ' + _glLookErr.message); }
 
-  // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only)
-  var ai = _aiCategorize(text, fromPhone);
-  if (ai) {
-    Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory);
-    _learnedSave(text, ai); // remember for next time
-    return ai;
+  // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only).
+  //
+  // NEVER-silently-corrupt invariant (Steven): this path is hit on the
+  // MULTI-ITEM write loop (parsed.items.forEach → matchCategorySmart →
+  // appendRow) where there is no per-item pre-pass to gate the AI. So we
+  // MUST enforce the same classify-contract here as the single-item path:
+  // we only accept the AI category when the normalized contract says it is
+  // safe to auto-write (!should_ask_user) AND confidence clears the 0.6 hard
+  // floor. A low-confidence / ambiguous AI result (e.g. {אוכל, 0.45}) must
+  // NOT be returned as a confident category — instead we fall through to the
+  // keyword/DEFAULT match (שונות ואחרים / שונות), so the caller files it in
+  // the explicit needs-review bucket rather than silently writing a wrong
+  // financial row. (Premium gate + 'בלתי מזוהה' filter preserved from the
+  // old thin _aiCategorize wrapper.)
+  if (!fromPhone || _hasActivePremium_(fromPhone)) {
+    var rich = _aiCategorizeRich(text, fromPhone);
+    var richConf = rich
+      ? ((typeof rich.confidence_score === 'number' ? rich.confidence_score
+         : (rich.contract && typeof rich.contract.confidence_score === 'number' ? rich.contract.confidence_score
+         : (typeof rich.confidence === 'number' ? rich.confidence : 0))))
+      : 0;
+    if (rich && rich.category && rich.category !== 'בלתי מזוהה' &&
+        rich.contract && !rich.contract.should_ask_user && richConf >= 0.6) {
+      var ai = { category: rich.category, subcategory: rich.subcategory };
+      Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory + ' (conf=' + richConf + ')');
+      _learnedSave(text, ai); // remember for next time
+      return ai;
+    }
+    if (rich) {
+      Logger.log('matchCategorySmart: AI result for "' + text + '" withheld (shouldAsk=' +
+        (rich.contract ? rich.contract.should_ask_user : 'n/a') + ', conf=' + richConf +
+        ') — falling through to DEFAULT so the caller routes to needs_review');
+    }
   }
 
-  return matched; // DEFAULT_CATEGORY
+  return matched; // DEFAULT_CATEGORY (שונות ואחרים / שונות) → caller asks / needs_review
 }
 
 // Returns top-N category guesses for ambiguous text — used to populate the
@@ -9179,24 +10440,225 @@ function _hasActivePremium_(fromPhone) {
   }
 }
 
-function _aiCategorize(text, fromPhone) {
-  // Premium gating — AI categorisation is Pro+. Free users fall back
-  // to CATEGORY_MAP keyword matching + learned cache. The bot reply
-  // path adds an upsell line on the way out so the upgrade prompt is
-  // contextual ("we couldn't categorise this — Pro would").
-  if (fromPhone && !_hasActivePremium_(fromPhone)) {
+// ════════════════════════════════════════════════════════════════════════════
+// 🔑 AI PROVIDER RESOLUTION (env / Script-Property only — NO hardcoded keys)
+// ----------------------------------------------------------------------------
+// The classifier is provider-agnostic. Keys are read ONLY from Apps Script
+// Script Properties (the GAS analogue of env vars). We pick the FIRST one that
+// is configured, in this priority order:
+//     OPENAI_API_KEY → GEMINI_API_KEY → XAI_API_KEY → ANTHROPIC_API_KEY → OPENROUTER_API_KEY
+// If NONE is set, the resolver returns null and the LLM step is skipped
+// gracefully (the bot still runs on its deterministic keyword/cache pipeline).
+//
+// Also honoured for the Node contract test (which has no PropertiesService):
+//   if a global `process` with `env` exists, those values are used as the key
+//   source. In Apps Script `process` is undefined, so production always reads
+//   the Script Properties.
+// ════════════════════════════════════════════════════════════════════════════
+var _AI_PROVIDER_PRIORITY_ = [
+  { provider: 'openai',     key: 'OPENAI_API_KEY' },
+  { provider: 'gemini',     key: 'GEMINI_API_KEY' },
+  { provider: 'xai',        key: 'XAI_API_KEY' },
+  { provider: 'anthropic',  key: 'ANTHROPIC_API_KEY' },
+  { provider: 'openrouter', key: 'OPENROUTER_API_KEY' }
+];
+
+// Read a single property from Script Properties, falling back to process.env
+// (used only by the offline Node test harness). Never throws.
+function _aiReadKey_(name) {
+  try {
+    var v = PropertiesService.getScriptProperties().getProperty(name);
+    if (v != null && String(v).trim() !== '') return String(v).trim();
+  } catch (_psErr) {}
+  try {
+    if (typeof process !== 'undefined' && process && process.env && process.env[name] != null && String(process.env[name]).trim() !== '') {
+      return String(process.env[name]).trim();
+    }
+  } catch (_envErr) {}
+  return null;
+}
+
+// Returns {provider, keyName, key} for the first configured provider, or null
+// when no AI key is present. Pure, side-effect-free, never throws.
+function _aiProviderResolve_() {
+  for (var i = 0; i < _AI_PROVIDER_PRIORITY_.length; i++) {
+    var entry = _AI_PROVIDER_PRIORITY_[i];
+    var k = _aiReadKey_(entry.key);
+    if (k) return { provider: entry.provider, keyName: entry.key, key: k };
+  }
+  return null;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 🤖 PROVIDER DISPATCH — send the same system+user prompt to whichever provider
+// resolved, return the RAW text reply (or null on any failure). All branches
+// use muteHttpExceptions and degrade to null so a provider outage never throws.
+// OpenAI / xAI / OpenRouter share the OpenAI chat-completions schema. Gemini
+// and Anthropic each use their own. The shared JSON contract is enforced by the
+// caller (it parses the text out of whatever the model returns).
+// ════════════════════════════════════════════════════════════════════════════
+function _aiChatComplete_(provider, key, systemPrompt, userMsg) {
+  try {
+    if (provider === 'anthropic') {
+      var aResp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        payload: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 140,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userMsg }]
+        }),
+        muteHttpExceptions: true
+      });
+      if (aResp.getResponseCode() !== 200) { Logger.log('_aiChatComplete_ anthropic ' + aResp.getResponseCode() + ': ' + aResp.getContentText().slice(0, 200)); return null; }
+      var aBody = JSON.parse(aResp.getContentText());
+      return (aBody.content && aBody.content[0] && aBody.content[0].text) || '';
+    }
+
+    if (provider === 'gemini') {
+      var gModels = [];
+      var gConfigured = _aiReadKey_('GEMINI_MODEL');
+      if (gConfigured) gModels.push(gConfigured);
+      ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-flash-latest'].forEach(function (m) { if (gModels.indexOf(m) < 0) gModels.push(m); });
+      var gPayload = JSON.stringify({
+        systemInstruction: { parts: [{ text: String(systemPrompt || '') }] },
+        contents: [{ role: 'user', parts: [{ text: String(userMsg || '') }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 180 }
+      });
+      for (var gi = 0; gi < gModels.length; gi++) {
+        var gUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(gModels[gi]) + ':generateContent?key=' + encodeURIComponent(key);
+        var gResp = UrlFetchApp.fetch(gUrl, { method: 'post', contentType: 'application/json', payload: gPayload, muteHttpExceptions: true });
+        if (gResp.getResponseCode() === 200) {
+          var gBody = JSON.parse(gResp.getContentText());
+          var gCand = gBody && gBody.candidates && gBody.candidates[0];
+          var gTxt = gCand && gCand.content && gCand.content.parts && gCand.content.parts[0] && gCand.content.parts[0].text;
+          if (gTxt) return String(gTxt);
+        } else {
+          Logger.log('_aiChatComplete_ gemini ' + gModels[gi] + ' → ' + gResp.getResponseCode());
+        }
+      }
+      return null;
+    }
+
+    // OpenAI-compatible providers: openai, xai, openrouter.
+    var url, model;
+    if (provider === 'xai') { url = 'https://api.x.ai/v1/chat/completions'; model = _aiReadKey_('XAI_MODEL') || 'grok-3-mini'; }
+    else if (provider === 'openrouter') { url = 'https://openrouter.ai/api/v1/chat/completions'; model = _aiReadKey_('OPENROUTER_MODEL') || 'openai/gpt-4o-mini'; }
+    else { url = 'https://api.openai.com/v1/chat/completions'; model = _aiReadKey_('OPENAI_MODEL') || 'gpt-4o-mini'; }
+    var oResp = UrlFetchApp.fetch(url, {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      payload: JSON.stringify({
+        model: model,
+        max_tokens: 180,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMsg }
+        ]
+      }),
+      muteHttpExceptions: true
+    });
+    if (oResp.getResponseCode() !== 200) { Logger.log('_aiChatComplete_ ' + provider + ' ' + oResp.getResponseCode() + ': ' + oResp.getContentText().slice(0, 200)); return null; }
+    var oBody = JSON.parse(oResp.getContentText());
+    return (oBody.choices && oBody.choices[0] && oBody.choices[0].message && oBody.choices[0].message.content) || '';
+  } catch (e) {
+    Logger.log('_aiChatComplete_ ' + provider + ' err: ' + (e && e.message));
     return null;
   }
-  var rich = _aiCategorizeRich(text, fromPhone);
-  if (!rich) return null;
-  if (rich.category === 'בלתי מזוהה') return null;
-  return { category: rich.category, subcategory: rich.subcategory, confidence: rich.confidence, reason: rich.reason };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 📐 CLASSIFY CONTRACT NORMALIZER
+// ----------------------------------------------------------------------------
+// Maps a raw AI classification (and the parser-supplied amount/currency/etc.)
+// into the canonical 13-field contract that the whole pipeline agrees on:
+//
+//   {intent, amount, currency, type, profile_type, category, subcategory,
+//    project_name, business_name, confidence_score, reason,
+//    should_ask_user, needs_review}
+//
+// SAFETY INVARIANT (Steven, NEVER-silently-corrupt rule):
+//   A low-confidence or ambiguous (שונות / שונות ואחרים / בלתי מזוהה) result
+//   MUST set should_ask_user=true and needs_review=true so the caller asks the
+//   user instead of writing a financial row. The hard floor is 0.6: below that
+//   we ALWAYS ask, regardless of how the env threshold is tuned. The ask
+//   threshold is max(0.6, KFL_CONFIDENCE_ASK_THRESHOLD) so raising the env knob
+//   only makes the bot MORE cautious, never less.
+// ════════════════════════════════════════════════════════════════════════════
+var _AI_AMBIGUOUS_CATEGORIES_ = ['שונות', 'שונות ואחרים', 'בלתי מזוהה'];
+
+// Hard confidence floor below which we ALWAYS ask the user — the contract-level
+// invariant that no env tuning can lower.
+function _aiAskFloor_() { return 0.6; }
+
+function _normalizeAiClassifyResult_(rich, opts) {
+  opts = opts || {};
+  var cat = rich && rich.category ? String(rich.category).trim() : '';
+  var sub = rich && rich.subcategory ? String(rich.subcategory).trim() : '';
+  var conf = (rich && typeof rich.confidence === 'number' && !isNaN(rich.confidence)) ? rich.confidence : 0;
+  if (conf < 0) conf = 0; if (conf > 1) conf = 1;
+
+  var isAmbiguous = !cat || _AI_AMBIGUOUS_CATEGORIES_.indexOf(cat) >= 0;
+
+  // Ask threshold: the env knob, but never below the 0.6 hard floor.
+  var envThreshold;
+  try { envThreshold = _kflConfidenceAskThreshold_(); } catch (_e) { envThreshold = 0.85; }
+  var askThreshold = Math.max(_aiAskFloor_(), (typeof envThreshold === 'number' ? envThreshold : 0.85));
+
+  // INVARIANT: ask whenever confidence is below the bar OR the category is the
+  // misc/unknown bucket. needs_review mirrors this — anything NOT confidently
+  // auto-written is flagged for human review rather than silently filed.
+  var shouldAsk = isAmbiguous || conf < askThreshold;
+
+  // type (income vs expense): prefer an explicit caller hint, else derive from
+  // the category (income categories → 'income'). Never guessed by the model.
+  var type = opts.type;
+  if (type !== 'income' && type !== 'expense') {
+    var inc = false;
+    try { inc = (typeof _isIncomeCategory_ === 'function') ? _isIncomeCategory_(cat, sub) : false; } catch (_incErr) {}
+    type = inc ? 'income' : 'expense';
+  }
+
+  return {
+    intent: opts.intent || 'log_expense',
+    amount: (typeof opts.amount === 'number' && !isNaN(opts.amount)) ? opts.amount : null,
+    currency: opts.currency || 'ILS',
+    type: type,
+    profile_type: opts.profile_type || null,
+    category: cat || 'בלתי מזוהה',
+    subcategory: sub || 'לא ברור',
+    project_name: opts.project_name || null,
+    business_name: opts.business_name || null,
+    confidence_score: conf,
+    reason: rich && rich.reason ? String(rich.reason).slice(0, 80) : '',
+    should_ask_user: !!shouldAsk,
+    needs_review: !!shouldAsk
+  };
+}
+
+// DEPRECATED / DISABLED (2026-05-31 multi-item-guard):
+//   This thin wrapper used to return ANY AI category != 'בלתי מזוהה',
+//   DISCARDING contract.should_ask_user / needs_review and the 0.6 hard
+//   confidence floor. That let a low-confidence/ambiguous AI result (e.g.
+//   {אוכל, 0.45}) be written SILENTLY when reached via the multi-item
+//   matchCategorySmart path — bypassing the NEVER-silently-corrupt invariant.
+//   matchCategorySmart now calls _aiCategorizeRich directly and enforces the
+//   contract inline. This wrapper is retired and returns null so NO code path
+//   can ever bypass the classify contract again. Do not re-introduce a caller.
+function _aiCategorize(text, fromPhone) {
+  Logger.log('_aiCategorize: DISABLED (multi-item-guard) — use _aiCategorizeRich + contract gating');
+  return null;
 }
 
 function _aiCategorizeRich(text, fromPhone) {
   try {
-    var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-    if (!apiKey) return null;
+    // Provider keys come ONLY from env / Script Properties (no hardcoded keys).
+    // Pick the first configured provider; skip AI gracefully if none is set so
+    // the bot keeps running on its deterministic keyword/cache pipeline.
+    var ai = _aiProviderResolve_();
+    if (!ai) return null;
 
     // Behavior learning from the onboarding questionnaire: if we know how this
     // customer tracks money (trackingType from profile:{phone}), give the model
@@ -9311,32 +10773,17 @@ function _aiCategorizeRich(text, fromPhone) {
 
     var userMsg = 'תיאור: "' + String(text || '').slice(0, 200) + '"\n\nReturn JSON only with confidence and reason.';
 
-    var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-      method: 'post',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      payload: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 140,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }]
-      }),
-      muteHttpExceptions: true
-    });
-
-    if (response.getResponseCode() !== 200) {
-      Logger.log('_aiCategorizeRich: API error ' + response.getResponseCode() + ': ' + response.getContentText().slice(0, 200));
+    // Send to the resolved provider (Anthropic / OpenAI / Gemini / xAI /
+    // OpenRouter). Returns the raw text reply or null on any failure. The
+    // structured-JSON contract below is provider-independent.
+    var reply = _aiChatComplete_(ai.provider, ai.key, systemPrompt, userMsg);
+    if (reply == null || reply === '') {
+      Logger.log('_aiCategorizeRich: provider ' + ai.provider + ' returned no reply');
       return null;
     }
-
-    var body = JSON.parse(response.getContentText());
-    var reply = (body.content && body.content[0] && body.content[0].text) || '';
     var jsonMatch = String(reply).match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      Logger.log('_aiCategorizeRich: no JSON in reply: ' + reply.slice(0, 200));
+      Logger.log('_aiCategorizeRich: no JSON in reply: ' + String(reply).slice(0, 200));
       return null;
     }
     var parsed;
@@ -9357,7 +10804,11 @@ function _aiCategorizeRich(text, fromPhone) {
 
     if (category === 'שונות' || category === 'שונות ואחרים') {
       Logger.log('_aiCategorizeRich: model returned שונות despite instruction — treating as low-confidence בלתי מזוהה');
-      return { category: 'בלתי מזוהה', subcategory: 'לא ברור', confidence: Math.min(confidence, 0.4), reason: reason || 'מודל הציע שונות' };
+      var miscRich = { category: 'בלתי מזוהה', subcategory: 'לא ברור', confidence: Math.min(confidence, 0.4), reason: reason || 'מודל הציע שונות' };
+      // Attach the normalized 13-field contract. For the misc/ambiguous bucket
+      // it forces should_ask_user + needs_review = true (NEVER silently write).
+      miscRich.contract = _normalizeAiClassifyResult_(miscRich, { text: text });
+      return miscRich;
     }
 
     var validCats = ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','בריאות','עסק','שירותים','בידור','חינוך','ילדים','ממשלה ומיסים','פיננסים','בלתי מזוהה'];
@@ -9365,7 +10816,12 @@ function _aiCategorizeRich(text, fromPhone) {
       Logger.log('_aiCategorizeRich: invalid category from AI: ' + category);
       return null;
     }
-    return { category: category, subcategory: subcategory, confidence: confidence, reason: reason };
+    var rich = { category: category, subcategory: subcategory, confidence: confidence, reason: reason };
+    // Normalized 13-field classify contract. The caller uses
+    // contract.should_ask_user / contract.needs_review to decide whether to
+    // write the row or ask the user (the NEVER-silently-corrupt invariant).
+    rich.contract = _normalizeAiClassifyResult_(rich, { text: text });
+    return rich;
   } catch (e) {
     Logger.log('_aiCategorizeRich error: ' + e.message);
     return null;
@@ -9653,10 +11109,13 @@ function _recurringSuggestionLine_(fromPhone, history, current) {
   try {
     var cand = _detectRecurringCandidate_(history, current);
     if (!cand) return '';
+    // Recurring-suggestion-shown marker now lives in KV (key unchanged:
+    // 'recsug_'+sha256(phone|desc).slice(0,24), value '1') with a legacy
+    // Script-Property read fallback, so a suggestion already offered before
+    // this migration is never re-offered. Presence-only -> no TTL.
     var markerKey = 'recsug_' + _sha256Hex_((fromPhone || '') + '|' + _normForRecurring_(current.description)).slice(0, 24);
-    var props = PropertiesService.getScriptProperties();
-    if (props.getProperty(markerKey)) return '';   // already offered once
-    props.setProperty(markerKey, '1');
+    if (_seenFlag_(markerKey, 0)) return '';   // already offered once
+    _markFlag_(markerKey, '1', 0);
     return '\n\n🔁 שמתי לב ש"' + cand.desc + '" חוזר כבר ' + cand.count +
            ' חודשים (~' + _money_(cand.amount) + '). רוצה שאוסיף אותו כהוצאה קבועה?\n' +
            '👉 שלח: קבוע ' + cand.desc + ' ' + cand.amount;
@@ -9867,12 +11326,15 @@ function _handleReceiptImage_(fromPhone, image) {
   }
   var monthKey = Utilities.formatDate(rowDate, 'Asia/Jerusalem', 'yyyy-MM');
   var rowDescription = vendor ? (vendor + ' — ' + description) : description;
+  // Canonicalize col E to a dashboard row label so the receipt amount is visible.
+  var __rcptDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+    ? _normalizeSubForDashboard_(matched.subcategory, matched.category) : matched.subcategory;
   sheet.appendRow([
     rowDate,
     monthKey,
     amount,
     sanitizeForSheet(matched.category),
-    sanitizeForSheet(matched.subcategory),
+    sanitizeForSheet(__rcptDashSub),
     sanitizeForSheet(rowDescription),
     'WhatsApp (receipt)',
     true
@@ -10228,13 +11690,29 @@ function _handleObjectiveCommand_(fromPhone, text) {
       }
     }
     if (!horizon || !rest) {
+      // 2026-06-01 FIX: stamp pending-objective state so the user's bare
+      // "1/2/3/4" reply routes to objective-creation (see
+      // _handleObjectivePendingReply_) instead of the expense fast-path.
+      // If a horizon WAS parsed but the description is missing, skip the
+      // horizon question and wait for the goal text directly.
+      if (typeof _objPendSet_ === 'function') {
+        _objPendSet_(clean, horizon ? ('desc:' + horizon) : 'horizon');
+      }
+      if (horizon && !rest) {
+        return { handled: true, replyText:
+          '🎯 מעולה! ומה היעד עצמו?\n\n' +
+          'כתוב לי במשפט אחד מה תרצה להשיג —\n' +
+          'לדוגמה: "לחסוך 1000 לטיול ביוני".'
+        };
+      }
       return { handled: true, replyText:
         '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
         '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
         '2️⃣ ל-6 חודשים   — בינוני (סגירת חוב, קרן חירום)\n' +
         '3️⃣ לשנה הקרובה  — גדול (משכנתא, השקעה, מטרת חיים)\n' +
         '4️⃣ אין לי יעד   — נדבר בהמשך\n\n' +
-        'דוגמה: "יעד חדש חודש לחסוך 1000 לטיול ביוני"'
+        'ענה במספר 1/2/3/4, או שלח בשורה אחת:\n' +
+        '"יעד חדש חודש לחסוך 1000 לטיול ביוני"'
       };
     }
     var r5 = _api_({ phone: clean, action: 'set', horizon: horizon, description: rest });
@@ -10254,6 +11732,9 @@ function _handleObjectiveCommand_(fromPhone, text) {
 
   // Bare "יעד חדש" — start the 2-step conversation
   if (/^יעד\s+חדש$/.test(t)) {
+    // 2026-06-01 FIX: stamp pending-objective state (see helper docs) so the
+    // user's "1/2/3/4" reply routes to objective-creation, not a 1₪ expense.
+    if (typeof _objPendSet_ === 'function') { _objPendSet_(clean, 'horizon'); }
     return { handled: true, replyText:
       '🎯 שאלה אחרונה — מה היעד הפיננסי שלך?\n\n' +
       '1️⃣ לחודש הקרוב   — קצר, ממוקד\n' +
@@ -10265,6 +11746,120 @@ function _handleObjectiveCommand_(fromPhone, text) {
     };
   }
 
+  return { handled: false };
+}
+
+// 2026-06-01 FIX: pending-objective reply dispatcher. Called from doPost
+// BEFORE the expense fast-path. Handles the user's reply to the "יעד חדש"
+// 1/2/3/4 prompt, and the follow-up goal-description text.
+//
+// Returns { handled, replyText } when it consumes the message, or
+// { handled:false } to let normal routing (incl. the expense fast-path)
+// continue. Critically:
+//   - reply "1".."4" (END-ANCHORED) when state == "horizon" -> pick horizon
+//     (1/2/3) or decline (4); NEVER books an expense.
+//   - "1 קפה" is NOT end-anchored, so this returns {handled:false} and the
+//     message books an expense exactly as before.
+//   - cancel words (ביטול / לא / בטל) clear the pending state.
+//   - while waiting for the goal text (state "desc:<h>"), a NEW expense
+//     (text starting with a digit) drops the pending state and falls through
+//     so the user isn't trapped.
+function _handleObjectivePendingReply_(fromPhone, text) {
+  if (!fromPhone || !text) return { handled: false };
+  var clean = String(fromPhone).replace(/[^0-9]/g, '');
+  if (!clean) return { handled: false };
+  var state = (typeof _objPendGet_ === 'function') ? _objPendGet_(clean) : null;
+  if (!state) return { handled: false };
+  var t = String(text).trim();
+  if (!t) return { handled: false };
+
+  // Cancel words clear the flow from any stage.
+  if (/^(ביטול|בטל|לא|עזוב|תעזוב|cancel)$/i.test(t)) {
+    if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+    return { handled: true, replyText: '👌 בוטל. כשתרצה לקבוע יעד, שלח "יעד חדש".' };
+  }
+
+  // Stage 1: waiting for the 1/2/3/4 horizon pick.
+  if (state === 'horizon') {
+    var m = t.match(/^([1-4])$/);
+    if (!m) {
+      // Not an end-anchored 1-4 pick (e.g. "1 קפה", or free text). Let it
+      // fall through so it books as an expense / hits other routers. We keep
+      // the pending state until TTL so a clean "1" right after still works.
+      return { handled: false };
+    }
+    var pick = m[1];
+    if (pick === '4') {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: true, replyText:
+        '👍 אין בעיה, נדבר על יעד בהמשך.\n' +
+        'מתי שתרצה — שלח "יעד חדש".'
+      };
+    }
+    var horizonByPick = { '1': 'month', '2': 'six_months', '3': 'year' };
+    var horizon = horizonByPick[pick];
+    if (typeof _objPendSet_ === 'function') { _objPendSet_(clean, 'desc:' + horizon); }
+    var horizonHe = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    return { handled: true, replyText:
+      '🎯 מעולה — יעד ' + horizonHe[horizon] + '.\n\n' +
+      'ומה היעד עצמו? כתוב לי במשפט אחד —\n' +
+      'לדוגמה: "לחסוך 1000 לטיול ביוני".'
+    };
+  }
+
+  // Stage 2: a horizon was picked; this message is the goal description.
+  var dm = String(state).match(/^desc:(month|six_months|year)$/);
+  if (dm) {
+    var h = dm[1];
+    // A new expense (leading digit) drops the pending objective so the user
+    // isn't trapped mid-flow — mirrors the pending-category hijack guard.
+    if (/^\s*\d/.test(t)) {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: false };
+    }
+    var desc = t.slice(0, 200);
+    // Reuse the same API the rest of _handleObjectiveCommand_ uses.
+    var base = (typeof KESEFLE_API_BASE !== 'undefined') ? KESEFLE_API_BASE : '';
+    var secret = '';
+    try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
+    if (!base || !secret) {
+      if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+      return { handled: true, replyText: '😬 שגיאת קונפיגורציה (יעדים).' };
+    }
+    var resp;
+    try {
+      resp = UrlFetchApp.fetch(base + '/api/objectives/action', {
+        method: 'post', contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': secret },
+        payload: JSON.stringify({ phone: clean, action: 'set', horizon: h, description: desc }),
+        muteHttpExceptions: true,
+      });
+    } catch (e) {
+      // Keep state so the user can retry the description.
+      return { handled: true, replyText: '😬 שגיאה זמנית. נסה לשלוח את היעד שוב.' };
+    }
+    var code = resp.getResponseCode();
+    if (code !== 200) {
+      var je = {};
+      try { je = JSON.parse(resp.getContentText() || '{}'); } catch (_) {}
+      return { handled: true, replyText: '😬 ' + (je.error || ('שגיאה ' + code)) };
+    }
+    if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
+    var j = {};
+    try { j = JSON.parse(resp.getContentText() || '{}'); } catch (_) {}
+    var horizonHe2 = { month: 'לחודש הקרוב', six_months: 'ל-6 חודשים', year: 'לשנה הקרובה' };
+    var savedDesc = (j.objective && j.objective.description) || desc;
+    var savedHor = (j.objective && j.objective.horizon) || h;
+    return { handled: true, replyText:
+      '✅ יעד חדש נקבע ' + horizonHe2[savedHor] + ':\n\n' +
+      '"' + savedDesc + '"\n\n' +
+      '💡 שלח "יעד שלי" כדי לראות את הסטטוס בכל זמן.\n' +
+      '   "השגתי יעד" כשמסיימים, או "השתק יעד" כדי להפסיק תזכורות.'
+    };
+  }
+
+  // Unknown state — clear it defensively and let routing continue.
+  if (typeof _objPendClear_ === 'function') { _objPendClear_(clean); }
   return { handled: false };
 }
 
@@ -10544,7 +12139,10 @@ function _handleCategoryCorrection_(fromPhone, text) {
 
     var llmTail = '';
     try {
-      var extracted = _learnExpandedKeywords_(pend.originalText, pend.newCategory);
+      // Pass the ALREADY-RESOLVED (category, subcategory) so learned rows carry
+      // the real subcategory (col E) — re-resolving pend.newCategory inside
+      // would double-match and corrupt the pair (AUDIT_BOT_LLM_SAFETY F1).
+      var extracted = _learnExpandedKeywords_(pend.originalText, __resolved.category, __resolved.subcategory);
       if (extracted && extracted.length) {
         llmTail = '\n🧠 למדתי גם: ' + extracted.join(', ');
       }
@@ -10560,9 +12158,63 @@ function _handleCategoryCorrection_(fromPhone, text) {
   }
 }
 
-function _learnExpandedKeywords_(text, category) {
+// 2026-05-31 (AUDIT_BOT_LLM_SAFETY Finding 1): canonical top-level category
+// whitelist. Derived at runtime from CATEGORY_MAP (the same source the תנועות
+// data-validation dropdown uses, line ~11170) + DEFAULT_CATEGORY + the static
+// list _aiCategorizeRich already validates against. Anything NOT in this set
+// is a category the dashboard SUMIFS can't sum, so the learned-keyword writers
+// must refuse to persist it (when unsure, do NOT write). Cached per execution.
+var _CANON_CATS_ = null;
+function _isCanonicalCategory_(cat) {
+  var c = String(cat || '').trim();
+  if (!c) return false;
+  if (!_CANON_CATS_) {
+    var set = {};
+    try {
+      if (typeof CATEGORY_MAP !== 'undefined' && Array.isArray(CATEGORY_MAP)) {
+        CATEGORY_MAP.forEach(function (e) { if (e && e.category) set[String(e.category).trim()] = true; });
+      }
+    } catch (_e) {}
+    try { if (typeof DEFAULT_CATEGORY !== 'undefined' && DEFAULT_CATEGORY.category) set[String(DEFAULT_CATEGORY.category).trim()] = true; } catch (_e2) {}
+    // Belt-and-suspenders: the same list _aiCategorizeRich gates AI output on.
+    ['הכנסות','אוכל','תחבורה','הוצאות קבועות','הוצאות זמניות','קניות','בריאות','עסק','שירותים','בידור','חינוך','ילדים','ממשלה ומיסים','פיננסים','בלתי מזוהה']
+      .forEach(function (x) { set[x] = true; });
+    _CANON_CATS_ = set;
+  }
+  return _CANON_CATS_[c] === true;
+}
+
+// 2026-05-31 fix (AUDIT_BOT_LLM_SAFETY Finding 1): `subcategoryArg` is the
+// ALREADY-RESOLVED subcategory (col E) from the correction flow. The caller
+// resolves the (category, subcategory) pair ONCE via _resolveCorrectionPair_
+// and passes both in — we must NOT re-run matchCategory on a value that is
+// already a chosen top-level category (that double-resolve substring-matches
+// junk like "category" → עסק). If a caller omits it (legacy), fall back to
+// resolving here, but never to subcategory==category.
+function _learnExpandedKeywords_(text, category, subcategoryArg) {
   var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   if (!apiKey) return [];
+
+  // 2026-05-31 fix (AUDIT_BOT_LLM_SAFETY Finding 1):
+  // (a) Write the REAL subcategory, never subcategory==category (which broke
+  //     dashboard SUMIFS that key on the real subcategory string).
+  // (b) Validate the category against the canonical set; if the correction
+  //     target isn't a category the dashboard can sum, refuse to learn
+  //     keywords from it — a poisoned learned row would silently mis-route
+  //     every future message that hits the keyword (when unsure, do NOT write).
+  var learnCategory = category;
+  var learnSubcategory = subcategoryArg;
+  if (learnSubcategory == null || learnSubcategory === '') {
+    // Legacy/standalone call: resolve the pair, but only from a raw freeform
+    // value (not an already-chosen category — caller should pass both).
+    var rp = (typeof _resolveCorrectionPair_ === 'function') ? _resolveCorrectionPair_(category) : null;
+    if (rp && rp.category) { learnCategory = rp.category; learnSubcategory = rp.subcategory; }
+  }
+  if (!learnSubcategory) learnSubcategory = learnCategory; // last resort, still better than nothing
+  if (!_isCanonicalCategory_(learnCategory)) {
+    Logger.log('_learnExpandedKeywords_: skip — non-canonical category "' + learnCategory + '" (from "' + category + '")');
+    return [];
+  }
 
   var prompt = 'משתמש כתב הוצאה בעברית: "' + text + '"\n' +
     'הוא תיקן את הקטגוריה ל-"' + category + '".\n' +
@@ -10609,7 +12261,8 @@ function _learnExpandedKeywords_(text, category) {
     rule.keywords.forEach(function (kw) {
       var k = String(kw || '').toLowerCase().trim();
       if (k.length < 2 || k.length > 30) return;
-      _learnedSave(k, { category: category, subcategory: category }, 'llm-extracted');
+      // 2026-05-31 fix: real subcategory (resolved above), not category==subcategory.
+      _learnedSave(k, { category: learnCategory, subcategory: learnSubcategory }, 'llm-extracted');
       saved.push(k);
     });
     return saved;
@@ -10930,7 +12583,9 @@ function getEngineStatus() {
   try {
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('מילון לימוד');
     var learnedCount = sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
-    var aiEnabled = !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+    var _aiProv = null;
+    try { _aiProv = _aiProviderResolve_(); } catch (_aiPErr) {}
+    var aiEnabled = !!_aiProv;
     var keywordCount = (typeof CATEGORY_MAP !== 'undefined') ? CATEGORY_MAP.reduce(function(a,b){ return a + (b.keywords ? b.keywords.length : 0); }, 0) : 0;
     var categoryCount = (typeof CATEGORY_MAP !== 'undefined') ? CATEGORY_MAP.length : 0;
     return '⚡ *מצב המנוע*\n' +
@@ -10941,9 +12596,9 @@ function getEngineStatus() {
       '🥈 *שכבה 2 — Keywords*\n' +
       '   ' + keywordCount + ' מילים פרושות על ' + categoryCount + ' קטגוריות\n' +
       '   ~5ms • חינם\n\n' +
-      '🥉 *שכבה 3 — Claude AI*\n' +
-      '   ' + (aiEnabled ? '✅ מופעל (claude-3-5-haiku)' : '⚠️ לא מופעל (חסר API key)') + '\n' +
-      '   ~800ms • $0.0001/קריאה\n\n' +
+      '🥉 *שכבה 3 — AI*\n' +
+      '   ' + (aiEnabled ? '✅ מופעל (' + _aiProv.provider + ')' : '⚠️ לא מופעל (חסר API key)') + '\n' +
+      '   ~800ms\n\n' +
       '🔒 הכל נשמר ב-Drive שלך. לא אצלנו.';
   } catch (e) {
     return '😬 לא הצלחתי לקרוא מצב מנוע: ' + (e && e.message || '') + '\n💡 ננסה שוב בעוד דקה?';
@@ -11324,6 +12979,14 @@ function migrateDashboardToSUMIFS() {
       continue;
     }
     processed++;
+    // 2026-05-29 FROZEN-YEAR FIX (WS2 HIGH from PR #152 deep-review):
+    // The old code baked `year + '-' + MM` as a literal SUMIFS criterion, so
+    // the dashboard's $B$4 year selector became cosmetic — switching it did
+    // not change totals. Now we wire every formula to $B$4 via SUMPRODUCT +
+    // LEFT(B,4), matching _MDD_buildFormulas_ in MIGRATE_DASHBOARD_FROM_OLD.gs.
+    // See bot/MIGRATE_DASHBOARD_FROM_OLD.gs:203 for the canonical pattern and
+    // why SUMPRODUCT not SUMIFS (Sheets parses "2025-01" as arithmetic).
+    var _MDS_yearExpr = 'IF($B$4="",TEXT(YEAR(TODAY()),"0000"),TEXT($B$4,"0000"))';
     for (let mi = 0; mi < monthCols.length; mi++) {
       const col = monthCols[mi];
       const monthNum = mi + 1;
@@ -11336,7 +12999,12 @@ function migrateDashboardToSUMIFS() {
         transactions.appendRow([dt, monthKey, val, sanitizeForSheet(currentSection), sanitizeForSheet(name), 'מיגרציה אוטומטית מהדשבורד', 'Legacy']);
         legacy++;
       }
-      cell.setFormula('=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, $A' + cellRow + ', תנועות!B:B, "' + monthKey + '"), 0)');
+      var _MDS_mm = monthNum < 10 ? '0' + monthNum : '' + monthNum;
+      cell.setFormula(
+        '=SUMPRODUCT((תנועות!E2:E2000=$A' + cellRow + ')*' +
+        '(תנועות!B2:B2000=' + _MDS_yearExpr + '&"-' + _MDS_mm + '")*' +
+        'תנועות!C2:C2000)'
+      );
       formulas++;
     }
     dashboard.getRange(cellRow, 2).setFormula('=SUM(C' + cellRow + ':N' + cellRow + ')');
@@ -11457,12 +13125,222 @@ var _BIZ_DASH_SUBS = {
   'מיסים': 'הוצאות תפעוליות',
   'אחר': 'הוצאות תפעוליות',
   'שונות': 'הוצאות תפעוליות',
-  'שונות עסק': 'הוצאות תפעוליות'
+  'שונות עסק': 'הוצאות תפעוליות',
+  // 2026-06-02 taxonomy-normalize: product collections roll into the ops bucket
+  // (the company dashboard ops criteria also match *קולקצי*).
+  'קולקציות': 'הוצאות תפעוליות'
 };
 
 function _normalizeBizSub_(subcategory) {
   var s = String(subcategory || '').trim();
   return _BIZ_DASH_SUBS[s] || null;
+}
+
+// ─── Taxonomy normalization (col E -> dashboard row label) ──────────────────
+//
+// ROOT-CAUSE FIX (the "disappearing money" bug): the classifier emits a
+// GRANULAR subcategory into col E (e.g. "אוכל לבית — שופרסל וריאציות",
+// "Electronics - big chains", "שיניים"), but the per-tenant dashboards
+// exact/wildcard-match col E against a much SMALLER set of row labels -- any
+// granular sub that is not a substring of a row label hits NO row and the
+// amount is silently invisible. This MIRRORS normalizeSubcategoryForDashboard
+// in lib/sheet-writer.js (the Vercel write path); keep the two in lock-step.
+//
+// _normalizeSubForDashboard_(sub, category) returns the canonical row label.
+// Pipeline (first match wins) so money is NEVER invisible:
+//   1. business (category === "עסק") -> _BIZ_DASH_SUBS, ops catch-all otherwise.
+//   2. exact personal mapping in _KFL_SUB_TO_DASHBOARD_ROW.
+//   3. split on " — " (U+2014) and retry the prefix.
+//   4. if the value already CONTAINS a personal row label, leave it unchanged.
+//   5. ultimate catch-all "שונות".
+var _KFL_PERSONAL_DASH_ROWS = ['הכנסה 1 — משכורת', 'הכנסה 2 — עסק', 'הכנסה 3 — נוסף', 'שונות (הכנסות)', 'בית', 'מכון כושר', 'אפליקציות', 'תקשורת', 'לימודים', 'ביטוח אישי', 'בנקאות', 'מנויים דיגיטליים', 'חשמל', 'מים', 'תחזוקת בית', 'תינוק', 'מתנות', 'חיות מחמד', 'תרופות', 'חופשות', 'אוכל לבית', 'אוכל בחוץ', 'דלק', 'חניה', 'מונית', 'ליים', 'אחזקת רכב', 'תחבורה ציבורית', 'ביטוח רכב', 'מוסך', 'ביגוד', 'טיפוח', 'בריאות', 'בילויים', 'שונות'];
+
+var _KFL_SUB_TO_DASHBOARD_ROW = {
+  'אוכל בחוץ — אפליקציות משלוח': 'אוכל בחוץ',
+  'מזון רחוב / קיוסקים / חטיפים': 'אוכל בחוץ',
+  'משקאות — מותגים שמופיעים בהוצאות': 'אוכל בחוץ',
+  'אוכל לבית — אורגני ובריאות': 'אוכל לבית',
+  'אוכל לבית — גבינות ומעדנים': 'אוכל לבית',
+  'אוכל לבית — דגים': 'אוכל לבית',
+  'אוכל לבית — חנויות נוחות 24/7': 'אוכל לבית',
+  'אוכל לבית — יין ואלכוהול': 'אוכל לבית',
+  'אוכל לבית — מאפיות ולחם': 'אוכל לבית',
+  'אוכל לבית — סופר מינים אחרים': 'אוכל לבית',
+  'אוכל לבית — סופרמרקטים ארציים': 'אוכל לבית',
+  'אוכל לבית — קמחנים ודברי מאפה': 'אוכל לבית',
+  'אוכל לבית — קצביות': 'אוכל לבית',
+  'אוכל לבית — שווקים פתוחים': 'אוכל לבית',
+  'אוכל לבית — שופרסל וריאציות': 'אוכל לבית',
+  'השכרת רכב': 'אחזקת רכב',
+  'רישוי': 'אחזקת רכב',
+  'רכב שכור': 'אחזקת רכב',
+  'BMW s1000': 'אחזקת רכב',
+  'Accessories': 'ביגוד',
+  'Baby and children stores': 'ביגוד',
+  'International fashion chains': 'ביגוד',
+  'Israeli fashion chains - men': 'ביגוד',
+  'Israeli fashion chains - women': 'ביגוד',
+  'Israeli kids fashion': 'ביגוד',
+  'Luxury and designer brands': 'ביגוד',
+  'Online shopping additional': 'ביגוד',
+  'Shoes - Israeli chains': 'ביגוד',
+  'Specialty retail': 'ביגוד',
+  'Sportswear chains': 'ביגוד',
+  'Toys and games': 'ביגוד',
+  'Travel goods': 'ביגוד',
+  'Underwear and swimwear': 'ביגוד',
+  'ביטוח': 'ביטוח אישי',
+  'ביטוח בנייני ועסקים': 'ביטוח אישי',
+  'ביטוח כללי - חברות נוספות': 'ביטוח אישי',
+  'ביטוחי חיים וחיסכון - מותגי משנה': 'ביטוח אישי',
+  'ספקי אבטחה ואזעקות': 'ביטוח אישי',
+  'אירועים': 'בילויים',
+  'בילוי ויציאה': 'בילויים',
+  'חצי איירון מן': 'בילויים',
+  'יציאות': 'בילויים',
+  'לוטו': 'בילויים',
+  'משחקי מחשב וקונסולה': 'בילויים',
+  'משחקים': 'בילויים',
+  'פלייסטיישן': 'בילויים',
+  'נדל': 'בית',
+  'נדל"ן - אגרות בנייה והיתרים': 'בית',
+  'ספקי מנעולים ושירות חירום': 'בית',
+  'תיווך ונדל': 'בית',
+  'תיווך ונדל"ן - תשלומי שכירות': 'בית',
+  'השקעות': 'בנקאות',
+  'חיסכון ופנסיה - גמל וקרנות השתלמות': 'בנקאות',
+  'פיקדונות, ניהול חשבון ועמלות בנקאיות': 'בנקאות',
+  'שירותים מקצועיים - רואי חשבון ומיסים': 'בנקאות',
+  'שירותים מקצועיים נוספים - יעוץ': 'בנקאות',
+  'שירותים פיננסיים - ברוקרים והשקעות': 'בנקאות',
+  'תוכנות חשבונאות וניהול': 'בנקאות',
+  'תכנון פנסיוני וזכויות': 'בנקאות',
+  'ביטוח רפואי - השלמות וביטוחים פרטיים': 'בריאות',
+  'הוצאות לבעלי חיים - וטרינר ושירותים': 'בריאות',
+  'ספורט ותוספים': 'בריאות',
+  'שיניים': 'בריאות',
+  'שירותי דיור מוגן וגיל הזהב': 'בריאות',
+  'שירותי קלינאות והעצמה': 'בריאות',
+  'שירותי שיקום וגיל הזהב': 'בריאות',
+  'שכר טיפול ושיניים בילדים': 'בריאות',
+  'כביש 6': 'דלק',
+  'טיסות': 'חופשות',
+  'מלונות': 'חופשות',
+  'מרוץ - אוסטריה': 'חופשות',
+  'תיירות': 'חופשות',
+  'Pet food brands': 'חיות מחמד',
+  'Pet stores - chains': 'חיות מחמד',
+  'Veterinary': 'חיות מחמד',
+  'גז': 'חשמל',
+  'Beauty and cosmetics chains': 'טיפוח',
+  'Hair salons and styling': 'טיפוח',
+  'קורקינט': 'ליים',
+  'אקדמיה - אגרות וביטוחי סטודנט': 'לימודים',
+  'חינוך': 'לימודים',
+  'חינוך - אוניברסיטאות ומכללות': 'לימודים',
+  'חינוך - גנים ובתי ספר פרטיים': 'לימודים',
+  'חינוך - חוגים והעשרה': 'לימודים',
+  'חינוך - שיעורים פרטיים ובגרות': 'לימודים',
+  'חינוך וטיפול': 'לימודים',
+  'מוסדות אקדמיים - תקצוב מדינה': 'לימודים',
+  'מוסדות חינוך - מקצועות הרפואה': 'לימודים',
+  'מסלולי לימוד מבוגרים והעצמה': 'לימודים',
+  'מסלולי לימוד מקצועיים ותעודות': 'לימודים',
+  'קורסים מקוונים': 'לימודים',
+  'כושר': 'מכון כושר',
+  'כושר ומנויים': 'מכון כושר',
+  'אפולו': 'מנויים דיגיטליים',
+  'חדשות ומגזינים': 'מנויים דיגיטליים',
+  'סטרימינג': 'מנויים דיגיטליים',
+  'AI ובינה': 'מנויים דיגיטליים',
+  'אבא': 'שונות',
+  'אגרות תעבורה - לרכב ולמשאיות': 'שונות',
+  'אישי': 'שונות',
+  'אלקטרוניקה': 'שונות',
+  'ביטוח לאומי - קצבאות וניכויים מיוחדים': 'שונות',
+  'ביטוח לאומי - שירותים מקוונים': 'שונות',
+  'גיא': 'שונות',
+  'ועדת מנהלת ואיגוד מקצועי': 'שונות',
+  'מוסדות תרבות וטריבליות': 'שונות',
+  'מיסי חברה - תאגידי וניהול': 'שונות',
+  'מיסים ואגרות': 'שונות',
+  'ממשלה - מיסים, אגרות ודוחות': 'שונות',
+  'נסיעות': 'שונות',
+  'ספרים': 'שונות',
+  'קניות מקוונות': 'שונות',
+  'רהיטים': 'שונות',
+  'רוביקון': 'שונות',
+  'שירותי דת והלכה - גמ': 'שונות',
+  'שירותי דת והלכה - גמ"חים': 'שונות',
+  'שירותי דת ומועצות דתיות': 'שונות',
+  'שירותים מיוחדים - גמלאים ונכים': 'שונות',
+  'שירותים מקצועיים - עורכי דין': 'שונות',
+  'תוכניות ושוברי תרבות': 'שונות',
+  'תיירות, אגרות וביטוחי נסיעות': 'שונות',
+  'Bedding and textiles': 'שונות',
+  'Books and culture': 'שונות',
+  'Computer and gaming': 'שונות',
+  'Electronics - big chains': 'שונות',
+  'Eyewear and optics': 'שונות',
+  'Furniture additional': 'שונות',
+  'Furniture and home decor chains': 'שונות',
+  'Garden and plants': 'שונות',
+  'Hardware and DIY': 'שונות',
+  'Home appliances brands': 'שונות',
+  'Home decor and accessories': 'שונות',
+  'Home goods small chains': 'שונות',
+  'Jewelry and watches': 'שונות',
+  'Mobile phones and accessories': 'שונות',
+  'Music stores': 'שונות',
+  'Stationery and office supplies': 'שונות',
+  'Watches additional': 'שונות',
+  'אגף הרישוי - מבחנים לרכב': 'תחבורה ציבורית',
+  'שירותי הסעות פרטיות וצי רכבים': 'תחבורה ציבורית',
+  'תחבורה': 'תחבורה ציבורית',
+  'תחבורה - אגד, דן וחברות אוטובוסים': 'תחבורה ציבורית',
+  'תחבורה - נסיעות לחו': 'תחבורה ציבורית',
+  'תחבורה - נסיעות לחו"ל וטיסות פנים ארץ': 'תחבורה ציבורית',
+  'כלי עבודה': 'תחזוקת בית',
+  'כסאות בטיחות לילדים': 'תינוק',
+  'צעצועים ומשחקי ילדים': 'תינוק',
+  'חשבונות': 'תקשורת',
+  'מוקדי שירות וטלפוניה לעסקים': 'תקשורת',
+  'שירותים אדמיניסטרטיביים': 'תקשורת',
+  'שירותים מקצועיים - SaaS עסקי וIT': 'תקשורת',
+  'Cosmetic supplements': 'תרופות',
+  'Pharmacies extended': 'תרופות',
+};
+
+function _normalizeSubForDashboard_(subcategory, category) {
+  var raw = String(subcategory == null ? '' : subcategory)
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '')
+    .trim();
+  if (!raw) return raw;
+  var cat = String(category == null ? '' : category).trim();
+
+  // 1. business -> canonical company bucket (ops catch-all if unmapped).
+  if (cat === 'עסק') {
+    return _BIZ_DASH_SUBS[raw] || 'הוצאות תפעוליות';
+  }
+  // 2. exact personal mapping.
+  if (Object.prototype.hasOwnProperty.call(_KFL_SUB_TO_DASHBOARD_ROW, raw)) {
+    return _KFL_SUB_TO_DASHBOARD_ROW[raw];
+  }
+  // 3. " — " split.
+  var dash = raw.indexOf(' \u2014 ');
+  if (dash >= 0) {
+    var prefix = raw.slice(0, dash).trim();
+    if (Object.prototype.hasOwnProperty.call(_KFL_SUB_TO_DASHBOARD_ROW, prefix)) {
+      return _KFL_SUB_TO_DASHBOARD_ROW[prefix];
+    }
+    if (_KFL_PERSONAL_DASH_ROWS.indexOf(prefix) >= 0) return prefix;
+  }
+  // 4. already-visible (a row label is a substring of the written value).
+  for (var i = 0; i < _KFL_PERSONAL_DASH_ROWS.length; i++) {
+    if (raw.indexOf(_KFL_PERSONAL_DASH_ROWS[i]) >= 0) return raw;
+  }
+  // 5. ultimate catch-all so the amount is never invisible.
+  return 'שונות';
 }
 
 // Steven 2026-05-25: rewritten to RECOMPUTE the (sub-row x month-col) cell
@@ -11518,10 +13396,11 @@ function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, a
   var hebMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   var monthLabel = hebMonths[monthIdx - 1];
 
-  var dashNames = ['מאזן חברה ' + year, 'מאזן חברה'];
-  for (var d = 0; d < dashNames.length; d++) {
-    var ds = ss.getSheetByName(dashNames[d]);
+  var dashTabs = _businessDashTabs_(ss, year);
+  for (var d = 0; d < dashTabs.length; d++) {
+    var ds = dashTabs[d];
     if (!ds) continue;
+    var dsName = ds.getName();
     var dvals = ds.getDataRange().getValues();
     // For each year-section in this tab, find the row labeled canonSub
     // whose section header (B-cell of an "X4" type row above it) === year.
@@ -11561,14 +13440,14 @@ function _updateBusinessDashboardInSheet_(ss, category, subcategory, monthKey, a
             // what counts as broken.
             if (_isBrokenBotDashFormula_(existingFormula)) {
               cell.setValue(fresh);
-              Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' had BROKEN formula -- cleaned to ₪' + fresh);
+              Logger.log('_updateBusinessDashboardInSheet_: ' + dsName + '!' + cell.getA1Notation() + ' had BROKEN formula -- cleaned to ₪' + fresh);
               return true;
             }
-            Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' has clean formula - preserved');
+            Logger.log('_updateBusinessDashboardInSheet_: ' + dsName + '!' + cell.getA1Notation() + ' has clean formula - preserved');
             return false;
           }
           cell.setValue(fresh);
-          Logger.log('_updateBusinessDashboardInSheet_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' recomputed -> ₪' + fresh + ' (sub=' + canonSub + ', month=' + monthLabel + ', year=' + year + ')');
+          Logger.log('_updateBusinessDashboardInSheet_: ' + dsName + '!' + cell.getA1Notation() + ' recomputed -> ₪' + fresh + ' (sub=' + canonSub + ', month=' + monthLabel + ', year=' + year + ')');
           return true;
         }
       }
@@ -11930,14 +13809,18 @@ function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId, bypassG
     }
     var now = new Date();
     var monthKey = Utilities.formatDate(now, 'Asia/Jerusalem', 'yyyy-MM');
+    // Canonicalize col E to a company-dashboard bucket so the SUMIFS picks it up
+    // (keeps the append + the dashboard recompute below on the same row label).
+    var __ordDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+      ? _normalizeSubForDashboard_(sub, 'עסק') : sub;
     // 8-column schema matches the main 'תנועות' tab exactly so all
     // existing dashboard formulas keep working.
-    tx.appendRow([now, monthKey, amount, 'עסק', sub, description, 'WhatsApp', !isIncome]);
+    tx.appendRow([now, monthKey, amount, 'עסק', __ordDashSub, description, 'WhatsApp', !isIncome]);
 
     // For n=1 only, recompute the per-N dashboard. n>=2 tabs don't have
     // their own dashboard rows yet (next iteration).
     if (n === 1) {
-      try { _updateBusinessDashboardInSheet_(ss, 'עסק', sub, monthKey, amount); }
+      try { _updateBusinessDashboardInSheet_(ss, 'עסק', __ordDashSub, monthKey, amount); }
       catch (_dErr) { Logger.log('biz dash err: ' + (_dErr && _dErr.message)); }
     }
 
@@ -12105,7 +13988,6 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
   if (!noteText) return false;
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var isBiz = (category === 'עסק');
-  var dashNames = isBiz ? ['מאזן חברה 2026', 'מאזן חברה'] : ['מאזן שנתי', 'מאזן אישי'];
   var rowLabel = String(subcategory || '').trim();
   if (isBiz && typeof _normalizeBizSub_ === 'function') {
     var canon = _normalizeBizSub_(subcategory);
@@ -12122,9 +14004,24 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
   if (!yearTag || isNaN(yearTag)) {
     yearTag = parseInt(Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyy'), 10);
   }
-  for (var d = 0; d < dashNames.length; d++) {
-    var ds = ss.getSheetByName(dashNames[d]);
+  // Resolve the target dashboard tab(s). Business goes through the shared
+  // multi-business resolver (covers renamed "עסק תמונות" + "עסק 2/3"...);
+  // personal keeps its fixed two-name lookup. Both collapse to sheet objects.
+  var dashTabs;
+  if (isBiz) {
+    dashTabs = _businessDashTabs_(ss, yearTag);
+  } else {
+    dashTabs = [];
+    var _personalNames = ['מאזן שנתי', 'מאזן אישי'];
+    for (var _pn = 0; _pn < _personalNames.length; _pn++) {
+      var _psh = ss.getSheetByName(_personalNames[_pn]);
+      if (_psh) dashTabs.push(_psh);
+    }
+  }
+  for (var d = 0; d < dashTabs.length; d++) {
+    var ds = dashTabs[d];
     if (!ds) continue;
+    var dsName = ds.getName();
     var dvals = ds.getDataRange().getValues();
     for (var r = 0; r < dvals.length; r++) {
       for (var c = 0; c < dvals[r].length; c++) {
@@ -12136,7 +14033,7 @@ function setDashboardNoteForTransaction_(category, subcategory, monthKey, noteTe
                 var existing = cell.getNote();
                 var combined = _composeNoteWithYearSeparator_(existing, noteText, yearTag);
                 cell.setNote(combined);
-                Logger.log('setDashboardNoteForTransaction_: ' + dashNames[d] + '!' + cell.getA1Notation() + ' += "' + noteText + '" (year ' + yearTag + ')');
+                Logger.log('setDashboardNoteForTransaction_: ' + dsName + '!' + cell.getA1Notation() + ' += "' + noteText + '" (year ' + yearTag + ')');
                 return true;
               }
             }
@@ -13770,13 +15667,15 @@ function installKesefleBot() {
     err++;
   }
 
-  // 4. Optional: ANTHROPIC_API_KEY (AI fallback)
-  var ai = props.getProperty('ANTHROPIC_API_KEY');
-  if (!ai) {
-    report.push('⚠️  ANTHROPIC_API_KEY — not set (AI fallback disabled, bot still works with 18,725 keywords)');
+  // 4. Optional: AI provider key (AI fallback). Any one of
+  // OPENAI/GEMINI/XAI/ANTHROPIC/OPENROUTER enables it; first configured wins.
+  var aiProvider = null;
+  try { aiProvider = _aiProviderResolve_(); } catch (_aiResErr) {}
+  if (!aiProvider) {
+    report.push('⚠️  AI provider key — none set (OPENAI/GEMINI/XAI/ANTHROPIC/OPENROUTER). AI fallback disabled, bot still works with 18,725 keywords)');
     warn++;
   } else {
-    report.push('✅ ANTHROPIC_API_KEY — set (AI fallback enabled)');
+    report.push('✅ AI provider — ' + aiProvider.keyName + ' set (AI fallback enabled, provider=' + aiProvider.provider + ')');
     ok++;
   }
 
@@ -13936,7 +15835,8 @@ function installKesefleBot() {
 function getBotStatusMessage(fromPhone) {
   try {
     var props = PropertiesService.getScriptProperties();
-    var ai = !!props.getProperty('ANTHROPIC_API_KEY');
+    var ai = false;
+    try { ai = !!_aiProviderResolve_(); } catch (_aiSErr) {}
     var pnid = props.getProperty('WHATSAPP_PHONE_NUMBER_ID') || WHATSAPP_PHONE_NUMBER_ID;
     var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
     var rowCount = sheet ? (sheet.getLastRow() - 1) : 0;
@@ -14808,6 +16708,178 @@ function kvDel(key) {
   }
 }
 
+// ─── Bot-state KV migration + self-test ────────────────────────────────
+//
+// Background: Apps Script Script Properties are CONFIG storage with a ~50-item
+// editor cap. The bot historically wrote one monotonic per-user "seen/sent"
+// flag per phone/hash (welcomed:, surveyed:, fxcel:, leadNotified:, recsug_)
+// into Script Properties, which accumulate without bound and eventually fill
+// the store (Steven hit the cap 2026-05-31, blocking manual property edits).
+// PR #186 moved the welcomed/surveyed WRITE path to KV; the code paths for
+// fxcel/leadNotified/recsug followed (see _celebrateIfFirstExpense_ /
+// _notifyOwnerNewLead_ / _recurringSuggestionLine_). This one-shot tool
+// reclaims the slots already consumed by copying the legacy Script-Property
+// flags into KV, then deleting them from Script Properties.
+
+// The ONLY prefixes this tool will ever copy+delete. Every entry is a proven
+// presence-only monotonic flag whose value is never parsed (read sites check
+// presence only); copying then deleting cannot change any decision. Colon vs
+// underscore separators are intentional (matches the live key shapes); the
+// match is a prefix test so both shapes work.
+var BOT_STATE_KV_MIGRATE_PREFIXES = [
+  'welcomed:',      // one-time welcome sent (ISO ts) — presence-only
+  'surveyed:',      // onboarding survey kicked off (ISO ts) — presence-only
+  'fxcel:',         // first-expense celebration sent (ISO ts) — presence-only
+  'leadNotified:',  // owner alerted for this new lead (ISO ts) — presence-only
+  'milestone:',     // milestone (100/250/.. expenses) celebrated (ISO ts) — presence-only
+  'recsug_'         // recurring suggestion offered ('1') — presence-only
+];
+
+// Hard exclude-list: secrets + config + transient conversational state +
+// backups/snapshots. A key matching ANY of these is NEVER touched, even if it
+// somehow also matched a migrate prefix. Exact keys and active-state prefixes.
+var BOT_STATE_KV_NEVER_KEYS = {
+  'ANTHROPIC_API_KEY': 1, 'GEMINI_API_KEY': 1, 'KESEFLE_BOT_SECRET': 1,
+  'META_APP_SECRET': 1, 'WHATSAPP_TOKEN': 1, 'WHATSAPP_BUSINESS_ACCOUNT_ID': 1,
+  'WHATSAPP_PHONE_NUMBER_ID': 1, 'SHEET_OWNER_PHONE': 1, 'SUBSCRIBERS': 1,
+  'EXTRA_RULE_BANKING': 1, 'streak:default': 1, 'DIAG_TO': 1,
+  'KESEFLE_API_BASE': 1, 'VERCEL_KV_REST_URL': 1, 'VERCEL_KV_REST_TOKEN': 1,
+  'MOO_SNAPSHOT_LASTROW': 1, 'MOO_APPLIED_COUNT': 1,
+  'LEAD_ALERT_PHONE': 1, 'blacklist': 1, 'lastMotivationDate': 1
+};
+// Active/transient or per-user CONFIG prefixes whose VALUE is read (not a
+// presence flag) — left in Script Properties on purpose.
+var BOT_STATE_KV_NEVER_PREFIXES = [
+  'src_pending:', 'pending:', 'delPend:', 'clarPend:',  // active conversational state
+  'gender:', 'need:', 'settings:',                       // per-user config (value is read)
+  'CONFIRM_', 'MOO_'                                     // gated apply tokens / snapshots
+];
+
+function _botStateKvNeverTouch_(key) {
+  if (BOT_STATE_KV_NEVER_KEYS[key]) return true;
+  if (/_BACKUP_/.test(key)) return true;          // any *_BACKUP_* key
+  for (var i = 0; i < BOT_STATE_KV_NEVER_PREFIXES.length; i++) {
+    if (key.indexOf(BOT_STATE_KV_NEVER_PREFIXES[i]) === 0) return true;
+  }
+  return false;
+}
+
+// One-shot migration. dryRun=true (DEFAULT) logs what it WOULD do and writes/
+// deletes nothing. dryRun=false copies each allowlisted Script-Property flag
+// into KV (idempotent: skips the copy if KV already holds the key) and then
+// deletes it from Script Properties. Requires KV creds — aborts otherwise so
+// it can never delete a property it could not copy. Logs per-prefix counts and
+// total reclaimed.
+function MIGRATE_BOT_STATE_TO_KV(dryRun) {
+  if (dryRun !== false) dryRun = true; // default + guard: only an explicit false applies
+  Logger.log('MIGRATE_BOT_STATE_TO_KV: ' + (dryRun ? 'DRY RUN (no writes/deletes)' : 'APPLY (will move + delete)'));
+
+  if (!_kvCreds_()) {
+    Logger.log('ABORT: KV creds missing (set VERCEL_KV_REST_URL / VERCEL_KV_REST_TOKEN). ' +
+               'Refusing to run so no Script Property is deleted without a KV copy.');
+    return { ok: false, error: 'kv_creds_missing' };
+  }
+
+  var props = PropertiesService.getScriptProperties();
+  var keys;
+  try { keys = props.getKeys(); } catch (e) {
+    Logger.log('ABORT: could not read Script Properties: ' + (e && e.message));
+    return { ok: false, error: 'getKeys_failed' };
+  }
+
+  var perPrefix = {};   // prefix -> { copied, alreadyInKv, deleted, skippedNoCopy }
+  for (var p = 0; p < BOT_STATE_KV_MIGRATE_PREFIXES.length; p++) {
+    perPrefix[BOT_STATE_KV_MIGRATE_PREFIXES[p]] = { copied: 0, alreadyInKv: 0, deleted: 0, skippedNoCopy: 0 };
+  }
+  var totalReclaimed = 0, totalScanned = keys.length, neverTouched = 0;
+
+  for (var k = 0; k < keys.length; k++) {
+    var key = keys[k];
+
+    // Defense in depth: never touch a secret/config/transient/backup key.
+    if (_botStateKvNeverTouch_(key)) { neverTouched++; continue; }
+
+    // Only allowlisted migrate prefixes proceed.
+    var matched = null;
+    for (var m = 0; m < BOT_STATE_KV_MIGRATE_PREFIXES.length; m++) {
+      if (key.indexOf(BOT_STATE_KV_MIGRATE_PREFIXES[m]) === 0) { matched = BOT_STATE_KV_MIGRATE_PREFIXES[m]; break; }
+    }
+    if (!matched) continue;
+
+    var stat = perPrefix[matched];
+    var val = props.getProperty(key);
+
+    if (dryRun) {
+      // Report whether a copy would be needed, but change nothing.
+      var existsDry = false;
+      try { existsDry = (kvGet(key) != null); } catch (_eg) { existsDry = false; }
+      if (existsDry) stat.alreadyInKv++; else stat.copied++;
+      stat.deleted++; // would delete after a successful (or already-present) copy
+      totalReclaimed++;
+      Logger.log('  WOULD migrate ' + key + (existsDry ? ' (already in KV, would just delete SP)' : ' (copy -> KV, then delete SP)'));
+      continue;
+    }
+
+    // APPLY. Idempotent: only copy if KV does not already have it.
+    var inKv = false;
+    try { inKv = (kvGet(key) != null); } catch (_eg2) { inKv = false; }
+    if (inKv) {
+      stat.alreadyInKv++;
+    } else {
+      var wrote = false;
+      try { wrote = kvSet(key, (val == null ? '' : val), 0); } catch (_es) { wrote = false; }
+      if (!wrote) {
+        // Copy failed -> DO NOT delete (never lose the only copy). Leave the SP.
+        stat.skippedNoCopy++;
+        Logger.log('  SKIP (KV write failed, SP kept): ' + key);
+        continue;
+      }
+      stat.copied++;
+    }
+    // Copy is safe (just written or already present) -> reclaim the SP slot.
+    try { props.deleteProperty(key); stat.deleted++; totalReclaimed++; }
+    catch (_ed) { Logger.log('  WARN: KV has ' + key + ' but SP delete failed: ' + (_ed && _ed.message)); }
+  }
+
+  Logger.log('--- per-prefix ' + (dryRun ? '(dry run)' : '(applied)') + ' ---');
+  for (var rp = 0; rp < BOT_STATE_KV_MIGRATE_PREFIXES.length; rp++) {
+    var pf = BOT_STATE_KV_MIGRATE_PREFIXES[rp], s = perPrefix[pf];
+    Logger.log('  ' + pf + '  copied=' + s.copied + ' alreadyInKv=' + s.alreadyInKv +
+               ' deleted=' + s.deleted + ' skippedNoCopy=' + s.skippedNoCopy);
+  }
+  Logger.log('TOTAL: scanned=' + totalScanned + ' neverTouched(protected)=' + neverTouched +
+             ' reclaimed=' + totalReclaimed + (dryRun ? ' (DRY RUN — nothing changed)' : ''));
+  return { ok: true, dryRun: dryRun, scanned: totalScanned, reclaimed: totalReclaimed,
+           neverTouched: neverTouched, perPrefix: perPrefix };
+}
+
+// KV connectivity self-test. Round-trips a throwaway key and reports the
+// precise result. Run this before MIGRATE_BOT_STATE_TO_KV(false) to confirm KV
+// is reachable. Cleans up the throwaway key on the way out.
+function KV_SELFTEST() {
+  if (!_kvCreds_()) {
+    Logger.log('KV creds missing: set VERCEL_KV_REST_URL/TOKEN');
+    return { ok: false, error: 'kv_creds_missing' };
+  }
+  var probe = 'kv_selftest:' + Date.now() + ':' + Math.floor(Math.random() * 1e9);
+  var expected = 'ok-' + Date.now();
+  var wrote = false;
+  try { wrote = kvSet(probe, expected, 60); } catch (e) { wrote = false; }
+  if (!wrote) {
+    Logger.log('KV SELFTEST FAIL: kvSet returned false (HTTP non-200 or fetch error — see kvSet log above)');
+    return { ok: false, error: 'kvSet_failed' };
+  }
+  var got = null;
+  try { got = kvGet(probe); } catch (e2) { got = null; }
+  try { kvDel(probe); } catch (_ed) {}   // best-effort cleanup
+  if (got === expected) {
+    Logger.log('KV OK');
+    return { ok: true };
+  }
+  Logger.log('KV SELFTEST FAIL: round-trip mismatch (wrote "' + expected + '" got "' + got + '")');
+  return { ok: false, error: 'roundtrip_mismatch', expected: expected, got: got };
+}
+
 // --- Family dispatcher -------------------------------------------------
 
 function _handleFamilyMultiCommand_(fromPhone, text) {
@@ -15421,11 +17493,14 @@ function _celebrateIfFirstExpense_(fromPhone) {
   try {
     var p = String(fromPhone || '').replace(/[^0-9]/g, '');
     if (!p) return '';
-    var props = PropertiesService.getScriptProperties();
+    // First-expense flag now lives in KV (key unchanged: 'fxcel:'+phone) with a
+    // legacy Script-Property read fallback, so pre-migration users are never
+    // re-celebrated. Permanent dedup -> no TTL.
     var key = 'fxcel:' + p;
-    if (props.getProperty(key)) return '';
-    props.setProperty(key, new Date().toISOString());
-    return '\n\n🎉 זאת ההוצאה הראשונה שלך! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
+    if (_seenFlag_(key, 0)) return '';
+    _markFlag_(key, new Date().toISOString(), 0);
+    var _aC = _addr_(fromPhone);
+    return '\n\n🎉 זאת ההוצאה הראשונה שלך' + (_aC ? ' ' + _aC : '') + '! מעכשיו כל הוצאה שתשלח תיכנס לגיליון אוטומטית.\n💡 טיפ: כתוב "/קבוע" כדי לסמן הוצאה חוזרת חודשית.';
   } catch (_e) { return ''; }
 }
 
@@ -15671,6 +17746,14 @@ function cronSynonymExpansion() {
 
     for (var p = 0; p < list.length; p++) {
       var item = list[p];
+      // 2026-05-31 (AUDIT_BOT_LLM_SAFETY Finding 1): never seed synonyms into a
+      // category the dashboard can't sum. The (cat,sub) here come from the ML
+      // Audit's resolved finalCategory, but guard anyway so a corrupted audit
+      // row can't poison the Auto Synonyms map.
+      if (typeof _isCanonicalCategory_ === 'function' && !_isCanonicalCategory_(item.category)) {
+        Logger.log('cronSynonymExpansion: skip non-canonical category "' + item.category + '" for "' + item.text + '"');
+        continue;
+      }
       var synonyms = _llmHebrewSynonyms_(item.text, apiKey);
       llmCalls++;
       if (!synonyms || !synonyms.length) continue;
@@ -15789,6 +17872,40 @@ function _dashNormalizeLabel_(s) {
   return t;
 }
 
+// Helper: return EVERY sheet that is a business/company balance dashboard.
+// Steven renamed "מאזן חברה" -> "עסק תמונות" and may add "עסק 2"/"עסק 3"
+// per additional business (see the multi-business routing block above), so
+// the dashboard tab can no longer be found by a hardcoded name list. We match
+// any tab whose name starts with the canonical company-dashboard prefix
+// "מאזן חברה" OR the per-business prefix "עסק " (note the trailing space, so
+// the orders/transactions tabs and bare command keywords never match):
+//   'מאזן חברה', 'מאזן חברה 2026', 'עסק תמונות', 'עסק 1', 'עסק 2', ...
+// When a `year` is passed we put any tab whose name carries that exact year
+// (e.g. "מאזן חברה 2026") FIRST so a frozen-year snapshot tab is preferred
+// over the live bare tab, exactly like the old ['מאזן חברה ' + year,
+// 'מאזן חברה'] ordering. Original sheet order is preserved within each group,
+// so an org that owns ONLY the plain "מאזן חברה" tab gets back exactly
+// [that sheet] -- identical to the legacy behavior.
+function _businessDashTabs_(ss, year) {
+  if (!ss) return [];
+  var re = /^(מאזן חברה|עסק )/;
+  var yearStr = '';
+  var yNum = parseInt(year, 10);
+  if (yNum >= 2000 && yNum <= 2100) yearStr = String(yNum);
+  var withYear = [];   // name contains the requested year -> preferred
+  var rest = [];       // bare / no-year tabs and everything else
+  var all = ss.getSheets();
+  for (var i = 0; i < all.length; i++) {
+    var sh = all[i];
+    var name = '';
+    try { name = String(sh.getName() || ''); } catch (_nErr) { continue; }
+    if (!re.test(name.trim())) continue;
+    if (yearStr && name.indexOf(yearStr) !== -1) withYear.push(sh);
+    else rest.push(sh);
+  }
+  return withYear.concat(rest);
+}
+
 // Helper: figure out the year for a dashboard tab.
 //   1. tab name ends with 4-digit year (e.g. "מאזן חברה 2026") -> use it
 //   2. B2 of the dashboard is a year-like number -> use it
@@ -15836,15 +17953,19 @@ function _safeReplaceWithFormula_(cell, newFormula, ctxLabel) {
 // Returns counters + per-tab breakdown.
 function installCompanyDashboardFormulas() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
-  var dashNames = ['מאזן חברה 2026', 'מאזן חברה'];
+  // Resolve ALL company dashboard tabs (renamed "עסק תמונות", "עסק 2"...,
+  // year-suffixed snapshots, or the legacy bare "מאזן חברה"). Each tab's own
+  // year is still derived per-tab via _dashResolveYear_ below; passing the
+  // current year here just orders any year-suffixed snapshot tab first.
+  var dashTabs = _businessDashTabs_(ss, new Date().getFullYear());
   var summary = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0, perTab: {} };
   var anyFound = false;
 
-  for (var d = 0; d < dashNames.length; d++) {
-    var sheet = ss.getSheetByName(dashNames[d]);
+  for (var d = 0; d < dashTabs.length; d++) {
+    var sheet = dashTabs[d];
     if (!sheet) continue;
     anyFound = true;
-    var tabKey = dashNames[d];
+    var tabKey = sheet.getName();
     var tabStat = { fixed: 0, skippedFormulas: 0, unmapped: 0, skippedNonNumeric: 0, derived: 0 };
     var year = _dashResolveYear_(sheet);
     var lastRow = sheet.getLastRow();
@@ -15910,18 +18031,30 @@ function installCompanyDashboardFormulas() {
       continue;
     }
 
-    // Phase 3: install SUMIFS for direct metric rows.
+    // Phase 3: install SUMPRODUCT for direct metric rows.
+    // 2026-05-29 FROZEN-YEAR FIX (WS2 HIGH from PR #152 deep-review):
+    // The old code baked `year + '-' + MM` as a literal SUMIFS criterion, so
+    // the dashboard's $B$4 year selector became cosmetic. Now we wire every
+    // formula to $B$4 via SUMPRODUCT + LEFT(B,4), matching _MDD_buildFormulas_
+    // in MIGRATE_DASHBOARD_FROM_OLD.gs:203.
+    var _ICDF_yearExpr = 'IF($B$4="",TEXT(YEAR(TODAY()),"0000"),TEXT($B$4,"0000"))';
     for (var canonSub in metricRows) {
       var rowsForSub = metricRows[canonSub];
+      // Escape any " in canonSub so it survives the criterion string.
+      var _ICDF_crit = String(canonSub).replace(/"/g, '""');
       for (var ri = 0; ri < rowsForSub.length; ri++) {
         var rowIdx0 = rowsForSub[ri];
         for (var monthLabel in monthCols) {
           var colIdx0 = monthCols[monthLabel];
           var monthIdx1 = _DASH_HEB_MONTHS.indexOf(monthLabel) + 1; // 1..12
-          var monthKey = year + '-' + (monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1);
+          var _ICDF_mm = monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1;
           var cell = sheet.getRange(rowIdx0 + 1, colIdx0 + 1);
-          // Use IFERROR to keep cell numeric even if no matches yet.
-          var f = '=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, "' + canonSub + '", תנועות!B:B, "' + monthKey + '"), 0)';
+          // SUMPRODUCT keeps the cell numeric; bounded range B2:B2000 avoids
+          // header-row #VALUE! errors. Year wired to $B$4.
+          var f =
+            '=SUMPRODUCT((תנועות!E2:E2000="' + _ICDF_crit + '")*' +
+            '(תנועות!B2:B2000=' + _ICDF_yearExpr + '&"-' + _ICDF_mm + '")*' +
+            'תנועות!C2:C2000)';
           var res = _safeReplaceWithFormula_(cell, f, tabKey + '/' + canonSub + '/' + monthLabel);
           if (res === 'fixed') { summary.fixed++; tabStat.fixed++; }
           else if (res === 'skip-formula' || res === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
@@ -16002,7 +18135,7 @@ function installCompanyDashboardFormulas() {
   }
 
   if (!anyFound) {
-    Logger.log('[dashFx] no company dashboard tab found (looked for: ' + dashNames.join(', ') + ')');
+    Logger.log('[dashFx] no company dashboard tab found (matched none of /^(מאזן חברה|עסק )/)');
   }
 
   Logger.log('[dashFx] installCompanyDashboardFormulas DONE: ' +
@@ -16048,6 +18181,12 @@ function installPersonalDashboardFormulas() {
     }
     var monthCols = [3,4,5,6,7,8,9,10,11,12,13,14]; // C..N
     var colA = sheet.getRange(1, 1, lastRow, 1).getValues();
+    // 2026-05-29 FROZEN-YEAR FIX (WS2 HIGH from PR #152 deep-review):
+    // The old code baked `year + '-' + MM` as a literal SUMIFS criterion, so
+    // the dashboard's $B$4 year selector became cosmetic. Now we wire every
+    // formula to $B$4 via SUMPRODUCT + LEFT(B,4), matching _MDD_buildFormulas_
+    // in MIGRATE_DASHBOARD_FROM_OLD.gs:203.
+    var _IPDF_yearExpr = 'IF($B$4="",TEXT(YEAR(TODAY()),"0000"),TEXT($B$4,"0000"))';
     for (var r = 3; r < colA.length; r++) { // skip first 3 rows (title + year + header)
       var rowLabel = _dashNormalizeLabel_(colA[r][0]);
       if (!rowLabel) continue;
@@ -16057,9 +18196,14 @@ function installPersonalDashboardFormulas() {
       for (var mi = 0; mi < monthCols.length; mi++) {
         var col = monthCols[mi];
         var monthIdx1 = mi + 1;
-        var monthKey = year + '-' + (monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1);
+        var _IPDF_mm = monthIdx1 < 10 ? '0' + monthIdx1 : '' + monthIdx1;
         var cell = sheet.getRange(rowOneBased, col);
-        var f = '=IFERROR(SUMIFS(תנועות!C:C, תנועות!E:E, $A' + rowOneBased + ', תנועות!B:B, "' + monthKey + '"), 0)';
+        // SUMPRODUCT keeps the cell numeric; bounded range B2:B2000 avoids
+        // header-row #VALUE! errors. Year wired to $B$4.
+        var f =
+          '=SUMPRODUCT((תנועות!E2:E2000=$A' + rowOneBased + ')*' +
+          '(תנועות!B2:B2000=' + _IPDF_yearExpr + '&"-' + _IPDF_mm + '")*' +
+          'תנועות!C2:C2000)';
         var res = _safeReplaceWithFormula_(cell, f, tabKey + '/' + rowLabel + '/' + _DASH_HEB_MONTHS[mi]);
         if (res === 'fixed') { summary.fixed++; tabStat.fixed++; }
         else if (res === 'skip-formula' || res === 'skip-already') { summary.skippedFormulas++; tabStat.skippedFormulas++; }
