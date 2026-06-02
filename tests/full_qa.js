@@ -46,7 +46,7 @@ function extractFn(src, name) {
 
 // ── 1. Existing unit suites ─────────────────────────────────────────────────
 console.log('\n══ 1. Unit suites (isolation + parser) ══');
-for (const f of ['bot/test_isolation.js', 'bot/test_isolation_edge_cases.js', 'bot/test_parser.js', 'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_classifier_primitives.js', 'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js', 'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js', 'bot/test_objective_commands.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js', 'tests/test_sheet_writer_row_building.js', 'tests/test_summary_column_schema.js', 'tests/test_billing_manual_audit_log.js']) {
+for (const f of ['bot/test_isolation.js', 'bot/test_isolation_edge_cases.js', 'bot/test_parser.js', 'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_classifier_primitives.js', 'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js', 'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js', 'bot/test_objective_commands.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js', 'tests/test_sheet_writer_row_building.js', 'tests/test_summary_column_schema.js', 'tests/test_gdpr_delete_key_completeness.js', 'tests/test_billing_manual_audit_log.js']) {
   try { execFileSync('node', [path.join(ROOT, f)], { stdio: 'pipe' }); ok(f + ' passed', true); }
   catch (e) { ok(f + ' passed', false); }
 }
@@ -445,6 +445,47 @@ ok('sw.js has push + notificationclick handlers (without breaking the existing f
    /addEventListener\(\s*['"]fetch['"]/.test(SW_SRC));
 ok('api/config.js returns vapid_public_key',
    /vapid_public_key:\s*process\.env\.VAPID_PUBLIC_KEY/.test(CONFIG_API));
+
+// ── 5l. Admin-endpoint rate-limiting + KV index hygiene (2026-06 hardening) ──
+// requireAdmin gates WHO can call an admin endpoint; it does NOT cap HOW often.
+// A leaked/abused admin session (or an admin's own runaway script) could hammer
+// an endpoint — especially ones that hit a paid 3rd-party API (PayPal plan
+// creation) — unless the route is ALSO behind withRateLimit. These guards keep
+// admin routes from regressing to auth-only.
+console.log('\n══ 5l. Admin rate-limiting + KV index hygiene ══');
+const PAYPAL_API = fs.readFileSync(path.join(ROOT, 'api/billing/paypal.js'), 'utf8');
+ok('paypal setup-plans (admin) is BOTH requireAdmin AND withRateLimit',
+   /withRateLimit\(\s*\{[^}]*\}\s*\)\(\s*requireAdmin\(\s*setupPlansImpl\s*\)/.test(PAYPAL_API));
+ok('paypal setup-plans is no longer the bare requireAdmin(setupPlansImpl)(req,res) router call',
+   !/setup-plans['"]\)\s*return\s+requireAdmin\(setupPlansImpl\)\(req,\s*res\)/.test(PAYPAL_API));
+
+// Every api/admin/* endpoint + the admin-action billing endpoints should pair
+// requireAdmin with withRateLimit. (manual.js carries a separate pending PR for
+// its admin handler — excluded here so this gate doesn't block that work.)
+const adminFiles = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) walk(full);
+    else if (e.name.endsWith('.js')) adminFiles.push(full);
+  }
+})(path.join(ROOT, 'api/admin'));
+let adminUnlimited = [];
+for (const f of adminFiles) {
+  const src = fs.readFileSync(f, 'utf8');
+  if (/requireAdmin\(/.test(src) && !/withRateLimit\(/.test(src)) {
+    adminUnlimited.push(path.relative(ROOT, f));
+  }
+}
+ok('every api/admin/* requireAdmin endpoint is also withRateLimit',
+   adminUnlimited.length === 0,
+   adminUnlimited.length ? ('unlimited: ' + adminUnlimited.join(', ')) : '');
+
+// KV index hygiene: the users_all SET must be SREM'd on delete (see the
+// dedicated test_gdpr_delete_key_completeness.js suite for the full contract).
+ok('account.js evicts deleted user from users_all SET (SREM)',
+   /\/srem\//.test(ACCOUNT) &&
+   /kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub/.test(ACCOUNT));
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
