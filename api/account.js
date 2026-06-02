@@ -40,6 +40,21 @@ async function kvDel(key) {
   return r.ok;
 }
 
+// Remove ONE member from a KV set (Upstash REST: POST /srem/<key>/<member>).
+// Used to evict a deleted user from the `users_all` index set on account
+// deletion. A DEL can't do this — the set persists and only the matching
+// member must go. Best-effort: a missing member is a no-op (SREM returns 0).
+async function kvSetRemove(setKey, member) {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return false;
+  const r = await fetch(
+    `${url}/srem/${encodeURIComponent(setKey)}/${encodeURIComponent(member)}`,
+    { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } },
+  );
+  return r.ok;
+}
+
 // 2026-05-29 resweep R1: single source of truth for "every KV key that holds
 // per-user state". Previously the cookie-auth deleteAccount() path and the
 // bot-secret deleteByPhone() path each maintained their own list, and they
@@ -88,10 +103,12 @@ async function _keysForUser_(userSub, phone, referralCode) {
     'user_seen_announcement:' + userSub, // dismissed announcement IDs
     'referral:redeemed:' + userSub,      // referral redemption idempotency
     // TODO (deferred — needs SCAN, not DEL):
-    //   goal:{userSub}:{goalId}   — multi-key, requires kvScan to enumerate
+    //   goal:{userSub}:{goalId}   — multi-key, but lib/goals.js keeps a
+    //                               goals:{userSub} index; purgeGoals() walks it
     //   stats:{userSub}:{window}  — multi-key cached stats; TTL'd but PII
-    // Plus the SET `users_all` needs SREM (different op than DEL) — handled
-    // separately in deleteAccount handler so this list stays SET-vs-KEY clean.
+    // The SET `users_all` needs SREM (different op than DEL) — it is removed
+    // via kvSetRemove() in BOTH deleteAccount and deleteByPhone (see below),
+    // so this DEL-only list stays SET-vs-KEY clean.
   ];
   if (phone) {
     // Phone-keyed records (only the bot flow had these; web flow missed them)
@@ -168,6 +185,14 @@ async function deleteAccount(req, res) {
 
   for (const k of keysToDelete) {
     if (await kvDel(k)) deleted.push(k);
+  }
+
+  // Evict from the `users_all` index SET (SADD'd as 'google:'+sub at signup in
+  // api/auth/google.js). A DEL can't remove a set member — without this SREM the
+  // deleted user lingers in the set forever and the morning-nudge /
+  // customer-weekly-digest crons keep iterating a ghost on every run.
+  if (await kvSetRemove('users_all', 'google:' + userSub)) {
+    deleted.push('users_all[google:' + userSub + ']');
   }
 
   // Audit log (non-fatal)
@@ -365,6 +390,11 @@ async function deleteByPhone(req, res) {
   const keysToDelete = await _keysForUser_(userSub, phone, referralCode);
   for (const k of keysToDelete) {
     if (await kvDel(k)) deleted.push(k);
+  }
+  // Same `users_all` index eviction as the web deleteAccount path, so a
+  // bot-driven delete leaves no ghost in the cron set either.
+  if (await kvSetRemove('users_all', 'google:' + userSub)) {
+    deleted.push('users_all[google:' + userSub + ']');
   }
   log.info('account.delete_by_phone', { reqId: req.reqId, phone: phone.replace(/\d(?=\d{4})/g, '*') });
   return res.status(200).json({ ok: true, deleted });

@@ -441,6 +441,15 @@ const subscribeHandler = withRateLimit({ key: 'billing_paypal', limit: 30, windo
   requireAuth(subscribeImpl)
 );
 
+// setup-plans is an admin-only, one-time bootstrap that creates PayPal products
+// + billing plans (write calls to PayPal's API). Behind requireAdmin already,
+// but — like every other admin endpoint — also rate-limited so a leaked/abused
+// admin session can't hammer PayPal's plan-creation API. Tight cap: this is run
+// a handful of times ever. Mirrors api/billing/invoice.js's admin handler shape.
+const setupPlansHandler = withRateLimit({ key: 'billing_paypal_setup', limit: 5, windowSec: 3600 })(
+  requireAdmin(setupPlansImpl)
+);
+
 export default withRequestId(async function paypalRouter(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -448,6 +457,6 @@ export default withRequestId(async function paypalRouter(req, res) {
   const action = String(req.query.action || '').toLowerCase();
   if (action === 'subscribe') return subscribeHandler(req, res);
   if (action === 'webhook') return webhookImpl(req, res);
-  if (action === 'setup-plans') return requireAdmin(setupPlansImpl)(req, res);
+  if (action === 'setup-plans') return setupPlansHandler(req, res);
   return res.status(400).json({ ok: false, error: 'unknown_action', allowed: ['subscribe', 'webhook', 'setup-plans'] });
 });
