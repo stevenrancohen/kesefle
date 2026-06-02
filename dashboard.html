@@ -2024,6 +2024,9 @@ function showEmptyState() {
   document.getElementById('reauth-banner').classList.add('hidden');
   document.getElementById('summary-cards').classList.add('hidden');
   document.getElementById('empty-state').classList.remove('hidden');
+  // Empty hero is now the single focal CTA — collapse the start-checklist so
+  // it doesn't duplicate the "send first expense" ask above it.
+  try { if (window.kflOnboardingRefresh) window.kflOnboardingRefresh(); } catch (_e) {}
   document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">אין תנועות עדיין. שלח לבוט הודעה ראשונה.</div>';
   document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">אין נתונים עדיין.</div>';
 }
@@ -2075,6 +2078,10 @@ async function kesefleDeleteTransaction() {
 function renderDashboard(d) {
   function fmt(n) { return new Intl.NumberFormat('he-IL').format(Math.round(n || 0)); }
   function num(n) { return '₪' + fmt(n); }
+
+  // User has data now: the empty-state hero is hidden, so the start-checklist
+  // can surface (it was suppressed while zero-data, to keep one obvious CTA).
+  try { if (window.kflOnboardingRefresh) window.kflOnboardingRefresh(); } catch (_e) {}
 
   // --- PR-D3: Populate the Financial Overview hero. Runs first so the
   //     headline is up before the per-card animations finish. Computes
@@ -4039,6 +4046,16 @@ function generatePseudoSeries(target, n, intLike) {
     var section = document.getElementById('kfl-onboarding');
     var list = document.getElementById('kfl-onboarding-list');
     if (!section || !list) return;
+    // Don't compete with the full-bleed empty-state hero. While the user has
+    // zero transactions the big "send your first expense" panel IS the single
+    // obvious next action; this 4-step checklist (which leads with the same
+    // step) would only split attention. It re-appears automatically once the
+    // user has data and the empty state is hidden.
+    var emptyHero = document.getElementById('empty-state');
+    if (emptyHero && !emptyHero.classList.contains('hidden')) {
+      section.classList.add('hidden');
+      return;
+    }
     var state = loadState();
     // Auto-detect any newly-completed steps.
     STEPS.forEach(function (s) {
@@ -4084,6 +4101,11 @@ function generatePseudoSeries(target, n, intLike) {
     var section = document.getElementById('kfl-onboarding');
     if (section) section.classList.add('hidden');
   };
+
+  // Public hook so the dashboard data-load path can re-evaluate the checklist
+  // once it knows whether the empty-state hero is showing (avoids a flash of
+  // the checklist before zero-data is confirmed).
+  window.kflOnboardingRefresh = render;
 
   if (document.readyState === 'complete') render();
   else window.addEventListener('load', function () { setTimeout(render, 1500); });
