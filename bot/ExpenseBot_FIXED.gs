@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize-menu-first-wizard';
+const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize-biz-misroute-keywords-menu-first-wizard';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -282,7 +282,7 @@ const CATEGORY_MAP = [
   // short forms ARE still routed via _BIZ_DASH_SUBS below, so legacy
   // historical rows keep matching; new writes are canonical from here.
   // See docs/BOT_TAXONOMY_RECONCILE_2026-05-28.md section 4 + 6.
-  {"keywords":["marketing","advertising","ads","promotion","promo","branding","campaign","sponsored","influencer","social media ads","content marketing","email marketing","seo","sem","ppc","pr","press release","יחסי ציבור","קמפיין","פרסומת","קידום","שיווק","פרסום"],"category":"עסק","subcategory":"עלות שיווק"},
+  {"keywords":["marketing","advertising","ads","promotion","promo","branding","campaign","sponsored","influencer","social media ads","content marketing","email marketing","seo","sem","ppc","pr","press release","יחסי ציבור","קמפיין","פרסומת","קידום","שיווק","פרסום","בוסט לפוסט","משפיען"],"category":"עסק","subcategory":"עלות שיווק"},
   {"keywords":["operations","operational","ops","admin","administrative","admin fee","running cost","overhead","operating expense","תפעול","תפעולי","הוצאות תפעוליות"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["raw materials","materials","material","supplies","supply","inventory","stock","wholesale","ingredients","components","parts","חומרי גלם","חומר גלם","סחורה","מלאי","חומרים","רכש"],"category":"עסק","subcategory":"עלות חומרי גלם"},
   {"keywords":["shipping","delivery","courier","freight","logistics","packaging","packing","postage","fulfillment","משלוח","משלוחים","הובלה","אריזה","שילוח","אריזה ומשלוח"],"category":"עסק","subcategory":"משלוחים והתקנות"},
@@ -296,7 +296,7 @@ const CATEGORY_MAP = [
   {"keywords":["software","saas","subscription tool","tool","app","application","license","software license","cloud service","אופיס","תוכנה","תוכנת חשבוניות","סאאס","רישיון","כלי עבודה"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["business equipment","office equipment","equipment","printer","scanner","laptop","monitor","desk","office chair","ציוד עסקי","ציוד למשרד","מדפסת","סורק","ציוד משרד"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["business tax","corporate tax","vat","vat payment","income tax","tax payment","sales tax","מע\"מ","מעמ","תשלום מעמ","מס הכנסה עסקי","מסי עסק","ביטוח לאומי עצמאי"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
-  {"keywords":["revenue","sale","sales","income payment","customer payment","invoice paid","order received","קבלת תשלום","תשלום לקוח","הזמנה","מחזור","מכירה","מכירות","ssayhe"],"category":"עסק","subcategory":"מחזור","isIncome":true},
+  {"keywords":["revenue","sale","sales","income payment","customer payment","invoice paid","order received","קבלת תשלום","תשלום לקוח","הזמנה","מחזור","מכירה","מכירות","ssayhe","החזר מעמ","החזר מע\"מ"],"category":"עסק","subcategory":"מחזור","isIncome":true},
 
   // ===== FAMILY + KIDS + BABY (expanded 2026-05-24 per Steven's request) =====
   {"keywords":["טיטול","טיטולים","האגיס","פמפרס","ליברה","מוליקס","מגבונים לחים","מגבונים לתינוק","חיתולים","חיתול","דיאפר","פמפרסים","חיתולי לילה","חיתולי בריכה","חיתול בריכה","תחתוני אימון","פולים","טיטולי גמילה"],"category":"חינוך וילדים","subcategory":"חיתולים ותינוקות"},
