@@ -373,7 +373,15 @@ async function handlerImpl(req, res) {
 
   try {
     const range = encodeURIComponent(`'${TX_TAB}'!A:F`);
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    // RAW (not USER_ENTERED) — consistent with every other Kesefle writer
+    // (lib/sheet-writer.js, bank-csv.js, relabel-row.js, mark-vat.js). RAW
+    // stores each cell verbatim instead of re-parsing it as if a user typed
+    // it, which (a) keeps sanitizeCell's formula-injection guard sound (it was
+    // designed for RAW per its own doc-comment) and (b) stops Sheets from
+    // mangling imported free-text into formulas/dates -- e.g. a description
+    // "3/4" becoming a date, or "01" losing its leading zero. Amounts are
+    // written as JS numbers either way, so totals are unaffected.
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
     const r = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
