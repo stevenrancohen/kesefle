@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-01-biz-expense';
+const KFL_BUILD_VERSION = '2026-06-02-nl-biz-orders';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2928,7 +2928,29 @@ function parseBusinessOrder_(text) {
   // (so the ה or ת suffix failed the test).
   // ORDER MATTERS: עסקה / עסקת before עסק so the longer prefix matches
   // first and gets stripped fully.
-  if (!/^(עסקה|עסקת|עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s)) return null;
+  //
+  // 2026-06-02 NL-income fix: the original gate ONLY fired when the message
+  // STARTED with עסק/עסקה/biz, so a natural sentence like
+  //   "יש לי הכנסה בעסק של התמונות ... הלקוחה שילמה 1700 ... + 450 להתקנה"
+  // was dropped (it starts with "יש", and "בעסק" is the clitic ב+עסק form
+  // that the standalone gate never recognised) — it fell to the PERSONAL
+  // classifier. We now ALSO accept the order shape when a business marker
+  // appears ANYWHERE in the text, in standalone OR clitic form
+  // ([בלמ]?עסק with an optional ה/ת suffix → covers עסק / בעסק / לעסק /
+  // מעסק / עסקה / עסקת / בעסקה). This is ANCHORED on the עסק token by
+  // design: an income verb alone ("קיבלתי 1700 מתנה") must NOT enter the
+  // order path. The existing fieldsFound<2 guard below still protects a
+  // bare chat line that merely mentions the business but carries no order
+  // fields (size/material/cost/labelled-sale) from becoming a spurious
+  // order. We deliberately exclude the bare adjective/list forms
+  // עסקי/עסקים from the anywhere-trigger to avoid false positives.
+  var _bizStartsPrefix = /^(עסקה|עסקת|עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(s);
+  var _bizMarkerAnywhere = /(^|\s)[בלמ]?עסק(ה|ת)?(\s|$|[:,\-])/.test(s) ||
+                           /(^|\s)(biz|business)(\s|$|[:,\-])/i.test(s);
+  if (!_bizStartsPrefix && !_bizMarkerAnywhere) return null;
+  // Strip a LEADING prefix only (no-op for the NL form, where the marker is
+  // mid-sentence — there we keep the full text so the field parsers below
+  // can read the headline amount, size, material and shipping in place).
   s = s.replace(/^(עסקה|עסקת|עסק|biz|business)\s*[:\-]?\s*/i, '');
 
   function _num(re) {
@@ -2972,15 +2994,38 @@ function parseBusinessOrder_(text) {
   var salePriceLabeled = _num(/(?:עלות\s+מכירה|מחיר\s+מכירה|מכירת|מכירה|מחיר|sold|sale)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   var salePrice      = salePriceLabeled;
   var shipping       = _num(/(?:דמי\s+משלוח|משלוח\s+(?:והתקנה|והובלה|והתקנות)|משלוח|שילוח|התקנה|התקנות|shipping|delivery)(?:\s+\S+){0,1}?\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  // 2026-06-02: also catch the NL "<amount> [שח] ל<keyword>" order, where the
+  // number comes BEFORE the shipping/install keyword — e.g. "+ 450 שח להתקנה"
+  // or "30 שקל למשלוח". The keyword-first regex above only handles
+  // "התקנה 450"; this fallback handles "450 ... התקנה" without misreading a
+  // size token (sizes are NxN, never a lone number directly before the
+  // keyword). Only used when the keyword-first pass found nothing.
+  if (shipping == null) {
+    shipping = _num(/(\d+(?:[.,]\d+)?)\s*(?:ש["׳']?ח|שקל(?:ים)?|nis|₪)?\s*ל?(?:משלוח|שילוח|התקנה|התקנות|הובלה)(?:\s|$|[.,])/i);
+  }
 
   // Customer name: try the explicit label first ("שם לקוח X" / "לקוח X").
-  var customer = _word(/(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s*([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,})|$)/i);
+  //
+  // 2026-06-02: anchor the לקוח label on a word boundary ((^|\s) before, and a
+  // space/colon after) so it does NOT match the substring "לקוח" inside the
+  // NL word "הלקוחה" ("the customer paid"), which used to capture a junk
+  // customer of "ה שילמה". A genuine "לקוח דני" (space-separated) still
+  // matches. The capture must also start with a Hebrew/Latin letter so we
+  // never grab a stray verb fragment.
+  var customer = _word(/(?:^|\s)(?:שם\s+לקוח|לקוח|customer)\s*[:=]?\s+([A-Za-z֐-׿][^\d\n]*?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,})|$)/i);
   // Fallback: if no explicit label, grab the leading Hebrew text right
   // after the "עסק" prefix up to the first labelled field or number.
   // Lets the user write "עסק ליה מרמת גן גודל ..." without forcing the
   // "לקוח" keyword. Capped at 40 chars to avoid grabbing the whole
   // message when no labelled field appears later.
-  if (!customer) {
+  //
+  // 2026-06-02: ONLY apply this leading-text heuristic for the prefix form
+  // (message STARTED with עסק). In the NL form the marker sits mid-sentence
+  // ("יש לי הכנסה בעסק ... הלקוחה שילמה 1700"), so the leading words are
+  // narration, not a name — grabbing them produced a junk customer like
+  // "ה שילמה". For NL we leave customer blank (the explicit "לקוח X" label
+  // above still works) and let the reply invite the user to add a name.
+  if (!customer && _bizStartsPrefix) {
     var leadM = s.match(/^([^\d\n]+?)(?=\s*(?:גודל|תמונה|קנבס|בד|נייר|אקריליק|עץ|זכוכית|מתכת|PVC|קרטון|עלות|מחיר|מכירה|ייצור|יצור|מוצר|פריט|משלוח|שילוח|\d{2,}))/);
     if (leadM) {
       var lead = leadM[1].trim();
@@ -8285,7 +8330,26 @@ function processExpense(text, fromPhone) {
     Logger.log('bare-biz detector err (falling through): ' + (__bbeErr && __bbeErr.message));
   }
 
-  var __hIsBiz = /^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(__hT);
+  // 2026-06-02 NL-income routing fix.
+  // Original gate only entered this block when the message STARTED with
+  // עסק/biz, so a natural business-income sentence ("יש לי הכנסה בעסק של
+  // התמונות ... הלקוחה שילמה 1700 ... + 450 להתקנה") never reached the order
+  // writer and fell to the personal category picker. We now ALSO enter when
+  // parseBusinessOrder_ recognises the message as an order (it is anchored on
+  // the עסק/בעסק token + order fields, so a personal income like
+  // "קיבלתי 1700 מתנה" still returns null and never enters here).
+  //
+  // This whole block already sits AFTER the tenant-return above, so it is
+  // owner-only and writes the owner SHEET_ID — no tenant can reach
+  // _writeOrderRow_. The legacy numbered-PICKER fallback further below stays
+  // guarded to the prefix form (__hStartsBiz) because it strips a leading
+  // עסק prefix and is tuned for the "עסק <amount> <token>" shape — NL text
+  // must never be run through it.
+  var __hStartsBiz = /^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(__hT);
+  var __hOrder = null;
+  try { __hOrder = parseBusinessOrder_(__hT); }
+  catch (__hOrderPreErr) { Logger.log('parseBusinessOrder_ pre-check THREW: ' + (__hOrderPreErr && __hOrderPreErr.message)); }
+  var __hIsBiz = __hStartsBiz || !!__hOrder;
   if (__hIsBiz) {
     // First try the rich-order parser. If the message contains at least
     // 2 labelled fields (customer, size, material, costs, shipping…) we
@@ -8293,21 +8357,29 @@ function processExpense(text, fromPhone) {
     // flow entirely. Simpler "עסק 24 שיווק" messages return null here
     // and continue to the existing categoriser below.
     try {
-      var __order = parseBusinessOrder_(__hT);
+      var __order = __hOrder;
       if (__order) {
         __hProps.deleteProperty('smart_pending');
         var __orderRes = _writeOrderRow_(__order);
         if (__orderRes.ok) {
+          // Warm Hebrew confirmation (Steven's voice). Mentions product /
+          // size / material, sale price, installation (shipping), total, and
+          // that it landed in הזמנות + מאזן חברה. If no customer name was
+          // parsed, record it blank and invite the user to add one.
+          var __saleN  = __order.salePrice ? Number(__order.salePrice) : 0;
+          var __shipN  = __order.shipping ? Number(__order.shipping) : 0;
+          var __totalN = __saleN + __shipN;
           var __ln = [];
-          __ln.push('✅ הזמנה נרשמה');
+          __ln.push('✅ רשמתי הזמנה');
           if (__order.customer) __ln.push('👤 ' + __order.customer);
-          if (__order.size || __order.material) {
-            __ln.push('🖼 ' + [__order.size, __order.material].filter(Boolean).join(' · '));
-          }
-          if (__order.salePrice)      __ln.push('💰 מחזור: ₪' + Number(__order.salePrice).toLocaleString('he-IL'));
-          if (__order.productionCost) __ln.push('🏭 עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
-          if (__order.shipping)       __ln.push('🚚 משלוח: ₪' + Number(__order.shipping).toLocaleString('he-IL'));
-          if (__order.profit != null) __ln.push('📈 רווח: ₪' + Number(__order.profit).toLocaleString('he-IL'));
+          var __desc = [__order.size, __order.material].filter(Boolean).join(' · ');
+          if (__desc) __ln.push('🖼 ' + __desc);
+          if (__saleN)  __ln.push('מכירה: ₪' + __saleN.toLocaleString('he-IL'));
+          if (__shipN)  __ln.push('התקנה/משלוח: ₪' + __shipN.toLocaleString('he-IL'));
+          if (__order.productionCost) __ln.push('עלות ייצור: ₪' + Number(__order.productionCost).toLocaleString('he-IL'));
+          if (__totalN) __ln.push('סה"כ: ₪' + __totalN.toLocaleString('he-IL'));
+          __ln.push('נכנס להזמנות ולמאזן חברה.');
+          if (!__order.customer) __ln.push('רוצה? שלח "לקוח <שם>" ואשייך.');
           return { reply: __ln.join('\n') };
         }
         Logger.log('order parse OK but write failed: ' + (__orderRes && __orderRes.error));
@@ -8317,6 +8389,11 @@ function processExpense(text, fromPhone) {
       Logger.log('parseBusinessOrder_ THREW: ' + (__orderErr && __orderErr.message));
     }
 
+    // Legacy numbered-PICKER fallback — ONLY for the prefix form. For an NL
+    // message that produced an order but whose write failed above, we do NOT
+    // strip-and-pick (that regex assumes a leading עסק prefix); we let it fall
+    // through to the normal classifier below instead.
+    if (__hStartsBiz) {
     var __hAM = __hT.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)/);
     var __hA = __hAM ? parseFloat(__hAM[1]) : null;
     if (__hA && __hA > 0) {
@@ -8404,6 +8481,7 @@ function processExpense(text, fromPhone) {
         return { reply: __hLnBare.join('\n') };
       }
     }
+    } // end legacy numbered-PICKER fallback (__hStartsBiz only)
   }
 
   const trimmed = text.trim().toLowerCase();
@@ -9564,7 +9642,12 @@ function matchCategory(text) {
   if (!text) return _matchCategory_long(text);
   var t = String(text).toLowerCase().trim();
   t = t.replace(/[   ​]/g, ' ').replace(/\s+/g, ' ');
-  var hasBusinessPrefix = /(^|\s)עסק($|\s)/.test(t);
+  // 2026-06-02: accept the clitic prefix forms (בעסק / לעסק / מעסק / העסק /
+  // ועסק) in addition to the standalone עסק, so a natural sentence like
+  // "...הכנסה בעסק..." routes business (e.g. "הכנסה" -> מחזור income). The
+  // boundary anchors ((^|\s) before the optional clitic, ($|\s) after עסק)
+  // keep this tight: "מעסיק" (employer) and "בעסקים" do NOT match.
+  var hasBusinessPrefix = /(^|\s)[בלמהו]?עסק($|\s)/.test(t);
   if (hasBusinessPrefix) {
     var entries = [];
     for (var cat in BUSINESS_CATEGORY_MAP) {
@@ -9626,10 +9709,13 @@ function _classifyBareBusinessExpense_(text) {
   // Normalize odd whitespace (NBSP / narrow-NBSP / zero-width) to plain spaces.
   var t = raw.replace(/[  ​]/g, ' ').replace(/\s+/g, ' ').trim();
 
-  // Must contain the standalone Hebrew word עסק, optionally directly preceded by
-  // הוצאה / הוצאת. (Standalone = not glued to other letters, so "עסקה"/"עסקי"/
-  // "עסקים" do NOT trigger — those are order / adjective / list-command words.)
-  if (!/(^|\s)עסק(\s|$)/.test(t)) return null;
+  // Must contain the Hebrew word עסק, standalone OR in a clitic prefix form
+  // (בעסק / לעסק / מעסק / העסק / ועסק), optionally directly preceded by
+  // הוצאה / הוצאת. The trailing boundary keeps the suffix forms out: "עסקה"
+  // / "עסקי" / "עסקים" still do NOT trigger (those are order / adjective /
+  // list-command words). 2026-06-02: clitic prefix added so "בעסק 288 שיווק"
+  // is recognised as a bare business expense too.
+  if (!/(^|\s)[בלמהו]?עסק(\s|$)/.test(t)) return null;
 
   // GUARD 1: numbered business ("עסק 2 שיווק 300"). That route writes to its own
   // tab and MUST win. Never hijack it here.
@@ -9657,7 +9743,7 @@ function _classifyBareBusinessExpense_(text) {
   // the subcategory phrase we classify.
   var rest = t
     .replace(/^\s*(?:הוצאה|הוצאת)\s+/, '')   // optional expense lead-in
-    .replace(/(^|\s)עסק(\s|$)/, ' ')          // the business marker
+    .replace(/(^|\s)[בלמהו]?עסק(\s|$)/, ' ')  // the business marker (+clitic prefix)
     .replace(/,/g, ' ')
     .replace(new RegExp('(^|\\s)' + amount.toString().replace('.', '\\.') + '(\\s|$)'), ' ')
     .replace(/\s+/g, ' ')
