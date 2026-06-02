@@ -219,11 +219,15 @@ assert(/function _resolveIsIncome_\(/.test(SRC),
   '_resolveIsIncome_ defined in source');
 // Verify the THREE appendRow sites all use _resolveIsIncome_, not hardcoded
 // `true`. Each must have the helper call AND the `!__xIsInc` arg in col H.
-assert(/var __isInc = _resolveIsIncome_\(matched,[\s\S]{0,400}sheet\.appendRow\([\s\S]*?'WhatsApp', !__isInc\]/.test(SRC),
+// 2026-06-02 taxonomy-normalize: the col-E canonicalization (__dashSub /
+// __hPDashSub / __interSub via _normalizeSubForDashboard_) is now inserted
+// between the _resolveIsIncome_ call and the appendRow, so the proximity
+// window widened 400 -> 900. The col-H wiring asserted here is unchanged.
+assert(/var __isInc = _resolveIsIncome_\(matched,[\s\S]{0,900}sheet\.appendRow\([\s\S]*?'WhatsApp', !__isInc\]/.test(SRC),
   'processExpense main appendRow uses _resolveIsIncome_ for col H');
-assert(/var __hPIsInc = _resolveIsIncome_\(__hPicked[\s\S]{0,400}__hPSheet\.appendRow\([\s\S]*?'WhatsApp', !__hPIsInc\]/.test(SRC),
+assert(/var __hPIsInc = _resolveIsIncome_\(__hPicked[\s\S]{0,900}__hPSheet\.appendRow\([\s\S]*?'WhatsApp', !__hPIsInc\]/.test(SRC),
   'smart_pending hijack appendRow uses _resolveIsIncome_ for col H');
-assert(/var __interIsInc = _resolveIsIncome_\(null[\s\S]{0,400}sheet\.appendRow\([\s\S]*?'WhatsApp \(interactive\)', !__interIsInc\]/.test(SRC),
+assert(/var __interIsInc = _resolveIsIncome_\(null[\s\S]{0,900}sheet\.appendRow\([\s\S]*?'WhatsApp \(interactive\)', !__interIsInc\]/.test(SRC),
   'interactive picker reply appendRow uses _resolveIsIncome_ for col H');
 // Negative: NO appendRow site for the תנועות sheet still has the old
 // hardcoded `true` flag in the col-H position with the 'WhatsApp' / 'WhatsApp

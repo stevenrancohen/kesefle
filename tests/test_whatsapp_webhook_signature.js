@@ -86,5 +86,57 @@ check(
   /log\.error\s*\(\s*['"]wa\.sheets_append_failed['"]/.test(src)
 );
 
+console.log('\n── webhook canonical sheet write (ITEM 2 — dashboard-invisible row landmine) ──');
+// Background: the webhook's inbound-write path used to hand-roll its OWN row +
+// Sheets append with a column layout no dashboard could read (amount in B, the
+// month column; currency in C; "expense"/"income" in D where the dashboards
+// SUMIFS expect "עסק"/category). It was also tokenless (read the refresh token
+// off the phone:{E164} pointer, which never carries one). The fix routes the
+// write through the SHARED canonical lib/sheet-writer.js (buildExpenseRow +
+// appendRowToUserSheet) — the same path /api/sheet/append uses — and resolves
+// the canonical sheet:{userSub} with an isolation leak-guard.
+
+// 9) Routes through the canonical shared writer (imported from lib/sheet-writer.js).
+check(
+  'imports buildExpenseRow + appendRowToUserSheet from lib/sheet-writer.js',
+  /import\s*\{[^}]*\bbuildExpenseRow\b[^}]*\bappendRowToUserSheet\b[^}]*\}\s*from\s*['"]\.\.\/\.\.\/lib\/sheet-writer\.js['"]/.test(src) ||
+  /import\s*\{[^}]*\bappendRowToUserSheet\b[^}]*\bbuildExpenseRow\b[^}]*\}\s*from\s*['"]\.\.\/\.\.\/lib\/sheet-writer\.js['"]/.test(src)
+);
+check(
+  'writeToUserSheet calls the canonical appendRowToUserSheet',
+  /appendRowToUserSheet\s*\(\s*\{/.test(src)
+);
+check(
+  'writeToUserSheet builds the row via canonical buildExpenseRow',
+  /buildExpenseRow\s*\(\s*\{/.test(src)
+);
+
+// 10) The wrong-column landmine is GONE: no local hand-rolled row with currency
+//     in C + type in D, and no local Sheets values:append URL in the webhook.
+check(
+  'no local "currency" column comment (old C-column layout removed)',
+  !/\/\/\s*C:\s*currency/i.test(src)
+);
+check(
+  'no local Sheets values:append URL in the webhook (delegated to sheet-writer)',
+  !/spreadsheets\/\$\{[^}]*\}\/values\/[^`]*:append/.test(src)
+);
+check(
+  'no local sanitizeCell helper (buildExpenseRow sanitizes internally)',
+  !/function\s+sanitizeCell\s*\(/.test(src)
+);
+
+// 11) Tenant isolation: resolves the canonical sheet:{userSub} and aborts on a
+//     phone-cache-vs-canonical mismatch BEFORE writing (never cross-tenant).
+check(
+  'resolves canonical sheet via sheet:${userSub}',
+  /kvGet\(\s*`sheet:\$\{userSub\}`\s*\)/.test(src)
+);
+check(
+  'aborts on sheet ownership mismatch before writing (isolation guard)',
+  /sheet_ownership_mismatch/.test(src) &&
+  /canonicalSheetId\s*&&\s*phoneSheetId\s*&&\s*canonicalSheetId\s*!==\s*phoneSheetId/.test(src)
+);
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' WEBHOOK CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);

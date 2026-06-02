@@ -34,9 +34,9 @@
       extend: {
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
-          ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#ecfeff', 100:'#cffafe', 200:'#a5f3fc', 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490', 800:'#155e75', 900:'#164e63' },
-          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
+          ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 500:'#3b82f6', 600:'#60a5fa' }
         },
         boxShadow: {
           glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
@@ -62,14 +62,14 @@
     letter-spacing: -0.02em;
   }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
-  *:focus-visible { outline: 2px solid #0891b2; outline-offset: 2px; border-radius: 8px; }
+  *:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 8px; }
   /* Progress ring */
   .ring-track { stroke: #eef0f6; }
   html.dark .ring-track { stroke: rgba(255,255,255,0.08); }
   .ring-fill { stroke: url(#ringGrad); transition: stroke-dashoffset 0.8s cubic-bezier(.22,.61,.36,1); }
   /* trend arrows */
   .trend-down { color: #dc2626; }
-  .trend-up   { color: #0e7490; }
+  .trend-up   { color: #1d4ed8; }
   /* card hover lift */
   .lift { transition: transform 0.18s ease-out, box-shadow 0.18s ease-out; }
   .lift:hover { transform: translateY(-2px); box-shadow: 0 12px 32px -16px rgba(15,20,34,0.18); }
@@ -215,7 +215,7 @@
             <svg class="h-full w-full -rotate-90" viewBox="0 0 100 100">
               <defs>
                 <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#0891b2" />
+                  <stop offset="0%" stop-color="#2563eb" />
                   <stop offset="100%" stop-color="#a855f7" />
                 </linearGradient>
               </defs>
@@ -323,8 +323,8 @@
             <svg viewBox="0 0 600 220" class="w-full" preserveAspectRatio="none" aria-label="Performance chart">
               <defs>
                 <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#0891b2" stop-opacity="0.35"/>
-                  <stop offset="100%" stop-color="#0891b2" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#2563eb" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#2563eb" stop-opacity="0"/>
                 </linearGradient>
                 <linearGradient id="chartFill2" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#a855f7" stop-opacity="0.30"/>
@@ -359,9 +359,9 @@
               <!-- Impressions area + line -->
               <path d="M60 70 L148 60 L236 95 L324 80 L412 105 L500 88 L585 75 L585 190 L60 190 Z" fill="url(#chartFill)"/>
               <path d="M60 70 L148 60 L236 95 L324 80 L412 105 L500 88 L585 75"
-                    stroke="#0891b2" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    stroke="#2563eb" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
               <!-- impressions dots -->
-              <g fill="#0891b2">
+              <g fill="#2563eb">
                 <circle cx="60"  cy="70"  r="3"/>
                 <circle cx="148" cy="60"  r="3"/>
                 <circle cx="236" cy="95"  r="3"/>

@@ -13,6 +13,11 @@ const BOT_SECRET = process.env.KESEFLE_BOT_SECRET;
 const kv = new Map();
 const setKv = (k, v) => kv.set(k, typeof v === 'string' ? v : JSON.stringify(v));
 
+// Capture the last Sheets values:append URL so we can assert the writer uses
+// valueInputOption=RAW (consistent with every other Kesefle writer; USER_ENTERED
+// would let Sheets re-interpret imported free-text into formulas/dates).
+let lastAppendUrl = null;
+
 global.fetch = async (url, opts) => {
   opts = opts || {};
   const u = String(url);
@@ -28,7 +33,7 @@ global.fetch = async (url, opts) => {
   if (/spreadsheets\/.+\/values\/.+/.test(u) && (!opts.method || opts.method.toUpperCase() === 'GET')) {
     return new Response(JSON.stringify({ values: [['2026-04-15','2026-04','99','אוכל','','קפה ארומה']] }), { status: 200 });
   }
-  if (/:append/.test(u)) return new Response('{"updates":{}}', { status: 200 });
+  if (/:append/.test(u)) { lastAppendUrl = u; return new Response('{"updates":{}}', { status: 200 }); }
   return new Response('{}', { status: 404 });
 };
 
@@ -146,6 +151,9 @@ console.log('\n=== COMMIT (tenant isolation) ===\n');
   await handler(req({ phone: '972501111111', csv, mode: 'commit' }, { 'x-kesefle-bot-secret': BOT_SECRET }), r);
   check('commit happy path returns 200', r.statusCode === 200, 'got ' + r.statusCode + ' ' + JSON.stringify(r.body));
   check('commit imported 1 row', r.body.imported === 1);
+  check('commit appends with valueInputOption=RAW (not USER_ENTERED)',
+    /valueInputOption=RAW/.test(lastAppendUrl || '') && !/USER_ENTERED/.test(lastAppendUrl || ''),
+    'append url=' + lastAppendUrl);
 }
 {
   // Dedup: existing row with same date+amount+desc should be skipped

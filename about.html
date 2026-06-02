@@ -71,9 +71,9 @@
       extend: {
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
-          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#ecfeff', 100:'#cffafe', 200:'#a5f3fc', 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490', 800:'#155e75', 900:'#164e63' },
-          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 500:'#3b82f6', 600:'#60a5fa' }
         },
         boxShadow: {
           glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
@@ -127,11 +127,11 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: linear-gradient(to bottom, #0891b2 0%, #0e7490 50%, #155e75 100%);
+    background: linear-gradient(to bottom, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
     border-radius: 9999px;
   }
   .dark .timeline-line {
-    background: linear-gradient(to bottom, #0891b2 0%, #22d3ee 50%, #67e8f9 100%);
+    background: linear-gradient(to bottom, #2563eb 0%, #38bdf8 50%, #7dd3fc 100%);
   }
   .timeline-dot {
     position: absolute;
@@ -141,10 +141,10 @@
     height: 1.75rem;
     border-radius: 9999px;
     background: white;
-    border: 3px solid #0891b2;
+    border: 3px solid #2563eb;
     box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.45);
   }
-  .dark .timeline-dot { background: #ffffff; border-color: #22d3ee; }
+  .dark .timeline-dot { background: #ffffff; border-color: #38bdf8; }
   .timeline-dot-future {
     background: #f7f8fb;
     border-style: dashed;
@@ -183,7 +183,7 @@
   .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
   .kfl-curtain-logo {
     width: 64px; height: 64px; border-radius: 16px;
-    background: linear-gradient(135deg, #0891b2, #0e7490);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     display: grid; place-items: center;
     color: white; font-size: 28px; font-weight: 900;
     transform: scale(0.9); opacity: 0;
@@ -488,7 +488,7 @@
       <p class="mb-2 text-sm font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">החזון</p>
       <h2 class="text-3xl font-black tracking-tight md:text-5xl">
         כל שקל
-        <span style="background:linear-gradient(90deg,#67e8f9,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent">מספר סיפור.</span>
+        <span style="background:linear-gradient(90deg,#7dd3fc,#38bdf8);-webkit-background-clip:text;background-clip:text;color:transparent">מספר סיפור.</span>
       </h2>
       <p class="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-ink-700">
         כספ'לה היא לא אפליקציה. היא רובד דק, שקוף, שיושב בין הוואטסאפ שלך לבין הגיליון שלך — וגורם לכסף לנהל את עצמו.
@@ -783,9 +783,12 @@
     <div>
       <p class="font-bold dark:text-white">מוצר</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
-        <li></li>
-        <li></li>
         <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
+        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">דמו אינטראקטיבי</a></li>
+        <li><a href="/maakav-hotzaot-whatsapp" class="hover:text-ink-900 dark:hover:text-white">מעקב הוצאות בוואטסאפ</a></li>
+        <li><a href="/nihul-taktziv-mishpachti" class="hover:text-ink-900 dark:hover:text-white">ניהול תקציב משפחתי</a></li>
+        <li><a href="/nihul-hotzaot-esek-katan" class="hover:text-ink-900 dark:hover:text-white">ניהול הוצאות לעסק קטן</a></li>
+        <li><a href="/referral" class="hover:text-ink-900 dark:hover:text-white">חבר מביא חבר</a></li>
       </ul>
     </div>
     <div>
