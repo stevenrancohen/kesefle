@@ -6,7 +6,7 @@
 <title>הדשבורד שלי — כספ'לה</title>
 <meta name="description" content="הדשבורד האישי שלך בכספ'לה — תנועות אחרונות, סיכום חודשי וניתוחים מהגוגל שיט שלך." />
 <meta name="robots" content="noindex,follow" />
-<meta name="theme-color" content="#0891b2" />
+<meta name="theme-color" content="#6366F1" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="כספ'לה" />
@@ -35,9 +35,9 @@
       extend: {
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
-          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#ecfeff', 100:'#cffafe', 200:'#a5f3fc', 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490', 800:'#155e75', 900:'#164e63' },
-          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+          brand:   { 50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 300:'#93c5fd', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 500:'#0ea5e9', 600:'#0284c7' }
         },
         boxShadow: {
           glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)',
@@ -87,7 +87,7 @@
   .kfl-curtain.kfl-curtain-hidden { opacity: 0; visibility: hidden; }
   .kfl-curtain-logo {
     width: 64px; height: 64px; border-radius: 16px;
-    background: linear-gradient(135deg, #0891b2, #0e7490);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     display: grid; place-items: center;
     color: white; font-size: 28px; font-weight: 900;
     transform: scale(0.9); opacity: 0;
@@ -178,7 +178,7 @@
 
   /* Clickable tx rows */
   .tx-row { cursor: pointer; }
-  .tx-row:focus-visible { outline: 2px solid #0891b2; outline-offset: 2px; }
+  .tx-row:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
   /* Dashboard tour CSS removed 2026-05-24 per Steven's request. */
 </style>
 <script src="/lib/analytics.js" defer></script>
@@ -282,10 +282,10 @@
     transition: background 0.15s, color 0.15s;
   }
   html.dark .kfl-side-link { color: #cbd5e1; }
-  .kfl-side-link:hover { background: rgba(6,182,212,0.08); color: #0891b2; }
-  html.dark .kfl-side-link:hover { background: rgba(6,182,212,0.14); color: #67e8f9; }
-  .kfl-side-link.is-active { background: #ecfeff; color: #0e7490; font-weight: 700; }
-  html.dark .kfl-side-link.is-active { background: rgba(6,182,212,0.18); color: #a5f3fc; }
+  .kfl-side-link:hover { background: rgba(59,130,246,0.08); color: #2563eb; }
+  html.dark .kfl-side-link:hover { background: rgba(59,130,246,0.14); color: #7dd3fc; }
+  .kfl-side-link.is-active { background: #f0f9ff; color: #1d4ed8; font-weight: 700; }
+  html.dark .kfl-side-link.is-active { background: rgba(59,130,246,0.18); color: #bae6fd; }
   .kfl-side-icon { display: inline-block; width: 1.25rem; text-align: center; }
   /* Reserve space on desktop so the main content doesn't sit under the sidebar */
   @media (min-width: 768px) {
@@ -446,7 +446,7 @@
           <div class="relative h-32 w-32 flex-shrink-0 sm:h-36 sm:w-36">
             <svg id="health-gauge" viewBox="0 0 100 100" class="h-full w-full -rotate-90" aria-hidden="true">
               <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="9" class="text-ink-700/60 dark:text-ink-700/60"/>
-              <circle id="health-gauge-arc" cx="50" cy="50" r="42" fill="none" stroke="#0891b2" stroke-width="9" stroke-linecap="round"
+              <circle id="health-gauge-arc" cx="50" cy="50" r="42" fill="none" stroke="#2563eb" stroke-width="9" stroke-linecap="round"
                       stroke-dasharray="0 263.9" style="transition:stroke-dasharray .9s cubic-bezier(.22,.61,.36,1), stroke .4s ease;"/>
             </svg>
             <div class="absolute inset-0 grid place-items-center text-center">
@@ -785,7 +785,7 @@
               <div class="mt-1 font-mono text-sm font-bold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">"סופר רמי לוי 230"</div>
               <div class="mt-1 text-[10px] text-ink-500 dark:text-ink-400">סדר חופשי. מזהה את הסכום והמטרה.</div>
             </a>
-            <a href="https://wa.me/15556408123?text=📷%20%D7%A6%D7%99%D7%9C%D7%95%D7%9D%20%D7%A7%D7%91%D7%9C%D7%94" target="_blank" rel="noopener" class="group rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
+            <a href="https://wa.me/15556408123?text=%F0%9F%93%B7%20%D7%A6%D7%99%D7%9C%D7%95%D7%9D%20%D7%A7%D7%91%D7%9C%D7%94" target="_blank" rel="noopener" class="group rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
               <div class="text-xs font-bold text-ink-500 dark:text-ink-400">3. צילום קבלה</div>
               <div class="mt-1 font-mono text-sm font-bold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">📷 שלח תמונה</div>
               <div class="mt-1 text-[10px] text-ink-500 dark:text-ink-400">קורא את הסכום והשם מהקבלה.</div>
@@ -840,8 +840,74 @@
     </div>
   </section>
 
+  <!-- PR-D3 (2026-05-26): Financial Overview hero strip.
+       Headline section that gives a 1-second read on "am I OK this
+       month?". Pulls from the same data payload as summary-cards;
+       no new endpoint. Hidden by default until the first render call
+       so the empty-state flow still works for first-time users. -->
+  <section id="kfl-fo-hero" class="mb-6 hidden">
+    <div class="relative overflow-hidden rounded-3xl border border-ink-200 bg-gradient-to-br from-white via-brand-50/40 to-white p-6 shadow-soft dark:border-ink-700 dark:from-ink-800 dark:via-brand-500/5 dark:to-ink-800 md:p-8">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-700 dark:text-brand-300">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/></svg>
+            סקירה פיננסית
+          </div>
+          <h2 class="mt-1 font-display text-2xl font-black tracking-tight text-ink-900 dark:text-white md:text-3xl" id="kfl-fo-month">—</h2>
+        </div>
+        <div id="kfl-fo-status" class="kfl-fo-pill kfl-fo-pill-neutral">
+          <span class="kfl-fo-pill-dot"></span>
+          <span id="kfl-fo-status-text">טוען…</span>
+        </div>
+      </div>
+      <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div>
+          <div class="text-xs font-semibold text-ink-600 dark:text-ink-300">תזרים נטו</div>
+          <div class="mt-1 font-display text-3xl font-black tracking-tight md:text-4xl" id="kfl-fo-net" dir="ltr" style="font-variant-numeric: tabular-nums; line-height: 1.05;">—</div>
+          <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="kfl-fo-net-sub">הכנסות פחות הוצאות</div>
+        </div>
+        <div class="sm:border-r sm:border-l-0 sm:pr-6 sm:border-ink-200 dark:sm:border-ink-700">
+          <div class="text-xs font-semibold text-ink-600 dark:text-ink-300">הוצאה יומית ממוצעת</div>
+          <div class="mt-1 font-display text-3xl font-black tracking-tight text-red-600 md:text-4xl" id="kfl-fo-burn" dir="ltr" style="font-variant-numeric: tabular-nums; line-height: 1.05;">—</div>
+          <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="kfl-fo-burn-sub">מתחילת החודש</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-ink-600 dark:text-ink-300">נותרו בחודש</div>
+          <div class="mt-1 font-display text-3xl font-black tracking-tight text-ink-900 dark:text-white md:text-4xl" id="kfl-fo-days" dir="ltr" style="font-variant-numeric: tabular-nums; line-height: 1.05;">—</div>
+          <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="kfl-fo-days-sub">ימים</div>
+        </div>
+      </div>
+    </div>
+    <style>
+      .kfl-fo-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px; border-radius: 9999px;
+        font-size: 13px; font-weight: 700;
+        border: 1px solid transparent;
+      }
+      .kfl-fo-pill-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: currentColor;
+        animation: kfl-fo-pulse 2s ease-in-out infinite;
+      }
+      @keyframes kfl-fo-pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+      @media (prefers-reduced-motion: reduce) { .kfl-fo-pill-dot { animation: none; } }
+      .kfl-fo-pill-ok      { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+      .kfl-fo-pill-warn    { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+      .kfl-fo-pill-crit    { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+      .kfl-fo-pill-neutral { background: #F8FAFC; color: #475569; border-color: #E2E8F0; }
+      html.dark .kfl-fo-pill-ok      { background: rgba(4,120,87,0.18);   color: #6EE7B7; border-color: rgba(167,243,208,0.35); }
+      html.dark .kfl-fo-pill-warn    { background: rgba(180,83,9,0.18);   color: #FCD34D; border-color: rgba(253,230,138,0.35); }
+      html.dark .kfl-fo-pill-crit    { background: rgba(185,28,28,0.18);  color: #FCA5A5; border-color: rgba(254,202,202,0.35); }
+      html.dark .kfl-fo-pill-neutral { background: rgba(71,85,105,0.18);  color: #CBD5E1; border-color: rgba(226,232,240,0.35); }
+    </style>
+  </section>
+
   <!-- summary cards -->
-  <section id="summary-cards" class="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+  <!-- PR-D4 (2026-05-27): grid bumped from md:grid-cols-4 to lg:grid-cols-6
+       so the two NEW cards (MoM + top category) fit on a single row on
+       desktop. Mobile still wraps to 2 cols, tablet 3 cols. -->
+  <section id="summary-cards" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
     <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between">
         <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">החודש — הוצאות</div>
@@ -871,12 +937,12 @@
       <svg class="sparkline" id="spark-income" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="grad-income" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#0891b2" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="#0891b2" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#2563eb" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#2563eb" stop-opacity="0"/>
           </linearGradient>
         </defs>
         <path d="" id="spark-income-fill" fill="url(#grad-income)"/>
-        <path d="" id="spark-income-line" stroke="#0891b2" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="" id="spark-income-line" stroke="#2563eb" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
     </div>
     <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800" id="card-balance">
@@ -900,6 +966,35 @@
       <div class="mt-3 flex items-end gap-0.5" id="count-bars" aria-hidden="true">
         <!-- 14 daily mini-bars injected by JS -->
       </div>
+    </div>
+
+    <!-- PR-D4 (2026-05-27): NEW card — Month-over-month spending change.
+         Uses the same d.month_expenses_delta_pct value the small "delta"
+         under "החודש - הוצאות" was already showing, but elevated to its
+         own card so a CEO-glance reading instantly answers "are we
+         spending more or less than last month?". -->
+    <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800" id="card-mom">
+      <div class="flex items-center justify-between">
+        <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">שינוי מהחודש שעבר</div>
+        <div id="mom-icon" class="grid h-7 w-7 place-items-center rounded-lg bg-ink-100 text-ink-500 dark:bg-ink-700 dark:text-ink-300">↔</div>
+      </div>
+      <div class="mt-2 text-3xl font-black" dir="ltr" style="text-align:right;">
+        <span class="num stat-num text-ink-900 dark:text-white" id="month-mom-pct">—</span>
+      </div>
+      <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="month-mom-detail">השוואה ל-30 ימים</div>
+    </div>
+
+    <!-- PR-D4 (2026-05-27): NEW card — Top category this month.
+         The dashboard already fetches d.top_cat / d.top_cat_amount for
+         the existing "קטגוריות מובילות" list, but no headline summary
+         existed. This card promotes the #1 to glance level. -->
+    <div class="stat-card min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800" id="card-topcat">
+      <div class="flex items-center justify-between">
+        <div class="text-sm font-semibold text-ink-500 dark:text-ink-300">קטגוריה מובילה</div>
+        <div class="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">🏆</div>
+      </div>
+      <div class="mt-2 text-xl font-black truncate text-ink-900 dark:text-white" id="month-topcat-name" title="—">—</div>
+      <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="month-topcat-amount">—</div>
     </div>
   </section>
 
@@ -1108,8 +1203,8 @@
       <p class="mt-1 text-sm text-ink-500 dark:text-ink-400">כל ההוצאות וההכנסות שלך במקום אחד, עם חיפוש וייצוא.</p>
     </header>
     <div class="rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-soft dark:border-ink-700 dark:bg-ink-800">
-      <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#ECFEFF;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#f0f9ff;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
       <div class="text-base font-bold text-ink-900 dark:text-white">העסקאות שלך יופיעו כאן</div>
       <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">בקרוב — חיפוש, סינון לפי תאריך/קטגוריה/סכום, וייצוא ל-CSV.</div>
@@ -1540,19 +1635,19 @@ var CATEGORY_META = {
   'בית':        { icon: '🏠', color: '#8b5cf6' },
   'ארנונה':     { icon: '🏛️', color: '#7c3aed' },
   'חשמל':       { icon: '💡', color: '#eab308' },
-  'מים':        { icon: '💧', color: '#06b6d4' },
+  'מים':        { icon: '💧', color: '#3b82f6' },
   'חשבונות':    { icon: '🧾', color: '#64748b' },
   'בריאות':     { icon: '⚕️', color: '#ef4444' },
   'בידור':      { icon: '🎬', color: '#ec4899' },
   'קניות':      { icon: '🛍️', color: '#a855f7' },
-  'משכורת':     { icon: '💰', color: '#0891b2' },
-  'הכנסה':      { icon: '💰', color: '#0891b2' },
+  'משכורת':     { icon: '💰', color: '#2563eb' },
+  'הכנסה':      { icon: '💰', color: '#2563eb' },
   'חיות מחמד':  { icon: '🐾', color: '#f97316' },
   'ילדים':      { icon: '🧒', color: '#fb7185' },
-  'חינוך':      { icon: '📚', color: '#06b6d4' },
+  'חינוך':      { icon: '📚', color: '#3b82f6' },
   'ביטוח':      { icon: '🛡️', color: '#475569' },
 };
-var DONUT_PALETTE = ['#0891b2', '#a855f7', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4', '#64748b'];
+var DONUT_PALETTE = ['#2563eb', '#a855f7', '#3b82f6', '#f59e0b', '#ec4899', '#3b82f6', '#64748b'];
 
 function categoryMeta(name) {
   if (!name) return { icon: '💸', color: '#64748b' };
@@ -1929,6 +2024,9 @@ function showEmptyState() {
   document.getElementById('reauth-banner').classList.add('hidden');
   document.getElementById('summary-cards').classList.add('hidden');
   document.getElementById('empty-state').classList.remove('hidden');
+  // Empty hero is now the single focal CTA — collapse the start-checklist so
+  // it doesn't duplicate the "send first expense" ask above it.
+  try { if (window.kflOnboardingRefresh) window.kflOnboardingRefresh(); } catch (_e) {}
   document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">אין תנועות עדיין. שלח לבוט הודעה ראשונה.</div>';
   document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">אין נתונים עדיין.</div>';
 }
@@ -1981,6 +2079,15 @@ function renderDashboard(d) {
   function fmt(n) { return new Intl.NumberFormat('he-IL').format(Math.round(n || 0)); }
   function num(n) { return '₪' + fmt(n); }
 
+  // User has data now: the empty-state hero is hidden, so the start-checklist
+  // can surface (it was suppressed while zero-data, to keep one obvious CTA).
+  try { if (window.kflOnboardingRefresh) window.kflOnboardingRefresh(); } catch (_e) {}
+
+  // --- PR-D3: Populate the Financial Overview hero. Runs first so the
+  //     headline is up before the per-card animations finish. Computes
+  //     entirely from the same `d` payload — no new endpoint.
+  try { populateFinancialOverviewHero(d); } catch (_foErr) { /* never block */ }
+
   // --- Animated summary cards
   countUp(document.getElementById('month-expenses'), d.month_expenses || 0, { prefix: '₪' });
   countUp(document.getElementById('month-income'), d.month_income || 0, { prefix: '₪' });
@@ -2021,6 +2128,65 @@ function renderDashboard(d) {
     d2El.textContent = s2 + d.month_income_delta_pct + '% מהחודש שעבר';
     d2El.className = 'mt-1 text-xs font-medium ' + (d.month_income_delta_pct < 0 ? 'text-red-600 dark:text-red-600' : 'text-brand-600 dark:text-brand-600');
   }
+
+  // --- PR-D4: Month-over-month expenses card.
+  //     For expenses, RED means UP (worse) and GREEN means DOWN (better),
+  //     opposite of the income card. Inverts the existing delta logic so
+  //     the standalone tile reads at a glance.
+  try {
+    var momEl = document.getElementById('month-mom-pct');
+    var momSub = document.getElementById('month-mom-detail');
+    var momIcon = document.getElementById('mom-icon');
+    if (d.month_expenses_delta_pct != null && momEl) {
+      var pct = Number(d.month_expenses_delta_pct);
+      var sign3 = pct >= 0 ? '+' : '';
+      momEl.textContent = sign3 + pct + '%';
+      // Red = expenses UP, Green = expenses DOWN, Grey = ~flat (±2%)
+      var color = Math.abs(pct) < 2
+        ? 'text-ink-600 dark:text-ink-300'
+        : (pct > 0 ? 'text-red-600 dark:text-red-500' : 'text-emerald-600 dark:text-emerald-400');
+      momEl.className = 'num stat-num ' + color;
+      if (momSub) {
+        momSub.textContent = pct > 0
+          ? 'הוצאת יותר מהחודש שעבר'
+          : (pct < 0 ? 'הוצאת פחות מהחודש שעבר' : 'בערך זהה לחודש שעבר');
+      }
+      if (momIcon) {
+        var arrow = Math.abs(pct) < 2 ? '↔' : (pct > 0 ? '↗' : '↘');
+        var bgcls = Math.abs(pct) < 2
+          ? 'bg-ink-100 text-ink-500 dark:bg-ink-700 dark:text-ink-300'
+          : (pct > 0
+            ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-500'
+            : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400');
+        momIcon.textContent = arrow;
+        momIcon.className = 'grid h-7 w-7 place-items-center rounded-lg ' + bgcls;
+      }
+    } else if (momEl) {
+      momEl.textContent = '—';
+      if (momSub) momSub.textContent = 'אין מספיק נתונים מהחודש שעבר';
+    }
+  } catch (_momErr) { /* never block render */ }
+
+  // --- PR-D4: Top category card.
+  //     Promotes #1 from d.top_categories to its own glance-tile so the user
+  //     instantly sees "where my money goes most" without scrolling to the
+  //     donut. Truncates names > 20 chars so long Hebrew labels don't overflow.
+  try {
+    var topCatName = document.getElementById('month-topcat-name');
+    var topCatAmt = document.getElementById('month-topcat-amount');
+    var topCatList = d.top_categories || [];
+    var top = topCatList[0];
+    if (topCatName && top && top.name) {
+      var displayName = String(top.name);
+      if (displayName.length > 20) displayName = displayName.slice(0, 19) + '…';
+      topCatName.textContent = displayName;
+      topCatName.title = String(top.name);
+      if (topCatAmt) topCatAmt.textContent = num(top.total || 0) + ' החודש';
+    } else if (topCatName) {
+      topCatName.textContent = '—';
+      if (topCatAmt) topCatAmt.textContent = 'אין הוצאות החודש';
+    }
+  } catch (_topcatErr) { /* never block render */ }
 
   // Sparklines from daily series (or generated from totals if absent)
   var expSeries = d.daily_expenses || generatePseudoSeries(d.month_expenses || 0, 14);
@@ -2102,6 +2268,103 @@ function renderDashboard(d) {
   });
 }
 
+// PR-D3 (2026-05-26): Financial Overview hero populator. Pulls from the
+// same `d` payload as the per-card animations, computes 3 hero metrics +
+// a health pill, fills the strip. No side effects, no fetches; if any
+// piece is missing it leaves the em-dash placeholder.
+function populateFinancialOverviewHero(d) {
+  var hero = document.getElementById('kfl-fo-hero');
+  if (!hero) return;
+  // Show the hero only if we have something meaningful to display.
+  var income = Math.max(0, +(d && d.month_income) || 0);
+  var expenses = Math.max(0, +(d && d.month_expenses) || 0);
+  if (income <= 0 && expenses <= 0) {
+    hero.classList.add('hidden');
+    return;
+  }
+  hero.classList.remove('hidden');
+
+  var fmt = function(n) { return new Intl.NumberFormat('he-IL').format(Math.round(n || 0)); };
+
+  // Month name in Hebrew, e.g. "מאי 2026". Intl handles Hebrew month
+  // names natively in modern browsers; fall back to ISO if it fails.
+  var monthName = '';
+  try {
+    monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' })
+      .format(new Date());
+  } catch (_e) {
+    var now = new Date();
+    monthName = (now.getMonth() + 1) + '/' + now.getFullYear();
+  }
+  var mEl = document.getElementById('kfl-fo-month');
+  if (mEl) mEl.textContent = monthName;
+
+  // Net cashflow (= income - expenses). Color-coded: green if positive,
+  // amber if mildly negative (<= 15% of income), red otherwise.
+  var net = income - expenses;
+  var netEl = document.getElementById('kfl-fo-net');
+  if (netEl) {
+    netEl.textContent = (net >= 0 ? '+' : '−') + '₪' + fmt(Math.abs(net));
+    netEl.style.color = net >= 0
+      ? '#047857'   // emerald-700
+      : (income > 0 && (expenses - income) / income <= 0.15 ? '#B45309' : '#B91C1C');
+  }
+  var netSubEl = document.getElementById('kfl-fo-net-sub');
+  if (netSubEl) {
+    if (income > 0) {
+      var pct = Math.round((expenses / income) * 100);
+      netSubEl.textContent = 'הוצאת ' + pct + '% מההכנסה';
+    } else {
+      netSubEl.textContent = 'אין עדיין הכנסות החודש';
+    }
+  }
+
+  // Daily burn rate. Use days elapsed in the current month (counting
+  // today). On day 1 of the month this is "1" so we never divide by zero.
+  var now = new Date();
+  var dayOfMonth = now.getDate();
+  var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  var daysRemaining = Math.max(0, daysInMonth - dayOfMonth);
+  var burn = expenses / Math.max(1, dayOfMonth);
+  var burnEl = document.getElementById('kfl-fo-burn');
+  if (burnEl) burnEl.textContent = '₪' + fmt(burn);
+  var burnSubEl = document.getElementById('kfl-fo-burn-sub');
+  if (burnSubEl) burnSubEl.textContent = 'מתחילת ' + monthName.split(' ')[0];
+
+  var daysEl = document.getElementById('kfl-fo-days');
+  if (daysEl) daysEl.textContent = String(daysRemaining);
+  var daysSubEl = document.getElementById('kfl-fo-days-sub');
+  if (daysSubEl) {
+    daysSubEl.textContent = daysRemaining === 0
+      ? 'החודש מסתיים היום' : 'מתוך ' + daysInMonth + ' ימים';
+  }
+
+  // Status pill: 4 tiers based on the net/income ratio.
+  //   - bal >= 0           => OK (green)
+  //   - 0-15% over budget  => warn (amber)
+  //   - >15% over          => crit (red)
+  //   - no income yet      => neutral (no judgment)
+  var statusEl = document.getElementById('kfl-fo-status');
+  var statusTxt = document.getElementById('kfl-fo-status-text');
+  if (statusEl && statusTxt) {
+    // Reset variants to avoid stuck classes after re-render.
+    statusEl.className = 'kfl-fo-pill';
+    if (income <= 0) {
+      statusEl.classList.add('kfl-fo-pill-neutral');
+      statusTxt.textContent = 'ממתין להכנסה ראשונה';
+    } else if (net >= 0) {
+      statusEl.classList.add('kfl-fo-pill-ok');
+      statusTxt.textContent = 'במסלול - יתרה חיובית';
+    } else if ((expenses - income) / income <= 0.15) {
+      statusEl.classList.add('kfl-fo-pill-warn');
+      statusTxt.textContent = 'דורש תשומת לב';
+    } else {
+      statusEl.classList.add('kfl-fo-pill-crit');
+      statusTxt.textContent = 'גרעון משמעותי';
+    }
+  }
+}
+
 // Generate a smooth random series so sparklines look alive even before API plumbed
 function generatePseudoSeries(target, n, intLike) {
   if (!target || target <= 0) return new Array(n).fill(0);
@@ -2139,7 +2402,7 @@ function generatePseudoSeries(target, n, intLike) {
 
   // Color palette aligned with the dashboard theme
   // (brand-500 green, accent purple, amber, slate, sky, rose, sand)
-  var DONUT_COLORS = ['#0891b2','#a855f7','#f59e0b','#0ea5e9','#ef4444','#14b8a6','#94a3b8'];
+  var DONUT_COLORS = ['#2563eb','#a855f7','#f59e0b','#0ea5e9','#ef4444','#14b8a6','#94a3b8'];
 
   // ---- Bucket helpers ---------------------------------------------------
   function ym(d){
@@ -2313,7 +2576,7 @@ function generatePseudoSeries(target, n, intLike) {
     if (arc) {
       var pct = Math.max(0, Math.min(100, h.overall)) / 100;
       arc.setAttribute('stroke-dasharray', (FULL * pct).toFixed(1) + ' ' + FULL);
-      var color = h.overall >= 80 ? '#0891b2' : h.overall >= 50 ? '#f59e0b' : '#ef4444';
+      var color = h.overall >= 80 ? '#2563eb' : h.overall >= 50 ? '#f59e0b' : '#ef4444';
       arc.setAttribute('stroke', color);
     }
 
@@ -2447,7 +2710,7 @@ function generatePseudoSeries(target, n, intLike) {
     var poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
     poly.setAttribute('points', areaPts.join(' '));
     poly.setAttribute('fill', 'none');
-    poly.setAttribute('stroke', '#0891b2');
+    poly.setAttribute('stroke', '#2563eb');
     poly.setAttribute('stroke-width', '2.5');
     poly.setAttribute('stroke-linecap', 'round');
     poly.setAttribute('stroke-linejoin', 'round');
@@ -2459,8 +2722,8 @@ function generatePseudoSeries(target, n, intLike) {
       c.setAttribute('cx', xAt(i));
       c.setAttribute('cy', yAt(m.total));
       c.setAttribute('r', i === months.length - 1 ? '5' : '3.5');
-      c.setAttribute('fill', i === months.length - 1 ? '#0891b2' : '#0f1422');
-      c.setAttribute('stroke', '#0891b2');
+      c.setAttribute('fill', i === months.length - 1 ? '#2563eb' : '#0f1422');
+      c.setAttribute('stroke', '#2563eb');
       c.setAttribute('stroke-width', '2');
       var title = document.createElementNS('http://www.w3.org/2000/svg','title');
       title.textContent = monthLabel(m.date) + ': ' + moneyShekel(m.total);
@@ -2816,7 +3079,7 @@ function generatePseudoSeries(target, n, intLike) {
     // <60% green, 60-threshold yellow, >=threshold red.
     if (pct >= threshold) return '#ef4444';
     if (pct >= 60) return '#f59e0b';
-    return '#0891b2';
+    return '#2563eb';
   }
   function renderBudgets(rows){
     var listEl = safeEl('budget-list');
@@ -3048,7 +3311,14 @@ function generatePseudoSeries(target, n, intLike) {
   }
 
   function renderTable(rows) {
-    var anyMember = rows.some(function(r){ return r && r.member && String(r.member).trim() !== ''; });
+    // Newest-first: sort by real parsed date (nulls last) so the latest entries
+    // always show on top, regardless of the sheet's append order.
+    rows = (rows || []).slice().sort(function(a, b){
+      var da = parseDate(a && a.date), db = parseDate(b && b.date);
+      if (da && db) return db - da;
+      if (da) return -1; if (db) return 1; return 0;
+    });
+    var anyMember = rows.some(function(r){ var v = r && String(r.member || '').trim(); return v && !/^(false|0|לא)$/i.test(v); });
     var thMember = document.getElementById('live-th-member');
     if (thMember) thMember.style.display = anyMember ? '' : 'none';
 
@@ -3065,8 +3335,13 @@ function generatePseudoSeries(target, n, intLike) {
       var amtCell = '<td class="num-cell px-4 py-2.5 font-black ' + amtClass + '">' + money(Math.abs(amt)) + '</td>';
       var catCell = '<td class="px-4 py-2.5 text-ink-700 dark:text-ink-200">' + escapeHtml(r.category || '—') + '</td>';
       var descCell = '<td class="px-4 py-2.5 text-ink-700 dark:text-ink-200">' + escapeHtml(r.description || '') + '</td>';
+      // Consistent status/member rendering: a checkmark for a positive flag,
+      // the member name if it's a name, blank for empty/false -- never raw "TRUE".
+      var __mv = String(r.member || '').trim();
+      var __mShow = (__mv === '' || /^(false|0|לא)$/i.test(__mv)) ? ''
+        : (/^(true|1|כן|✅|v|yes)$/i.test(__mv) ? '✅' : escapeHtml(__mv));
       var memberCell = anyMember
-        ? '<td class="px-4 py-2.5 text-ink-600 dark:text-ink-300">' + escapeHtml(r.member || '') + '</td>'
+        ? '<td class="px-4 py-2.5 text-center text-ink-600 dark:text-ink-300">' + __mShow + '</td>'
         : '';
       tr.innerHTML = dateCell + amtCell + catCell + descCell + memberCell;
       frag.appendChild(tr);
@@ -3255,7 +3530,7 @@ function generatePseudoSeries(target, n, intLike) {
   function setStatus(msg, isError) {
     var s = getStatus(); if (!s) return;
     s.textContent = msg; s.classList.remove('hidden');
-    s.style.color = isError ? '#b91c1c' : '#155e75';
+    s.style.color = isError ? '#b91c1c' : '#1e40af';
   }
 
   function hideCardForever() {
@@ -3402,7 +3677,7 @@ function generatePseudoSeries(target, n, intLike) {
     <textarea id="kflNpsComment" placeholder="מה הסיבה לציון? איך נוכל להשתפר?" rows="3" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;color:#e6f6ec;font-family:inherit;font-size:13px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button id="kflNpsSkip" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(230,246,236,0.65);font-family:inherit;font-size:13px;cursor:pointer">דלג</button>
-      <button id="kflNpsSubmit" style="flex:2;padding:10px;border-radius:8px;border:0;background:#0891b2;color:#062a13;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer">שלח משוב</button>
+      <button id="kflNpsSubmit" style="flex:2;padding:10px;border-radius:8px;border:0;background:#2563eb;color:#062a13;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer">שלח משוב</button>
     </div>
   </div>
   <div id="kflNpsStep3" style="display:none;text-align:center;padding:18px 4px">
@@ -3441,7 +3716,7 @@ function generatePseudoSeries(target, n, intLike) {
     btn.type = 'button';
     btn.textContent = String(i);
     btn.dataset.score = String(i);
-    var color = i <= 6 ? '#ef4444' : i <= 8 ? '#f59e0b' : '#0891b2';
+    var color = i <= 6 ? '#ef4444' : i <= 8 ? '#f59e0b' : '#2563eb';
     btn.style.cssText = 'padding:9px 0;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);color:'+color+';border-radius:6px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:transform 0.1s';
     btn.addEventListener('mouseenter', function(){this.style.transform='translateY(-2px)';this.style.background='rgba(255,255,255,0.07)';});
     btn.addEventListener('mouseleave', function(){this.style.transform='';this.style.background='rgba(255,255,255,0.03)';});
@@ -3517,7 +3792,7 @@ function generatePseudoSeries(target, n, intLike) {
     if (document.getElementById('kfl-install-banner')) return;
     var bar = document.createElement('div');
     bar.id = 'kfl-install-banner';
-    bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#0e7490;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:9999;font:600 14px/1.4 Heebo,system-ui,sans-serif;box-shadow:0 -4px 16px rgba(0,0,0,0.2)';
+    bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1d4ed8;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:9999;font:600 14px/1.4 Heebo,system-ui,sans-serif;box-shadow:0 -4px 16px rgba(0,0,0,0.2)';
     bar.dir = 'rtl';
     bar.innerHTML =
       '<div style="display:flex;align-items:center;gap:10px">' +
@@ -3528,7 +3803,7 @@ function generatePseudoSeries(target, n, intLike) {
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-shrink:0">' +
-        '<button id="kfl-install-go" style="background:#fff;color:#0e7490;border:none;padding:9px 18px;border-radius:10px;font-weight:800;cursor:pointer;font:inherit">' + (opts.action || 'התקן') + '</button>' +
+        '<button id="kfl-install-go" style="background:#fff;color:#1d4ed8;border:none;padding:9px 18px;border-radius:10px;font-weight:800;cursor:pointer;font:inherit">' + (opts.action || 'התקן') + '</button>' +
         '<button id="kfl-install-dismiss" style="background:transparent;color:#fff;border:1px solid #fff;padding:9px 14px;border-radius:10px;cursor:pointer;font:inherit;opacity:0.85">לא עכשיו</button>' +
       '</div>';
     document.body.appendChild(bar);
@@ -3771,6 +4046,16 @@ function generatePseudoSeries(target, n, intLike) {
     var section = document.getElementById('kfl-onboarding');
     var list = document.getElementById('kfl-onboarding-list');
     if (!section || !list) return;
+    // Don't compete with the full-bleed empty-state hero. While the user has
+    // zero transactions the big "send your first expense" panel IS the single
+    // obvious next action; this 4-step checklist (which leads with the same
+    // step) would only split attention. It re-appears automatically once the
+    // user has data and the empty state is hidden.
+    var emptyHero = document.getElementById('empty-state');
+    if (emptyHero && !emptyHero.classList.contains('hidden')) {
+      section.classList.add('hidden');
+      return;
+    }
     var state = loadState();
     // Auto-detect any newly-completed steps.
     STEPS.forEach(function (s) {
@@ -3786,7 +4071,7 @@ function generatePseudoSeries(target, n, intLike) {
     list.innerHTML = STEPS.map(function (s) {
       var done = !!state[s.id];
       var checkbox = done
-        ? '<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:#0e7490;color:white;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✓</span>'
+        ? '<span style="display:inline-flex;width:24px;height:24px;border-radius:50%;background:#1d4ed8;color:white;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✓</span>'
         : '<button data-step="' + s.id + '" class="kfl-onb-mark" style="display:inline-flex;width:24px;height:24px;border-radius:50%;border:2px solid #bcc4d6;background:white;cursor:pointer;flex-shrink:0" title="סמן כבוצע"></button>';
       var titleStyle = done ? 'text-decoration:line-through;opacity:0.6' : '';
       return '<li style="display:flex;align-items:flex-start;gap:10px;padding:8px 0">' +
@@ -3795,7 +4080,7 @@ function generatePseudoSeries(target, n, intLike) {
           '<div style="font-weight:700;font-size:14px;' + titleStyle + '">' + s.title + '</div>' +
           (done ? '' : '<div style="font-size:12px;color:#5d6b8f;margin-top:2px">' + s.hint + '</div>') +
         '</div>' +
-        (done ? '' : '<a href="' + s.cta_url + '" target="_blank" rel="noopener" style="font-size:12px;color:#0e7490;font-weight:700;text-decoration:none;border:1px solid #0e7490;padding:6px 12px;border-radius:8px;flex-shrink:0">' + s.cta_label + '</a>') +
+        (done ? '' : '<a href="' + s.cta_url + '" target="_blank" rel="noopener" style="font-size:12px;color:#1d4ed8;font-weight:700;text-decoration:none;border:1px solid #1d4ed8;padding:6px 12px;border-radius:8px;flex-shrink:0">' + s.cta_label + '</a>') +
       '</li>';
     }).join('');
     section.classList.remove('hidden');
@@ -3816,6 +4101,11 @@ function generatePseudoSeries(target, n, intLike) {
     var section = document.getElementById('kfl-onboarding');
     if (section) section.classList.add('hidden');
   };
+
+  // Public hook so the dashboard data-load path can re-evaluate the checklist
+  // once it knows whether the empty-state hero is showing (avoids a flash of
+  // the checklist before zero-data is confirmed).
+  window.kflOnboardingRefresh = render;
 
   if (document.readyState === 'complete') render();
   else window.addEventListener('load', function () { setTimeout(render, 1500); });
@@ -3970,7 +4260,7 @@ window.addEventListener('load', function () {
       var host = document.querySelector('main') || document.body;
       if (!host) return;
       if ((host.innerText || '').replace(/\s+/g, '').length >= 5) return;
-      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#0e7490;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
+      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#1d4ed8;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
     } catch (_e) {}
   }, 2500);
 });

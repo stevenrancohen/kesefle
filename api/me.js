@@ -12,6 +12,7 @@
 //   { ok: false, error: "unauthorized" }   // 401, no/invalid cookie
 
 import { withRequestId } from '../lib/log.js';
+import { withRateLimit } from '../lib/ratelimit.js';
 import { getUserId } from './_lib/session.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
@@ -76,4 +77,12 @@ async function handlerImpl(req, res) {
   return res.status(200).json({ ok: true, user: profile, sheet });
 }
 
-export default withRequestId(handlerImpl);
+// 2026-05-29 resweep R8: added per-IP rate limit. /api/me returns email +
+// name + picture + spreadsheetId for the cookie holder; without a limit,
+// a leaked SameSite=Lax cookie + XSS could pivot to the profile in one
+// round trip. 30/min is generous for any legitimate dashboard hydrate flow
+// (typically 1-2 calls per session) and fail-open semantics in lib/ratelimit
+// keep the endpoint available if KV is degraded.
+export default withRequestId(
+  withRateLimit({ key: 'me', limit: 30, windowSec: 60 })(handlerImpl)
+);

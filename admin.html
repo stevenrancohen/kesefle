@@ -6,7 +6,7 @@
 <meta name="description" content="אזור ניהול פנימי — כספ'לה." />
 <title>פאנל ניהול — כספ'לה</title>
 <meta name="robots" content="noindex,nofollow" />
-<meta name="theme-color" content="#0891b2" />
+<meta name="theme-color" content="#6366F1" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" href="/logo.png" />
 <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -27,8 +27,8 @@
         colors: {
           // Official Kesefle brand palette — matches kesefle.com/
           ink:    { 50:'#f7f8fb',100:'#eef0f6',200:'#dde1ec',300:'#bcc4d6',400:'#8a95b3',500:'#5d6b8f',600:'#41506f',700:'#2f3b54',800:'#1e2638',900:'#0f1422',950:'#070b16' },
-          brand:  { 50:'#ecfeff',100:'#cffafe',200:'#a5f3fc',300:'#67e8f9',400:'#22d3ee',500:'#06b6d4',600:'#0891b2',700:'#0e7490',800:'#155e75',900:'#164e63' },
-          accent: { 400:'#22d3ee',500:'#06b6d4',600:'#14b8a6' },
+          brand:  { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' },
+          accent: { 400:'#38bdf8',500:'#3b82f6',600:'#60a5fa' },
           // Retain slate (used by existing components) so we don't break anything.
           slate: { 50:'#F8FAFC',100:'#F1F5F9',200:'#E2E8F0',300:'#CBD5E1',400:'#94A3B8',500:'#64748B',600:'#475569',700:'#334155',800:'#1E293B',900:'#0F172A',950:'#020617' },
         },
@@ -54,7 +54,7 @@
   body {
     background:
       radial-gradient(at 12% 10%, rgba( 79, 70,229,0.06) 0px, transparent 50%),
-      radial-gradient(at 88% 14%, rgba(  6,182,212,0.08) 0px, transparent 55%),
+      radial-gradient(at 88% 14%, rgba(59,130,246,0.08) 0px, transparent 55%),
       radial-gradient(at 50% 90%, rgba( 20,184,166,0.05) 0px, transparent 55%),
       #f7f8fb;
     font-family: 'Inter', 'Heebo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -65,41 +65,43 @@
   html.dark body {
     background:
       radial-gradient(at 12% 10%, rgba( 79, 70,229,0.18) 0px, transparent 50%),
-      radial-gradient(at 88% 14%, rgba(  6,182,212,0.12) 0px, transparent 55%),
+      radial-gradient(at 88% 14%, rgba(59,130,246,0.12) 0px, transparent 55%),
       #070b16;
     color: #e2e8f0;
   }
   /* Premium animated holo gradient text — same as kesefle.com hero */
   @keyframes kfl-holo { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
   .kfl-accent-gradient {
-    background-image: linear-gradient(110deg, #06b6d4 0%, #14b8a6 25%, #0891b2 50%, #14b8a6 75%, #06b6d4 100%);
+    background-image: linear-gradient(110deg, #3b82f6 0%, #14b8a6 25%, #2563eb 50%, #14b8a6 75%, #3b82f6 100%);
     background-size: 200% 100%;
     -webkit-background-clip: text; background-clip: text; color: transparent;
     animation: kfl-holo 6s linear infinite;
   }
   /* Brand primary button — cyan→teal, the colors Steven loved on "על אוטומט" */
   .kfl-btn-primary {
-    background: linear-gradient(135deg, #06b6d4 0%, #14b8a6 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #14b8a6 100%);
     color: #ffffff;
-    box-shadow: 0 10px 24px -8px rgba(6, 182, 212, 0.45);
+    box-shadow: 0 10px 24px -8px rgba(59, 130, 246, 0.45);
     transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
   }
-  .kfl-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -8px rgba(6, 182, 212, 0.55); opacity: 0.96; }
+  .kfl-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -8px rgba(59, 130, 246, 0.55); opacity: 0.96; }
   .kfl-btn-ghost {
     background: #ffffff; color: #2f3b54; border: 1px solid #dde1ec;
     transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
   }
-  .kfl-btn-ghost:hover { border-color: #06b6d4; box-shadow: 0 4px 12px -4px rgba(6, 182, 212, 0.25); transform: translateY(-1px); }
+  .kfl-btn-ghost:hover { border-color: #3b82f6; box-shadow: 0 4px 12px -4px rgba(59, 130, 246, 0.25); transform: translateY(-1px); }
   @media (prefers-reduced-motion: reduce) { .kfl-accent-gradient { animation: none !important; } }
   /* LTR-isolated numerals */
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; font-variant-numeric: tabular-nums; }
 
-  /* Premium card — matches kesefle.com pricing/feature cards */
+  /* Premium card — matches Steven's 2026-05-26 fintech spec:
+     border #E2E8F0, radius 16px, subtle elevation. Replaces the
+     softer #eef0f6 / 20px look. */
   .card {
     background: #FFFFFF;
-    border: 1px solid #eef0f6;
-    border-radius: 20px;
-    box-shadow: 0 8px 30px -12px rgba(15, 20, 34, 0.08);
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px -12px rgba(15, 20, 34, 0.06);
   }
   html.dark .card {
     background: #1e2638;
@@ -111,17 +113,84 @@
   .card-hover { transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
   .card-hover:hover {
     transform: translateY(-2px);
-    border-color: #06b6d4;
-    box-shadow: 0 16px 40px -16px rgba(6, 182, 212, 0.25);
+    border-color: #3b82f6;
+    box-shadow: 0 16px 40px -16px rgba(59, 130, 246, 0.25);
   }
   html.dark .card-hover:hover {
-    border-color: #06b6d4;
-    box-shadow: 0 16px 40px -16px rgba(6, 182, 212, 0.35);
+    border-color: #3b82f6;
+    box-shadow: 0 16px 40px -16px rgba(59, 130, 246, 0.35);
   }
 
+  /* PR-A2 (2026-05-26): KPI typography hierarchy.
+     Single source of truth for the "CEO at a glance" cards so every
+     metric tile reads at the same weight + contrast. Used by the KPI
+     strip; eligible for any future numeric card.
+     Steven palette: #0F172A primary, #475569 secondary, #3b82f6 accent. */
+  .kfl-kpi-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1d4ed8;  /* cyan-700, default accent */
+    line-height: 1;
+  }
+  .kfl-kpi-eyebrow.warn { color: #b45309; }  /* amber-700 */
+  .kfl-kpi-eyebrow.crit { color: #b91c1c; }  /* red-700 */
+  html.dark .kfl-kpi-eyebrow { color: #7dd3fc; }
+  html.dark .kfl-kpi-eyebrow.warn { color: #fbbf24; }
+  html.dark .kfl-kpi-eyebrow.crit { color: #f87171; }
+
+  .kfl-kpi-num {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 2rem;          /* 32px, up from text-3xl=30px */
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #0F172A;
+    direction: ltr;
+    unicode-bidi: isolate;
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 768px) { .kfl-kpi-num { font-size: 2.25rem; } }  /* 36px on desktop */
+  html.dark .kfl-kpi-num { color: #ffffff; }
+
+  .kfl-kpi-sub {
+    font-size: 0.8125rem;     /* 13px, up from text-xs=12px */
+    font-weight: 500;
+    color: #475569;            /* Steven secondary palette */
+    line-height: 1.4;
+  }
+  html.dark .kfl-kpi-sub { color: #94a3b8; }
+
+  /* PR-A2: Status badges. Use for "tier", "status", "state" chips on
+     KPI cards, tables, and lists. Variants: default (neutral),
+     ok (green), warn (amber), crit (red), info (cyan). */
+  .kfl-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    border: 1px solid transparent;
+  }
+  .kfl-badge.kfl-badge-ok   { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+  .kfl-badge.kfl-badge-warn { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+  .kfl-badge.kfl-badge-crit { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+  .kfl-badge.kfl-badge-info { background: #f0f9ff; color: #1d4ed8; border-color: #bae6fd; }
+  .kfl-badge.kfl-badge-neutral { background: #F8FAFC; color: #475569; border-color: #E2E8F0; }
+  html.dark .kfl-badge.kfl-badge-ok   { background: rgba(4,120,87,0.15);   color: #6EE7B7; border-color: rgba(167,243,208,0.3); }
+  html.dark .kfl-badge.kfl-badge-warn { background: rgba(180,83,9,0.15);   color: #FCD34D; border-color: rgba(253,230,138,0.3); }
+  html.dark .kfl-badge.kfl-badge-crit { background: rgba(185,28,28,0.15);  color: #FCA5A5; border-color: rgba(254,202,202,0.3); }
+  html.dark .kfl-badge.kfl-badge-info { background: rgba(29,78,216,0.15); color: #7dd3fc; border-color: rgba(165,243,252,0.3); }
+  html.dark .kfl-badge.kfl-badge-neutral { background: rgba(71,85,105,0.15); color: #CBD5E1; border-color: rgba(226,232,240,0.3); }
+
   /* Section heading rule — premium 2px cyan/teal accent matching the new brand */
-  .section-rule { border-bottom: 2px solid #06b6d4; padding-bottom: 16px; }
-  html.dark .section-rule { border-bottom-color: #06b6d4; }
+  .section-rule { border-bottom: 2px solid #3b82f6; padding-bottom: 16px; }
+  html.dark .section-rule { border-bottom-color: #3b82f6; }
   /* Section H2 — Rubik 900 + ink-900 + tight tracking, matches kesefle.com */
   .kfl-section-h2 {
     font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
@@ -138,9 +207,11 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #0e7490;
+    color: #1d4ed8;
   }
-  .kfl-section-sub { font-size: 0.875rem; font-weight: 500; color: #41506f; margin-top: 6px; }
+  /* PR-A2: aligned to Steven's secondary text color (#475569). The old
+     #41506f was slightly more saturated and clashed with the cyan accent. */
+  .kfl-section-sub { font-size: 0.875rem; font-weight: 500; color: #475569; margin-top: 6px; }
   html.dark .kfl-section-sub { color: #94a3b8; }
 
   /* Discrete status dot */
@@ -203,7 +274,7 @@
   <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
     <a href="/" class="flex items-center gap-2.5 text-base font-medium tracking-tight" style="color: #1E293B;">
       <img src="/logo.png" alt="כספ'לה" class="h-7 w-7 rounded-md" />
-      <span>כספ'לה</span>
+      <span class="kfl-logo-text">כספ'לה</span>
       <span class="hidden sm:inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium" style="border: 1px solid #E2E8F0; color: #475569; background: #F8FAFC;">
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Admin
@@ -233,9 +304,9 @@
   <section class="mb-10 pt-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div class="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest" style="background:rgba(6,182,212,0.10);color:#0e7490;">
-          <span class="status-dot" style="background:#06b6d4;animation:kfl-blink 1.4s ease-in-out infinite;"></span>
-          לייב <span class="num" style="color:#0e7490;" id="now-clock">00:00:00</span>
+        <div class="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest" style="background:rgba(59,130,246,0.10);color:#1d4ed8;">
+          <span class="status-dot" style="background:#3b82f6;animation:kfl-blink 1.4s ease-in-out infinite;"></span>
+          לייב <span class="num" style="color:#1d4ed8;" id="now-clock">00:00:00</span>
         </div>
         <h1 class="font-display text-5xl font-black tracking-tight md:text-6xl" style="color:#0f1422;letter-spacing:-0.035em;line-height:1;">
           לוח בקרה <span class="kfl-accent-gradient">כספ׳לה</span>
@@ -243,7 +314,7 @@
         <p class="mt-3 text-lg font-medium" style="color:#41506f;">שלום סטיבן. הנה מה שצריך לדעת על העסק עכשיו.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold" style="background:rgba(6,182,212,0.10);color:#0e7490;">
+        <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold" style="background:rgba(59,130,246,0.10);color:#1d4ed8;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           תכנית: Pro
         </span>
@@ -265,53 +336,57 @@
   <section class="mb-10" id="kfl-kpi-strip" aria-label="מדדים מרכזיים">
     <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
       <!-- Premium KPI cards (Lucide-style SVG icons, single cyan accent + amber/red for warnings) -->
+      <!-- PR-A2: unified .kfl-kpi-* typography classes replace inline
+           text-3xl + color styles. Stronger hierarchy: bigger numbers
+           (text-3xl -> text-4xl at md), Steven-spec secondary color
+           (#475569 not #5d6b8f), warn/crit eyebrow variants. -->
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">משתמשים</div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <div class="kfl-kpi-eyebrow">משתמשים</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-total" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">סך כל החשבונות</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-total">—</div>
+        <div class="mt-1 kfl-kpi-sub">סך כל החשבונות</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">פעילים</div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div class="kfl-kpi-eyebrow">פעילים</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-active" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">השתמשו השבוע</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-active">—</div>
+        <div class="mt-1 kfl-kpi-sub">השתמשו השבוע</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">משלמים</div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <div class="kfl-kpi-eyebrow">משלמים</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-paying" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">מנויי Pro / משפחה</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-paying">—</div>
+        <div class="mt-1 kfl-kpi-sub">מנויי Pro / משפחה</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">הכנסה</div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <div class="kfl-kpi-eyebrow">הכנסה</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black" id="kfl-kpi-mrr" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">חודשית קבועה</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-mrr">—</div>
+        <div class="mt-1 kfl-kpi-sub">חודשית קבועה</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#b45309;">תקועים</div>
+          <div class="kfl-kpi-eyebrow warn">תקועים</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-stuck" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">נרשמו, אין גיליון</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-stuck">—</div>
+        <div class="mt-1 kfl-kpi-sub">נרשמו, אין גיליון</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold uppercase tracking-widest" style="color:#b91c1c;">לתיקון</div>
+          <div class="kfl-kpi-eyebrow crit">לתיקון</div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
-        <div class="mt-2 font-display text-3xl font-black num" id="kfl-kpi-todo" style="color:#0f1422;">—</div>
-        <div class="mt-1 text-xs font-medium" style="color:#5d6b8f;">מצריך תשומת לב</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-todo">—</div>
+        <div class="mt-1 kfl-kpi-sub">מצריך תשומת לב</div>
       </div>
     </div>
     <script>
@@ -346,9 +421,9 @@
 
   <!-- ====== SECTION 1.5: PENDING PAYMENTS ====== -->
   <section class="mb-10" id="pending-payments-section">
-    <div class="mb-5 flex items-end justify-between pb-4" style="border-bottom:2px solid #06b6d4;">
+    <div class="mb-5 flex items-end justify-between pb-4" style="border-bottom:2px solid #3b82f6;">
       <div>
-        <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest" style="color:#0e7490;">
+        <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest" style="color:#1d4ed8;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           תשלומים
         </p>
@@ -366,7 +441,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             <div class="text-base font-bold" style="color:#0f1422;">הגדרת תכניות PayPal</div>
           </div>
           <div class="mt-1.5 text-sm font-medium" style="color:#41506f;">לחיצה אחת יוצרת את התכניות Pro (₪19) ומשפחה (₪39) ב-PayPal. הגדרה חד-פעמית.</div>
@@ -1016,7 +1091,7 @@
     }
     localStorage.setItem('kesefle_theme', mode);
   }
-  applyTheme(localStorage.getItem('kesefle_theme') || 'dark');
+  applyTheme(localStorage.getItem('kesefle_theme') || 'light');
   themeBtn.addEventListener('click', () => {
     const cur = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     applyTheme(cur === 'dark' ? 'light' : 'dark');
@@ -1046,7 +1121,7 @@
     const tbody = document.getElementById('users-tbody');
     if (!tbody) return;
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="9" class="p-10 text-center" style="color: #64748B;"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#ECFEFF;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m22 11-3 3-1.5-1.5"/></svg></div><div class="text-sm font-medium" style="color:#1E293B;">עדיין אין משתמשים רשומים</div><div class="mt-1 text-xs" style="color:#64748B;">משתמש ראשון יופיע כאן אוטומטית ברגע שמישהו ירשם ב-kesefle.com</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="p-10 text-center" style="color: #64748B;"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style="background:#f0f9ff;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m22 11-3 3-1.5-1.5"/></svg></div><div class="text-sm font-medium" style="color:#1E293B;">עדיין אין משתמשים רשומים</div><div class="mt-1 text-xs" style="color:#64748B;">משתמש ראשון יופיע כאן אוטומטית ברגע שמישהו ירשם ב-kesefle.com</div></td></tr>';
       return;
     }
     // Steven 2026-05-26 (QA HIGH #3): every user-controlled string goes
@@ -1580,9 +1655,22 @@
         var f = chip.dataset.filter, labelMap = { all: 'All', active: 'Active', trial: 'Trial', paused: 'Paused', cancelled: 'Cancelled' };
         if (labelMap[f] !== undefined) chip.textContent = labelMap[f] + ' (' + (counts[f] || 0) + ')';
       });
-      // activity feed = real recent signups
+      // activity feed = real recent signups.
+      // 2026-05-31 audit fix (docs/AUDIT_FRONTEND_XSS_CSRF_2026_05_31.md HIGH):
+      // x.email and x.name come from user-controlled signup records. Before this
+      // fix they were concatenated into innerHTML without escaping, so a user
+      // signing up with display name '</span><img src=x onerror=alert(1)>'
+      // would execute JS in the admin's session every time /admin is loaded.
+      // The HTML must stay (we still want bold), so escape the user fields and
+      // template-literal the wrapper instead of building an unescaped string.
+      var _kflEscHtml = function (s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      };
       var recent = mapped.slice(0, 12).map(function (x) {
-        return { text: '<span style="font-weight: 500;">' + (x.email || x.name) + '</span> signed up for Kesefle', time: x.signupRaw };
+        var label = _kflEscHtml(x.email || x.name || '');
+        return { text: '<span style="font-weight: 500;">' + label + '</span> signed up for Kesefle', time: x.signupRaw };
       });
       if (window.__kflSetActivities) window.__kflSetActivities(recent);
     }

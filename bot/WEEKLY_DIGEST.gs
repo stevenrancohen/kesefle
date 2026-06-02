@@ -29,7 +29,14 @@
 // Configuration
 // ---------------------------------------------------------------------------
 
-var WD_SHEET_ID = '1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo';
+// 2026-05-29: was hardcoded to the OLD pre-migration sheet
+// (1UKrXDkdiBwGzrvehacNfWOEvCukNTOAYoyXOIyKW-Qo). If the
+// Sunday 08:00 trigger fires while pointing at OLD, every
+// subscriber receives stale data. Switched to the NEW Kesefle
+// sheet. For multi-tenant the right answer is to resolve a
+// per-subscriber sheet via _resolveTenant_, but the digest is
+// currently owner-only so the NEW sheet is the right default.
+var WD_SHEET_ID = '1rtiPQs1sABkDr_viCiDDg7LuQNGY0bxzPvKT-KEqP0A';
 var WD_TX_SHEET = 'תנועות';
 var WD_TRIGGER_HANDLER = '_WEEKLY_DIGEST_HANDLER_';
 var WD_TZ = 'Asia/Jerusalem';
@@ -96,6 +103,14 @@ function RUN_WEEKLY_DIGEST_NOW() {
   return _WEEKLY_DIGEST_HANDLER_({ manual: true });
 }
 
+// 2026-05-29 resweep R4: redact full E.164 phones in Logger.log output.
+// Apps Script Stackdriver retains these for ~30 days; the bot's [KFL-TRACE]
+// line already uses last-4 (see bot/ExpenseBot_FIXED.gs:257), this matches
+// that pattern.
+function _WD_phoneTail_(p) {
+  return '...' + String(p || '').slice(-4);
+}
+
 // ---------------------------------------------------------------------------
 // Trigger handler: iterate subscribers, dispatch per-user digests.
 // ---------------------------------------------------------------------------
@@ -112,14 +127,24 @@ function _WEEKLY_DIGEST_HANDLER_(_event) {
       var res = _sendWeeklyDigestToPhone_(phone, WD_SHEET_ID);
       if (res.sent) sent++;
       else skipped++;
-      Logger.log('Digest ' + phone + ': ' + JSON.stringify(res));
+      Logger.log('Digest ' + _WD_phoneTail_(phone) + ': ' + JSON.stringify(res));
     } catch (e) {
       errors++;
-      Logger.log('Digest ' + phone + ' threw: ' + (e && e.message ? e.message : String(e)));
+      Logger.log('Digest ' + _WD_phoneTail_(phone) + ' threw: ' + (e && e.message ? e.message : String(e)));
     }
   }
   return { ok: true, sent: sent, skipped: skipped, errors: errors };
 }
+
+// 2026-05-31 audit follow-up (docs/AUDIT_WEEKLY_DIGEST_AND_CRONS_2026_05_31.md §4):
+// Defensive owner-phone allowlist. WD_SHEET_ID is hardcoded to Steven's NEW
+// sheet, so every subscriber received Steven's data. The SUBSCRIBERS Script
+// Property is owner-only by design, but the TODO at line 20 flags that we'll
+// add per-tenant resolution later. Until then this allowlist makes the
+// cross-tenant leak class impossible if SUBSCRIBERS is ever updated by
+// accident or by future code. Add a phone here only after confirming it
+// should receive Steven's sheet contents.
+var WD_OWNER_PHONES = ['972547760643'];
 
 // ---------------------------------------------------------------------------
 // Per-user digest builder + sender.
@@ -128,6 +153,11 @@ function _WEEKLY_DIGEST_HANDLER_(_event) {
 function _sendWeeklyDigestToPhone_(phone, sheetId) {
   var phoneStr = String(phone == null ? '' : phone).trim();
   if (!phoneStr) return { sent: false, reason: 'empty_phone' };
+
+  if (WD_OWNER_PHONES.indexOf(phoneStr) === -1) {
+    Logger.log('Weekly digest: ' + _WD_phoneTail_(phoneStr) + ' not in WD_OWNER_PHONES allowlist; skipping.');
+    return { sent: false, reason: 'not_owner_phone' };
+  }
 
   if (_WD_isOptedOut_(phoneStr)) {
     return { sent: false, reason: 'opted_out' };
@@ -438,7 +468,8 @@ function TEST_WEEKLY_DIGEST_RENDER() {
     deltaKnown: prevExpense > 0,
     spike: spike
   });
-  Logger.log('--- digest preview for ' + phone + ' ---');
+  // 2026-05-29 resweep R4: redact full E.164 phone.
+  Logger.log('--- digest preview for ' + _WD_phoneTail_(phone) + ' ---');
   Logger.log(text);
   return text;
 }

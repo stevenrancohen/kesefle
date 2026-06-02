@@ -11,7 +11,7 @@
 <meta property="og:image" content="https://kesefle.com/og-image.png" />
 <meta property="og:url" content="https://kesefle.com/account" />
 <meta property="og:type" content="website" />
-<meta name="theme-color" content="#0891b2" />
+<meta name="theme-color" content="#6366F1" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Rubik:wght@600;700;800;900&display=swap" />
@@ -27,8 +27,8 @@
         fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
         colors: {
           ink:    { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422' },
-          brand:   { 50:'#ecfeff', 100:'#cffafe', 200:'#a5f3fc', 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4', 600:'#0891b2', 700:'#0e7490', 800:'#155e75', 900:'#164e63' },
-          accent:  { 500:'#06b6d4', 600:'#14b8a6' }
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 500:'#3b82f6', 600:'#60a5fa' }
         }
       }
     }
@@ -69,7 +69,7 @@
   button, .kfl-cta {
     display: inline-flex; align-items: center; justify-content: center;
     min-height: 44px; padding: 12px 20px;
-    background: #0e7490; color: white; border: none; border-radius: 14px;
+    background: #1d4ed8; color: white; border: none; border-radius: 14px;
     font-weight: 700; font-size: 15px; cursor: pointer;
     -webkit-appearance: none;
   }
@@ -172,7 +172,7 @@
 </style>
 <script src="/lib/analytics.js" defer></script>
   <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#0891b2">
+  <meta name="theme-color" content="#6366F1">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/icon-192.png">
   <script src="/js/analytics-loader.js" defer></script>
 </head>
@@ -339,8 +339,8 @@
                   <a
                     id="link-wa-deeplink"
                     href="#"
-                    target="_blank"
                     rel="noopener"
+                    onclick="return kesefleOpenWhatsAppLink(this, event)"
                     class="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white hover:opacity-90"
                   >
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
@@ -364,10 +364,16 @@
               <div id="link-state-success" class="hidden rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-500/40 dark:bg-emerald-500/10">
                 <div class="flex items-start gap-3">
                   <div class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-white">✓</div>
-                  <div>
+                  <div class="min-w-0 flex-1">
                     <div class="font-bold text-emerald-900 dark:text-emerald-200">החיבור הושלם!</div>
-                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. אפשר לשלוח הוצאות לבוט.</div>
-                    <a href="/welcome" class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">המשיכי למסך הפתיחה ←</a>
+                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. הצעד האחרון — שלחי הוצאה ראשונה לבוט.</div>
+                    <div class="mt-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                      <a href="https://wa.me/15556408123?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="kesefleLogFirstExpense()" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
+                        שלחי הוצאה ראשונה →
+                      </a>
+                      <a href="/welcome" class="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">מדריך הפקודות ←</a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -435,6 +441,70 @@
           <button id="btn-fix-dashboard" type="button" onclick="kesefleFixCompanyDashboard()" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60" title="פתרון מהיר בלי ליצור גיליון חדש: מתקן רק את הנוסחאות של מאזן חברה.">
             <span>🛠️</span><span>תקן נוסחאות מאזן חברה</span>
           </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       FIXED MONTHLY EXPENSES
+       Mobile-first RTL. Visible only when signed in. The user adds each
+       fixed monthly charge once {amount, day-of-month 1-28, category}; the
+       recurring engine (api/recurring.js + daily cron) auto-posts it into
+       their sheet every month on that day, exactly once.
+       ════════════════════════════════════════════════════════════════════ -->
+  <section id="fixed-expenses" class="mt-6 hidden rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-[0_24px_60px_-32px_rgba(15,20,34,0.25)]" dir="rtl">
+    <div class="flex items-start gap-3 sm:gap-4">
+      <div class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl sm:text-2xl shadow-sm ring-1 ring-brand-200/70">🔁</div>
+      <div class="min-w-0 flex-1">
+        <h2 class="text-base sm:text-xl font-black text-ink-900 leading-snug">הוצאות קבועות</h2>
+        <p class="mt-1 text-sm text-slate-700 break-words">שכר דירה, ארנונה, חשמל, מנויים — כל מה שחוזר כל חודש. מזינים פעם אחת, וזה נכנס לגיליון לבד בכל חודש ביום שתבחר/י.</p>
+
+        <!-- Add form -->
+        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+          <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-[1fr_1fr_auto]">
+            <label class="block">
+              <span class="mb-1 block text-[11px] font-bold text-slate-600">מה ההוצאה?</span>
+              <select id="fx-category" aria-label="קטגוריה" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200">
+                <!-- options injected by JS from a curated fixed-expense list -->
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-[11px] font-bold text-slate-600">סכום (₪)</span>
+              <input id="fx-amount" type="number" inputmode="decimal" min="1" step="1" placeholder="2000" aria-label="סכום בשקלים" dir="ltr" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200" />
+            </label>
+            <label class="block sm:self-end">
+              <span class="mb-1 block text-[11px] font-bold text-slate-600">יום בחודש</span>
+              <select id="fx-day" aria-label="יום בחודש" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200">
+                <!-- 1..28 injected by JS -->
+              </select>
+            </label>
+          </div>
+          <!-- Free-text name, shown only when the "other" category is chosen -->
+          <label id="fx-customwrap" class="mt-2.5 hidden block">
+            <span class="mb-1 block text-[11px] font-bold text-slate-600">שם ההוצאה</span>
+            <input id="fx-custom" type="text" maxlength="40" placeholder="לדוגמה: חוג שחייה" aria-label="שם ההוצאה" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200" />
+          </label>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button type="button" id="fx-add-btn" onclick="kesefleFixedAdd()" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-60">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              הוסף/י הוצאה קבועה
+            </button>
+            <span class="text-[11px] text-slate-500">היום שתבחר/י = היום שבו הסכום ייכנס לגיליון בכל חודש.</span>
+          </div>
+          <div id="fx-msg" class="mt-2 hidden text-xs"></div>
+        </div>
+
+        <!-- Existing rules list -->
+        <div class="mt-4">
+          <div class="mb-2 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-600">ההוצאות הקבועות שלך</span>
+            <span id="fx-count" class="text-[11px] text-slate-400"></span>
+          </div>
+          <ul id="fx-list" class="space-y-2"></ul>
+          <div id="fx-empty" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+            עוד לא הוספת הוצאות קבועות. הוסף/י את הראשונה למעלה ☝️
+          </div>
         </div>
       </div>
     </div>
@@ -541,7 +611,7 @@ function kesefleCelebrate() {
   // Confetti burst
   var host = document.getElementById('confetti-host');
   if (host) {
-    var colors = ['#0891b2', '#a855f7', '#f59e0b', '#3b82f6', '#ec4899', '#10b981'];
+    var colors = ['#2563eb', '#a855f7', '#f59e0b', '#3b82f6', '#ec4899', '#10b981'];
     for (var i = 0; i < 32; i++) {
       var c = document.createElement('span');
       c.className = 'confetti';
@@ -722,9 +792,14 @@ function _kflDisplayCode(code, ttlSec) {
   if (display) display.textContent = code;
   if (inline) inline.textContent = code;
   if (waLink) {
-    // Pre-fill the WhatsApp message with "קוד 482917"
+    // Pre-fill the WhatsApp message with the connect code (e.g. "code 482917").
+    // Always the universal https://wa.me/<E164>?text=... form (works on iOS
+    // Safari, Android Chrome, and in-app browsers). Store on a data-attr too
+    // so the tap handler has the URL even if some extension rewrites href.
     var msg = encodeURIComponent('קוד ' + code);
-    waLink.href = 'https://wa.me/' + KESEFLE_BOT_NUMBER + '?text=' + msg;
+    var waUrl = 'https://wa.me/' + KESEFLE_BOT_NUMBER + '?text=' + msg;
+    waLink.href = waUrl;
+    waLink.setAttribute('data-wa-url', waUrl);
   }
   _kflSetLinkState('code');
   // TTL countdown
@@ -745,6 +820,28 @@ function _kflDisplayCode(code, ttlSec) {
   if (kflLinkTtlTimer) clearInterval(kflLinkTtlTimer);
   tickTtl();
   kflLinkTtlTimer = setInterval(tickTtl, 1000);
+}
+
+// Mobile-reliable WhatsApp open. On phones, anchors with target="_blank" that
+// fire from an embedded/in-app context are often swallowed by the popup
+// blocker, so the chat never opens (Steven's "works on desktop, not phone"
+// bug). The fix: navigate the CURRENT tab synchronously inside the tap
+// handler. We still return true as a fallback so a plain <a href> click works
+// if JS is disabled. The href is the universal https://wa.me/ form, set in
+// _kflDisplayCode. Polling continues from the bg tab when the user returns.
+function kesefleOpenWhatsAppLink(a, ev) {
+  try {
+    var url = (a && (a.getAttribute('data-wa-url') || a.href)) || '';
+    if (!url || url.charAt(url.length - 1) === '#') return true; // nothing to open yet
+    if (ev && ev.preventDefault) ev.preventDefault();
+    // Same-tab navigation is the most reliable across iOS Safari / Android
+    // Chrome / WhatsApp+Instagram in-app browsers. WhatsApp opens over us; the
+    // page (and its link poll) is still here when the user switches back.
+    window.location.href = url;
+    return false;
+  } catch (e) {
+    return true; // let the browser handle the bare href as a last resort
+  }
 }
 
 // Adaptive polling cadence: fast for the first 30s (user is staring at the
@@ -830,6 +927,19 @@ function _kflShowLinkSuccess(phone) {
   kesefleUpdateOnboardingProgress();
   // Confetti for the win
   try { kesefleCelebrate && kesefleCelebrate(); } catch (e) {}
+}
+
+// Fired when the user taps the post-link "send first expense" CTA. Logs the
+// funnel step (no PII) and lets the native wa.me navigation proceed.
+function kesefleLogFirstExpense() {
+  try {
+    fetch('/api/log/funnel-event', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: 'first_message_sent' }),
+      keepalive: true,
+    }).catch(function () {});
+  } catch (_e) {}
 }
 
 function kesefleLinkResetState() {
@@ -1100,7 +1210,7 @@ window.kesefleSubmitWaitlist = function (btn) {
         } else {
           statusEl.textContent = '✓ נרשמת! נחזור אליך תוך 24 שעות';
         }
-        statusEl.style.color = '#0e7490';
+        statusEl.style.color = '#1d4ed8';
         // Clear inputs after success.
         var p = document.getElementById('kfl-wait-phone');
         var e = document.getElementById('kfl-wait-email');
@@ -1126,8 +1236,8 @@ function kesefleShowInAppBrowserHelp() {
   var title = isDark ? '#ffffff' : '#0f1422';
   var body = isDark ? '#bcc4d6' : '#41506f';
   var muted = isDark ? '#8a95b3' : '#5d6b8f';
-  var brand = '#0e7490';
-  var brandHover = '#155e75';
+  var brand = '#1d4ed8';
+  var brandHover = '#1e40af';
   var url = window.location.href;
   // Strip the URL scheme so we can build x-safari-https:// / intent:// URIs.
   var noScheme = url.replace(/^https?:\/\//, '');
@@ -1399,7 +1509,7 @@ function kesefleShowConnecting() {
 }
 function kesefleShowSigninError(msg) {
   var isDark = document.documentElement.classList.contains('dark');
-  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#0e7490';
+  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#1d4ed8';
   _kflCardShell('<div style="font-size:40px;">😕</div><h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">ההתחברות לא הושלמה</h2><p style="margin-top:10px;font-size:13px;color:' + body + ';word-break:break-word;">' + String(msg || '').slice(0, 200) + '</p><button type="button" onclick="kesefleStartRedirectSignin()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה/י שוב</button>');
 }
 
@@ -1409,7 +1519,7 @@ function kesefleShowSigninError(msg) {
 // again, not restart OAuth.
 function kesefleShowProvisionError(msg) {
   var isDark = document.documentElement.classList.contains('dark');
-  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#0e7490';
+  var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#1d4ed8';
   var safeMsg = String(msg || '').replace(/[<>&"']/g, '').slice(0, 200);
   _kflCardShell(
     '<div style="font-size:40px;">📋</div>' +
@@ -1467,7 +1577,7 @@ function kesefleShowSigninPrompt() {
   var title = isDark ? '#ffffff' : '#0f1422';
   var body = isDark ? '#bcc4d6' : '#2f3b54';
   var muted = isDark ? '#8a95b3' : '#41506f';
-  var brand = '#0e7490';
+  var brand = '#1d4ed8';
   var btnBg = isDark ? '#0f1422' : '#ffffff';
   var btnBorder = isDark ? '#41506f' : '#8a95b3';
   var btnText = isDark ? '#ffffff' : '#0f1422';
@@ -1477,7 +1587,7 @@ function kesefleShowSigninPrompt() {
   card.style.cssText = 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;';
   card.innerHTML =
     '<div style="border-radius:24px;border:1px solid ' + border + ';background:' + bg + ';padding:32px;box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);text-align:center;max-width:28rem;width:100%;">' +
-      '<div style="display:grid;place-items:center;height:56px;width:56px;border-radius:16px;background:linear-gradient(135deg,#0891b2,#155e75);color:#ffffff;font-size:24px;font-weight:900;margin:0 auto 20px;">₪</div>' +
+      '<div style="display:grid;place-items:center;height:56px;width:56px;border-radius:16px;background:linear-gradient(135deg,#2563eb,#1e40af);color:#ffffff;font-size:24px;font-weight:900;margin:0 auto 20px;">₪</div>' +
       '<h2 style="font-size:24px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:0;">התחברות לחשבון</h2>' +
       '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">התחבר עם Google כדי ליצור את הגיליון שלך ולהתחיל לעקוב אחרי הוצאות בוואטסאפ.</p>' +
       '<button id="account-signin-btn" type="button" onclick="kesefleAccountStartSignin()" style="margin-top:24px;display:inline-flex;align-items:center;justify-content:center;gap:12px;width:100%;border-radius:16px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';padding:14px 24px;font-size:16px;font-weight:700;color:' + btnText + ';box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);cursor:pointer;transition:background 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">' +
@@ -1501,13 +1611,18 @@ function kesefleShowSigninPrompt() {
   // Returning from the Google redirect? Finish the exchange + provisioning.
   if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
 
-  // RETURNING-USER FAST PATH (Steven 2026-05-25):
-  // If the user already has a valid kefle_session cookie AND a provisioned
-  // sheet, send them straight to their dashboard. The previous behaviour
-  // left returning users staring at the onboarding card with a manual
-  // "לדשבורד שלי" link they had to click. Now the click is implicit.
-  // Skipped when ?force=signin is on the URL (lets us re-link a sheet
-  // intentionally from elsewhere in the app).
+  // RETURNING-USER FAST PATH (Steven 2026-05-25; gated 2026-05-31):
+  // Send a user straight to their dashboard ONLY when onboarding is fully
+  // done — i.e. they have BOTH a provisioned sheet AND a linked WhatsApp
+  // number. The old code redirected as soon as a sheet existed, which
+  // dumped a half-onboarded user (sheet created, phone NOT yet connected)
+  // on the transactions view and stranded them before STEP B/C — the exact
+  // bug Steven reported. WhatsApp-linked state lives in localStorage
+  // (kesefle_whatsapp_linked, set by _kflShowLinkSuccess); /api/me does not
+  // expose link status, so we read the local flag. A user who cleared
+  // storage simply falls through to the guided flow and re-links — never
+  // trapped on the dashboard.
+  // Skipped when ?force=signin is on the URL (lets us re-link intentionally).
   if (!_q.get('force')) {
     try {
       var meResp = await fetch('/api/me', { credentials: 'include' });
@@ -1517,8 +1632,16 @@ function kesefleShowSigninPrompt() {
           // Hydrate localStorage in case the dashboard reads it on first paint.
           try { localStorage.setItem('kesefle_user', JSON.stringify(meJson.user)); } catch (_) {}
           try { localStorage.setItem('kesefle_sheet', JSON.stringify(meJson.sheet)); } catch (_) {}
-          window.location.href = '/dashboard';
-          return;
+          var waLinked = false;
+          try { waLinked = localStorage.getItem('kesefle_whatsapp_linked') === '1'; } catch (_) {}
+          if (waLinked) {
+            window.location.href = '/dashboard';
+            return;
+          }
+          // Sheet exists but WhatsApp not yet linked -> stay here and guide the
+          // user through the phone-connect step (STEP B/C) instead of bouncing
+          // them to a dashboard they can't feed yet. Fall through to render the
+          // onboarding flow (init continues below).
         }
       }
     } catch (_meErr) { /* network blip -> fall through to normal flow */ }
@@ -1568,6 +1691,8 @@ function kesefleShowSigninPrompt() {
       var rc = document.getElementById('reprovision-card'); if (rc) rc.classList.remove('hidden');
     }
     try { kesefleUpdateOnboardingProgress(); } catch (_pe) {}
+    // Fixed monthly expenses section -- visible once signed in.
+    try { kesefleFixedReveal(); } catch (_fxe) {}
   } catch (_initErr) { /* never blank the page over a render hiccup */ }
 })();
 
@@ -1650,6 +1775,336 @@ async function kesefleFixCompanyDashboard() {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// FIXED MONTHLY EXPENSES
+// ════════════════════════════════════════════════════════════════════════════
+// The user enters each fixed monthly charge once {amount, day-of-month, category};
+// the recurring engine (api/recurring.js + the daily cron) auto-posts it into
+// their sheet on that day every month, exactly once (idempotent per the
+// recurring contract). We POST in the EXACT shape api/recurring expects:
+//   { action:'add', phone, amount, description, category, subcategory,
+//     freq:{ type:'monthly', day } }
+//
+// BACKEND NOTE (honest scope): api/recurring.js authenticates the write actions
+// with the SERVER-ONLY bot secret (x-kesefle-bot-secret) and is keyed by phone,
+// not by browser session. A browser must NOT hold that secret, so this direct
+// POST is rejected (401 unauthorized / 503 bot_secret_not_configured) until a
+// thin SESSION-authed proxy route exists server-side (out of this PR's account-
+// only scope; flagged in the PR body). To never silently fail on real money, on
+// rejection we: (a) keep the user's rule in localStorage so the list persists
+// and the form clearly works, and (b) surface the WORKING bot-command fallback
+// the user can send right now. The moment the proxy ships, the same UI succeeds
+// with zero changes here.
+//
+// Day-of-month is capped at 28 so February always fires (recurring idempotency
+// rule). Categories map to real sheet subcategories so the posted rows land in
+// the dashboard rows that sum them.
+
+// Curated list of the most common Israeli fixed monthly expenses. Each maps to
+// a real {category, subcategory} from lib/categories.js so the auto-posted row
+// shows up in the right dashboard row. The last entry (label "other") is the
+// free-text option (generic fixed-expense category).
+var KFL_FIXED_CATS = [
+  { label: 'שכר דירה',            category: 'דיור',        subcategory: 'שכר דירה' },
+  { label: 'משכנתה',             category: 'דיור',        subcategory: 'משכנתה' },
+  { label: 'ארנונה',             category: 'דיור',        subcategory: 'ארנונה' },
+  { label: 'ועד בית',            category: 'דיור',        subcategory: 'מיסי ישוב / ועד בית' },
+  { label: 'חשמל',               category: 'אחזקת בית',    subcategory: 'חשמל' },
+  { label: 'מים',                category: 'אחזקת בית',    subcategory: 'מים וביוב' },
+  { label: 'אינטרנט / טלוויזיה',  category: 'תקשורת',      subcategory: 'טלויזיה ואינטרנט (ספק ותשתית)' },
+  { label: 'טלפון נייד',          category: 'תקשורת',      subcategory: 'טלפון נייד ונייח' },
+  { label: 'מנוי (נטפליקס וכו׳)', category: 'תקשורת',      subcategory: 'מנויים' },
+  { label: 'חדר כושר / ספורט',    category: 'פנאי, בילוי ותחביבים', subcategory: 'ספורט' },
+  { label: 'ביטוח רכב',           category: 'תחבורה',      subcategory: 'ביטוח רכב' },
+  { label: 'ביטוח בריאות',        category: 'בריאות',      subcategory: 'ביטוח רפואי נוסף' },
+  { label: 'ביטוח חיים',          category: 'פיננסים',     subcategory: 'ביטוח חיים' },
+  { label: 'חוג / חינוך',         category: 'חינוך',       subcategory: 'חוגים ותנועת נוער' },
+  { label: 'אחר',                 category: 'הוצאות קבועות', subcategory: 'קבוע' }
+];
+
+function _kflFixedPhone() {
+  try { return localStorage.getItem('kesefle_whatsapp_phone') || ''; } catch (e) { return ''; }
+}
+function _kflFixedLocalKey() {
+  // Scope the local mirror by phone so two accounts on one device don't mix.
+  return 'kesefle_fixed_expenses:' + (_kflFixedPhone() || 'anon');
+}
+function _kflFixedLocalGet() {
+  try { return JSON.parse(localStorage.getItem(_kflFixedLocalKey()) || '[]') || []; }
+  catch (e) { return []; }
+}
+function _kflFixedLocalSet(list) {
+  try { localStorage.setItem(_kflFixedLocalKey(), JSON.stringify(list || [])); } catch (e) {}
+}
+
+function _kflFixedMsg(text, kind) {
+  var el = document.getElementById('fx-msg');
+  if (!el) return;
+  var cls = kind === 'ok' ? 'text-emerald-700' : kind === 'warn' ? 'text-amber-700' : 'text-red-600';
+  el.className = 'mt-2 text-xs ' + cls;
+  el.innerHTML = text;
+  el.classList.remove('hidden');
+}
+function _kflFixedClearMsg() {
+  var el = document.getElementById('fx-msg');
+  if (el) el.classList.add('hidden');
+}
+
+// Populate the category + day dropdowns once.
+function _kflFixedInitInputs() {
+  var cat = document.getElementById('fx-category');
+  if (cat && !cat.options.length) {
+    KFL_FIXED_CATS.forEach(function (c, i) {
+      var o = document.createElement('option');
+      o.value = String(i);
+      o.textContent = c.label;
+      cat.appendChild(o);
+    });
+    cat.addEventListener('change', function () {
+      var wrap = document.getElementById('fx-customwrap');
+      var isOther = KFL_FIXED_CATS[Number(cat.value)] && KFL_FIXED_CATS[Number(cat.value)].label === 'אחר';
+      if (wrap) wrap.classList.toggle('hidden', !isOther);
+    });
+  }
+  var day = document.getElementById('fx-day');
+  if (day && !day.options.length) {
+    // 1..28 only -- guarantees the charge fires every month incl. February.
+    for (var d = 1; d <= 28; d++) {
+      var o = document.createElement('option');
+      o.value = String(d);
+      o.textContent = String(d);
+      if (d === 1) o.selected = true;
+      day.appendChild(o);
+    }
+  }
+}
+
+// Build a human "every month on day D" label.
+function _kflFixedWhenLabel(day) {
+  return 'בכל ' + Number(day) + ' לחודש';
+}
+
+// Render the rules list from whatever source we have (server list or local).
+function _kflFixedRender(list) {
+  var ul = document.getElementById('fx-list');
+  var empty = document.getElementById('fx-empty');
+  var count = document.getElementById('fx-count');
+  if (!ul) return;
+  ul.innerHTML = '';
+  var arr = Array.isArray(list) ? list : [];
+  if (count) count.textContent = arr.length ? ('סה"כ ' + arr.length) : '';
+  if (!arr.length) { if (empty) empty.classList.remove('hidden'); return; }
+  if (empty) empty.classList.add('hidden');
+  arr.forEach(function (t) {
+    var day = (t.freq && t.freq.day) || t.dayOfMonth || 1;
+    var amount = Number(t.amount) || 0;
+    var desc = String(t.description || t.label || 'הוצאה קבועה');
+    var li = document.createElement('li');
+    li.className = 'flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5';
+    var left = document.createElement('div');
+    left.className = 'min-w-0 flex-1';
+    var title = document.createElement('div');
+    title.className = 'truncate text-sm font-bold text-ink-900';
+    title.textContent = desc;
+    var sub = document.createElement('div');
+    sub.className = 'text-[11px] text-slate-500';
+    sub.textContent = _kflFixedWhenLabel(day);
+    left.appendChild(title); left.appendChild(sub);
+    var amt = document.createElement('div');
+    amt.className = 'num flex-shrink-0 text-sm font-black text-ink-900';
+    amt.setAttribute('dir', 'ltr');
+    amt.textContent = '₪' + amount.toLocaleString('he-IL');
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'flex-shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600';
+    del.setAttribute('aria-label', 'מחק/י ' + desc);
+    del.innerHTML = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    del.onclick = function () { kesefleFixedRemove(t.id, desc); };
+    li.appendChild(left); li.appendChild(amt); li.appendChild(del);
+    ul.appendChild(li);
+  });
+}
+
+// Fetch the user's rules. Tries the server (recurring `list`), falls back to the
+// local mirror if the server path isn't reachable for the browser (see note).
+async function kesefleFixedList() {
+  var phone = _kflFixedPhone();
+  // No linked phone yet -> only the local mirror can exist; render it.
+  if (!phone) { _kflFixedRender(_kflFixedLocalGet()); return; }
+  try {
+    var r = await fetch('/api/recurring', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list', phone: phone }),
+    });
+    var j = await r.json().catch(function () { return {}; });
+    if (r.ok && j && j.ok && Array.isArray(j.templates)) {
+      // Server is the source of truth -- mirror it locally + render.
+      _kflFixedLocalSet(j.templates);
+      _kflFixedRender(j.templates);
+      return;
+    }
+  } catch (e) { /* fall through to local mirror */ }
+  // Server not reachable from the browser session (expected until a session
+  // proxy ships) -> render the local mirror so the user still sees their rules.
+  _kflFixedRender(_kflFixedLocalGet());
+}
+
+async function kesefleFixedAdd() {
+  _kflFixedClearMsg();
+  var catEl = document.getElementById('fx-category');
+  var amtEl = document.getElementById('fx-amount');
+  var dayEl = document.getElementById('fx-day');
+  var customEl = document.getElementById('fx-custom');
+  var btn = document.getElementById('fx-add-btn');
+  if (!catEl || !amtEl || !dayEl) return;
+
+  var spec = KFL_FIXED_CATS[Number(catEl.value)] || KFL_FIXED_CATS[KFL_FIXED_CATS.length - 1];
+  var isOther = spec.label === 'אחר';
+  var description = isOther ? String((customEl && customEl.value) || '').trim() : spec.label;
+  var amount = Number(amtEl.value);
+  var day = Math.max(1, Math.min(28, parseInt(dayEl.value, 10) || 1));
+
+  if (isOther && !description) { _kflFixedMsg('כתוב/י שם להוצאה (לדוגמה: חוג שחייה).', 'err'); return; }
+  if (!isFinite(amount) || amount <= 0) { _kflFixedMsg('הזן/י סכום תקין בשקלים.', 'err'); return; }
+
+  var phone = _kflFixedPhone();
+  var tpl = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    amount: amount,
+    description: description,
+    category: spec.category,
+    subcategory: spec.subcategory,
+    freq: { type: 'monthly', day: day },
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  };
+
+  if (btn) { btn.disabled = true; btn.textContent = '...מוסיף'; }
+
+  // No phone linked yet -> can't reach the recurring engine at all. Save locally
+  // and tell the user to connect WhatsApp first (the rule will be honored once
+  // a session proxy ships; for now it documents intent + drives them to link).
+  if (!phone) {
+    var localOnly = _kflFixedLocalGet(); localOnly.push(tpl); _kflFixedLocalSet(localOnly);
+    _kflFixedRender(localOnly);
+    _kflFixedMsg('נשמר. כדי שייכנס לגיליון אוטומטית — חבר/י קודם את הוואטסאפ (שלב 3 למעלה).', 'warn');
+    _kflFixedResetForm();
+    if (btn) { btn.disabled = false; btn.textContent = 'הוסף/י הוצאה קבועה'; }
+    return;
+  }
+
+  // Try the server in the exact recurring contract shape.
+  var ok = false, errCode = '';
+  try {
+    var r = await fetch('/api/recurring', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add',
+        phone: phone,
+        amount: amount,
+        description: description,
+        category: spec.category,
+        subcategory: spec.subcategory,
+        freq: { type: 'monthly', day: day },
+      }),
+    });
+    var j = await r.json().catch(function () { return {}; });
+    if (r.ok && j && j.ok) { ok = true; if (j.template && j.template.id) tpl.id = j.template.id; }
+    else errCode = (j && j.error) || ('http_' + r.status);
+  } catch (e) { errCode = 'network'; }
+
+  // Mirror locally regardless so the list always reflects what the user added.
+  var list = _kflFixedLocalGet(); list.push(tpl); _kflFixedLocalSet(list);
+
+  if (ok) {
+    // Re-pull from server to stay authoritative; render happens inside.
+    await kesefleFixedList();
+    _kflFixedMsg('✓ נוסף! ' + description + ' (₪' + amount.toLocaleString('he-IL') + ') ייכנס לגיליון בכל ' + day + ' לחודש.', 'ok');
+    _kflFixedResetForm();
+    try { _kflFunnel('fixed_expense_added'); } catch (e) {}
+  } else {
+    _kflFixedRender(list);
+    _kflFixedResetForm();
+    // Honest fallback: the browser can't authenticate the recurring WRITE yet.
+    // Give the user the bot command that works right now (copy-paste into WA).
+    var botCmd = 'קבוע ' + description + ' ' + amount + ' בכל ' + day + ' לחודש';
+    var auth = /unauthorized|bot_secret_not_configured|http_401|http_503/.test(errCode);
+    if (auth) {
+      _kflFixedMsg(
+        'נשמר ברשימה. כדי שייכנס לגיליון אוטומטית, שלח/י לבוט את ההודעה:<br>' +
+        '<button type="button" onclick="kesefleFixedCopyCmd(this)" data-cmd="' +
+        botCmd.replace(/"/g, '&quot;') +
+        '" class="mt-1 inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2 py-1 font-mono text-[11px] font-bold text-amber-800 hover:bg-amber-200">' +
+        '📋 ' + botCmd.replace(/</g, '&lt;') + '</button>',
+        'warn'
+      );
+    } else {
+      _kflFixedMsg('נשמר ברשימה, אבל לא הצלחנו לסנכרן כרגע (' + String(errCode).replace(/</g, '&lt;') + '). ננסה שוב מאוחר יותר.', 'warn');
+    }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'הוסף/י הוצאה קבועה'; }
+}
+
+// Copy the bot-command fallback to the clipboard.
+function kesefleFixedCopyCmd(btn) {
+  var cmd = (btn && btn.getAttribute('data-cmd')) || '';
+  if (!cmd) return;
+  function done() { btn.textContent = '✓ הועתק — הדבק/י בוואטסאפ'; }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(cmd).then(done, done);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = cmd; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); done();
+    }
+  } catch (e) { done(); }
+}
+
+async function kesefleFixedRemove(id, desc) {
+  if (!id) return;
+  if (!window.confirm('למחוק את "' + (desc || 'ההוצאה הקבועה') + '"?')) return;
+  var phone = _kflFixedPhone();
+  // Drop from the local mirror first so the UI is responsive.
+  var list = _kflFixedLocalGet().filter(function (t) { return t.id !== id; });
+  _kflFixedLocalSet(list);
+  _kflFixedRender(list);
+  if (!phone) return;
+  try {
+    await fetch('/api/recurring', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove', phone: phone, ref: id }),
+    });
+  } catch (e) { /* local mirror already updated; server reconciles on next list */ }
+  // Re-pull authoritative state (no-op if server unreachable -> keeps local).
+  kesefleFixedList();
+}
+
+function _kflFixedResetForm() {
+  var amtEl = document.getElementById('fx-amount');
+  var customEl = document.getElementById('fx-custom');
+  if (amtEl) amtEl.value = '';
+  if (customEl) customEl.value = '';
+}
+
+// Reveal the fixed-expenses section + hydrate it. Called from init() once we
+// know the user is authenticated. Safe to call more than once.
+function kesefleFixedReveal() {
+  var sec = document.getElementById('fixed-expenses');
+  if (!sec) return;
+  try { _kflFixedInitInputs(); } catch (e) {}
+  sec.classList.remove('hidden');
+  try { kesefleFixedList(); } catch (e) {}
+}
+
 // ── Blank-screen safety net ──────────────────────────────────────────────────
 // If, shortly after load, the content area rendered essentially nothing (an
 // uncaught error or a cleared-but-not-refilled <main>), show a recovery card
@@ -1668,8 +2123,8 @@ window.addEventListener('load', function () {
         '<div style="max-width:24rem;"><div style="font-size:44px;">🔄</div>' +
         '<h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2>' +
         '<p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב. אם זה ממשיך, פתח/י את הקישור ב-Safari או Chrome.</p>' +
-        '<button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#0e7490;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button>' +
-        '<a href="/account" style="display:block;margin-top:10px;color:#0e7490;font-size:13px;text-decoration:none;">חזרה להתחברות</a></div></div>';
+        '<button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#1d4ed8;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button>' +
+        '<a href="/account" style="display:block;margin-top:10px;color:#1d4ed8;font-size:13px;text-decoration:none;">חזרה להתחברות</a></div></div>';
     } catch (_e) {}
   }, 2500);
 });

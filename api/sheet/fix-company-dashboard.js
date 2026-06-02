@@ -116,6 +116,9 @@ async function resolveUser(req, body) {
     userRec,
     sheetRec,
     phone,
+    // PR-S2: expose phoneRec.spreadsheetId so the caller can run the
+    // canonical-vs-phone-record sheet_ownership_mismatch guard.
+    phoneSheetId: phoneRec.spreadsheetId || null,
   };
 }
 
@@ -134,8 +137,24 @@ async function handlerImpl(req, res) {
   const r = await resolveUser(req, body);
   if (!r.ok) return res.status(r.code || 401).json({ ok: false, error: r.error });
 
-  const { userSub, userRec, sheetRec, phone } = r;
-  const spreadsheetId = sheetRec?.spreadsheetId || userRec?.spreadsheetId || null;
+  const { userSub, userRec, sheetRec, phone, phoneSheetId } = r;
+
+  // PR-S2 (2026-05-27 security audit H1): tenant-isolation guard.
+  // Same shape as api/sheet/append.js:124-132. Only meaningful in Mode B
+  // (bot-secret + phone) — Mode A (session sub) has no phone record to
+  // compare against, so phoneSheetId is undefined and the check no-ops.
+  // Aborts BEFORE rewriting dashboard formulas if the phone-record's
+  // cached sheet id disagrees with the canonical sheet:{userSub}.
+  const canonicalSheetId = sheetRec?.spreadsheetId || null;
+  if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
+    log.error('fix_company_dashboard.sheet_ownership_mismatch', {
+      reqId: req.reqId, phone, userSub,
+      phoneRecordSheet: phoneSheetId, canonicalSheet: canonicalSheetId,
+    });
+    return res.status(409).json({ ok: false, error: 'sheet_ownership_mismatch' });
+  }
+
+  const spreadsheetId = canonicalSheetId || userRec?.spreadsheetId || null;
   if (!spreadsheetId) return res.status(404).json({ ok: false, error: 'no_sheet' });
   if (!userRec.refreshTokenEnvelope && !userRec.refreshToken) {
     return res.status(409).json({ ok: false, error: 'reauth_required' });
