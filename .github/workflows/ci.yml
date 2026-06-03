@@ -7,6 +7,34 @@ on:
     branches: [main]
 
 jobs:
+  tests:
+    name: Run test suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The offline gate. tests/full_qa.js loads the real source (bot + lib +
+      # api) and registers the isolation / billing-signature / classifier
+      # suites. It needs no secrets and no network. A non-zero exit here fails
+      # the build so a regression can never merge silently.
+      - name: Offline QA gate (tests/full_qa.js)
+        run: node tests/full_qa.js
+
+      # Key bot suites run explicitly too, so they still fail loudly even if a
+      # future edit drops them from full_qa.js's registry.
+      - name: Bot isolation + classifier + destructive-guard suites
+        run: |
+          node bot/test_isolation.js
+          node bot/test_isolation_edge_cases.js
+          node bot/test_classify.js
+          node bot/test_destructive_delete_confirm.js
+
   validate:
     name: Validate code + structure
     runs-on: ubuntu-latest

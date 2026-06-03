@@ -118,21 +118,31 @@ Bilingual step-by-step. Estimated total: ~35 minutes (you can do them in any ord
 3. Add the **WhatsApp Business Platform** product.
 4. Get/buy a phone number through Meta (₪50-100 setup; the number itself is free for new ones).
 5. Verify the number via the Meta dashboard (they send an SMS code).
-6. Set up the webhook:
-   - Callback URL: `https://kesefle.com/api/whatsapp/webhook`
+6. Set up the webhook — **point Meta at the Apps Script bot, NOT at the Vercel
+   webhook** (see the warning below for why):
+   - Callback URL: your Apps Script Web App `/exec` URL (the deployed bot from
+     `DEPLOYMENT_CHECKLIST.md` §1). This is the live, fully-classifying bot.
    - Verify Token: choose any random string (save it).
    - Subscribe to `messages` field.
-7. From the Meta dashboard, copy these values:
-   - **App Secret** (from App Settings → Basic)
-   - **Phone Number ID** (WhatsApp → API Setup)
-   - **Access Token** — generate a System User permanent token (Business Settings → System Users → Generate Token)
-8. Add to Vercel env vars (Vercel dashboard → kesefle → Settings → Environment Variables):
-   - `META_VERIFY_TOKEN` = the string from step 6
-   - `META_APP_SECRET` = from step 7
-   - `META_PHONE_NUMBER_ID` = from step 7
-   - `META_ACCESS_TOKEN` = from step 7
-9. Redeploy.
-10. Send a WhatsApp message to the new number — should work.
+7. From the Meta dashboard, copy the **Phone Number ID** (WhatsApp → API Setup)
+   and an **Access Token** (System User permanent token: Business Settings →
+   System Users → Generate Token). Put these in the **Apps Script Script
+   Properties** as `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_TOKEN`
+   (`DEPLOYMENT_CHECKLIST.md` §2) — that is what the live bot uses to reply.
+8. Send a WhatsApp message to the new number → it should be parsed and land in
+   the right sheet/category by the Apps Script bot.
+
+> ⚠️ **Do NOT point Meta's Callback URL at `https://kesefle.com/api/whatsapp/webhook`
+> and do NOT set `META_APP_SECRET` / `META_VERIFY_TOKEN` on Vercel as part of
+> launch.** That Vercel webhook is an unfinished alternate path: it uses a STUB
+> parser (`parseMessage` in `api/whatsapp/webhook.js`) that does NO real
+> classification — it just copies the message text into the category field, so
+> **every expense would be miscategorized** and would bypass the real Apps
+> Script classifier entirely. The path is fail-closed today (it returns 503
+> until `META_APP_SECRET` is set), so setting that secret is what would *arm*
+> the broken path. The Meta env vars on Vercel are only for a future, finished
+> Vercel-native bot — leave them unset until that exists. (See
+> `DEPLOYMENT_CHECKLIST.md` §3 "WhatsApp-on-Vercel path".)
 
 Full guide: I recommend Meta's official docs at https://developers.facebook.com/docs/whatsapp/cloud-api/get-started
 

@@ -46,7 +46,32 @@ function extractFn(src, name) {
 
 // ── 1. Existing unit suites ─────────────────────────────────────────────────
 console.log('\n══ 1. Unit suites (isolation + parser) ══');
-for (const f of ['bot/test_isolation.js', 'bot/test_isolation_edge_cases.js', 'bot/test_parser.js', 'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_classifier_primitives.js', 'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js', 'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js', 'bot/test_objective_commands.js', 'bot/test_objective_reminders_cron.js', 'tests/golden_set.js', 'tests/recurring_detect.js', 'tests/test_bank_parsers.js', 'tests/test_sheet_writer_row_building.js', 'tests/test_summary_column_schema.js', 'tests/test_gdpr_delete_key_completeness.js', 'tests/test_billing_manual_audit_log.js', 'tests/test_weekly_question_cron.js']) {
+// Each entry is run as a child `node <file>`; a non-zero exit fails the gate.
+const UNIT_SUITES = [
+  'bot/test_isolation.js', 'bot/test_isolation_edge_cases.js', 'bot/test_parser.js',
+  'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_classifier_primitives.js',
+  'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js',
+  'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js',
+  'bot/test_objective_commands.js', 'bot/test_objective_reminders_cron.js', 'tests/golden_set.js',
+  'tests/recurring_detect.js', 'tests/test_bank_parsers.js', 'tests/test_sheet_writer_row_building.js',
+  'tests/test_summary_column_schema.js', 'tests/test_gdpr_delete_key_completeness.js',
+  'tests/test_billing_manual_audit_log.js', 'tests/test_weekly_question_cron.js',
+  // 2026-06 QA-safety pass: register high-value suites that existed but were
+  // never run by this gate (isolation / billing-signature / classifier). All
+  // verified green standalone before adding. Kept curated (not all 40 orphans)
+  // to avoid bloating gate runtime; pure-compute, no secrets/network.
+  'tests/test_sheet_ownership_guard_5_endpoints.js', // tenant-isolation: cross-sheet write guard on 5 endpoints
+  'tests/test_whatsapp_webhook_signature.js',        // webhook HMAC fails closed when META_APP_SECRET unset
+  'tests/test_oauth_rotation_capture.js',            // rotated refresh-token capture (auth / data-loss)
+  'tests/test_log_redact_spreadsheet_id.js',         // PII redaction: no spreadsheetId leaks to logs
+  'tests/test_crypto_webhook_no_silent_payment_drop.js', // billing: payment webhook never silently drops
+  'tests/test_winback_token_exact_match.js',         // billing/auth token exact-match (no prefix bypass)
+  'tests/test_taxonomy_normalize.js',                // classifier: category taxonomy normalization
+  'tests/test_currency_hardcoded_ils_contract.js',   // currency contract (ILS) stays intact
+  'tests/test_ratelimit_arg_order.js',               // ratelimit arg-order regression guard
+];
+// Dedup defensively so an accidental duplicate entry can't double-count.
+for (const f of [...new Set(UNIT_SUITES)]) {
   try { execFileSync('node', [path.join(ROOT, f)], { stdio: 'pipe' }); ok(f + ' passed', true); }
   catch (e) { ok(f + ' passed', false); }
 }
