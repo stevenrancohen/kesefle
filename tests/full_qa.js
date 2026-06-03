@@ -74,6 +74,7 @@ const UNIT_SUITES = [
   'tests/test_ratelimit_ipv6_ttl.js',                // ratelimit: IPv6 /64 bypass + atomic-TTL lockout fix
   'tests/test_dashboard_sumifs_status_filter.js',    // dashboard income/expense sign-flip: every תנועות-subcategory SUMIFS filters col H (#227)
   'tests/test_sheet_tab_constants.js',               // tab-name constants centralized + byte-identical to bot (silent-rename guard) (#230)
+  'tests/test_email_unsubscribe.js',                 // onboarding: welcome+lifecycle emails have a working, signed, single-click unsubscribe
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {

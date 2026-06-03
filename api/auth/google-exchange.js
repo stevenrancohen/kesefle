@@ -271,6 +271,7 @@ async function handlerImpl(req, res) {
       const guardJson = await guardRes.json().catch(() => ({}));
       if (!guardJson?.result) {
         const { sendTemplate } = await import('../../lib/email.js');
+        const { buildUnsubscribeUrl } = await import('../../lib/email-unsub.js');
         const firstName = identity.name
           ? String(identity.name).split(/\s+/)[0]
           : String(identity.email).split('@')[0];
@@ -280,7 +281,10 @@ async function handlerImpl(req, res) {
           vars: {
             firstName,
             userEmail: identity.email,
-            unsubscribeUrl: `https://kesefle.com/unsubscribe?sub=${encodeURIComponent(identity.sub)}`,
+            // Signed, single-click unsubscribe (lib/email-unsub.js). Replaces the
+            // old unsigned ?sub= link that 404'd (no /unsubscribe page existed)
+            // AND was forgeable for any sub.
+            unsubscribeUrl: buildUnsubscribeUrl(identity.sub),
           },
         });
         if (sendResult.ok || sendResult.skipped) {
