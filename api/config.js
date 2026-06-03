@@ -14,7 +14,7 @@ import { withRequestId } from '../lib/log.js';
 // The real 360dialog production WhatsApp Business number. Same default lives
 // hardcoded across the wa.me/ anchors site-wide. KESEFLE_BOT_NUMBER can still
 // override it via env for a future renumber without a redeploy.
-const DEFAULT_BOT_NUMBER = '972547760643';
+const DEFAULT_BOT_NUMBER = '972547766361';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
