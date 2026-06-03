@@ -359,7 +359,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
         <div class="mt-3 kfl-kpi-num" id="kfl-kpi-active">—</div>
-        <div class="mt-1 kfl-kpi-sub">השתמשו השבוע</div>
+        <div class="mt-1 kfl-kpi-sub">פעילים ב-24 השעות האחרונות</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
@@ -367,7 +367,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
         <div class="mt-3 kfl-kpi-num" id="kfl-kpi-paying">—</div>
-        <div class="mt-1 kfl-kpi-sub">מנויי Pro / משפחה</div>
+        <div class="mt-1 kfl-kpi-sub">משלמים · <span class="num" id="kfl-kpi-trial">—</span> בתקופת ניסיון</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
@@ -375,15 +375,15 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
         <div class="mt-3 kfl-kpi-num" id="kfl-kpi-mrr">—</div>
-        <div class="mt-1 kfl-kpi-sub">חודשית קבועה</div>
+        <div class="mt-1 kfl-kpi-sub">חודשית קבועה · שנתית <span class="num" id="kfl-kpi-arr" style="color:#1d4ed8;font-weight:700;">—</span></div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
-          <div class="kfl-kpi-eyebrow warn">תקועים</div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div class="kfl-kpi-eyebrow warn">נטישה</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 18l-9.5-9.5-5 5L1 6"/><polyline points="17 18 23 18 23 12"/></svg>
         </div>
-        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-stuck">—</div>
-        <div class="mt-1 kfl-kpi-sub">נרשמו, אין גיליון</div>
+        <div class="mt-3 kfl-kpi-num" id="kfl-kpi-churn">—</div>
+        <div class="mt-1 kfl-kpi-sub">ביטולים ב-30 הימים האחרונים</div>
       </div>
       <div class="card card-hover p-5">
         <div class="flex items-center justify-between">
@@ -391,33 +391,71 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
         <div class="mt-3 kfl-kpi-num" id="kfl-kpi-todo">—</div>
-        <div class="mt-1 kfl-kpi-sub">מצריך תשומת לב</div>
+        <div class="mt-1 kfl-kpi-sub">נרשמו ללא גיליון / קישור שבור</div>
       </div>
     </div>
     <script>
     (function(){
-      // KPI fetcher — pulls existing /api/admin?action=stats and fills the cards.
-      // Falls back to "—" silently on error so the page never looks broken.
-      async function loadKpi() {
+      // KPI fetcher (2026-06-03 CEO console rebuild) — wires the at-a-glance
+      // strip to the REAL admin endpoints instead of the non-existent
+      // ?action=stats route (which 400'd, so every card showed "—"):
+      //   /api/admin/revenue         -> MRR, ARR, paying, trial, churn
+      //   /api/admin?action=metrics  -> total users, MAU/DAU (active 24h)
+      //   /api/admin?action=registration-health -> orphans + broken links
+      // Each card degrades to "—" independently if its source errors, so a
+      // single failing endpoint never blanks the whole strip. All values are
+      // numbers/currency we format ourselves -> textContent is XSS-safe.
+      function set(id, v) { var el = document.getElementById(id); if (el && v != null && v !== '') el.textContent = v; }
+      function nf(n) { return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('en-US') : null; }
+      function ils(n) { return (typeof n === 'number' && isFinite(n)) ? ('₪' + n.toLocaleString('en-US')) : null; }
+      // Stash for the executive snapshot section (Daily Insights) so it can
+      // reuse the same fetched numbers without a second round-trip.
+      window.__kflExec = window.__kflExec || {};
+
+      async function getJson(url) {
         try {
-          var r = await fetch('/api/admin?action=stats', { credentials: 'include' });
-          if (!r.ok) return;
-          var j = await r.json();
-          var d = j && (j.stats || j.data || j) || {};
-          function set(id, v) { var el = document.getElementById(id); if (el && v != null) el.textContent = v; }
-          set('kfl-kpi-total',  d.totalUsers || d.users || d.signups || '—');
-          set('kfl-kpi-active', d.activeUsers7d || d.active || '—');
-          set('kfl-kpi-paying', d.payingUsers || d.paying || '—');
-          set('kfl-kpi-mrr',    (d.mrrILS != null ? '₪' + d.mrrILS : (d.mrr || '—')));
-          set('kfl-kpi-stuck',  d.stuckUsers || d.stuck || d.orphans || '—');
-          set('kfl-kpi-todo',   d.openIssues || d.todoCount || ((d.stuckUsers||0) + (d.brokenSheets||0) + (d.botErrors||0)) || '—');
-        } catch (_e) { /* leave em-dash */ }
+          var r = await fetch(url, { credentials: 'include' });
+          if (!r.ok) return null;
+          return await r.json();
+        } catch (_e) { return null; }
       }
+
+      async function loadKpi() {
+        var rev = await getJson('/api/admin/revenue');
+        if (rev && rev.ok) {
+          var c = rev.counts || {}, mrr = rev.mrr || {}, arr = rev.arr || {}, churn = rev.churn || {}, conv = rev.conversion || {};
+          set('kfl-kpi-paying', nf(c.paid));
+          set('kfl-kpi-trial', nf(c.trial) || '0');
+          set('kfl-kpi-mrr', ils(mrr.ils) || '₪0');
+          set('kfl-kpi-arr', ils(arr.ils) || '₪0');
+          set('kfl-kpi-churn', nf(churn.cancellations_last_30d) != null ? nf(churn.cancellations_last_30d) : '0');
+          window.__kflExec.revenue = rev;
+        }
+        var met = await getJson('/api/admin?action=metrics');
+        if (met && met.ok && met.metrics) {
+          set('kfl-kpi-total', nf(met.metrics.totalUsers));
+          set('kfl-kpi-active', nf(met.metrics.dau));
+          window.__kflExec.metrics = met.metrics;
+          // If revenue endpoint failed, fall back to metrics for the paying card.
+          if (!rev || !rev.ok) set('kfl-kpi-paying', nf(met.metrics.paidUsers));
+        }
+        var hp = await getJson('/api/admin?action=registration-health');
+        if (hp && hp.ok) {
+          var toFix = (hp.orphanCount || 0) + (hp.brokenPhoneCount || 0);
+          set('kfl-kpi-todo', nf(toFix));
+          window.__kflExec.health = hp;
+        }
+        // Fire the executive-snapshot renderer (Daily Insights) now that the
+        // shared numbers are in window.__kflExec.
+        if (typeof window.__kflRenderExec === 'function') { try { window.__kflRenderExec(); } catch (_e) {} }
+      }
+
       // Wait for the auth gate to drop before fetching.
       var attempts = 0;
       var poller = setInterval(function(){
         attempts++;
-        var gateGone = !document.getElementById('kfl-gate') || document.getElementById('kfl-gate').style.display === 'none';
+        var gate = document.getElementById('kfl-gate');
+        var gateGone = !gate || gate.classList.contains('hidden') || gate.style.display === 'none';
         if (gateGone || attempts > 40) { clearInterval(poller); loadKpi(); }
       }, 250);
     })();
@@ -842,8 +880,8 @@
       <div>
         <p class="kfl-section-eyebrow">הבוט</p>
         <h2 class="kfl-section-h2">מצב הבוט</h2>
-        <p class="kfl-section-sub">הוא עונה? הוא בחיים? אילו הודעות נכשלו אתמול?</p>
-        <p class="mt-0.5 text-sm" style="color: #64748B;">Inference-tier distribution — higher T1/T2 share means lower spend.</p>
+        <p class="kfl-section-sub">הוא עונה? הוא בחיים? והגרסה שרצה מעודכנת?</p>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">תקינות תפעולית בזמן אמת — מתי הבוט כתב לאחרונה, ניצול KV, ואחוז הקמת גיליונות מוצלחת.</p>
       </div>
       <div id="kfl-bot-freshness" class="hidden text-xs font-medium rounded-full px-3 py-1.5 flex items-center gap-1.5">
         <!-- populated by loadBotFreshness() -->
@@ -851,63 +889,60 @@
     </div>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
+      <!-- Card 1: bot reachability (last successful write) -->
       <div class="card card-hover p-5">
         <div class="mb-2 flex items-center gap-2">
-          <span class="grid h-7 w-7 place-items-center rounded-md text-xs font-medium" style="background: #F1F5F9; color: #475569;">T1</span>
+          <span class="grid h-7 w-7 place-items-center rounded-md" style="background:#F1F5F9;" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
           <div>
-            <div class="text-sm font-medium" style="color: #1E293B;">Cache hit</div>
-            <div class="text-[11px]" style="color: #94A3B8;">Local cache lookup</div>
+            <div class="text-sm font-medium" style="color: #1E293B;">הבוט פעיל</div>
+            <div class="text-[11px]" style="color: #94A3B8;">הכתיבה האחרונה לגיליון</div>
           </div>
         </div>
-        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;">30%</div>
-        <div class="qbar mt-2"><span style="width:30%"></span></div>
-        <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div><div style="color: #94A3B8;">Cost</div><div class="num font-medium" style="color: #1E293B;">$0.00</div></div>
-          <div><div style="color: #94A3B8;">Latency</div><div class="num font-medium" style="color: #1E293B;">12ms</div></div>
+        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;" id="bot-write-ago">—</div>
+        <div class="mt-2 flex items-center gap-1.5 text-[11px]">
+          <span class="status-dot" id="bot-write-dot" style="background:#94A3B8;"></span>
+          <span id="bot-write-status" style="color:#64748B;">טוען…</span>
         </div>
       </div>
 
+      <!-- Card 2: KV usage (free-tier daily quota) -->
       <div class="card card-hover p-5">
         <div class="mb-2 flex items-center gap-2">
-          <span class="grid h-7 w-7 place-items-center rounded-md text-xs font-medium" style="background: #F1F5F9; color: #475569;">T2</span>
+          <span class="grid h-7 w-7 place-items-center rounded-md" style="background:#F1F5F9;" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
           <div>
-            <div class="text-sm font-medium" style="color: #1E293B;">Keyword match</div>
-            <div class="text-[11px]" style="color: #94A3B8;">Rule-based parse</div>
+            <div class="text-sm font-medium" style="color: #1E293B;">ניצול KV היום</div>
+            <div class="text-[11px]" style="color: #94A3B8;">מתוך מכסת ה-Free Tier היומית</div>
           </div>
         </div>
-        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;">65%</div>
-        <div class="qbar mt-2"><span style="width:65%"></span></div>
-        <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div><div style="color: #94A3B8;">Cost</div><div class="num font-medium" style="color: #1E293B;">$0.00</div></div>
-          <div><div style="color: #94A3B8;">Latency</div><div class="num font-medium" style="color: #1E293B;">38ms</div></div>
-        </div>
+        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;" id="bot-kv-pct">—</div>
+        <div class="qbar mt-2"><span id="bot-kv-bar" style="width:0%"></span></div>
+        <div class="mt-2 text-[11px]" style="color: #64748B;" id="bot-kv-detail">טוען…</div>
       </div>
 
+      <!-- Card 3: provisioning success rate -->
       <div class="card card-hover p-5">
         <div class="mb-2 flex items-center gap-2">
-          <span class="grid h-7 w-7 place-items-center rounded-md text-xs font-medium" style="background: #F1F5F9; color: #475569;">T3</span>
+          <span class="grid h-7 w-7 place-items-center rounded-md" style="background:#F1F5F9;" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg></span>
           <div>
-            <div class="text-sm font-medium" style="color: #1E293B;">AI fallback</div>
-            <div class="text-[11px]" style="color: #94A3B8;">Claude Haiku</div>
+            <div class="text-sm font-medium" style="color: #1E293B;">הקמת גיליונות</div>
+            <div class="text-[11px]" style="color: #94A3B8;">גיליונות שנוצרו ÷ נרשמים</div>
           </div>
         </div>
-        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;">5%</div>
-        <div class="qbar mt-2"><span style="width:5%"></span></div>
-        <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div><div style="color: #94A3B8;">Cost</div><div class="num font-medium" style="color: #1E293B;">$0.019</div></div>
-          <div><div style="color: #94A3B8;">Latency</div><div class="num font-medium" style="color: #1E293B;">680ms</div></div>
-        </div>
+        <div class="mt-3 text-2xl num" style="font-weight: 500; color: #1E293B;" id="bot-provision-pct">—</div>
+        <div class="qbar mt-2"><span id="bot-provision-bar" style="width:0%"></span></div>
+        <div class="mt-2 text-[11px]" style="color: #64748B;" id="bot-provision-detail">טוען…</div>
       </div>
     </div>
 
-    <!-- Budget bar -->
-    <div class="card card-hover mt-4 p-5">
-      <div class="flex items-center justify-between mb-2">
-        <div class="text-sm font-medium" style="color: #1E293B;">Anthropic API — monthly budget</div>
-        <div class="text-sm"><span class="num font-medium" style="color: #1E293B;">$9.81</span><span class="num" style="color: #94A3B8;"> / $10.00</span></div>
+    <!-- Honest note: AI inference-tier mix + per-message cost are not yet
+         instrumented (no KV counter for tier hits). The previous static
+         "30/65/5% · $9.81/$10" tiles were placeholders and were removed in the
+         2026-06-03 CEO console rebuild so the panel never shows invented data. -->
+    <div class="card mt-4 p-4" style="background:#F8FAFC;border:1px dashed #CBD5E1;">
+      <div class="flex items-start gap-2 text-xs" style="color:#475569;">
+        <svg class="mt-0.5 flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>פילוח שכבות ה-AI (cache / keyword / fallback) ועלות-להודעה עדיין לא נמדדים אוטומטית. יתווספו כשנחבר מונה שכבות ב-KV. עד אז מוצגת תקינות תפעולית אמיתית בלבד.</span>
       </div>
-      <div class="qbar"><span style="width:98%"></span></div>
-      <div class="mt-2 text-xs" style="color: #64748B;">Burn rate: <span class="num font-medium" style="color: #475569;">$0.019/day</span> &middot; Est. depletion: <span class="num font-medium" style="color: #475569;">~516 days</span></div>
     </div>
   </section>
 
@@ -981,40 +1016,92 @@
   <!-- ====== SECTION 7: DAILY INSIGHTS ====== -->
   <section class="mb-10">
     <div class="mb-4 section-rule pb-3">
-      <p class="kfl-section-eyebrow">תובנות יומיות</p>
-      <h2 class="kfl-section-h2">מה כדאי לדעת היום</h2>
-      <p class="kfl-section-sub">דברים שצמחו, ירדו, או דורשים תשומת לב — עדכון יומי.</p>
-      <p class="mt-0.5 text-sm" style="color: #64748B;">Automated analysis based on today's data.</p>
+      <p class="kfl-section-eyebrow">תמונת מצב</p>
+      <h2 class="kfl-section-h2">סיכום מנהלים</h2>
+      <p class="kfl-section-sub">המספרים שמסכמים את בריאות העסק — הכנסה, המרה ונטישה — מחושבים מנתוני אמת.</p>
+      <p class="mt-0.5 text-sm" style="color: #64748B;">מבוסס על /api/admin/revenue ו-registration-health. ללא הערכות פיקטיביות.</p>
     </div>
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-
-      <div class="card card-hover p-5">
-        <div class="mb-2 inline-flex items-center text-[10px] font-medium" style="color: #64748B;">
-          Marketing insight
-        </div>
-        <h3 class="text-sm font-medium leading-snug" style="color: #1E293B;">Peak signup window: Friday 16:00–20:00</h3>
-        <p class="mt-2 text-sm" style="color: #475569;">12 of 47 signups (25%) happened in this window. Schedule Facebook/Instagram posts here.</p>
-        <button class="mt-3 text-xs font-medium" style="color: #3B82F6;">Schedule post</button>
-      </div>
-
-      <div class="card card-hover p-5">
-        <div class="mb-2 inline-flex items-center text-[10px] font-medium" style="color: #64748B;">
-          Retention
-        </div>
-        <h3 class="text-sm font-medium leading-snug" style="color: #1E293B;">5 users have not messaged in 7 days</h3>
-        <p class="mt-2 text-sm" style="color: #475569;">Consider sending a re-engagement message with an example or short tip.</p>
-        <button class="mt-3 text-xs font-medium" style="color: #3B82F6;">Send re-engagement</button>
-      </div>
-
-      <div class="card card-hover p-5">
-        <div class="mb-2 inline-flex items-center text-[10px] font-medium" style="color: #F59E0B;">
-          Cost watch
-        </div>
-        <h3 class="text-sm font-medium leading-snug" style="color: #1E293B;">AI cost up 23% today</h3>
-        <p class="mt-2 text-sm" style="color: #475569;">Driven by the "events" category (shows, films, etc.). Consider adding keywords to T2.</p>
-        <button class="mt-3 text-xs font-medium" style="color: #3B82F6;">View category breakdown</button>
-      </div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="kfl-exec-grid">
+      <div class="card p-5"><div class="text-sm flex items-center gap-2" style="color:#64748B;"><svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M22 12a10 10 0 0 1-10 10"/></svg><span>טוען סיכום מנהלים…</span></div></div>
     </div>
+    <script>
+    (function(){
+      // Executive snapshot (2026-06-03 CEO console rebuild). Replaces the three
+      // hardcoded "insight" cards (which showed invented numbers like "12 of 47
+      // signups" and "AI cost up 23%") with a real summary derived from the same
+      // data the KPI strip already fetched into window.__kflExec. No extra
+      // network calls; renders the moment the KPI loader signals readiness.
+      // Every value is a number/string we format -> textContent (XSS-safe).
+      function ils(n){ return (typeof n==='number'&&isFinite(n)) ? ('₪'+n.toLocaleString('en-US')) : '—'; }
+      function nf(n){ return (typeof n==='number'&&isFinite(n)) ? n.toLocaleString('en-US') : '—'; }
+
+      function card(eyebrow, eyebrowColor, valueText, valueColor, note){
+        var c = document.createElement('div');
+        c.className = 'card card-hover p-5';
+        var eb = document.createElement('div');
+        eb.className = 'mb-2 inline-flex items-center text-[10px] font-bold uppercase tracking-wider';
+        eb.style.color = eyebrowColor; eb.textContent = eyebrow;
+        var v = document.createElement('div');
+        v.className = 'kfl-kpi-num'; v.style.fontSize = '1.75rem'; v.style.color = valueColor || '#0F172A';
+        v.textContent = valueText;
+        var n = document.createElement('p');
+        n.className = 'mt-2 text-sm'; n.style.color = '#475569'; n.textContent = note;
+        c.appendChild(eb); c.appendChild(v); c.appendChild(n);
+        return c;
+      }
+
+      function render(){
+        var grid = document.getElementById('kfl-exec-grid');
+        if (!grid) return;
+        var ex = window.__kflExec || {};
+        var rev = ex.revenue, health = ex.health;
+        if (!rev || !rev.ok) { return; } // KPI loader will call us again once ready
+        grid.textContent = '';
+        var c = rev.counts || {}, mrr = rev.mrr || {}, arr = rev.arr || {}, churn = rev.churn || {}, conv = rev.conversion || {}, ltv = rev.ltv || {};
+
+        // 1. Recurring revenue (MRR + ARR)
+        grid.appendChild(card('הכנסה חוזרת', '#1d4ed8',
+          ils(mrr.ils) + ' / חודש', '#0F172A',
+          'שנתית צפויה ' + ils(arr.ils) + ' · ARPU ' + ils(mrr.avg_revenue_per_user_ils) + ' למשלם'));
+
+        // 2. Trial -> paid conversion
+        var tp = (typeof conv.trial_to_paid_pct === 'number') ? conv.trial_to_paid_pct : null;
+        grid.appendChild(card('המרת ניסיון', tp != null && tp < 20 ? '#B45309' : '#0f766e',
+          (tp != null ? tp + '%' : '—') + ' ניסיון→משלם', '#0F172A',
+          nf(c.paid) + ' משלמים · ' + nf(c.trial) + ' בניסיון · ' + nf(c.free) + ' חינם'));
+
+        // 3. Churn (cancellations last 30d)
+        var cancels = churn.cancellations_last_30d;
+        var churnPct = churn.monthly_churn_rate_pct;
+        grid.appendChild(card('נטישה (30 ימים)', (cancels > 0) ? '#B45309' : '#0f766e',
+          nf(cancels) + ' ביטולים', (cancels > 0) ? '#B45309' : '#0F172A',
+          (churnPct != null ? churnPct + '% נטישה חודשית' : '—') + ' · LTV ~' + ils(ltv.avg_ils)));
+
+        // 4. Total accounts
+        grid.appendChild(card('חשבונות', '#1d4ed8',
+          nf(c.total) + ' סך הכל', '#0F172A',
+          nf(c.paid) + ' משלמים · ' + nf(c.trial) + ' ניסיון · ' + nf(c.cancelled) + ' בוטלו'));
+
+        // 5. Signup -> paid (overall conversion)
+        var sp = (typeof conv.signup_to_paid_pct === 'number') ? conv.signup_to_paid_pct : null;
+        grid.appendChild(card('המרה כוללת', '#0f766e',
+          (sp != null ? sp + '%' : '—') + ' נרשם→משלם', '#0F172A',
+          'מתוך כלל הנרשמים שהפכו ללקוחות משלמים'));
+
+        // 6. Accounts needing attention (from registration-health)
+        if (health && health.ok) {
+          var orphans = health.orphanCount || 0, broken = health.brokenPhoneCount || 0, toFix = orphans + broken;
+          grid.appendChild(card('דורש טיפול', toFix > 0 ? '#B91C1C' : '#0f766e',
+            nf(toFix) + ' חשבונות', toFix > 0 ? '#B91C1C' : '#047857',
+            toFix > 0 ? (nf(orphans) + ' ללא גיליון · ' + nf(broken) + ' קישור שבור — ראה "בריאות הרישום"') : 'כל הלקוחות מחוברים ותקינים ✓'));
+        }
+      }
+      // Expose so the KPI loader can trigger us once window.__kflExec is filled.
+      window.__kflRenderExec = render;
+      // Also attempt a render shortly after load in case KPI data is already in.
+      setTimeout(render, 1500);
+    })();
+    </script>
   </section>
 
   <!-- ====== SECTION 8: SUGGESTED ACTIONS ====== -->
@@ -1568,7 +1655,89 @@
     } catch (_e) { /* silent — badge stays hidden */ }
   }
 
-  function loadOnboarding() { loadHealth(); loadQuestionnaires(); loadBotFreshness(); }
+  // Bot operational health (2026-06-03 CEO console rebuild). Replaces the old
+  // fabricated tier/cost/budget tiles with REAL signals from
+  // /api/admin/launch-monitor (requireAdmin): last successful bot write, KV
+  // free-tier usage %, and sheet-provisioning success rate. Each card degrades
+  // independently and all values are formatted numbers -> textContent-safe.
+  async function loadBotHealth() {
+    function set(id, v) { var e = el(id); if (e && v != null) e.textContent = v; }
+    function agoHe(min) {
+      if (min == null) return null;
+      if (min < 1) return 'הרגע';
+      if (min < 60) return min + ' דק׳';
+      var h = Math.round(min / 60);
+      if (h < 24) return h + ' שע׳';
+      return Math.round(h / 24) + ' ימים';
+    }
+    var j;
+    try {
+      var r = await fetch('/api/admin/launch-monitor', { credentials: 'include' });
+      if (r.status === 401 || r.status === 403) return;  // gate handles auth UX
+      j = await r.json();
+    } catch (_e) { return; }
+    if (!j || !j.ok) return;
+
+    // --- Card 1: bot reachability ---
+    var bot = j.bot || {};
+    var mins = bot.minutes_since_last_write;
+    var ago = agoHe(mins);
+    set('bot-write-ago', ago ? ('לפני ' + ago) : 'אין נתון');
+    var dot = el('bot-write-dot'), st = el('bot-write-status');
+    if (st && dot) {
+      if (bot.last_successful_write == null) {
+        dot.style.background = '#94A3B8'; st.style.color = '#64748B';
+        st.textContent = 'אין כתיבה מתועדת עדיין';
+      } else if (bot.healthy) {
+        dot.style.background = '#10B981'; st.style.color = '#047857';
+        st.textContent = 'תקין — כותב כרגיל';
+      } else {
+        dot.style.background = '#EF4444'; st.style.color = '#B91C1C';
+        st.textContent = 'לא נראתה כתיבה לאחרונה — בדוק את הבוט';
+      }
+    }
+
+    // --- Card 2: KV usage ---
+    var kv = j.kvUsage || {};
+    var bar = el('bot-kv-bar'), detail = el('bot-kv-detail');
+    if (!kv.tracked || kv.pct_used == null) {
+      set('bot-kv-pct', 'אין מעקב');
+      if (bar) bar.style.width = '0%';
+      if (detail) detail.textContent = 'מונה פקודות KV עדיין לא פעיל';
+    } else {
+      set('bot-kv-pct', kv.pct_used + '%');
+      if (bar) {
+        bar.style.width = Math.max(2, Math.min(100, kv.pct_used)) + '%';
+        bar.style.background = kv.critical ? '#EF4444' : (kv.warning ? '#F59E0B' : '#3B82F6');
+      }
+      if (detail) {
+        detail.textContent = (kv.commands_today != null ? kv.commands_today.toLocaleString('en-US') : '?')
+          + ' מתוך ' + (kv.free_tier_daily ? kv.free_tier_daily.toLocaleString('en-US') : '?') + ' פקודות'
+          + (kv.critical ? ' · קריטי!' : (kv.warning ? ' · התראה' : ''));
+        detail.style.color = kv.critical ? '#B91C1C' : (kv.warning ? '#B45309' : '#64748B');
+      }
+    }
+
+    // --- Card 3: provisioning success rate ---
+    var totals = j.totals || {};
+    var rate = totals.provisionSuccessRate != null ? Number(totals.provisionSuccessRate) : null;
+    var pbar = el('bot-provision-bar'), pdetail = el('bot-provision-detail');
+    if (rate == null || !isFinite(rate)) {
+      set('bot-provision-pct', '—');
+      if (pdetail) pdetail.textContent = 'אין נתון';
+    } else {
+      var pct = Math.round(rate * 100);
+      set('bot-provision-pct', pct + '%');
+      if (pbar) {
+        pbar.style.width = Math.max(2, Math.min(100, pct)) + '%';
+        pbar.style.background = pct >= 90 ? '#10B981' : (pct >= 70 ? '#F59E0B' : '#EF4444');
+      }
+      if (pdetail) pdetail.textContent = (totals.sheetsProvisioned != null ? totals.sheetsProvisioned : '?')
+        + ' גיליונות · ' + (totals.users != null ? totals.users : '?') + ' נרשמים';
+    }
+  }
+
+  function loadOnboarding() { loadHealth(); loadQuestionnaires(); loadBotFreshness(); loadBotHealth(); }
   window.kflLoadOnboarding = loadOnboarding;
   if (document.readyState !== 'loading') loadOnboarding();
   else document.addEventListener('DOMContentLoaded', loadOnboarding);

@@ -76,6 +76,7 @@ const UNIT_SUITES = [
   'tests/test_sheet_tab_constants.js',               // tab-name constants centralized + byte-identical to bot (silent-rename guard) (#230)
   'tests/test_round3_api_kv_hardening.js',           // round 3 audit: cron secret-in-header, admin RL, dedup constantTimeEqual, PII hash, GDPR goal/stats purge
   'tests/test_email_unsubscribe.js',                 // onboarding: welcome+lifecycle emails have a working, signed, single-click unsubscribe
+  'tests/test_api_error_wrapper_hardening.js',       // hardening: getExpenses wrapped in withRequestId + paypal subscribe/webhook return stable error codes (no e.message leak)
   'tests/pwa.js',                                     // PWA hardening: manifest validity, maskable icon, theme-color parity, SW cache-versioning + skipWaiting/clients.claim + offline fallback, controllerchange auto-update (#13), install CTA (#125), iOS meta
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
@@ -532,6 +533,32 @@ ok('every api/admin/* requireAdmin endpoint is also withRateLimit',
 ok('account.js evicts deleted user from users_all SET (SREM)',
    /\/srem\//.test(ACCOUNT) &&
    /kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub/.test(ACCOUNT));
+
+// ── 5m. Revenue: customer-facing PayPal subscribe is wired (not orphaned) ────
+// Guards the #1 revenue path: pricing + account must actually CALL the
+// subscribe endpoint, and /upgrade must serve the return page (not 301 to
+// /pricing). Catches a future PR that re-orphans the subscribe button.
+console.log('\n══ 5m. Revenue: PayPal subscribe wiring ══');
+const PRICING_HTML = fs.readFileSync(path.join(ROOT, 'pricing.html'), 'utf8');
+const UPGRADE_HTML = fs.readFileSync(path.join(ROOT, 'upgrade.html'), 'utf8');
+// VERCEL_JSON is already loaded above (cron suite); reuse it here.
+ok('pricing.html POSTs to /api/billing/paypal?action=subscribe',
+   /\/api\/billing\/paypal\?action=subscribe/.test(PRICING_HTML) &&
+   /window\.kflPricingCta\s*=/.test(PRICING_HTML));
+ok('pricing.html Pro/Family CTAs invoke kflPricingCta',
+   /kflPricingCta\(\s*['"]pro['"]/.test(PRICING_HTML) &&
+   /kflPricingCta\(\s*['"]family['"]/.test(PRICING_HTML));
+ok('account.html has kflSubscribe wired to the subscribe endpoint',
+   /\/api\/billing\/paypal\?action=subscribe/.test(ACCOUNT_HTML) &&
+   /function kflSubscribe\(/.test(ACCOUNT_HTML));
+ok('account.html upgrade button triggers kflStartUpgrade',
+   /onclick="kflStartUpgrade\(/.test(ACCOUNT_HTML) && /id="upgrade-card"/.test(ACCOUNT_HTML));
+ok('account.html subscribe uses cookie auth (credentials:include)',
+   /action=subscribe[\s\S]{0,200}credentials:\s*['"]include['"]/.test(ACCOUNT_HTML));
+ok('upgrade.html exists and handles ?paypal= success/cancel',
+   /paypal/i.test(UPGRADE_HTML) && /state-cancel/.test(UPGRADE_HTML) && /state-success/.test(UPGRADE_HTML));
+ok('vercel.json no longer 301s /upgrade -> /pricing (so upgrade.html serves)',
+   !/"source":\s*"\/upgrade"/.test(VERCEL_JSON));
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {

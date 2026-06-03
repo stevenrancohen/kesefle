@@ -1,6 +1,7 @@
 import { requireUser } from '../_lib/session.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { withRequestId } from '../../lib/log.js';
 import { exchangeRefreshForAccess } from '../../lib/oauth.js';
 import { TX_TAB } from '../../lib/sheet-tabs.js';
 
@@ -204,4 +205,16 @@ async function handlerImpl(req, res) {
 // limit. An authed user could spam reads and hit Google Sheets per-project
 // quota (300 req/min) trivially, and Vercel function execution cost. 60/min IP
 // cap matches the rest of api/sheet/* read endpoints (bot-query, stats).
-export default withRateLimit({ key: 'sheet_get_expenses', limit: 60, windowSec: 60 })(handlerImpl);
+//
+// 2026-06 hardening: this endpoint was the lone api/sheet/* read that was NOT
+// wrapped in withRequestId (stats/bot-query/summary all are). handlerImpl has
+// throw paths that are NOT inside try-catch — kvGet does an unguarded
+// JSON.parse(j.result) (corrupt KV record throws) and kvSet's fetch can reject
+// on a network blip — so an unhandled rejection returned Vercel's raw 500 with
+// no reqId and an inconsistent body. withRequestId catches it, emits the same
+// { ok:false, error:'internal_error', reqId } shape + X-Request-Id header +
+// structured http.error log as every sibling. It also sets req.reqId so the
+// in-handler log lines correlate. No behavior change on the success path.
+export default withRequestId(
+  withRateLimit({ key: 'sheet_get_expenses', limit: 60, windowSec: 60 })(handlerImpl)
+);
