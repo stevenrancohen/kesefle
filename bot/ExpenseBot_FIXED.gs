@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-03-allowance-income';
+const KFL_BUILD_VERSION = '2026-06-03-360dialog-provider';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -921,6 +921,20 @@ function doGet(e) {
 function _verifyMetaWebhook_(e, rawBody) {
   try {
     var props = PropertiesService.getScriptProperties();
+
+    // -- 360dialog provider branch --
+    // 360dialog is a Meta BSP: inbound payloads are Meta-Cloud-API format
+    // (doPost parses them unchanged), but 360dialog does NOT send Meta's
+    // X-Hub-Signature header, so the HMAC path below can never run for it.
+    // 360dialog's security boundary is the SECRET inbound webhook URL (the
+    // bot's unguessable Apps Script /exec). Treat the request as authentic
+    // here and skip the Meta-only HMAC requirement. The full Meta HMAC + WABA
+    // path below is untouched for provider 'meta' (the default).
+    var provider = String(props.getProperty('WHATSAPP_PROVIDER') || 'meta').toLowerCase();
+    if (provider === '360dialog') {
+      return { valid: true, reason: '360dialog_secret_url' };
+    }
+
     var appSecret = props.getProperty('META_APP_SECRET') || '';
     var expectedWaba = props.getProperty('WHATSAPP_BUSINESS_ACCOUNT_ID') || '';
     var strict = props.getProperty('STRICT_WEBHOOK_VERIFY') === '1';
@@ -11150,6 +11164,7 @@ function _handleReceiptImage_(fromPhone, image) {
   }
 
   // Step 1 — Meta's media endpoint returns a short-lived signed URL.
+  // TODO: 360dialog media download differs (waba-v2 + D360-API-KEY) -- receipt/voice media fetch is Meta-only until then; text expenses unaffected.
   var mediaMetaUrl = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(mediaId);
   var metaRes = UrlFetchApp.fetch(mediaMetaUrl, {
     method: 'get',
@@ -11393,6 +11408,7 @@ function _handleVoiceMessage_(fromPhone, audio) {
     return { replyText: '🎙️ אין תמיכה בקול כרגע\n💡 רשום בכתב — סכום פירוט (למשל "85 סופר")' };
   }
 
+  // TODO: 360dialog media download differs (waba-v2 + D360-API-KEY) -- receipt/voice media fetch is Meta-only until then; text expenses unaffected.
   var mediaMetaUrl = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(mediaId);
   var metaRes = UrlFetchApp.fetch(mediaMetaUrl, {
     method: 'get',
@@ -12899,6 +12915,52 @@ function _unwrapConciergeJson_(message) {
   return s;
 }
 
+// ============================================================
+// Provider-aware send config -- returns where + how to POST a WhatsApp
+// outbound message. Lets the bot talk to either Meta Cloud API (default) or
+// 360dialog (a Meta BSP whose send body is byte-identical to Meta's) by
+// flipping a single Script Property -- no code change, no secrets in code.
+// ------------------------------------------------------------
+// Chosen by Script Property WHATSAPP_PROVIDER (lowercased): 'meta' (default)
+// or '360dialog'. The API credential is ALWAYS read at runtime from a Script
+// Property, NEVER hard-coded:
+//   meta      -> WHATSAPP_TOKEN  (Authorization: Bearer ...)
+//   360dialog -> D360_API_KEY    (D360-API-KEY: ...)
+// Returns { ok, url, headers, provider }; on a missing credential returns
+// { ok:false, reason } so callers bail gracefully (same as the no-token guard).
+// The JSON body is IDENTICAL for both providers, so callers reuse one payload.
+// ============================================================
+function _waSendConfig_() {
+  var props = PropertiesService.getScriptProperties();
+  var provider = String(props.getProperty('WHATSAPP_PROVIDER') || 'meta').toLowerCase();
+
+  if (provider === '360dialog') {
+    var d360Key = props.getProperty('D360_API_KEY') || '';
+    if (!d360Key || d360Key.indexOf('PASTE_') === 0) {
+      return { ok: false, provider: provider, reason: 'no_d360_key' };
+    }
+    return {
+      ok: true,
+      provider: provider,
+      url: 'https://waba-v2.360dialog.io/messages',
+      headers: { 'D360-API-KEY': d360Key, 'Content-Type': 'application/json' }
+    };
+  }
+
+  // Default: Meta Cloud API. Byte-identical to the legacy send path --
+  // same graph.facebook.com URL (inbound number first, configured default
+  // as fallback) and same Bearer auth.
+  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
+    return { ok: false, provider: 'meta', reason: 'no_token' };
+  }
+  return {
+    ok: true,
+    provider: 'meta',
+    url: 'https://graph.facebook.com/v21.0/' + (_ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID) + '/messages',
+    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN, 'Content-Type': 'application/json' }
+  };
+}
+
 function sendWhatsAppMessage(to, message) {
   if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
     Logger.log('sendWhatsAppMessage: token not configured - skipping reply');
@@ -12909,10 +12971,15 @@ function sendWhatsAppMessage(to, message) {
     return { ok: false, reason: 'missing_args' };
   }
 
-  // Prefer the number the user actually messaged (set in doPost); fall back to
-  // the configured default for unsolicited sends (crons, alerts).
-  var _pnid = _ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID;
-  const url = 'https://graph.facebook.com/v21.0/' + _pnid + '/messages';
+  // Provider-aware target (Meta default, or 360dialog when configured). The
+  // Meta branch uses the same URL/headers as before; 360dialog points at
+  // waba-v2 with the D360 key. Bail gracefully if the credential is missing.
+  var _cfg = _waSendConfig_();
+  if (!_cfg.ok) {
+    Logger.log('sendWhatsAppMessage: send config not ready (' + _cfg.reason + ') - skipping reply');
+    return { ok: false, reason: _cfg.reason };
+  }
+  var url = _cfg.url;
   const payload = {
     messaging_product: 'whatsapp',
     to: to,
@@ -12920,13 +12987,10 @@ function sendWhatsAppMessage(to, message) {
     text: { body: String(_unwrapConciergeJson_(message)).slice(0, 4096) }
   };
 
-  Logger.log('sendWhatsAppMessage: to=' + to + ' len=' + String(message).length);
+  Logger.log('sendWhatsAppMessage: to=' + to + ' len=' + String(message).length + ' provider=' + _cfg.provider);
   const response = UrlFetchApp.fetch(url, {
     method: 'post',
-    headers: {
-      'Authorization': 'Bearer ' + WHATSAPP_TOKEN,
-      'Content-Type': 'application/json'
-    },
+    headers: _cfg.headers,
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   });
@@ -12949,11 +13013,12 @@ function sendWhatsAppMessage(to, message) {
 //
 // sections shape: [{ title: "...", rows: [{ id: "cat_food_restaurant", title: "אוכל/מסעדות", description: "" }, ...] }]
 function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, buttonText, sections) {
-  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
-    Logger.log('WhatsApp token not configured — skipping list');
+  var _cfg = _waSendConfig_();
+  if (!_cfg.ok) {
+    Logger.log('WhatsApp send config not ready (' + _cfg.reason + ') -- skipping list');
     return;
   }
-  var url = 'https://graph.facebook.com/v21.0/' + (_ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID) + '/messages';
+  var url = _cfg.url;
   var payload = {
     messaging_product: 'whatsapp',
     to: to,
@@ -12975,7 +13040,7 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
   }
   var resp = UrlFetchApp.fetch(url, {
     method: 'post',
-    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN, 'Content-Type': 'application/json' },
+    headers: _cfg.headers,
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   });
@@ -12984,8 +13049,9 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
 
 // Quick reply buttons (max 3) — simpler than list, great for yes/no/correction prompts.
 function sendWhatsAppQuickButtons(to, bodyText, buttons) {
-  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) return;
-  var url = 'https://graph.facebook.com/v21.0/' + (_ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID) + '/messages';
+  var _cfg = _waSendConfig_();
+  if (!_cfg.ok) { Logger.log('WhatsApp send config not ready (' + _cfg.reason + ') -- skipping buttons'); return; }
+  var url = _cfg.url;
   var btns = (buttons || []).slice(0, 3).map(function(b) {
     return { type: 'reply', reply: { id: String(b.id), title: String(b.title).slice(0, 20) } };
   });
@@ -13001,7 +13067,7 @@ function sendWhatsAppQuickButtons(to, bodyText, buttons) {
   };
   UrlFetchApp.fetch(url, {
     method: 'post',
-    headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN, 'Content-Type': 'application/json' },
+    headers: _cfg.headers,
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   });

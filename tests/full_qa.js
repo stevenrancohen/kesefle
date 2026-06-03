@@ -251,9 +251,17 @@ ok('default Phone Number ID = test number 1086749664527399 (not the dead Numero 
    /getProperty\('WHATSAPP_PHONE_NUMBER_ID'\)\s*\|\|\s*'1086749664527399'/.test(BOT));
 ok('doPost captures the inbound phone_number_id into _ACTIVE_PHONE_NUMBER_ID_',
    /_ACTIVE_PHONE_NUMBER_ID_\s*=\s*\(__meta_/.test(BOT) && /metadata/.test(BOT));
-ok('every /messages send targets the inbound number (no bare hardcoded id)',
+// 2026-06-03 provider-aware send: the 3 send sites no longer build the Meta
+// URL inline -- they get url+headers from _waSendConfig_(), which is now the
+// single source of truth for the inbound-number targeting. So the guarantee
+// is: (a) no bare hardcoded-id send anywhere, (b) the Meta URL inside the
+// shared config still uses the inbound number (_ACTIVE_ or the default), and
+// (c) all 3 send sites route through _waSendConfig_() so they inherit it.
+ok('every /messages send targets the inbound number via _waSendConfig_ (no bare hardcoded id)',
    !/WHATSAPP_PHONE_NUMBER_ID \+ '\/messages'/.test(BOT) &&
-   (BOT.match(/_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID|_pnid \+ '\/messages'/g) || []).length >= 3);
+   /_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID/.test(BOT) &&
+   /https:\/\/graph\.facebook\.com\/v21\.0\/' \+ \(_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID\) \+ '\/messages'/.test(BOT) &&
+   (BOT.match(/_waSendConfig_\(\)/g) || []).length >= 4);
 ok('BOT_PHONE_E164 display number matches the test number', /BOT_PHONE_E164 = '\+15556408123'/.test(BOT));
 
 // ── 5e. Minimal OAuth scope (drive.file) — publishable without CASA audit ────
