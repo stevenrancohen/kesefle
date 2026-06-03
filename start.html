@@ -17,8 +17,19 @@
 <meta name="robots" content="index,follow" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.tailwindcss.com" />
 <link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+<link rel="dns-prefetch" href="https://api.qrserver.com" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
+<style>
+  /* === Critical first-paint fallback (perf pass 2026-06-03) ===
+     Tailwind loads from a render-blocking CDN tag below; if that CDN is
+     slow or blocked the page would flash unstyled. These INLINE base rules
+     paint instantly with the same values the body's Tailwind utilities
+     produce, so once Tailwind arrives nothing shifts. Light-mode default. */
+  html { background-color: #ffffff; }
+  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #ffffff; color: #0f1422; }
+</style>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <link rel="stylesheet" href="/css/brand.css" />
 <script>
@@ -183,7 +194,7 @@
     <div class="kfl-lift rounded-3xl border border-ink-200/60 bg-white/40 p-6 text-center backdrop-blur">
       <div class="text-xs font-bold text-brand-300">📱 סריקה מהטלפון</div>
       <div class="mt-4 inline-block rounded-2xl bg-white p-3 shadow-glow">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https%3A%2F%2Fwa.me%2F15556408123%3Ftext%3D%25D7%25A9%25D7%259C%25D7%2595%25D7%259D%2521&bgcolor=ffffff&color=0f1422&qzone=1" alt="QR לפתיחת הבוט בוואטסאפ" width="220" height="220" class="block rounded-xl" loading="lazy">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https%3A%2F%2Fwa.me%2F15556408123%3Ftext%3D%25D7%25A9%25D7%259C%25D7%2595%25D7%259D%2521&bgcolor=ffffff&color=0f1422&qzone=1" alt="QR לפתיחת הבוט בוואטסאפ" width="220" height="220" class="block rounded-xl" loading="lazy" decoding="async">
       </div>
       <div class="mt-3 text-xs text-ink-500">סרקו עם המצלמה של הטלפון</div>
     </div>
