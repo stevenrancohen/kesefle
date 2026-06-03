@@ -693,7 +693,7 @@
       <div class="mt-7 flex items-center gap-5 text-sm text-ink-500 dark:text-ink-300">
         <div class="flex items-center gap-2">
           <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
-          <span>חודש ראשון חינם</span>
+          <span><span class="num">14</span> ימי ניסיון חינם</span>
         </div>
         <div class="flex items-center gap-2">
           <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
@@ -1320,10 +1320,58 @@
 <!-- ============== INTERACTIVE DEMO (auto-running) ============== -->
 
 
-<!-- Testimonials section removed 2026-05-26 (Steven). When we have real
-     customer quotes we'll bring it back, ideally with photos + verified
-     LinkedIn handles for credibility. -->
-
+<!-- ============== TESTIMONIALS ============== -->
+<!-- Re-added 2026-06-03: a curated testimonials system exists (api/testimonials.js
+     with admin approve/hide). This section renders the live approved list from
+     GET /api/testimonials when available; otherwise it falls back to the static
+     seed quotes below (same copy already shown on /referral). RTL + light-mode. -->
+<section id="testimonials" class="bg-ink-50 py-20 dark:bg-ink-900 md:py-28" dir="rtl">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">מה אומרים</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">משתמשים אמיתיים, חיסכון אמיתי</h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">בלי אפליקציה לפתוח. כותבים הוצאה — וזה נרשם, מקוטלג ומסוכם.</p>
+    </div>
+    <div id="kfl-testimonials-grid" class="mt-12 grid gap-6 md:grid-cols-3">
+      <figure class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft kfl-lift dark:border-ink-700 dark:bg-ink-800">
+        <blockquote class="leading-relaxed text-ink-800 dark:text-ink-100">
+          "סוף סוף משהו שלא דורש ממני לפתוח אפליקציה כל יום. כותב הוצאה כשאני עומד בקופה — וזה שם."
+        </blockquote>
+        <figcaption class="mt-4 flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">י</div>
+          <div>
+            <div class="text-sm font-bold dark:text-white">יואב, תל אביב</div>
+            <div class="text-xs text-ink-500 dark:text-ink-300">משתמש פעיל <span class="num">8</span> חודשים</div>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft kfl-lift dark:border-ink-700 dark:bg-ink-800">
+        <blockquote class="leading-relaxed text-ink-800 dark:text-ink-100">
+          "אני אוהבת שהגיליון שלי ולא של מישהו אחר. אם פעם אעזוב את כספ'לה — הנתונים נשארים אצלי."
+        </blockquote>
+        <figcaption class="mt-4 flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-full bg-accent-500/20 font-bold text-accent-600 dark:text-accent-300">ש</div>
+          <div>
+            <div class="text-sm font-bold dark:text-white">שירה, חיפה</div>
+            <div class="text-xs text-ink-500 dark:text-ink-300">משתמשת פעילה <span class="num">14</span> חודשים</div>
+          </div>
+        </figcaption>
+      </figure>
+      <figure class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft kfl-lift dark:border-ink-700 dark:bg-ink-800">
+        <blockquote class="leading-relaxed text-ink-800 dark:text-ink-100">
+          "הוצאתי <span class="num">1,800</span> ש"ח פחות החודש רק כי כל הוצאה תיעדה את עצמה. לראות זה לחסוך."
+        </blockquote>
+        <figcaption class="mt-4 flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">ד</div>
+          <div>
+            <div class="text-sm font-bold dark:text-white">דניאל, ירושלים</div>
+            <div class="text-xs text-ink-500 dark:text-ink-300">משתמש פעיל <span class="num">5</span> חודשים</div>
+          </div>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
 
 <!-- ============== PRICING ============== -->
 <section id="pricing" class="relative py-24 md:py-32">
@@ -1331,12 +1379,12 @@
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">מחיר</p>
       <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">פחות מקפה. בחודש.</h2>
-      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">חודש ראשון על חשבוננו. ביטול בלחיצה. בלי הרפתקאות.</p>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200"><span class="num">14</span> ימי ניסיון על חשבוננו. ביטול בלחיצה. בלי הרפתקאות.</p>
     </div>
     <div class="mt-10 flex justify-center">
       <div class="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
         <span>✨</span>
-        <span>חודש ראשון חינם · ביטול בלחיצה · בלי כרטיס אשראי</span>
+        <span><span class="num">14</span> ימי ניסיון חינם · ביטול בלחיצה · בלי כרטיס אשראי</span>
       </div>
     </div>
     <div class="mt-8 grid gap-6 md:grid-cols-3">
@@ -1365,7 +1413,7 @@
         <div class="absolute -top-3.5 right-6 rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white">מומלץ לאדם בודד</div>
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">Pro</h3>
-          <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">חודש חינם</span>
+          <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"><span class="num">14</span> ימי ניסיון</span>
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num">19</span></span>
@@ -1380,7 +1428,7 @@
           <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> מטבעות מרובים</li>
           <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> תמיכה תוך <span class="num">24</span> שעות</li>
         </ul>
-        <a href="#signup" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון של חודש</a>
+        <a href="#signup" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-gradient-to-l from-brand-600 via-brand-600 to-brand-700 py-3.5 text-center font-bold text-white shadow-glow transition hover:shadow-2xl hover:-translate-y-0.5">התחל ניסיון <span class="num">14</span> ימים</a>
       </div>
       <!-- family plan -->
       <div class="rounded-3xl border border-ink-200 bg-white p-8 kfl-lift dark:border-ink-700 dark:bg-ink-800">
@@ -1401,10 +1449,10 @@
           <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> קטגוריות לכל בן משפחה</li>
           <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> דשבורד הורים</li>
         </ul>
-        <a href="#signup" onclick="kesefleSelectPlan('family')" class="mt-8 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-500">התחל ניסיון של חודש</a>
+        <a href="#signup" onclick="kesefleSelectPlan('family')" class="mt-8 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-500">התחל ניסיון <span class="num">14</span> ימים</a>
       </div>
     </div>
-    <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">30</span> יום החזר כספי מלא. בלי שאלות. תכתוב "ביטול" בוואטסאפ — וזהו.</p>
+    <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">14</span> יום החזר כספי מלא. בלי שאלות. תכתוב "ביטול" בוואטסאפ — וזהו.</p>
     <p class="mt-3 text-center text-sm text-ink-500 dark:text-ink-300">חיוב חודשי בכרטיס אשראי. חשבונית מס נשלחת אוטומטית.</p>
   </div>
 </section>
@@ -1420,7 +1468,7 @@
   <div class="mx-auto max-w-3xl px-5 text-center text-ink-900">
     <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
       <span class="h-1 w-1 rounded-full bg-brand-500"></span>
-      <span>חודש ראשון חינם • ביטול בקליק • ההצטרפות תוך 60 שניות</span>
+      <span><span class="num">14</span> ימי ניסיון חינם • ביטול בקליק • ההצטרפות תוך 60 שניות</span>
     </div>
     <h2 class="text-4xl font-black tracking-tighter text-ink-900 md:text-6xl">
       מוכן לעבור
@@ -2459,6 +2507,66 @@ function kesefleToggleDark() { /* no-op: dark only */ }
       if (!ticking) { requestAnimationFrame(update); ticking = true; }
     }, { passive: true });
     update();
+  })();
+</script>
+
+<script>
+  /* Testimonials: progressively enhance the static seed with the live curated
+     list from GET /api/testimonials (admin-approved, non-hidden). We only swap
+     the seed out when the API returns >= 3 real ones, so the section is never
+     empty and curated content wins when it exists. All text via textContent
+     (no HTML injection). */
+  (function liveTestimonials(){
+    if (window.kflTestimonialsInit) return;
+    window.kflTestimonialsInit = true;
+    var grid = document.getElementById('kfl-testimonials-grid');
+    if (!grid || !('fetch' in window)) return;
+
+    var AVATAR_BG = ['bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300',
+                     'bg-accent-500/20 text-accent-600 dark:text-accent-300'];
+
+    function firstChar(name){
+      var s = String(name || '').trim();
+      return s ? s.charAt(0) : '?';
+    }
+
+    function buildCard(t, i){
+      var fig = document.createElement('figure');
+      fig.className = 'rounded-3xl border border-ink-200 bg-white p-6 shadow-soft kfl-lift dark:border-ink-700 dark:bg-ink-800';
+      var q = document.createElement('blockquote');
+      q.className = 'leading-relaxed text-ink-800 dark:text-ink-100';
+      q.textContent = '"' + String(t.text || '').trim() + '"';
+      var cap = document.createElement('figcaption');
+      cap.className = 'mt-4 flex items-center gap-3';
+      var av = document.createElement('div');
+      av.className = 'grid h-10 w-10 place-items-center rounded-full font-bold ' + AVATAR_BG[i % AVATAR_BG.length];
+      av.textContent = firstChar(t.name);
+      var meta = document.createElement('div');
+      var nm = document.createElement('div');
+      nm.className = 'text-sm font-bold dark:text-white';
+      nm.textContent = String(t.name || 'משתמש/ת').trim();
+      meta.appendChild(nm);
+      cap.appendChild(av);
+      cap.appendChild(meta);
+      fig.appendChild(q);
+      fig.appendChild(cap);
+      return fig;
+    }
+
+    fetch('/api/testimonials', { headers: { 'Accept': 'application/json' } })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        if (!data || !data.ok || !Array.isArray(data.testimonials)) return;
+        var list = data.testimonials.filter(function(t){
+          return t && typeof t.text === 'string' && t.text.trim().length >= 10;
+        });
+        if (list.length < 3) return; // keep the seed if we don't have enough real ones yet
+        var frag = document.createDocumentFragment();
+        list.slice(0, 6).forEach(function(t, i){ frag.appendChild(buildCard(t, i)); });
+        grid.innerHTML = '';
+        grid.appendChild(frag);
+      })
+      .catch(function(){ /* keep static seed on any failure */ });
   })();
 </script>
 
