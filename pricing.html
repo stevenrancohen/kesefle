@@ -447,7 +447,7 @@
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> שיחה חופשית עם הבוט (Concierge)</li>
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> ציון בריאות פיננסית והשוואת חודש&ndash;לחודש</li>
         </ul>
-        <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="kfl-magnetic mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">התחל ניסיון <span class="num">14</span> ימים</a>
+        <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro'); return kflPricingCta('pro', event)" class="kfl-magnetic mt-8 block rounded-2xl bg-brand-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-brand-700">שדרג/י ל-Pro עם PayPal</a>
         <p class="mt-3 text-center text-xs font-semibold text-ink-700 dark:text-ink-300">PayPal &middot; קריפטו &middot; ביט &middot; העברה בנקאית</p>
       </div>
 
@@ -471,7 +471,7 @@
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> כל אחד רושם מהוואטסאפ שלו &mdash; הכל באותו גיליון</li>
           <li class="flex items-start gap-2"><svg class="h-5 w-5 shrink-0 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> פיצול הוצאות בסגנון Splitwise בעברית</li>
         </ul>
-        <a href="/account?plan=family" onclick="kesefleSelectPlan('family')" class="kfl-magnetic mt-6 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-700">התחל ניסיון <span class="num">14</span> ימים</a>
+        <a href="/account?plan=family" onclick="kesefleSelectPlan('family'); return kflPricingCta('family', event)" class="kfl-magnetic mt-6 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-700">הצטרף/י למשפחה עם PayPal</a>
       </div>
     </div>
     <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">14</span> יום החזר כספי מלא, החל מיום החיוב הראשון.</p>
@@ -840,8 +840,8 @@
     <h2 class="text-4xl font-black tracking-tight text-ink-900 md:text-5xl dark:text-white">מוכן/ה להפסיק לאבד את החשבון?</h2>
     <p class="mt-5 text-lg text-ink-700 dark:text-ink-200"><span class="num">14</span> ימי ניסיון Pro בחינם. <span class="num">14</span> יום החזר מלא. ביטול בלחיצה.</p>
     <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-      <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro')" class="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-base font-black text-white shadow-glow transition hover:bg-brand-700 sm:w-auto">
-        התחל ניסיון Pro &mdash; <span class="num">14</span> ימים
+      <a href="/account?plan=pro" onclick="kesefleSelectPlan('pro'); return kflPricingCta('pro', event)" class="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-base font-black text-white shadow-glow transition hover:bg-brand-700 sm:w-auto">
+        שדרג/י ל-Pro עם PayPal
         <svg class="h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
       </a>
       <a href="/account?plan=free" onclick="kesefleSelectPlan('free')" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-ink-300 bg-white px-8 py-4 text-base font-semibold text-ink-900 shadow-soft transition hover:border-brand-500 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:hover:bg-ink-700 sm:w-auto">
@@ -1057,6 +1057,80 @@ window.kflSetPeriod = function (period) {
     if (saved === 'year') window.kflSetPeriod('year');
   } catch (_e) {}
 })();
+</script>
+<script>
+/* ── PayPal subscribe wiring (revenue) ─────────────────────────────────────
+   Turns the Pro / משפחה CTAs into real "Subscribe with PayPal" actions that
+   call the already-built, auth-gated POST /api/billing/paypal?action=subscribe
+   (api/billing/paypal.js). The <a href="/account?plan=..."> stays as a no-JS
+   fallback; with JS we intercept the click:
+     - signed-in  -> POST subscribe, redirect to the PayPal approval URL.
+     - signed-out -> remember the plan + a "pending subscribe" flag and send the
+                     user to /account to sign in; account.html auto-resumes the
+                     subscribe after the OAuth round-trip.
+   On ANY error (e.g. Steven hasn't set PayPal LIVE env vars yet) we show a
+   friendly Hebrew message and NEVER break the page or leave a dead spinner. */
+function _kflPriceMsg(code) {
+  switch (String(code || '')) {
+    case 'paypal_plan_not_configured':
+      return 'התשלום עדיין לא פעיל אצלנו לרגע קט — אנחנו על זה. נסה/י שוב בקרוב, ובינתיים אפשר להתחיל בחינם.';
+    default:
+      return 'משהו השתבש בהפניה ל-PayPal. נסה/י שוב עוד רגע; אם זה ממשיך, אפשר להתחיל בחינם ולשדרג מאוחר יותר.';
+  }
+}
+function _kflPriceNotify(msg) {
+  // Non-blocking, brand-light toast at the bottom. No external deps; XSS-safe
+  // via textContent. Auto-dismisses; never blocks navigation or the page.
+  try {
+    var t = document.createElement('div');
+    t.setAttribute('dir', 'rtl');
+    t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;max-width:90vw;background:#fff;color:#0f1422;border:1px solid #dde1ec;border-radius:14px;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:0 12px 40px -12px rgba(15,20,34,0.35);';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { try { t.remove(); } catch (_r) {} }, 6000);
+  } catch (_e) { try { window.alert(msg); } catch (_a) {} }
+}
+function _kflReadPeriod() {
+  try { return sessionStorage.getItem('kfl_pricing_period') === 'year' ? 'year' : 'month'; } catch (_e) { return 'month'; }
+}
+window.kflPricingCta = function (plan, ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  plan = (plan === 'family') ? 'family' : 'pro';
+  var period = _kflReadPeriod();
+  // Persist selection up-front so the signed-out path (and account.html's own
+  // ?plan capture) always have it, regardless of which branch we take.
+  try {
+    sessionStorage.setItem('kesefle_selected_plan', plan);
+    sessionStorage.setItem('kesefle_selected_period', period);
+  } catch (_s) {}
+  // Decide signed-in vs signed-out via the cookie-based /api/me (same auth
+  // convention as the rest of the site -- credentials:'include', no Bearer).
+  fetch('/api/me', { credentials: 'include' }).then(function (r) {
+    if (r && r.ok) {
+      // Signed in -> subscribe directly.
+      return fetch('/api/billing/paypal?action=subscribe', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: plan, period: period })
+      }).then(function (sr) {
+        return sr.json().catch(function () { return {}; }).then(function (j) {
+          if (sr.ok && j && j.ok && j.url) { window.location.href = j.url; return; }
+          _kflPriceNotify(_kflPriceMsg(j && j.error));
+        });
+      });
+    }
+    // Signed out -> route through /account sign-in, remembering the intent so
+    // account.html auto-resumes the subscribe after OAuth.
+    try { sessionStorage.setItem('kfl_pending_subscribe', '1'); } catch (_s2) {}
+    window.location.href = '/account?plan=' + plan + '&period=' + period;
+  }).catch(function () {
+    // Network blip deciding auth state -> fall back to the sign-in route rather
+    // than stranding the user; the subscribe still resumes from /account.
+    try { sessionStorage.setItem('kfl_pending_subscribe', '1'); } catch (_s3) {}
+    window.location.href = '/account?plan=' + plan + '&period=' + period;
+  });
+  return false;
+};
 </script>
 <script src="/js/ab-client.js" defer></script>
 <script>

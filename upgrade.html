@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>שדרוג — כספ'לה</title>
+<meta name="description" content="סיום תהליך השדרוג ל-Pro / משפחה בכספ'לה." />
+<meta name="robots" content="noindex,follow">
+<meta property="og:title" content="שדרוג — כספ'לה" />
+<meta property="og:description" content="סיום תהליך השדרוג בכספ'לה." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:url" content="https://kesefle.com/upgrade" />
+<meta property="og:image" content="https://kesefle.com/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://kesefle.com/og-image.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content="#6366F1" />
+<link rel="icon" type="image/png" href="/logo.png" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="canonical" href="https://kesefle.com/upgrade" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.tailwindcss.com" />
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
+<style>
+  /* Critical first-paint fallback. This page is intentionally LIGHT-MODE
+     only (post-checkout confirmation): no dark variants below, so the
+     buyer always sees a bright, on-brand confirmation regardless of their
+     OS theme. */
+  html { background-color: #f7f8fb; }
+  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #f7f8fb; color: #0f1422; }
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/brand.css" />
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {
+    fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+    colors: {
+      ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+      brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+      accent:  { 50:'#faf5ff', 100:'#f3e8ff', 200:'#e9d5ff', 300:'#d8b4fe', 400:'#c084fc', 500:'#a855f7', 600:'#9333ea', 700:'#7e22ce' },
+    }
+  }}
+};
+</script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+  .confetti span { position: absolute; width: 10px; height: 10px; border-radius: 2px; animation: fall 3.5s linear forwards; opacity: 0.9; }
+  @keyframes fall { 0% { transform: translateY(-10vh) rotate(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+</style>
+</head>
+<body class="bg-ink-50 text-ink-900 min-h-screen flex flex-col">
+
+<div class="confetti" id="confetti" hidden></div>
+
+<main class="flex-1 flex items-center justify-center px-5 py-12">
+  <!-- Both states are pre-rendered and toggled by JS reading ?paypal=.
+       Defaulting to SUCCESS visible / CANCEL hidden means the page never
+       flashes blank and degrades gracefully if JS is disabled (the common
+       case after a completed PayPal approval is success). -->
+  <div class="max-w-lg w-full text-center">
+
+    <!-- Single shared heading + icon; text/style set by JS per state so the
+         page keeps exactly one top-level heading. Defaults to success wording. -->
+    <div id="state-icon" class="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl mb-6 shadow-lg shadow-brand-500/30">✓</div>
+    <h1 id="upgrade-title" class="text-3xl md:text-5xl font-black tracking-tight">השדרוג הושלם!</h1>
+    <p id="upgrade-sub" class="mt-4 text-lg text-ink-600">תודה שהצטרפת לכספ'לה. אישור התשלום מ-PayPal התקבל וחשבונך משודרג עכשיו.</p>
+
+    <!-- ===== SUCCESS ===== -->
+    <div id="state-success">
+      <div class="mt-8 rounded-3xl border border-ink-200 bg-white p-6 text-right">
+        <p class="font-bold text-lg mb-3">מה הלאה?</p>
+        <ul class="space-y-3 text-sm">
+          <li><a href="/dashboard" class="flex items-center justify-between rounded-xl px-4 py-3 bg-ink-50 hover:bg-ink-100 transition">
+            <span><b>לדשבורד שלי</b> &middot; המאזן, המגמה החודשית והקטגוריות</span><span class="text-brand-600">&rarr;</span>
+          </a></li>
+          <li><a href="/welcome" class="flex items-center justify-between rounded-xl px-4 py-3 bg-ink-50 hover:bg-ink-100 transition">
+            <span><b>מדריך הפקודות</b> &middot; איך לרשום הוצאה מהוואטסאפ</span><span class="text-brand-600">&rarr;</span>
+          </a></li>
+        </ul>
+      </div>
+
+      <p class="mt-6 text-xs text-ink-500">העדכון נכנס תוך כמה שניות. אם המסלול עדיין מופיע כחינמי, רעננו את הדשבורד בעוד רגע &mdash; PayPal שולח לנו את האישור ברקע.</p>
+
+      <a href="/dashboard" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">המשך לדשבורד &larr;</a>
+    </div>
+
+    <!-- ===== CANCEL ===== -->
+    <div id="state-cancel" hidden>
+      <div class="mt-8 rounded-3xl border border-ink-200 bg-white p-6 text-right">
+        <p class="font-bold text-lg mb-2">אפשר להמשיך בחינם</p>
+        <p class="text-sm text-ink-600">המסלול החינמי כולל רישום הוצאות, גיליון פרטי ודשבורד. שדרוג ל-Pro פותח סיווג AI, OCR לקבלות ועוד &mdash; כשתהיה מוכן.</p>
+      </div>
+
+      <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="/pricing" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">חזרה למסלולים</a>
+        <a href="/dashboard" class="inline-flex items-center justify-center rounded-2xl border border-ink-300 bg-white px-8 py-3.5 text-base font-semibold text-ink-900 transition hover:border-brand-500 hover:text-brand-700">לדשבורד שלי</a>
+      </div>
+    </div>
+
+    <a href="/" class="mt-10 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">&larr; חזרה לדף הבית</a>
+  </div>
+</main>
+
+<script>
+  // Decide which state to show from ?paypal=. PayPal returns ?paypal=success
+  // on approval and ?paypal=cancel on cancel (api/billing/paypal.js return_url
+  // / cancel_url). We treat anything that is not an explicit cancel as success
+  // so a slightly-different param never strands the buyer on a blank page.
+  (function () {
+    var paypal = '';
+    try { paypal = (new URLSearchParams(window.location.search).get('paypal') || '').toLowerCase(); } catch (_e) {}
+    var isCancel = paypal === 'cancel' || paypal === 'cancelled' || paypal === 'canceled';
+    var success = document.getElementById('state-success');
+    var cancel = document.getElementById('state-cancel');
+    if (isCancel) {
+      if (success) success.hidden = true;
+      if (cancel) cancel.hidden = false;
+      // Repoint the shared heading/icon to the cancel wording (textContent =
+      // XSS-safe). One heading total; we only swap its text.
+      var titleEl = document.getElementById('upgrade-title');
+      var subEl = document.getElementById('upgrade-sub');
+      var iconEl = document.getElementById('state-icon');
+      if (titleEl) titleEl.textContent = 'ביטלת את השדרוג';
+      if (subEl) subEl.textContent = 'לא בוצע שום חיוב. החשבון שלך נשאר בדיוק כפי שהיה — אפשר לשדרג בכל רגע שתרצה.';
+      if (iconEl) { iconEl.className = 'mx-auto w-20 h-20 rounded-full bg-ink-100 ring-1 ring-ink-200 flex items-center justify-center text-4xl mb-6'; iconEl.textContent = '↩'; }
+      try { document.title = "בוטל — כספ'לה"; } catch (_t) {}
+    }
+    // Confetti only on success.
+    if (!isCancel) {
+      var c = document.getElementById('confetti');
+      if (c) {
+        c.hidden = false;
+        var colors = ['#2563eb', '#1d4ed8', '#7dd3fc', '#38bdf8', '#a855f7', '#f59e0b'];
+        for (var i = 0; i < 60; i++) {
+          var s = document.createElement('span');
+          s.style.left = (Math.random() * 100) + 'vw';
+          s.style.background = colors[i % colors.length];
+          s.style.animationDelay = (Math.random() * 0.5) + 's';
+          s.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+          c.appendChild(s);
+        }
+        setTimeout(function () { c.remove(); }, 5500);
+      }
+    }
+  })();
+  // Service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {}); });
+  }
+</script>
+<script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+</body>
+</html>

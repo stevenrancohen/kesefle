@@ -424,6 +424,27 @@
     </div>
   </section>
 
+  <!-- Upgrade to Pro: the customer-facing PayPal subscribe trigger. Hidden
+       until a signed-in user is detected (revealed in init()). Clicking POSTs
+       {plan,period} to /api/billing/paypal?action=subscribe and redirects to
+       the PayPal approval URL; failures render inline in #upgrade-status. -->
+  <section id="upgrade-card" class="mt-4 hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-4 sm:p-6">
+    <div class="flex flex-wrap items-start gap-3 sm:gap-4">
+      <div class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-white text-xl shadow-sm ring-1 ring-brand-100">⭐</div>
+      <div class="min-w-0 flex-1">
+        <div class="font-bold">שדרוג ל-Pro</div>
+        <div class="mt-1 text-sm text-slate-600 break-words">סיווג AI אוטומטי, OCR לקבלות, תמלול הודעות קוליות וזיהוי מנויים. ביטול בכל רגע.</div>
+        <div id="upgrade-status" class="mt-2 hidden text-xs" hidden></div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="btn-upgrade" type="button" onclick="kflStartUpgrade('pro')" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-60">
+            <span>שדרג/י ל-Pro עם PayPal</span>
+          </button>
+          <a href="/pricing" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50">השווה/י מסלולים</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Re-provision: lets an existing user create a FRESH sheet with the
        latest layout ("מאזן אישי" first, new dashboards, new keywords).
        Hidden until #linked-sheet is also visible (i.e., user already has one). -->
@@ -520,6 +541,83 @@ function kesefleGetUser() {
 }
 function kesefleSetUser(u) {
   localStorage.setItem('kesefle_user', JSON.stringify(u));
+}
+
+// ── PayPal subscribe (revenue: wires the upgrade button to the already-built
+//    POST /api/billing/paypal?action=subscribe endpoint) ─────────────────────
+// The endpoint is requireAuth-gated and reads {plan,period} from the POST body;
+// on success it returns { ok:true, url } (the PayPal approval URL). We redirect
+// the browser there. On ANY failure (e.g. Steven hasn't set the PayPal LIVE env
+// vars yet -> paypal_plan_not_configured/paypal_unreachable) we show a friendly
+// Hebrew message and NEVER leave a dead spinner or break the page.
+// `statusEl` (optional) is an on-page element to show inline status in; when
+// omitted we fall back to a non-blocking alert so the caller still gets feedback.
+function _kflSubscribeMsg(code) {
+  // Map known stable error codes to friendly Hebrew. Anything else -> generic.
+  switch (String(code || '')) {
+    case 'paypal_plan_not_configured':
+      return 'התשלום עדיין לא פעיל אצלנו לרגע קט — אנחנו על זה. נסה/י שוב בקרוב, ובינתיים אפשר להמשיך להשתמש בחשבון רגיל.';
+    case 'unauthorized':
+      return 'צריך להתחבר קודם כדי לשדרג. מתחברים עם Google ואז ממשיכים לתשלום.';
+    default:
+      return 'משהו השתבש בהפניה ל-PayPal. אפשר לנסות שוב עוד רגע; אם זה ממשיך, כתבו לנו ונדאג לכם.';
+  }
+}
+async function kflSubscribe(plan, period, statusEl) {
+  plan = (plan === 'family') ? 'family' : 'pro';
+  period = (period === 'year') ? 'year' : 'month';
+  var setStatus = function (txt, isErr) {
+    if (statusEl) {
+      statusEl.hidden = false;
+      statusEl.classList.remove('hidden');
+      statusEl.textContent = txt;
+      statusEl.style.color = isErr ? '#b91c1c' : '#41506f';
+    } else if (isErr) {
+      try { window.alert(txt); } catch (_a) {}
+    }
+  };
+  setStatus('מעבירים אותך ל-PayPal…', false);
+  try {
+    var r = await fetch('/api/billing/paypal?action=subscribe', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: plan, period: period })
+    });
+    var j = await r.json().catch(function () { return {}; });
+    if (r.ok && j && j.ok && j.url) {
+      window.location.href = j.url;
+      return true;
+    }
+    // Not signed in -> route to sign-in, remembering the chosen plan so we can
+    // auto-resume the subscribe after the OAuth round-trip.
+    if (r.status === 401) {
+      try {
+        sessionStorage.setItem('kesefle_selected_plan', plan);
+        sessionStorage.setItem('kesefle_selected_period', period);
+        sessionStorage.setItem('kfl_pending_subscribe', '1');
+      } catch (_s) {}
+      setStatus(_kflSubscribeMsg('unauthorized'), false);
+      try { kesefleShowSigninPrompt(); } catch (_p) {}
+      return false;
+    }
+    setStatus(_kflSubscribeMsg(j && j.error), true);
+    return false;
+  } catch (e) {
+    setStatus(_kflSubscribeMsg('network'), true);
+    return false;
+  }
+}
+// On-page "Upgrade" button handler (signed-in account view).
+async function kflStartUpgrade(plan) {
+  var btn = document.getElementById('btn-upgrade');
+  var statusEl = document.getElementById('upgrade-status');
+  var period = 'month';
+  try { period = sessionStorage.getItem('kesefle_selected_period') || sessionStorage.getItem('kfl_pricing_period') || 'month'; } catch (_e) {}
+  if (btn) btn.disabled = true;
+  var ok = await kflSubscribe(plan || 'pro', period, statusEl);
+  // Re-enable on failure so the user can retry (success navigates away).
+  if (!ok && btn) btn.disabled = false;
 }
 
 // ── Partial-state resume ────────────────────────────────────────────────────
@@ -640,7 +738,7 @@ function kesefleStartWaitingForMsg() {
 //   code    → 6-digit code displayed, polls /api/whatsapp/link?phone= every 4s
 //   success → confirmed linked, shows confirmation + link to /welcome
 
-var KESEFLE_BOT_NUMBER = '15556408123'; // Numero US, registered with Meta 2026-05-18
+var KESEFLE_BOT_NUMBER = '15556408123'; // Meta TEST number (see api/config.js DEFAULT_BOT_NUMBER); overridden by KESEFLE_BOT_NUMBER env / scripts/swap-bot-number.sh at production cutover.
 var kflLinkPollTimer = null;
 var kflLinkTtlTimer = null;
 var kflLinkPhone = null;
@@ -1693,6 +1791,26 @@ function kesefleShowSigninPrompt() {
     try { kesefleUpdateOnboardingProgress(); } catch (_pe) {}
     // Fixed monthly expenses section -- visible once signed in.
     try { kesefleFixedReveal(); } catch (_fxe) {}
+    // Upgrade-to-Pro card: visible for any signed-in user (reaching here means
+    // signed in -- init() returns early via kesefleShowSigninPrompt otherwise).
+    try {
+      var uc = document.getElementById('upgrade-card'); if (uc) uc.classList.remove('hidden');
+    } catch (_uce) {}
+    // Auto-resume PayPal subscribe after a sign-in that was triggered by an
+    // explicit "Subscribe" click (flag set in kflSubscribe / the pricing CTA).
+    // We require the explicit flag so merely landing on /account?plan=pro (the
+    // "start trial" path) never force-launches checkout. One-shot: clear first.
+    try {
+      var pending = sessionStorage.getItem('kfl_pending_subscribe') === '1';
+      if (pending) {
+        sessionStorage.removeItem('kfl_pending_subscribe');
+        var rp = (sessionStorage.getItem('kesefle_selected_plan') || 'pro');
+        if (rp !== 'family') rp = 'pro';
+        var rper = (sessionStorage.getItem('kesefle_selected_period') || sessionStorage.getItem('kfl_pricing_period') || 'month');
+        // Fire-and-forget; kflSubscribe handles its own errors + navigation.
+        kflSubscribe(rp, rper, document.getElementById('upgrade-status'));
+      }
+    } catch (_are) {}
   } catch (_initErr) { /* never blank the page over a render hiccup */ }
 })();
 
