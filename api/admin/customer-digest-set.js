@@ -3,14 +3,19 @@
 // Steven sets / gets the "מה חדש השבוע" message that the customer-weekly-digest
 // cron sends out on Sundays at 10:00 IL.
 //
-// אימות: KESEFLE_BOT_SECRET (header `x-kesefle-bot-secret` או body.botSecret).
+// Auth: requireAdmin (Google ID-token or cookie session + email allow-list).
+// Steven 2026-05-30 (deep-review PR #152 WS4): switched from KESEFLE_BOT_SECRET
+// to requireAdmin since this is a human-admin action, not a bot-callable.
+// The cron (/api/cron/customer-weekly-digest) reads the message DIRECTLY from
+// KV under `customer_digest:current`, so it does not need to call this
+// endpoint — meaning the only legitimate callers are admins via the admin UI.
 //
 // POST:
-//   { action:"set", body:"<Hebrew message>", botSecret:"..." }
+//   { action:"set", body:"<Hebrew message>" }
 //     → { ok:true, length, preview }
-//   { action:"get", botSecret:"..." }
+//   { action:"get" }
 //     → { ok:true, current:{ body, updatedAt, updatedBy } | null }
-//   { action:"clear", botSecret:"..." }
+//   { action:"clear" }
 //     → { ok:true, cleared:true }
 //
 // המסר עצמו אינו עובר עיבוד נוסף — מה שכותבים פה זה מה שמגיע לוואטסאפ.
@@ -18,7 +23,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
-import { constantTimeEqual } from '../../lib/crypto.js';
+import { requireAdmin } from '../../lib/auth.js';
 
 const KV_KEY = 'customer_digest:current';
 const MAX_LEN = 3900;
@@ -62,14 +67,8 @@ async function kvDel(key) {
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
 
-  const expected = process.env.KESEFLE_BOT_SECRET;
-  if (!expected) return res.status(503).json({ ok: false, error: 'bot_secret_not_configured' });
-
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-  const got = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-  if (!constantTimeEqual(got, expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
-
   const action = String(body?.action || 'get').toLowerCase();
 
   if (action === 'get') {
@@ -85,19 +84,24 @@ async function handlerImpl(req, res) {
     if (msg.length > MAX_LEN) {
       return res.status(400).json({ ok: false, error: 'message_too_long', maxLength: MAX_LEN });
     }
+    // updatedBy: use the verified admin email when available so the audit
+    // trail attributes the change to the real human, not a freeform body
+    // field that could be spoofed. Fall back to body.updatedBy for
+    // backward compatibility.
+    const updatedBy = (req.user?.email || body?.updatedBy || 'admin').slice(0, 40);
     const record = {
       body: msg,
       updatedAt: new Date().toISOString(),
-      updatedBy: String(body?.updatedBy || 'admin').slice(0, 40),
+      updatedBy,
     };
     await kvSet(KV_KEY, record);
-    log.info('customer_digest.message_set', { reqId: req.reqId, length: msg.length });
+    log.info('customer_digest.message_set', { reqId: req.reqId, length: msg.length, updatedBy });
     return res.status(200).json({ ok: true, length: msg.length, preview: msg.slice(0, 80) });
   }
 
   if (action === 'clear') {
     await kvDel(KV_KEY);
-    log.info('customer_digest.message_cleared', { reqId: req.reqId });
+    log.info('customer_digest.message_cleared', { reqId: req.reqId, updatedBy: req.user?.email || null });
     return res.status(200).json({ ok: true, cleared: true });
   }
 
@@ -105,5 +109,7 @@ async function handlerImpl(req, res) {
 }
 
 export default withRequestId(
-  withRateLimit({ key: 'admin-customer-digest', limit: 30, windowSec: 60 })(handlerImpl)
+  withRateLimit({ key: 'admin-customer-digest', limit: 30, windowSec: 60 })(
+    requireAdmin(handlerImpl)
+  )
 );

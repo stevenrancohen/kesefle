@@ -4,7 +4,167 @@ Rolling catch-up log of autonomous work. (KV `agent_digest:{ts}` isn't writable
 from the dev environment without KV creds, so this repo doc + the git log are
 the persistent record. Newest first.)
 
+> New here? Read [`SYSTEM_OVERVIEW.md`](../SYSTEM_OVERVIEW.md) first — it maps the
+> whole system (bot, web, api, sheet template, KV keys, crons, deploy) in ~10
+> minutes. This file is the chronological "what shipped".
+
 ---
+
+## 2026-06-02 — Money is never invisible: NL business routing + taxonomy normalize (bot `2026-06-02-taxonomy-normalize`)
+
+Two merged PRs closing the last "the money landed somewhere the dashboard can't
+see it" gaps. Both bot-side (need a re-paste) plus the matching web mirror.
+
+- **#208 — natural-language business income → orders tab.** Free-text business
+  sales/income (not just the structured `עסק N` command) now route to the
+  `הזמנות` (orders) tab where revenue belongs, instead of being parsed as a
+  personal expense. Also fixed a real sign error: a **customer-paid installation
+  fee is booked as revenue, not as a shipping cost** (it was landing on the
+  expense side and depressing net).
+- **#209 — subcategory→dashboard-row normalization (bot + web).** When the bot
+  (or a website edit) writes a subcategory that doesn't exactly match a dashboard
+  row label, the value was real in `תנועות` but **invisible** on the dashboard
+  (no SUMIFS row summed it). Both the bot and the web append path now normalize
+  the subcategory to a known dashboard row so every shekel is counted somewhere.
+  Golden-set + `tests/test_taxonomy_normalize.js` lock it.
+
+### Action for Steven
+1. **Re-paste the bot** (`bot/ExpenseBot_DEPLOY.gs` → Save → Deploy → New Version)
+   to activate #208 + #209. Confirm `בדיקה` → `גרסה: 2026-06-02-taxonomy-normalize`.
+
+---
+
+## 2026-06-01 — Blue rebrand + onboarding-to-KV + canonical webhook + classifier accuracy (night bundle)
+
+A large multi-track day. The bot changes shipped as **one** conflict-free bundle
+(#200) so the morning was a single re-paste; the web changes auto-deployed.
+
+### Bot (PR #200 night bundle — #186/#187 + #189 + #199 folded in)
+- **Onboarding state moved Script-Properties → KV** (#186/#187). Per-user
+  `welcomed` / `surveyed` / `fxcel` / `leadNotified` flags now live in Vercel KV,
+  not Apps Script Script-Properties — this reclaims the limited Script-Property
+  slots that were exhausting at scale. Ships with gated `MIGRATE_BOT_STATE_TO_KV`
+  + `KV_SELFTEST` (run once after adding `VERCEL_KV_REST_URL/TOKEN`).
+- **Objective `יעד חדש` 1/2/3/4 reply fix** (#189) — the numbered reply was being
+  hijacked into a ₪1 expense write; now dispatches to the objective flow. Plus a
+  `ביטוח אישי` mis-route fix and safe dashboard keywords.
+- **Classifier accuracy** (#199) — golden 95.3% → 95.7%, **9 genuine Hebrew
+  mis-routes** fixed additively. Most important was a **P&L sign-flip**: a VAT
+  refund (`החזר מעמ`) was booked as a company **expense** instead of revenue —
+  now revenue. Also מגדל insurance, `בוסט לפוסט` → marketing, משפיען, בית ספר →
+  חינוך, דמי טיפול רפואי → בריאות, בקבוק יין → food. Never-corrupt floor untouched.
+- Earlier same-day standalone fix: 7 classifier mis-routes via additive keywords
+  (folded into the accuracy work).
+
+### Web (auto-deployed)
+- **Blue brand unification** (#206 + #207) — accent palette retoned to a clean
+  blue on the dashboard, then unified **site-wide** (the prior cyan/teal/indigo
+  drift is gone). Missing Tailwind color shades backfilled so `bg-brand-*` etc.
+  render everywhere.
+- **Dashboard UX batch** (#205) — transactions newest-first, cleaner status
+  column, readable expense heading, expanded expense category picker.
+- **Morning-nudge cron + honesty** (#202) — new `cron/morning-nudge` (3-day
+  re-engagement + monthly full-guide message) **and removed a false
+  "download the app" claim** from bot + site (there is no native app; WhatsApp is
+  the app).
+- **Bot UX** (#202) — sheet link included in confirmations, natural-language
+  fixed-expense command.
+- **Footer + admin polish** (#191, #201) — filled empty footer product-column
+  links (about/press/team/blog), admin defaults light-first, FAQ JSON-LD brand
+  typo, welcome-toast contrast, pricing footer.
+
+### Infra
+- **Canonical webhook write** (#188) — the dead/corrupt-column write path in
+  `api/whatsapp/webhook.js` now routes through the shared canonical writer in
+  `lib/sheet-writer.js` (`buildExpenseRow` + `appendRowToUserSheet`), so the
+  Vercel-native webhook can never reintroduce the column-misalignment class of bug.
+- **Standalone tools** `bot/MAAZAN_SRC_TOOLS.gs` (#190) added (separate tools
+  project, gated DRY_RUN→APPLY): `FMC_` cross-year leak fix + `$B$2` company net,
+  `ES2_` wires עסק-2 (SRC crypto-arb realized net P&L) into מאזן אישי, `FOM_`
+  fixes an orphan 2026 marketing row.
+
+Full night plan + the live-sheet truth (MOE not-yet-applied → historical company
+net still shows gross until Steven runs the gated migration) is in
+[`NIGHT_REPORT_2026-06-01.md`](NIGHT_REPORT_2026-06-01.md). QA at session end:
+full_qa 122/122, 32/32 bot suites, golden 95.3%, security clean on all night diffs.
+
+---
+
+## 2026-05-31 — Bot-intelligence epic + security round + sheet tools consolidation
+
+The biggest single day of the window. Bot-intelligence epic landed, a hardening
+round closed real CRITICAL/HIGH findings, and the sprawl of one-shot sheet tools
+was consolidated.
+
+### Bot-intelligence epic (#178/#179/#180)
+- **Env-var AI providers + structured-JSON classify contract** + a
+  **never-silently-corrupt guard** — the LLM tier now returns structured JSON and
+  the bot refuses to write a row it can't justify (extended to the multi-item
+  path, #181-adjacent). AI provider/model is env-configurable.
+- **Recognizes renamed / multi-business dashboard tabs** — the bot no longer
+  assumes the stock tab names; it tolerates `עסק 1 / עסק 2 / עסק <name>` renames.
+- **Onboarding questionnaire extended (sections A-H) + 10 template presets**
+  seeded through the safe `add-category-row` path (Basic Personal / Family /
+  Business / Contractor / Mixed / Advanced, etc.).
+- **`קולקציות` → business** (#181) — Steven's art/glass collection routes to עסק,
+  not the hobbies bucket.
+
+### OAuth + installments fixes (#177/#178)
+- **Rotated `refresh_token` captured at all 5 exchange sites** (#178, H1) — Google
+  occasionally rotates the refresh token on exchange; we were dropping it at some
+  call sites, which would silently kill long-lived tenant writes.
+- **Installments Hebrew-boundary parser** + freq object-shape fix + LLM
+  learned-subcategory wiring (#177).
+
+### Security hardening round (#167-#171)
+- **`opt_out` → `optout` typo (CRITICAL)** fixed — the opt-out key prefix didn't
+  match the reader, so STOP requests could be ignored. Plus GDPR `_keysForUser_`
+  completeness (delete now purges every per-user key).
+- **WhatsApp webhook GET fail-open (CRITICAL F1)** closed + 2 PII mediums + a new
+  webhook test suite.
+- **admin.html stored XSS (HIGH)** + **recurring SETNX race (HIGH)** fixed.
+- **OAuth `email_verified` guard** + strip legacy plaintext `refreshToken`.
+- PII `userSub` hashing in logs + `WEEKLY_DIGEST` owner-allowlist.
+
+### Sheet tools (Steven's live sheet — gated, run by him)
+- **`KESEFLE_SHEET_TOOLS.gs` (#176)** — ALL the scattered one-shot sheet tools
+  consolidated into ONE standalone file (uses `getScriptLock`, not document lock).
+- `REWIRE_DASHBOARD_TO_B4`, `ADD_YEAR_DROPDOWN` (clickable year dropdown on
+  מאזן אישי B2), `WIRE_ESEK1_NETPROFIT` (rename מאזן חברה→עסק 1 + wire עסק income
+  to net profit), `FIX_PERSONAL_TOTALS` (Phase-1 total-expenses fix), and a
+  multi-line frozen-year validator.
+- **Mobile-readable tenant sheet template** + emoji `wa.me` link encoding (#181-day).
+
+### Account / recurring web (#181-day)
+- Session-authed web CRUD for **fixed expenses** + a `שלום` onboarding convo
+  (gender question + need + fixed-expenses link), post-login redirect fix, and a
+  hardened WhatsApp mobile link.
+
+Audit reports for the day: `docs/AUDIT_*_2026_05_31.md` (API security, KV tenant
+isolation, bot category map, LLM safety, OAuth/Drive, recurring engine, webhook,
+weekly digest/crons) + `docs/AUDIT_BOT_DESTRUCTIVE_FUNCTIONS_2026_05_31.md`
+(verdict: 0 critical / 3 high / 8 medium).
+
+---
+
+## 2026-05-29 → 2026-05-30 — Deep-review #152 follow-ups + dashboard $B$4 + security resweep
+
+The deep code review from 2026-05-29 (#152) drove a batch of correctness +
+hardening fixes; the dashboard-formula installers were made year-selector-safe.
+
+- **Dashboard installers use `SUMPRODUCT + $B$4`** (#152 WS2 HIGH) across 3
+  installers — so reinstalling dashboard formulas can never reintroduce a
+  hardcoded year; everything follows the year-selector cell.
+- **`תינוקות` → `תינוק` template fix (Bug #4)** + a dashboard cross-reference
+  audit ensuring every dashboard row maps to a real category.
+- **Security resweep follow-ups** — GDPR delete completeness, PII log scrub, and
+  2 added rate limits.
+- **`קולקציות` route added** + admin hygiene cleanup + multi-line frozen-year
+  validator tightening + template-validation/label-drift fixes.
+
+(The session-by-session 2026-05-27 → 2026-05-28 entry below covers the Phase-A v2
+work and the dashboard incident that motivated the "two source tabs" and
+"verify-before-fix" rules now baked into the docs.)
 
 ## 2026-05-22 — PRE-LAUNCH AUDIT (10 agents) + fixes; verdict for 1000 users
 
@@ -379,3 +539,73 @@ Steven's CI was throttled (intermittent account-suspension on GitHub Actions run
 4. **Pick xlsx option A / B / C** per `docs/XLSX_DIAGNOSIS_2026_05_26.md` (recommend A — zero effort).
 5. **Answer the 5 questions** at the bottom of `docs/SMART_BUDGET_GOALS_DESIGN.md` so PR-1 (data + commands) can open.
 6. **(Optional)** Merge #70 (rate limits) — security hardening, no behavior change.
+
+---
+
+## Session 2026-05-27 → 2026-05-28 — Phase A v2 + dashboard incident + recovery
+
+A long session with a real production incident (PR #114 wiped Steven's dashboard, restored from backup). Mixed results — some genuine wins, one ugly mistake, lots of process improvements.
+
+### What shipped (5 PRs merged + 2 closed/redesign)
+
+**Merged ✅**:
+- **#108** — `docs/APP_STRATEGY_WHATSAPP_PLUS_APP.md` — one-page strategy: WhatsApp stays input, dashboard becomes correction layer, PWA over native app.
+- **#109** — skill `honest-counter-opinion` — push-back-on-external-plans pattern.
+- **#110** — `docs/SHEET_AND_DASHBOARD_STRATEGY.md` — companion strategy reconciling morning vs evening asks.
+- **#111** — skill `reconcile-conflicting-strategy` — table-not-silent-override pattern.
+- **#112** — Phase A v2: bot uncertainty guards + diaper LLM examples + עסק-N structural guards. Live test passed for diaper classification. 412 LOC added.
+- **#113** — Phase A v2.1: pending-clarification resolver fix. "עסק 1 - 35 הוצאות שיווק" reply now routes correctly to expense write instead of being re-parsed as a tab-creation command. Live test passed.
+
+**Closed without merge ❌**:
+- **#114** — Phase A v2.2 dashboard repair. **CRITICAL INCIDENT**: APPLY zeroed 4 years of Steven's historical revenue + order data because my new formula builder pointed all metrics to `תנועות` instead of the dual-source architecture (`הזמנות` for revenue, `תנועות` for bot expenses). Steven restored from backup. Closed PR with full analysis. Redesign tracked in [Monday 2945153160](https://kesefle.monday.com/boards/5097200701/pulses/2945153160).
+
+**Open (doc-only)**:
+- **#115** — skill `verify-data-sources-before-formula-repair` — captures the lesson from #114.
+
+### The dashboard incident — what went wrong + what we learned
+
+I assumed `תנועות` was the single source-of-truth tab for all metrics. Actually:
+- `הזמנות` (orders tab) is the source for revenue + per-order detail
+- `תנועות` (transactions tab) is the bot's WhatsApp expense writes
+
+The existing `_buildRevenueFormulas_` in `personal_sheet_fix.gs` already used `_PSF_ORDERS_TAB_ = 'הזמנות'` correctly. I ignored it and wrote a "cleaner" replacement that broke everything.
+
+**3 new process rules saved to memory**:
+1. `feedback-two-source-tabs-revenue-vs-expenses` — Steven's data architecture has TWO source tabs, never assume one.
+2. `feedback-audit-agents-verify-before-fix` — All 7 findings from this session's background audit agent were false positives. Verify every audit finding against actual code at the cited line before any fix.
+3. `feedback-monday-move-completed` — Reinforced: always sync Monday subitem status to reality between turns.
+
+### Bot tests + QA
+
+- 18/18 bot tests passing (added `test_phase_a_v2_uncertainty.js` with 41 assertions, `test_dashboard_repair.js` with 52 assertions before PR #114 was reverted)
+- 118/118 offline full_qa checks passing
+- Relaxed 2 brittle hardcoded-version test assertions (same fix-class as `test_pending_state_hijack.js` earlier)
+
+### Skills added this session
+
+1. `monday-sync-at-turn-end` — end-of-turn workflow (Monday sync + new skill + next-stage tasks)
+2. `monday-feature-spec` — 7-section template for deferred Monday items
+3. `honest-counter-opinion` — push back on external plans
+4. `reconcile-conflicting-strategy` — table-not-silent-override pattern
+5. `verify-data-sources-before-formula-repair` — 3-step pre-flight before formula apply
+
+### Monday tasks queued (not started)
+
+- [2944947687](https://kesefle.monday.com/boards/5097200701/pulses/2944947687) — Sheet tab cleanup strategy (25 tabs, many duplicates)
+- [2945063597](https://kesefle.monday.com/boards/5097200701/pulses/2945063597) — Column H NULL backfill (older bot rows missing isExpense flag)
+- [2945153160](https://kesefle.monday.com/boards/5097200701/pulses/2945153160) — Dashboard repair redesign (per `docs/DASHBOARD_REPAIR_REDESIGN_v2.md`)
+- Plus the existing Bot uncertainty + Review Inbox + PWA MVP epic with 7 remaining subitems
+
+### Honest scope report
+
+- **Done well**: Phase A v2 + v2.1 (real bot bug fixes, live-tested, deployed by Steven)
+- **Done badly**: Phase A v2.2 dashboard repair (architectural assumption wrong, data temporarily destroyed, recovered from backup)
+- **Process improvements**: 5 new skills + 3 new memory rules to prevent the same mistakes
+- **Trust impact**: Steven explicitly told me to stop all feature work + verify everything. New rule: no formula apply without per-cell evaluated-value verification.
+
+### Next session priorities (when Steven says go)
+
+1. Verify dashboard fully recovered from backup (live bot test)
+2. Pick dashboard redesign Path A/B/C per `docs/DASHBOARD_REPAIR_REDESIGN_v2.md`
+3. If "hold" — move to deferred Phase A v2.5 (60s timeout + needs_review + correction-button-after-save)
+4. AI multi-model router only after both above are confirmed

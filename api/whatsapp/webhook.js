@@ -11,10 +11,10 @@
 // IMPORTANT: This is the multi-tenant version. Each user's expenses go to THEIR sheet.
 
 import crypto from 'node:crypto';
-import { decryptRefreshToken } from '../../lib/crypto.js';
+import { constantTimeEqual } from '../../lib/crypto.js';
 import { rateLimit } from '../../lib/ratelimit.js';
-import { getGoogleClientId } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
+import { buildExpenseRow, appendRowToUserSheet } from '../../lib/sheet-writer.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -85,14 +85,32 @@ async function sendReply(toPhone, text) {
 
 async function handlerImpl(req, res) {
   // 1. Verification handshake (GET) — Meta calls this when you set up the webhook.
+  //
+  // 2026-05-31 audit fix (docs/AUDIT_WHATSAPP_WEBHOOK_2026_05_31.md F1 CRITICAL):
+  // The previous strict-equality comparison failed OPEN when the verify-token
+  // env var was unset (undefined equals undefined, returns true), letting an
+  // attacker hijack webhook registration during any misconfig window. Mirrors
+  // the POST path's fail-closed 503 for unset META_APP_SECRET below. Also
+  // swapped strict-equality for constantTimeEqual to remove the timing leak.
   if (req.method === 'GET') {
+    const expectedToken = process.env.META_VERIFY_TOKEN;
+    if (!expectedToken) {
+      // Fail closed if the secret isn't configured — refuse to confirm any
+      // ownership claim until an operator sets the env var.
+      return res.status(503).json({ ok: false, error: 'verify_token_not_configured' });
+    }
     const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
+    // Reject anything other than the documented subscribe handshake BEFORE the
+    // token compare so probers can't fingerprint the endpoint by mode value.
+    if (mode !== 'subscribe') {
+      return res.status(403).json({ ok: false, error: 'mode_not_supported' });
+    }
+    const token = String(req.query['hub.verify_token'] || '');
     const challenge = req.query['hub.challenge'];
-    if (mode === 'subscribe' && token === process.env.META_VERIFY_TOKEN) {
+    if (constantTimeEqual(token, expectedToken)) {
       return res.status(200).send(challenge);
     }
-    return res.status(403).json({ ok: false, error: 'verify token mismatch' });
+    return res.status(403).json({ ok: false, error: 'verify_token_mismatch' });
   }
 
   if (req.method !== 'POST') {
@@ -303,8 +321,11 @@ async function handlerImpl(req, res) {
     return res.status(200).json({ ok: true, parseError: parsed.errorMsg });
   }
 
-  // 7. Write to the user's sheet using the user's stored Google access token
-  //    (Phase 2 wiring — depends on /api/auth/google.js storing the refresh token.)
+  // 7. Write to the user's sheet via the SHARED canonical writer
+  //    (lib/sheet-writer.js buildExpenseRow + appendRowToUserSheet) — the same
+  //    path /api/sheet/append uses. `userRecord` here is the phone:{E164}
+  //    pointer; writeToUserSheet resolves it into the canonical sheet:{userSub}
+  //    + the encrypted token from user:{userSub}.
   const writeResult = await writeToUserSheet(userRecord, parsed, text, messageId);
 
   // 8. Reply
@@ -334,144 +355,106 @@ function parseMessage(text) {
   };
 }
 
-// Production writer: calls Sheets API with the user's refresh token to append a transaction row.
+// Production writer: appends one transaction row to the user's תנועות tab via
+// the SHARED canonical writer in lib/sheet-writer.js (buildExpenseRow +
+// appendRowToUserSheet) — the exact same path /api/sheet/append uses.
 //
-// Sheet schema expected (matches the template):
-//   A: timestamp (ISO) | B: amount | C: currency | D: type (income|expense) | E: category | F: subcategory | G: raw text | H: source (whatsapp|web) | I: message_id (idempotency)
+// 2026-06-01: this function previously hand-rolled its OWN row + Sheets call
+// with a column layout that NO dashboard could read:
+//   OLD (wrong): A=ts B=amount C=currency D=type E=category F=subcat G=raw H=src I=msgId
+//   canonical:   A=ts B=YYYY-MM C=amount D=category E=subcat F=raw G=src H=status I=VAT
+// The dashboards SUMIFS on C:C (amount) keyed by B:B (month) / D:D (category) /
+// E:E (subcategory), so every row the old code wrote was invisible to the
+// "מאזן אישי" / "מאזן חברה" dashboards (amount landed in B, the month column;
+// "expense"/"income" landed in D where the dashboard expects "עסק"/category).
+// It was also TOKENLESS: it read the refresh token off the phone:{E164} pointer
+// record, which never carries one (the encrypted envelope lives only in
+// user:{userSub}) — so even with Meta vars set the write failed immediately.
+// This path is dead today (the POST handler fails closed on unset
+// META_APP_SECRET above), but routing it through the canonical writer removes
+// the wrong-column landmine and makes it correct if Meta is ever pointed here.
 //
-// Retries the access-token refresh once on 401. Returns { ok, rowIndex } on success or { ok:false, error } on failure.
+// `userRecord` is the phone:{E164} pointer (userSub + a cached sheet id). We
+// resolve the canonical write target exactly like /api/sheet/append: the sheet
+// from sheet:{userSub}, the encrypted token from user:{userSub}. Tenant
+// isolation is load-bearing — we resolve phone -> userSub -> sheet:{sub} and
+// abort (never write) if the phone-cached sheet disagrees with the canonical
+// one. Returns { ok, rowIndex } or { ok:false, error }.
 async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
-  if (!userRecord?.spreadsheetId) {
+  const userSub = userRecord?.userSub;
+  if (!userSub) {
+    log.error('wa.write_blocked_no_user_sub', {});
+    return { ok: false, error: 'incomplete_user_record' };
+  }
+
+  // Resolve canonical sheet (sheet:{userSub}) + token holder (user:{userSub}).
+  const sheetRec = await kvGet(`sheet:${userSub}`);
+  const userRec = (await kvGet(`user:${userSub}`)) || {};
+  const canonicalSheetId = sheetRec?.spreadsheetId || null;
+  const phoneSheetId = userRecord?.spreadsheetId || null;
+
+  // Isolation leak-guard (same intent as /api/sheet/append): if the phone
+  // record cached a sheet that disagrees with the canonical one, abort BEFORE
+  // writing rather than risk a cross-tenant write.
+  if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
+    log.error('wa.sheet_ownership_mismatch', {
+      userSub, phoneRecordSheet: phoneSheetId, canonicalSheet: canonicalSheetId,
+    });
+    return { ok: false, error: 'sheet_ownership_mismatch' };
+  }
+  const spreadsheetId = canonicalSheetId || phoneSheetId || userRec.spreadsheetId || null;
+  if (!spreadsheetId) {
+    log.error('wa.no_sheet_provisioned', { userSub });
     return { ok: false, error: 'no_spreadsheet_id_in_user_record' };
   }
-  // SECURITY: Read refresh token from encrypted envelope (AES-256-GCM, AAD-bound to userSub).
-  // Legacy fallback: also check the old plaintext field for users provisioned before the
-  // encryption rollout. New writes never store plaintext.
-  let refreshToken = null;
-  if (userRecord?.refreshTokenEnvelope) {
-    try {
-      refreshToken = decryptRefreshToken(userRecord.refreshTokenEnvelope, userRecord.userSub);
-    } catch (e) {
-      console.error('WRITE_BLOCKED_DECRYPT_FAILED', { userSub: userRecord.userSub, err: e.message });
-      return { ok: false, error: 'refresh_token_decrypt_failed' };
-    }
-  } else if (userRecord?.refreshToken) {
-    refreshToken = userRecord.refreshToken; // legacy
-  } else {
-    console.error('WRITE_BLOCKED_NO_REFRESH_TOKEN', { userSub: userRecord.userSub, spreadsheetId: userRecord.spreadsheetId });
+  // The ENCRYPTED refresh token lives only in user:{userSub} (the phone pointer
+  // is tokenless). Fail closed with a relink hint if it's missing.
+  if (!userRec.refreshTokenEnvelope && !userRec.refreshToken) {
+    log.error('wa.write_blocked_no_refresh_token', { userSub, spreadsheetId });
     return { ok: false, error: 'no_refresh_token_relink_needed' };
   }
 
-  let accessToken;
-  try {
-    accessToken = await exchangeRefreshForAccess(refreshToken);
-  } catch (e) {
-    console.error('access_token_refresh_failed', e.message);
-    return { ok: false, error: 'token_refresh_failed', detail: e.message };
-  }
+  // Build the canonical 9-col row. buildExpenseRow puts the month key in B, the
+  // amount (numeric) in C, the top category in D, the subcategory in E, and
+  // sanitizes every string cell against formula injection internally — so the
+  // local sanitizeCell helper this function used to carry is gone.
+  const row = buildExpenseRow({
+    amount: typeof parsed.amount === 'number' ? parsed.amount : Number(parsed.amount) || 0,
+    isIncome: !!parsed.is_income,
+    category: parsed.category,
+    subcategory: parsed.subcategory,
+    rawText,
+  });
 
-  // CRITICAL FIX (RT3-F6): Sanitize cells to prevent formula injection.
-  // If a user sends "99 =IMPORTXML(...)" the raw text would be evaluated as a formula
-  // by Google Sheets when valueInputOption=USER_ENTERED. Prefix dangerous leading chars
-  // with a tab+apostrophe ("'") which Sheets treats as a literal text marker.
-  function sanitizeCell(v) {
-    if (v == null) return '';
-    if (typeof v === 'number') return v;
-    const s = String(v);
-    if (s.length === 0) return '';
-    // Strip zero-width + bidi override chars that can hide injected formulas
-    const cleaned = s.replace(/[​-‏‪-‮⁦-⁩﻿]/g, '');
-    // Prefix if first non-space char is a formula trigger
-    const firstNonSpace = cleaned.trimStart()[0];
-    if (firstNonSpace === '=' || firstNonSpace === '+' || firstNonSpace === '-' || firstNonSpace === '@' || firstNonSpace === '\t') {
-      return "'" + cleaned;
+  // Hand the canonical row + resolved credentials to the shared writer. It
+  // owns the AES-256-GCM decrypt, the OAuth exchange (capturing any rotated
+  // refresh token), the RAW-mode append to 'תנועות'!A:I, the 401-refresh
+  // retry, and the missing-tab self-heal.
+  const writerRecord = {
+    userSub,
+    spreadsheetId,
+    refreshTokenEnvelope: userRec.refreshTokenEnvelope || null,
+    refreshToken: userRec.refreshToken || null,
+  };
+  const result = await appendRowToUserSheet({ userRecord: writerRecord, row });
+  if (!result.ok) {
+    // Preserve the named log events the webhook signature test asserts on and
+    // operators grep for. appendRowToUserSheet already redacts internally; we
+    // only surface the stable error code here (no spreadsheetId / Hebrew tab
+    // name in the message).
+    if (/token_refresh/.test(result.error || '')) {
+      log.error('wa.access_token_refresh_failed', { userSub, error: result.error });
+    } else {
+      log.error('wa.sheets_append_failed', { userSub, error: result.error });
     }
-    return cleaned;
+    return result;
   }
-
-  const isoNow = new Date().toISOString();
-  const isIncome = !!parsed.is_income;
-  const row = [
-    isoNow,                                            // A: timestamp
-    typeof parsed.amount === 'number' ? parsed.amount : 0,  // B: amount (numeric only)
-    sanitizeCell(parsed.currency || 'ILS'),            // C: currency
-    sanitizeCell(isIncome ? 'income' : 'expense'),     // D: type
-    sanitizeCell(parsed.category || 'אחר'),            // E: category
-    sanitizeCell(parsed.subcategory || ''),            // F: subcategory
-    sanitizeCell(rawText),                             // G: raw text
-    'whatsapp',                                         // H: source (fixed enum, safe)
-    sanitizeCell(messageId),                           // I: message_id
-  ];
-
-  // Append to the תנועות tab (range 'תנועות'!A:I) with INSERT_ROWS mode.
-  // CRITICAL: valueInputOption=RAW (not USER_ENTERED) — RAW treats values as literals,
-  // blocking formula injection. We pre-sanitized above as defense-in-depth.
-  const range = encodeURIComponent("'תנועות'!A:I");
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${userRecord.spreadsheetId}/values/${range}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
-
-  let resp;
-  try {
-    resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ values: [row] }),
-    });
-  } catch (e) {
-    return { ok: false, error: 'sheets_api_unreachable', detail: e.message };
-  }
-
-  if (resp.status === 401) {
-    // Refresh and retry once (re-derive a fresh access token from the same refresh token)
-    try {
-      accessToken = await exchangeRefreshForAccess(refreshToken, true);
-      resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [row] }),
-      });
-    } catch (e) {
-      return { ok: false, error: 'token_refresh_retry_failed', detail: e.message };
-    }
-  }
-
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    console.error('sheets_append_failed', resp.status, errText.slice(0, 300));
-    return { ok: false, error: 'sheets_append_status_' + resp.status, detail: errText.slice(0, 200) };
-  }
-
-  const j = await resp.json().catch(() => ({}));
-  return { ok: true, rowIndex: j?.updates?.updatedRange || null };
+  return result;
 }
 
-// Exchanges a Google OAuth refresh token for a fresh access token.
-// Returns the access token string. Throws on failure.
-async function exchangeRefreshForAccess(refreshToken /*, forceRefresh */) {
-  const clientId = getGoogleClientId();
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientSecret) {
-    throw new Error('GOOGLE_CLIENT_SECRET env var missing');
-  }
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: 'refresh_token',
-  });
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString(),
-  });
-  const j = await r.json();
-  if (!r.ok || !j.access_token) {
-    throw new Error('refresh_failed: ' + (j.error_description || j.error || r.status));
-  }
-  return j.access_token;
-}
-
+// NOTE: all refresh-for-access exchanges + the Sheets append now go through
+// lib/sheet-writer.js (which delegates token exchange to lib/oauth.js). That
+// keeps a SINGLE source of truth for the תנועות column order and the rotated-
+// refresh-token capture (audit H1) — the webhook no longer hand-rolls either.
 
 export default withRequestId(handlerImpl);

@@ -299,7 +299,21 @@ async function handlerImpl(req, res) {
   if (!userSub) return res.status(404).json({ ok: false, error: 'no_user' });
   const userRec = await kvGet('user:' + userSub);
   const sheetRec = await kvGet('sheet:' + userSub);
-  const spreadsheetId = sheetRec?.spreadsheetId || userRec?.spreadsheetId || null;
+
+  // PR-S2 (2026-05-27 security audit H1): tenant-isolation guard.
+  // Same shape as api/sheet/append.js:124-132. Aborts BEFORE writing if the
+  // phone-record's cached sheet id disagrees with canonical sheet:{userSub}.
+  const canonicalSheetId = sheetRec?.spreadsheetId || null;
+  const phoneSheetId = phoneRec.spreadsheetId || null;
+  if (canonicalSheetId && phoneSheetId && canonicalSheetId !== phoneSheetId) {
+    log.error('csv_import.sheet_ownership_mismatch', {
+      reqId: req.reqId, phone, userSub,
+      phoneRecordSheet: phoneSheetId, canonicalSheet: canonicalSheetId,
+    });
+    return res.status(409).json({ ok: false, error: 'sheet_ownership_mismatch' });
+  }
+
+  const spreadsheetId = canonicalSheetId || userRec?.spreadsheetId || null;
   if (!spreadsheetId) return res.status(404).json({ ok: false, error: 'no_sheet' });
   if (!userRec?.refreshTokenEnvelope && !userRec?.refreshToken) {
     return res.status(409).json({ ok: false, error: 'reauth_required' });
@@ -359,7 +373,15 @@ async function handlerImpl(req, res) {
 
   try {
     const range = encodeURIComponent(`'${TX_TAB}'!A:F`);
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    // RAW (not USER_ENTERED) — consistent with every other Kesefle writer
+    // (lib/sheet-writer.js, bank-csv.js, relabel-row.js, mark-vat.js). RAW
+    // stores each cell verbatim instead of re-parsing it as if a user typed
+    // it, which (a) keeps sanitizeCell's formula-injection guard sound (it was
+    // designed for RAW per its own doc-comment) and (b) stops Sheets from
+    // mangling imported free-text into formulas/dates -- e.g. a description
+    // "3/4" becoming a date, or "01" losing its leading zero. Amounts are
+    // written as JS numbers either way, so totals are unaffected.
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
     const r = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },

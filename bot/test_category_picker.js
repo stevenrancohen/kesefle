@@ -58,7 +58,10 @@ while ((m = sectionRe.exec(literal)) !== null) {
 
 console.log('\n══ Category picker QA — Tier 1 functional ══');
 ok('SECTIONS array parsed', sections.length > 0);
-ok('Exactly 4 sections', sections.length === 4);
+// PR-3 (2026-05-26): picker expanded from 4 to 10 sections per the canonical
+// buckets in docs/BOT_MENU_FIRST_POLICY.md (food, home, transport, personal,
+// education-kids, leisure, business, financial, income, other).
+ok('Has 7-10 sections (post PR-3)', sections.length >= 7 && sections.length <= 10);
 
 const allRows = sections.flatMap(s => s.rows);
 ok('At least 30 categories total', allRows.length >= 30);
@@ -82,15 +85,18 @@ if (dupes.length) console.log('  → duplicates: ' + [...new Set(dupes)].join(',
 ok('No row name contains the pipe separator (would collide with id parsing)', !names.some(n => n.indexOf('|') >= 0));
 
 console.log('\n══ Tier 4 adversarial ══');
-const catchAllCount = names.filter(n => n === 'אחר').length;
-ok('Catch-all "אחר" exists exactly once', catchAllCount === 1);
+// PR-3: catch-all moved from "אחר" (which collided with the section title) to
+// "שונות". The "אחר" section title still exists, but no row is named "אחר".
+const catchAllCount = names.filter(n => n === 'שונות').length;
+ok('Catch-all "שונות" exists exactly once', catchAllCount === 1);
 const incomeSection = sections.find(s => s.title.includes('הכנסות'));
 ok('Income section exists', !!incomeSection);
 ok('Income section contains משכורת', incomeSection && incomeSection.rows.some(r => r.name === 'משכורת'));
 const businessSection = sections.find(s => s.title.includes('עסק'));
 ok('Business section exists', !!businessSection);
 ok('Business section contains שיווק ופרסום', businessSection && businessSection.rows.some(r => r.name === 'שיווק ופרסום'));
-ok('Business section contains עובדים', businessSection && businessSection.rows.some(r => r.name === 'עובדים'));
+// PR-3 renamed "עובדים" -> "שכר עובדים" to make the row title cleaner.
+ok('Business section contains שכר עובדים', businessSection && businessSection.rows.some(r => r.name === 'שכר עובדים'));
 
 console.log('\n──────────────────────────────────────');
 console.log(`PASS: ${pass}   FAIL: ${fail}`);

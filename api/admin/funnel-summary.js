@@ -6,6 +6,7 @@
 
 import { withRequestId } from '../../lib/log.js';
 import { requireAdmin } from '../../lib/auth.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -125,4 +126,11 @@ async function handlerImpl(req, res) {
   });
 }
 
-export default withRequestId(requireAdmin(handlerImpl));
+// Steven 2026-05-30 (deep-review PR #152 WS4 follow-up): defense-in-depth
+// rate limit. Funnel summary is an admin view; 30/min is plenty for the
+// /admin/launch-monitor poll loop (every 30-60s) and caps any rogue caller.
+export default withRequestId(
+  withRateLimit({ key: 'admin_funnel_summary', limit: 30, windowSec: 60 })(
+    requireAdmin(handlerImpl)
+  )
+);

@@ -75,6 +75,29 @@ assert(objIdx > 0 && goalIdx > 0 && objIdx < goalIdx,
 assert(/api\/objectives\/action/.test(BOT), 'bot POSTs to /api/objectives/action');
 assert(/x-kesefle-bot-secret/.test(BOT), 'bot-secret header is sent');
 
+// 2026-06-01 FIX (ITEM 1): pending-objective dispatcher must be wired into
+// doPost BEFORE the expense fast-path, otherwise a bare "1" reply to the
+// "יעד חדש" prompt is written as a 1-shekel expense.
+assert(/function _handleObjectivePendingReply_\(fromPhone, text\)/.test(BOT),
+  '_handleObjectivePendingReply_ function exists');
+assert(/_handleObjectivePendingReply_\(__from_, __text_\)/.test(BOT),
+  'doPost dispatches to _handleObjectivePendingReply_');
+const pendIdx = BOT.indexOf('_handleObjectivePendingReply_(__from_, __text_)');
+const fastIdx = BOT.indexOf('var __looksLikeExpense = /^\\s*\\d/.test(__text_)');
+assert(pendIdx > 0 && fastIdx > 0 && pendIdx < fastIdx,
+  'pending-objective dispatch runs BEFORE the expense fast-path');
+// The two prompt-returning paths must stamp the pending state.
+assert(/_objPendSet_\(clean, 'horizon'\)/.test(BOT),
+  'bare "יעד חדש" stamps pending-objective state ("horizon")');
+assert(/_objPendSet_\(clean, horizon \? \('desc:' \+ horizon\) : 'horizon'\)/.test(BOT),
+  'one-shot missing-horizon/desc path stamps pending-objective state');
+// End-anchored 1-4 guard (must NOT be a substring match that catches "1 קפה").
+assert(/t\.match\(\/\^\(\[1-4\]\)\$\/\)/.test(BOT),
+  'horizon pick uses an END-ANCHORED ^[1-4]$ match (not a substring)');
+// 15-minute TTL on the pending state.
+assert(/_OBJ_PEND_TTL_SEC_\s*=\s*900/.test(BOT),
+  'pending-objective state has a 15-minute (900s) TTL');
+
 // Hebrew commands all present
 for (const cmd of ['יעד שלי', 'השגתי יעד', 'השתק יעד', 'שנה יעד', 'יעד חדש']) {
   assert(BOT.indexOf(cmd) >= 0, 'bot recognizes "' + cmd + '"');
@@ -83,8 +106,11 @@ for (const cmd of ['יעד שלי', 'השגתי יעד', 'השתק יעד', 'ש�
 // Version was bumped to reflect this PR (so admin freshness badge flips red
 // until Steven pastes).
 const v = (BOT.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/objectives/.test(v || ''),
-  'KFL_BUILD_VERSION bumped to include "objectives" (currently: ' + v + ')');
+// Relaxed from /objectives/ — every bot PR bumps the version, so this
+// assertion only verifies a date-stamped version exists. The earlier strict
+// check broke every subsequent PR (PR-3 picker, etc).
+assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
+  'KFL_BUILD_VERSION is date-stamped (currently: ' + v + ')');
 
 // ── 3) API + lib existence ─────────────────────────────────────────────────
 console.log('\nAPI + lib files:');
