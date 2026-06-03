@@ -178,7 +178,14 @@ async function subscribeImpl(req, res) {
 
   let token;
   try { token = await getAccessToken(); }
-  catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
+  catch (e) {
+    // Stable error code (not the raw exception message) — matches the sibling
+    // failure responses below (paypal_subscribe_failed / paypal_unreachable)
+    // and keeps internal detail out of this user-facing, authed response body.
+    // The detail is logged server-side for debugging.
+    log.error('paypal_get_token_failed', { reqId: req.reqId, where: 'subscribe', error: e.message });
+    return res.status(502).json({ ok: false, error: 'paypal_unreachable' });
+  }
 
   // custom_id binds the subscription to the verified user identity (NOT body).
   const userSub = req.user.sub;
@@ -239,7 +246,12 @@ async function verifyWebhook(req, token) {
 async function webhookImpl(req, res) {
   let token;
   try { token = await getAccessToken(); }
-  catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
+  catch (e) {
+    // Stable error code; detail logged server-side. 502 so PayPal retries the
+    // webhook delivery (a transient token-mint failure shouldn't drop the event).
+    log.error('paypal_get_token_failed', { reqId: req.reqId, where: 'webhook', error: e.message });
+    return res.status(502).json({ ok: false, error: 'paypal_unreachable' });
+  }
 
   const ok = await verifyWebhook(req, token);
   if (!ok) {
