@@ -55,6 +55,36 @@
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://kesefle.com/blog/keren-hishtalmut</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kesefle.com/blog/kupat-gemel-lehashkaa</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kesefle.com/blog/michzur-mashkanta</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kesefle.com/blog/atzmai-mul-sachir-mas</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kesefle.com/blog/bituach-chaim-briut-alut</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://kesefle.com/blog/hachzer-mas-sachir</loc>
     <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>

@@ -78,6 +78,7 @@ const UNIT_SUITES = [
   'tests/test_email_unsubscribe.js',                 // onboarding: welcome+lifecycle emails have a working, signed, single-click unsubscribe
   'tests/test_api_error_wrapper_hardening.js',       // hardening: getExpenses wrapped in withRequestId + paypal subscribe/webhook return stable error codes (no e.message leak)
   'tests/pwa.js',                                     // PWA hardening: manifest validity, maskable icon, theme-color parity, SW cache-versioning + skipWaiting/clients.claim + offline fallback, controllerchange auto-update (#13), install CTA (#125), iOS meta
+  'tests/test_admin_console_data_sources.js',         // admin console: deepened sections wire ONLY real requireAdmin endpoints (funnel-summary, registration-health, recent-signups, revenue, launch-monitor) + one-click recovery (reprovision/resend) + masked identity + honest "not instrumented" notes; no fabricated tiles
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {
@@ -559,6 +560,23 @@ ok('upgrade.html exists and handles ?paypal= success/cancel',
    /paypal/i.test(UPGRADE_HTML) && /state-cancel/.test(UPGRADE_HTML) && /state-success/.test(UPGRADE_HTML));
 ok('vercel.json no longer 301s /upgrade -> /pricing (so upgrade.html serves)',
    !/"source":\s*"\/upgrade"/.test(VERCEL_JSON));
+
+// dashboard.html subscriptions section (#250): a client-side detector that
+// surfaces recurring/subscription charges from the already-fetched rows with
+// an ANNUALIZED cost, a "last seen" month, and a forgotten-subscription flag.
+// Guards the section markup, the detector + its wiring into renderAnalytics,
+// the 3-month/CV/cadence gates, and the annualized (x12) headline.
+const DASHBOARD_HTML = fs.readFileSync(path.join(ROOT, 'dashboard.html'), 'utf8');
+ok('dashboard.html subscriptions section: detector + annualized + forgotten flag + wired',
+   /id="subs-list"/.test(DASHBOARD_HTML) && /id="subs-monthly-total"/.test(DASHBOARD_HTML) &&
+   /id="subs-annual-total"/.test(DASHBOARD_HTML) && /id="subs-empty"/.test(DASHBOARD_HTML) &&
+   /function detectSubscriptions\s*\(/.test(DASHBOARD_HTML) &&
+   /function renderSubscriptions\s*\(/.test(DASHBOARD_HTML) &&
+   /renderSubscriptions\(rows\)/.test(DASHBOARD_HTML) &&         // invoked from renderAnalytics
+   /monthCount\s*<\s*3/.test(DASHBOARD_HTML) &&                  // needs 3+ months
+   /cv\s*>\s*0\.35/.test(DASHBOARD_HTML) &&                      // amount-stability gate
+   /monthly\s*\*\s*12/.test(DASHBOARD_HTML) &&                   // annualized cost
+   /forgotten/.test(DASHBOARD_HTML));                            // forgotten-subscription flag
 
 // ── 6. Optional: live API health ────────────────────────────────────────────
 if (process.argv.includes('--live')) {
