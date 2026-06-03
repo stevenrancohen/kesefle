@@ -766,6 +766,69 @@
       </div>
     </div>
 
+    <!-- Row 3.5: Subscriptions & fixed commitments ----------------------
+         A dedicated, management-grade view of recurring/subscription
+         charges auto-detected from the SAME rows already loaded (no extra
+         fetch). This COMPLEMENTS — does not duplicate — the compact
+         "מנויים קבועים" card above (Row 3), which is a quick glance
+         (count + monthly total + name/#months). Here we add what that
+         card lacks and what the user needs to manage commitments:
+         per-subscription ANNUALIZED cost (₪X/חודש = ₪Y/שנה), the month
+         each was LAST SEEN, and a gentle "possible forgotten subscription"
+         flag for charges that recur historically but were NOT seen this
+         month (a likely-still-active commitment worth a second look).
+         The headline shows total monthly + annualized recurring spend.
+         All data text is set via textContent (XSS-safe) in
+         renderSubscriptions(). Empty/first-time state is graceful. -->
+    <div class="mt-4">
+      <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg" aria-hidden="true">🔁</span>
+            <div>
+              <h3 class="text-base font-black tracking-tight text-ink-900 dark:text-white">המנויים וההוצאות הקבועות שלך</h3>
+              <p class="mt-0.5 text-xs text-ink-500 dark:text-ink-500">חיובים שחוזרים כל חודש — כמה הם עולים לך בשנה</p>
+            </div>
+          </div>
+          <!-- forgotten-subscription badge; shown only when we flag at least one -->
+          <div id="subs-flag-badge" class="hidden rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+            <span class="num" id="subs-flag-count">0</span> חיובים לבדיקה
+          </div>
+        </div>
+
+        <!-- First-time / nothing-detected state -->
+        <div id="subs-empty" class="hidden mt-4 rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
+          <div class="text-3xl" aria-hidden="true">🧾</div>
+          <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עדיין לא זוהו מנויים קבועים</div>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד/י הוצאות לאורך כמה חודשים בוואטסאפ — וכשנזהה חיוב שחוזר על עצמו (נטפליקס, חדר כושר, ביטוח…) נציג אותו כאן עם העלות השנתית.</p>
+        </div>
+
+        <!-- Populated view -->
+        <div id="subs-body" class="hidden">
+          <!-- Headline: total monthly + annualized -->
+          <div class="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3 rounded-2xl bg-ink-50 p-4 dark:bg-ink-700/40">
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">סך הוצאות קבועות לחודש</div>
+              <div class="num mt-0.5 text-3xl font-black text-amber-600" id="subs-monthly-total">₪0</div>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">בשנה</div>
+              <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="subs-annual-total">₪0</div>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">מנויים שזוהו</div>
+              <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="subs-detected-count">0</div>
+            </div>
+          </div>
+
+          <!-- Per-subscription list -->
+          <ul id="subs-list" class="mt-4 space-y-2.5"></ul>
+
+          <p class="mt-3 text-[11px] leading-4 text-ink-500 dark:text-ink-500">זוהה אוטומטית מהתנועות שלך (חיוב דומה שחוזר 3+ חודשים). הסכום השנתי הוא הערכה לפי הממוצע החודשי.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 4: Top splurges + Goals -->
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
 
@@ -3052,6 +3115,222 @@ function generatePseudoSeries(target, n, intLike) {
     });
   }
 
+  // ---- 6b. Subscriptions & fixed commitments (management view) ---------
+  //
+  // A richer, subscription-focused companion to renderRecurring above.
+  // renderRecurring answers "what recurs?" (a quick count + monthly list).
+  // This answers "what am I committed to, and is anything slipping?":
+  //   - typical amount + ANNUALIZED cost per subscription (the headline
+  //     number people actually react to),
+  //   - the month each charge was LAST SEEN,
+  //   - a gentle flag for a charge that recurs historically but was NOT
+  //     seen this month -- a possible forgotten subscription.
+  //
+  // Detection (client-side, from the rows already fetched -- no network):
+  //   * expenses only (amount > 0), grouped by normalized description,
+  //   * >= 3 distinct months of charges,
+  //   * tight amount stability (coefficient of variation <= 0.35) so we
+  //     surface genuine fixed commitments rather than anything that merely
+  //     repeats (renderRecurring already uses the looser <= 0.5),
+  //   * roughly-monthly cadence: charged in at least half the months
+  //     between the first and last charge (rejects once-a-quarter noise).
+  // "typical"/"monthly" use the MEDIAN so a one-off price bump or partial
+  // charge does not distort the annualized estimate.
+
+  // Median of a numeric array (does not mutate the caller's array).
+  function _median(arr){
+    if (!arr.length) return 0;
+    var s = arr.slice().sort(function(a,b){ return a - b; });
+    var m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+
+  function detectSubscriptions(rows){
+    var now = new Date();
+    var curKey = ym(now);
+    var buckets = Object.create(null);
+    (rows || []).forEach(function(r){
+      var d = parseDate(r.date);
+      if (!d) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return; // expenses only
+      var desc = String(r.description || '').trim();
+      if (!desc) return;
+      var key = normalizeKey(desc);
+      if (!key) return;
+      if (!buckets[key]) {
+        buckets[key] = { desc: desc, amounts: [], months: Object.create(null),
+                         category: r.category || '', lastDate: d, firstDate: d };
+      }
+      var b = buckets[key];
+      b.amounts.push(amt);
+      b.months[ym(d)] = true;
+      if (!b.category && r.category) b.category = r.category;
+      if (d.getTime() > b.lastDate.getTime()) b.lastDate = d;
+      if (d.getTime() < b.firstDate.getTime()) b.firstDate = d;
+    });
+
+    var subs = [];
+    Object.keys(buckets).forEach(function(k){
+      var b = buckets[k];
+      var monthCount = Object.keys(b.months).length;
+      if (monthCount < 3) return;
+
+      // Amount stability (CV = stdev / mean).
+      var mean = b.amounts.reduce(function(a,c){ return a + c; }, 0) / b.amounts.length;
+      if (mean <= 0) return;
+      var variance = b.amounts.reduce(function(a,c){ return a + (c - mean) * (c - mean); }, 0) / b.amounts.length;
+      var cv = Math.sqrt(variance) / mean;
+      if (cv > 0.35) return; // too variable to be a fixed commitment
+
+      // Roughly-monthly cadence: charged in >= half the months spanned.
+      var monthSpan = (b.lastDate.getFullYear() - b.firstDate.getFullYear()) * 12
+                    + (b.lastDate.getMonth() - b.firstDate.getMonth()) + 1;
+      if (monthSpan > 0 && (monthCount / monthSpan) < 0.5) return;
+
+      var monthly = _median(b.amounts);
+      var seenThisMonth = !!b.months[curKey];
+      // Months since last charge (0 = this month). A positive value on a
+      // qualifying recurring charge is the "maybe forgotten" signal.
+      var monthsSinceSeen = (now.getFullYear() - b.lastDate.getFullYear()) * 12
+                          + (now.getMonth() - b.lastDate.getMonth());
+
+      subs.push({
+        name: _cleanMerchant(b.desc),
+        category: b.category,
+        typical: monthly,
+        monthly: monthly,
+        annual: monthly * 12,
+        months: monthCount,
+        lastDate: b.lastDate,
+        seenThisMonth: seenThisMonth,
+        monthsSinceSeen: monthsSinceSeen,
+        // Gentle flag: recurred historically but not this month, and it is
+        // genuinely "due" (last seen at least a month ago).
+        forgotten: !seenThisMonth && monthsSinceSeen >= 1
+      });
+    });
+
+    // Active first, then forgotten; within each, largest annual cost first.
+    subs.sort(function(a,b){
+      if (a.forgotten !== b.forgotten) return a.forgotten ? 1 : -1;
+      return b.annual - a.annual;
+    });
+    return subs;
+  }
+
+  // Tidy a raw description into a readable subscription name: collapse
+  // whitespace, drop a trailing reference/number tail, cap length. Plain
+  // string in -> plain string out (rendered via textContent downstream).
+  function _cleanMerchant(s){
+    var t = String(s || '').replace(/\s+/g, ' ').trim();
+    // strip a trailing run of digits / ref punctuation (e.g. "Netflix 4829")
+    t = t.replace(/[\s\-_#·]*[\d׳״'\-.]{3,}$/, '').trim();
+    if (!t) t = String(s || '').replace(/\s+/g, ' ').trim();
+    if (t.length > 40) t = t.slice(0, 39).trim() + '…';
+    return t;
+  }
+
+  function renderSubscriptions(rows){
+    var bodyEl  = safeEl('subs-body');
+    var emptyEl = safeEl('subs-empty');
+    if (!bodyEl || !emptyEl) return;
+
+    var subs = detectSubscriptions(rows || []);
+
+    if (!subs.length) {
+      bodyEl.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    bodyEl.classList.remove('hidden');
+
+    var monthlyTotal = subs.reduce(function(s, x){ return s + x.monthly; }, 0);
+    var annualTotal  = subs.reduce(function(s, x){ return s + x.annual; }, 0);
+    var flaggedCount = subs.filter(function(x){ return x.forgotten; }).length;
+
+    var mTotEl = safeEl('subs-monthly-total');
+    if (mTotEl) mTotEl.textContent = moneyShekel(monthlyTotal);
+    var aTotEl = safeEl('subs-annual-total');
+    if (aTotEl) aTotEl.textContent = moneyShekel(annualTotal) + ' / שנה';
+    var cntEl = safeEl('subs-detected-count');
+    if (cntEl) cntEl.textContent = String(subs.length);
+
+    // Forgotten-subscription badge (header).
+    var badgeEl = safeEl('subs-flag-badge');
+    var flagCntEl = safeEl('subs-flag-count');
+    if (flagCntEl) flagCntEl.textContent = String(flaggedCount);
+    if (badgeEl) badgeEl.classList.toggle('hidden', flaggedCount === 0);
+
+    var listEl = safeEl('subs-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    subs.forEach(function(s){
+      var li = document.createElement('li');
+      li.className = 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border px-3 py-2.5 '
+        + (s.forgotten
+            ? 'border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10'
+            : 'border-ink-200 bg-ink-50 dark:border-ink-700 dark:bg-ink-700/40');
+
+      // Left: name + meta (category, months seen, last seen / forgotten note)
+      var left = document.createElement('div');
+      left.className = 'min-w-0 flex-1';
+
+      var nameRow = document.createElement('div');
+      nameRow.className = 'flex items-center gap-2 min-w-0';
+      var name = document.createElement('span');
+      name.className = 'truncate font-bold text-ink-800 dark:text-ink-100';
+      name.textContent = s.name;
+      name.title = s.name;
+      nameRow.appendChild(name);
+      if (s.forgotten) {
+        var pill = document.createElement('span');
+        pill.className = 'flex-shrink-0 rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-500/25 dark:text-amber-300';
+        pill.textContent = 'אולי נשכח?';
+        nameRow.appendChild(pill);
+      }
+      left.appendChild(nameRow);
+
+      var meta = document.createElement('div');
+      meta.className = 'mt-0.5 text-[11px] text-ink-500 dark:text-ink-400';
+      var bits = [];
+      if (s.category) bits.push(s.category);
+      bits.push(s.months + ' חודשים');
+      if (s.forgotten) {
+        bits.push('לא נראה ' + _heMonthName(s.lastDate) + ' — חיוב שחוזר אך לא נראה החודש');
+      } else {
+        bits.push('נראה לאחרונה: ' + _heMonthName(s.lastDate));
+      }
+      meta.textContent = bits.join(' · ');
+      left.appendChild(meta);
+
+      // Right: typical monthly = annualized
+      var right = document.createElement('div');
+      right.className = 'flex-shrink-0 text-left';
+      var perMonth = document.createElement('div');
+      perMonth.className = 'num text-sm font-black text-amber-600';
+      perMonth.textContent = moneyShekel(s.monthly) + ' / חודש';
+      var perYear = document.createElement('div');
+      perYear.className = 'num text-[11px] font-bold text-ink-500 dark:text-ink-400';
+      perYear.textContent = '= ' + moneyShekel(s.annual) + ' / שנה';
+      right.appendChild(perMonth);
+      right.appendChild(perYear);
+
+      li.appendChild(left);
+      li.appendChild(right);
+      listEl.appendChild(li);
+    });
+  }
+
+  // Full Hebrew month + year for "last seen" labels (e.g. "מרץ 2026").
+  var HE_MONTHS_LONG = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  function _heMonthName(d){
+    if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+    return HE_MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
   // ---- 7. MoM comparison ------------------------------------------------
   function renderMoM(rows){
     var now = new Date();
@@ -3774,6 +4053,7 @@ function generatePseudoSeries(target, n, intLike) {
     renderTrend(rows);
     renderDonut(h);
     renderRecurring(rows);
+    try { renderSubscriptions(rows); } catch (e) { /* never block the rest */ }
     renderMoM(rows);
     renderSplurges(rows);
     // Goals widget is a static placeholder (count stays 0 until backend lands).
