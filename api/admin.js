@@ -38,12 +38,27 @@ async function kvFetch(path, opts = {}) {
   return { ok: r.ok, status: r.status, ...j };
 }
 
+// Returns the matched keys, or `null` to SIGNAL a KV outage (so callers can
+// answer 503 instead of masking the failure as an empty result set).
+//
+// The distinction is critical for the admin dashboard: a scan that legitimately
+// finds zero keys must return [] (a healthy, empty result -> 200), while a
+// transport failure must be detectable. kvFetch reports an outage as
+// { ok:false, kvOutage:true } (missing env vars or a non-2xx KV response), so
+// if the VERY FIRST cursor fetch is not ok we never reached KV at all -> return
+// null. A failure on a later cursor (partial pagination) keeps the prior
+// behavior of returning the keys gathered so far.
 async function kvScan(pattern, count = 100) {
   let cursor = '0';
   const keys = [];
   for (let i = 0; i < 20; i++) {
     const r = await kvFetch(`/scan/${cursor}?match=${encodeURIComponent(pattern)}&count=${count}`);
-    if (!r.ok) break;
+    if (!r.ok) {
+      // First fetch failed -> we never reached a healthy KV: signal the outage
+      // so the handler returns 503 kv_outage rather than a misleading empty 200.
+      if (i === 0) return null;
+      break;
+    }
     cursor = r.result?.[0] || '0';
     const batch = r.result?.[1] || [];
     keys.push(...batch);
@@ -103,7 +118,11 @@ async function getUser(req, res) {
     return res.status(400).json({ ok: false, error: 'invalid_sub' });
   }
   const r = await kvFetch(`/get/${encodeURIComponent('user:' + sub)}`);
-  if (r.kvOutage) return kvOutage(res);
+  // Catch BOTH outage flavours: env-unconfigured (r.kvOutage) AND a runtime KV
+  // failure (r.ok === false with no flag). Otherwise a real outage falls through
+  // to a misleading 404 user_not_found instead of a 503 — same masking class as
+  // the kvScan bug. r.result null on a healthy KV still correctly yields 404.
+  if (!r.ok) return kvOutage(res);
   const user = r.result ? JSON.parse(r.result) : null;
   if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
   return res.status(200).json({ ok: true, user: sanitizeUser(user) });
@@ -172,6 +191,7 @@ async function registrationHealth(req, res) {
   // phone records are broken (point at a sub whose canonical sheet is missing or
   // disagrees with the phone record's spreadsheetId).
   const phoneKeys = await kvScan('phone:*');
+  if (phoneKeys === null) return kvOutage(res); // KV went down mid-request — fail loud, don't report a partial picture
   const phoneRecs = phoneKeys.length ? await kvMget(phoneKeys) : [];
   const phoneLinkedSubs = new Set();
   const brokenPhone = [];
@@ -397,7 +417,9 @@ async function setFeatureFlag(req, res) {
   const value = body?.value;
   if (!key || !/^[a-z0-9_\-.]+$/i.test(key)) return res.status(400).json({ ok: false, error: 'invalid_key' });
   const r = await kvFetch(`/set/${encodeURIComponent('flag:' + key)}`, { method: 'POST', body: { value, updatedAt: new Date().toISOString(), by: req.user.email } });
-  if (r.kvOutage) return kvOutage(res);
+  // Same fix as getUser: a runtime KV failure (r.ok === false, no kvOutage flag)
+  // must 503, not falsely 200 "saved" when the SET never landed.
+  if (!r.ok) return kvOutage(res);
   log.info('admin.flag_set', { reqId: req.reqId, key, value, by: req.user.email });
   return res.status(200).json({ ok: true, key, value });
 }
