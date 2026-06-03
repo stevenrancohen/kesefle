@@ -29,6 +29,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { appendRowToUserSheet, buildExpenseRow } from '../../lib/sheet-writer.js';
+import { recordExpenseActivity } from '../../lib/user-activity.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -192,6 +193,17 @@ async function handlerImpl(req, res) {
   }
 
   log.info('append.ok', { reqId: req.reqId, phone, rowIndex: result.rowIndex, userSub: userRecord.userSub, spreadsheetId: userRecord.spreadsheetId });
+
+  // Activation telemetry: bump expensesCount + stamp lastActive on the
+  // canonical user:{userSub} record so the lifecycle email cron
+  // (api/cron/lifecycle.js) can actually gate on them. Without this the
+  // day-1 / day-7 / weekly-digest / inactivity emails never fire. We pass the
+  // `userRec` we ALREADY fetched above (line ~120) so this costs exactly ONE
+  // extra KV SET per expense — no second GET. Best-effort + never throws, so a
+  // KV hiccup here cannot break a write the user already saw succeed.
+  try {
+    await recordExpenseActivity({ userSub: phoneRec.userSub, currentRecord: userRec });
+  } catch (_actErr) { /* telemetry must never break a write */ }
 
   // Anomaly detector (defense-in-depth): a PERSONAL sheet should only ever be
   // written by ONE userSub (family expense-sharing goes through /api/group, not

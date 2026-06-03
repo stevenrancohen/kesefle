@@ -16,6 +16,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { requireAuth } from '../../lib/auth.js';
 import { appendRowToUserSheet, buildExpenseRow } from '../../lib/sheet-writer.js';
+import { recordExpenseActivity } from '../../lib/user-activity.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -92,6 +93,15 @@ async function handlerImpl(req, res) {
   }
 
   log.info('web_append.ok', { reqId: req.reqId, userSub, spreadsheetId, rowIndex: result.rowIndex });
+
+  // Activation telemetry: same as /api/sheet/append — bump expensesCount +
+  // stamp lastActive on user:{userSub} so the lifecycle cron's day-1/day-7/
+  // weekly-digest/inactivity gates work for web-form expenses too. Reuses the
+  // `userRec` already fetched above (line ~58): one extra KV SET, no extra GET.
+  try {
+    await recordExpenseActivity({ userSub, currentRecord: userRec });
+  } catch (_actErr) { /* telemetry must never break a write */ }
+
   return res.status(200).json({
     ok: true,
     rowIndex: result.rowIndex,
