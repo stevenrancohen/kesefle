@@ -26,7 +26,7 @@ in code — or that the prior audit got wrong — is called out in **⚠️ FLAG
 
 **Why:** the bot is a Google Apps Script that does **not** auto-deploy. Pushing to
 GitHub changes nothing live until you paste + re-deploy by hand. The latest bot
-build (`KFL_BUILD_VERSION = '2026-06-03-confirm-always-dropdown-no-sheet-url'`,
+build (`KFL_BUILD_VERSION = '2026-06-02-labeled-orders'`,
 `bot/ExpenseBot_DEPLOY.gs:137`) carries the queued fixes — including the
 account-linking flow where a new user sends `קוד NNNNNN` to the bot to connect
 their WhatsApp to their account (`api/whatsapp/link.js:3-17`; deep link built at
@@ -40,7 +40,7 @@ their WhatsApp to their account (`api/whatsapp/link.js:3-17`; deep link built at
 > `docs/REVENUE_BLOCKER_SELF_SERVE_AUDIT_2026-06-03.md:53-59`.)
 
 ### Current deployed version to expect
-- `KFL_BUILD_VERSION = '2026-06-03-confirm-always-dropdown-no-sheet-url'`
+- `KFL_BUILD_VERSION = '2026-06-02-labeled-orders'`
   (`bot/ExpenseBot_DEPLOY.gs:137`; identical in `bot/ExpenseBot_FIXED.gs:62` — the
   two files are in sync). After deploy, the bot's "version" line should read this
   exact string (the bot prints `'גרסה: ' + KFL_BUILD_VERSION`,
@@ -62,7 +62,7 @@ Source of truth: `docs/DEPLOY_BOT_SIMPLE.md`.
 
 ### Verify
 - WhatsApp the bot a quick expense (e.g. `42 קפה`) — it should reply, and any
-  "version" line should show `2026-06-03-confirm-always-dropdown-no-sheet-url`.
+  "version" line should show `2026-06-02-labeled-orders`.
 
 ### Emergency stop (good to know)
 - To instantly halt all bot writes without redeploying: in Apps Script →
@@ -131,6 +131,12 @@ There is a built-in admin helper. Signed in as admin on **kesefle.com**, open th
 >    (b) leave them unset and accept that "annual" buyers are billed monthly
 >    (the safe fallback above). There is no code button that creates the annual
 >    plans today.
+>
+> **UPDATE — after you merge the wave-4 PR #259:** that PR upgrades `setup-plans`
+> to create **all FOUR** plans automatically (Pro + Family, monthly **and** annual
+> — 19/190/39/390) and return all 4 IDs. So once #259 is merged + redeployed, the
+> manual annual step above is no longer needed: just click "Create PayPal plans"
+> and paste all four IDs into Vercel.
 
 ### 2.3 The webhook
 - **Webhook URL to register in PayPal:**
