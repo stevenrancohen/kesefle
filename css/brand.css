@@ -223,6 +223,40 @@ html.dark .kfl-chip-info { background: rgba(14,116,144,0.18); color: #67E8F9; bo
 .kfl-chip-neutral { background: #F8FAFC; color: #475569; border-color: #E2E8F0; }
 html.dark .kfl-chip-neutral { background: rgba(71,85,105,0.18); color: #CBD5E1; border-color: rgba(226,232,240,0.35); }
 
+/* ====================================================================
+   Critical first-paint fallback (added 2026-06-03, FE/SEO polish audit).
+
+   Every public page styles itself through the Tailwind PLAY CDN
+   (<script src="https://cdn.tailwindcss.com">), which is a render-
+   blocking script: if that CDN is slow or unreachable the page paints
+   as unstyled black serif text on white (FOUC).
+
+   brand.css is a LOCAL stylesheet (served by Vercel, not the CDN), so
+   these base element rules are available on first paint regardless of
+   the CDN. They mirror the values the Tailwind utilities on <body>
+   (bg-ink-50 / text-ink-900 / Heebo) would produce, so once Tailwind
+   loads nothing shifts -- the loaded look is identical.
+
+   Scope is intentionally tiny: base typography + background + RTL only.
+   NO layout utilities here (those stay the CDN's job) so we never fight
+   Tailwind's specificity. Light-mode is the default; dark is opt-in via
+   the existing `.dark` class the site already toggles. */
+html { background-color: #f7f8fb; }
+html.dark { background-color: #070b16; }
+body {
+  font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #0f1422;
+  background-color: #f7f8fb;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+html.dark body { color: #ffffff; background-color: #070b16; }
+/* Keep Hebrew pages RTL on first paint even before Tailwind/attribute
+   styling settles (pages already set dir="rtl" on <html>; this is a
+   belt-and-suspenders default for the body box). */
+[dir="rtl"] body { direction: rtl; }
+
 /* Modifier: subtle gradient backdrop for premium chips on hero/CTAs.
    Use sparingly -- it's eye-catching by design. */
 .kfl-chip-premium.kfl-chip-gradient {
