@@ -50,8 +50,12 @@ assert(/action:\s*['"]set['"]/.test(BOT), 'confirm step calls /api/objectives/ac
 
 console.log('\nVersion + DEPLOY.gs sync:');
 const v = (BOT.match(/KFL_BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/) || [])[1];
-assert(/menu-first|wizard/.test(v || ''),
-  'KFL_BUILD_VERSION mentions menu-first/wizard (currently: ' + v + ')');
+// The version string should describe the LATEST change, so we assert it is a
+// well-formed dated build (YYYY-MM-DD-...) rather than pinning a specific old
+// feature keyword -- pinning "menu-first/wizard" forever breaks every later
+// version bump that (correctly) describes a newer change.
+assert(/^\d{4}-\d{2}-\d{2}-.+/.test(v || ''),
+  'KFL_BUILD_VERSION is a dated build string (currently: ' + v + ')');
 const DEPLOY = fs.readFileSync(path.join(__dirname, 'ExpenseBot_DEPLOY.gs'), 'utf8');
 assert(/_handlePendingFlowStep_/.test(DEPLOY), 'DEPLOY.gs contains _handlePendingFlowStep_');
 assert((DEPLOY.match(/function doPost/g) || []).length === 1, 'DEPLOY.gs has exactly 1 doPost');
