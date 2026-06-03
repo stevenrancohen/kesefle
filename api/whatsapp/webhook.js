@@ -15,6 +15,7 @@ import { constantTimeEqual } from '../../lib/crypto.js';
 import { rateLimit } from '../../lib/ratelimit.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { buildExpenseRow, appendRowToUserSheet } from '../../lib/sheet-writer.js';
+import { recordExpenseActivity } from '../../lib/user-activity.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -449,6 +450,16 @@ async function writeToUserSheet(userRecord, parsed, rawText, messageId) {
     }
     return result;
   }
+
+  // Activation telemetry: bump expensesCount + stamp lastActive on
+  // user:{userSub} so the lifecycle cron's day-1/day-7/weekly-digest/inactivity
+  // gates work. Reuses `userRec` fetched above — one extra KV SET, no extra GET.
+  // (This webhook path is dead today, but keeping it correct means activation
+  // tracking works automatically if Meta is ever pointed back here.)
+  try {
+    await recordExpenseActivity({ userSub, currentRecord: userRec });
+  } catch (_actErr) { /* telemetry must never break a write */ }
+
   return result;
 }
 

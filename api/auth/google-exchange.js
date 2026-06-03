@@ -157,6 +157,9 @@ async function handlerImpl(req, res) {
   // Shared by BOTH the user: record and the token: record, so neither ever
   // stores the refresh token in plaintext at rest.
   let sharedRefreshEnvelope = null;
+  // Hoisted to function scope so the welcome-email send below the KV block can
+  // gate on "is this the user's very first signup" (set inside the block).
+  let isNewUser = false;
   if (tokens.refresh_token && kvUrl && kvToken) {
     try {
       // SECURITY: Encrypt refresh token at rest using AES-256-GCM with AAD bound to userSub.
@@ -174,7 +177,7 @@ async function handlerImpl(req, res) {
       // MERGE into the existing record (don't clobber). Preserves plan,
       // stripeCustomerId, subscriptionStatus, referral data, etc. on re-login.
       const existing = await kvGetUser(kvUrl, kvToken, identity.sub);
-      const isNewUser = !existing;
+      isNewUser = !existing;
       const nowIso = new Date().toISOString();
       const record = {
         ...(existing || {}),
@@ -249,6 +252,55 @@ async function handlerImpl(req, res) {
     setSessionCookie(res, identity.sub);
   } catch (e) {
     log.error('session_cookie_failed', { reqId: req.reqId, error: e.message });
+  }
+
+  // Welcome email — SEQUENCE.md item #0: fire on account creation, immediate,
+  // transactional. The lifecycle cron only starts at day-1, so without this the
+  // brand-new user gets nothing from us by email. Only for genuinely NEW users
+  // (isNewUser, set during the KV record write above). Guarded in KV so we never
+  // double-send even across retries / replays. env-fail-soft: sendTemplate()
+  // no-ops to { skipped:true } when RESEND_API_KEY is unset (never throws), and
+  // we still record the guard on a skip so a later config doesn't backfill a
+  // burst of stale welcomes. Entirely best-effort — never blocks the response.
+  if (isNewUser && identity.email && kvUrl && kvToken) {
+    try {
+      const welcomeGuardKey = 'welcome_email_sent:' + identity.sub;
+      const guardRes = await fetch(`${kvUrl}/get/${encodeURIComponent(welcomeGuardKey)}`, {
+        headers: { 'Authorization': `Bearer ${kvToken}` },
+      });
+      const guardJson = await guardRes.json().catch(() => ({}));
+      if (!guardJson?.result) {
+        const { sendTemplate } = await import('../../lib/email.js');
+        const firstName = identity.name
+          ? String(identity.name).split(/\s+/)[0]
+          : String(identity.email).split('@')[0];
+        const sendResult = await sendTemplate({
+          to: identity.email,
+          template: 'welcome',
+          vars: {
+            firstName,
+            userEmail: identity.email,
+            unsubscribeUrl: `https://kesefle.com/unsubscribe?sub=${encodeURIComponent(identity.sub)}`,
+          },
+        });
+        if (sendResult.ok || sendResult.skipped) {
+          // Record both a real send and a "skipped because email unconfigured"
+          // so re-signups / retries don't re-attempt. 1-year TTL (a user only
+          // signs up once; the guard self-expires so KV doesn't grow forever).
+          await fetch(`${kvUrl}/set/${encodeURIComponent(welcomeGuardKey)}?EX=${365 * 24 * 3600}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ at: new Date().toISOString(), id: sendResult.id || null, skipped: !!sendResult.skipped }),
+          }).catch(() => {});
+          log.info('exchange.welcome_email', { reqId: req.reqId, userSub: identity.sub, sent: !!sendResult.ok, skipped: !!sendResult.skipped });
+        } else {
+          log.warn('exchange.welcome_email_failed', { reqId: req.reqId, userSub: identity.sub, error: sendResult.error });
+        }
+      }
+    } catch (welcomeErr) {
+      // Never let the welcome path affect signup success.
+      log.warn('exchange.welcome_email_threw', { reqId: req.reqId, userSub: identity.sub, error: welcomeErr.message });
+    }
   }
 
   return res.status(200).json({

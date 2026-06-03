@@ -69,6 +69,8 @@ const UNIT_SUITES = [
   'tests/test_taxonomy_normalize.js',                // classifier: category taxonomy normalization
   'tests/test_currency_hardcoded_ils_contract.js',   // currency contract (ILS) stays intact
   'tests/test_ratelimit_arg_order.js',               // ratelimit arg-order regression guard
+  // backend-activation (#225): activation/onboarding plumbing wiring guard.
+  'tests/test_activation_plumbing.js',               // activation: backend plumbing wired correctly
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {
