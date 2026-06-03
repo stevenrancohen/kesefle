@@ -315,7 +315,17 @@ async function exportAccount(req, res) {
         }
       }
     } catch (e) {
-      sheetReadError = e.message;
+      // Don't surface the raw exception text to the client: decrypt / token
+      // failures throw messages that name internal env vars + key IDs
+      // (e.g. "crypto: KESEFLE_DB_KEY_ACTIVE_KID=... not present in keyring",
+      // "crypto.decrypt: authentication failed"). Return a stable, generic
+      // classification in the export doc; log the real detail server-side for
+      // operators. The export still succeeds — transactions just come back
+      // empty with a machine-readable reason.
+      sheetReadError = /crypto|decrypt|envelope|keyring|KEK/i.test(String(e && e.message))
+        ? 'token_decrypt_failed'
+        : 'sheet_read_failed';
+      log.warn('account.export_sheet_read_failed', { reqId: req.reqId, userSub, reason: sheetReadError, err: e && e.message });
     }
   }
 
