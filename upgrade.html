@@ -66,6 +66,18 @@ tailwind.config = {
   .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
   .confetti span { position: absolute; width: 10px; height: 10px; border-radius: 2px; animation: fall 3.5s linear forwards; opacity: 0.9; }
   @keyframes fall { 0% { transform: translateY(-10vh) rotate(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+  /* Respect reduced-motion: drop the confetti fall + heading animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .confetti span { animation: none; opacity: 0; }
+  }
+  /* === Keyboard focus ring (a11y 2.4.7) ===
+     Keyboard-only via :focus-visible (mouse/touch users see no change).
+     This page is light-mode only, so a single brand-blue ring suffices. */
+  a:focus-visible, button:focus-visible, [role="button"]:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 </style>
 </head>
 <body class="bg-ink-50 text-ink-900 min-h-screen flex flex-col">

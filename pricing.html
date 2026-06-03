@@ -214,6 +214,22 @@
     .kfl-lift:hover { transform: none; }
     .animate-blob, .pulse-glow { animation: none !important; }
   }
+  /* === Keyboard focus ring (a11y 2.4.7) ===
+     Keyboard-only via :focus-visible, so mouse/touch users see no change.
+     A consistent brand-blue ring on every interactive element; offset keeps
+     it clear of the element's own rounded border. */
+  a:focus-visible, button:focus-visible, [role="button"]:focus-visible,
+  input:focus-visible, select:focus-visible, textarea:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .dark a:focus-visible, .dark button:focus-visible, .dark [role="button"]:focus-visible,
+  .dark input:focus-visible, .dark select:focus-visible, .dark textarea:focus-visible,
+  .dark summary:focus-visible {
+    outline-color: #7dd3fc;
+  }
 </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#6366F1">
@@ -386,6 +402,11 @@
 <!-- ============== PRICING TIERS ============== -->
 <section id="tiers" class="bg-ink-50 pb-20 dark:bg-ink-950 scroll-mt-24">
   <div class="mx-auto max-w-6xl px-5">
+
+    <!-- Section heading for assistive tech: the tier cards below are <h3>, so
+         this visually-hidden <h2> keeps the document outline from skipping a
+         level (h1 -> h2 -> h3) without altering the visual design. -->
+    <h2 class="sr-only">המסלולים והמחירים</h2>
 
     <!-- Annual/monthly toggle (above the tier grid) -->
     <div class="mb-8 flex justify-center">
