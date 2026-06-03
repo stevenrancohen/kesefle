@@ -492,6 +492,91 @@
       </div>
     </div>
 
+    <!-- Row 0.5: Spending forecast + 3-month category trends -------------
+         Complements the Smart Insights strip above (which is point-in-time:
+         top category / MoM / biggest expense / budget status) and the
+         6-month total-spend line chart below. This row is FORWARD-looking:
+         it projects the month-end total from the month-to-date pace
+         (days elapsed vs days in month), flags on-track / over-pace vs the
+         user's total budget when one is set, lists a simple up/down/flat
+         direction per top category over the last 3 full-ish months, and
+         prints one plain-Hebrew takeaway. Computed client-side from the
+         same `rows` already fetched -- NO extra network call. All data text
+         is written via textContent (XSS-safe). The empty state shows for a
+         first-time user with nothing logged this month yet. -->
+    <div class="mb-4">
+      <div class="mb-3 flex items-center gap-2">
+        <span class="text-lg" aria-hidden="true">🔮</span>
+        <h3 class="text-base font-black tracking-tight text-ink-900 dark:text-white">תחזית ומגמות</h3>
+      </div>
+
+      <!-- First-time / no-data-this-month state -->
+      <div id="forecast-empty" class="hidden rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
+        <div class="text-3xl" aria-hidden="true">📅</div>
+        <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עוד אין מספיק נתונים לתחזית</div>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד/י כמה הוצאות החודש — ונראה לך לאן אתה בקצב הזה.</p>
+      </div>
+
+      <!-- Forecast grid -->
+      <div id="forecast-grid" class="hidden grid gap-4 lg:grid-cols-3">
+
+        <!-- Projection card (wide): month-end pace + on-track signal + takeaway -->
+        <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft lg:col-span-2 dark:border-ink-700 dark:bg-ink-800">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-brand-50 text-base dark:bg-brand-500/15" aria-hidden="true">📈</span>
+              <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">תחזית הוצאות לסוף החודש</div>
+            </div>
+            <!-- on-track / over-pace pill; revealed only when we have a budget to compare -->
+            <div id="forecast-pace-pill" class="hidden rounded-full px-3 py-1 text-xs font-bold">—</div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3">
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">צפי לסוף החודש</div>
+              <div class="num mt-0.5 text-3xl font-black text-ink-900 dark:text-white" id="forecast-projected">—</div>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">הוצאת עד עכשיו</div>
+              <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="forecast-mtd">—</div>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">ממוצע ליום</div>
+              <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="forecast-daily">—</div>
+            </div>
+          </div>
+
+          <!-- Month progress bar: portion of the month elapsed -->
+          <div class="mt-4">
+            <div class="mb-1 flex items-center justify-between text-[10px] font-bold text-ink-500 dark:text-ink-500">
+              <span id="forecast-days-label">—</span>
+              <span id="forecast-progress-pct" class="num">—</span>
+            </div>
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-ink-200 dark:bg-ink-700">
+              <div id="forecast-progress-bar" class="h-full bg-brand-500 transition-all duration-700" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- One-line plain-Hebrew takeaway -->
+          <div class="mt-4 flex items-start gap-2 rounded-xl bg-brand-50 px-3 py-2.5 dark:bg-brand-500/10">
+            <span class="text-base leading-5" aria-hidden="true">💡</span>
+            <p class="text-sm font-semibold leading-5 text-ink-700 dark:text-ink-200" id="forecast-takeaway">—</p>
+          </div>
+        </div>
+
+        <!-- 3-month trend per top category -->
+        <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="flex items-center gap-2">
+            <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-accent-500/10 text-base" aria-hidden="true">📊</span>
+            <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מגמה ל-3 חודשים</div>
+          </div>
+          <p class="mt-1 text-[11px] text-ink-500 dark:text-ink-500">לפי הקטגוריות המובילות שלך</p>
+          <ul id="forecast-trend-list" class="mt-4 space-y-2.5"></ul>
+          <div id="forecast-trend-empty" class="hidden mt-4 text-xs text-ink-500 dark:text-ink-400">אין מספיק היסטוריה לזיהוי מגמה.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 1: Health Score (wide) + Cash Flow -->
     <div class="grid gap-4 lg:grid-cols-3">
 
@@ -3172,12 +3257,29 @@ function generatePseudoSeries(target, n, intLike) {
       if (!names.length) {
         // Mirror the no-budgets state into the Smart Insights strip.
         try { _renderBudgetInsight(cats, {}); } catch (e) { /* never block */ }
+        // No budgets -> the forecast pace pill has nothing to compare against.
+        try { _forecastBudgetTotal = 0; _applyForecastPace(); } catch (e) { /* never block */ }
         showEmpty();
         return;
       }
       var mtd = computeMtdByCategory(rows);
       // Feed the same budgets+MTD data into the Smart Insights budget card.
       try { _renderBudgetInsight(cats, mtd); } catch (e) { /* never block */ }
+      // Feed the total monthly budget into the forecast pace pill, then refresh
+      // it (renderForecast ran earlier, before this async fetch resolved).
+      try {
+        var _capTotal = 0;
+        names.forEach(function(n){ _capTotal += Number(cats[n] && cats[n].cap) || 0; });
+        _forecastBudgetTotal = _capTotal;
+        // Re-run the takeaway too so its budget clause picks up the new total.
+        if (typeof window.__kflLastRows !== 'undefined' && window.__kflLastRows) {
+          var _f = computeForecast(window.__kflLastRows);
+          var _t = compute3MonthTrends(window.__kflLastRows);
+          var _tk = safeEl('forecast-takeaway');
+          if (_tk && _f.hasData) _tk.textContent = _forecastTakeaway(_f, _t);
+        }
+        _applyForecastPace();
+      } catch (e) { /* never block */ }
       // Sort: highest percentage first so the at-risk categories pop visually.
       names.sort(function(a, b){
         var pa = Number(cats[a].cap) > 0 ? (Number(mtd[a] || 0) / Number(cats[a].cap)) : 0;
@@ -3381,12 +3483,293 @@ function generatePseudoSeries(target, n, intLike) {
   // assignment makes the dependency explicit and survives any reorder).
   _renderBudgetInsight._isInsightHelper = true;
 
+  // ---- 13b. Spending forecast + 3-month category trends -----------------
+  // Forward-looking complement to the (point-in-time) Smart Insights strip
+  // and the 6-month total line chart. Reuses the same `rows` -- no fetch.
+  //
+  // (1) computeForecast: month-to-date expenses + a straight-line projection
+  //     of the month-end total from the current daily pace. We deliberately
+  //     ignore income (amount < 0) so the projection is SPEND, matching the
+  //     "biggest expense" / budget cards. Early in the month a single big
+  //     purchase would wildly inflate the projection, so we only show a
+  //     projection once at least `MIN_DAYS_FOR_PROJECTION` days have elapsed;
+  //     before that we still show MTD but mark the projection as not-ready.
+  var _forecastBudgetTotal = 0;   // sum of all category caps, set by renderBudgets
+  var _forecastProjectedCache = 0; // last projected month-end total, for the pace pill
+
+  function _daysInMonth(y, m){ return new Date(y, m + 1, 0).getDate(); }
+
+  function computeForecast(rows){
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth();
+    var dim = _daysInMonth(y, m);
+    // Day-of-month, clamped to [1..dim]. Treat "today" as a full day elapsed so
+    // the pace isn't divided by a fractional day.
+    var dayOfMonth = Math.min(Math.max(now.getDate(), 1), dim);
+
+    var mtd = 0;
+    rows.forEach(function(r){
+      var d = parseDate(r && r.date);
+      if (!d) return;
+      if (d.getFullYear() !== y || d.getMonth() !== m) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return; // expenses only
+      mtd += amt;
+    });
+
+    var dailyPace = dayOfMonth > 0 ? mtd / dayOfMonth : 0;
+    var projected = Math.round(dailyPace * dim);
+    // Projection is only meaningful once a few days have passed (avoid a single
+    // day-1 purchase implying a 30x month). MTD itself is always real.
+    var MIN_DAYS_FOR_PROJECTION = 3;
+    var projectionReady = dayOfMonth >= MIN_DAYS_FOR_PROJECTION;
+
+    return {
+      hasData: mtd > 0,
+      mtd: Math.round(mtd),
+      projected: projected,
+      dailyPace: Math.round(dailyPace),
+      dayOfMonth: dayOfMonth,
+      daysInMonth: dim,
+      daysLeft: Math.max(0, dim - dayOfMonth),
+      monthProgress: Math.round(dayOfMonth / dim * 100),
+      projectionReady: projectionReady
+    };
+  }
+
+  // (2) compute3MonthTrends: for the top categories by recent spend, derive a
+  //     simple up / down / flat direction across the last 3 calendar months.
+  //     The current month is partial, so we scale it to a full-month estimate
+  //     (by the same pace logic) ONLY for the comparison, so a category isn't
+  //     called "down" just because the month isn't over. Direction is the
+  //     change from the earliest month-with-data to the latest, with a flat
+  //     band of +-FLAT_BAND so tiny wiggles read as "flat".
+  function compute3MonthTrends(rows){
+    var now = new Date();
+    var dim = _daysInMonth(now.getFullYear(), now.getMonth());
+    var dayOfMonth = Math.min(Math.max(now.getDate(), 1), dim);
+    var paceScale = dim / dayOfMonth; // multiply the partial current month up
+
+    // Month buckets: index 0 = two months ago, 1 = last month, 2 = this month.
+    var keys = [];
+    for (var i = 2; i >= 0; i--) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      keys.push(ym(d));
+    }
+    var curKey = keys[2];
+
+    // byCat[cat] = [m-2, m-1, m] expense totals.
+    var byCat = Object.create(null);
+    rows.forEach(function(r){
+      var d = parseDate(r && r.date);
+      if (!d) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return;
+      var k = ym(d);
+      var idx = keys.indexOf(k);
+      if (idx < 0) return;
+      var cat = String((r.category || 'אחר')).trim() || 'אחר';
+      if (!byCat[cat]) byCat[cat] = [0, 0, 0];
+      byCat[cat][idx] += amt;
+    });
+
+    // Rank categories by total spend across the window, keep the top few.
+    var cats = Object.keys(byCat);
+    cats.sort(function(a, b){
+      var sa = byCat[a][0] + byCat[a][1] + byCat[a][2];
+      var sb = byCat[b][0] + byCat[b][1] + byCat[b][2];
+      return sb - sa;
+    });
+
+    var FLAT_BAND = 0.08; // +-8% reads as "flat"
+    var out = [];
+    cats.slice(0, 4).forEach(function(cat){
+      var vals = byCat[cat].slice();
+      // Scale the (partial) current month up to a full-month estimate so the
+      // comparison is apples-to-apples.
+      var comp = vals.slice();
+      comp[2] = comp[2] * paceScale;
+
+      // Earliest non-zero month vs the latest (current, scaled).
+      var firstIdx = -1;
+      for (var i = 0; i < comp.length; i++) { if (comp[i] > 0) { firstIdx = i; break; } }
+      if (firstIdx < 0) return;
+      var first = comp[firstIdx];
+      var last = comp[2];
+      var ratio = first > 0 ? (last / first - 1) : 0;
+
+      var dir = 'flat';
+      if (ratio > FLAT_BAND) dir = 'up';
+      else if (ratio < -FLAT_BAND) dir = 'down';
+      // Only one month of data -> can't call a trend.
+      var monthsWithData = comp.filter(function(v){ return v > 0; }).length;
+      if (monthsWithData < 2) dir = 'flat';
+
+      out.push({
+        cat: cat,
+        dir: dir,
+        pct: Math.round(Math.abs(ratio) * 100),
+        current: Math.round(vals[2]),         // real (partial) current-month spend
+        monthsWithData: monthsWithData
+      });
+    });
+    return out;
+  }
+
+  // Apply the on-track / over-pace pill against the total monthly budget (if
+  // the user has any budgets set). Split out so renderBudgets can re-invoke it
+  // once its async /api/budgets fetch lands (renderForecast runs first).
+  function _applyForecastPace(){
+    var pill = safeEl('forecast-pace-pill');
+    if (!pill) return;
+    var projected = _forecastProjectedCache;
+    var budget = _forecastBudgetTotal;
+    if (!(budget > 0) || !(projected > 0)) {
+      pill.classList.add('hidden');
+      return;
+    }
+    pill.classList.remove('hidden');
+    var ratio = projected / budget;
+    if (ratio > 1.05) {
+      pill.textContent = 'בקצב חריגה';
+      pill.className = 'rounded-full px-3 py-1 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300';
+    } else if (ratio >= 0.95) {
+      pill.textContent = 'גבולי';
+      pill.className = 'rounded-full px-3 py-1 text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300';
+    } else {
+      pill.textContent = 'בקצב טוב';
+      pill.className = 'rounded-full px-3 py-1 text-xs font-bold bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300';
+    }
+  }
+  _applyForecastPace._isForecastHelper = true;
+
+  // Builds the one-line plain-Hebrew takeaway. Numbers are isolated LTR via the
+  // shekel formatter; the whole string is set with textContent by the caller.
+  function _forecastTakeaway(f, trends){
+    if (!f.projectionReady) {
+      return 'תעד/י עוד כמה ימים ונראה לאן אתה בקצב הזה (עד עכשיו: ' + moneyShekel(f.mtd) + ').';
+    }
+    var msg = 'בקצב הזה תסיים את החודש על כ-' + moneyShekel(f.projected) + '.';
+    // Add a budget-aware clause when we know the total budget.
+    if (_forecastBudgetTotal > 0) {
+      var over = f.projected - _forecastBudgetTotal;
+      if (over > 0) {
+        msg += ' זה כ-' + moneyShekel(over) + ' מעל התקציב הכולל.';
+      } else {
+        msg += ' זה בתוך התקציב הכולל (נשאר כ-' + moneyShekel(-over) + ').';
+      }
+    } else {
+      // No budget -> point at the strongest rising category, if any.
+      var rising = null;
+      (trends || []).forEach(function(t){
+        if (t.dir === 'up' && (!rising || t.pct > rising.pct)) rising = t;
+      });
+      if (rising && rising.pct >= 10) {
+        msg += ' שים/י לב: ' + rising.cat + ' עולה (+' + rising.pct + '%).';
+      }
+    }
+    return msg;
+  }
+
+  function renderForecast(rows){
+    var gridEl = safeEl('forecast-grid');
+    var emptyEl = safeEl('forecast-empty');
+    if (!gridEl || !emptyEl) return;
+
+    var f = computeForecast(rows || []);
+    if (!f.hasData) {
+      gridEl.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+      _forecastProjectedCache = 0;
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    gridEl.classList.remove('hidden');
+
+    // Cache the projection so the budget pill can be applied now and again when
+    // budgets resolve.
+    _forecastProjectedCache = f.projectionReady ? f.projected : 0;
+
+    // Headline projected total (or MTD-only label when it's too early to project).
+    var projEl = safeEl('forecast-projected');
+    if (projEl) {
+      if (f.projectionReady) projEl.textContent = moneyShekel(f.projected);
+      else projEl.textContent = '—';
+    }
+    var mtdEl = safeEl('forecast-mtd');
+    if (mtdEl) mtdEl.textContent = moneyShekel(f.mtd);
+    var dailyEl = safeEl('forecast-daily');
+    if (dailyEl) dailyEl.textContent = moneyShekel(f.dailyPace);
+
+    // Month progress bar + labels.
+    var daysLabel = safeEl('forecast-days-label');
+    if (daysLabel) daysLabel.textContent = 'יום ' + f.dayOfMonth + ' מתוך ' + f.daysInMonth + ' · נשארו ' + f.daysLeft + ' ימים';
+    var pctEl = safeEl('forecast-progress-pct');
+    if (pctEl) pctEl.textContent = f.monthProgress + '% מהחודש';
+    var barEl = safeEl('forecast-progress-bar');
+    if (barEl) barEl.style.width = Math.min(100, Math.max(0, f.monthProgress)) + '%';
+
+    // 3-month per-category trend list.
+    var trends = compute3MonthTrends(rows || []);
+    var listEl = safeEl('forecast-trend-list');
+    var trendEmpty = safeEl('forecast-trend-empty');
+    if (listEl) {
+      listEl.innerHTML = '';
+      var shown = trends.filter(function(t){ return t.current > 0 || t.monthsWithData >= 2; });
+      if (!shown.length) {
+        listEl.classList.add('hidden');
+        if (trendEmpty) trendEmpty.classList.remove('hidden');
+      } else {
+        listEl.classList.remove('hidden');
+        if (trendEmpty) trendEmpty.classList.add('hidden');
+        shown.forEach(function(t){
+          // up = more spending = red; down = less = brand (good); flat = ink.
+          var arrow = t.dir === 'up' ? '▲' : (t.dir === 'down' ? '▼' : '=');
+          var clr = t.dir === 'up' ? 'text-red-600' : (t.dir === 'down' ? 'text-brand-600' : 'text-ink-500 dark:text-ink-400');
+          var label = t.dir === 'flat' ? 'יציב' : (arrow + ' ' + t.pct + '%');
+
+          var li = document.createElement('li');
+          li.className = 'flex items-center justify-between gap-2 rounded-xl bg-ink-50 px-3 py-2 dark:bg-ink-700/40';
+          var name = document.createElement('div');
+          name.className = 'truncate text-sm font-bold text-ink-700 dark:text-ink-200';
+          name.textContent = t.cat;
+          name.title = t.cat;
+          var right = document.createElement('div');
+          right.className = 'flex items-baseline gap-2 flex-shrink-0';
+          var amt = document.createElement('span');
+          amt.className = 'num text-xs font-bold text-ink-500 dark:text-ink-400';
+          amt.textContent = moneyShekel(t.current);
+          var tag = document.createElement('span');
+          tag.className = 'num text-sm font-black ' + clr;
+          tag.textContent = label;
+          right.appendChild(amt);
+          right.appendChild(tag);
+          li.appendChild(name);
+          li.appendChild(right);
+          listEl.appendChild(li);
+        });
+      }
+    }
+
+    // Plain-Hebrew takeaway.
+    var takeawayEl = safeEl('forecast-takeaway');
+    if (takeawayEl) takeawayEl.textContent = _forecastTakeaway(f, trends);
+
+    // Budget pill (uses whatever budget total we already know; renderBudgets
+    // calls _applyForecastPace again once /api/budgets resolves).
+    _applyForecastPace();
+  }
+
   function renderAnalytics(rows){
     if (!rows || !rows.length) return;
+    // Stash the rows so the async budgets fetch can recompute the forecast
+    // takeaway with the total-budget clause once it resolves (see renderBudgets).
+    try { window.__kflLastRows = rows; } catch (e) { /* non-fatal */ }
     var h = computeHealth(rows);
     renderHealth(h);
     renderCashflow(h);
     renderSmartInsights(rows);
+    try { renderForecast(rows); } catch (e) { /* never block the rest */ }
     renderTrend(rows);
     renderDonut(h);
     renderRecurring(rows);
