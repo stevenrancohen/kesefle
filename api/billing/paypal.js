@@ -10,7 +10,10 @@
 // paid period. That keeps it consistent with the prepaid methods.
 //
 // Env: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_ENV ('live'|'sandbox'),
-//      PAYPAL_PLAN_PRO, PAYPAL_PLAN_FAMILY, PAYPAL_WEBHOOK_ID
+//      PAYPAL_PLAN_PRO, PAYPAL_PLAN_FAMILY (monthly),
+//      PAYPAL_PLAN_PRO_YEAR, PAYPAL_PLAN_FAMILY_YEAR (annual, optional —
+//      planIdFor falls back to the monthly plan if a yearly one is unset),
+//      PAYPAL_WEBHOOK_ID
 
 import { requireAuth, requireAdmin } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
@@ -396,7 +399,11 @@ async function createProduct(token) {
   return j.id;
 }
 
-async function createPlan(token, productId, name, priceIls) {
+// intervalUnit is 'MONTH' (default, preserves the original monthly behavior) or
+// 'YEAR'. interval_count stays 1 either way: 1 MONTH = monthly billing,
+// 1 YEAR = annual billing. total_cycles:0 = bill forever until cancelled.
+async function createPlan(token, productId, name, priceIls, intervalUnit) {
+  const unit = intervalUnit === 'YEAR' ? 'YEAR' : 'MONTH';
   const r = await fetch(`${paypalBase()}/v1/billing/plans`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -405,7 +412,7 @@ async function createPlan(token, productId, name, priceIls) {
       name,
       status: 'ACTIVE',
       billing_cycles: [{
-        frequency: { interval_unit: 'MONTH', interval_count: 1 },
+        frequency: { interval_unit: unit, interval_count: 1 },
         tenure_type: 'REGULAR',
         sequence: 1,
         total_cycles: 0,
@@ -423,6 +430,22 @@ async function createPlan(token, productId, name, priceIls) {
   return j.id;
 }
 
+// PURE: the canonical list of the four billing plans setup-plans creates — two
+// monthly + two annual, for Pro and Family. Prices come straight from
+// lib/billing.js's priceILS (the single server-side source of truth shared by
+// the subscribe/webhook/invoice/revenue paths); we never hardcode amounts here.
+// `envKey` is the Vercel env var the resulting plan id must be pasted into, and
+// matches exactly what planIdFor / planFromPlanId look up. Annual uses
+// intervalUnit 'YEAR'; monthly omits it (createPlan defaults to 'MONTH').
+function buildPlansToCreate() {
+  return [
+    { envKey: 'PAYPAL_PLAN_PRO',         name: 'Kesefle Pro',           plan: 'pro',    period: 'month', priceIls: priceILS('pro', 'month') },
+    { envKey: 'PAYPAL_PLAN_PRO_YEAR',    name: 'Kesefle Pro (Annual)',  plan: 'pro',    period: 'year',  intervalUnit: 'YEAR', priceIls: priceILS('pro', 'year') },
+    { envKey: 'PAYPAL_PLAN_FAMILY',      name: 'Kesefle Family',        plan: 'family', period: 'month', priceIls: priceILS('family', 'month') },
+    { envKey: 'PAYPAL_PLAN_FAMILY_YEAR', name: 'Kesefle Family (Annual)', plan: 'family', period: 'year', intervalUnit: 'YEAR', priceIls: priceILS('family', 'year') },
+  ];
+}
+
 async function setupPlansImpl(req, res) {
   let token;
   try { token = await getAccessToken(); }
@@ -431,15 +454,22 @@ async function setupPlansImpl(req, res) {
   }
   try {
     const productId = await createProduct(token);
-    const proPlanId = await createPlan(token, productId, 'Kesefle Pro', priceILS('pro', 'month'));
-    const familyPlanId = await createPlan(token, productId, 'Kesefle Family', priceILS('family', 'month'));
-    log.info('paypal.plans_created', { reqId: req.reqId, productId });
+    // Create all four plans (Pro/Family x monthly/annual) under one product and
+    // collect their ids keyed by the Vercel env var each must be pasted into.
+    const out = {};
+    for (const spec of buildPlansToCreate()) {
+      out[spec.envKey] = await createPlan(token, productId, spec.name, spec.priceIls, spec.intervalUnit);
+    }
+    log.info('paypal.plans_created', { reqId: req.reqId, productId, count: Object.keys(out).length });
     return res.status(200).json({
       ok: true,
       productId,
-      PAYPAL_PLAN_PRO: proPlanId,
-      PAYPAL_PLAN_FAMILY: familyPlanId,
-      next: 'Paste these two IDs into Vercel as PAYPAL_PLAN_PRO and PAYPAL_PLAN_FAMILY, then redeploy.',
+      // Monthly ids (unchanged keys) + the two new annual ids.
+      PAYPAL_PLAN_PRO: out.PAYPAL_PLAN_PRO,
+      PAYPAL_PLAN_PRO_YEAR: out.PAYPAL_PLAN_PRO_YEAR,
+      PAYPAL_PLAN_FAMILY: out.PAYPAL_PLAN_FAMILY,
+      PAYPAL_PLAN_FAMILY_YEAR: out.PAYPAL_PLAN_FAMILY_YEAR,
+      next: 'Paste all four IDs into Vercel as PAYPAL_PLAN_PRO, PAYPAL_PLAN_PRO_YEAR, PAYPAL_PLAN_FAMILY and PAYPAL_PLAN_FAMILY_YEAR, then redeploy.',
     });
   } catch (e) {
     log.error('paypal.setup_plans_failed', { reqId: req.reqId, error: e.message });
