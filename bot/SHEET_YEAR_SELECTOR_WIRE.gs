@@ -43,14 +43,19 @@
  * (no formula), the wrapper still works: the literal becomes the "live"
  * branch and the historical lookup is the fallback.
  *
- * SAFETY:
+ * SAFETY (per kesefle-financial-data-integrity-guard discipline):
  *   - No-op safe: if company tab missing, the historical summary tab is
  *     missing, or B4 is not in the expected range -> return early.
- *   - Backup-first: every write is preceded by a _BAK_yearwire_<ts> tab
- *     containing rows 1-65 cols A..N of the company dashboard.
+ *   - GATED: WIRE_YEAR_SELECTOR() refuses unless Script Property
+ *     CONFIRM_WIRE_YEAR_SELECTOR == "YES I UNDERSTAND".
+ *   - Lock + backup-first: every write takes a LockService script lock and is
+ *     preceded by a _BAK_yearwire_<ts> tab containing rows 1-65 cols A..N of
+ *     the company dashboard.
  *   - DRY_RUN_YEAR_SELECTOR_WIRE() prints the new wrapped formula for
  *     every cell with no writes.
  *   - WIRE_YEAR_SELECTOR() does the actual wrap.
+ *   - ROLLBACK_YEAR_SELECTOR_WIRE() restores rows 6-11 from the newest
+ *     _BAK_yearwire_* tab.
  *
  * ENCODING:
  *   Every Hebrew string is \u05XX-escaped.
@@ -65,6 +70,17 @@ var _YS_COMPANY_TAB_ = '\u05de\u05d0\u05d6\u05df \u05d7\u05d1\u05e8\u05d4';
 var _YS_HISTORY_TAB_ = '\u05e1\u05d9\u05db\u05d5\u05dd \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9';
 
 var _YS_VERSION_     = 'YearSelectorWire_v1';
+
+// CONFIRM gate (per kesefle-financial-data-integrity-guard discipline).
+// WIRE_YEAR_SELECTOR already has LockService + an automatic _BAK_yearwire_*
+// backup, but it had NO confirmation gate -- so a stray dropdown-pick in the
+// Apps Script function selector could re-wrap rows 6-11 (78 formula cells).
+// APPLY now refuses unless this Script Property is set to the exact value.
+// Set it in Project Settings -> Script Properties, run WIRE_YEAR_SELECTOR(),
+// then (optionally) clear it. ROLLBACK_YEAR_SELECTOR_WIRE() restores the
+// newest _BAK_yearwire_* tab.
+var _YS_CONFIRM_PROP_ = 'CONFIRM_WIRE_YEAR_SELECTOR';
+var _YS_CONFIRM_VAL_  = 'YES I UNDERSTAND';
 
 // The "current" year -- when B4 == this value, formulas use LIVE sources.
 // When B4 is any other value, formulas use historical summary.
@@ -276,12 +292,25 @@ function DRY_RUN_YEAR_SELECTOR_WIRE() {
   });
 
   Logger.log('');
-  Logger.log('Run WIRE_YEAR_SELECTOR() to apply.');
+  Logger.log('To apply: set Script Property ' + _YS_CONFIRM_PROP_ + ' = ' + _YS_CONFIRM_VAL_ +
+             ' then run WIRE_YEAR_SELECTOR(). A backup tab is created automatically;');
+  Logger.log('ROLLBACK_YEAR_SELECTOR_WIRE() undoes it.');
 }
 
 // ---- PUBLIC: APPLY -----------------------------------------------------
 
 function WIRE_YEAR_SELECTOR() {
+  // CONFIRM gate -- refuse unless the Script Property is set. This stops an
+  // accidental dropdown-run from re-wrapping the dashboard formulas. (Lock +
+  // backup are already present below; the gate is the missing third guardrail.)
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(_YS_CONFIRM_PROP_) !== _YS_CONFIRM_VAL_) {
+    Logger.log('!! REFUSING: set Script Property ' + _YS_CONFIRM_PROP_ +
+               ' = ' + _YS_CONFIRM_VAL_ + ' first (Project Settings -> Script Properties),');
+    Logger.log('   then run WIRE_YEAR_SELECTOR() again. Run DRY_RUN_YEAR_SELECTOR_WIRE() to preview.');
+    return 'refused-no-confirm';
+  }
+
   var lock = LockService.getScriptLock();
   try { lock.waitLock(15000); } catch (e) {
     Logger.log('!! could not acquire lock -- abort: ' + e.message);
@@ -333,6 +362,63 @@ function WIRE_YEAR_SELECTOR() {
     Logger.log('');
     Logger.log('DONE. Backup at: ' + bakName);
     Logger.log('Test: change B4 to 2025 -- dashboard should swap to historical values.');
+  } finally {
+    try { lock.releaseLock(); } catch (e) { /* ignore */ }
+  }
+}
+
+// ---- PUBLIC: ROLLBACK --------------------------------------------------
+// Restore rows 6-11 cols B..N of the company dashboard from the newest
+// _BAK_yearwire_* backup tab created by WIRE_YEAR_SELECTOR(). The backup tab
+// holds a full copy (rows 1-65, cols A..N); we copy back only the rows the
+// wrap wrote (6-11). Note: this restores the FORMULAS to their pre-wrap state
+// but does NOT remove the B4 dropdown validation (harmless to leave).
+// Read-only if no backup tab is found.
+function ROLLBACK_YEAR_SELECTOR_WIRE() {
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch (e) {
+    Logger.log('!! could not acquire lock -- abort: ' + e.message);
+    return;
+  }
+  try {
+    var ss = _ys_openSheet_();
+    var dash = ss.getSheetByName(_YS_COMPANY_TAB_);
+    if (!dash) { Logger.log('!! no company tab -- no-op'); return 'no-company-tab'; }
+
+    // Find the newest _BAK_yearwire_* tab (timestamp sorts lexicographically).
+    var tabs = ss.getSheets();
+    var newest = null;
+    var newestName = '';
+    for (var i = 0; i < tabs.length; i++) {
+      var name = tabs[i].getName();
+      if (name.indexOf('_BAK_yearwire_') === 0 && name > newestName) {
+        newestName = name;
+        newest = tabs[i];
+      }
+    }
+    if (!newest) {
+      Logger.log('!! no _BAK_yearwire_* backup tab found -- nothing to roll back.');
+      return 'no-backup';
+    }
+
+    Logger.log('===== ROLLBACK: WIRE_YEAR_SELECTOR (' + _YS_VERSION_ + ') =====');
+    Logger.log('Restoring rows 6-11 cols B..N from backup tab: ' + newestName);
+
+    // rows 6..11 are contiguous (revenue..operational); restore in one copy.
+    var rowNums = [];
+    Object.keys(_YS_WRAP_ROWS_).forEach(function (k) { rowNums.push(_YS_WRAP_ROWS_[k]); });
+    rowNums.sort(function (a, b) { return a - b; });
+    var firstRow = rowNums[0]; // 6
+    var lastRow  = rowNums[rowNums.length - 1]; // 11
+    var numRows  = lastRow - firstRow + 1; // 6
+    // cols B..N = col 2..14 = 13 cols.
+    var srcRange = newest.getRange(firstRow, 2, numRows, 13);
+    srcRange.copyTo(dash.getRange(firstRow, 2), { contentsOnly: false });
+
+    SpreadsheetApp.flush();
+    Logger.log('DONE. Rows ' + firstRow + '-' + lastRow + ' restored from ' + newestName + '.');
+    Logger.log('(The B4 year dropdown validation was left in place -- harmless.)');
+    return 'rolled-back:' + newestName;
   } finally {
     try { lock.releaseLock(); } catch (e) { /* ignore */ }
   }
