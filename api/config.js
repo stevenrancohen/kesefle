@@ -11,11 +11,10 @@
 
 import { withRequestId } from '../lib/log.js';
 
-// Default to the Meta test number until Steven configures KESEFLE_BOT_NUMBER
-// via the env var (after WABA approval). Same default lives hardcoded across
-// the ~45 wa.me/ anchors -- swap with scripts/swap-bot-number.sh + this env
-// var simultaneously for a clean cutover.
-const DEFAULT_BOT_NUMBER = '15556408123';
+// The real 360dialog production WhatsApp Business number. Same default lives
+// hardcoded across the wa.me/ anchors site-wide. KESEFLE_BOT_NUMBER can still
+// override it via env for a future renumber without a redeploy.
+const DEFAULT_BOT_NUMBER = '972547760643';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
@@ -26,13 +25,21 @@ async function handlerImpl(req, res) {
   const botNumber = String(process.env.KESEFLE_BOT_NUMBER || DEFAULT_BOT_NUMBER).replace(/\D+/g, '');
   const botDisplayName = String(process.env.KESEFLE_BOT_NAME || "כספ'לה");
 
+  // Human-friendly display. Israeli mobiles (972 5x xxx xxxx) render as the
+  // familiar "+972 5x-xxx-xxxx". Any other shape falls back to a plain "+"
+  // prefix so an env override with a different country code still reads sanely.
+  const ilMatch = botNumber.match(/^972(\d{2})(\d{3})(\d{4})$/);
+  const botNumberDisplay = ilMatch
+    ? `+972 ${ilMatch[1]}-${ilMatch[2]}-${ilMatch[3]}`
+    : '+' + botNumber;
+
   // Cache for 60s -- changes propagate within a minute, but we don't pay for
   // every page load to hit a serverless function.
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
   return res.status(200).json({
     ok: true,
     BOT_NUMBER: botNumber,
-    BOT_NUMBER_DISPLAY: '+' + botNumber.replace(/(\d{1,3})(\d{3})(\d{3})(\d{4})/, '$1 $2 $3 $4'),
+    BOT_NUMBER_DISPLAY: botNumberDisplay,
     BOT_NAME: botDisplayName,
     // Drift signal: did the env override the default? Useful for the admin
     // drift detector to know whether the hardcoded HTML anchors are still

@@ -211,14 +211,11 @@
     <p>שינויים מהותיים יתפרסמו בעמוד זה ויישלחו לאימייל הרשום שלך לפחות 30 יום לפני כניסתם לתוקף.</p>
 
     <h2>10. יצירת קשר</h2>
-    <!-- Frontend audit 2026-05-27: the public WhatsApp number on this
-         legal page used to be the Meta WABA sandbox placeholder
-         (+1-555-640-8123). That's correct internally (api/config.js
-         DEFAULT_BOT_NUMBER until KESEFLE_BOT_NUMBER env is set), but on
-         a legal page in Hebrew it looks unprofessional and confuses
-         users. Until WABA approval lands, email is the canonical
-         privacy-contact channel. After approval, swap-bot-number.sh
-         updates this anchor along with the other ~45 site-wide. -->
+    <!-- The public WhatsApp bot number (+972 54-776-0643) is live site-wide
+         via the real 360dialog production line; api/config.js DEFAULT_BOT_NUMBER
+         carries it as the fallback. On this legal page we intentionally keep
+         email as the canonical privacy-contact channel so requests are
+         logged and traceable. -->
     <p>שאלות? כתוב לנו ל: <a href="mailto:info@kesefle.com">info@kesefle.com</a></p>
 
     <p class="mt-12 text-sm text-slate-500">מדיניות זו כפופה לחוק הגנת הפרטיות, התשמ"א-1981 ולתקנות הגנת הפרטיות (אבטחת מידע), התשע"ז-2017.</p>
