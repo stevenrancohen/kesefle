@@ -72,6 +72,13 @@ Then run `installKesefleBot()` once — it verifies properties and installs the 
 
 **WhatsApp‑on‑Vercel path (only if Meta points at Vercel instead of Apps Script):**
 - `META_APP_SECRET`, `META_VERIFY_TOKEN`, `META_ACCESS_TOKEN`, `META_PHONE_NUMBER_ID`
+- ⚠️ **Leave these UNSET for normal launch.** Meta points at the **Apps Script**
+  bot (§1), which does the real classification. `api/whatsapp/webhook.js` is an
+  unfinished alternate that uses a STUB parser (no taxonomy — it copies the
+  message text into the category), so arming it (by setting `META_APP_SECRET`
+  *and* pointing Meta's callback at `/api/whatsapp/webhook`) would
+  **miscategorize every expense**. Set these only once a finished Vercel‑native
+  bot replaces that stub.
 
 **Payments (optional, enable what you use):**
 - PayPal: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, `PAYPAL_PLAN_PRO`, `PAYPAL_PLAN_FAMILY`, `PAYPAL_WEBHOOK_ID` — **⚠️ rotate the PayPal secret that was pasted in chat earlier; treat it as compromised.**
