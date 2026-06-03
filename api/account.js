@@ -18,6 +18,7 @@ import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken, constantTimeEqual } from '../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../lib/oauth.js';
+import { TX_TAB } from '../lib/sheet-tabs.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -259,7 +260,7 @@ async function exportAccount(req, res) {
         : userRec.refreshToken;
       if (refreshToken) {
         const { accessToken } = await exchangeRefreshForAccess({ refreshToken, userSub });
-        const range = encodeURIComponent("'תנועות'!A2:I10001");
+        const range = encodeURIComponent(`'${TX_TAB}'!A2:I10001`);
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${userRec.spreadsheetId}/values/${range}`;
         const r = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });
         if (r.ok) {

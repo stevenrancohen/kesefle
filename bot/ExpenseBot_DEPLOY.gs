@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-02-taxonomy-normalize-biz-misroute-keywords-menu-first-wizard';
+const KFL_BUILD_VERSION = '2026-06-03-confirm-always-dropdown-no-sheet-url';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1424,6 +1424,17 @@ function _userSheetUrl_(fromPhone) {
 function _sheetLinkLine_(fromPhone) {
   var u = _userSheetUrl_(fromPhone);
   return u ? ('\n\n📊 הגיליון שלך: ' + u) : '';
+}
+
+// SHORT, link-free nudge for the END of an expense CONFIRMATION (Steven
+// 2026-06-03, change 2). The long docs.google.com URL was noise on every
+// single confirmation — the user already has their sheet bookmarked, and the
+// tappable category dropdown is the real call-to-action now. This replaces the
+// long-URL line on confirmations only; _sheetLinkLine_ above is kept for the
+// explicit "show me my sheet" command where the actual URL is what's wanted.
+// No fromPhone needed — it never prints an id, so it's tenant-safe by design.
+function _sheetNudgeLine_() {
+  return '\n📊 לצפייה מלאה — היכנס לגיליון שלך.';
 }
 
 // ───── NATURAL-LANGUAGE FIXED-EXPENSE INTENT (ask C, 2026-06-01) ─────
@@ -7020,12 +7031,17 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
     }
     if (!sectionsOut.length) return;
 
+    // The dropdown is now attached to EVERY confirmation (Steven 2026-06-03,
+    // change 1) and the old text "change category" instruction was removed from
+    // the reply -- so this list IS the way to re-classify. The action button
+    // label is the explicit Hebrew "shane kategoria" (11 chars, under
+    // WhatsApp's 20-char cap) so it is obvious what the tappable opens.
     sendWhatsAppInteractiveList(
       fromPhone,
-      'לשנות קטגוריה?',
-      'הבוט בחר *' + currentCategory + '*. אפשר לבחור אחרת מהרשימה למטה:',
+      'רוצה קטגוריה אחרת?',
+      'נשמר תחת *' + currentCategory + '*. אפשר לבחור קטגוריה אחרת מהרשימה:',
       'אפשר להתעלם — הרישום נשמר',
-      'בחר',
+      'שנה קטגוריה',
       sectionsOut
     );
   } catch (e) { Logger.log('_sendChangeCategoryPicker_ err: ' + (e && e.message)); }
@@ -7935,7 +7951,9 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
       return { reply:
         '✅ נרשם: ' + nice +
         (__mtdLine ? '\n' + __mtdLine : '') +
-        _sheetLinkLine_(fromPhone) +
+        // change 2 (2026-06-03): short link-free nudge instead of the long URL;
+        // the tappable dropdown (picker call above) is the change-category path.
+        _sheetNudgeLine_() +
         __firstCel +
         // Gendered encouragement (throttled to once/day) — skip on the first-
         // expense message, which already carries its own celebration line.
@@ -8507,8 +8525,9 @@ function processExpense(text, fromPhone) {
           '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון 📊' +
           '\n📂 ' + __bbeCat +
           (__bbeSub && __bbeSub !== __bbeCat ? '\n🏷️ ' + __bbeSub : '') +
-          '\n\n👇 לשנות קטגוריה — בחר מהרשימה למטה, או שלח "קטגוריה <שם>".' +
-          _sheetLinkLine_(fromPhone)
+          // change 1 (2026-06-03): dropdown is always attached (picker call above);
+          // the text instruction line was removed. change 2: short link-free nudge.
+          _sheetNudgeLine_()
         };
       }
     }
@@ -9555,12 +9574,16 @@ function processExpense(text, fromPhone) {
         __recurringTail +
         __streakTail +
         (__softHintTail || '') +
-        '\n\n👇 לשנות קטגוריה — בחר מהרשימה למטה, או שלח "קטגוריה <שם>".' +
+        // change 1 (2026-06-03): the tappable category dropdown is now ALWAYS
+        // attached as a separate interactive list (see _sendChangeCategoryPicker_
+        // call above), so the old "change category - pick from the list below"
+        // text line was dropped -- one tap replaces the typed instruction.
         '\nכתוב "סיכום" לראות איפה אתה עומד החודש.' +
-        _sheetLinkLine_(fromPhone)
+        // change 2 (2026-06-03): short link-free nudge instead of the long URL.
+        _sheetNudgeLine_()
       };
     }
-    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail + _sheetLinkLine_(fromPhone) };
+    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail + _sheetNudgeLine_() };
   } catch (err) {
     return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + (err && err.message || '') + '\n💡 ננסה שוב בעוד דקה? אם זה ממשיך — שלח "עזרה".' };
   }
@@ -11410,7 +11433,9 @@ function _handleReceiptImage_(fromPhone, image) {
       '\n💰 ₪' + amount.toLocaleString('he-IL') +
       dateLine +
       '\n📂 ' + matched.category + subLabel +
-      '\n\n👇 לשנות קטגוריה — בחר מהרשימה למטה, או שלח "קטגוריה <שם>".'
+      // change 1 (2026-06-03): dropdown always attached (picker call above);
+      // the text instruction line was removed. change 2: short link-free nudge.
+      _sheetNudgeLine_()
   };
 }
 

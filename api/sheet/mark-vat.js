@@ -34,6 +34,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -139,7 +140,7 @@ async function handlerImpl(req, res) {
   // Read the last row of the תנועות tab. We use a windowed read (A:A) just
   // to find the last non-empty row index cheaply, then a targeted read of
   // that row to verify the 24h cutoff.
-  const dateColUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent("'תנועות'!A:A")}`;
+  const dateColUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${TX_TAB}'!A:A`)}`;
   let dateColResp;
   try {
     dateColResp = await fetch(dateColUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
@@ -178,7 +179,7 @@ async function handlerImpl(req, res) {
 
   // Write TRUE to col I of that row. Use PUT (values.update) so we don't
   // append a new row. valueInputOption=RAW preserves the boolean type.
-  const updateRange = encodeURIComponent(`'תנועות'!I${lastDataRowIndex}`);
+  const updateRange = encodeURIComponent(`'${TX_TAB}'!I${lastDataRowIndex}`);
   const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${updateRange}?valueInputOption=RAW`;
   let updateResp;
   try {
@@ -200,7 +201,7 @@ async function handlerImpl(req, res) {
   // (legacy sheets that predate this feature). Don't fail the request if it
   // doesn't work -- the data write above already succeeded.
   try {
-    const hdrUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent("'תנועות'!I1")}`;
+    const hdrUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${TX_TAB}'!I1`)}`;
     const hdrR = await fetch(hdrUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
     if (hdrR.ok) {
       const hdrJ = await hdrR.json().catch(() => ({}));

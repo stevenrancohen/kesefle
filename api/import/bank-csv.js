@@ -42,11 +42,11 @@ import { BANK_PARSERS } from '../../lib/bank-parsers.js';
 import {
   buildExpenseRow, exchangeRefreshForAccess,
 } from '../../lib/sheet-writer.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { findGroupForSubcategory } from '../../lib/categories.js';
 import crypto from 'node:crypto';
 
-const TX_TAB = 'תנועות';
 // Keep in sync with lib/sheet-writer.js TX_HEADERS -- col I "ניכוי מע״מ"
 // added 2026-05-24. Bank-imported rows default to vatDeductible=false
 // (the user can flip individual rows from the bot or sheet UI).
