@@ -273,6 +273,9 @@ const CATEGORY_MAP = [
   // Placed FIRST so the income entry wins the length-tie (V8 stable sort) vs the identical
   // phrases on the government-EXPENSE rows below. Purely additive -- removes/reorders nothing.
   {"keywords":["קצבת ילדים","קצבת זקנה","קצבת נכות","קצבת שאירים","קצבת אזרח ותיק","קצבת ניידות","קצבת הבטחת הכנסה","הבטחת הכנסה","השלמת הכנסה","דמי לידה","מענק לידה","דמי אבטלה","מענק עבודה","מענק שחרור","מענק קורונה","תגמולי מילואים","דמי מילואים","פיצויי פיטורין","פיצויי פרישה","פדיון ימי חופשה","פדיון ימי מחלה","גמלת סיעוד"],"category":"הכנסות","subcategory":"קצבאות וזכאויות","isIncome":true},
+  // ===== INCOME -- income-tax refund -> income (Fix C, per bot/BOT_IMPROVEMENTS.md).
+  // At top so "hahzer mas" wins the length-tie vs the government-EXPENSE row. Additive.
+  {"keywords":["החזר מס הכנסה","החזר ממס הכנסה","מס הכנסה החזר","זיכוי מס","החזר מס"],"category":"הכנסות","subcategory":"החזר מס","isIncome":true},
   // ===== BUSINESS (עסק) — English + Hebrew aliases, top of list so they
   // win priority. Subcategories match the short forms the dashboard
   // SUMIFS literally expects ("שיווק", "תפעוליות", etc.). =====
