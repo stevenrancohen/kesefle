@@ -75,6 +75,7 @@ const UNIT_SUITES = [
   'tests/test_dashboard_sumifs_status_filter.js',    // dashboard income/expense sign-flip: every תנועות-subcategory SUMIFS filters col H (#227)
   'tests/test_sheet_tab_constants.js',               // tab-name constants centralized + byte-identical to bot (silent-rename guard) (#230)
   'tests/test_round3_api_kv_hardening.js',           // round 3 audit: cron secret-in-header, admin RL, dedup constantTimeEqual, PII hash, GDPR goal/stats purge
+  'tests/test_email_unsubscribe.js',                 // onboarding: welcome+lifecycle emails have a working, signed, single-click unsubscribe
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {

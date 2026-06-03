@@ -18,6 +18,7 @@
 
 import { withRequestId, log, subHash } from '../../lib/log.js';
 import { sendTemplate } from '../../lib/email.js';
+import { buildUnsubscribeUrl } from '../../lib/email-unsub.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -79,8 +80,10 @@ function firstNameFromUser(u) {
 }
 
 function unsubscribeUrlFor(userSub) {
-  // Steven: replace with a signed-token URL once /api/account/unsubscribe is built.
-  return `https://kesefle.com/unsubscribe?sub=${encodeURIComponent(userSub)}`;
+  // Signed, single-click unsubscribe (lib/email-unsub.js) backed by
+  // /api/account/unsubscribe + /unsubscribe.html. Replaces the earlier unsigned
+  // ?sub= link that 404'd and was forgeable for any sub.
+  return buildUnsubscribeUrl(userSub);
 }
 
 // Each function returns true if a send was attempted (skipped or actually sent).

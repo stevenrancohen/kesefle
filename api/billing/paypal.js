@@ -335,6 +335,7 @@ async function webhookImpl(req, res) {
         // Fire Day-0 email immediately (best-effort, env-fail-soft).
         try {
           const { sendTemplate } = await import('../../lib/email.js');
+          const { buildUnsubscribeUrl } = await import('../../lib/email-unsub.js');
           const u = await billingKvGet(`user:${userSub}`);
           if (u?.email) {
             await sendTemplate({
@@ -345,7 +346,8 @@ async function webhookImpl(req, res) {
                 userEmail: u.email,
                 planName: (map?.plan === 'family') ? 'Family' : 'Pro',
                 amount: String(Number(resource.amount?.total) || priceILS(map?.plan || 'pro', 'month')),
-                unsubscribeUrl: `https://kesefle.com/unsubscribe?sub=${encodeURIComponent(userSub)}`,
+                // Signed unsubscribe (lib/email-unsub.js) — was an unsigned 404 link.
+                unsubscribeUrl: buildUnsubscribeUrl(userSub),
               },
             });
           }
