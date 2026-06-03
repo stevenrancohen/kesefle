@@ -428,6 +428,70 @@
       </div>
     </div>
 
+    <!-- Row 0: Smart Insights strip -------------------------------------
+         At-a-glance headline takeaways computed from the same rows already
+         loaded for this view (no extra fetch). Each card's value/sub text is
+         set via textContent in renderSmartInsights() (XSS-safe). The empty
+         state (#insights-empty) shows for a first-time user with no expenses
+         this month yet; the grid (#insights-grid) is revealed once we have
+         something to say. -->
+    <div class="mb-4">
+      <div class="mb-3 flex items-center gap-2">
+        <span class="text-lg" aria-hidden="true">✨</span>
+        <h3 class="text-base font-black tracking-tight text-ink-900 dark:text-white">תובנות חכמות</h3>
+      </div>
+
+      <!-- First-time / no-data-this-month state -->
+      <div id="insights-empty" class="hidden rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
+        <div class="text-3xl" aria-hidden="true">🪄</div>
+        <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עוד אין תובנות לחודש הזה</div>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד/י כמה הוצאות החודש בוואטסאפ — והתובנות יופיעו כאן אוטומטית.</p>
+      </div>
+
+      <!-- Insights grid -->
+      <div id="insights-grid" class="hidden grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Top spending category this month -->
+        <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="flex items-center gap-2">
+            <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-brand-50 text-base dark:bg-brand-500/15" aria-hidden="true">🏆</span>
+            <div class="text-[11px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">קטגוריה מובילה החודש</div>
+          </div>
+          <div class="mt-3 truncate text-lg font-black text-ink-900 dark:text-white" id="insight-topcat-name" title="—">—</div>
+          <div class="mt-0.5 text-xs text-ink-500 dark:text-ink-400" id="insight-topcat-detail">—</div>
+        </div>
+
+        <!-- Month-over-month total change -->
+        <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="flex items-center gap-2">
+            <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-accent-500/10 text-base" aria-hidden="true">📈</span>
+            <div class="text-[11px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">שינוי מול החודש שעבר</div>
+          </div>
+          <div class="num mt-3 text-lg font-black text-ink-900 dark:text-white" id="insight-mom-value">—</div>
+          <div class="mt-0.5 text-xs text-ink-500 dark:text-ink-400" id="insight-mom-detail">—</div>
+        </div>
+
+        <!-- Biggest single expense this month -->
+        <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="flex items-center gap-2">
+            <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-amber-500/10 text-base" aria-hidden="true">💸</span>
+            <div class="text-[11px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">ההוצאה הגדולה ביותר</div>
+          </div>
+          <div class="num mt-3 text-lg font-black text-red-600" id="insight-biggest-value">—</div>
+          <div class="mt-0.5 truncate text-xs text-ink-500 dark:text-ink-400" id="insight-biggest-detail" title="—">—</div>
+        </div>
+
+        <!-- Budget status headline (reuses the budgets data already fetched) -->
+        <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="flex items-center gap-2">
+            <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-brand-50 text-base dark:bg-brand-500/15" aria-hidden="true">🎯</span>
+            <div class="text-[11px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מצב תקציבים</div>
+          </div>
+          <div class="mt-3 text-lg font-black text-ink-900 dark:text-white" id="insight-budget-value">—</div>
+          <div class="mt-0.5 truncate text-xs text-ink-500 dark:text-ink-400" id="insight-budget-detail" title="—">—</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 1: Health Score (wide) + Cash Flow -->
     <div class="grid gap-4 lg:grid-cols-3">
 
@@ -3105,8 +3169,15 @@ function generatePseudoSeries(target, n, intLike) {
       var cats = (j && j.ok && j.budget && j.budget.categories) || {};
       var names = Object.keys(cats);
       if (countEl) countEl.textContent = String(names.length);
-      if (!names.length) { showEmpty(); return; }
+      if (!names.length) {
+        // Mirror the no-budgets state into the Smart Insights strip.
+        try { _renderBudgetInsight(cats, {}); } catch (e) { /* never block */ }
+        showEmpty();
+        return;
+      }
       var mtd = computeMtdByCategory(rows);
+      // Feed the same budgets+MTD data into the Smart Insights budget card.
+      try { _renderBudgetInsight(cats, mtd); } catch (e) { /* never block */ }
       // Sort: highest percentage first so the at-risk categories pop visually.
       names.sort(function(a, b){
         var pa = Number(cats[a].cap) > 0 ? (Number(mtd[a] || 0) / Number(cats[a].cap)) : 0;
@@ -3141,15 +3212,181 @@ function generatePseudoSeries(target, n, intLike) {
     }).catch(function(){
       // Network/parse failure -- fall back to the empty CTA so the card still
       // renders something useful.
+      try { _renderBudgetInsight({}, {}); } catch (e) { /* never block */ }
       showEmpty();
     });
   }
+
+  // ---- 13. Smart Insights strip ----------------------------------------
+  // A concise, scannable summary at the top of the analytics block. Reuses
+  // the same `rows` already fetched for this view -- NO extra network call.
+  // Surfaces: (1) top spending category this month, (2) month-over-month
+  // total change, (3) biggest single expense this month. The budget-status
+  // card (#4) is filled in by _renderBudgetInsight() from the /api/budgets
+  // data that renderBudgets() already fetches, so we never fetch twice.
+  // Every data-derived string is written with textContent (XSS-safe).
+  function _setInsightText(id, text){
+    var el = safeEl(id);
+    if (!el) return;
+    el.textContent = (text == null ? '' : String(text));
+    // Keep the native tooltip in sync where one exists (truncated names).
+    if (el.hasAttribute('title')) el.setAttribute('title', el.textContent);
+  }
+
+  function computeSmartInsights(rows){
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth();
+    var pm = m === 0 ? 11 : m - 1;
+    var py = m === 0 ? y - 1 : y;
+
+    var curTotal = 0, prevTotal = 0;
+    var byCat = Object.create(null);
+    var biggest = null; // { amount, description, category }
+    rows.forEach(function(r){
+      var d = parseDate(r && r.date);
+      if (!d) return;
+      var amt = Number(r.amount) || 0;
+      if (amt <= 0) return; // expenses only
+      if (d.getFullYear() === y && d.getMonth() === m) {
+        curTotal += amt;
+        var cat = String((r.category || 'אחר')).trim() || 'אחר';
+        byCat[cat] = (byCat[cat] || 0) + amt;
+        if (!biggest || amt > biggest.amount) {
+          biggest = { amount: amt, description: String(r.description || '').trim(), category: cat };
+        }
+      } else if (d.getFullYear() === py && d.getMonth() === pm) {
+        prevTotal += amt;
+      }
+    });
+
+    var topCat = null, topAmt = 0;
+    Object.keys(byCat).forEach(function(k){ if (byCat[k] > topAmt){ topAmt = byCat[k]; topCat = k; } });
+
+    return {
+      hasData: curTotal > 0,
+      curTotal: curTotal,
+      prevTotal: prevTotal,
+      topCat: topCat,
+      topAmt: topAmt,
+      topShare: curTotal > 0 ? Math.round(topAmt / curTotal * 100) : 0,
+      biggest: biggest
+    };
+  }
+
+  function renderSmartInsights(rows){
+    var gridEl = safeEl('insights-grid');
+    var emptyEl = safeEl('insights-empty');
+    if (!gridEl || !emptyEl) return;
+
+    var s = computeSmartInsights(rows || []);
+    if (!s.hasData) {
+      // First-time / nothing logged this month yet.
+      gridEl.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    gridEl.classList.remove('hidden');
+
+    // (1) Top spending category this month
+    if (s.topCat) {
+      _setInsightText('insight-topcat-name', s.topCat);
+      _setInsightText('insight-topcat-detail', moneyShekel(s.topAmt) + ' · ' + s.topShare + '% מההוצאות');
+    } else {
+      _setInsightText('insight-topcat-name', '—');
+      _setInsightText('insight-topcat-detail', 'אין נתונים החודש');
+    }
+
+    // (2) Month-over-month total change
+    var momValueEl = safeEl('insight-mom-value');
+    if (s.prevTotal > 0) {
+      var ratio = s.curTotal / s.prevTotal - 1;
+      var pct = Math.round(ratio * 100);
+      var arrow = ratio > 0 ? '▲' : (ratio < 0 ? '▼' : '=');
+      _setInsightText('insight-mom-value', arrow + ' ' + Math.abs(pct) + '%');
+      if (momValueEl) {
+        // Up = more spending = red; down = less = brand (good). Neutral = ink.
+        var momColor = ratio > 0 ? 'text-red-600' : (ratio < 0 ? 'text-brand-600' : 'text-ink-700 dark:text-ink-200');
+        momValueEl.className = 'num mt-3 text-lg font-black ' + momColor;
+      }
+      _setInsightText('insight-mom-detail', 'בחודש שעבר: ' + moneyShekel(s.prevTotal));
+    } else {
+      _setInsightText('insight-mom-value', 'חודש ראשון');
+      if (momValueEl) momValueEl.className = 'num mt-3 text-lg font-black text-ink-700 dark:text-ink-200';
+      _setInsightText('insight-mom-detail', 'אין נתוני חודש קודם להשוואה');
+    }
+
+    // (3) Biggest single expense this month
+    if (s.biggest) {
+      _setInsightText('insight-biggest-value', moneyShekel(s.biggest.amount));
+      var label = s.biggest.description || s.biggest.category || 'הוצאה';
+      _setInsightText('insight-biggest-detail', label);
+    } else {
+      _setInsightText('insight-biggest-value', '—');
+      _setInsightText('insight-biggest-detail', 'אין הוצאות החודש');
+    }
+
+    // (4) Budget status -- a friendly default until renderBudgets() resolves
+    // its /api/budgets fetch and calls _renderBudgetInsight(). We only set the
+    // placeholder if it has not already been filled this render.
+    var bv = safeEl('insight-budget-value');
+    if (bv && (!bv.textContent || bv.textContent === '—')) {
+      _setInsightText('insight-budget-value', '—');
+      _setInsightText('insight-budget-detail', 'בודק תקציבים…');
+    }
+  }
+
+  // Fills the budget-status insight card from the budgets data renderBudgets()
+  // already holds. `cats` = { name: { cap, threshold } }, `mtd` = month-to-date
+  // spend by category. Called for the populated case and the no-budgets case.
+  function _renderBudgetInsight(cats, mtd){
+    var names = cats ? Object.keys(cats) : [];
+    if (!names.length) {
+      _setInsightText('insight-budget-value', 'לא הוגדרו');
+      _setInsightText('insight-budget-detail', 'הגדר/י תקציב בוואטסאפ');
+      return;
+    }
+    var overCount = 0, nearCount = 0, worstName = null, worstPct = -1;
+    names.forEach(function(name){
+      var conf = cats[name] || {};
+      var cap = Number(conf.cap) || 0;
+      var th = Number(conf.threshold) || 80;
+      if (cap <= 0) return;
+      var spent = Number((mtd && mtd[name]) || 0);
+      var pct = Math.round(spent / cap * 100);
+      if (pct >= 100) overCount++;
+      else if (pct >= th) nearCount++;
+      if (pct > worstPct) { worstPct = pct; worstName = name; }
+    });
+
+    var bv = safeEl('insight-budget-value');
+    if (overCount > 0) {
+      _setInsightText('insight-budget-value', overCount + ' בחריגה');
+      if (bv) bv.className = 'mt-3 text-lg font-black text-red-600';
+    } else if (nearCount > 0) {
+      _setInsightText('insight-budget-value', nearCount + ' מתקרבים לתקציב');
+      if (bv) bv.className = 'mt-3 text-lg font-black text-amber-600';
+    } else {
+      _setInsightText('insight-budget-value', 'הכל בטווח');
+      if (bv) bv.className = 'mt-3 text-lg font-black text-brand-600';
+    }
+
+    if (worstName && worstPct >= 0) {
+      _setInsightText('insight-budget-detail', worstName + ' · ' + worstPct + '% מהתקציב');
+    } else {
+      _setInsightText('insight-budget-detail', names.length + ' תקציבים פעילים');
+    }
+  }
+  // Expose for renderBudgets (defined earlier in this module scope, but this
+  // assignment makes the dependency explicit and survives any reorder).
+  _renderBudgetInsight._isInsightHelper = true;
 
   function renderAnalytics(rows){
     if (!rows || !rows.length) return;
     var h = computeHealth(rows);
     renderHealth(h);
     renderCashflow(h);
+    renderSmartInsights(rows);
     renderTrend(rows);
     renderDonut(h);
     renderRecurring(rows);
