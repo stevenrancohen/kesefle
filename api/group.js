@@ -611,6 +611,18 @@ async function handlerImpl(req, res) {
       }
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      // MEMBERSHIP GATE — same defense-in-depth as addexpense above: a
+      // recurring template injects an expense into the group's ledger every
+      // cycle (and carries an attacker-chosen payerPhone), so a bare
+      // bot-secret + code must NOT be enough to plant one in a stranger's
+      // group. The bot sends payerPhone = the sender (resolved from the
+      // sender's OWN active group), so reqPhone falls back to payerPhone and
+      // the legit path keeps working without a bot change.
+      const recReqPhone = normalizeE164(body.requesterPhone) || payerPhone;
+      if (!isMemberOrCreator(group, recReqPhone)) {
+        log.warn('group.addrecurring.not_member', { reqId: req.reqId, code });
+        return res.status(403).json({ ok: false, error: 'not_a_member' });
+      }
       group.recurring = group.recurring || [];
       group.recurring.push({
         id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
@@ -631,6 +643,18 @@ async function handlerImpl(req, res) {
       const code = String(body.code || '').trim().toUpperCase();
       const group = await kvGet('group:' + code);
       if (!group) return res.status(404).json({ ok: false, error: 'group_not_found' });
+      // MEMBERSHIP GATE (backward-compatible): the recurring list carries each
+      // template's payerPhone (member PII), so when the caller supplies a
+      // requesterPhone we enforce membership exactly like the info/balances/
+      // recent actions. The live bot does not yet send requesterPhone here, so
+      // we MUST NOT hard-require it (that would 403 every legit list) — once the
+      // bot is updated to pass it, this gate engages automatically. The residual
+      // unauthenticated-read path is tracked for a coordinated bot change.
+      const reqPhone = normalizeE164(body.requesterPhone);
+      if (reqPhone && !isMemberOrCreator(group, reqPhone)) {
+        log.warn('group.listrecurring.not_member', { reqId: req.reqId, code });
+        return res.status(403).json({ ok: false, error: 'not_a_member' });
+      }
       return res.status(200).json({ ok: true, recurring: group.recurring || [] });
     }
 
