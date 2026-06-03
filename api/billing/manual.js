@@ -184,7 +184,12 @@ async function adminImpl(req, res) {
 const requestHandler = withRateLimit({ key: 'billing_manual', limit: 10, windowSec: 3600 })(
   requireAuth(requestImpl)
 );
-const adminHandler = requireAdmin(adminImpl);
+// Defense-in-depth (audit M1, docs/AUDIT_API_ENDPOINT_SECURITY_2026_05_31.md):
+// requireAdmin already gates list/confirm/reject, but a rate limit caps brute
+// force if the admin token/cookie ever leaks. Matches the user-flow wrap above.
+const adminHandler = withRateLimit({ key: 'billing_manual_admin', limit: 60, windowSec: 60 })(
+  requireAdmin(adminImpl)
+);
 
 export default withRequestId(async function manualRouter(req, res) {
   const action = String(req.query.action || '').toLowerCase();

@@ -22,6 +22,11 @@ import { withRequestId, log } from '../../lib/log.js';
 import { rateLimit } from '../../lib/ratelimit.js';
 import { computeEntitlement } from '../../lib/subscription.js';
 import { getUserId } from '../_lib/session.js';
+// Canonical constant-time compare (audit M2,
+// docs/AUDIT_API_ENDPOINT_SECURITY_2026_05_31.md): shared lib/crypto.js helper
+// (wraps crypto.timingSafeEqual) instead of a local copy, so the primitive
+// only has to be hardened in one place.
+import { constantTimeEqual } from '../../lib/crypto.js';
 
 // Sends a one-shot WhatsApp welcome to a freshly-linked user. Fire-and-forget
 // from the confirm path — if Meta is down or the token has rotated, the link
@@ -134,25 +139,6 @@ function normalizeE164(input) {
   return s;
 }
 
-// Constant-time string comparison. Prevents timing-based leakage of a secret
-// when comparing against a presented header value. Walks the longer string
-// so the comparison time depends only on the larger length, not the index of
-// the first differing byte.
-//
-// Out-of-bounds `charCodeAt` returns NaN; `NaN || 0 === 0`, so positions past
-// the end of either string contribute 0 to `diff` (but the initial
-// `la ^ lb` already accumulates a non-zero `diff` for any length mismatch).
-function constantTimeEqual(a, b) {
-  const la = a.length, lb = b.length;
-  let diff = la ^ lb;
-  const max = Math.max(la, lb);
-  for (let i = 0; i < max; i++) {
-    const ca = a.charCodeAt(i) || 0;
-    const cb = b.charCodeAt(i) || 0;
-    diff |= (ca ^ cb);
-  }
-  return diff === 0;
-}
 
 // Cryptographically-safe, UNBIASED 6-digit code (100000-999999).
 // The old `100000 + (buf[0] % 900000)` form is biased because 2^32 is not
@@ -332,7 +318,6 @@ async function handlerImpl(req, res) {
       return res.status(503).json({ ok: false, error: 'bot_secret_not_configured' });
     }
     const botSecret = req.headers['x-kesefle-bot-secret'] || body?.botSecret;
-    const { constantTimeEqual } = await import('../../lib/crypto.js');
     if (!botSecret || !constantTimeEqual(String(botSecret), expected)) {
       log.warn('link.confirm.unauthorized', { reqId: req.reqId });
       return res.status(401).json({ ok: false, error: 'unauthorized' });

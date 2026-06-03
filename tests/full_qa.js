@@ -74,6 +74,7 @@ const UNIT_SUITES = [
   'tests/test_ratelimit_ipv6_ttl.js',                // ratelimit: IPv6 /64 bypass + atomic-TTL lockout fix
   'tests/test_dashboard_sumifs_status_filter.js',    // dashboard income/expense sign-flip: every תנועות-subcategory SUMIFS filters col H (#227)
   'tests/test_sheet_tab_constants.js',               // tab-name constants centralized + byte-identical to bot (silent-rename guard) (#230)
+  'tests/test_round3_api_kv_hardening.js',           // round 3 audit: cron secret-in-header, admin RL, dedup constantTimeEqual, PII hash, GDPR goal/stats purge
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {
@@ -111,8 +112,20 @@ ok('income flag in col H (false=income)', rInc[7] === false);
 ok('formula in rawText sanitized', String(buildExpenseRow({ amount: 1, rawText: '=HACK()' })[5]).startsWith("'"));
 
 // ── 3b. constantTimeEqual (regression guard for the off-by-one bug found 2026-05-23) ──
-console.log('\n══ 3b. constantTimeEqual ══');
-(0, eval)(extractFn(LINK, 'constantTimeEqual'));
+// Round 3 audit M2: the three local copies (api/whatsapp/link.js,
+// api/log/bot-heartbeat.js, api/admin/stats.js) were removed in favor of the
+// single canonical helper in lib/crypto.js. This guard now extracts + exercises
+// the canonical function directly, so the off-by-one regression stays covered
+// at the one place that compare logic now lives.
+console.log('\n══ 3b. constantTimeEqual (canonical lib/crypto.js) ══');
+const nodeCrypto = require('node:crypto');
+const CRYPTO_SRC = fs.readFileSync(path.join(ROOT, 'lib/crypto.js'), 'utf8');
+// The canonical helper references `crypto.timingSafeEqual`. Direct eval (not
+// indirect `(0, eval)`) runs in THIS scope, so expose node's crypto as `crypto`
+// for the duration of the eval'd function definition.
+const crypto = nodeCrypto; // eslint-disable-line no-unused-vars
+// eslint-disable-next-line no-eval
+eval(extractFn(CRYPTO_SRC, 'constantTimeEqual'));
 ok('cte: empty strings equal', constantTimeEqual('', '') === true);
 ok('cte: identical strings equal', constantTimeEqual('abc', 'abc') === true);
 ok('cte: position-0 mismatch detected (off-by-one regression)', constantTimeEqual('Xbc', 'abc') === false);
@@ -161,7 +174,8 @@ ok('recurring.js resolves token from user:{userSub}', /resolveTenantWriteRecord/
 ok('account.js delete purges token:{sub}', /'token:'\s*\+\s*userSub/.test(ACCOUNT));
 ok('account.js delete revokes encrypted-envelope grant', /refreshTokenEnvelope[\s\S]{0,80}decryptRefreshToken/.test(ACCOUNT));
 ok('link.js does NOT log the link code', !/code_issued'[^)]*\bcode\b/.test(LINK));
-ok('admin/stats.js uses constant-time token compare (no !==)', /ctEq\(/.test(ADMIN_STATS) && !/token !== ADMIN_TOKEN/.test(ADMIN_STATS));
+// Round 3 audit M2: ctEq was replaced by the canonical constantTimeEqual import.
+ok('admin/stats.js uses constant-time token compare (no !==)', /constantTimeEqual\(/.test(ADMIN_STATS) && !/token !== ADMIN_TOKEN/.test(ADMIN_STATS) && !/bearer !== ADMIN_TOKEN/.test(ADMIN_STATS));
 
 // ── 5b. Cross-user self-learning (privacy-safe global knowledge base) ───────
 // These guard the "learn from every correction, get smarter for everyone"

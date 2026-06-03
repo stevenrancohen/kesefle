@@ -12,20 +12,11 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
-
-// Constant-time string comparison for the bot secret. Same implementation
-// as api/whatsapp/link.js -- duplicated to avoid cross-file imports here.
-function constantTimeEqual(a, b) {
-  const la = a.length, lb = b.length;
-  let diff = la ^ lb;
-  const max = Math.max(la, lb);
-  for (let i = 0; i < max; i++) {
-    const ca = a.charCodeAt(i) || 0;
-    const cb = b.charCodeAt(i) || 0;
-    diff |= (ca ^ cb);
-  }
-  return diff === 0;
-}
+// Canonical constant-time compare (audit M2,
+// docs/AUDIT_API_ENDPOINT_SECURITY_2026_05_31.md): use the shared
+// lib/crypto.js helper (wraps crypto.timingSafeEqual) instead of a local copy,
+// so future hardening of the primitive propagates everywhere.
+import { constantTimeEqual } from '../../lib/crypto.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
