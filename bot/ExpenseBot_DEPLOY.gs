@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-03-confirm-always-dropdown-no-sheet-url';
+const KFL_BUILD_VERSION = '2026-06-03-allowance-income';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -344,6 +344,10 @@ const ALLOWED_PHONE = '';
 // ============================================================
 
 const CATEGORY_MAP = [
+  // ===== INCOME -- National-Insurance allowances / benefits / grants (2026-06-03 sign-flip fix).
+  // Placed FIRST so the income entry wins the length-tie (V8 stable sort) vs the identical
+  // phrases on the government-EXPENSE rows below. Purely additive -- removes/reorders nothing.
+  {"keywords":["קצבת ילדים","קצבת זקנה","קצבת נכות","קצבת שאירים","קצבת אזרח ותיק","קצבת ניידות","קצבת הבטחת הכנסה","הבטחת הכנסה","השלמת הכנסה","דמי לידה","מענק לידה","דמי אבטלה","מענק עבודה","מענק שחרור","מענק קורונה","תגמולי מילואים","דמי מילואים","פיצויי פיטורין","פיצויי פרישה","פדיון ימי חופשה","פדיון ימי מחלה","גמלת סיעוד"],"category":"הכנסות","subcategory":"קצבאות וזכאויות","isIncome":true},
   // ===== BUSINESS (עסק) — English + Hebrew aliases, top of list so they
   // win priority. Subcategories match the short forms the dashboard
   // SUMIFS literally expects ("שיווק", "תפעוליות", etc.). =====
