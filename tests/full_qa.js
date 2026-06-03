@@ -77,6 +77,7 @@ const UNIT_SUITES = [
   'tests/test_round3_api_kv_hardening.js',           // round 3 audit: cron secret-in-header, admin RL, dedup constantTimeEqual, PII hash, GDPR goal/stats purge
   'tests/test_email_unsubscribe.js',                 // onboarding: welcome+lifecycle emails have a working, signed, single-click unsubscribe
   'tests/test_api_error_wrapper_hardening.js',       // hardening: getExpenses wrapped in withRequestId + paypal subscribe/webhook return stable error codes (no e.message leak)
+  'tests/pwa.js',                                     // PWA hardening: manifest validity, maskable icon, theme-color parity, SW cache-versioning + skipWaiting/clients.claim + offline fallback, controllerchange auto-update (#13), install CTA (#125), iOS meta
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {
