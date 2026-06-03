@@ -19,6 +19,11 @@ import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken, constantTimeEqual } from '../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../lib/oauth.js';
 import { TX_TAB } from '../lib/sheet-tabs.js';
+// GDPR completeness (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md): goals are
+// stored as one key per goal under an index, so a flat key list can't reach
+// them. purgeGoals() walks the goals:{userSub} index and deletes each
+// goal:{userSub}:{id} plus the index itself.
+import { purgeGoals } from '../lib/goals.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -128,6 +133,29 @@ async function _keysForUser_(userSub, phone, referralCode) {
   return keys;
 }
 
+// Purge the per-user records that a flat key list in _keysForUser_ can't reach
+// because they are multi-key (one KV entry per goal, indexed) or windowed
+// (one entry per stats window). Called from BOTH delete paths so bot-driven
+// and web-driven deletes leave identical (zero) residue. Best-effort: every
+// op tolerates a missing key, so a partial state never throws.
+// (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md GDPR completeness, items 5 + 7.)
+async function _purgeMultiKeyUserRecords_(userSub, deleted) {
+  try {
+    const r = await purgeGoals(userSub);   // walks goals:{userSub} index → goal:{userSub}:{id} + index
+    if (r && r.purged) deleted.push('goal:' + userSub + ':* (' + r.purged + ')');
+    deleted.push('goals:' + userSub);
+  } catch (e) {
+    log.warn('account.purge_goals_failed', { err: e && e.message });
+  }
+  // Cached stats aggregates (amounts → PII). Two known windows; TTL'd anyway,
+  // but the user asked for deletion, so honor it immediately.
+  for (const window of ['7d', '30d']) {
+    if (await kvDel('stats:' + userSub + ':' + window)) {
+      deleted.push('stats:' + userSub + ':' + window);
+    }
+  }
+}
+
 async function revokeGoogleToken(refreshToken) {
   if (!refreshToken) return;
   try {
@@ -187,6 +215,10 @@ async function deleteAccount(req, res) {
   for (const k of keysToDelete) {
     if (await kvDel(k)) deleted.push(k);
   }
+
+  // Multi-key / windowed per-user records (goals index, cached stats) that the
+  // flat key list above can't reach.
+  await _purgeMultiKeyUserRecords_(userSub, deleted);
 
   // Evict from the `users_all` index SET (SADD'd as 'google:'+sub at signup in
   // api/auth/google.js). A DEL can't remove a set member — without this SREM the
@@ -392,6 +424,8 @@ async function deleteByPhone(req, res) {
   for (const k of keysToDelete) {
     if (await kvDel(k)) deleted.push(k);
   }
+  // Same multi-key / windowed purge as the web deleteAccount path.
+  await _purgeMultiKeyUserRecords_(userSub, deleted);
   // Same `users_all` index eviction as the web deleteAccount path, so a
   // bot-driven delete leaves no ghost in the cron set either.
   if (await kvSetRemove('users_all', 'google:' + userSub)) {

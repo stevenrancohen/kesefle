@@ -22,6 +22,10 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { requireAdmin } from '../../lib/auth.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+// Canonical constant-time compare (audit M2 / L5,
+// docs/AUDIT_API_ENDPOINT_SECURITY_2026_05_31.md): shared lib/crypto.js helper
+// (wraps crypto.timingSafeEqual) replaces the third local copy in the codebase.
+import { constantTimeEqual } from '../../lib/crypto.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -56,15 +60,6 @@ async function kvGetRaw(key) {
   if (!res.ok) return null;
   const j = await res.json();
   return j.result;
-}
-
-// Constant-time string compare to avoid a timing oracle on the admin token.
-function ctEq(a, b) {
-  a = String(a == null ? '' : a); b = String(b == null ? '' : b);
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
 }
 
 // Core handler — runs only after one of the auth modes has accepted.
@@ -136,7 +131,7 @@ async function dispatch(req, res) {
       res.status(503).json({ error: 'admin_token_not_configured' });
       return;
     }
-    if (ctEq(bearer, ADMIN_TOKEN)) {
+    if (constantTimeEqual(bearer, ADMIN_TOKEN)) {
       log.info('admin_stats.legacy_auth_ok', { reqId: req.reqId });
       return legacyRateLimited(req, res);
     }

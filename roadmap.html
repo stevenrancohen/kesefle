@@ -15,7 +15,18 @@
 <link rel="canonical" href="https://kesefle.com/roadmap" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.tailwindcss.com" />
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&display=swap" />
+<style>
+  /* === Critical first-paint fallback (perf pass 2026-06-03) ===
+     Tailwind loads from a render-blocking CDN tag below; if that CDN is
+     slow or blocked the page would flash unstyled. These INLINE base rules
+     paint instantly with the same values the body's Tailwind utilities
+     produce, so once Tailwind arrives nothing shifts. Light-mode default. */
+  html { background-color: #ffffff; }
+  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #ffffff; color: #0f1422; }
+</style>
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <link rel="stylesheet" href="/css/brand.css" />
 <script>
@@ -250,7 +261,7 @@
 <footer class="border-t border-ink-200 bg-white py-10">
   <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 text-sm text-ink-500 md:flex-row">
     <div class="flex items-center gap-2">
-      <img src="/logo.png" alt="כספ'לה" class="h-6 w-6 rounded-lg" />
+      <img src="/logo.png" alt="כספ'לה" class="h-6 w-6 rounded-lg" loading="lazy" decoding="async" />
       <span>© 2026 כספ'לה — הכסף שלך, על אוטומט.</span>
     </div>
     <div class="flex gap-5">

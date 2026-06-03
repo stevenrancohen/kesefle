@@ -76,10 +76,30 @@ function isAuthorizedCronCall(req) {
   if (cronAuth && process.env.CRON_SECRET && constantTimeEqual(cronAuth, 'Bearer ' + process.env.CRON_SECRET)) {
     return true;
   }
+  // PREFERRED manual-trigger path: bot secret in a HEADER, never the URL.
+  // Vercel access logs / proxies / browser history capture the query string,
+  // so a secret in `?admin=` leaks to anyone with log read access (audit H1,
+  // docs/AUDIT_API_ENDPOINT_SECURITY_2026_05_31.md). Accept the secret via
+  // `X-Kesefle-Bot-Secret: <secret>` or `Authorization: Bearer <secret>`.
+  const botSecret = process.env.KESEFLE_BOT_SECRET;
+  if (botSecret) {
+    const headerSecret = req.headers['x-kesefle-bot-secret'];
+    if (headerSecret && constantTimeEqual(String(headerSecret), botSecret)) {
+      return true;
+    }
+    if (cronAuth && constantTimeEqual(String(cronAuth), 'Bearer ' + botSecret)) {
+      return true;
+    }
+  }
+  // DEPRECATED (kept working for 1 release): bot secret in the URL query string.
+  // Emits a loud warning so the secret-in-URL usage can be migrated to a header.
   const adminParam = (req.query && req.query.admin) || (req.url && (() => {
     try { return new URL(req.url, 'http://x').searchParams.get('admin'); } catch { return null; }
   })());
-  if (adminParam && process.env.KESEFLE_BOT_SECRET && constantTimeEqual(adminParam, process.env.KESEFLE_BOT_SECRET)) {
+  if (adminParam && botSecret && constantTimeEqual(adminParam, botSecret)) {
+    log.warn('cron.customer_weekly_digest.deprecated_secret_in_url', {
+      hint: 'Use X-Kesefle-Bot-Secret header instead of ?admin= (secret leaks via access logs)',
+    });
     return true;
   }
   return false;
@@ -164,7 +184,12 @@ async function handlerImpl(req, res) {
       // throttle so Meta doesn't rate-limit us
       await new Promise((r) => setTimeout(r, SEND_THROTTLE_MS));
     } catch (e) {
-      errors.push({ user: userKey, error: e.message });
+      // Audit L4 (docs/AUDIT_API_ENDPOINT_SECURITY_2026_05_31.md): the raw
+      // userKey is "google:<sub>" — the Google sub is PII. Store only a
+      // sha256-8 fingerprint so the in-scope errors array can never surface
+      // a real identifier if logged/profiled.
+      const userFp = createHash('sha256').update(String(userKey)).digest('hex').slice(0, 8);
+      errors.push({ user: userFp, error: e.message });
       // continue with next user
     }
   }

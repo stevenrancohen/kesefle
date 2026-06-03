@@ -7,6 +7,26 @@ on:
     branches: [main]
 
 jobs:
+  # The headline gate: the comprehensive regression gauntlet. This is the SAME
+  # `npm run gauntlet` developers run locally after every batch (see
+  # scripts/gauntlet.sh + the deploy-checklist skill), so CI and local agree.
+  # It orchestrates all 6 safety-net groups (full_qa, every test suite,
+  # node --check on all JS + the bot .gs, inline-HTML-script + JSON-LD
+  # validation, sitemap well-formedness, secret scan) and fails loudly with a
+  # per-group pass/fail summary on any regression.
+  gauntlet:
+    name: Regression gauntlet (npm run gauntlet)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run the full gauntlet
+        run: npm run gauntlet
+
   tests:
     name: Run test suites
     runs-on: ubuntu-latest
@@ -23,6 +43,10 @@ jobs:
       # api) and registers the isolation / billing-signature / classifier
       # suites. It needs no secrets and no network. A non-zero exit here fails
       # the build so a regression can never merge silently.
+      #
+      # NOTE: the `gauntlet` job above is the comprehensive net and already
+      # runs this. These focused steps are kept because they fail FASTER on the
+      # two most common breakages and emit clearer per-suite GitHub annotations.
       - name: Offline QA gate (tests/full_qa.js)
         run: node tests/full_qa.js
 
@@ -39,6 +63,11 @@ jobs:
     name: Validate code + structure
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Only the checks NOT already covered by the `gauntlet` job live here, to
+    # avoid duplicating work. The gauntlet handles: Apps Script + all-JS
+    # syntax (node --check), sitemap well-formedness, inline-HTML-script +
+    # JSON-LD validation, and the secret scan. JSON validation and the .bak
+    # leak guard are unique to this job.
     steps:
       - uses: actions/checkout@v4
 
@@ -46,19 +75,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Syntax check Apps Script bot
-        run: |
-          # Apps Script files are JS, but Node refuses the .gs extension
-          # in newer versions. Copy to a temp .js file before --check.
-          for f in bot/ExpenseBot_FIXED.gs bot/ExpenseBot_DEPLOY.gs; do
-            if [ -f "$f" ]; then
-              echo "Checking $f..."
-              cp "$f" "/tmp/$(basename "$f" .gs).js"
-              node --check "/tmp/$(basename "$f" .gs).js" \
-                || { echo "::error file=$f::Syntax error"; exit 1; }
-            fi
-          done
 
       - name: Validate JSON
         run: |
@@ -68,20 +84,6 @@ jobs:
             node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8'))" \
               || { echo "::error file=$f::Invalid JSON"; exit 1; }
           done
-
-      - name: Validate sitemap.xml well-formed
-        run: |
-          if [ -f sitemap.xml ]; then
-            node -e "
-              const fs = require('fs');
-              const xml = fs.readFileSync('sitemap.xml', 'utf8');
-              const opens = (xml.match(/<url>/g) || []).length;
-              const closes = (xml.match(/<\/url>/g) || []).length;
-              if (opens !== closes) { console.error('sitemap.xml has', opens, 'opens vs', closes, 'closes'); process.exit(1); }
-              if (!xml.includes('<urlset')) { console.error('sitemap.xml missing <urlset>'); process.exit(1); }
-              console.log('sitemap.xml OK with', opens, 'URLs');
-            "
-          fi
 
       - name: Check for accidental .bak files
         run: |
@@ -93,18 +95,6 @@ jobs:
             exit 1
           fi
           echo "No .bak files leaked."
-
-      - name: Check for hard-coded secrets
-        run: |
-          # Quick scan for obvious leaks. Not a substitute for proper secret-scanning,
-          # but catches the easy mistakes.
-          if grep -rE "(EAA[A-Za-z0-9_-]{40,}|sk-ant-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,})" \
-            --include="*.html" --include="*.js" --include="*.gs" --include="*.md" \
-            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.next . ; then
-            echo "::error::Found what looks like a hard-coded API token. Investigate before merging."
-            exit 1
-          fi
-          echo "No obvious secrets in committed files."
 
   links:
     name: Internal link sanity
