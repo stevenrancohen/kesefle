@@ -34,11 +34,15 @@
  *   We use SUMPRODUCT not SUMIFS because SUMIFS does not support
  *   REGEXMATCH inside its criteria -- only literal wildcards * and ?.
  *
- * SAFETY (per Steven's iron rules):
+ * SAFETY (per Steven's iron rules + kesefle-financial-data-integrity-guard):
  *   - DRY_RUN_SMART_REMAP_DASHBOARD() prints proposed formula per row
  *     plus the evaluated sum it would produce -- read-only.
- *   - SMART_REMAP_DASHBOARD() backs up the company dashboard rows 1-65
+ *   - SMART_REMAP_DASHBOARD() is GATED: it refuses unless Script Property
+ *     CONFIRM_SMART_REMAP_DASHBOARD == "YES I UNDERSTAND". It also takes a
+ *     LockService script lock and backs up the company dashboard rows 1-65
  *     to a _BAK_remap_<ts> tab BEFORE writing.
+ *   - ROLLBACK_SMART_REMAP_DASHBOARD() restores rows 8-11 from the newest
+ *     _BAK_remap_* tab if the remap produced wrong values.
  *   - Touches ONLY the 12 monthly formula cells in rows 8/9/10/11 (cols
  *     C..N) and the col B annual SUM. Does NOT touch labels in col A,
  *     row 6/7 (revenue/orders -- those are correctly wired already),
@@ -47,7 +51,8 @@
  *
  * Public entry points (zero-arg, dropdown friendly):
  *   DRY_RUN_SMART_REMAP_DASHBOARD()   -- read-only diagnostic + proposal
- *   SMART_REMAP_DASHBOARD()           -- backup + apply
+ *   SMART_REMAP_DASHBOARD()           -- gate + lock + backup + apply
+ *   ROLLBACK_SMART_REMAP_DASHBOARD()  -- restore rows 8-11 from newest backup
  *   VERIFY_SMART_REMAP_DASHBOARD()    -- post-write read of new values
  *
  * ENCODING:
@@ -69,6 +74,17 @@ var _SR_TX_TAB_ = '\u05ea\u05e0\u05d5\u05e2\u05d5\u05ea';
 var _SR_BUSINESS_TAG_ = '\u05e2\u05e1\u05e7';
 
 var _SR_VERSION_ = 'SmartRemap_v1';
+
+// CONFIRM gate (per kesefle-financial-data-integrity-guard discipline).
+// SMART_REMAP_DASHBOARD already has LockService + an automatic _BAK_remap_*
+// backup, but it had NO confirmation gate -- so a stray dropdown-pick in the
+// Apps Script function selector could rewrite rows 8-11. APPLY now refuses
+// unless this Script Property is set to the exact value. Set it in
+// Project Settings -> Script Properties, run SMART_REMAP_DASHBOARD(), then
+// (optionally) clear the property again. ROLLBACK_SMART_REMAP_DASHBOARD()
+// restores the newest _BAK_remap_* tab.
+var _SR_CONFIRM_PROP_ = 'CONFIRM_SMART_REMAP_DASHBOARD';
+var _SR_CONFIRM_VAL_  = 'YES I UNDERSTAND';
 
 // 2026 year block rows (mirrors personal_sheet_fix.gs and Phase 5 verifier).
 var _SR_YEAR_2026_ = {
@@ -243,12 +259,25 @@ function DRY_RUN_SMART_REMAP_DASHBOARD() {
   });
 
   Logger.log('');
-  Logger.log('Run SMART_REMAP_DASHBOARD() to apply. A backup tab will be created automatically.');
+  Logger.log('To apply: set Script Property ' + _SR_CONFIRM_PROP_ + ' = ' + _SR_CONFIRM_VAL_ +
+             ' then run SMART_REMAP_DASHBOARD(). A backup tab is created automatically;');
+  Logger.log('ROLLBACK_SMART_REMAP_DASHBOARD() undoes it.');
 }
 
 // ---- PUBLIC: APPLY -----------------------------------------------------
 
 function SMART_REMAP_DASHBOARD() {
+  // CONFIRM gate -- refuse unless the Script Property is set. This stops an
+  // accidental dropdown-run from rewriting the dashboard. (Lock + backup are
+  // already present below; the gate is the missing third guardrail.)
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(_SR_CONFIRM_PROP_) !== _SR_CONFIRM_VAL_) {
+    Logger.log('!! REFUSING: set Script Property ' + _SR_CONFIRM_PROP_ +
+               ' = ' + _SR_CONFIRM_VAL_ + ' first (Project Settings -> Script Properties),');
+    Logger.log('   then run SMART_REMAP_DASHBOARD() again. Run DRY_RUN_SMART_REMAP_DASHBOARD() to preview.');
+    return 'refused-no-confirm';
+  }
+
   var lock = LockService.getScriptLock();
   try { lock.waitLock(15000); } catch (e) {
     Logger.log('!! could not acquire lock -- abort: ' + e.message);
@@ -328,4 +357,58 @@ function VERIFY_SMART_REMAP_DASHBOARD() {
   Logger.log('  r' + b.total   + ' total  : ' + totalAnnual.toFixed(2));
   Logger.log('  r' + b.net     + ' net    : ' + netAnnual.toFixed(2) +
     ' (expected ' + (revenueAnnual - totalAnnual).toFixed(2) + ')');
+}
+
+// ---- PUBLIC: ROLLBACK --------------------------------------------------
+// Restore rows 8-11 cols B..N of the company dashboard from the newest
+// _BAK_remap_* backup tab created by SMART_REMAP_DASHBOARD(). The backup tab
+// holds a full copy of the dashboard (rows 1-65, cols A..N), so we copy back
+// only the cells SMART_REMAP wrote (the four expense-bucket rows). Read-only
+// if no backup tab is found.
+function ROLLBACK_SMART_REMAP_DASHBOARD() {
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch (e) {
+    Logger.log('!! could not acquire lock -- abort: ' + e.message);
+    return;
+  }
+  try {
+    var ss = _sr_openSheet_();
+    var dash = ss.getSheetByName(_SR_COMPANY_TAB_);
+    if (!dash) { Logger.log('!! no company tab -- no-op'); return 'no-company-tab'; }
+
+    // Find the newest _BAK_remap_* tab by name (timestamp sorts lexicographically).
+    var tabs = ss.getSheets();
+    var newest = null;
+    var newestName = '';
+    for (var i = 0; i < tabs.length; i++) {
+      var name = tabs[i].getName();
+      if (name.indexOf('_BAK_remap_') === 0 && name > newestName) {
+        newestName = name;
+        newest = tabs[i];
+      }
+    }
+    if (!newest) {
+      Logger.log('!! no _BAK_remap_* backup tab found -- nothing to roll back.');
+      return 'no-backup';
+    }
+
+    Logger.log('===== ROLLBACK: SMART_REMAP_DASHBOARD (' + _SR_VERSION_ + ') =====');
+    Logger.log('Restoring rows 8-11 cols B..N from backup tab: ' + newestName);
+
+    var b = _SR_YEAR_2026_;
+    // rows 8..11 (material..operational) are contiguous; restore in one copy.
+    var firstRow = b.material; // 8
+    var lastRow  = b.operational; // 11
+    var numRows  = lastRow - firstRow + 1; // 4
+    // cols B..N = col 2..14 = 13 cols.
+    var srcRange = newest.getRange(firstRow, 2, numRows, 13);
+    srcRange.copyTo(dash.getRange(firstRow, 2), { contentsOnly: false });
+
+    SpreadsheetApp.flush();
+    Logger.log('DONE. Rows ' + firstRow + '-' + lastRow + ' restored from ' + newestName + '.');
+    Logger.log('Run VERIFY_SMART_REMAP_DASHBOARD() to confirm the restored values.');
+    return 'rolled-back:' + newestName;
+  } finally {
+    try { lock.releaseLock(); } catch (e) { /* ignore */ }
+  }
 }

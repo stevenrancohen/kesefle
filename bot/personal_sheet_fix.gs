@@ -18,7 +18,10 @@
  *
  * Two phases:
  *   DRY_RUN_RESTORE_2026()   — read-only, prints what WILL change.
- *   APPLY_RESTORE_2026()     — actually writes the formulas (with backup).
+ *   APPLY_RESTORE_2026()     — writes the formulas. GATED: needs Script
+ *                              Property CONFIRM_RESTORE_2026 == "YES I
+ *                              UNDERSTAND"; takes a lock + backup first.
+ *                              RESTORE_FROM_BACKUP() is the undo.
  *
  * Plus diagnostic + personal-dashboard helpers (see end of file).
  *
@@ -53,6 +56,23 @@ var _PSF_YEAR_2026_ = {
   rawMaterials: 8, marketing: 9, shipping: 10, ops: 11,
   totalExp: 12, netProfit: 13, marginPct: 14,
 };
+
+// CONFIRM gate for fixPersonalDashboardFormulas (per
+// kesefle-financial-data-integrity-guard discipline). That function rewrites
+// C..N for EVERY data row of the personal dashboard (maazan ishi) and used
+// to have no gate, no lock and no backup -- yet it is reachable via the
+// one-click FIX_EVERYTHING() runner. It now refuses unless this Script
+// Property is set, takes a document lock, and snapshots the personal tab to a
+// _BAK_personal_<ts> tab first. ROLLBACK_FIX_PERSONAL_DASHBOARD() restores it.
+var _PSF_PERSONAL_CONFIRM_PROP_ = 'CONFIRM_FIX_PERSONAL_DASHBOARD';
+var _PSF_PERSONAL_CONFIRM_VAL_  = 'YES I UNDERSTAND';
+
+// CONFIRM gate for APPLY_RESTORE_2026 (company dashboard formula restore).
+// It already backs up to _BAK_recomp_<ts> but had no gate and no lock, so a
+// stray dropdown-run could rewrite the 2026 block. RESTORE_FROM_BACKUP()
+// already exists as the undo half (restores from the newest _BAK_recomp_*).
+var _PSF_RESTORE_CONFIRM_PROP_ = 'CONFIRM_RESTORE_2026';
+var _PSF_RESTORE_CONFIRM_VAL_  = 'YES I UNDERSTAND';
 
 // ─── No editing below ───────────────────────────────────────────────────
 
@@ -141,6 +161,24 @@ function _backupCompanyDashboard_(ss) {
   return bakName;
 }
 
+// Backup: snapshot rows 1..65 cols A..N of the PERSONAL dashboard
+// (maazan ishi) into a new _BAK_personal_<ts> tab. Same backup-first rule as
+// the company dashboard. Returns the backup tab name (or null if no tab).
+function _backupPersonalDashboard_(ss) {
+  var src = ss.getSheetByName(_PSF_PERSONAL_TAB_);
+  if (!src) return null;
+  var ts = Utilities.formatDate(new Date(), 'Asia/Jerusalem', 'yyyyMMdd_HHmmss');
+  var bakName = '_BAK_personal_' + ts;
+  while (ss.getSheetByName(bakName)) {
+    bakName = '_BAK_personal_' + ts + '_' + Math.floor(Math.random() * 1000);
+  }
+  var dst = ss.insertSheet(bakName);
+  var range = src.getRange(1, 1, 65, 14);
+  range.copyTo(dst.getRange(1, 1), { contentsOnly: false });
+  Logger.log('Backup written -> ' + bakName);
+  return bakName;
+}
+
 // Phase 1: read-only. Print what would change, no writes.
 function DRY_RUN_RESTORE_2026() {
   var ss = _openSheet_();
@@ -175,6 +213,23 @@ function DRY_RUN_RESTORE_2026() {
 
 // Phase 2: actually rewrite. Creates a backup first.
 function APPLY_RESTORE_2026() {
+  // CONFIRM gate -- refuse unless the Script Property is set. (Backup is
+  // already taken below; the gate + lock are the missing guardrails.)
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(_PSF_RESTORE_CONFIRM_PROP_) !== _PSF_RESTORE_CONFIRM_VAL_) {
+    Logger.log('!! REFUSING APPLY_RESTORE_2026: set Script Property ' +
+               _PSF_RESTORE_CONFIRM_PROP_ + ' = ' + _PSF_RESTORE_CONFIRM_VAL_ +
+               ' first (Project Settings -> Script Properties), then run again.');
+    Logger.log('   Run DRY_RUN_RESTORE_2026() to preview. RESTORE_FROM_BACKUP() undoes a bad run.');
+    return 'refused-no-confirm';
+  }
+
+  var lock = LockService.getDocumentLock();
+  try { lock.waitLock(15000); } catch (e) {
+    Logger.log('!! could not acquire lock -- abort: ' + e.message);
+    return 'refused-no-lock';
+  }
+  try {
   var ss = _openSheet_();
   var dash = ss.getSheetByName(_PSF_COMPANY_TAB_);
   if (!dash) { Logger.log('FAIL: no ' + _PSF_COMPANY_TAB_); return; }
@@ -220,34 +275,108 @@ function APPLY_RESTORE_2026() {
   Logger.log('Done. The dashboard is now FORMULA-BASED.');
   Logger.log('Refresh the sheet — May "עלות שיווק" should update to the live total from תנועות.');
   Logger.log('From now on, every bot write to תנועות propagates automatically without re-running this.');
+  return 'applied';
+  } finally {
+    try { lock.releaseLock(); } catch (e) { /* ignore */ }
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────
 // PERSONAL dashboard — wildcard-wrap every data row's monthly SUMIFS.
-// Lower-risk than the company dashboard; doesn't use a backup tab.
+// GATED (2026-06): refuses unless Script Property
+// CONFIRM_FIX_PERSONAL_DASHBOARD == "YES I UNDERSTAND". Takes a document lock
+// and snapshots the personal tab to a _BAK_personal_<ts> tab BEFORE writing.
+// This function rewrites C..N for EVERY data row (incl. manually-typed ones),
+// so it follows the same backup-first -> gate -> lock discipline the company
+// dashboard repairs use. ROLLBACK_FIX_PERSONAL_DASHBOARD() restores it.
 // ────────────────────────────────────────────────────────────────────────
 function fixPersonalDashboardFormulas() {
-  var ss = _openSheet_();
-  var sheet = ss.getSheetByName(_PSF_PERSONAL_TAB_);
-  if (!sheet) { Logger.log('FAIL: no ' + _PSF_PERSONAL_TAB_); return; }
-  var lastRow = Math.min(sheet.getLastRow(), 60);
-  var labels = sheet.getRange('A1:A' + lastRow).getValues();
-  var updates = 0;
-  for (var r = 0; r < labels.length; r++) {
-    var rowNum = r + 1;
-    var label = String(labels[r][0] || '').trim();
-    if (!label) continue;
-    if (/^סה/.test(label)) continue;
-    if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(label)) continue;
-    if (rowNum < 5) continue;
-    var newRow = [];
-    for (var m = 1; m <= 12; m++) {
-      var mm = m < 10 ? ('0' + m) : ('' + m);
-      newRow.push("=IFERROR(SUMIFS('" + _PSF_TX_TAB_ + "'!C:C, '" + _PSF_TX_TAB_ + "'!B:B, $B$2&\"-" + mm + "\", '" + _PSF_TX_TAB_ + "'!E:E, \"*\"&$A" + rowNum + "&\"*\"), 0)");
-    }
-    try { sheet.getRange('C' + rowNum + ':N' + rowNum + '').setFormulas([newRow]); updates++; } catch (_e) {}
+  // CONFIRM gate -- refuse unless the Script Property is set.
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(_PSF_PERSONAL_CONFIRM_PROP_) !== _PSF_PERSONAL_CONFIRM_VAL_) {
+    Logger.log('!! REFUSING fixPersonalDashboardFormulas: set Script Property ' +
+               _PSF_PERSONAL_CONFIRM_PROP_ + ' = ' + _PSF_PERSONAL_CONFIRM_VAL_ +
+               ' first (Project Settings -> Script Properties), then run again.');
+    return 'refused-no-confirm';
   }
-  Logger.log('OK: מאזן אישי — wildcard-wrap on ' + updates + ' rows.');
+
+  var lock = LockService.getDocumentLock();
+  try { lock.waitLock(15000); } catch (e) {
+    Logger.log('!! could not acquire lock -- abort: ' + e.message);
+    return 'refused-no-lock';
+  }
+  try {
+    var ss = _openSheet_();
+    var sheet = ss.getSheetByName(_PSF_PERSONAL_TAB_);
+    if (!sheet) { Logger.log('FAIL: no ' + _PSF_PERSONAL_TAB_); return; }
+
+    // Backup-first: snapshot the personal dashboard before touching it.
+    var bakName = _backupPersonalDashboard_(ss);
+    Logger.log('Backup: ' + bakName);
+
+    var lastRow = Math.min(sheet.getLastRow(), 60);
+    var labels = sheet.getRange('A1:A' + lastRow).getValues();
+    var updates = 0;
+    for (var r = 0; r < labels.length; r++) {
+      var rowNum = r + 1;
+      var label = String(labels[r][0] || '').trim();
+      if (!label) continue;
+      if (/^סה/.test(label)) continue;
+      if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(label)) continue;
+      if (rowNum < 5) continue;
+      var newRow = [];
+      for (var m = 1; m <= 12; m++) {
+        var mm = m < 10 ? ('0' + m) : ('' + m);
+        newRow.push("=IFERROR(SUMIFS('" + _PSF_TX_TAB_ + "'!C:C, '" + _PSF_TX_TAB_ + "'!B:B, $B$2&\"-" + mm + "\", '" + _PSF_TX_TAB_ + "'!E:E, \"*\"&$A" + rowNum + "&\"*\"), 0)");
+      }
+      try { sheet.getRange('C' + rowNum + ':N' + rowNum + '').setFormulas([newRow]); updates++; } catch (_e) {}
+    }
+    Logger.log('OK: מאזן אישי — wildcard-wrap on ' + updates + ' rows. Backup at ' + bakName + '.');
+    return 'applied:' + updates;
+  } finally {
+    try { lock.releaseLock(); } catch (e) { /* ignore */ }
+  }
+}
+
+// ROLLBACK for fixPersonalDashboardFormulas: restore the personal dashboard
+// (rows 1-65 cols A..N) from the newest _BAK_personal_* tab. Read-only if no
+// backup tab is found. Takes a document lock.
+function ROLLBACK_FIX_PERSONAL_DASHBOARD() {
+  var lock = LockService.getDocumentLock();
+  try { lock.waitLock(15000); } catch (e) {
+    Logger.log('!! could not acquire lock -- abort: ' + e.message);
+    return 'refused-no-lock';
+  }
+  try {
+    var ss = _openSheet_();
+    var dash = ss.getSheetByName(_PSF_PERSONAL_TAB_);
+    if (!dash) { Logger.log('!! no ' + _PSF_PERSONAL_TAB_ + ' -- no-op'); return 'no-personal-tab'; }
+
+    var tabs = ss.getSheets();
+    var newest = null;
+    var newestName = '';
+    for (var i = 0; i < tabs.length; i++) {
+      var name = tabs[i].getName();
+      if (name.indexOf('_BAK_personal_') === 0 && name > newestName) {
+        newestName = name;
+        newest = tabs[i];
+      }
+    }
+    if (!newest) {
+      Logger.log('!! no _BAK_personal_* backup tab found -- nothing to roll back.');
+      return 'no-backup';
+    }
+
+    Logger.log('===== ROLLBACK: fixPersonalDashboardFormulas =====');
+    Logger.log('Restoring rows 1-65 cols A..N from backup tab: ' + newestName);
+    var srcRange = newest.getRange(1, 1, 65, 14);
+    srcRange.copyTo(dash.getRange(1, 1), { contentsOnly: false });
+    SpreadsheetApp.flush();
+    Logger.log('DONE. Personal dashboard restored from ' + newestName + '.');
+    return 'rolled-back:' + newestName;
+  } finally {
+    try { lock.releaseLock(); } catch (e) { /* ignore */ }
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────
@@ -287,11 +416,22 @@ function diagnoseBusinessRows() {
 }
 
 // One-click runner — restore company dashboard formulas + personal wildcards.
+// NOTE (2026-06): both halves are now CONFIRM-gated. For this to actually
+// write, set BOTH Script Properties first:
+//   CONFIRM_RESTORE_2026            = YES I UNDERSTAND  (company half)
+//   CONFIRM_FIX_PERSONAL_DASHBOARD  = YES I UNDERSTAND  (personal half)
+// Each half backs up first (_BAK_recomp_* / _BAK_personal_*) and has an undo
+// (RESTORE_FROM_BACKUP / ROLLBACK_FIX_PERSONAL_DASHBOARD).
 function FIX_EVERYTHING() {
-  try { APPLY_RESTORE_2026(); } catch (e) { Logger.log('company err: ' + e.message); }
-  try { fixPersonalDashboardFormulas(); } catch (e) { Logger.log('personal err: ' + e.message); }
+  var c = APPLY_RESTORE_2026();
+  var p = fixPersonalDashboardFormulas();
   Logger.log('---');
-  Logger.log('All fixes applied. Refresh the sheet (Cmd+R) — numbers should be live now.');
+  if (c === 'refused-no-confirm' || p === 'refused-no-confirm') {
+    Logger.log('Some halves were REFUSED. Set the CONFIRM_* Script Properties above, then re-run FIX_EVERYTHING().');
+    Logger.log('  company: ' + c + '   personal: ' + p);
+    return;
+  }
+  Logger.log('All fixes applied (company: ' + c + ', personal: ' + p + '). Refresh the sheet (Cmd+R).');
 }
 
 // ════════════════════════════════════════════════════════════════════════
