@@ -575,6 +575,69 @@
     </div>
   </section>
 
+  <!-- ====== SECTION 1.7: USERS NEEDING ATTENTION (actionable) ====== -->
+  <!-- 2026-06-03 deepen: an executive "act now" list built ENTIRELY from the
+       existing requireAdmin endpoints. Orphans + pending-link come from
+       /api/admin?action=registration-health; each row carries a masked id
+       (privacy) plus the ONE-CLICK recovery action that already exists server
+       side: POST /api/admin/reprovision-user-sheet {sub|phone} for orphans,
+       POST /api/admin/resend-welcome {phone} for pending links. No fabricated
+       rows -- if the chain is healthy the section shows an honest "all good".
+       All identity strings are masked + rendered via textContent (XSS-safe). -->
+  <section class="mb-10" id="kfl-attention-section">
+    <div class="mb-5 flex items-end justify-between pb-4" style="border-bottom:2px solid #ef4444;">
+      <div>
+        <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest" style="color:#b91c1c;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          טיפול מיידי
+        </p>
+        <h2 class="font-display text-2xl font-black tracking-tight md:text-3xl" style="color:#0f1422;">משתמשים שדורשים טיפול</h2>
+        <p class="mt-1.5 text-sm font-medium" style="color:#41506f;">נרשמו אבל משהו נתקע — גיליון חסר, קישור שבור, או ממתינים לחיבור וואטסאפ. כל שורה עם כפתור תיקון בלחיצה אחת.</p>
+      </div>
+      <button onclick="window.kflLoadAttention && window.kflLoadAttention()" class="kfl-btn-ghost rounded-xl px-4 py-2.5 text-sm font-bold">
+        <span class="inline-flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>רענון</span>
+      </button>
+    </div>
+    <div class="card card-hover p-4 sm:p-6">
+      <div id="kfl-attention" class="text-sm font-medium" style="color:#41506f;">טוען…</div>
+    </div>
+  </section>
+
+  <!-- ====== SECTION 1.8: RECENT SIGNUPS FEED ====== -->
+  <!-- 2026-06-03 deepen: live recent-signups feed from /api/admin/recent-signups
+       (requireAdmin). Shows the furthest onboarding step each new user reached
+       (OAuth -> sheet -> linked) with a masked email, a relative "X ago", and a
+       direct link to their sheet. Emails are masked client-side; everything is
+       textContent / attribute-escaped (no innerHTML of user data). -->
+  <section class="mb-10" id="kfl-recent-signups-section">
+    <div class="mb-5 flex items-end justify-between pb-4" style="border-bottom:2px solid #3b82f6;">
+      <div>
+        <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest" style="color:#1d4ed8;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          הצטרפויות
+        </p>
+        <h2 class="font-display text-2xl font-black tracking-tight md:text-3xl" style="color:#0f1422;">מי נרשם לאחרונה</h2>
+        <p class="mt-1.5 text-sm font-medium" style="color:#41506f;">המשתמשים החדשים, מהחדש לישן, עם השלב שאליו הגיעו בהצטרפות. מזהים מוסתרים מטעמי פרטיות.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-xs font-medium" style="color:#64748B;">טווח:
+          <select id="kfl-signups-range" class="rounded-md px-2 py-1 text-xs" style="border:1px solid #E2E8F0;color:#334155;">
+            <option value="6">6 שעות</option>
+            <option value="24" selected>24 שעות</option>
+            <option value="72">3 ימים</option>
+            <option value="168">7 ימים</option>
+          </select>
+        </label>
+        <button onclick="window.kflLoadRecentSignups && window.kflLoadRecentSignups()" class="kfl-btn-ghost rounded-xl px-4 py-2.5 text-sm font-bold">
+          <span class="inline-flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>רענון</span>
+        </button>
+      </div>
+    </div>
+    <div class="card card-hover p-4 sm:p-6">
+      <div id="kfl-recent-signups" class="text-sm font-medium" style="color:#41506f;">טוען…</div>
+    </div>
+  </section>
+
   <!-- ====== SECTION 2: REAL-TIME ANALYTICS ====== -->
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between section-rule pb-3">
@@ -859,19 +922,115 @@
   </section>
 
   <!-- ====== SECTION 3.5: CONVERSION FUNNEL ====== -->
+  <!-- 2026-06-03 deepen: re-pointed from the coarse 5-step ?action=analytics
+       counter to the genuine 7-step onboarding waterfall in
+       /api/admin/funnel-summary (requireAdmin): landing -> Google click ->
+       OAuth -> sheet -> phone-link-start -> phone-linked -> first expense.
+       It already computes conversion_from_prev + the single biggest leak, so
+       the CEO sees exactly where the day's signups fall off. Values are
+       numbers/percents we format -> textContent-safe. Honest fallback if the
+       day's counters are empty. The 30d page-view/signup totals in "מדדים
+       מרכזיים" still come from ?action=analytics (untouched). -->
   <section class="mb-10">
     <div class="mb-4 flex items-end justify-between section-rule pb-3">
       <div>
         <p class="kfl-section-eyebrow">קליטת לקוחות</p>
-        <h2 class="kfl-section-h2">משפך ההצטרפות (30 ימים)</h2>
+        <h2 class="kfl-section-h2">משפך ההצטרפות (היום)</h2>
         <p class="kfl-section-sub">איפה לקוחות פוטנציאליים נופלים בדרך, כדי שנדע מה לשפר.</p>
-        <p class="mt-0.5 text-sm" style="color: #64748B;">From site visit to first message to the bot — real event data.</p>
+        <p class="mt-0.5 text-sm" style="color: #64748B;">מנחיתה על ההרשמה ועד ההוצאה הראשונה לבוט — נתוני אירועים אמיתיים של היום.</p>
       </div>
-      <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium" style="background: #F1F5F9; color: #475569;">Live data</span>
+      <span class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium" style="background: #F1F5F9; color: #475569;">נתונים חיים</span>
     </div>
     <div class="card card-hover p-5">
+      <div id="kfl-funnel-leak" class="mb-4 hidden rounded-lg p-3 text-xs font-medium"></div>
       <div id="kfl-funnel" class="space-y-3 text-sm" style="color: #64748B;"><div class="flex items-center gap-2"><svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M22 12a10 10 0 0 1-10 10"/></svg><span>טוען נתוני משפך…</span></div></div>
     </div>
+    <script>
+    (function(){
+      // Dedicated funnel loader (2026-06-03). Uses the 7-step waterfall from
+      // /api/admin/funnel-summary. Replaces the legacy analytics-fed renderer
+      // for THIS section only. Every label is from a fixed Hebrew dictionary;
+      // every number is formatted by us -> textContent (XSS-safe DOM build).
+      function el(id){ return document.getElementById(id); }
+      function nf(n){ return (typeof n==='number'&&isFinite(n)) ? n.toLocaleString('en-US') : '—'; }
+      function pct(x){ return (typeof x==='number'&&isFinite(x)) ? Math.round(x*100) : null; }
+      function mk(tag, attrs, txt){
+        var n = document.createElement(tag);
+        if (attrs) Object.keys(attrs).forEach(function(k){ if(k==='class') n.className=attrs[k]; else n.setAttribute(k, attrs[k]); });
+        if (txt != null) n.textContent = txt;
+        return n;
+      }
+      function render(j){
+        var box = el('kfl-funnel'); if (!box) return;
+        box.textContent = '';
+        var steps = (j && j.funnel) || [];
+        var hasAny = steps.some(function(s){ return (s.count||0) > 0; });
+        if (!steps.length || !hasAny) {
+          box.appendChild(mk('div', { style:'color:#94A3B8;' }, 'אין עדיין נתוני משפך להיום — יופיעו כשמבקרים יתחילו את ההרשמה.'));
+          return;
+        }
+        var top = steps[0] && steps[0].count ? steps[0].count : 0;
+        steps.forEach(function(s, i){
+          var wrap = mk('div');
+          var rowTop = mk('div', { class:'flex items-center justify-between text-xs' });
+          rowTop.appendChild(mk('span', { class:'font-medium', style:'color:#1E293B;' }, s.label || s.step));
+          var right = mk('span', { class:'num font-medium', style:'color:#1E293B;' });
+          right.textContent = nf(s.count);
+          if (i > 0) {
+            var cp = pct(s.conversion_from_prev);
+            if (cp != null) {
+              var cspan = mk('span', { style:'color:' + (cp < 50 ? '#B45309' : '#94A3B8') + ';' }, ' (' + cp + '% מהשלב הקודם)');
+              right.appendChild(cspan);
+            }
+          }
+          rowTop.appendChild(right);
+          wrap.appendChild(rowTop);
+          var barWrap = mk('div', { class:'mt-1 qbar' });
+          var pctOfTop = top > 0 ? Math.round((s.count / top) * 100) : 0;
+          barWrap.appendChild(mk('span', { style:'width:' + Math.max(2, pctOfTop) + '%' }));
+          wrap.appendChild(barWrap);
+          box.appendChild(wrap);
+        });
+        // Biggest leak callout.
+        var leakBox = el('kfl-funnel-leak');
+        if (leakBox) {
+          var leak = j.biggest_leak;
+          if (leak && leak.dropoff > 0) {
+            leakBox.textContent = '';
+            leakBox.setAttribute('style', 'background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;');
+            leakBox.className = 'mb-4 rounded-lg p-3 text-xs font-medium';
+            var lp = pct(leak.dropoff_pct);
+            leakBox.textContent = 'הנשירה הגדולה ביותר: "' + (leak.label || leak.step) + '" — נשרו ' + nf(leak.dropoff) + ' משתמשים' + (lp != null ? ' (' + lp + '% מהשלב הקודם)' : '') + '.';
+          } else {
+            leakBox.className = 'mb-4 hidden';
+          }
+        }
+      }
+      async function load(){
+        var box = el('kfl-funnel'); if (!box) return;
+        try {
+          var r = await fetch('/api/admin/funnel-summary', { credentials:'include' });
+          if (r.status === 401 || r.status === 403) {
+            box.textContent = ''; box.appendChild(mk('div', { style:'color:#94A3B8;' }, 'התחבר/י כמנהל כדי לראות את המשפך.')); return;
+          }
+          var j = await r.json();
+          if (!j || !j.ok) { box.textContent=''; box.appendChild(mk('div', { style:'color:#EF4444;' }, 'שגיאה בטעינת המשפך.')); return; }
+          render(j);
+        } catch (_e) {
+          box.textContent=''; box.appendChild(mk('div', { style:'color:#EF4444;' }, 'שגיאה בטעינת המשפך.'));
+        }
+      }
+      window.kflLoadFunnel = load;
+      // Defer until the auth gate drops (same pattern as the KPI strip).
+      var attempts = 0;
+      var poller = setInterval(function(){
+        attempts++;
+        var gate = document.getElementById('kfl-gate');
+        var gone = !gate || gate.classList.contains('hidden') || gate.style.display === 'none';
+        if (gone || attempts > 40) { clearInterval(poller); load(); }
+      }, 250);
+    })();
+    </script>
   </section>
 
   <!-- ====== SECTION 4: BOT HEALTH ====== -->
@@ -1023,6 +1182,18 @@
     </div>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" id="kfl-exec-grid">
       <div class="card p-5"><div class="text-sm flex items-center gap-2" style="color:#64748B;"><svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M22 12a10 10 0 0 1-10 10"/></svg><span>טוען סיכום מנהלים…</span></div></div>
+    </div>
+    <!-- Revenue trend honest-skip (2026-06-03 deepen): /api/admin/revenue is a
+         point-in-time SNAPSHOT (current MRR/ARR/paid) -- it does NOT store
+         month-over-month history, so a real trend line cannot be drawn without
+         fabricating numbers. Per the "never invent data" rule we show an honest
+         note instead of a fake sparkline. Wiring a monthly MRR snapshot cron
+         (e.g. mrr_snapshot:<YYYY-MM>) is the follow-up that would unlock this. -->
+    <div class="card mt-4 p-4" style="background:#F8FAFC;border:1px dashed #CBD5E1;">
+      <div class="flex items-start gap-2 text-xs" style="color:#475569;">
+        <svg class="mt-0.5 flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>מגמת הכנסה לאורך זמן (MRR חודש-מול-חודש) עדיין לא נמדדת — /api/admin/revenue מחזיר תמונת מצב נוכחית בלבד ולא היסטוריה. כדי לא להציג גרף מומצא, מוצג המצב הנוכחי בלבד. יתווסף כשנחבר snapshot חודשי של MRR.</span>
+      </div>
     </div>
     <script>
     (function(){
@@ -1786,32 +1957,11 @@
     if (s === 'trialing' || (!u.plan || u.plan === 'free')) return { status: 'trial', label: 'Trial', cls: 'background: #FFFBEB; color: #F59E0B;' };
     return { status: 'active', label: 'Active', cls: 'background: #ECFDF5; color: #10B981;' };
   }
-  var FUNNEL_HE = {
-    page_view: 'Page views',
-    signup_start: 'Started signup',
-    signup_complete: 'Completed signup',
-    sheet_provisioned: 'Sheet provisioned',
-    first_message_received: 'First message to bot',
-  };
-  function renderFunnel(funnel) {
-    var box = el('kfl-funnel');
-    if (!box) return;
-    if (!funnel.length) { box.innerHTML = '<div style="color: #94A3B8;">No event data yet.</div>'; return; }
-    var top = funnel[0] && funnel[0].count ? funnel[0].count : 0;
-    box.innerHTML = funnel.map(function (stage, i) {
-      var label = FUNNEL_HE[stage.event] || stage.event;
-      var pctOfTop = top > 0 ? Math.round((stage.count / top) * 100) : 0;
-      var prev = i > 0 ? funnel[i - 1].count : null;
-      var conv = (prev && prev > 0) ? Math.round((stage.count / prev) * 100) : null;
-      return '<div>'
-        + '<div class="flex items-center justify-between text-xs">'
-        + '<span class="font-medium" style="color: #1E293B;">' + label + '</span>'
-        + '<span class="num font-medium" style="color: #1E293B;">' + num(stage.count) + (conv !== null ? ' <span style="color: #94A3B8;">(' + conv + '% from prev)</span>' : '') + '</span>'
-        + '</div>'
-        + '<div class="mt-1 qbar"><span style="width:' + Math.max(2, pctOfTop) + '%"></span></div>'
-        + '</div>';
-    }).join('');
-  }
+  // NOTE (2026-06-03 deepen): the conversion-funnel render moved to its own
+  // loader inside Section 3.5, fed by the richer 7-step /api/admin/funnel-
+  // summary. The old analytics-fed renderFunnel + FUNNEL_HE dictionary were
+  // removed to avoid two scripts writing the same #kfl-funnel container. This
+  // loader still sets the 30d page-view / signup totals below.
   function authBanner(msg) {
     var grid = el('kfl-keystats');
     if (grid && !el('kfl-auth-banner')) {
@@ -1850,7 +2000,8 @@
     if (a && a.ok && a.totals) {
       setTxt('stat-pageviews', num(a.totals.page_view || 0));
       setTxt('stat-signups', num(a.totals.signup_complete || 0));
-      renderFunnel(a.funnel || []);
+      // Funnel waterfall is now rendered by the dedicated Section 3.5 loader
+      // (window.kflLoadFunnel) from /api/admin/funnel-summary -- not here.
     }
     // USERS
     var u = await get('users&limit=200');
@@ -2043,6 +2194,270 @@
 
   if (document.readyState !== 'loading') load();
   else document.addEventListener('DOMContentLoaded', load);
+})();
+</script>
+
+<!-- Users-needing-attention + Recent-signups (2026-06-03 deepen).
+     Both read existing requireAdmin endpoints (HttpOnly session cookie via
+     credentials:'include'; opportunistic Bearer). Identity is masked
+     client-side; every user-supplied string is rendered with textContent or
+     used only inside a confirm() prompt -- never innerHTML. One-click actions
+     POST to the recovery endpoints that already exist:
+       reprovision-user-sheet  (orphan: signed up, no sheet)
+       resend-welcome          (pending: sheet exists, WhatsApp not linked) -->
+<script>
+(function () {
+  function token() { try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; } catch (e) { return ''; } }
+  function isLoggedIn() { try { var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}'); return !!(u && u.sub); } catch (e) { return false; } }
+  function el(id) { return document.getElementById(id); }
+  function when(s) { try { return s ? new Date(s).toLocaleString('he-IL') : '—'; } catch (e) { return '—'; } }
+
+  // ---- masking (privacy: never show a full email / phone in the console) ----
+  function maskEmail(e) {
+    if (!e || typeof e !== 'string' || e.indexOf('@') < 0) return e ? '***' : '—';
+    var parts = e.split('@'); var u = parts[0] || ''; var dom = parts[1] || '';
+    var head = u.slice(0, 2); var tail = u.length > 3 ? u.slice(-1) : '';
+    return head + '***' + tail + '@' + dom;
+  }
+  function maskPhone(p) {
+    if (!p) return '—';
+    var d = String(p).replace(/\D+/g, '');
+    if (d.length < 4) return '****';
+    return '••••' + d.slice(-4);
+  }
+  function agoHe(min) {
+    if (min == null || !isFinite(min)) return '—';
+    if (min < 1) return 'הרגע';
+    if (min < 60) return 'לפני ' + Math.round(min) + ' דק׳';
+    var h = Math.round(min / 60);
+    if (h < 24) return 'לפני ' + h + ' שע׳';
+    return 'לפני ' + Math.round(h / 24) + ' ימים';
+  }
+
+  // ---- DOM builder (text always via textContent) ----
+  function mk(tag, attrs, txt) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'class') n.className = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    if (txt != null) n.textContent = txt;
+    return n;
+  }
+  function chip(text, color, bg, border) {
+    return mk('span', { class: 'rounded-full px-2 py-0.5 text-[11px] font-bold', style: 'color:' + color + ';background:' + bg + ';border:1px solid ' + border + ';' }, text);
+  }
+
+  async function getJSON(url) {
+    if (!isLoggedIn()) return { _noauth: true };
+    var t = token();
+    var r = await fetch(url, { credentials: 'include', headers: t ? { 'Authorization': 'Bearer ' + t } : {} });
+    if (r.status === 401 || r.status === 403) return { _denied: true };
+    try { return await r.json(); } catch (e) { return { ok: false, error: 'bad_json' }; }
+  }
+  async function postJSON(url, body) {
+    var t = token();
+    var headers = { 'Content-Type': 'application/json' };
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    var r = await fetch(url, { method: 'POST', credentials: 'include', headers: headers, body: JSON.stringify(body || {}) });
+    var j = {}; try { j = await r.json(); } catch (e) {}
+    return { status: r.status, ok: r.ok && j && j.ok !== false, body: j };
+  }
+  var AUTH_MSG = 'התחבר/י עם חשבון המנהל ב-/account (באותו דפדפן) ואז רענן/י.';
+  var DENY_MSG = 'הגישה נדחתה — ודא/י שהאימייל שלך מופיע ב-ADMIN_EMAILS.';
+  function plainMsg(box, text, color) {
+    box.textContent = '';
+    box.appendChild(mk('div', { class: 'text-sm', style: 'color:' + (color || '#64748B') + ';' }, text));
+  }
+
+  // === recovery actions (one-click, server-side endpoints already exist) ===
+  // mode: 'reprovision' (orphan) | 'resend' (pending link)
+  async function runAction(btn, mode, ident) {
+    var confirmMsg = mode === 'reprovision'
+      ? 'ליצור מחדש גיליון למשתמש זה? נעשה שימוש ב-refresh token השמור שלו.'
+      : 'לשלוח שוב הודעת ברוכים-הבאים בוואטסאפ למשתמש זה?';
+    if (!confirm(confirmMsg)) return;
+    var orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'שולח…';
+    try {
+      var res;
+      if (mode === 'reprovision') {
+        // Prefer sub; fall back to phone. recovery endpoint accepts either.
+        var body = ident.sub ? { sub: ident.sub } : { phone: ident.phone };
+        res = await postJSON('/api/admin/reprovision-user-sheet', body);
+      } else {
+        res = await postJSON('/api/admin/resend-welcome', { phone: ident.phone });
+      }
+      if (res.ok) {
+        btn.textContent = '✓ בוצע';
+        btn.setAttribute('style', 'border:1px solid #A7F3D0;color:#047857;background:#ECFDF5;');
+      } else {
+        var err = (res.body && (res.body.error || res.body.hint)) || res.status;
+        btn.disabled = false; btn.textContent = orig;
+        alert('שגיאה: ' + err);
+      }
+    } catch (e) {
+      btn.disabled = false; btn.textContent = orig;
+      alert('שגיאה: ' + e.message);
+    }
+  }
+
+  function attentionRow(opts) {
+    // opts: { kind, masked, sub, phone, when, reasonText, action } action: 'reprovision'|'resend'|null
+    var row = mk('div', { class: 'flex items-center justify-between gap-3 flex-wrap rounded-lg p-3', style: 'background:#F8FAFC;border:1px solid #EEF2F6;' });
+    var left = mk('div', { class: 'flex items-center gap-3 min-w-0' });
+    left.appendChild(chip(opts.kindLabel, opts.kindColor, opts.kindBg, opts.kindBorder));
+    var who = mk('div', { class: 'min-w-0' });
+    who.appendChild(mk('div', { class: 'text-sm font-bold num', style: 'color:#1E293B;' }, opts.masked));
+    who.appendChild(mk('div', { class: 'text-[11px]', style: 'color:#94A3B8;' }, opts.reasonText + (opts.when ? ' · נרשם ' + opts.when : '')));
+    left.appendChild(who);
+    row.appendChild(left);
+    if (opts.action) {
+      var btn = mk('button', { class: 'rounded-md px-3 py-1.5 text-xs font-bold', style: 'border:1px solid #E2E8F0;color:#1d4ed8;background:#FFFFFF;' },
+        opts.action === 'reprovision' ? 'צור גיליון מחדש' : 'שלח ברוכים-הבאים');
+      btn.addEventListener('click', function () { runAction(btn, opts.action, { sub: opts.sub, phone: opts.phone }); });
+      row.appendChild(btn);
+    } else {
+      row.appendChild(mk('span', { class: 'text-[11px]', style: 'color:#94A3B8;' }, 'ממתין למשתמש'));
+    }
+    return row;
+  }
+
+  async function loadAttention() {
+    var box = el('kfl-attention'); if (!box) return;
+    plainMsg(box, 'טוען…');
+    var j = await getJSON('/api/admin?action=registration-health');
+    if (j._noauth) { plainMsg(box, AUTH_MSG, '#92400E'); return; }
+    if (j._denied) { plainMsg(box, DENY_MSG, '#F59E0B'); return; }
+    if (!j.ok) { plainMsg(box, 'שגיאה: ' + (j.error || ''), '#EF4444'); return; }
+
+    var REASON_HE = {
+      no_sheet_at_all: 'אין גיליון כלל',
+      user_has_sheet_but_no_bot_mapping: 'יש גיליון אך הבוט לא מקושר',
+      mapping_without_user_record_sheet: 'קישור ללא רשומת משתמש',
+      phone_record_missing_userSub: 'קישור טלפון ללא מזהה',
+      phone_record_missing_sheet: 'קישור טלפון ללא גיליון',
+      no_canonical_sheet_for_sub: 'אין גיליון רשום למשתמש',
+      phone_sheet_mismatch_canonical: 'גיליון בקישור שונה מהרשום',
+    };
+    var orphans = j.orphans || [], broken = j.brokenPhone || [], pending = j.pendingPhoneLink || [];
+    box.textContent = '';
+
+    // Summary chips
+    var head = mk('div', { class: 'mb-4 flex flex-wrap items-center gap-2' });
+    head.appendChild(chip(orphans.length + ' ללא גיליון', orphans.length ? '#B91C1C' : '#047857', orphans.length ? '#FEF2F2' : '#ECFDF5', orphans.length ? '#FECACA' : '#A7F3D0'));
+    head.appendChild(chip(broken.length + ' קישור שבור', broken.length ? '#B91C1C' : '#047857', broken.length ? '#FEF2F2' : '#ECFDF5', broken.length ? '#FECACA' : '#A7F3D0'));
+    head.appendChild(chip(pending.length + ' ממתינים לחיבור', pending.length ? '#B45309' : '#047857', pending.length ? '#FFFBEB' : '#ECFDF5', pending.length ? '#FDE68A' : '#A7F3D0'));
+    box.appendChild(head);
+
+    if (!orphans.length && !broken.length && !pending.length) {
+      var okBox = mk('div', { class: 'rounded-lg p-4 text-sm', style: 'background:#ECFDF5;border:1px solid #A7F3D0;color:#047857;' }, 'כל המשתמשים מחוברים ותקינים — אין מה לטפל ✓');
+      box.appendChild(okBox);
+      return;
+    }
+    var list = mk('div', { class: 'grid gap-2' });
+    // Orphans (critical) -> reprovision action
+    orphans.forEach(function (o) {
+      list.appendChild(attentionRow({
+        kindLabel: 'אין גיליון', kindColor: '#B91C1C', kindBg: '#FEF2F2', kindBorder: '#FECACA',
+        masked: maskEmail(o.email) + ' · ' + maskPhone(o.phone),
+        sub: o.sub || null, phone: o.phone || null,
+        when: when(o.connectedAt), reasonText: REASON_HE[o.reason] || o.reason || 'אין גיליון',
+        action: 'reprovision',
+      }));
+    });
+    // Broken phone links (critical). If a sub is known we can reprovision; if
+    // only a phone is known we still offer a reprovision-by-phone attempt.
+    broken.forEach(function (b) {
+      list.appendChild(attentionRow({
+        kindLabel: 'קישור שבור', kindColor: '#B91C1C', kindBg: '#FEF2F2', kindBorder: '#FECACA',
+        masked: maskPhone(b.phone),
+        sub: b.linkedSub || null, phone: b.phone || null,
+        when: '', reasonText: REASON_HE[b.reason] || b.reason || 'קישור שבור',
+        action: (b.linkedSub || b.phone) ? 'reprovision' : null,
+      }));
+    });
+    // Pending WhatsApp link (expected interim) -> resend welcome nudge
+    pending.forEach(function (p) {
+      list.appendChild(attentionRow({
+        kindLabel: 'ממתין לחיבור', kindColor: '#B45309', kindBg: '#FFFBEB', kindBorder: '#FDE68A',
+        masked: maskEmail(p.email) + ' · ' + maskPhone(p.phone),
+        sub: p.sub || null, phone: p.phone || null,
+        when: when(p.connectedAt), reasonText: 'יש גיליון, טרם שלח הודעה',
+        action: p.phone ? 'resend' : null,
+      }));
+    });
+    box.appendChild(list);
+  }
+
+  // === Recent signups feed ===
+  function signupsRange() { var s = el('kfl-signups-range'); return s ? (parseInt(s.value, 10) || 24) : 24; }
+  var STEP_HE = {
+    1: { t: 'התחבר עם Google', c: '#B45309', bg: '#FFFBEB', bd: '#FDE68A' },
+    2: { t: 'גיליון נוצר', c: '#1d4ed8', bg: '#EFF6FF', bd: '#BFDBFE' },
+    3: { t: 'וואטסאפ מחובר', c: '#047857', bg: '#ECFDF5', bd: '#A7F3D0' },
+  };
+  async function loadRecentSignups() {
+    var box = el('kfl-recent-signups'); if (!box) return;
+    plainMsg(box, 'טוען…');
+    var hours = signupsRange();
+    var j = await getJSON('/api/admin/recent-signups?limit=30&hours=' + hours);
+    if (j._noauth) { plainMsg(box, AUTH_MSG, '#92400E'); return; }
+    if (j._denied) { plainMsg(box, DENY_MSG, '#F59E0B'); return; }
+    if (!j.ok) { plainMsg(box, 'שגיאה: ' + (j.error || ''), '#EF4444'); return; }
+    var users = j.users || [];
+    box.textContent = '';
+    var head = mk('div', { class: 'mb-3 flex flex-wrap items-center gap-2' });
+    head.appendChild(mk('span', { class: 'text-xl num font-black', style: 'color:#0f1422;' }, String(j.returned != null ? j.returned : users.length)));
+    head.appendChild(mk('span', { class: 'text-xs', style: 'color:#94A3B8;' }, 'הצטרפו ב-' + hours + ' השעות האחרונות'));
+    var bs = j.by_step || {};
+    if (bs.step_3_fully_linked != null) head.appendChild(chip((bs.step_3_fully_linked || 0) + ' מחוברים', '#047857', '#ECFDF5', '#A7F3D0'));
+    if (bs.step_2_sheet_no_phone != null) head.appendChild(chip((bs.step_2_sheet_no_phone || 0) + ' גיליון בלבד', '#1d4ed8', '#EFF6FF', '#BFDBFE'));
+    if (bs.step_1_oauth_only != null) head.appendChild(chip((bs.step_1_oauth_only || 0) + ' רק התחברו', '#B45309', '#FFFBEB', '#FDE68A'));
+    box.appendChild(head);
+
+    if (!users.length) {
+      box.appendChild(mk('div', { class: 'rounded-lg p-4 text-sm', style: 'background:#F8FAFC;border:1px solid #E2E8F0;color:#64748B;' }, 'אין הצטרפויות חדשות בטווח שנבחר.'));
+      return;
+    }
+    var list = mk('div', { class: 'grid gap-2' });
+    users.forEach(function (u) {
+      var row = mk('div', { class: 'flex items-center justify-between gap-3 flex-wrap rounded-lg p-3', style: 'background:#F8FAFC;border:1px solid #EEF2F6;' });
+      var left = mk('div', { class: 'flex items-center gap-3 min-w-0' });
+      var st = STEP_HE[u.step] || STEP_HE[1];
+      left.appendChild(chip(st.t, st.c, st.bg, st.bd));
+      var who = mk('div', { class: 'min-w-0' });
+      who.appendChild(mk('div', { class: 'text-sm font-bold num', style: 'color:#1E293B;' }, maskEmail(u.email) + (u.linkedPhone ? ' · ' + maskPhone(u.linkedPhone) : '')));
+      who.appendChild(mk('div', { class: 'text-[11px]', style: 'color:#94A3B8;' }, agoHe(u.minutes_ago)));
+      left.appendChild(who);
+      row.appendChild(left);
+      var actions = mk('div', { class: 'flex items-center gap-2' });
+      if (u.sheetUrl) {
+        var a = mk('a', { class: 'rounded-md px-3 py-1.5 text-xs font-bold', style: 'border:1px solid #E2E8F0;color:#1d4ed8;background:#FFFFFF;', href: u.sheetUrl, target: '_blank', rel: 'noopener' }, 'פתח גיליון ↗');
+        actions.appendChild(a);
+      }
+      if (u.linkedPhone) {
+        var rb = mk('button', { class: 'rounded-md px-3 py-1.5 text-xs font-bold', style: 'border:1px solid #E2E8F0;color:#475569;background:#FFFFFF;' }, 'שלח שוב');
+        rb.addEventListener('click', function () { runAction(rb, 'resend', { phone: u.linkedPhone }); });
+        actions.appendChild(rb);
+      }
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+    box.appendChild(list);
+  }
+
+  window.kflLoadAttention = loadAttention;
+  window.kflLoadRecentSignups = loadRecentSignups;
+
+  function boot() {
+    var sel = el('kfl-signups-range');
+    if (sel) sel.addEventListener('change', loadRecentSignups);
+    loadAttention();
+    loadRecentSignups();
+  }
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
 </body>
