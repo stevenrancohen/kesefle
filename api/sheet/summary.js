@@ -30,6 +30,7 @@ import { withRequestId } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/oauth.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
@@ -67,7 +68,7 @@ async function handlerImpl(req, res) {
   }
 
   // Read the תנועות tab columns A-I, all rows (cap at 5000 for safety).
-  const range = encodeURIComponent("'תנועות'!A2:I5001");
+  const range = encodeURIComponent(`'${TX_TAB}'!A2:I5001`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${userRec.spreadsheetId}/values/${range}`;
   let resp;
   try {

@@ -71,6 +71,7 @@ const UNIT_SUITES = [
   'tests/test_ratelimit_arg_order.js',               // ratelimit arg-order regression guard
   // backend-activation (#225): activation/onboarding plumbing wiring guard.
   'tests/test_activation_plumbing.js',               // activation: backend plumbing wired correctly
+  'tests/test_sheet_tab_constants.js',               // tab-name constants centralized + byte-identical to bot (silent-rename guard)
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {

@@ -41,6 +41,7 @@ import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { requireAuth } from '../../lib/auth.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -127,7 +128,7 @@ async function handlerImpl(req, res) {
   // Read A2:I5001 from the תנועות tab. Cap at 5000 rows -- well above any
   // realistic year of expenses for a single עוסק and keeps Sheets quota in
   // check on the off chance someone has a 10k-row sheet.
-  const range = encodeURIComponent("'תנועות'!A2:I5001");
+  const range = encodeURIComponent(`'${TX_TAB}'!A2:I5001`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
   let resp;
   try {

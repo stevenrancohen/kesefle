@@ -19,6 +19,7 @@ import { withRequestId, log, subHash } from '../../lib/log.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
 import { sendPush } from '../../lib/push.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -103,7 +104,7 @@ function monthKey(dt) {
 async function readMtdByCategory(spreadsheetId, accessToken) {
   const year = new Date().getFullYear();
   let result = await fetchSheetRange(spreadsheetId, `'${year}'!A1:N`, accessToken);
-  if (!result.ok) result = await fetchSheetRange(spreadsheetId, "'תנועות'!A1:N", accessToken);
+  if (!result.ok) result = await fetchSheetRange(spreadsheetId, `'${TX_TAB}'!A1:N`, accessToken);
   if (!result.ok) result = await fetchSheetRange(spreadsheetId, 'A1:N', accessToken);
   if (!result.ok) return null;
 

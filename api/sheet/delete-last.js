@@ -23,9 +23,8 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { exchangeRefreshForAccess, sanitizeCell } from '../../lib/sheet-writer.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 import { constantTimeEqual, decryptRefreshToken } from '../../lib/crypto.js';
-
-const TX_TAB = 'תנועות';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
