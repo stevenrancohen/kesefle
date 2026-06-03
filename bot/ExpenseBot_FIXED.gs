@@ -12962,10 +12962,9 @@ function _waSendConfig_() {
 }
 
 function sendWhatsAppMessage(to, message) {
-  if (!WHATSAPP_TOKEN || WHATSAPP_TOKEN.indexOf('PASTE_') === 0) {
-    Logger.log('sendWhatsAppMessage: token not configured - skipping reply');
-    return { ok: false, reason: 'no_token' };
-  }
+  // No Meta-token gate here: the credential check is provider-aware in
+  // _waSendConfig_() below (Meta WHATSAPP_TOKEN or 360dialog D360_API_KEY).
+  // A WHATSAPP_TOKEN gate would wrongly block 360dialog replies (no Meta token).
   if (!to || !message) {
     Logger.log('sendWhatsAppMessage: missing to=' + to + ' messageLen=' + (message ? String(message).length : 0));
     return { ok: false, reason: 'missing_args' };
