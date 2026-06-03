@@ -25,11 +25,11 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { constantTimeEqual, decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess, sanitizeCell } from '../../lib/sheet-writer.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 const BOT_SECRET = process.env.KESEFLE_BOT_SECRET;
-const TX_TAB = 'תנועות';
 
 async function kvGet(key) {
   if (!KV_URL || !KV_TOKEN) return null;

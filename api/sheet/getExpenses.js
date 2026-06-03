@@ -2,6 +2,7 @@ import { requireUser } from '../_lib/session.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { exchangeRefreshForAccess } from '../../lib/oauth.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -130,7 +131,7 @@ async function handlerImpl(req, res) {
   const primaryRange = `'${year}'!A1:N`;
   let result = await fetchSheetRange(record.sheetId, primaryRange, accessToken);
   if (!result.ok) {
-    result = await fetchSheetRange(record.sheetId, "'תנועות'!A1:N", accessToken);
+    result = await fetchSheetRange(record.sheetId, `'${TX_TAB}'!A1:N`, accessToken);
   }
   if (!result.ok) {
     result = await fetchSheetRange(record.sheetId, 'A1:N', accessToken);

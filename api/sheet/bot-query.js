@@ -37,6 +37,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { decryptRefreshToken, constantTimeEqual } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
+import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 async function kvGet(key) {
   const url = process.env.KV_REST_API_URL;
@@ -202,7 +203,7 @@ async function handlerImpl(req, res) {
   // Read the תנועות tab (same fallback chain as stats.js).
   const year = new Date().getFullYear();
   let result = await fetchSheetRange(spreadsheetId, `'${year}'!A1:N`, accessToken);
-  if (!result.ok) result = await fetchSheetRange(spreadsheetId, "'תנועות'!A1:N", accessToken);
+  if (!result.ok) result = await fetchSheetRange(spreadsheetId, `'${TX_TAB}'!A1:N`, accessToken);
   if (!result.ok) result = await fetchSheetRange(spreadsheetId, 'A1:N', accessToken);
   if (!result.ok) return res.status(502).json({ ok: false, error: 'sheets_read_failed', status: result.status });
 
