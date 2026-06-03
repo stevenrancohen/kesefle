@@ -169,6 +169,22 @@
       animation: none !important; transition-duration: 0.01ms !important;
     }
   }
+  /* === Keyboard focus ring (a11y 2.4.7) ===
+     Keyboard-only via :focus-visible, so mouse/touch users see no change.
+     Inputs/selects here already carry an explicit focus ring; this adds the
+     same consistent brand ring to links, buttons and summaries that lacked one. */
+  a:focus-visible, button:focus-visible, [role="button"]:focus-visible,
+  input:focus-visible, select:focus-visible, textarea:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .dark a:focus-visible, .dark button:focus-visible, .dark [role="button"]:focus-visible,
+  .dark input:focus-visible, .dark select:focus-visible, .dark textarea:focus-visible,
+  .dark summary:focus-visible {
+    outline-color: #7dd3fc;
+  }
 </style>
 <script src="/lib/analytics.js" defer></script>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -520,7 +536,7 @@
         <div class="mt-4">
           <div class="mb-2 flex items-center justify-between">
             <span class="text-xs font-bold text-slate-600">ההוצאות הקבועות שלך</span>
-            <span id="fx-count" class="text-[11px] text-slate-400"></span>
+            <span id="fx-count" class="text-[11px] text-slate-500"></span>
           </div>
           <ul id="fx-list" class="space-y-2"></ul>
           <div id="fx-empty" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
@@ -2034,7 +2050,7 @@ function _kflFixedRender(list) {
     amt.textContent = '₪' + amount.toLocaleString('he-IL');
     var del = document.createElement('button');
     del.type = 'button';
-    del.className = 'flex-shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600';
+    del.className = 'flex-shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600';
     del.setAttribute('aria-label', 'מחק/י ' + desc);
     del.innerHTML = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
     del.onclick = function () { kesefleFixedRemove(t.id, desc); };
