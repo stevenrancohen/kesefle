@@ -59,7 +59,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-04-twilio-provider';
+const KFL_BUILD_VERSION = '2026-06-04-fx-robust';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9476,12 +9476,13 @@ function processExpense(text, fromPhone) {
       var __newRowForNote = sheet.getLastRow();
       try {
         var __noteExtras = [];
-        if (fx) {
-          if (fx.autoConverted) {
-            __noteExtras.push('FX: ' + (fx.foreignAmount || '') + (fx.foreignSymbol || '') + ' → ₪' + fx.ilsAmount + ' (rate ' + (fx.fxRate || '') + ')');
-          } else if (fx.note) {
-            __noteExtras.push('FX: ' + fx.note);
-          }
+        // fx.note now carries the full, clear FX line for both paths:
+        //   auto-converted -> Hebrew "shulam $70 (shaar 3.71) = NIS 260"
+        //                     ("paid $70 (rate 3.71) = 260 shekels")
+        //   ILS-given      -> the original "<sym> <amt> ... <ils> shekels" snippet
+        // so the cell note always shows the original foreign amount + the rate.
+        if (fx && fx.note) {
+          __noteExtras.push('FX: ' + fx.note);
         }
         _kfl_setRowOriginalNote(sheet, __newRowForNote, _kfl_buildOriginalNote('Original WhatsApp', item.originalText || text || item.description, __noteExtras));
       } catch (__noteErr) { Logger.log('processExpense note err: ' + (__noteErr && __noteErr.message)); }
@@ -9623,7 +9624,64 @@ var KFL_FX_DEFAULTS = {
   CAD: 2.65, AUD: 2.40, JPY: 0.024, CHF: 4.10
 };
 
-function _kfl_fxRate(code) {
+// Live FX rate fetcher. Hits a free, no-key endpoint (Frankfurter) for the
+// current <code>->ILS rate and caches it per-code for ~6h via CacheService so
+// we do NOT fetch on every message. Returns a positive number on success, or
+// null on ANY failure (network error, non-200, malformed JSON, missing rate)
+// so callers can silently fall back to the hardcoded default. Never throws.
+var _KFL_FX_LIVE_CACHE_SECONDS = 6 * 60 * 60; // 6 hours
+function _kfl_fxRateLive_(code) {
+  if (!code) return null;
+  var k = String(code).toUpperCase().trim();
+  if (k === 'ILS') return 1;
+  // CacheService + UrlFetchApp only exist in Apps Script. Guard with typeof so
+  // the offline replay/test harness (which does not stub them) just skips the
+  // live path and falls through to the hardcoded default.
+  if (typeof UrlFetchApp === 'undefined') return null;
+  var cache = null;
+  try { if (typeof CacheService !== 'undefined') cache = CacheService.getScriptCache(); } catch (_ce) { cache = null; }
+  var cacheKey = 'fx_live_' + k;
+  if (cache) {
+    try {
+      var hit = cache.get(cacheKey);
+      if (hit) {
+        var cached = parseFloat(hit);
+        if (!isNaN(cached) && cached > 0) return cached;
+      }
+    } catch (_cg) {}
+  }
+  try {
+    // Frankfurter: https://api.frankfurter.app/latest?from=USD&to=ILS
+    // -> {"amount":1.0,"base":"USD","date":"...","rates":{"ILS":3.71}}
+    var url = 'https://api.frankfurter.app/latest?from=' + encodeURIComponent(k) + '&to=ILS';
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+    if (!resp || typeof resp.getResponseCode !== 'function' || resp.getResponseCode() !== 200) return null;
+    var body = resp.getContentText();
+    if (!body) return null;
+    var data = JSON.parse(body);
+    if (!data || !data.rates) return null;
+    var rate = parseFloat(data.rates.ILS);
+    if (isNaN(rate) || rate <= 0) return null;
+    if (cache) { try { cache.put(cacheKey, String(rate), _KFL_FX_LIVE_CACHE_SECONDS); } catch (_cp) {} }
+    Logger.log('_kfl_fxRateLive_: ' + k + '->ILS live=' + rate);
+    return rate;
+  } catch (_fe) {
+    Logger.log('_kfl_fxRateLive_: fetch failed for ' + k + ': ' + (_fe && _fe.message));
+    return null;
+  }
+}
+
+// Resolve the ILS rate for a currency CODE. Priority order (highest first):
+//   (1) FX_RATE_<code> Script Property  -- manual override, never fetched
+//   (2) live cached API rate            -- current market rate, cached ~6h
+//   (3) KFL_FX_DEFAULTS[<code>]         -- hardcoded 2026 estimate fallback
+// Returns null only for an unknown currency code. The caller records the
+// ACTUAL number returned here in the cell note, so the note always reflects
+// the rate that was really used.
+// STATIC rate: Script Property override -> hardcoded default. NO network. This
+// is the cheap, synchronous path used at script-load time (KFL_FX_RATES table)
+// and anywhere a live fetch would be wasteful. Never throws.
+function _kfl_fxRateStatic_(code) {
   if (!code) return null;
   var k = String(code).toUpperCase().trim();
   try {
@@ -9639,12 +9697,40 @@ function _kfl_fxRate(code) {
   return KFL_FX_DEFAULTS[k] || null;
 }
 
+// Resolve the effective ILS rate for a currency CODE on the CONVERSION path.
+// Priority: (1) FX_RATE_<code> Script Property override -> (2) live cached API
+// rate -> (3) hardcoded default. The live fetch is lazy + cached ~6h, so it
+// only happens when an FX conversion actually runs (parseForeignCurrencyHint),
+// never at script load. The number returned here is what the cell note records.
+function _kfl_fxRate(code) {
+  if (!code) return null;
+  var k = String(code).toUpperCase().trim();
+  // (1) manual Script Property override (also covers step 1 of the static path).
+  try {
+    var override = PropertiesService.getScriptProperties().getProperty('FX_RATE_' + k);
+    if (override) {
+      var n = parseFloat(override);
+      if (!isNaN(n) && n > 0) return n;
+    }
+  } catch (_e) {}
+  // (2) live cached API rate (silent fallback on any failure).
+  try {
+    var live = _kfl_fxRateLive_(k);
+    if (live && live > 0) return live;
+  } catch (_le) {}
+  // (3) hardcoded default.
+  return KFL_FX_DEFAULTS[k] || null;
+}
+
 // KFL_FX_RATES kept for legacy callers (KFL_FX_RATES.USD, KFL_FX_RATES['$']).
 // Built once at script load from current Script Property overrides + defaults.
+// Uses the STATIC resolver so module load never triggers a network fetch (Apps
+// Script re-runs top-level statements on every doPost; a live fetch here would
+// add latency + timeout risk to messages that have no foreign currency).
 var KFL_FX_RATES = {
-  USD: _kfl_fxRate('USD'), EUR: _kfl_fxRate('EUR'), GBP: _kfl_fxRate('GBP'),
-  CAD: _kfl_fxRate('CAD'), AUD: _kfl_fxRate('AUD'), JPY: _kfl_fxRate('JPY'), CHF: _kfl_fxRate('CHF'),
-  '$': _kfl_fxRate('USD'), '€': _kfl_fxRate('EUR'), '£': _kfl_fxRate('GBP'), '¥': _kfl_fxRate('JPY')
+  USD: _kfl_fxRateStatic_('USD'), EUR: _kfl_fxRateStatic_('EUR'), GBP: _kfl_fxRateStatic_('GBP'),
+  CAD: _kfl_fxRateStatic_('CAD'), AUD: _kfl_fxRateStatic_('AUD'), JPY: _kfl_fxRateStatic_('JPY'), CHF: _kfl_fxRateStatic_('CHF'),
+  '$': _kfl_fxRateStatic_('USD'), '€': _kfl_fxRateStatic_('EUR'), '£': _kfl_fxRateStatic_('GBP'), '¥': _kfl_fxRateStatic_('JPY')
 };
 
 function _kfl_fxLookup(symbolOrCode) {
@@ -9698,21 +9784,155 @@ function parseForeignCurrencyHint(text) {
   var foreignAmountRe = /(\d+(?:[.,]\d+)?)\s*(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/i;
   var foreignSymRe = /(\$|€|£|¥)\s*(\d+(?:[.,]\d+)?)/i;
   var fm = s.match(foreignAmountRe) || s.match(foreignSymRe);
-  if (!fm) return null;
-  var amount, sym;
-  if (fm[1] && isNaN(parseFloat(fm[1]))) {
-    sym = fm[1]; amount = parseFloat(String(fm[2]).replace(',', '.'));
-  } else {
-    amount = parseFloat(String(fm[1]).replace(',', '.')); sym = fm[2] || fm[1];
+  if (fm) {
+    var amount, sym;
+    if (fm[1] && isNaN(parseFloat(fm[1]))) {
+      sym = fm[1]; amount = parseFloat(String(fm[2]).replace(',', '.'));
+    } else {
+      amount = parseFloat(String(fm[1]).replace(',', '.')); sym = fm[2] || fm[1];
+    }
+    if (!amount || isNaN(amount) || amount <= 0) return null;
+    var rate = _kfl_fxLookup(sym);
+    if (!rate) return null;
+    var converted = Math.round(amount * rate * 100) / 100;
+    var cleanedTextB = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/gi, '').replace(/(\$|€|£|¥)\s*\d+(?:[.,]\d+)?/gi, '').replace(/\s+/g, ' ').trim();
+    Logger.log('parseForeignCurrencyHint: ' + amount + ' ' + sym + ' * ' + rate + ' = ₪' + converted);
+    return { ilsAmount: converted, note: _kfl_fxNote_(sym, amount, rate, converted), cleanedText: cleanedTextB, autoConverted: true, fxRate: rate, foreignAmount: amount, foreignSymbol: sym };
   }
-  if (!amount || isNaN(amount) || amount <= 0) return null;
-  var rate = _kfl_fxLookup(sym);
-  if (!rate) return null;
-  var converted = Math.round(amount * rate * 100) / 100;
-  var noteB = sym + ' ' + amount + ' → ₪' + converted + ' (שער ' + rate + ')';
-  var cleanedTextB = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/gi, '').replace(/(\$|€|£|¥)\s*\d+(?:[.,]\d+)?/gi, '').replace(/\s+/g, ' ').trim();
-  Logger.log('parseForeignCurrencyHint: ' + amount + ' ' + sym + ' * ' + rate + ' = ₪' + converted);
-  return { ilsAmount: converted, note: noteB, cleanedText: cleanedTextB, autoConverted: true, fxRate: rate, foreignAmount: amount, foreignSymbol: sym };
+
+  // Path C (2026-06-04) -- NON-ADJACENT currency word. Owner hit this with
+  // "dolar aplikatsia chatgpt 70" ($70 for the ChatGPT app): the currency word
+  // (dolar = dollar) is NOT next to the number (70), so Paths A/B both miss and
+  // the bot wrongly booked 70 ILS. Fallback: if the message contains a
+  // STANDALONE foreign-currency indicator anywhere AND there is exactly ONE
+  // plausible amount, treat that number as the foreign amount and convert.
+  //
+  // False-positive guards (all must hold before we fire):
+  //   - the currency token is matched as a WHOLE word (no Hebrew/Latin letter
+  //     glued to it), so a token buried inside another word is ignored here
+  //     unless it is genuinely standalone;
+  //   - it is NOT a car-rental phrase (Hebrew "haskara" / "dollar rent" / "rent
+  //     a car" -> Dollar Rent A Car), guarded by checking the neighbour word;
+  //   - it is NOT a bank currency-conversion fee phrase (Hebrew "matbea chuts"
+  //     / "hamarat matbea"), which mentions a currency but is itself an ILS fee;
+  //   - EXACTLY one amount number is present (ambiguous if two+).
+  var cc = _kfl_nonAdjacentCurrency_(s);
+  if (cc && cc.symbol) {
+    // Count plausible amount numbers; require exactly one so we never have to
+    // guess which number is the price.
+    var nums = [];
+    var numRe2 = /\d+(?:[.,]\d+)?/g, mm2;
+    while ((mm2 = numRe2.exec(s)) !== null) {
+      var nv = parseFloat(String(mm2[0]).replace(',', '.'));
+      if (!isNaN(nv) && nv > 0) nums.push(nv);
+    }
+    if (nums.length === 1) {
+      var amtC = nums[0];
+      var rateC = _kfl_fxLookup(cc.symbol);
+      if (rateC && amtC > 0) {
+        var convertedC = Math.round(amtC * rateC * 100) / 100;
+        // Clean the description: drop the amount and the standalone currency
+        // word (and any leftover slashes) so the classifier sees just the
+        // merchant/keyword text (e.g. the app name).
+        var cleanedTextC = s
+          .replace(new RegExp(cc.wordRe, 'gi'), ' ')
+          .replace(/\d+(?:[.,]\d+)?/g, ' ')
+          .replace(/[\\\/]+/g, ' ')
+          .replace(/\s+/g, ' ').trim();
+        Logger.log('parseForeignCurrencyHint[non-adjacent]: ' + amtC + ' ' + cc.symbol + ' * ' + rateC + ' = ₪' + convertedC);
+        return { ilsAmount: convertedC, note: _kfl_fxNote_(cc.symbol, amtC, rateC, convertedC), cleanedText: cleanedTextC, autoConverted: true, fxRate: rateC, foreignAmount: amtC, foreignSymbol: cc.symbol };
+      }
+    }
+  }
+  return null;
+}
+
+// Build the cell-note line for an FX auto-conversion. Hebrew is fine in the
+// returned note STRING; only code COMMENTS must stay ASCII. The produced note
+// reads (transliterated): "shulam $70 (shaar 3.71) = NIS 260" -- i.e. "paid $70
+// (rate 3.71) = 260 shekels". Uses a friendly symbol for common currencies,
+// else the raw token.
+function _kfl_fxNote_(sym, amount, rate, converted) {
+  var disp = _kfl_currencyDisplay_(sym);
+  return 'שולם ' + disp + amount + ' (שער ' + rate + ') = ₪' + converted;
+}
+
+// Map a matched currency token (symbol, ISO code, or Hebrew word) to a short
+// display symbol for the note. Falls back to the trimmed token itself.
+function _kfl_currencyDisplay_(sym) {
+  var raw = String(sym || '').trim();
+  var k = raw.toUpperCase();
+  if (raw === '$' || k === 'USD' || /דולר/.test(raw)) return '$';
+  if (raw === '€' || k === 'EUR' || /יורו|אירו/.test(raw)) return '€';
+  if (raw === '£' || k === 'GBP' || /פאונד/.test(raw)) return '£';
+  if (raw === '¥' || k === 'JPY' || /יין/.test(raw)) return '¥';
+  if (k === 'CAD') return 'CAD ';
+  if (k === 'AUD') return 'AUD ';
+  if (k === 'CHF' || /פרנק/.test(raw)) return 'CHF ';
+  return raw + ' ';
+}
+
+// Detect a STANDALONE foreign-currency word anywhere in the text for the
+// non-adjacent FX fallback (Path C). Returns { symbol, wordRe } where symbol is
+// a canonical token _kfl_fxLookup understands and wordRe is a source string for
+// a RegExp that strips just that currency word from the description. Returns
+// null when no safe standalone currency token is present, or when a
+// false-positive guard (car-rental / bank-fee phrase) fires.
+function _kfl_nonAdjacentCurrency_(text) {
+  var s = String(text || '');
+  var low = s.toLowerCase();
+  // Bank currency-conversion fee phrases -- these mention a currency but the
+  // charge itself is in ILS, so never auto-convert. Bail for the whole message.
+  if (/מטבע\s*חוץ|המרת\s*מטבע|עמלת\s*המרה|currency\s*conversion|forex\s*fee/i.test(s)) return null;
+  // Candidate currency tokens, longest/most-specific first. Each entry:
+  //   re      -> whole-word matcher (Hebrew words use lookaround on non-letters,
+  //              Latin codes/words use \b); used to TEST presence.
+  //   symbol  -> canonical token passed to _kfl_fxLookup for the rate.
+  //   wordRe  -> source string used to STRIP the word from the description.
+  //   guard   -> optional source string; if it matches near the token, skip.
+  var H = 'A-Za-z\\u0590-\\u05FF'; // word-char class: Latin + Hebrew letters
+  var cands = [
+    // Hebrew "dolar" / "dolarim" (USD). Whole word = not glued to another letter.
+    { re: '(^|[^' + H + '])דולר(ים)?([^' + H + ']|$)', symbol: 'דולר', wordRe: 'דולר(ים)?' },
+    { re: '(^|[^' + H + '])(יורו|אירו)([^' + H + ']|$)', symbol: 'יורו', wordRe: '(יורו|אירו)' },
+    { re: '(^|[^' + H + '])פאונד([^' + H + ']|$)', symbol: 'פאונד', wordRe: 'פאונד' },
+    { re: '(^|[^' + H + '])יין([^' + H + ']|$)', symbol: 'יין', wordRe: 'יין' },
+    { re: '(^|[^' + H + '])פרנק([^' + H + ']|$)', symbol: 'פרנק', wordRe: 'פרנק' },
+    // Symbols.
+    { re: '\\$', symbol: '$', wordRe: '\\$' },
+    { re: '\\u20AC', symbol: '€', wordRe: '\\u20AC' },
+    { re: '\\u00A3', symbol: '£', wordRe: '\\u00A3' },
+    { re: '\\u00A5', symbol: '¥', wordRe: '\\u00A5' },
+    // Latin ISO codes / the word "dollar" -- whole word via \b.
+    { re: '\\busd\\b', symbol: 'USD', wordRe: '\\busd\\b' },
+    { re: '\\beur\\b', symbol: 'EUR', wordRe: '\\beur\\b' },
+    { re: '\\bgbp\\b', symbol: 'GBP', wordRe: '\\bgbp\\b' },
+    { re: '\\bcad\\b', symbol: 'CAD', wordRe: '\\bcad\\b' },
+    { re: '\\baud\\b', symbol: 'AUD', wordRe: '\\baud\\b' },
+    { re: '\\bjpy\\b', symbol: 'JPY', wordRe: '\\bjpy\\b' },
+    { re: '\\bchf\\b', symbol: 'CHF', wordRe: '\\bchf\\b' },
+    { re: '\\bdollars?\\b', symbol: 'USD', wordRe: '\\bdollars?\\b' },
+    { re: '\\beuros?\\b', symbol: 'EUR', wordRe: '\\beuros?\\b' },
+    { re: '\\bpounds?\\b', symbol: 'GBP', wordRe: '\\bpounds?\\b' }
+  ];
+  // Car-rental guard: if a rental word sits right next to the currency token,
+  // it is almost certainly "Dollar Rent A Car" (car rental), not a USD amount.
+  var rentalRe = /(השכרה|rent\s*a\s*car|\brent\b|\bcar\b|רכב)/i;
+  for (var i = 0; i < cands.length; i++) {
+    var c = cands[i];
+    if (new RegExp(c.re, 'i').test(s)) {
+      // Examine a small window around the token for a rental word.
+      var probe = new RegExp(c.wordRe, 'i');
+      var hit = probe.exec(s);
+      if (hit) {
+        var idx = hit.index;
+        var around = s.slice(Math.max(0, idx - 18), Math.min(s.length, idx + (hit[0] ? hit[0].length : 4) + 18));
+        if (rentalRe.test(around)) continue; // skip this currency token
+      }
+      return { symbol: c.symbol, wordRe: c.wordRe };
+    }
+  }
+  return null;
 }
 
 function parseAmountAndDescription(text) {
