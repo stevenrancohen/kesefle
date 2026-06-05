@@ -74,6 +74,11 @@ const sandbox = {
   PropertiesService: { getScriptProperties: () => ({ getProperty: () => null }) },
   Logger: { log: () => {} },
   Utilities: { computeDigest: () => [] },
+  // NOTE: CacheService and UrlFetchApp are deliberately LEFT UNDEFINED. The FX
+  // live-rate path (_kfl_fxRateLive_) guards on `typeof UrlFetchApp` and skips
+  // the network when it is undefined, so the replay stays 100% offline and
+  // deterministic: it falls back to the hardcoded KFL_FX_DEFAULTS rate. This
+  // keeps bot-replay.js read-only and network-free per its hard rule.
   console,
 };
 
@@ -99,8 +104,21 @@ const code = [
   extractFn('_parseBusinessNumberPrefix_') || '',
   extractFn('matchCategory') || '',
   extractFn('_classifyBareBusinessExpense_') || '',
+  // FX conversion chain (2026-06-04) so the replay exercises the SAME foreign-
+  // currency path processExpense uses: parseForeignCurrencyHint -> convert ->
+  // classify on the cleaned (currency-stripped) description. _kfl_fxRateLive_ is
+  // a no-op offline (UrlFetchApp is undefined in this sandbox), so rates come
+  // from the hardcoded KFL_FX_DEFAULTS -- deterministic + network-free.
+  'var KFL_FX_DEFAULTS = ' + JSON.stringify({ USD: 3.65, EUR: 3.95, GBP: 4.65, CAD: 2.65, AUD: 2.40, JPY: 0.024, CHF: 4.10 }) + ';',
+  extractFn('_kfl_fxRateLive_') || '',
+  extractFn('_kfl_fxRate') || '',
+  extractFn('_kfl_fxLookup') || '',
+  extractFn('_kfl_fxNote_') || '',
+  extractFn('_kfl_currencyDisplay_') || '',
+  extractFn('_kfl_nonAdjacentCurrency_') || '',
+  extractFn('parseForeignCurrencyHint') || '',
   // Export the things we want to use
-  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, CATEGORY_MAP };',
+  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, parseForeignCurrencyHint, CATEGORY_MAP };',
 ].join('\n\n');
 
 vm.createContext(sandbox);
@@ -126,6 +144,37 @@ function replay(input) {
   if (!text) {
     out.decisions.fatal = 'empty input';
     return out;
+  }
+
+  // 0) Foreign-currency (FX) conversion -- runs FIRST, exactly like
+  // processExpense (const fx = parseForeignCurrencyHint(text)). When it fires,
+  // the AMOUNT becomes the converted ILS value and the DESCRIPTION used for
+  // classification is fx.cleanedText (currency word + number stripped), so the
+  // classifier sees just the merchant/keyword text. Offline the rate comes from
+  // the hardcoded KFL_FX_DEFAULTS (no network in this sandbox).
+  let classifyText = text;
+  if (typeof bot.parseForeignCurrencyHint === 'function') {
+    try {
+      const fx = bot.parseForeignCurrencyHint(text);
+      if (fx) {
+        out.decisions.fx = {
+          autoConverted: !!fx.autoConverted,
+          foreignAmount: fx.foreignAmount != null ? fx.foreignAmount : null,
+          foreignSymbol: fx.foreignSymbol || null,
+          fxRate: fx.fxRate != null ? fx.fxRate : null,
+          ilsAmount: fx.ilsAmount != null ? fx.ilsAmount : null,
+          cleanedText: fx.cleanedText || '',
+          note: fx.note || '',
+          rate_source: 'KFL_FX_DEFAULTS (offline replay; live API used in prod)',
+        };
+        // Mirror processExpense: parseAmountAndDescription(fx.ilsAmount + ' ' + fx.cleanedText)
+        if (fx.autoConverted && fx.cleanedText) classifyText = fx.cleanedText;
+      } else {
+        out.decisions.fx = null;
+      }
+    } catch (e) {
+      out.decisions.fx = { error: e.message };
+    }
   }
 
   // 1) Amount parse
@@ -226,10 +275,13 @@ function replay(input) {
     }
   }
 
-  // 4) Categorize
+  // 4) Categorize. When FX auto-converted, classify on the CLEANED description
+  // (currency word + number stripped) exactly like processExpense does, so the
+  // reported category matches what the bot will actually write.
   if (typeof bot.matchCategory === 'function') {
     try {
-      const matched = bot.matchCategory(text);
+      if (classifyText !== text) out.decisions.classifyText = classifyText;
+      const matched = bot.matchCategory(classifyText);
       out.decisions.matchCategory = matched || null;
       if (matched) {
         out.predicted_target = out.predicted_target || {
