@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-03-360dialog-provider';
+const KFL_BUILD_VERSION = '2026-06-04-twilio-provider';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1008,6 +1008,17 @@ function _verifyMetaWebhook_(e, rawBody) {
     var provider = String(props.getProperty('WHATSAPP_PROVIDER') || 'meta').toLowerCase();
     if (provider === '360dialog') {
       return { valid: true, reason: '360dialog_secret_url' };
+    }
+
+    // -- Twilio provider branch --
+    // Twilio posts form-urlencoded inbound params (not Meta JSON) and does NOT
+    // send Meta's X-Hub-Signature header, so the HMAC path below can never run
+    // for it. Twilio's security boundary is the SECRET Apps Script /exec
+    // webhook URL (same model as 360dialog). Treat the request as authentic and
+    // skip the Meta-only HMAC requirement. The Meta HMAC + WABA path below is
+    // untouched for provider 'meta' (the default).
+    if (provider === 'twilio') {
+      return { valid: true, reason: 'twilio_secret_url' };
     }
 
     var appSecret = props.getProperty('META_APP_SECRET') || '';
@@ -1950,12 +1961,79 @@ function _isRateLimited_(fromPhone) {
 }
 
 // ============================================================
-// [HARDENING_WRAPPER + SRC_ROUTER + BOT_COMMANDS] — unified doPost (2026-05-17 v3)
+// doPost -- webhook entrypoint. Provider-aware front door (2026-06-04).
+// Meta + 360dialog send Meta-Cloud-API JSON; Twilio sends form-urlencoded
+// params. This thin wrapper detects the Twilio shape, rewrites the request
+// into the SAME Meta JSON envelope the rest of the pipeline already speaks
+// (so _doPostRouter_ + _doPost_orig + every command router run UNCHANGED and
+// the expense logic is NOT duplicated), then returns empty TwiML so Twilio is
+// satisfied -- the real reply still goes out async via sendWhatsAppMessage.
+// For meta/360dialog this is a pass-through: behavior is byte-identical.
+// ============================================================
+function doPost(e) {
+  var __props = PropertiesService.getScriptProperties();
+  var __provider = String(__props.getProperty('WHATSAPP_PROVIDER') || 'meta').toLowerCase();
+
+  // Twilio inbound detection: either the provider is explicitly 'twilio', or
+  // the request carries Twilio's form params (From value 'whatsapp:+<sender>').
+  var __twFrom = (e && e.parameter && e.parameter.From) ? String(e.parameter.From) : '';
+  var __isTwilio = (__provider === 'twilio') || (__twFrom.indexOf('whatsapp:') === 0);
+
+  if (__isTwilio && __twFrom) {
+    // E.164-normalize the sender (strip 'whatsapp:'), pull the body text, and
+    // synthesize a Meta-Cloud-API webhook envelope. We overwrite
+    // e.postData.contents with that JSON so the existing router (which reads
+    // e.postData.contents) and the _doPost_orig fall-through both see a normal
+    // Meta payload -- one code path, no duplicated expense logic. A synthetic
+    // message id (Twilio's MessageSid when present) keeps idempotency working.
+    var __twFromNorm = _waNormE164Digits_(__twFrom);
+    var __twBody = (e.parameter.Body != null) ? String(e.parameter.Body) : '';
+    var __twMsgId = (e.parameter.MessageSid || e.parameter.SmsMessageSid || ('tw_' + Date.now()));
+    var __synthetic = {
+      entry: [{
+        changes: [{
+          value: {
+            messaging_product: 'whatsapp',
+            metadata: {},
+            messages: [{
+              from: __twFromNorm,
+              id: String(__twMsgId),
+              type: 'text',
+              text: { body: __twBody }
+            }]
+          }
+        }]
+      }]
+    };
+    if (!e.postData) e.postData = {};
+    e.postData.contents = JSON.stringify(__synthetic);
+
+    // Run the full existing pipeline. Its return value is a ContentService
+    // text/JSON output meant for Meta; Twilio ignores it -- we discard it and
+    // reply with an empty TwiML <Response/> (a valid "handled, send nothing"
+    // ack). The user's actual reply was sent inside the pipeline via the
+    // Twilio Messages API (sendWhatsAppMessage).
+    try {
+      _doPostRouter_(e);
+    } catch (__twErr) {
+      Logger.log('doPost(twilio): router error: ' + (__twErr && __twErr.stack || __twErr));
+    }
+    return ContentService
+      .createTextOutput('<?xml version="1.0" encoding="UTF-8"?><Response></Response>')
+      .setMimeType(ContentService.MimeType.XML);
+  }
+
+  // Meta + 360dialog: unchanged pass-through to the router.
+  return _doPostRouter_(e);
+}
+
+// ============================================================
+// [HARDENING_WRAPPER + SRC_ROUTER + BOT_COMMANDS] -- unified router (2026-05-17 v3)
 // FAST PATH: messages starting with a digit bypass routers and go straight to
 // processExpense. Prevents SRC_ROUTER_handle / handleBotCommand_ from silently
 // eating expense messages like "54 סופר".
 // ============================================================
-function doPost(e) {
+function _doPostRouter_(e) {
   // SCALABILITY: the script lock exists only to serialize concurrent
   // writes to the OWNER's single shared sheet. Tenants write to their
   // OWN sheets via the Vercel bridge and never contend. The old code
@@ -13005,6 +13083,27 @@ function _unwrapConciergeJson_(message) {
 // { ok:false, reason } so callers bail gracefully (same as the no-token guard).
 // The JSON body is IDENTICAL for both providers, so callers reuse one payload.
 // ============================================================
+// Normalize a WhatsApp number to bare E.164 digits (no '+', no 'whatsapp:'
+// prefix, no spaces/dashes). Twilio's From/To want 'whatsapp:+<digits>', so
+// the send path re-adds the '+' itself. Meta/360dialog never call this.
+function _waNormE164Digits_(num) {
+  return String(num || '')
+    .replace(/^whatsapp:/i, '')
+    .replace(/[^0-9]/g, '');
+}
+
+// Build an application/x-www-form-urlencoded body string from a flat object.
+// Used only for the Twilio send path (Meta/360dialog use JSON).
+function _waEncodeForm_(obj) {
+  var parts = [];
+  for (var k in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, k)) {
+      parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(obj[k])));
+    }
+  }
+  return parts.join('&');
+}
+
 function _waSendConfig_() {
   var props = PropertiesService.getScriptProperties();
   var provider = String(props.getProperty('WHATSAPP_PROVIDER') || 'meta').toLowerCase();
@@ -13019,6 +13118,32 @@ function _waSendConfig_() {
       provider: provider,
       url: 'https://waba-v2.360dialog.io/messages',
       headers: { 'D360-API-KEY': d360Key, 'Content-Type': 'application/json' }
+    };
+  }
+
+  if (provider === 'twilio') {
+    // Twilio WhatsApp send: POST to the account Messages endpoint with HTTP
+    // Basic auth (username=AccountSid, password=AuthToken) and an
+    // application/x-www-form-urlencoded body. This is NOT Meta's JSON shape --
+    // the text/interactive send sites build a form body when provider==twilio.
+    // Creds come from Script Properties only (no secrets in code).
+    var twSid = props.getProperty('TWILIO_ACCOUNT_SID') || '';
+    var twToken = props.getProperty('TWILIO_AUTH_TOKEN') || '';
+    var twFrom = props.getProperty('TWILIO_FROM') || '';
+    if (!twSid || !twToken || !twFrom
+        || twSid.indexOf('PASTE_') === 0
+        || twToken.indexOf('PASTE_') === 0) {
+      return { ok: false, provider: provider, reason: 'no_twilio_creds' };
+    }
+    return {
+      ok: true,
+      provider: 'twilio',
+      url: 'https://api.twilio.com/2010-04-01/Accounts/' + twSid + '/Messages.json',
+      headers: {
+        'Authorization': 'Basic ' + Utilities.base64Encode(twSid + ':' + twToken),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      from: twFrom
     };
   }
 
@@ -13054,18 +13179,31 @@ function sendWhatsAppMessage(to, message) {
     return { ok: false, reason: _cfg.reason };
   }
   var url = _cfg.url;
-  const payload = {
-    messaging_product: 'whatsapp',
-    to: to,
-    type: 'text',
-    text: { body: String(_unwrapConciergeJson_(message)).slice(0, 4096) }
-  };
+  var bodyText = String(_unwrapConciergeJson_(message)).slice(0, 4096);
+
+  // Provider-aware request body. Twilio is form-urlencoded with whatsapp:+E.164
+  // From/To and a Body field; Meta/360dialog use the identical Meta JSON payload.
+  var requestPayload;
+  if (_cfg.provider === 'twilio') {
+    requestPayload = _waEncodeForm_({
+      From: 'whatsapp:+' + _waNormE164Digits_(_cfg.from),
+      To: 'whatsapp:+' + _waNormE164Digits_(to),
+      Body: bodyText
+    });
+  } else {
+    requestPayload = JSON.stringify({
+      messaging_product: 'whatsapp',
+      to: to,
+      type: 'text',
+      text: { body: bodyText }
+    });
+  }
 
   Logger.log('sendWhatsAppMessage: to=' + to + ' len=' + String(message).length + ' provider=' + _cfg.provider);
   const response = UrlFetchApp.fetch(url, {
     method: 'post',
     headers: _cfg.headers,
-    payload: JSON.stringify(payload),
+    payload: requestPayload,
     muteHttpExceptions: true
   });
 
@@ -13092,6 +13230,28 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
     Logger.log('WhatsApp send config not ready (' + _cfg.reason + ') -- skipping list');
     return;
   }
+
+  // Twilio sandbox does NOT support Meta interactive list messages. Degrade
+  // gracefully to a plain TEXT message: the prompt plus a numbered list of the
+  // option titles. The bot already accepts a free-text / numeric category
+  // reply, so this keeps the unsure-category flow working without tappable
+  // rows. Meta/360dialog keep the native interactive list below.
+  if (_cfg.provider === 'twilio') {
+    var __twLines = [];
+    if (headerText) __twLines.push(String(headerText));
+    if (bodyText) __twLines.push(String(bodyText));
+    var __n = 0;
+    (sections || []).forEach(function(sec) {
+      (sec && sec.rows ? sec.rows : []).forEach(function(row) {
+        __n++;
+        __twLines.push(__n + '. ' + String(row && row.title || ''));
+      });
+    });
+    if (footerText) __twLines.push(String(footerText));
+    sendWhatsAppMessage(to, __twLines.join('\n'));
+    return;
+  }
+
   var url = _cfg.url;
   var payload = {
     messaging_product: 'whatsapp',
@@ -13125,6 +13285,20 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
 function sendWhatsAppQuickButtons(to, bodyText, buttons) {
   var _cfg = _waSendConfig_();
   if (!_cfg.ok) { Logger.log('WhatsApp send config not ready (' + _cfg.reason + ') -- skipping buttons'); return; }
+
+  // Twilio sandbox has no tappable quick-reply buttons -- degrade to a plain
+  // TEXT message with a numbered list of the button titles. The bot accepts
+  // the numeric / text reply downstream. Meta/360dialog keep native buttons.
+  if (_cfg.provider === 'twilio') {
+    var __twb = [];
+    if (bodyText) __twb.push(String(bodyText));
+    (buttons || []).slice(0, 3).forEach(function(b, i) {
+      __twb.push((i + 1) + '. ' + String(b && b.title || ''));
+    });
+    sendWhatsAppMessage(to, __twb.join('\n'));
+    return;
+  }
+
   var url = _cfg.url;
   var btns = (buttons || []).slice(0, 3).map(function(b) {
     return { type: 'reply', reply: { id: String(b.id), title: String(b.title).slice(0, 20) } };
