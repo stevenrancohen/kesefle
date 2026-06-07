@@ -47,7 +47,10 @@ let m;
 while ((m = sectionRe.exec(literal)) !== null) {
   const title = m[1];
   const rowsBlock = m[2];
-  const rowRe = /name:\s*'([^']+)',\s*icon:\s*'([^']+)'\s*\}/g;
+  // Tolerate optional trailing fields after icon (e.g. cat/sub/display tags):
+  // `{ name: 'X', icon: 'Y', cat: 'עסק', sub: 'שיווק' }`. [^}]* stops at the row's
+  // closing brace, so extra keys are skipped without missing the row.
+  const rowRe = /name:\s*'([^']+)',\s*icon:\s*'([^']+)'[^}]*\}/g;
   const rows = [];
   let rm;
   while ((rm = rowRe.exec(rowsBlock)) !== null) {

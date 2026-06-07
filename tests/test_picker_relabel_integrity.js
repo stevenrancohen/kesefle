@@ -107,6 +107,33 @@ ok('new user: <= 10 rows', allRows(out2).length <= 10);
 // buildRecent returns null for a phone with no recents (no empty section).
 ok('no recents -> null recent section', api.buildRecent('972599999999', 'אוכל') === null);
 
+// Business tagging: tagged rows emit relabel|<cat>|<sub> so the relabel routes
+// to the company dashboard; personal rows keep the bare relabel|<name>.
+const bizSections = [
+  { title: '💼 עסק', rows: [
+    { name: 'חומרי גלם', icon: '🧱', cat: 'עסק' },
+    { name: 'שיווק ופרסום', icon: '📣', cat: 'עסק', sub: 'שיווק' },
+  ] },
+  { title: '🍞 אוכל', rows: [{ name: 'קפה', icon: '☕' }] },
+];
+const bizIds = allRows(api.buildSections(bizSections, 'שונות')).map((r) => r.id);
+ok('business row uses tagged id relabel|<cat>|<name>', bizIds.indexOf('relabel|עסק|חומרי גלם') >= 0, JSON.stringify(bizIds));
+ok('business row with sub override uses canonical sub', bizIds.indexOf('relabel|עסק|שיווק') >= 0, JSON.stringify(bizIds));
+ok('personal row keeps bare id relabel|<name>', bizIds.indexOf('relabel|קפה') >= 0);
+ok('business ids still unique', new Set(bizIds).size === bizIds.length);
+const bizTitles = allRows(api.buildSections(bizSections, 'שונות')).map((r) => r.title).join(' | ');
+ok('business title shows friendly name (no piped id leaks into title)', !/עסק\|/.test(bizTitles));
+
+// The _handleRelabelTap_ split contract (replicated): "<cat>|<sub>" -> cat + sub.
+function splitToken(tok) {
+  const p = String(tok).indexOf('|');
+  return p > 0 ? { cat: tok.slice(0, p), sub: tok.slice(p + 1), tagged: true } : { cat: tok, sub: '', tagged: false };
+}
+const sp1 = splitToken('עסק|חומרי גלם');
+ok('split tagged -> cat + sub', sp1.tagged && sp1.cat === 'עסק' && sp1.sub === 'חומרי גלם');
+const sp2 = splitToken('קפה');
+ok('split untagged -> name as cat, empty sub', !sp2.tagged && sp2.cat === 'קפה' && sp2.sub === '');
+
 // Normalizer: empty subcategory must not be invisible when category is known.
 (async () => {
   try {
@@ -122,6 +149,10 @@ ok('no recents -> null recent section', api.buildRecent('972599999999', 'אוכ�
       ok('normalize(bare category) -> visible catch-all', String(norm('תחבורה', 'תחבורה') || '').length > 0, '"' + norm('תחבורה', 'תחבורה') + '"');
       ok('normalize("zzz-unmapped", "אוכל") -> visible catch-all', String(norm('zzz-unmapped', 'אוכל') || '').length > 0, '"' + norm('zzz-unmapped', 'אוכל') + '"');
       ok('normalize("דלק","תחבורה") visible', String(norm('דלק', 'תחבורה') || '').length > 0);
+      // Business subs (cat="עסק") map to a company-dashboard row, never invisible.
+      ok('normalize biz "חומרי גלם" -> company row', String(norm('חומרי גלם', 'עסק') || '').length > 0, '"' + norm('חומרי גלם', 'עסק') + '"');
+      ok('normalize biz "שיווק" -> company row', String(norm('שיווק', 'עסק') || '').length > 0, '"' + norm('שיווק', 'עסק') + '"');
+      ok('normalize biz unmapped "שכר עובדים" -> ops catch-all (visible)', String(norm('שכר עובדים', 'עסק') || '').length > 0, '"' + norm('שכר עובדים', 'עסק') + '"');
     } else {
       console.log('  (skip normalizer: export missing)');
     }

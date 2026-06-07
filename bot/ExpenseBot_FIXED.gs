@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-picker-safe';
+const KFL_BUILD_VERSION = '2026-06-07-biz-route';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -6977,7 +6977,11 @@ function _kfl_buildPickerSections_(sections, currentCategory) {
       if (!c || !c.name) continue;
       if (c.name.indexOf('__') === 0) continue;   // escapes handled below
       if (c.name === currentCategory) continue;    // skip the current pick
-      var id = 'relabel|' + c.name;
+      // Tagged rows (e.g. business) carry an explicit category so the relabel can
+      // route to the right dashboard: id = relabel|<cat>|<sub>. The display title
+      // still shows the friendly name; _handleRelabelTap_ splits the id back.
+      var idCore = c.cat ? (c.cat + '|' + (c.sub || c.name)) : c.name;
+      var id = 'relabel|' + idCore;
       if (seen[id]) continue;                      // unique ids only
       seen[id] = 1;
       rows.push({ id: id, title: (c.icon + ' ' + (c.display || c.name)).slice(0, 24), description: '' });
@@ -7086,16 +7090,25 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
       {
         title: '💼 עסק',
         rows: [
+          // Income row -- routing deferred (needs an income dashboard-row col-E
+          // mapping + col H=FALSE); left untagged so it keeps today's behavior.
           { name: 'הכנסה מעסק',         icon: '💵' },
-          { name: 'שיווק ופרסום',       icon: '📣' },
-          { name: 'שכר עובדים',         icon: '👷' },
-          { name: 'קבלן משנה',          icon: '🔧' },
-          { name: 'חומרי גלם',          icon: '🧱' },
-          { name: 'תוכנות וציוד',       icon: '💻' },
-          { name: 'רואה חשבון',         icon: '🧮' },
-          { name: 'מיסים',              icon: '🏛' },
-          { name: 'משלוחים עסקיים',     icon: '🚚' },
-          { name: 'שכירות משרד',        icon: '🏢' },
+          // Business EXPENSE rows: tagging with the business top-level category
+          // makes the relabel write col D = the business category, the canonical
+          // company row in col E (via normalizeSubcategoryForDashboard), and col
+          // H=TRUE -- so the cost reaches the COMPANY dashboard, not personal misc.
+          // "sub" overrides the value sent for col E where the display name is not
+          // itself a BIZ_SUB_TO_DASHBOARD_ROW key; the rest map by name or land in
+          // the operations catch-all row (still on the company dashboard).
+          { name: 'שיווק ופרסום',       icon: '📣', cat: 'עסק', sub: 'שיווק' },
+          { name: 'שכר עובדים',         icon: '👷', cat: 'עסק' },
+          { name: 'קבלן משנה',          icon: '🔧', cat: 'עסק' },
+          { name: 'חומרי גלם',          icon: '🧱', cat: 'עסק' },
+          { name: 'תוכנות וציוד',       icon: '💻', cat: 'עסק' },
+          { name: 'רואה חשבון',         icon: '🧮', cat: 'עסק' },
+          { name: 'מיסים',              icon: '🏛', cat: 'עסק' },
+          { name: 'משלוחים עסקיים',     icon: '🚚', cat: 'עסק', sub: 'משלוחים' },
+          { name: 'שכירות משרד',        icon: '🏢', cat: 'עסק' },
         ],
       },
       {
@@ -7185,6 +7198,20 @@ function _handleRelabelTap_(fromPhone, newCategory) {
     };
   }
 
+  // Tagged rows arrive as "<cat>|<sub>" (see _kfl_buildPickerSections_): split so
+  // we POST the real top-level category + subcategory + income flag, routing the
+  // row to the correct dashboard. Untagged personal taps (no "|") keep today's
+  // behavior (category = the tapped name, col H untouched).
+  var relCategory = newCategory;
+  var relSubcategory = '';
+  var relIsIncome = null;
+  var __pipe = String(newCategory).indexOf('|');
+  if (__pipe > 0) {
+    relCategory = newCategory.slice(0, __pipe);
+    relSubcategory = newCategory.slice(__pipe + 1);
+    relIsIncome = false;
+  }
+
   var last = null;
   try {
     var raw = cache.get('lastTenantExp:' + clean);
@@ -7204,8 +7231,9 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       payload: JSON.stringify({
         phone: clean,
         rowIndex: last.rowIndex,
-        newCategory: newCategory,
-        newSubcategory: '',
+        newCategory: relCategory,
+        newSubcategory: relSubcategory,
+        isIncome: relIsIncome,
         botSecret: secret,
       }),
       muteHttpExceptions: true,
@@ -7216,18 +7244,18 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       // expense in either reflects the move.
       try {
         cache.remove('catMtd:' + clean + ':' + last.category);
-        cache.remove('catMtd:' + clean + ':' + newCategory);
+        cache.remove('catMtd:' + clean + ':' + relCategory);
       } catch (_ce) {}
       // Update lastExp so a re-tap on the picker still works.
       try {
-        last.category = newCategory;
-        last.subcategory = newCategory;
+        last.category = relCategory;
+        last.subcategory = relSubcategory || relCategory;
         cache.put('lastTenantExp:' + clean, JSON.stringify(last), 1800);
       } catch (_pe) {}
-      // Learn the user's OWN categories: remember what they corrected TO so the
-      // next picker leads with it. This name is dashboard-valid (normalized to a
-      // real row on write); the bot's pre-correction guess is no longer stored.
-      try { _kfl_pushRecentCat_(clean, newCategory); } catch (_rcp) {}
+      // Learn the user's OWN categories: push to recents ONLY for untagged
+      // personal taps. Tagged rows (business "<cat>|<sub>") are skipped so they
+      // do not re-surface with the wrong granularity or an ugly piped title.
+      if (__pipe <= 0) { try { _kfl_pushRecentCat_(clean, relCategory); } catch (_rcp) {} }
       // Steven 2026-05-25: TEACH the bot from every tap. Without this the
       // user retags the same expense over and over and the bot never learns.
       // _learnedSave with 'user-correction' source auto-publishes to the
@@ -7235,10 +7263,10 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       // classifier for EVERY future user typing the same description.
       try {
         if (typeof _learnedSave === 'function' && last.description) {
-          _learnedSave(last.description, { category: newCategory, subcategory: newCategory }, 'user-correction');
+          _learnedSave(last.description, { category: relCategory, subcategory: relSubcategory || relCategory }, 'user-correction');
         }
       } catch (_lsErr) { Logger.log('_handleRelabelTap_ learnedSave err: ' + (_lsErr && _lsErr.message)); }
-      return { replyText: '✅ עברה ל-' + newCategory + ' (ולמדתי — בפעם הבאה אזהה לבד). השורה בגיליון מעודכנת.' };
+      return { replyText: '✅ עברה ל-' + (relSubcategory || relCategory) + ' (ולמדתי — בפעם הבאה אזהה לבד). השורה בגיליון מעודכנת.' };
     }
     Logger.log('_handleRelabelTap_ HTTP ' + code + ' ' + resp.getContentText().slice(0, 200));
     return { replyText: '😬 לא הצלחתי לעדכן את השורה (' + code + '). נסה/י דרך הגיליון ישירות.' };

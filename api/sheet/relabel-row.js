@@ -172,9 +172,30 @@ async function handlerImpl(req, res) {
     });
   }
 
+  // Optional col H (status) correction. When the bot sends an explicit isIncome
+  // flag (a tagged business/income relabel), set col H so the row lands on the
+  // right side of the dashboards. col H is a boolean: TRUE = expense, FALSE =
+  // income (matches buildExpenseRow's `!isIncome`, and the company-dashboard
+  // SUMIFS filters col H = TRUE). Untagged personal taps omit isIncome, so col H
+  // is left untouched. Non-fatal on failure: col D/E are already written.
+  if (typeof body.isIncome === 'boolean') {
+    try {
+      const hRange = encodeURIComponent(`'${TX_TAB}'!H${rowIndex}`);
+      const hUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${hRange}?valueInputOption=RAW`;
+      const hResp = await fetch(hUrl, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[!body.isIncome]] }),
+      });
+      if (!hResp.ok) log.info('relabel_row.colH_write_failed', { reqId: req.reqId, rowIndex, status: hResp.status });
+    } catch (_he) {
+      log.info('relabel_row.colH_write_threw', { reqId: req.reqId, rowIndex });
+    }
+  }
+
   log.info('relabel_row.ok', {
     reqId: req.reqId, userSub, phone, rowIndex,
-    newCategory, newSubcategory,
+    newCategory, newSubcategory, isIncome: body.isIncome,
   });
 
   return res.status(200).json({ ok: true, rowIndex });
