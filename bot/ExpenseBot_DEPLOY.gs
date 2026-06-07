@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-review-fixes';
+const KFL_BUILD_VERSION = '2026-06-07-ux';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1480,8 +1480,13 @@ function _sheetLinkLine_(fromPhone) {
 // long-URL line on confirmations only; _sheetLinkLine_ above is kept for the
 // explicit "show me my sheet" command where the actual URL is what's wanted.
 // No fromPhone needed — it never prints an id, so it's tenant-safe by design.
-function _sheetNudgeLine_() {
-  return '\n📊 לצפייה מלאה — היכנס לגיליון שלך.';
+function _sheetNudgeLine_(fromPhone) {
+  var url = '';
+  try { if (fromPhone && typeof _userSheetUrl_ === 'function') url = _userSheetUrl_(fromPhone); } catch (_e) {}
+  if (url) {
+    return '\nהגיליון שלך:\n' + url + '\nבמחשב לוחצים על הקישור. בנייד מעתיקים אותו או נכנסים ישירות ל-Google Sheets.';
+  }
+  return '\nלצפייה בכל ההוצאות — היכנס לגיליון שלך.';
 }
 
 // ───── NATURAL-LANGUAGE FIXED-EXPENSE INTENT (ask C, 2026-06-01) ─────
@@ -8067,7 +8072,7 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
         (__mtdLine ? '\n' + __mtdLine : '') +
         // change 2 (2026-06-03): short link-free nudge instead of the long URL;
         // the tappable dropdown (picker call above) is the change-category path.
-        _sheetNudgeLine_() +
+        _sheetNudgeLine_(fromPhone) +
         __firstCel +
         // Gendered encouragement (throttled to once/day) — skip on the first-
         // expense message, which already carries its own celebration line.
@@ -8580,7 +8585,7 @@ function processExpense(text, fromPhone) {
               } catch (__hPSortErr) {}
               try { _updateBusinessDashboard_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount); } catch (__hPDashErr) { Logger.log('smart_pending dashboard err: ' + (__hPDashErr && __hPDashErr.message)); }
               try { _dashboardDetailNote_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount, __hPDesc, __hPNow); } catch (__hPDnErr) { Logger.log('smart_pending dashboard note err: ' + (__hPDnErr && __hPDnErr.message)); }
-              return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון 📊\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
+              return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
             }
           } catch (__hPWriteErr) {
             Logger.log('smart_pending write err: ' + (__hPWriteErr && __hPWriteErr.message));
@@ -8636,12 +8641,12 @@ function processExpense(text, fromPhone) {
         try { _sendChangeCategoryPicker_(fromPhone, __bbeCat); } catch (__bbePkErr) { Logger.log('bare-biz picker err: ' + (__bbePkErr && __bbePkErr.message)); }
         Logger.log('bare-biz: wrote ₪' + __bbe.amount + ' עסק/' + __bbeSub);
         return { reply:
-          '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון 📊' +
+          '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון' +
           '\n📂 ' + __bbeCat +
           (__bbeSub && __bbeSub !== __bbeCat ? '\n🏷️ ' + __bbeSub : '') +
           // change 1 (2026-06-03): dropdown is always attached (picker call above);
           // the text instruction line was removed. change 2: short link-free nudge.
-          _sheetNudgeLine_()
+          _sheetNudgeLine_(fromPhone)
         };
       }
     }
@@ -9681,7 +9686,7 @@ function processExpense(text, fromPhone) {
         Logger.log('owner-write picker err: ' + (_pkErr && _pkErr.message));
       }
       return { reply:
-        '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + __fxOriginal + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
+        '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + __fxOriginal + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון' +
         '\n📂 ' + matched.category + __subLabel + __globalNote +
         (__catCtx ? '\n💡 ' + __catCtx : '') +
         __anomalyTail +
@@ -9695,10 +9700,10 @@ function processExpense(text, fromPhone) {
         // text line was dropped -- one tap replaces the typed instruction.
         '\nכתוב "סיכום" לראות איפה אתה עומד החודש.' +
         // change 2 (2026-06-03): short link-free nudge instead of the long URL.
-        _sheetNudgeLine_()
+        _sheetNudgeLine_(fromPhone)
       };
     }
-    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail + _sheetNudgeLine_() };
+    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ')\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail + _sheetNudgeLine_(fromPhone) };
   } catch (err) {
     return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + (err && err.message || '') + '\n💡 ננסה שוב בעוד דקה? אם זה ממשיך — שלח "עזרה".' };
   }
@@ -11888,7 +11893,7 @@ function _handleReceiptImage_(fromPhone, image) {
       '\n📂 ' + matched.category + subLabel +
       // change 1 (2026-06-03): dropdown always attached (picker call above);
       // the text instruction line was removed. change 2: short link-free nudge.
-      _sheetNudgeLine_()
+      _sheetNudgeLine_(fromPhone)
   };
 }
 
@@ -13604,6 +13609,18 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
     sendWhatsAppMessage(to, __twLines.join('\n'));
     return;
   }
+
+  // Meta caps interactive lists at 10 ROWS TOTAL across all sections; an over-
+  // sized list is rejected outright (the user would then see NO buttons). Trim to
+  // a valid 10 rows so the picker always sends.
+  var __secOut = [], __rowBudget = 10;
+  (sections || []).forEach(function (sec) {
+    if (__rowBudget <= 0 || !sec || !sec.rows || !sec.rows.length) return;
+    var __r = sec.rows.slice(0, __rowBudget);
+    __rowBudget -= __r.length;
+    __secOut.push({ title: sec.title, rows: __r });
+  });
+  sections = __secOut;
 
   var url = _cfg.url;
   var payload = {
