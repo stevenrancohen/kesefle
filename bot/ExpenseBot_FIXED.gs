@@ -39,6 +39,21 @@ const TRANSACTIONS_SHEET = 'תנועות';
 const DASHBOARD_SHEET = 'מאזן שנתי';
 
 const VERIFY_TOKEN = 'expense_bot_verify_2026';
+// Admin-action secret: the destructive ?action= maintenance endpoints prefer a
+// PRIVATE Script Property ADMIN_ACTION_SECRET. Set + rotate it to lock them down
+// (the public VERIFY_TOKEN below stops triggering them). Falls back to
+// VERIFY_TOKEN so behavior is UNCHANGED until you set the property. The Meta
+// webhook 'hub.verify_token' check keeps using VERIFY_TOKEN (Meta config needs it).
+function _kfl_adminSecret_() {
+  try { var v = PropertiesService.getScriptProperties().getProperty('ADMIN_ACTION_SECRET'); if (v && String(v).trim()) return String(v).trim(); } catch (_e) {}
+  return VERIFY_TOKEN;
+}
+function _kfl_ctEq_(a, b) {
+  a = String(a == null ? '' : a); b = String(b == null ? '' : b);
+  if (a.length !== b.length) return false;
+  var r = 0; for (var i = 0; i < a.length; i++) r |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  return r === 0;
+}
 const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHATSAPP_TOKEN') || '';
 // Live bot number: +1 555 640 8123 (Meta TEST number) → Phone Number ID
 // 1086749664527399. Site links + outbound sends all use this number now.
@@ -59,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-04-fx-robust';
+const KFL_BUILD_VERSION = '2026-06-07-ux-learn';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -323,7 +338,7 @@ const CATEGORY_MAP = [
   {"keywords":["מסרק","מסרק שיער","מברשת שיער","פן","מייבש שיער","מחליק שיער","מסלסל","קייזר","אבן מלטשת","פלייר","פלייר לעצמות","מספריים לשיער","סכין גילוח","קצף גילוח","ג'ילט","ג'יליט","קרם גילוח","קרם אחרי גילוח","דאודורנט","שפתון","סוגי שפתון","אודם","איפור","איפור פנים","איפור עיניים","מסקרה","אייליינר","צללית","צללית עיניים","אבקה","פאודר","סומק","קונסילר","פריימר","ג'לסט","לק","לק לציפורניים","מסיר לק","פילר","מסיכת פנים","קרם פנים","קרם לחות","קרם עיניים","סרום","חלב פנים","טוניק","קלינסר","סקראב פנים","קרם אנטי אייג'ינג","קרם עיניים","ויטמין C קרם","קרם נגד קמטים","שמפו","מרכך","מסיכה לשיער","סטיילינג שיער","ג'ל לשיער","ספריי שיער","מוס","קרם שיער","שמן שיער","קרם הזנה","ציפי"],"category":"טיפוח","subcategory":"מוצרי טיפוח ויופי"},
   {"keywords":["חדר כושר","מנוי לחדר כושר","היט","פולס","הולמס פלייס","אנרגיים","פיט פיט","קרוספיט","יוגה","פילאטיס","אימון אישי","מאמן אישי","טרנר","חיטוב","תוסף תזונה","חלבון","אבקת חלבון","חטיף חלבון","תוסף ספורט","קריאטין","BCAA","ויטמינים","ויטמין D","ויטמין C","חומצה פולית","שמן דגים","אומגה 3","מולטי ויטמין","ברזל"],"category":"בריאות","subcategory":"ספורט ותוספים"},
   {"keywords":["בילוי","בילויים","בילוי זוגי","בילוי משפחתי","סופ\"ש בצימר","צימר","צימר רומנטי","בית הארחה","פאב","קולנוע","בית קולנוע","סרט","תיאטרון","הופעה","קונצרט","פסטיבל","אטרקציה","פארק שעשועים","סופרלנד","חוויה זוגית","חוויה משפחתית","ערב זוגי","יציאה זוגית"],"category":"בידור","subcategory":"בילוי ויציאה"},
-  {"keywords":["סטים","סטים אפליקציה","אפליקציה","מנוי לאפליקציה","שופיפיי","שטריימר","מנוי שופיפיי","נטפליקס","ספוטיפיי","דיסני פלוס","יוטיוב פרימיום","אפל מיוזיק","אפל טיוי","אמזון פריים","קרים","עוקבים","אינסטגרם פרימיום","טינדר","בומבל","הינג'","אוקיו פיד","פייטר","דואולינגו","דואו לינגו","אנקי","טדם","HBO","אופיס 365","אופיס","Office 365","אדובי","פוטושופ","פרמייר","אילוסטרייטור","קנבה","Canva","קנבה פרו","Adobe Cloud","אפליקציות","דיג'יטל","תוכנה","תוכנה לעסק","תוכנת חשבוניות","אייקלאוד","iCloud","שטרגראם","פינטרסט"],"category":"בידור","subcategory":"מנויים דיגיטליים"},
+  {"keywords":["סטים","סטים אפליקציה","מנוי לאפליקציה","שופיפיי","שטריימר","מנוי שופיפיי","נטפליקס","ספוטיפיי","דיסני פלוס","יוטיוב פרימיום","אפל מיוזיק","אפל טיוי","אמזון פריים","קרים","עוקבים","אינסטגרם פרימיום","טינדר","בומבל","הינג'","אוקיו פיד","פייטר","דואולינגו","דואו לינגו","אנקי","טדם","HBO","אופיס 365","אופיס","Office 365","אדובי","פוטושופ","פרמייר","אילוסטרייטור","קנבה","Canva","קנבה פרו","Adobe Cloud","דיג'יטל","תוכנה","תוכנה לעסק","תוכנת חשבוניות","אייקלאוד","iCloud","שטרגראם","פינטרסט"],"category":"בידור","subcategory":"מנויים דיגיטליים"},
   {"keywords":["משחק מחשב","משחקים","משחקי וידאו","סטים","Steam","אפיק","Epic Games","פלייסטיישן פלוס","PS Plus","אקס בוקס לייב","Xbox Game Pass","פורטנייט","Fortnite","מיינקראפט","Minecraft","FIFA","COD","Call of Duty","קונסולה","בקר משחק","קונטרולר","ג'וי קון","ניקרק","מקלדת גיימינג","עכבר גיימינג","אוזניות גיימינג","כסא גיימינג","שולחן גיימינג","Roblox","רובלוקס","V-Bucks","ג'מים","סקינים","כספים במשחק"],"category":"בידור","subcategory":"משחקי מחשב וקונסולה"},
   {"keywords":["מים","חשבון המים","תאגיד מים","אגרת מים"],"category":"הוצאות קבועות","subcategory":"מים"},
   {"keywords":["נטפליקס","ספוטיפיי","דיסני פלוס","יוטיוב פרימיום","אמזון פריים","אפל מיוזיק","אפל טיוי","מנוי נטפליקס","דיסני+"],"category":"בידור","subcategory":"סטרימינג"},
@@ -387,7 +402,7 @@ const CATEGORY_MAP = [
   {"keywords":["דמי חניה","כרטיס חניה","תשלום חניון","חניון בתשלום"],"category":"תחבורה","subcategory":"חניה"},
   {"keywords":["כרטיס אוטובוס","נסיעה ברכבת","כרטיס רכבת","טעינת רב קו","נסיעה באוטובוס"],"category":"תחבורה","subcategory":"תחבורה ציבורית"},
   {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית"],"category":"בריאות","subcategory":"בריאות"},
-  {"keywords":["תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
+  {"keywords":["תרופה","תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["טיפול שיניים","רופא שיניים","ניקוי אבנית","סתימה אצל שיניים"],"category":"בריאות","subcategory":"שיניים"},
   {"keywords":["בית הספר","בית ספר","גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
   {"keywords":["מתנה ליום הולדת","מתנה לחתונה","מתנה לחבר","מתנה לחברה","שי לחג","מתנת יום נישואין"],"category":"מתנות","subcategory":"מתנות"},
@@ -428,7 +443,7 @@ const CATEGORY_MAP = [
   {"keywords":["crossfit","goactive","gym","אימון","בריכה","גו אקטיב","חדר כושר","חוגים","יוגה","כושר","מאמן אישי","מכון כושר","פיט פלוס","פילאטיס","קאנטרי קלאב","שחייה"],"category":"הוצאות קבועות","subcategory":"מכון כושר"},
   {"keywords":["adidas","asos","castro","fox","h&m","levis","mango","next","nike","puma","renuar","shein","shoe","tommy","urbanica","zara","אדידס","אופנה","אורבניקה","בגדים","ביגוד","גולף","גרביים","דלתא","טומי הילפיגר","לויס","נייקי","נעליים","פולגת","פומה"],"category":"קניות","subcategory":"ביגוד"},
   {"keywords":["haircut","sephora","super pharm makeup","tikkun","wax","איי קיו","איפור","בושם","טיפוח","מאניקור","מספרה","מעצב שיער","מקס מרה","ספורה","ספרית","פדיקור","קרם","שעווה","תספורת"],"category":"קניות","subcategory":"טיפוח"},
-  {"keywords":["12 לייב","1blocker pro","1login","abc mouse","abcmouse","abode security","abonament","abracadabra","accuweather plus","acronis","acronis true image","ad guard","adguard premium","adt monitoring","alltrails","alltrails plus","alltrails+","alpha vantage premium","amazon kids unlimited","amazon kids+","amazon kindle unlimited","amazon music","amazon music hd","amazon music prime","amazon music unlimited","amazon prime","amazon prime video","amazon video","annual billing","annual saas","anthropic","app store subscription","apple app store","apple gift card subscription","apple icloud 200gb","apple icloud 2tb","apple icloud 50gb","apple news plus","apple news+","apple one","apple podcasts","apple tv","apple tv plus","apple tv+","arc browser","arkham pro","arlo secure","aroma subscription","arq backup","atlas coffee","atlas coffee club","atlas vpn","atlasvpn","atom finance","att unlimited extra","audible","audible plus","audible premium","audible premium plus","audirvana","auth zero","auth0","auto pay subscription","autocrit","avast premium","avg internet security","awal","back blaze","backblaze","bamboo learning","bandcamp","bandcamp pro","barchart premium","bear app","bear pro","beat stars","beatstars","beehiiv max","betternet","bfi player","bfi פליר","billed monthly","billed yearly","billing","bitdefender","blink subscription","blinkist","blockfolio","blue bottle subscription","bluesky subscription","book beat","bookbeat","boosty subscription","boots membership","boxit","boxit israel","boxit ישראל","brave premium","bumble","bumble bff","bumble boost","bumble premium","bunq premium","carbonite","card on file subscription","carrot weather","carrot weather premium","castro","ccleaner","ccleaner pro","cd baby","cellcom tv","cellcom סטרימינג","channel 12 live","channel 13","channels dvr","chatgpt","checkpoint vpn","ci-en","circle membership","cisco anyconnect","claude","cleanmymac","cleanmymac x","cloud subscription","cloudflare registrar","cmb","coffee meets bagel","coingecko premium","coingecko pro","coinmarketcap pro","coinstats premium","comixology","comixology unlimited","convertkit creator pro","craft docs","craft pro","crashplan","creative shrimp","creator support patreon","credit card subscription","criterion","criterion channel","crunchyroll","crunchyroll manga","crunchyroll premium","crypto pro","cryptopro","cyber ghost","cyberghost","darksky","day one journal","day one premium","dazn","dazn premium","dc comics","dc universe infinite","deezer","deezer premium","delta investments","delta pro","dexscreener","diarium pro","discord nitro basic","discord nitro classic","discord server boost","disney+","distro kid","distrokid","domain.com","doordash dashpass","dorico","drafts pro","dropbox","dropbox plus 2tb","duck duck go privacy","duck duck moose","dune analytics","duo security","duolingo english test","duolingo plus family","duplicati","dynadot","eharmony","eharmonyplus","elite","elite singles","epic for kids","epic kids books","eros now","eset internet security","esp שלוש","espn","espn plus","espn+","espresso club","etoro club","etoro premium","etoro pro","eufy security","everand","evermusic","expert flyer","express vpn","expressvpn","f-secure","f1 pro","f1 tv","f1 פרו","facebook dating","facetune pro","facetune2","fanbox creator","fanhouse","fansly","fantia","fastmail","fastmail family","fastmail premium","feedbin","feedly","feedly pro","feedwrangler","feeld","fender","fender play","fight pass","figma","filen","filmic firstlight","filmic pro","filmstruck","finale notation","finviz","finviz elite","firefox relay","five minute journal","flowkey","fluentu premium","fortigate vpn","free tv","frontpoint","fubo","fubo tv","fubotv","funimation","gaia gps","gaia gps premium","getepic","ghostery midnight","ginger software","github copilot","glassnode","glidan subscription","global entry","globalprotect","go daddy","godaddy","going","google authenticator backup","google domains","google drive 100gb","google drive 200gb","google drive 2tb","google nest aware","google one ai premium","google one premium","google one storage","google play credit","google play music","google play subscription","google podcasts","grindr","grindr unlimited","grindr xtra","guitareo","happn","hbo","headway","her app","her dating","hey email","hey hey","hey.com email","hide my ass","hidemyass","hinge","hinge premium","hinge x","hma vpn","hoichoi","homer learning","hot box","hot israel","hot magic","hot max","hot plus","hot sport","hot vod","hot חודשי","hotspot shield","hulu","hulu live","hulu plus","ia writer","ibkr pro","icedrive","icloud","icloud 200gb","icloud 2tb","icloud 50gb","idrive","iex cloud","iheart","iheartradio","illy","illy subscription","in app purchase","in-app purchase","infuse pro","inoreader","inoreader supporter","inshot pro","instacart plus","instacart+","instagram subscription","instapaper","instapaper premium","intelligentsia subscription","internxt","intotheblock pro","investorplace","ipvanish","ishpaz","israel pay","ivacy","ivanti pulse vpn","izotope","javy coffee","jdate plus","journey app","jriver media center","jswipe","jumpcloud","kafe israel subscription","kagi premium","kagi ultimate","kaiko","kan 11","kan maaman","kan meir","kan עוף","kanafol box","kaspersky","kayak premium","khan academy kids","kido tv","kindle paperwhite warranty","kindle subscription kids","kindle unlimited","kit pro","kk plus","kobo audio","kobo audiobook","kobo plus","kodi addon","kolab now","kolabnow","kontakt","koyfin","lalylala","landr","language transfer","libro fm","libro.fm","lightroom mobile","lingokids","lingvist premium","linkedin career","linkedin recruiter","linkedin sales nav","logseq sync","loopcloud","lounge buddy","loungekey","lyft pink","macrotrends","mailerlite premium","mako plus","mako tv","malwarebytes","malwarebytes premium","manoui","manoy","marketwatch premium","marvel comics","marvel unlimited","mastodon support","match","match premium","match.com","matter","matter app","mcafee","mcafee total protection","mega 400gb","memberium","memberkit","memberpress","memberspace","messari","messari pro","microsoft store subscription","minder","mlb tv","mlb.tv","monthly billing","monthly saas","monzo plus","monzo premium","moon plus reader","moon+ reader pro","moralis","morningstar premium","moshi sleep","motley fool stock advisor","mozilla vpn","mubi","mubi go","mullvad","musescore","musescore pro","musi premium","musicgurus","musictheory.net","muzz","muzzmatch","myradar pro","n12 לייב","n26 business","n26 metal","n26 you","name cheap","name.com","namecheap","namecheap premium","namesilo","nansen","nansen ai","native instruments","native komplete","naturalreader premium","nba league pass","nba tv","nba טיוי","neat banking","neeva","nespresso club","nest aware","netflix","newsblur","nfl game pass","nfl plus","nfl+","nhl tv","nhl.tv","noggin","noggin app","norton 360","norton antivirus","noteflight","notion","notion ai add-on","obsidian","obsidian publish","obsidian sync","office 365","ok cupid","okcupid","okta","okta workforce","omnivore","one login","onedrive 1tb","onelogin","only fans","onlyfans subscription","onx","onx hunt","onx maps","openai","openprovider","openvpn access server","opera gx","opera one","output","output arcade","overcast","panda dome","pandora","pandora plus","pandora premium","paramount","paramount plus","paramount+","partner tv","patreon 10 dollar","patreon 5 dollar","patreon creator membership","patreon premium tier","patreon supporter","patreon top tier","paybox premium","payment for subscription","pbs kids","pbskids subscription","peacock","peacock premium","perimeter 81","perimeter81","pia vpn","pianote","picsart gold","picsart premium","pixaloop pro","play store","playground sessions","playon cloud","plenty of fish","plex","plex lifetime","plex pass","plex pass annual","plex premium","pocket","pocket casts","pocket premium","pof","polarr pro","polygon.io","porkbun","prime gaming","prime membership","prime video","prime ישראל","prime סרטים","priority pass","priority pass select","private internet access","proton mail","proton vpn","protonmail","protonvpn","prowritingaid","ps express premium","radarscope pro","raindrop pro","raindrop.io","raya","readwise","readwise reader","reddit gold","reddit premium","reflect notes","reflect.app","remnote pro","renewal","renewed automatically","reshet 13","reshet plus","reshet+","revolut","revolut metal","revolut plus","revolut premium","revolut ultra","ridewise","ring protect","ring protect plan","roam research","roamresearch","robinhood gold","rome2rio","roon","roon labs","routenote","saas billing","salams","samsung galaxy store","santiment","scott's cheap flights","scott\\","scribd","scribd everand","scrivener","scrivener premium","scriverer","seat guru","seeking","seeking alpha premium","shazam","shazam premium","shipt","shipt membership","shonen jump","sibelius","sibelius cloud","simplisafe","simply guitar","simply piano","simply wall st","simplywallst","skiff mail","skoove","skratch","skyscanner premium","sling tv","snack","snapchat plus","snapchat+","snapseed","snowball analytics","sole in a box","songtrust","sonicwall vpn","sophos home premium","sos backup","sos online backup","soundcloud","soundcloud go","soundcloud pro","soundhound","soundslice","soundtrap","soundtrap by spotify","speakly","spideroak","splice","splice pro","splice sounds","splice video","sport 1 הוט","sport 5 הוט","spotify premium individual","spybot","starbucks gold","starbucks rewards plus","starbucks subscription","starfall","stationhead","sting tv","sting חודשי","stitcher","stockanalysis.com","stockcharts","stockunlock","stoic journal","storm radar","storytel","stumptown subscription","subscribestar","subscription annual","subscription auto","subscription box israel","subscription monthly","surf shark","surfshark","synology c2","synology drive","t-mobile magenta max","tablo dvr","tailscale","tapas","tea box israel","telegram premium plus","telegram stars","ten bis premium","tenbis +","tenuto","the league","the motley fool","the next stage","the old reader","thinkorswim","threads premium","thrifty traveler","tidal","tidal connect","tidal hifi","tidal premium","tikr terminal","tiktok coins","tiktok gifts","tiktok premium","tinder","tinder gold","tinder platinum","tinder plus","tivo plus","tivo+","tova wine","tovaw subscription","trade coffee","trading view","tradingview essential","tradingview plus","tradingview premium","tradingview pro","trail forks","trend micro","tripadvisor","tripadvisor plus","triple play","tsa precheck","ttp","tubi premium","tucows","tumblr crabs","tune core","tunecore","tunnelbear","tuta","tutanota","twelve data","twitch prime sub","twitter blue","twitter premium","uber one","uber pass","ufc","ufc fight pass","ulysses","ulysses subscription","verizon plus","videoleap pro","vivaldi","vivint","viz manga","vlc donation","voice dream reader","vsco premium","vsco x","vypr","vyprvpn","walla tv","wanderu","wasabi","wasabi cloud","watchguard vpn","weather strike pro","weather underground","weather.com plus","webtoon","webull premium","windscribe","windy.app pro","windy.com premium","wine box israel","wipr","wise account","wise business","wise multi currency","wise premium","wisesheets","wolt plus","wolt+","wwe","wwe network","wyze cam plus","x premium","x premium+","x פרימיום","x-vpn","xvpn","yaakobi box","yabla","yahoo finance plus","yahoo finance premium","ycharts","yes 4k","yes drama","yes go","yes israel","yes max","yes oh","yes plus","yes plus 4k","yes sport","yes stick","yes vod","yes vod מנוי","yes חבילת בסיס","yes חודשי","yes פרימיום","ynet plus","ynet tv","ynet+","yousician","youtube music","youtube music premium","youtube premium","youtube premium individual","youtube premium lite","youtube tv base","youtube tv premium","yt premium family","yubikey","zacks premium","zerotier","zoho mail","zoolz","אבונמנט","אובר וואן","אוברקאסט","אודיבל","אוואל","אוול","אוון","אוורנד","אוטפוט ארקייד","אי-דרייב","אייהארט","אייהארט רדיו","אייוסי","אייזוטופ","אישפז box","אם אל בי","אמזון וידאו","אמזון מיוזיק","אמזון פריים","אמזון פריים וידאו","אן אייץ אל","אן אף אל פלוס","אנימה מנוי","אספן","אספן פלוס","אספרסו קלאב","אפ סטור","אפ סטור קרדיט","אפל tv","אפל טי וי","אפל טיוי","אפל ניוז פלוס","אקספרס וי פי אן","אקרוניס","ארומה לשמ","ארוס נאו","באקבלייז","בוקביט","בוקס איט","בוקסיט","ביט pay","ביטדפנדר","ביטול מנוי","ביטסטארס","בלינקיסט","בנדקאמפ","גלידן מנוי","דאבליו וי אי","דאזן","דאזן פרימיום","דיזר","דיזר פרימיום","דיסטרוקיד","האפן","הדווי","הוט בוקס","הוט וויאודי","הוט וי או די","הוט ישראל","הוט מאג'יק","הוט מקס","הוט סטיק","הוט ספורט","הוט פלוס","הויצ'וי","הויצ\\","הולו","הולו לייב","הולו פלוס","החזר מנוי","הסיוול בקופסה","השלב הבא של הג'אוון","וואלה טיוי","וויינט פלוס","וולט+","ויאלה tv","וינדסקרייב","חבילה ישראלית","טאנל בר","טוטה","טיונקור","טיידאל","טיידל","טינדר","טריפל פליי","יו אף סי","יוטיוב","יוטיוב מוסיקה","יוטיוב מיוזיק","יוטיוב פרימיום","יוסיציאן","יין לבית","יס גו","יס דרמה","יס וויאודי","יס וי או די","יס ישראל","יס מקס","יס סטיק","יס ספורט","יס פלוס","יעקובי קופסה","ירול","כאן 11","כאן מעמן","כאן רשת","לאנדר","לופקלאוד","ליברו","ליגת nba","מאצ'","מאצ\\","מאקו טיוי","מאקו פלוס","מובי","מוזיקת אמזון","מולוואד","מנוי","מנוי 1password","מנוי adobe","מנוי apple","מנוי apple tv","מנוי audible","מנוי canva","מנוי chatgpt","מנוי crunchyroll","מנוי dazn","מנוי deezer","מנוי disney","מנוי disney+","מנוי dropbox","מנוי espn","מנוי f1","מנוי figma","מנוי gemini","מנוי hbo","מנוי hulu","מנוי icloud","מנוי kindle","מנוי lastpass","מנוי mlb","מנוי mubi","מנוי nba","מנוי netflix","מנוי nfl","מנוי notion","מנוי office","מנוי paramount","מנוי peacock","מנוי prime","מנוי slack","מנוי spotify","מנוי tidal","מנוי ufc","מנוי vpn","מנוי youtube","מנוי zoom","מנוי אפל","מנוי גוגל","מנוי דיגיטל","מנוי הוט","מנוי חודשי כפתור","מנוי יין","מנוי יס","מנוי מיקרוסופט","מנוי מקצועי","מנוי ערוץ הספורט","מנוי פעיל","מנוי פריים","מנוי קפה","מנוי שירות ענן","מנוי שנתי כפתור","מנוי שנתי שילם","מנוי תה","מקאפי","נורטון","סאבסקריפשן","סאונדקלאוד","סאונדקלאוד פרו","סאס תשלום","סונגטראסט","סטורי-טל","סטוריטל","סטינג","סטינג טיוי","סטינג מנוי","סטינג ספורט","סטיצ'ר","סטיצר","סידי בייבי","סייברגוסט","סלינג","סלקום tv","סלקום טיוי","סלקום סטרימינג","סנאפ פלוס","סנפצ'אט פלוס","סנפצ\\","ספיידר אוק","ספלייס","סקרייבד","סרפשארק","ערוץ 12 לייב","ערוץ 13","ערוץ הספורט","ערוץ הספורט מנוי","ערוץ ספורט 1","פ1 tv","פאנימיישן","פאסטמייל","פודקאסטים אפל","פודקאסטים גוגל","פוקט קאסטס","פוקט-קאסטס","פורמולה 1 טיוי","פידלי","פיובו","פילם סטראק","פיקוק","פיקוק פרימיום","פלקס","פלקס פאס","פנדורה","פסנתר פשוט","פעיל מנוי","פרוטון וי פי אן","פרוטון מייל","פרטנר tv","פרטנר טיוי","פרטנר סטרימינג","פרי טיוי","פרייבט אינטרנט","פריים וידאו","פרמאונט פלוס","פרמאונט+","פרמונט","קאסטרו","קובו אודיו","קינדל אנלימיטד","קספרסקי","קראנצ'ירול","קראנצירול","קראש פלאן","קרבונייט","קריטריון","קריטריון צ'נל","קריטריון צ\\","ראוטנוט","רינג חבילה","רכישה באפליקציה","רשת +","רשת פלוס","תשלום אוטומטי מנוי","תשלום חודשי שירות","תשלום מנוי","תשלום שירות מקוון","תשלום שנתי"],"category":"הוצאות קבועות","subcategory":"אפליקציות"},
+  {"keywords":["אפליקציה","אפליקציות","12 לייב","1blocker pro","1login","abc mouse","abcmouse","abode security","abonament","abracadabra","accuweather plus","acronis","acronis true image","ad guard","adguard premium","adt monitoring","alltrails","alltrails plus","alltrails+","alpha vantage premium","amazon kids unlimited","amazon kids+","amazon kindle unlimited","amazon music","amazon music hd","amazon music prime","amazon music unlimited","amazon prime","amazon prime video","amazon video","annual billing","annual saas","anthropic","app store subscription","apple app store","apple gift card subscription","apple icloud 200gb","apple icloud 2tb","apple icloud 50gb","apple news plus","apple news+","apple one","apple podcasts","apple tv","apple tv plus","apple tv+","arc browser","arkham pro","arlo secure","aroma subscription","arq backup","atlas coffee","atlas coffee club","atlas vpn","atlasvpn","atom finance","att unlimited extra","audible","audible plus","audible premium","audible premium plus","audirvana","auth zero","auth0","auto pay subscription","autocrit","avast premium","avg internet security","awal","back blaze","backblaze","bamboo learning","bandcamp","bandcamp pro","barchart premium","bear app","bear pro","beat stars","beatstars","beehiiv max","betternet","bfi player","bfi פליר","billed monthly","billed yearly","billing","bitdefender","blink subscription","blinkist","blockfolio","blue bottle subscription","bluesky subscription","book beat","bookbeat","boosty subscription","boots membership","boxit","boxit israel","boxit ישראל","brave premium","bumble","bumble bff","bumble boost","bumble premium","bunq premium","carbonite","card on file subscription","carrot weather","carrot weather premium","castro","ccleaner","ccleaner pro","cd baby","cellcom tv","cellcom סטרימינג","channel 12 live","channel 13","channels dvr","chatgpt","checkpoint vpn","ci-en","circle membership","cisco anyconnect","claude","cleanmymac","cleanmymac x","cloud subscription","cloudflare registrar","cmb","coffee meets bagel","coingecko premium","coingecko pro","coinmarketcap pro","coinstats premium","comixology","comixology unlimited","convertkit creator pro","craft docs","craft pro","crashplan","creative shrimp","creator support patreon","credit card subscription","criterion","criterion channel","crunchyroll","crunchyroll manga","crunchyroll premium","crypto pro","cryptopro","cyber ghost","cyberghost","darksky","day one journal","day one premium","dazn","dazn premium","dc comics","dc universe infinite","deezer","deezer premium","delta investments","delta pro","dexscreener","diarium pro","discord nitro basic","discord nitro classic","discord server boost","disney+","distro kid","distrokid","domain.com","doordash dashpass","dorico","drafts pro","dropbox","dropbox plus 2tb","duck duck go privacy","duck duck moose","dune analytics","duo security","duolingo english test","duolingo plus family","duplicati","dynadot","eharmony","eharmonyplus","elite","elite singles","epic for kids","epic kids books","eros now","eset internet security","esp שלוש","espn","espn plus","espn+","espresso club","etoro club","etoro premium","etoro pro","eufy security","everand","evermusic","expert flyer","express vpn","expressvpn","f-secure","f1 pro","f1 tv","f1 פרו","facebook dating","facetune pro","facetune2","fanbox creator","fanhouse","fansly","fantia","fastmail","fastmail family","fastmail premium","feedbin","feedly","feedly pro","feedwrangler","feeld","fender","fender play","fight pass","figma","filen","filmic firstlight","filmic pro","filmstruck","finale notation","finviz","finviz elite","firefox relay","five minute journal","flowkey","fluentu premium","fortigate vpn","free tv","frontpoint","fubo","fubo tv","fubotv","funimation","gaia gps","gaia gps premium","getepic","ghostery midnight","ginger software","github copilot","glassnode","glidan subscription","global entry","globalprotect","go daddy","godaddy","going","google authenticator backup","google domains","google drive 100gb","google drive 200gb","google drive 2tb","google nest aware","google one ai premium","google one premium","google one storage","google play credit","google play music","google play subscription","google podcasts","grindr","grindr unlimited","grindr xtra","guitareo","happn","hbo","headway","her app","her dating","hey email","hey hey","hey.com email","hide my ass","hidemyass","hinge","hinge premium","hinge x","hma vpn","hoichoi","homer learning","hot box","hot israel","hot magic","hot max","hot plus","hot sport","hot vod","hot חודשי","hotspot shield","hulu","hulu live","hulu plus","ia writer","ibkr pro","icedrive","icloud","icloud 200gb","icloud 2tb","icloud 50gb","idrive","iex cloud","iheart","iheartradio","illy","illy subscription","in app purchase","in-app purchase","infuse pro","inoreader","inoreader supporter","inshot pro","instacart plus","instacart+","instagram subscription","instapaper","instapaper premium","intelligentsia subscription","internxt","intotheblock pro","investorplace","ipvanish","ishpaz","israel pay","ivacy","ivanti pulse vpn","izotope","javy coffee","jdate plus","journey app","jriver media center","jswipe","jumpcloud","kafe israel subscription","kagi premium","kagi ultimate","kaiko","kan 11","kan maaman","kan meir","kan עוף","kanafol box","kaspersky","kayak premium","khan academy kids","kido tv","kindle paperwhite warranty","kindle subscription kids","kindle unlimited","kit pro","kk plus","kobo audio","kobo audiobook","kobo plus","kodi addon","kolab now","kolabnow","kontakt","koyfin","lalylala","landr","language transfer","libro fm","libro.fm","lightroom mobile","lingokids","lingvist premium","linkedin career","linkedin recruiter","linkedin sales nav","logseq sync","loopcloud","lounge buddy","loungekey","lyft pink","macrotrends","mailerlite premium","mako plus","mako tv","malwarebytes","malwarebytes premium","manoui","manoy","marketwatch premium","marvel comics","marvel unlimited","mastodon support","match","match premium","match.com","matter","matter app","mcafee","mcafee total protection","mega 400gb","memberium","memberkit","memberpress","memberspace","messari","messari pro","microsoft store subscription","minder","mlb tv","mlb.tv","monthly billing","monthly saas","monzo plus","monzo premium","moon plus reader","moon+ reader pro","moralis","morningstar premium","moshi sleep","motley fool stock advisor","mozilla vpn","mubi","mubi go","mullvad","musescore","musescore pro","musi premium","musicgurus","musictheory.net","muzz","muzzmatch","myradar pro","n12 לייב","n26 business","n26 metal","n26 you","name cheap","name.com","namecheap","namecheap premium","namesilo","nansen","nansen ai","native instruments","native komplete","naturalreader premium","nba league pass","nba tv","nba טיוי","neat banking","neeva","nespresso club","nest aware","netflix","newsblur","nfl game pass","nfl plus","nfl+","nhl tv","nhl.tv","noggin","noggin app","norton 360","norton antivirus","noteflight","notion","notion ai add-on","obsidian","obsidian publish","obsidian sync","office 365","ok cupid","okcupid","okta","okta workforce","omnivore","one login","onedrive 1tb","onelogin","only fans","onlyfans subscription","onx","onx hunt","onx maps","openai","openprovider","openvpn access server","opera gx","opera one","output","output arcade","overcast","panda dome","pandora","pandora plus","pandora premium","paramount","paramount plus","paramount+","partner tv","patreon 10 dollar","patreon 5 dollar","patreon creator membership","patreon premium tier","patreon supporter","patreon top tier","paybox premium","payment for subscription","pbs kids","pbskids subscription","peacock","peacock premium","perimeter 81","perimeter81","pia vpn","pianote","picsart gold","picsart premium","pixaloop pro","play store","playground sessions","playon cloud","plenty of fish","plex","plex lifetime","plex pass","plex pass annual","plex premium","pocket","pocket casts","pocket premium","pof","polarr pro","polygon.io","porkbun","prime gaming","prime membership","prime video","prime ישראל","prime סרטים","priority pass","priority pass select","private internet access","proton mail","proton vpn","protonmail","protonvpn","prowritingaid","ps express premium","radarscope pro","raindrop pro","raindrop.io","raya","readwise","readwise reader","reddit gold","reddit premium","reflect notes","reflect.app","remnote pro","renewal","renewed automatically","reshet 13","reshet plus","reshet+","revolut","revolut metal","revolut plus","revolut premium","revolut ultra","ridewise","ring protect","ring protect plan","roam research","roamresearch","robinhood gold","rome2rio","roon","roon labs","routenote","saas billing","salams","samsung galaxy store","santiment","scott's cheap flights","scott\\","scribd","scribd everand","scrivener","scrivener premium","scriverer","seat guru","seeking","seeking alpha premium","shazam","shazam premium","shipt","shipt membership","shonen jump","sibelius","sibelius cloud","simplisafe","simply guitar","simply piano","simply wall st","simplywallst","skiff mail","skoove","skratch","skyscanner premium","sling tv","snack","snapchat plus","snapchat+","snapseed","snowball analytics","sole in a box","songtrust","sonicwall vpn","sophos home premium","sos backup","sos online backup","soundcloud","soundcloud go","soundcloud pro","soundhound","soundslice","soundtrap","soundtrap by spotify","speakly","spideroak","splice","splice pro","splice sounds","splice video","sport 1 הוט","sport 5 הוט","spotify premium individual","spybot","starbucks gold","starbucks rewards plus","starbucks subscription","starfall","stationhead","sting tv","sting חודשי","stitcher","stockanalysis.com","stockcharts","stockunlock","stoic journal","storm radar","storytel","stumptown subscription","subscribestar","subscription annual","subscription auto","subscription box israel","subscription monthly","surf shark","surfshark","synology c2","synology drive","t-mobile magenta max","tablo dvr","tailscale","tapas","tea box israel","telegram premium plus","telegram stars","ten bis premium","tenbis +","tenuto","the league","the motley fool","the next stage","the old reader","thinkorswim","threads premium","thrifty traveler","tidal","tidal connect","tidal hifi","tidal premium","tikr terminal","tiktok coins","tiktok gifts","tiktok premium","tinder","tinder gold","tinder platinum","tinder plus","tivo plus","tivo+","tova wine","tovaw subscription","trade coffee","trading view","tradingview essential","tradingview plus","tradingview premium","tradingview pro","trail forks","trend micro","tripadvisor","tripadvisor plus","triple play","tsa precheck","ttp","tubi premium","tucows","tumblr crabs","tune core","tunecore","tunnelbear","tuta","tutanota","twelve data","twitch prime sub","twitter blue","twitter premium","uber one","uber pass","ufc","ufc fight pass","ulysses","ulysses subscription","verizon plus","videoleap pro","vivaldi","vivint","viz manga","vlc donation","voice dream reader","vsco premium","vsco x","vypr","vyprvpn","walla tv","wanderu","wasabi","wasabi cloud","watchguard vpn","weather strike pro","weather underground","weather.com plus","webtoon","webull premium","windscribe","windy.app pro","windy.com premium","wine box israel","wipr","wise account","wise business","wise multi currency","wise premium","wisesheets","wolt plus","wolt+","wwe","wwe network","wyze cam plus","x premium","x premium+","x פרימיום","x-vpn","xvpn","yaakobi box","yabla","yahoo finance plus","yahoo finance premium","ycharts","yes 4k","yes drama","yes go","yes israel","yes max","yes oh","yes plus","yes plus 4k","yes sport","yes stick","yes vod","yes vod מנוי","yes חבילת בסיס","yes חודשי","yes פרימיום","ynet plus","ynet tv","ynet+","yousician","youtube music","youtube music premium","youtube premium","youtube premium individual","youtube premium lite","youtube tv base","youtube tv premium","yt premium family","yubikey","zacks premium","zerotier","zoho mail","zoolz","אבונמנט","אובר וואן","אוברקאסט","אודיבל","אוואל","אוול","אוון","אוורנד","אוטפוט ארקייד","אי-דרייב","אייהארט","אייהארט רדיו","אייוסי","אייזוטופ","אישפז box","אם אל בי","אמזון וידאו","אמזון מיוזיק","אמזון פריים","אמזון פריים וידאו","אן אייץ אל","אן אף אל פלוס","אנימה מנוי","אספן","אספן פלוס","אספרסו קלאב","אפ סטור","אפ סטור קרדיט","אפל tv","אפל טי וי","אפל טיוי","אפל ניוז פלוס","אקספרס וי פי אן","אקרוניס","ארומה לשמ","ארוס נאו","באקבלייז","בוקביט","בוקס איט","בוקסיט","ביט pay","ביטדפנדר","ביטול מנוי","ביטסטארס","בלינקיסט","בנדקאמפ","גלידן מנוי","דאבליו וי אי","דאזן","דאזן פרימיום","דיזר","דיזר פרימיום","דיסטרוקיד","האפן","הדווי","הוט בוקס","הוט וויאודי","הוט וי או די","הוט ישראל","הוט מאג'יק","הוט מקס","הוט סטיק","הוט ספורט","הוט פלוס","הויצ'וי","הויצ\\","הולו","הולו לייב","הולו פלוס","החזר מנוי","הסיוול בקופסה","השלב הבא של הג'אוון","וואלה טיוי","וויינט פלוס","וולט+","ויאלה tv","וינדסקרייב","חבילה ישראלית","טאנל בר","טוטה","טיונקור","טיידאל","טיידל","טינדר","טריפל פליי","יו אף סי","יוטיוב","יוטיוב מוסיקה","יוטיוב מיוזיק","יוטיוב פרימיום","יוסיציאן","יין לבית","יס גו","יס דרמה","יס וויאודי","יס וי או די","יס ישראל","יס מקס","יס סטיק","יס ספורט","יס פלוס","יעקובי קופסה","ירול","כאן 11","כאן מעמן","כאן רשת","לאנדר","לופקלאוד","ליברו","ליגת nba","מאצ'","מאצ\\","מאקו טיוי","מאקו פלוס","מובי","מוזיקת אמזון","מולוואד","מנוי","מנוי 1password","מנוי adobe","מנוי apple","מנוי apple tv","מנוי audible","מנוי canva","מנוי chatgpt","מנוי crunchyroll","מנוי dazn","מנוי deezer","מנוי disney","מנוי disney+","מנוי dropbox","מנוי espn","מנוי f1","מנוי figma","מנוי gemini","מנוי hbo","מנוי hulu","מנוי icloud","מנוי kindle","מנוי lastpass","מנוי mlb","מנוי mubi","מנוי nba","מנוי netflix","מנוי nfl","מנוי notion","מנוי office","מנוי paramount","מנוי peacock","מנוי prime","מנוי slack","מנוי spotify","מנוי tidal","מנוי ufc","מנוי vpn","מנוי youtube","מנוי zoom","מנוי אפל","מנוי גוגל","מנוי דיגיטל","מנוי הוט","מנוי חודשי כפתור","מנוי יין","מנוי יס","מנוי מיקרוסופט","מנוי מקצועי","מנוי ערוץ הספורט","מנוי פעיל","מנוי פריים","מנוי קפה","מנוי שירות ענן","מנוי שנתי כפתור","מנוי שנתי שילם","מנוי תה","מקאפי","נורטון","סאבסקריפשן","סאונדקלאוד","סאונדקלאוד פרו","סאס תשלום","סונגטראסט","סטורי-טל","סטוריטל","סטינג","סטינג טיוי","סטינג מנוי","סטינג ספורט","סטיצ'ר","סטיצר","סידי בייבי","סייברגוסט","סלינג","סלקום tv","סלקום טיוי","סלקום סטרימינג","סנאפ פלוס","סנפצ'אט פלוס","סנפצ\\","ספיידר אוק","ספלייס","סקרייבד","סרפשארק","ערוץ 12 לייב","ערוץ 13","ערוץ הספורט","ערוץ הספורט מנוי","ערוץ ספורט 1","פ1 tv","פאנימיישן","פאסטמייל","פודקאסטים אפל","פודקאסטים גוגל","פוקט קאסטס","פוקט-קאסטס","פורמולה 1 טיוי","פידלי","פיובו","פילם סטראק","פיקוק","פיקוק פרימיום","פלקס","פלקס פאס","פנדורה","פסנתר פשוט","פעיל מנוי","פרוטון וי פי אן","פרוטון מייל","פרטנר tv","פרטנר טיוי","פרטנר סטרימינג","פרי טיוי","פרייבט אינטרנט","פריים וידאו","פרמאונט פלוס","פרמאונט+","פרמונט","קאסטרו","קובו אודיו","קינדל אנלימיטד","קספרסקי","קראנצ'ירול","קראנצירול","קראש פלאן","קרבונייט","קריטריון","קריטריון צ'נל","קריטריון צ\\","ראוטנוט","רינג חבילה","רכישה באפליקציה","רשת +","רשת פלוס","תשלום אוטומטי מנוי","תשלום חודשי שירות","תשלום מנוי","תשלום שירות מקוון","תשלום שנתי"],"category":"הוצאות קבועות","subcategory":"אפליקציות"},
   {"keywords":["epic games","fortnite","gaming","nintendo","playstation","ps plus","ps5","steam","xbox","פלייסטיישן","פלייסטישן"],"category":"הוצאות קבועות","subcategory":"פלייסטיישן"},
   {"keywords":["lotto","הגרלה","חיש גד","לוטו","מפעל הפיס","פיס"],"category":"שונות ואחרים","subcategory":"לוטו"},
   {"keywords":["אפולו"],"category":"הוצאות קבועות","subcategory":"אפולו"},
@@ -447,7 +462,7 @@ const CATEGORY_MAP = [
   {"keywords":["אמישראגז","בלון גז","דורגז","סופר גז","פז גז"],"category":"הוצאות קבועות","subcategory":"גז"},
   {"keywords":["012","014","bezeq","cellcom","hot","partner","pelephone","rami levy תקשורת","אינטרנט","אינטרנט סלולרי","בזק","גולן","גולן טלקום","הוט","סלולר","סלקום","פלאפון","פרטנר","תקשורת"],"category":"הוצאות קבועות","subcategory":"תקשורת"},
   {"keywords":["ace","home center","ikea","ksp","אייס","אינסטלטור","איקאה","ברק","הום סנטר","חשמלאי","ריהוט","תחזוקה"],"category":"הוצאות קבועות","subcategory":"תחזוקת בית"},
-  {"keywords":["newpharm","super pharm","אופטומטריסט","אופטיקה","אורתודונט","בדיקות דם","בית מרקחת","כללית","לאומית","מאוחדת","מבדק רפואי","מכבי","מרפאה","משקפיים","ניו פארם","סופר פארם","פיזיותרפיה","פיסיותרפיה","קופת חולים","רופא","שיניים","תרופה","תרופות"],"category":"בריאות","subcategory":"בריאות"},
+  {"keywords":["newpharm","super pharm","אופטומטריסט","אופטיקה","אורתודונט","בדיקות דם","בית מרקחת","כללית","לאומית","מאוחדת","מבדק רפואי","מכבי","מרפאה","משקפיים","ניו פארם","סופר פארם","פיזיותרפיה","פיסיותרפיה","קופת חולים","רופא","שיניים"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["ביטוח בריאות","ביטוח חיים","ביטוח משלים","בנקאות שב"],"category":"בריאות","subcategory":"ביטוח בריאות"},
   {"keywords":["airbnb","aliexpress","amazon","asos","booking","ebay","rozetka","shein","zap","אמזון","בוקינג","עלי אקספרס"],"category":"קניות","subcategory":"קניות מקוונות"},
   {"keywords":["cinema city","cinematheque","בית קולנוע","הופעה","יס פלאנט","יספלאנט","מופע","סינמה","תיאטרון"],"category":"שונות ואחרים","subcategory":"בילויים"},
@@ -535,7 +550,7 @@ const CATEGORY_MAP = [
   {"keywords":["24 carwash","ac delco","ac gas refill","ac רכב","accessories for car","accident repair","acdelco","acura service","adir garage","air filter","alfa romeo garage","alignment","all season tire","alpha halafim","alpha spare parts","alpine","alpine car audio","alternator","amit garage","annual service","antifreeze","arie garage","armored insurance","asf auto","audi garage","authorized garage","auto car wash","auto care","auto depot","auto dpi","auto garage","auto i","auto parts","auto world","auto-dpi","auto-i","autoglass","autoplex","autoplex garage","avi spare parts","avidan parts","avidan חלפים","avishai garages","aviv garage","banner battery","battery","better place","bf goodrich","bfgoodrich","bizziness auto","bmw garage","bmw parts","body shop","body work and paint","bolmei zaazuim","boogie","bosch","bosch auto parts","bosch wipers","brake cylinder","brake discs","brake drums","brake fluid","brake oil","brake pads","brake replacement","brake system","bridgestone","bubble wash","bushing","byd service","car ac","car ac repair","car accessories","car audio system","car cooler","car garage","car heater","car multimedia","car paint","car polish","car repair","car service","car wash","car wash 24","car wax","carglass","carmiel garage","charge point","chargepoint","charging station","charging station israel","charging stations","chery service","chevrolet garage","citroen garage","clutch","computer diagnostics","continental","continental tires","convert to electric","coolant water","cooper tires","dalia garages","damage repair","delek drive","disks bilum","egzoz","eilat garage","electra charging","electric charging","electric garage","els halafim","els spare parts","els חלפים","engine cooler","engine diagnostics","engine wash","ev battery","ev box","ev charger","ev-box","exhaust","exhaust system","exide battery","extended insurance","falken","fattal green","fiat garage","firestone","flex auto","flexauto","ford garage","fox plus","fuel filter","gal garage","galaxy glass","garage","garage center","gearbox","geely service","geometria","gilon garage","goodyear","google maps","gouri garage","gps israel","green mobility","greenmobility","haifa licensing","halafei avi","halafim","halahmis tires","halkei chiluf","halogen","hankook","harechev garage","headlights","hella","honda garage","hyundai garage","infiniti service","infinity auto","infinity car service","interior cleaning","iron tires","israeli glass","jeep garage","jerusalem licensing","kaspi garages","kenwood","kenwood audio","kia garage","kumho","land rover service","led headlight","lexus service","licensing center","lithium battery car","lucid service","magna","magna car","magnetti marelli","mahle","mahle filter","main light","major service","mann filter","manual wash","maserati service","matne'a","matne\\","mazda garage","mercedes garage","mercedes parts","metzanen","mg service","michelin","mini service","ministry of transportation","minor service","mister auto","mister auto il","mister auto israel","mitsubishi garage","moovit","mot","mr service","mr wash","multimedia installer","multimedia system","musach","musach mahir","myauto","nahum garage","navigation system","nesher car wash","netanya garage","nimrod garage","nissan garage","nokian","north garage","north tires","northern mesilon","obd scanner","oil change","oil filter","opel garage","ozel beled","pachach","pachachut","panchar","paz electric","peugeot garage","pioneer","pioneer audio","pirelli","polestar service","polish rechev","polishant","polygon check","porsche service","premium auto","premium garage","puncher","puncher repair","puncture","quick garage","quick service","quick wash","radiator","range rover service","rear window","reflectors","renault garage","rivian service","rob's garages","robs garages","s garages","sachs","sec auto","service 10000","service 15000","service 20000","shock absorbers","shtifat rechev","side mirror","sika","sika windshield","skoda garage","smart service","sonol drive","south garage","spare parts","spare parts israel","spark plugs","speed auto","splash car wash","splash carwash","springs","starter motor","steering column","steering stabilizer","steering system","step","step charge","subaru service","summer tire","suzuki garage","taillights","tesla garage","tesla service","tesla supercharger","tikun rechev","tipul rechev","tire fee","tire garages","tire inflation","tire replacement","tire wear","tlv licensing","tnuva garages","tommy wash","total auto","toyo","toyo tires","toyota garage","transmission","turbo","tzeva rechev","tzmigei hatzafon","valeo","varta battery","volkswagen garage","volta battery","volvo garage","volvo parts","waze","wexler garages","wheel alignment","wheel balancing","wheel ladder","wheel service","windshield","winter tire","wipe out","wiper","wiper blade","wipers","wipers israel","wisecar","woody car wash","woody carwash","wurth israel","xenon","yad 2 auto","yarok rechev","yasur car service","yifat israel","yifat israel glass","yokohama","yossi greenberg tires","zeevi garage","zf parts","zonsom","אאודי שירות","אבחון מנוע","אביזרי רכב","אביזרים לרכב","אגזוז","אגרת צמיג","אוטו dpi","אוטו איי","אוטו די פי איי","אוטו די.פי.איי","אוטו דיפו","אוטו פלקס","אוטו-איי","אוטוגלאס","אוטופלקס","אופל שירות","אי סי דלקו","איזון גלגלים","אינפיניטי שירות","אינפיניטי שירות רכב","אלטרנטור","אלפא חלפים","אלקטרה טעינה","אנטיפריז","ב.מ.וו שירות","בוגייז","בולמי זעזועים","בוש חלפים","ביזנס אוטו","ביטוח מורחב","ביטוח שריון","בלאי צמיג","ברידג'סטון","ברידג\\","ג'יפ שירות","גוגל מפות","גודייר","גרין מובילטי","גרינברג צמיגים","דיסקים בלם","האנקוק","הונדה שירות","החלפת בלם","החלפת בלמים","החלפת מצמד","החלפת צמיג","החלפת צמיגים","החלפת שמן","החלפת שמן רכב","הלה","הלחמיס","הלחמיס צמיגים","המרה לחשמלי","וודי","וודי קאר ווש","ווייז","וויסקאר","וולוו שירות","ווקס רכב","ולאו","וקסלר מוסכים","זאקס","זונסום","חלפי אבי","חלפים","חלקי חילוף","טויו","טויוטה שירות","טורבו","טיפול 10000","טיפול 15000","טיפול 20000","טיפול גדול","טיפול קטן","טיפול רכב","טיפול שנתי","טסלה שירות","טעינה חשמלית","יונדאי שירות","יוסי גרינברג צמיגים","יוקוהמה","ייצוב","ייצוב הגה","יסעור","יסעור שירותי רכב","יפ שירות","ירוק רכב","כיוון גלגלים","כספי מוסכים","להב מגב","לקסוס שירות","מאזדה שירות","מאן פילטר","מגב","מגבים","מהלה","מולטימדיה רכב","מוסך","מוסך bmw","מוסך אאודי","מוסך אביב","מוסך אדיר","מוסך אוטו פלקס","מוסך אופל","מוסך אילת","מוסך אלפא רומיאו","מוסך אריה","מוסך ג'יפ","מוסך ג\\","מוסך גורי","מוסך גילון","מוסך גל","מוסך הדרום","מוסך הונדה","מוסך הצפון","מוסך הרכב","מוסך וולוו","מוסך זאבי","מוסך חשמלי","מוסך טויוטה","מוסך טסלה","מוסך יונדאי","מוסך כרמיאל","מוסך מאזדה","מוסך מהיר","מוסך מורשה","מוסך מיצובישי","מוסך מרצדס","מוסך נחום","מוסך ניסאן","מוסך נמרוד","מוסך נתניה","מוסך סוזוקי","מוסך סיטרואן","מוסך סקודה","מוסך עמית","מוסך פולקסווגן","מוסך פורד","מוסך פיאט","מוסך פיג'ו","מוסך פרימיום","מוסך קיה","מוסך רובס","מוסך רנו","מוסך שברולט","מוסכי אבישי","מוסכי דליה","מוסכי הצמיג","מוסכי תנובה","מזגן רכב","מטען חשמלי לרכב","מטען רכב חשמלי","מי בלם","מיי אוטו","מילוי גז מזגן","מים למצנן","מיני שירות","מיסטר אוטו","מיסטר-אוטו","מיצובישי שירות","מישלין","מכון רישוי חיפה","מכון רישוי ירושלים","מכון רישוי תל אביב","מסטר אוטו","מסילתון הצפוני","מערכת בלמים","מערכת הגה","מערכת מולטימדיה","מערכת ניווט","מערכת פליטה","מערכת קול לרכב","מצבר exide","מצבר באנר","מצבר וולטה","מצבר ורטא","מצבר לרכב","מצבר רכב","מצברים","מצמד","מצמן רכב","מצנן","מצנן מנוע","מצתים","מראה צד","מרצדס שירות","מתנע","מתקין מולטימדיה","מתקני טעינה","נוזל בלם","נוקיאן","ניסן שירות","ניפוח אוויר","ניפוח גלגלים","ניקוי פנים","נשר ווש","נשר שטיפת רכב","סובארו שירות","סוזוקי שירות","סוללת ליתיום רכב","סוללת רכב חשמלי","סולמי גלגלים","סופר צ'רג'ר","סופר צ\\","סורק obd","סמארט שירות","סנטר מוסכים","ספלאש","סקודה שירות","פוליגון בודק","פוליש רכב","פולישנט","פולקסווגן שירות","פוקס פלוס","פורד שירות","פורשה שירות","פחח","פחחות וצבע","פיאט שירות","פיג'ו שירות","פיג\\","פילטר אויר","פילטר דלק","פילטר שמן","פיריוסטון","פירלי","פלגים","פלקן","פלקס אוטו","פנס ראשי","פנסים","פנסים אחוריים","פנצ'ר","פנצר","פצירות בלם","פתאל גרין","צבע רכב","צילינדר בלם","צמיג all season","צמיג חורף","צמיג קיץ","צמיגי איירון","צמיגי הצפון","צמיגי עירון","ק.ו 24","קאר ווש 24","קארגלאס","קארגלס","קומהו","קונטיננטל","קופר צמיגים","קיה שירות","קפיצים","רובס","רובס מוסכים","ריפודי בלם","רנו שירות","שטיפה אוטומטית","שטיפה ידנית","שטיפת מנוע","שטיפת רכב","שמשה אחורית","שמשה קדמית","תא הגה","תופי בלם","תחנת הטענה","תחנת טעינה","תיבת הילוכים","תיקון מזגן רכב","תיקון פגיעה","תיקון פנצ'ר","תיקון פנצ\\","תיקון רכב","תיקון תאונה","תכשיר נגד קור","תנור רכב"],"category":"תחבורה","subcategory":"מוסך"},
   {"keywords":["alamo","alamo rent","albar","annual car rental","auto europe","autocard","autonation","autotel","avis eilat","avis leasing","budget","budget rent a car","capitol auto","car 2 go","car leasing","car rental","car share","car2go","carmel","carmel rent a car","carmel rental","cdw","collision damage waiver","commercial vehicle rental","convertible rental","daily car rental","dollar rent a car","drive now","driveme","drivenow","drivy","el al rent a car","eldan","eldan eilat","eldan leasing","enterprise","enterprise rent","europcar","getaround","greenwheels","hertz 24/7","hertz 247","hertz eilat","jeep rental","kal auto","kilometers ללא הגבלה","leasing rechev","minibus rental","mobilix","monthly car rental","orix","orix leasing","pacific rent a car","rent a car israel","rent plus","rental for trip","rental insurance","royal rent","shlomo leasing","shlomo sixt","sixt","sixt eilat","sixt international","super cdw","tamir rent a car","third party cover","thrifty","tpc","turo","universal","universal israel","unlimited km","wibe","zipcar","אבי ליסינג","אביס אילת","אביס השכרת רכב","אוטו אירופה","אוטו טל","אוטוטל","אוריקס","אורקס ליסינג","אלבר","אלבר ליסינג","אלדן","אלדן אילת","אלדן השכרת רכב","אלדן ליסינג","אלמו","אנטרפרייז","באדג'ט","באדג'ט השכרת רכב","באדג\\","ביטוח השכרה","גטאראונד","גרין וילס","דולר השכרה","הרץ אילת","הרץ השכרת רכב","השכרת ג'יפ","השכרת ג\\","השכרת מיני באס","השכרת קבריולט","השכרת רכב","השכרת רכב חודשית","השכרת רכב יומית","השכרת רכב לטיול","השכרת רכב מסחרי","השכרת רכב שנתית","זיפקאר","ט השכרת רכב","טורו","טריפטי","יוניברסל","יוניברסל השכרה","יורופקאר","ליסינג רכב","סיקסט","סיקסט אילת","קאר טו גו","קל אוטו","שלמה sixt","שלמה ליסינג","שלמה ליסינג רכב","שלמה סיקסט"],"category":"תחבורה","subcategory":"השכרת רכב"},
   {"keywords":["מהאל","achziv","acropolis","airbnb israel","allenby bridge","ammunition hill","amsalem","amsalem tours","asia travel israel","asia trips","australia visa","autopus team","av hatzofim","avdat","beit shean","berlin welcome card","biblical zoo","bicester village","biometric passport","birthright","birthright israel","bookatable","booking.com israel","border crossing","border crossing israel","caesarea","camping gardens","camping israel","camping north","camping northern israel","canada visa","cedar point","cheap flights","children museum","china visa","christian tours","city beach","city of david","city tax","colosseum","crossing aqaba","dahab","dead sea","departure tax","diesenhaus","diesenhaus unitours","disney world","disneyland paris","disneyland tokyo","dizengoff travel","dubai visa","eiffel tower","eilat aquarium","eilat border","ein gedi","ein gedi trips","eshet tours","esta usa","esta visa","eurail","eurodisney","ferry eilat petra","ganei camping","get your guide","getyourguide","goto travel","great wall","green card","green card parks","gulul","gulul tours","haganah museum","holiday check","holiday lebanon","holidaycheck","homeaway","hotel tax","hotels","hotwire","hurghada","india visa","interrail","israel museum","israel travel","israel travel co","issta","issta lines","issta travel","jerusalem aquarium","jewish heritage tours","jr pass","klook","knafayim","kotel tunnels","lametayel","lametayel המטייל","last minute travel","lastminute","legoland","lisboa card","london pass","louvre","ma'avar gvul","ma\\","mar'av hatzofim","masa israel","masada festival","masada theatre","masada tickets","mikve israel","mishal","mishal travel","mitzpe hayamim","mona tours","national library","national park","national parks israel","nature parks authority","new passport","new york pass","niagara falls","omega kfar blum","onward israel","open sky","open sky israel","opentable","orbitz","overnight parking sites","palm park","paris pass","park asterix","park timna","parthenon","passport card","passport renewal","passportcard","petra","petra jordan","pilgrim tours","port tax","priceline","pyramids giza","resort fee","resy","river jordan crossing","roma pass","russia visa","safari","safari ramat gan","safir","safir tours","sar el","savanna africa","schengen visa","sharm el sheikh","sheikh hussein bridge","sherry travel","sinai egypt","six flags","skyscanner","spa tax","taba","taj mahal","tasa li","team park","tel beer sheva","tel megiddo","thailand visa","the fork","thefork","timna park","tiqets","tlv museum","tlv museum of art","tlv zoo","tokyo pass","tourism tax","tourist visa","travel agent","travel concept","travel insurance","travel israel","travel tax","travelocity","travelup","trip planner","tripadvisor","tripplanner","trips israel","tzimmer","tzimmer dead sea","tzimmer ein gedi","tzimmer galilee","tzimmers galilee","tzimmers golan","tzimmers kinneret","tzimmers negev","tzimmers north","tzimmers south","universal studios","usa visa","vacation tzimmer","vacation villa","vatican","versailles","viator","vienna pass","vietnam visa","villa kinneret","villa north","visa australia","visa canada","visa china","visa dubai","visa india","visa russia","visa schengen","visa thailand","visa usa","visa vietnam","volunteer tours","vrbo","wadi rum","walt disney","water tunnels nes tziona","wooden cabins","wyndham","yad vashem","yad2 zimmers","yad2 צימרים","yala","yalla","yalla tours","yallatour","yarkon park","yitzhak rabin crossing","yoresh card","zen trip","zentrip","zimmeril","zimmers for sites","zimmers.com","אבדת","אוטופוס תים","אומגה כפר בלום","אופן סקאי","אורביץ","אייר בי אנד בי","איסטא","איסתא","אכרזיב","אמסל","אמסל נסיעות","אקווריום אילת","אקווריום ירושלים","אקספדיה","אקרופוליס","אשת תיירות","אתרי חניון לילה","ביומטרי","ביטוח נסיעות","בית הספרים","בית שאן","בקתות עץ","ג'ייאר פאס","גבול אילת","גט יור גייד","גלל טורס","גן החיות התנכי","גן החיות תל אביב","גן חיות תנכי","גן לאומי","גני קמפינג","גשר אלנבי","דהב","דיזנגוף נסיעות","דיזנהאוז","דיזנהאוז יוניתורס","דיסנילנד פריז","דמי מתקני","דרכון חדש","ה מטיילים","הורגדה","החומה הסינית","המטייל","ואדי ראם","וויאטור","ווינדהאם","וותיקן","ויארביאו","ויזה esta","ויזה אוסטרליה","ויזה ארהב","ויזה הודו","ויזה וייטנאם","ויזה סין","ויזה קנדה","ויזה רוסיה","ויזה תיירות","ויזת שנגן","וילה בכנרת","וילה בצפון","וילה לחופשה","ורסאי","חוף הים העיר","חוף ים","חידוש דרכון","טאבה","טאג' מהאל","טיסות זול","טיקטס","טסה לי","טראבל קונספט","טראבלוסיטי","טריוואגו","טריפאדויזר","יאל","יאל\"א","יאל\"ה מטיילים","יאלה","יד ושם","יורייל","ים המלח","כנפיים","כנפיים נסיעות","כרטיס יורש","כרטיס ירוק","לגולנד","לובר","לונדון פאס","מגדל אייפל","מוזיאון ההגנה","מוזיאון הילדים","מוזיאון השואה","מוזיאון ישראל","מוזיאון תל אביב","מוזיאון תל אביב לאמנות","מונה טורס","מנהרות הכותל","מנהרות מים בנס ציונה","מס יציאה","מס מלון","מס נמל","מס נסיעה","מס עיר","מעבר גבול","מעבר גבול נהר הירדן","מצדה","מצדה כרטיסים","מצדה תיאטרון","מצפה הימים","מקווה ישראל","מרחב הצופים","נסיעות אסיה","נסיעות עין גדי","סוואנה אפריקה","סוכן נסיעות","סיני","ספארי","ספארי רמת גן","ספיר","סקייסקנר","עיר דוד","פארק הירקון","פארק התמרים","פארק תים","פארק תמנע","פטרה","פירמידות גיזה","פסטיבל מצדה","פספורט קארד","פספורטקרד","פרייסליין","צימר","צימר galilee","צימר זוגי","צימר חופשה","צימר ים המלח","צימר משפחתי","צימר עין גדי","צימריל","צימרים בגליל","צימרים בדרום","צימרים בכנרת","צימרים בנגב","צימרים בצפון","צימרים ברמת הגולן","צימרים לאתרים","צימרס.קום","קולוסיאום","קייאק","קיסריה","קלוק","קמפינג ישראל","רשות הטבע והגנים","שארם אל שייח","תגלית","תל מגידו"],"category":"תחבורה","subcategory":"תיירות"},
-  {"keywords":["אילת","abraham hostel","aman hotels","arbel hotel","aria hotel","astoria hotel","b&b","backpackers","bed and breakfast","beit bnei brak","beit oren","beresheet","beresheet hotel","best western","bnb","boutique hotel","brown beach","brown beach house","brown hotels","brown house tlv","brown mid town","brown midtown","brown tlv","brown tlv house","carlton","carlton hotel tlv","carlton tel aviv","carmel forest spa","carmel forest spa resort","comfort inn","cromwell hotel","crowne plaza","cucu","cucu hotel","dan caesarea","dan carmel","dan eilat","dan hotel","dan hotels","dan jerusalem","dan panorama","dan tel aviv","daniel dead sea","daniel herzliya","daniel hotel","david citadel","days inn","eden hotel","fattal","fattal hotels","four seasons","four seasons hotel","gilda hotel","hagoshrim","hagoshrim hotel","herods","herods eilat","herods jerusalem","herods tel aviv","herods vitalis","hilton","hilton jerusalem","hilton tel aviv","hod hamidbar","holiday inn","hostel","hostelling international","hostelworld","hyatt","hyatt regency","indigo","indigo hotel","intercontinental","isrotel","isrotel agamim","isrotel king solomon","isrotel lagoona","isrotel royal beach","kibbutz ginosar","kibbutz hotel","kibbutz lavi","kibbutz nof ginosar","king david","le meridien","leonardo","leonardo beach","leonardo boutique","leonardo club","leonardo israel","leonardo plaza","leonardo royal","leviathan hotel","lot hotel","magic kibbutz","mamilla hotel","mariott","marriott","masada hostel","massada hostel","meridien","merkaz hotel","metropolitan hotel","mitzpe ramon","mitzpe ramon hotel","motzkin hotel","neot midbar","neve ilan","nirvana spa","nirvana spa hotel","nof ginosar","norman","norman tel aviv","norman tlv","novotel","olive hotel","pastoral kfar blum","pastoral kibbutz","pension","place","place hotel","praga hotel","prima hotel","prima hotels","ramada","ramada hotel","ramada israel","ramat rachel","ramat rachel hotel","ramat razim","ramon inn","renaissance","rimonim","rimonim dead sea","rimonim galei kinneret","rimonim hotels","ritz carlton","royal beach","royal beach eilat","royal boutique","royal garden","royal hotel","sea net","sea net hotel","selina","selina hotel","setai","setai tel aviv","sheraton","sheraton moriah","sheraton tel aviv","six senses","spa club dead sea","stay inn","tel aviv hostel","tlv hostel","tower tel aviv","tower tlv","u coral beach","u hotels","u magic","u splendid","u suites","vert","vert hotels","w hotel","waldorf astoria","waldorf astoria jerusalem","westin","westin tel aviv","yam","yam hotel","yam suf akko","yam suf hotel","yarden hotel","yearim hotel","אברהם הוסטל","אינדיגו","אינטרקונטיננטל","ארבעת העונות","בסט ווסטרן","ברון","ברשית","גילדה","דוד המלך","דייז אין","דן אילת","דן הוטל","דן ירושלים","דן כרמל","דן פנורמה","דן קיסריה","דן תל אביב","דניאל","הגושרים","הוד המדבר","הוליידיי אין","הוסטל","הוסטלוורלד","הייאט","הייאט רידג'נסי","הייאט רידג\\","הילטון","הילטון ירושלים","הילטון ת\"א","המלון הנורמן","הרודס","הרודס אילת","הרודס ירושלים","הרודס תל אביב","וולדורף אסטוריה","ווסטין","יאם","יאם מלון","יו מג'יק","יו מג\\","יו ספלנדיד","ים סוף akko","ים סוף עכו","ישרוטל","ישרוטל אילת","לאונרדו","לאונרדו פלאזה","מלון beresheet","מלון w","מלון אדן","מלון אסתוריה","מלון ארבל","מלון בוטיק","מלון דניאל ים המלח","מלון המלך דוד","מלון ים סוף","מלון יערים","מלון לאוניתן","מלון לאונרדו","מלון לוט","מלון מוצקין","מלון מטרופוליטן","מלון מרידיאן","מלון מרכז","מלון נאות מדבר","מלון נובוטל","מלון נווה אילן","מלון פראיגי","מלון פרימה","מלון קיבוץ","מלון רויאל","מלון רויאל בוטיק","מלון רויאל ביץ'","מלון רויאל ביץ' אילת","מלון רויאל גארדן","מלון רויאל גרדן","מלון רימונים","מלון רמדה","מלונות פתאל","ממילא מלון","מצפה רמון","מריוט","נירוונה","סטאי","סלינה","פלייס","פלייס מלון","פנסיון","פסטורל כפר בלום","פתאל","קראון פלאזה","קרלטון ת","קרלטון ת\"א","קרלטון תל אביב","רימונים","רימונים בים המלח","רימונים גלי כנרת","ריץ קרלטון","ריץ-קרלטון","רמת רחל","רנסנס","שרתון","שרתון ת\"א","תרמילאים"],"category":"תחבורה","subcategory":"מלונות"},
+  {"keywords":["אילת","abraham hostel","aman hotels","arbel hotel","aria hotel","astoria hotel","b&b","backpackers","bed and breakfast","beit bnei brak","beit oren","beresheet","beresheet hotel","best western","bnb","boutique hotel","brown beach","brown beach house","brown hotels","brown house tlv","brown mid town","brown midtown","brown tlv","brown tlv house","carlton","carlton hotel tlv","carlton tel aviv","carmel forest spa","carmel forest spa resort","comfort inn","cromwell hotel","crowne plaza","cucu","cucu hotel","dan caesarea","dan carmel","dan eilat","dan hotel","dan hotels","dan jerusalem","dan panorama","dan tel aviv","daniel dead sea","daniel herzliya","daniel hotel","david citadel","days inn","eden hotel","fattal","fattal hotels","four seasons","four seasons hotel","gilda hotel","hagoshrim","hagoshrim hotel","herods","herods eilat","herods jerusalem","herods tel aviv","herods vitalis","hilton","hilton jerusalem","hilton tel aviv","hod hamidbar","holiday inn","hostel","hostelling international","hostelworld","hyatt","hyatt regency","indigo","indigo hotel","intercontinental","isrotel","isrotel agamim","isrotel king solomon","isrotel lagoona","isrotel royal beach","kibbutz ginosar","kibbutz hotel","kibbutz lavi","kibbutz nof ginosar","king david","le meridien","leonardo","leonardo beach","leonardo boutique","leonardo club","leonardo israel","leonardo plaza","leonardo royal","leviathan hotel","lot hotel","magic kibbutz","mamilla hotel","mariott","marriott","masada hostel","massada hostel","meridien","merkaz hotel","metropolitan hotel","mitzpe ramon","mitzpe ramon hotel","motzkin hotel","neot midbar","neve ilan","nirvana spa","nirvana spa hotel","nof ginosar","norman","norman tel aviv","norman tlv","novotel","olive hotel","pastoral kfar blum","pastoral kibbutz","place","place hotel","praga hotel","prima hotel","prima hotels","ramada","ramada hotel","ramada israel","ramat rachel","ramat rachel hotel","ramat razim","ramon inn","renaissance","rimonim","rimonim dead sea","rimonim galei kinneret","rimonim hotels","ritz carlton","royal beach","royal beach eilat","royal boutique","royal garden","royal hotel","sea net","sea net hotel","selina","selina hotel","setai","setai tel aviv","sheraton","sheraton moriah","sheraton tel aviv","six senses","spa club dead sea","stay inn","tel aviv hostel","tlv hostel","tower tel aviv","tower tlv","u coral beach","u hotels","u magic","u splendid","u suites","vert","vert hotels","w hotel","waldorf astoria","waldorf astoria jerusalem","westin","westin tel aviv","yam","yam hotel","yam suf akko","yam suf hotel","yarden hotel","yearim hotel","אברהם הוסטל","אינדיגו","אינטרקונטיננטל","ארבעת העונות","בסט ווסטרן","ברון","ברשית","גילדה","דוד המלך","דייז אין","דן אילת","דן הוטל","דן ירושלים","דן כרמל","דן פנורמה","דן קיסריה","דן תל אביב","דניאל","הגושרים","הוד המדבר","הוליידיי אין","הוסטל","הוסטלוורלד","הייאט","הייאט רידג'נסי","הייאט רידג\\","הילטון","הילטון ירושלים","הילטון ת\"א","המלון הנורמן","הרודס","הרודס אילת","הרודס ירושלים","הרודס תל אביב","וולדורף אסטוריה","ווסטין","יאם","יאם מלון","יו מג'יק","יו מג\\","יו ספלנדיד","ים סוף akko","ים סוף עכו","ישרוטל","ישרוטל אילת","לאונרדו","לאונרדו פלאזה","מלון beresheet","מלון w","מלון אדן","מלון אסתוריה","מלון ארבל","מלון בוטיק","מלון דניאל ים המלח","מלון המלך דוד","מלון ים סוף","מלון יערים","מלון לאוניתן","מלון לאונרדו","מלון לוט","מלון מוצקין","מלון מטרופוליטן","מלון מרידיאן","מלון מרכז","מלון נאות מדבר","מלון נובוטל","מלון נווה אילן","מלון פראיגי","מלון פרימה","מלון קיבוץ","מלון רויאל","מלון רויאל בוטיק","מלון רויאל ביץ'","מלון רויאל ביץ' אילת","מלון רויאל גארדן","מלון רויאל גרדן","מלון רימונים","מלון רמדה","מלונות פתאל","ממילא מלון","מצפה רמון","מריוט","נירוונה","סטאי","סלינה","פלייס","פלייס מלון","פנסיון","פסטורל כפר בלום","פתאל","קראון פלאזה","קרלטון ת","קרלטון ת\"א","קרלטון תל אביב","רימונים","רימונים בים המלח","רימונים גלי כנרת","ריץ קרלטון","ריץ-קרלטון","רמת רחל","רנסנס","שרתון","שרתון ת\"א","תרמילאים"],"category":"תחבורה","subcategory":"מלונות"},
   {"keywords":["aaa movers","aaa הובלה","aaa הובלות","achsana","apartment moving","aramex","argaz boutique","bezeq cargo","capital exchange","capital forex","car financing","car loan","car purchase","car sale","car storage","cargo israel","carmeli moves","change","change exchange","cheap movers","chronopost","containers","courier mail","cubes","cubes storage","currency exchange","dan app","designer moves","dhl","dhl israel","doral logistics","dpd","egged app","egged online","egged tour bus","electric skateboard","eshel travel","exchange bureau","fast mover","fedex","fedex israel","forex center","forex מרכז","furniture storage","get pack","globus logistics","gw logistics","haifa exchange","hermes israel","hop on hop off","hovalot lakol","jerusalem exchange","levy moving","maersk","masa trips","masa נסיעות","miklat ichsun","mini storage","ministry of transport","minivan","money changer","money gram","moneygram","moovit app","mot israel","motorcycle rental","moving boxes","moving vehicle","msc cargo","net 4 u","net 4u","netivei israel","new car purchase","nili movers","nili moves","ofakim shipping","office moving","ono car sales","orchel hovalot","oren exchange","passenger ticket","personal travel accident","photo storage","public storage israel","rav kav army","rechev hovalot","registered mail","ride hailing","ride to work","saliban moves","sea air","self storage","self storage israel","shipping containers","skateboard rental","social trips","storage","storage mart","storage shelter","storage warehouse","tlv exchange","tlv storage","tnt express","tnufa","tourist bus","transport ministry","transportation authority","travel reimbursement","ups","ups israel","used car","used motorcycle","van rental","western union","wolt drive","work commute","yad2 car","yad2 רכב","yam suf exchange","yango deliveries","yefe nof","zim","zim shipping","אגד אונליין","אוטובוס תיירותי","אונו מכירת רכבים","אופנוע השכרה","אופנוע יד שניה","אורכל הובלות","אחסון עצמי","אחסון רהיטים","אחסון רכב","אחסון תמונות","אחסנה","אכסון תל אביב","אפליקציית אגד","אפליקציית דן","אפליקציית מוביט","ארגז בוטיק","אריזות הובלה","ארמקס","אש\"ל נסיעות","ביטוח תאונות אישיות נסיעה","דואר רשום","דואר שליחים","די אייץ' אל","הובלות זול","הובלות לכל","הובלת דירה","הובלת משרד","החזר נסיעות","הלוואת רכב","המרת מטח","ואן השכרה","ווסטרן יוניון","חלפן אורן","חלפנות אורן","חלפנות חיפה","חלפנות ים סוף","חלפנות ים סוף ת","חלפנות ים סוף ת\"א","חלפנות ירושלים","חלפנות ת\"א","חלפנות תל אביב","טיולים סוציאליים","יאנגו משלוחים","יד2 רכב","יפה נוף","כרטיס נוסע","כרמלי הובלות","לוי הובלות","מאני גראם","מארסק","מוביל מהיר","מחסן אחסון","מימון רכב","מיני אחסון","מיני ואן","מיניוואן","מכולות","מכירת רכב","מעצב הובלות","מעצב הובלות בע","מעצב הובלות בע\"מ","מקלט אחסון","משרד התחבורה","נילי הובלות","נסיעה לעבודה","נסיעת עבודה","נציבות התעבורה","נתיבי ישראל","סי אייר","סלבן הובלות","סקייטבורד חשמלי","פדקס","צים","קיוּבּס","קניית רכב","קניית רכב חדש","רב קו צבאי","רב-קו צבא","רכב הובלות","רכב יד שניה","תנופה"],"category":"תחבורה","subcategory":"שונות"},
   {"keywords":["דוד המלך","פאס","4e arkia","4e טיסה","6h israir","6h טיסה","aadvantage","abu dhabi airport","aegean airlines","aegean greece","aeroflot","aerolineas argentinas","aeromexico","af air france","af טיסה","ai air india","air algerie","air arabia","air arabia israel","air asia","air berlin","air cairo","air canada","air china","air europa","air france af","air india","air malta","air new zealand","air seychelles","air tahiti","air transat","airasia","airport tax","ajet","alaska airlines","albatros","albatros airways","albawings","alitalia","all nippon airways","allegiant","ams","amsterdam schiphol","ana","ana airways","anadolu jet","arkia airlines","arkia flight","arn","arrival tax","asiana","asiana airlines","ath","athens airport","atl","atlanta airport","auh","austrian airlines","avianca","award flight","ay finnair","ay טיסה","az ita","azul","azul airlines","ba british airways","ba טיסה","baggage fee","baggage upgrade","bahamas air","bangkok airport","bangkok don mueang","barcelona airport","bcn","beijing capital","ben gurion airport","ben gurion airport israel","ben gurion terminals","ber","berlin airport","bgn","bicycle cargo","biman bangladesh","bkk","bluebird airways","bom","booking flight","bos","boston airport","british airways ba","bru","brussels airlines","brussels airport","bud","budapest airport","buenos aires","business class","cancellation fee","carrier imposed","cathay pacific","cathay pacific cx","cdg","cebu pacific","change fee","charles de gaulle","charter flight","charters","check in","check-in","chicago airport","children discount","children discount flight","china eastern","china southern","concierge airport","connecting flight","copenhagen airport","corendon","cph","croatia airlines","cx cathay","cx טיסה","cyprus airways","czech airlines","dallas airport","del","delhi airport","delta dl","departure tax","dfw","diners lounge","direct flight","dl delta","dl טיסה","dmk","domestic flight israel","domestic flights","dubai airport","dus","dusseldorf airport","dxb","eagle air","easyjet israel","economy class","economy plus","edelweiss","edelweiss air","egypt air","egyptair","eilat airport","ek emirates","el al flight","el al israel","el al israel airlines","emirates","ethiopian airlines","etihad","etihad airways","etm","eurowings","ewr","excess baggage","expediter","ey etihad","eze","fast track","fast track airport","fco","finnair ay","first class","flight aware","flight booking","flight radar","flight subscription","flight ticket","flight to eilat","flight to haifa","flight to ramon","flightaware","flightradar","flightradar24","flydubai","flydubai israel","flying blue","fra","frankfurt airport","freebird","freebird airlines","frequent flyer","frequent flyer israel","frontier","frontier airlines","fuel surcharge","garuda indonesia","gatwick","geneva airport","gol","gol airlines","golf bag","gru","gulf air","gva","haifa airport","hainan","hainan airlines","halal meal","ham","hamburg airport","haneda tokyo","hawaiian airlines","heathrow","hel","helsinki airport","herzliya airport","hfa","hh israir","hh טיסה","hkg","hnd","hong kong airlines","hong kong airport","iad","iberia","iberia airlines","icn","indigo airlines","infant discount","infant discount flight","israir airlines","israir flight","ist","istanbul airport","ita airways","jal","japan airlines","jeju air","jet blue","jet blue israel","jetblue","jfk","jfk airport","jin air","kenya airways","king david lounge","kl klm","kl טיסה","klm kl","korean air","kosher meal","kuala lumpur airport","kul","laguardia","larnaca airport","latam","latam airlines","lax","lca","lga","lgw","lh lufthansa","lh טיסה","lhr","los angeles airport","lot polish","lot polish airlines","lounge access","lounge pass","lufthansa lh","ly airlines","ly el al","ly טיסה","mad","madrid airport","malaysia airlines","malaysian airlines","masada lounge","matmid","mauritius air","meal selection","mel","melbourne airport","mex","mexico airport","mia","miami airport","milan malpensa","mileage bank","mileage plus","miles & more","miles and more","miles redemption","mobility assistance","montreal airport","ms egypt air","muc","multi city flight","mumbai airport","munich airport","musical instrument cargo","mxp","narita tokyo","new york jfk","newark airport","non refundable","norwegian","norwegian air","nrt","oman air","one way","one way flight","one world","oneworld","onur air","open jaw","open jaw flight","ord","ory","osl","oslo airport","paphos airport","paris cdg","paris orly","pegasus airlines","pek","pet cargo","pet in cabin","pfo","philippine airlines","pobeda","porter airlines","prague airport","prg","priority pass","private jet","ps ukraine international","pvg","qantas","qatar airways","qr qatar","ramon airport","refundable","refundable ticket","rmn","ro tarom","rome fiumicino","round trip","round trip flight","royal brunei","royal jordanian","rwandair","ryanair israel","s7 airlines","s7 sibir","saa","sabiha gokcen","salam air","san francisco airport","santiago airport","sao paulo airport","sas scandinavia","sas scandinavian","sas sk","saudia","saudia airlines","saw","scl","seat selection","senior discount","senior discount flight","seoul incheon","sfo","shanghai pudong","sichuan","sichuan airlines","sin","singapore airlines","singapore changi","sk sas","sk טיסה","skip line","skyteam","skywards","skywest","smartwings","south african airways","spice jet","spicejet","spirit","spirit airlines","sports equipment","sports equipment cargo","sri lankan airlines","stansted","star alliance","stn","stockholm airport","stroller cargo","student discount flight","su aeroflot","sun d'or","sun d\\","sun express","sundor","sunexpress","surfboard cargo","swiss","swiss air","syd","sydney airport","tap air portugal","tap portugal","tarom","terminal 1","terminal 3","thai airways","tk turkish","tk טיסה","tlv","tlv airport","toronto airport","turkish airlines tk","tus airways","ua united","ua טיסה","ukraine international","united ua","vegan meal","vegetarian meal","vie","vienna airport","vietnam airlines","vip airport service","vip service airport","vistara","vistara airlines","volaris","vueling","warsaw airport","washington dulles","waw","westjet","wheelchair service","wizz air israel","wizz israel","yul","yyz","zrh","zurich airport","אארופלוט","אגיאן","אגיפט אייר","אול ניפון","אוסטריאן איירליינס","אוקראינה איירליינס","אורד שיקגו","אורלי","איבריה","אייר אינדיה","אייר אירופה","אייר אסיה","אייר מאלטה","אייר ערביה","אייר צ'יינה","אייר קהיר","אייר קנדה","אליטליה","אמירייטס","אנאדולו ג'ט","אנאדולו ג\\","אנגי","אסיאנה","אפן איירליינס","אקספדיטור","ארוחה כשרה","אתיחאד","בחירת מושב","בלובירד","ברוסלס איירליינס","ג'אפן איירליינס","ג'ון קנדי","גטוויק","דמי ביטול","דמי שינוי","האינאן","הית'רו","הלוך חזור","וואן וורלד","וויולינג","וולאריס","וייטנאם איירליינס","חיפה airport","חלקי בן גוריון","טארום","טוס איירוויס","טיסה ישירה","טיסה לאילת","טיסה לחיפה","טיסה לרמון","טיסות פנים","טיסת אל על","טיסת ארקיע","טיסת המשך","טיסת ישראייר","טיסת צ'רטר","טיסת צ\\","טרמינל 1","טרמינל 3","טרמינל בן גוריון","יורווינגס","יינה","כיוון אחד","כרטיס טיסה","לאונג' דוד המלך","לאונג' מצדה","לאונג' פאס","לאונג\\","לוט","מחלקה ראשונה","מחלקת עסקים","מחלקת תיירים","מטוס פרטי","מטען עודף","מיילס אנד מור","מלפנסה","מנוי טיסה","מס שדה תעופה","מצרים אייר","מתמיד","מתמיד אל על","נורווגיאן","ניוארק","נמל בן גוריון","נמל התעופה בן גוריון","סאן אקספרס","סאן דור","סבחא גקצ'ן","סבחא גקצ\\","סוואנאבומי","סוויס","סטאר אלייאנס","סטנסטד","סינגפור איירליינס","סכיפול","סמרטוויניגס","ספיריט","סקייוורדס","סקייטיים","פגסוס","פגסוס איירליינס","פיומיצינו","פלייד דובאי","פליינג בלו","פריוריטי פאס","פרימיום אקונומי","צ'אנגי","צ'כיה איירליינס","צ'קאין","צ'רטר","קאין","קאתיי פסיפיק","קוואנטס","קוריאן אייר","קורנדון","קטר איירווייז","קרואטיה איירליינס","רמון airport","שארל דה גול","שדה תעופה אבו דאבי","שדה תעופה אילת","שדה תעופה איסטנבול","שדה תעופה אתונה","שדה תעופה בודפשט","שדה תעופה ברצלונה","שדה תעופה דובאי","שדה תעופה הרצליה","שדה תעופה וינה","שדה תעופה ורשה","שדה תעופה חיפה","שדה תעופה לרנקה","שדה תעופה מדריד","שדה תעופה מיאמי","שדה תעופה מינכן","שדה תעופה פראג","שדה תעופה פרנקפורט","שדה תעופה ציריך","שדה תעופה רמון","תאי איירווייז","תוספת דלק","תוספת מטען"],"category":"תחבורה","subcategory":"טיסות"},
   {"keywords":["אגרת טאבו","אחזקת מעלית","ארנונה אבן יהודה","ארנונה אום אל פחם","ארנונה אופקים","ארנונה אור יהודה","ארנונה אור עקיבא","ארנונה אילת","ארנונה אלעד","ארנונה אלקנה","ארנונה אריאל","ארנונה אשדוד","ארנונה אשקלון","ארנונה באר שבע","ארנונה בית שאן","ארנונה בית שמש","ארנונה ביתר עילית","ארנונה בני ברק","ארנונה בנימינה","ארנונה ג'דיידה מכר","ארנונה ג'סר א-זרקא","ארנונה ג\\","ארנונה גבעת זאב","ארנונה גבעת שמואל","ארנונה גבעתיים","ארנונה גני תקווה","ארנונה דבוריה","ארנונה דימונה","ארנונה דליית אל כרמל","ארנונה הוד השרון","ארנונה זכרון יעקב","ארנונה חולון","ארנונה חורה","ארנונה חיפה","ארנונה טבעון","ארנונה טבריה","ארנונה טייבה","ארנונה טירה","ארנונה טמרה","ארנונה יבנה","ארנונה יהוד","ארנונה יקנעם","ארנונה ירושלים","ארנונה כסיפה","ארנונה כפר ברא","ארנונה כפר חבד","ארנונה כפר יונה","ארנונה כפר מנדא","ארנונה כפר סבא","ארנונה כפר קאסם","ארנונה כרכור","ארנונה כרמיאל","ארנונה לוד","ארנונה לקיה","ארנונה מודיעין","ארנונה מטולה","ארנונה מכבים רעות","ארנונה מעלה אדומים","ארנונה מעלות","ארנונה מעלות תרשיחא","ארנונה נהריה","ארנונה נוף הגליל","ארנונה נצרת","ארנונה נצרת עילית","ארנונה נשר","ארנונה נתיבות","ארנונה נתניה","ארנונה סביון","ארנונה סחנין","ארנונה עין הוד","ארנונה עכו","ארנונה עפולה","ארנונה ערד","ארנונה ערערה","ארנונה ערערה בנגב","ארנונה פרדס חנה","ארנונה פתח תקווה","ארנונה צפת","ארנונה קלנסווה","ארנונה קצרין","ארנונה קריות","ארנונה קרית אונו","ארנונה קרית שמונה","ארנונה קרני שומרון","ארנונה ראשון לציון","ארנונה רהט","ארנונה רחובות","ארנונה רכסים","ארנונה רמלה","ארנונה רמת גן","ארנונה רמת השרון","ארנונה רעננה","ארנונה שדרות","ארנונה תל אביב","ארנונה תל שבע","ועד בית","ועד בנין","ועד הבית","ועד הדיירים","טאבו","ליפט","מועצה אזורית באר טוביה","מועצה אזורית בני שמעון","מועצה אזורית גזר","מועצה אזורית גליל עליון","מועצה אזורית גליל תחתון","מועצה אזורית גן רווה","מועצה אזורית דרום השרון","מועצה אזורית חבל יבנה","מועצה אזורית חוף הכרמל","מועצה אזורית יואב","מועצה אזורית לכיש","מועצה אזורית מטה אשר","מועצה אזורית מטה יהודה","מועצה אזורית מרום הגליל","מועצה אזורית עמק חפר","מועצה אזורית עמק יזרעאל","מועצה אזורית רמת הנגב","מועצה אזורית שפיר","מעלית","ניקיון בנין","סר א-זרקא","עירייה בת ים","עירייה גבעתיים","עירייה הרצליה","עירייה חולון","עירייה כפר סבא","עירייה נתניה","עירייה ראשון לציון","עירייה רחובות","עירייה רמת גן","עירייה רעננה","רישום מקרקעין","תחזוקת בנין","תשלום ועד בית"],"category":"הוצאות קבועות / בית","subcategory":"בית"},
@@ -637,7 +652,7 @@ const CATEGORY_MAP = [
   {"keywords":["accountant","cpa","bookkeeper","bookkeeping","יועץ עסקי","יועץ עסקים","יועץ שיווק","יועץ פיננסי עסקי","business consultant","business advisor","business coach","startup advisor","mentor עסקי","מנטור עסקי","מאמן עסקי","יועץ משפטי","עו\"ד","עו״ד","עורך דין עסקים","חוזה עסקי","עורך דין חוזים","עורך דין קניין רוחני","עורך דין מסחרי","יועץ מס נוסף","מורשה חתימה","רואה חשבון נוסף","הנה\"ח חיצונית","בודק שכר","בדיקת שכר עסקית","consultant fee","consultancy fee","legal fee","lawyer fee"],"category":"עסק","subcategory":"יועצים"},
   {"keywords":["shipping label","usps","fedex","dhl","dhl express","ups","tnt","aramex","doar","doar 24","doar shaliach","shaliach 24","shipping carrier","fulfillment","fulfillment service","shipbob","shipstation","pirate ship","pirateship","דואר 24","דואר ישראל עסקי","דואר שליחים","דואר שליח","שליח ישראל","שליחויות עסקיות","דאצ'ה","דצ'ה","דצה","משלוח עסקי","משלוחים עסקיים","התקנת מוצר","התקנה לקוח","אריזה ומשלוח","אריזה לעסק","חומרי אריזה","נייר אריזה","קרטונים","קרטוני אריזה","מדבקות משלוח","בועות אריזה","נייר בועות","bubble wrap","tape","אריזת מתנה"],"category":"עסק","subcategory":"משלוח"},
   {"keywords":["raw material","raw materials","wholesale","wholesaler","b2b supplier","supplier invoice","ספק חומרי גלם","ספק עסקי","ספקים עסקיים","מחסן ספקים","אתר ספקים","alibaba","alibaba.com","1688","1688.com","made in china","taobao","aliexpress עסקי","מנעולנים עסקי","נחושת","פלדה","מתכת","גומי","בדים","חוטים","יריעות","יריעות גומי","יריעות פלסטיק","דבק תעשייתי","מוטות","מסמרים תעשייה","ברגים תעשייה","אנקרים","תפסים","פינות מסגרת","זוויות מתכת","פרזול","חומרי דפוס","חומרי הדפסה","דיו הדפסה","דיו פלוטר","יריעות הדפסה","נייר אומנותי","נייר זהב","נייר צילום","נייר מאט","נייר ברק","glossy paper","matte paper","canvas roll","גליל קנבס","גלילי קנבס","דבק תרסיס","spray adhesive"],"category":"עסק","subcategory":"חומרי גלם"},
-  {"keywords":["invoice paid","payment received","customer payment","client payment","תקבול לקוח","תקבול עסקי","הוראת קבע מלקוח","קבלה ללקוח","תשלום מלקוח עסקי","מקדמה לקוח","מקדמה עסקית","מקדמת עבודה","מקדמת לקוח","order online","order placed","הזמנה אונליין","הזמנת לקוח","הזמנה אתר","הזמנת אתר","הזמנה עסקית","מכירה אונליין","מכירה אתר","מכירת מוצר","מכירת שירות","sale online","sale website","product sale","service sale","rebate","החזר מעמ","מעמ החזר","מע\"מ החזר","החזר מע\"מ","מע״מ החזר","vat refund","tax refund"],"category":"עסק","subcategory":"מחזור","isIncome":true},
+  {"keywords":["זיכוי מעמ","זיכוי מע\"מ","זיכוי מע״מ","invoice paid","payment received","customer payment","client payment","תקבול לקוח","תקבול עסקי","הוראת קבע מלקוח","קבלה ללקוח","תשלום מלקוח עסקי","מקדמה לקוח","מקדמה עסקית","מקדמת עבודה","מקדמת לקוח","order online","order placed","הזמנה אונליין","הזמנת לקוח","הזמנה אתר","הזמנת אתר","הזמנה עסקית","מכירה אונליין","מכירה אתר","מכירת מוצר","מכירת שירות","sale online","sale website","product sale","service sale","rebate","החזר מעמ","מעמ החזר","מע\"מ החזר","החזר מע\"מ","מע״מ החזר","vat refund","tax refund"],"category":"עסק","subcategory":"מחזור","isIncome":true},
   {"keywords":["mac mini","mac studio","macbook pro","macbook air","imac","mac pro","monitor 27","monitor 4k","monitor 5k","lg ultrafine","dell ultrasharp","asus prophet","logitech mx","magic keyboard","magic mouse","magic trackpad","wacom","cintiq","huion","xp pen","מחשב לעבודה","מחשב משרדי","מחשב עסקי","מסך עבודה","מסך 4k","מסך עסקי","מקלדת מקצועית","עכבר עיצוב","טבלט עיצוב","טאבלט עיצוב","wacom intuos","wacom cintiq","מסך מגע גרפי","גרפיקת אומנים","ipad pro","ipad pro 12.9","apple pencil","apple pencil 2","מקרן עבודה","מקרן פגישות","מקרן עסקי","מצלמה מקצועית","מצלמת מקצוע","מצלמת dslr","מצלמת mirrorless","sony a7","canon 5d","lumix s5","sigma art","tamron art","tripod","gimbal","dji ronin","dji rs2","dji rs3","rode mic","rode microphone","shure sm7b","shure mv7","audio interface","focusrite scarlett","softlight","ring light","softbox","תאורת סטודיו"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["workspace google","google workspace","gsuite","g suite","microsoft 365 business","microsoft 365 enterprise","office 365 business","דומיין עסקי","מייל עסקי","g suite business","workspace business","starter workspace","workspace starter","workspace standard","workspace plus"],"category":"עסק","subcategory":"תפעוליות"},
   {"keywords":["שופרסל דיל","שופרסל אקספרס","שופרסל אונליין","שופרסל סופר","שופרסל איתי","שופרסל יחיאל","shufersal big","shufersal sheli","shufersal yesh","shufersal exists","מגה בעיר","מגה בעיר אונליין","מגה ברמת השרון","יוחננוף סופר","יוחננוף מאיר","יוחננוף און ליין","יוחננוף אונליין","יוחננוף שוקי","מחסני השוק חיפה","מחסני השוק ראשון","מחסני השוק רמת גן","מחסני השוק אזור","מחסני השוק רחובות","מחסני השוק קניון","מחסני להב","רמי לוי שוקי המזון","רמי לוי שיווק השקמה","רמי לוי קמפוס","רמי לוי אונליין","רמי לוי קמפוס און ליין","ויקטורי אונליין","ויקטורי שיווק","ויקטורי בעיר","ויקטורי אילת","ויקטורי באר שבע","כוורת שיווק","כוורת השרון","כוורת אונליין","חצי חינם אונליין","חצי חינם רעננה","חצי חינם שיווק","אושר עד אונליין","אושר עד בנימינה","אושר עד חיפה","סופר ביצ' צ'יפ","ביצ'יפ","ביצ'ה צ'יפ","super pharm market","סופר פארם מרקט","סופר פארם קמפוס","super yuda online","יודה אונליין","super deal online","סופר דיל אונליין","tiv taam","טיב טעם אונליין","טיב טעם רמת השרון","טיב טעם תל אביב","טיב טעם תל-אביב","יינות ביתן אונליין","יינות ביתן רחוב","יינות ביתן רב חן"],"category":"אוכל","subcategory":"אוכל לבית"},
@@ -843,7 +858,7 @@ function doGet(e) {
   e = e || { parameter: {} };
   const action = e.parameter.action;
 
-  if (action === 'migrate' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'migrate' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       migrateDashboardToSUMIFS();
       return ContentService.createTextOutput('Migration completed successfully');
@@ -852,7 +867,7 @@ function doGet(e) {
     }
   }
 
-  if (action === 'buildbot' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'buildbot' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       cleanupAndBuildBotDashboard();
       return ContentService.createTextOutput('Bot dashboard built successfully');
@@ -861,7 +876,7 @@ function doGet(e) {
     }
   }
 
-  if (action === 'fullrebuild' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'fullrebuild' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       fullRebuildAllYears();
       return ContentService.createTextOutput('Full rebuild completed - all 4 years imported');
@@ -873,7 +888,7 @@ function doGet(e) {
   // Sort the תנועות sheet ascending (oldest top, newest bottom) — one-shot
   // remediation for sheets whose existing data is in wrong order. Safe to call
   // multiple times: the bot's auto-sort-after-append will keep it correct.
-  if (action === 'sortchrono' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'sortchrono' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       sortTransactionsChronological();
       var ss = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
@@ -1390,8 +1405,13 @@ function _sheetLinkLine_(fromPhone) {
 // long-URL line on confirmations only; _sheetLinkLine_ above is kept for the
 // explicit "show me my sheet" command where the actual URL is what's wanted.
 // No fromPhone needed — it never prints an id, so it's tenant-safe by design.
-function _sheetNudgeLine_() {
-  return '\n📊 לצפייה מלאה — היכנס לגיליון שלך.';
+function _sheetNudgeLine_(fromPhone) {
+  var url = '';
+  try { if (fromPhone && typeof _userSheetUrl_ === 'function') url = _userSheetUrl_(fromPhone); } catch (_e) {}
+  if (url) {
+    return '\nהגיליון שלך:\n' + url + '\nבמחשב לוחצים על הקישור. בנייד מעתיקים אותו או נכנסים ישירות ל-Google Sheets.';
+  }
+  return '\nלצפייה בכל ההוצאות — היכנס לגיליון שלך.';
 }
 
 // ───── NATURAL-LANGUAGE FIXED-EXPENSE INTENT (ask C, 2026-06-01) ─────
@@ -6897,6 +6917,41 @@ function _tenantCategoryMtdLine_(fromPhone, category) {
 //   - section title max 24 chars
 //   - section ids start with "relabel|" so _handleRelabelTap_ routes them
 //   - sections capped at 10 rows each, sections capped at 10 total
+// Per-user "recent categories" store (Script Properties, capped at 8). Powers the
+// learned ordering in the change-category picker so a user's own categories lead
+// the list. Small N of users today; at scale this moves to KV. Never throws.
+function _kfl_recentCats_(phone) {
+  try {
+    var clean = String(phone || '').replace(/[^0-9]/g, '');
+    if (!clean) return [];
+    var raw = PropertiesService.getScriptProperties().getProperty('KFL_RC_' + clean);
+    var arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (_e) { return []; }
+}
+function _kfl_pushRecentCat_(phone, cat) {
+  try {
+    var clean = String(phone || '').replace(/[^0-9]/g, '');
+    cat = String(cat || '').trim();
+    if (!clean || !cat || cat.indexOf('__') === 0) return;
+    var arr = _kfl_recentCats_(clean).filter(function (x) { return x && x !== cat; });
+    arr.unshift(cat);
+    if (arr.length > 8) arr = arr.slice(0, 8);
+    PropertiesService.getScriptProperties().setProperty('KFL_RC_' + clean, JSON.stringify(arr));
+  } catch (_e) {}
+}
+function _kfl_buildRecentSection_(phone, current) {
+  var recents = _kfl_recentCats_(phone) || [];
+  var rows = [];
+  for (var i = 0; i < recents.length && rows.length < 6; i++) {
+    if (recents[i] && recents[i] !== current) rows.push({ name: recents[i], icon: '⭐' });
+  }
+  // Escapes ALWAYS present in this first section so the 10-row cap can't hide them.
+  rows.push({ name: '__full_list__', icon: '📋', display: 'כל הקטגוריות' });
+  rows.push({ name: '__custom__', icon: '🆕', display: 'קטגוריה חדשה' });
+  return { title: 'מותאם לך', rows: rows };
+}
+
 function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
   try {
     if (!fromPhone) return;
@@ -7035,6 +7090,14 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
       },
     ];
 
+    // Learn from the user: lead with the categories THEY actually use (most-
+    // recent first), then the curated groups. Also guarantee the escapes (full
+    // list / new category) sit in the first 10 rows so the 10-row cap can't hide
+    // the way to reach every category.
+    try { _kfl_pushRecentCat_(fromPhone, currentCategory); } catch (_rcw) {}
+    var __recentSec = _kfl_buildRecentSection_(fromPhone, currentCategory);
+    if (__recentSec && __recentSec.rows && __recentSec.rows.length) SECTIONS.unshift(__recentSec);
+
     var sectionsOut = [];
     for (var s = 0; s < SECTIONS.length; s++) {
       var sec = SECTIONS[s];
@@ -7045,7 +7108,7 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
         if (c.name === currentCategory) continue;
         rows.push({
           id: 'relabel|' + c.name,
-          title: (c.icon + ' ' + c.name).slice(0, 24),
+          title: (c.icon + ' ' + (c.display || c.name)).slice(0, 24),
           description: '',
         });
         if (rows.length >= 10) break; // WhatsApp cap per section
@@ -7977,7 +8040,7 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
         (__mtdLine ? '\n' + __mtdLine : '') +
         // change 2 (2026-06-03): short link-free nudge instead of the long URL;
         // the tappable dropdown (picker call above) is the change-category path.
-        _sheetNudgeLine_() +
+        _sheetNudgeLine_(fromPhone) +
         __firstCel +
         // Gendered encouragement (throttled to once/day) — skip on the first-
         // expense message, which already carries its own celebration line.
@@ -8490,7 +8553,7 @@ function processExpense(text, fromPhone) {
               } catch (__hPSortErr) {}
               try { _updateBusinessDashboard_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount); } catch (__hPDashErr) { Logger.log('smart_pending dashboard err: ' + (__hPDashErr && __hPDashErr.message)); }
               try { _dashboardDetailNote_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount, __hPDesc, __hPNow); } catch (__hPDnErr) { Logger.log('smart_pending dashboard note err: ' + (__hPDnErr && __hPDnErr.message)); }
-              return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון 📊\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
+              return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
             }
           } catch (__hPWriteErr) {
             Logger.log('smart_pending write err: ' + (__hPWriteErr && __hPWriteErr.message));
@@ -8546,12 +8609,12 @@ function processExpense(text, fromPhone) {
         try { _sendChangeCategoryPicker_(fromPhone, __bbeCat); } catch (__bbePkErr) { Logger.log('bare-biz picker err: ' + (__bbePkErr && __bbePkErr.message)); }
         Logger.log('bare-biz: wrote ₪' + __bbe.amount + ' עסק/' + __bbeSub);
         return { reply:
-          '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון 📊' +
+          '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון' +
           '\n📂 ' + __bbeCat +
           (__bbeSub && __bbeSub !== __bbeCat ? '\n🏷️ ' + __bbeSub : '') +
           // change 1 (2026-06-03): dropdown is always attached (picker call above);
           // the text instruction line was removed. change 2: short link-free nudge.
-          _sheetNudgeLine_()
+          _sheetNudgeLine_(fromPhone)
         };
       }
     }
@@ -9591,7 +9654,7 @@ function processExpense(text, fromPhone) {
         Logger.log('owner-write picker err: ' + (_pkErr && _pkErr.message));
       }
       return { reply:
-        '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + __fxOriginal + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון 📊' +
+        '✅ ₪' + Math.abs(it.amount).toLocaleString('he-IL') + __fxOriginal + ' ל' + (it.description || matched.subcategory) + '. נשמר אצלך בגיליון' +
         '\n📂 ' + matched.category + __subLabel + __globalNote +
         (__catCtx ? '\n💡 ' + __catCtx : '') +
         __anomalyTail +
@@ -9605,10 +9668,10 @@ function processExpense(text, fromPhone) {
         // text line was dropped -- one tap replaces the typed instruction.
         '\nכתוב "סיכום" לראות איפה אתה עומד החודש.' +
         // change 2 (2026-06-03): short link-free nudge instead of the long URL.
-        _sheetNudgeLine_()
+        _sheetNudgeLine_(fromPhone)
       };
     }
-    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ') 📊\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail + _sheetNudgeLine_() };
+    return { reply: '✅ נרשמו ' + parsed.items.length + ' פעולות (סה"כ ₪' + runningTotal.toLocaleString('he-IL') + ')\n' + writtenLines.join('\n') + __anomalyTail + __budgetTail + __streakTail + _sheetNudgeLine_(fromPhone) };
   } catch (err) {
     return { reply: '😬 משהו השתבש בכתיבה לגיליון: ' + (err && err.message || '') + '\n💡 ננסה שוב בעוד דקה? אם זה ממשיך — שלח "עזרה".' };
   }
@@ -9760,7 +9823,11 @@ function parseForeignCurrencyHint(text) {
   if (!text) return null;
   var s = String(text);
   // Broader currency detection — symbols, ISO codes, Hebrew names.
-  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק)/i;
+  // English currency WORDS only in the PLURAL ("30 dollars", "100 pounds"). The
+  // singular is almost always an adjective in a noun phrase ("5 dollar menu",
+  // "pound cake", "dollar store", "euro disney") and must NOT trigger an FX
+  // conversion. Symbols ($), ISO codes (usd) and Hebrew (דולר) are unaffected.
+  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק|\bdollars\b|\beuros\b|\byen\b|\bfrancs\b)/i;
   if (!foreignRe.test(s)) return null;
 
   // Path A — user gave both amounts (e.g. "50$ amazon 180 שח")
@@ -9911,9 +9978,10 @@ function _kfl_nonAdjacentCurrency_(text) {
     { re: '\\baud\\b', symbol: 'AUD', wordRe: '\\baud\\b' },
     { re: '\\bjpy\\b', symbol: 'JPY', wordRe: '\\bjpy\\b' },
     { re: '\\bchf\\b', symbol: 'CHF', wordRe: '\\bchf\\b' },
-    { re: '\\bdollars?\\b', symbol: 'USD', wordRe: '\\bdollars?\\b' },
-    { re: '\\beuros?\\b', symbol: 'EUR', wordRe: '\\beuros?\\b' },
-    { re: '\\bpounds?\\b', symbol: 'GBP', wordRe: '\\bpounds?\\b' }
+    { re: '\\bdollars\\b', symbol: 'USD', wordRe: '\\bdollars\\b' },
+    { re: '\\beuros\\b', symbol: 'EUR', wordRe: '\\beuros\\b' },
+    { re: '\\byen\\b', symbol: 'JPY', wordRe: '\\byen\\b' },
+    { re: '\\bfrancs\\b', symbol: 'CHF', wordRe: '\\bfrancs\\b' }
   ];
   // Car-rental guard: if a rental word sits right next to the currency token,
   // it is almost certainly "Dollar Rent A Car" (car rental), not a USD amount.
@@ -10291,7 +10359,15 @@ function _kflIsWordChar_(ch) { return !!ch && /[0-9A-Za-z֐-׿]/.test(ch); }
 // words ("מים" inside "תשלומים", "קפה" inside "מקפה"). Core precision guard.
 function _kflKwHit_(t, kw) {
   if (!kw) return false;
-  if (kw.length > 3) return t.indexOf(kw) >= 0;
+  // Long Hebrew/mixed keywords match as substrings (Hebrew prefixes: "בשופרסל").
+  // But pure-ASCII keywords ("market" inside "supermarket", "make" inside
+  // "makeup") and digit-terminated keywords ("מונית 4" inside "מונית 40") must
+  // respect word boundaries even when long -- both fall through to the boundary
+  // scan below so English merchants and named taxi/bus lines stop false-firing.
+  var _kwAscii = /^[\x00-\x7f]+$/.test(kw);
+  var _kwLast = kw.charCodeAt(kw.length - 1);
+  var _kwEndsDigit = _kwLast >= 48 && _kwLast <= 57;
+  if (kw.length > 3 && !_kwAscii && !_kwEndsDigit) return t.indexOf(kw) >= 0;
   var from = 0, idx;
   while ((idx = t.indexOf(kw, from)) >= 0) {
     var b = idx === 0 ? '' : t.charAt(idx - 1);
@@ -10384,6 +10460,53 @@ function _matchCategory_orig(description) {
 // Smart entry-point: tries (1) learned cache from user corrections,
 // (2) keyword maps, (3) LLM fallback via Claude API for the long tail.
 // Falls back to DEFAULT_CATEGORY only if everything fails.
+
+// Big keyword fallback index. Data (KFL_KW_BUCKETS + KFL_KW_INDEX) lives in the
+// separate ExpenseBot_KEYWORDS.gs data file (auto-generated from bot/keywords/packs
+// by bot/keywords/build_index.js). Whole-word ngram lookup (1-4 words, longest
+// char match wins) so it is immune to the substring false-positives the primary
+// map guards against. Returns {category, subcategory, isIncome} or null. NO-OPS
+// (returns null) when the data file is not deployed, so the bot works without it.
+// Hebrew clitic prefixes tried on a miss so "באיקאה" still resolves to the stored
+// base "איקאה". The build step (build_index.js) drops such prefix-variants to shrink
+// the embedded file; this restores their coverage. Longest-first.
+var _KFL_KW_PFX = ['ב', 'ל', 'מ', 'ה', 'ו', 'ש', 'כ', 'מה', 'בה', 'לה', 'כה', 'שה', 'וה', 'של', 'כש', 'עם', 'ומ', 'ול', 'וב', 'מהה', 'כשה', 'בהה', 'והה', 'וכשה', 'אצל'];
+function _kfl_kwBucketFor_(phrase) {
+  if (Object.prototype.hasOwnProperty.call(KFL_KW_INDEX, phrase)) return KFL_KW_INDEX[phrase];
+  if (phrase.indexOf(' ') < 0 && /[֐-׿]/.test(phrase)) {
+    for (var pi = 0; pi < _KFL_KW_PFX.length; pi++) {
+      var p = _KFL_KW_PFX[pi];
+      if (phrase.length - p.length >= 3 && phrase.slice(0, p.length) === p) {
+        var base = phrase.slice(p.length);
+        if (Object.prototype.hasOwnProperty.call(KFL_KW_INDEX, base)) return KFL_KW_INDEX[base];
+      }
+    }
+  }
+  return undefined;
+}
+function _kfl_bigIndexLookup(text) {
+  if (typeof KFL_KW_INDEX === 'undefined' || typeof KFL_KW_BUCKETS === 'undefined' || !text) return null;
+  var words = String(text).toLowerCase().split(/[^0-9a-z֐-׿]+/);
+  var toks = [];
+  for (var i = 0; i < words.length; i++) { if (words[i]) toks.push(words[i]); }
+  if (!toks.length) return null;
+  var best = null, bestLen = -1;
+  var maxN = toks.length < 4 ? toks.length : 4;
+  for (var n = maxN; n >= 1; n--) {
+    for (var s = 0; s + n <= toks.length; s++) {
+      var phrase = toks.slice(s, s + n).join(' ');
+      var bidx = _kfl_kwBucketFor_(phrase);
+      if (bidx !== undefined && phrase.length > bestLen) {
+        best = bidx; bestLen = phrase.length;
+      }
+    }
+  }
+  if (best == null) return null;
+  var b = KFL_KW_BUCKETS[best];
+  if (!b) return null;
+  return { category: b[0], subcategory: b[1], isIncome: !!b[2] };
+}
+
 function matchCategorySmart(text, fromPhone) {
   // Step 1: learned cache (user-corrected categorizations)
   var cached = _learnedLookup(text);
@@ -10428,6 +10551,18 @@ function matchCategorySmart(text, fromPhone) {
       return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category, fromGlobal: true };
     }
   } catch (_glLookErr) { Logger.log('matchCategorySmart global err: ' + _glLookErr.message); }
+
+  // Step 2.8: big keyword fallback index (ExpenseBot_KEYWORDS.gs). Local + cheap,
+  // so it runs after the dictionary/global-learn miss but BEFORE the paid LLM hop.
+  // Whole-word ngram match (immune to substring false-hits). No-ops when the data
+  // file isn't deployed.
+  try {
+    var bigHit = _kfl_bigIndexLookup(text);
+    if (bigHit && bigHit.category) {
+      Logger.log('matchCategorySmart: big-index hit "' + text + '" -> ' + bigHit.subcategory);
+      return { category: bigHit.category, subcategory: bigHit.subcategory || bigHit.category, isIncome: bigHit.isIncome, fromBigIndex: true };
+    }
+  } catch (_bigErr) { Logger.log('matchCategorySmart big-index err: ' + (_bigErr && _bigErr.message)); }
 
   // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only).
   //
@@ -10748,7 +10883,16 @@ var _AI_PROVIDER_PRIORITY_ = [
   { provider: 'gemini',     key: 'GEMINI_API_KEY' },
   { provider: 'xai',        key: 'XAI_API_KEY' },
   { provider: 'anthropic',  key: 'ANTHROPIC_API_KEY' },
-  { provider: 'openrouter', key: 'OPENROUTER_API_KEY' }
+  { provider: 'openrouter', key: 'OPENROUTER_API_KEY' },
+  // Additional OpenAI-compatible providers. APPENDED so the existing priority
+  // is unchanged: each only activates if its key is the first one configured,
+  // or as a failover hop when KFL_AI_FAILOVER=1. All chat/completions-shaped.
+  { provider: 'deepseek',   key: 'DEEPSEEK_API_KEY' },
+  { provider: 'groq',       key: 'GROQ_API_KEY' },
+  { provider: 'mistral',    key: 'MISTRAL_API_KEY' },
+  { provider: 'together',   key: 'TOGETHER_API_KEY' },
+  { provider: 'fireworks',  key: 'FIREWORKS_API_KEY' },
+  { provider: 'perplexity', key: 'PERPLEXITY_API_KEY' }
 ];
 
 // Read a single property from Script Properties, falling back to process.env
@@ -10773,6 +10917,36 @@ function _aiProviderResolve_() {
     var entry = _AI_PROVIDER_PRIORITY_[i];
     var k = _aiReadKey_(entry.key);
     if (k) return { provider: entry.provider, keyName: entry.key, key: k };
+  }
+  return null;
+}
+
+// All configured providers in priority order (for opt-in failover). Never throws.
+function _aiProvidersAll_() {
+  var out = [];
+  for (var i = 0; i < _AI_PROVIDER_PRIORITY_.length; i++) {
+    var e = _AI_PROVIDER_PRIORITY_[i];
+    var k = _aiReadKey_(e.key);
+    if (k) out.push({ provider: e.provider, keyName: e.key, key: k });
+  }
+  return out;
+}
+
+// Dispatch the prompt to the resolved provider. When KFL_AI_FAILOVER=1, fall
+// through to the OTHER configured providers on a null/empty reply, so a single
+// provider outage or rate-limit never silently disables AI categorization.
+// Default (flag unset) is the previous single-provider behavior, unchanged.
+function _aiChatCompleteResilient_(systemPrompt, userMsg) {
+  var fo = _aiReadKey_('KFL_AI_FAILOVER');
+  if (fo !== '1' && fo !== 'true') {
+    var one = _aiProviderResolve_();
+    return one ? _aiChatComplete_(one.provider, one.key, systemPrompt, userMsg) : null;
+  }
+  var all = _aiProvidersAll_();
+  for (var i = 0; i < all.length; i++) {
+    var reply = _aiChatComplete_(all[i].provider, all[i].key, systemPrompt, userMsg);
+    if (reply != null && String(reply).trim() !== '') return reply;
+    Logger.log('_aiChatCompleteResilient_: ' + all[i].provider + ' empty, trying next');
   }
   return null;
 }
@@ -10829,10 +11003,17 @@ function _aiChatComplete_(provider, key, systemPrompt, userMsg) {
       return null;
     }
 
-    // OpenAI-compatible providers: openai, xai, openrouter.
+    // OpenAI-compatible providers (shared chat/completions schema): openai, xai,
+    // openrouter, deepseek, groq, mistral, together, fireworks, perplexity.
     var url, model;
     if (provider === 'xai') { url = 'https://api.x.ai/v1/chat/completions'; model = _aiReadKey_('XAI_MODEL') || 'grok-3-mini'; }
     else if (provider === 'openrouter') { url = 'https://openrouter.ai/api/v1/chat/completions'; model = _aiReadKey_('OPENROUTER_MODEL') || 'openai/gpt-4o-mini'; }
+    else if (provider === 'deepseek') { url = 'https://api.deepseek.com/v1/chat/completions'; model = _aiReadKey_('DEEPSEEK_MODEL') || 'deepseek-chat'; }
+    else if (provider === 'groq') { url = 'https://api.groq.com/openai/v1/chat/completions'; model = _aiReadKey_('GROQ_MODEL') || 'llama-3.3-70b-versatile'; }
+    else if (provider === 'mistral') { url = 'https://api.mistral.ai/v1/chat/completions'; model = _aiReadKey_('MISTRAL_MODEL') || 'mistral-small-latest'; }
+    else if (provider === 'together') { url = 'https://api.together.xyz/v1/chat/completions'; model = _aiReadKey_('TOGETHER_MODEL') || 'meta-llama/Llama-3.3-70B-Instruct-Turbo'; }
+    else if (provider === 'fireworks') { url = 'https://api.fireworks.ai/inference/v1/chat/completions'; model = _aiReadKey_('FIREWORKS_MODEL') || 'accounts/fireworks/models/llama-v3p3-70b-instruct'; }
+    else if (provider === 'perplexity') { url = 'https://api.perplexity.ai/chat/completions'; model = _aiReadKey_('PERPLEXITY_MODEL') || 'sonar'; }
     else { url = 'https://api.openai.com/v1/chat/completions'; model = _aiReadKey_('OPENAI_MODEL') || 'gpt-4o-mini'; }
     var oResp = UrlFetchApp.fetch(url, {
       method: 'post',
@@ -11064,7 +11245,7 @@ function _aiCategorizeRich(text, fromPhone) {
     // Send to the resolved provider (Anthropic / OpenAI / Gemini / xAI /
     // OpenRouter). Returns the raw text reply or null on any failure. The
     // structured-JSON contract below is provider-independent.
-    var reply = _aiChatComplete_(ai.provider, ai.key, systemPrompt, userMsg);
+    var reply = _aiChatCompleteResilient_(systemPrompt, userMsg);
     if (reply == null || reply === '') {
       Logger.log('_aiCategorizeRich: provider ' + ai.provider + ' returned no reply');
       return null;
@@ -11680,7 +11861,7 @@ function _handleReceiptImage_(fromPhone, image) {
       '\n📂 ' + matched.category + subLabel +
       // change 1 (2026-06-03): dropdown always attached (picker call above);
       // the text instruction line was removed. change 2: short link-free nudge.
-      _sheetNudgeLine_()
+      _sheetNudgeLine_(fromPhone)
   };
 }
 
@@ -13396,6 +13577,18 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
     sendWhatsAppMessage(to, __twLines.join('\n'));
     return;
   }
+
+  // Meta caps interactive lists at 10 ROWS TOTAL across all sections; an over-
+  // sized list is rejected outright (the user would then see NO buttons). Trim to
+  // a valid 10 rows so the picker always sends.
+  var __secOut = [], __rowBudget = 10;
+  (sections || []).forEach(function (sec) {
+    if (__rowBudget <= 0 || !sec || !sec.rows || !sec.rows.length) return;
+    var __r = sec.rows.slice(0, __rowBudget);
+    __rowBudget -= __r.length;
+    __secOut.push({ title: sec.title, rows: __r });
+  });
+  sections = __secOut;
 
   var url = _cfg.url;
   var payload = {
@@ -15680,6 +15873,76 @@ function installWeeklySavingsProjectionTrigger() {
 }
 
 // ============================================================
+// 🎉 RANDOM ENCOURAGEMENT — praise / improve / reduce, max 3 per ISO-week.
+// ============================================================
+// Steven (2026-06-07): during the week send a few RANDOM nudges — "well done" /
+// "you can improve" / "consider cutting expenses". Capped at
+// KFL_ENCOURAGE_MAX_PER_WEEK (default 3) per ISO-week, with a daily dice roll so
+// the timing feels random. Owner-targeted (matches the other proactive crons; a
+// multi-tenant rollout would iterate registered phones — future). Set the cap to
+// 0 to disable. Keeps emoji minimal per Steven's note.
+function _kfl_isoWeekKey_(d) {
+  d = d || new Date();
+  var dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var day = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - day);
+  var yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+  var wk = Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+  return dt.getUTCFullYear() + '-W' + (wk < 10 ? '0' + wk : wk);
+}
+
+function _kfl_buildEncouragement_() {
+  var r = Math.random();
+  // ~1/3 of the time, a data-driven "cut a category" nudge (only if there is data).
+  if (r < 0.34) {
+    try { var sp = _buildSavingsProjectionMessage_(); if (sp) return sp; } catch (_e) {}
+  }
+  var praise = [
+    'כל הכבוד! אתה עקבי ברישום ההוצאות — בדיוק ככה בונים שליטה בכסף.',
+    'יפה מאוד! כל הוצאה שאתה רושם מקרבת אותך לתמונה ברורה של הכסף שלך.',
+    'מרשים! ההתמדה שלך משתלמת — אתה יודע בדיוק לאן הכסף הולך.'
+  ];
+  var improve = [
+    'טיפ: נסה לרשום כל הוצאה ברגע שהיא קורית — ככה התמונה תמיד מדויקת.',
+    'רעיון לשיפור: כתוב "סיכום" מדי פעם כדי לראות איפה אתה עומד החודש.',
+    'אפשר להשתפר: שים תקציב חודשי לקטגוריה אחת — קל יותר לעקוב ולחסוך.'
+  ];
+  if (r < 0.67) return praise[Math.floor(Math.random() * praise.length)];
+  return improve[Math.floor(Math.random() * improve.length)];
+}
+
+function cronRandomEncouragement() {
+  try {
+    var to = (typeof ALLOWED_PHONE !== 'undefined' && ALLOWED_PHONE) ||
+             PropertiesService.getScriptProperties().getProperty('WEEKLY_SUMMARY_PHONE') || '';
+    if (!to) { Logger.log('cronRandomEncouragement: no recipient'); return; }
+    var props = PropertiesService.getScriptProperties();
+    var maxWk = parseInt(props.getProperty('KFL_ENCOURAGE_MAX_PER_WEEK') || '3', 10);
+    if (isNaN(maxWk) || maxWk < 0) maxWk = 3;
+    if (maxWk === 0) { Logger.log('cronRandomEncouragement: disabled (cap 0)'); return; }
+    var key = 'KFL_ENCOURAGE_' + _kfl_isoWeekKey_(new Date());
+    var sent = parseInt(props.getProperty(key) || '0', 10) || 0;
+    if (sent >= maxWk) { Logger.log('cronRandomEncouragement: weekly cap reached'); return; }
+    if (Math.random() > 0.45) { Logger.log('cronRandomEncouragement: skipped (dice)'); return; }
+    var msg = _kfl_buildEncouragement_();
+    if (!msg) return;
+    sendWhatsAppMessage(to, msg);
+    props.setProperty(key, String(sent + 1));
+    Logger.log('cronRandomEncouragement: sent (' + (sent + 1) + '/' + maxWk + ' this week)');
+  } catch (e) { Logger.log('cronRandomEncouragement error: ' + (e && e.stack || e)); }
+}
+
+function installRandomEncouragementTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronRandomEncouragement') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronRandomEncouragement')
+    .timeBased().everyDays(1).atHour(11).inTimezone('Asia/Jerusalem').create();
+  Logger.log('✅ Random encouragement trigger installed (daily ~11am, max 3/week)');
+}
+
+// ============================================================
 // 🎁 ONE-LINER INSTALLERS — make Steven's life easy.
 // ============================================================
 // Run installAllMotivationTriggers() once from the editor to enable both
@@ -15687,6 +15950,7 @@ function installWeeklySavingsProjectionTrigger() {
 function installAllMotivationTriggers() {
   installDailyMotivationTrigger();
   installWeeklySavingsProjectionTrigger();
+  installRandomEncouragementTrigger();
   Logger.log('✅ All motivation triggers installed.');
 }
 
@@ -15697,7 +15961,7 @@ function uninstallMotivationTriggers() {
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
     var fn = triggers[i].getHandlerFunction();
-    if (fn === 'cronDailyMotivation' || fn === 'cronWeeklySavingsProjection') {
+    if (fn === 'cronDailyMotivation' || fn === 'cronWeeklySavingsProjection' || fn === 'cronRandomEncouragement') {
       ScriptApp.deleteTrigger(triggers[i]);
       killed++;
     }
@@ -16294,7 +16558,7 @@ function installKesefleBot() {
   var aiProvider = null;
   try { aiProvider = _aiProviderResolve_(); } catch (_aiResErr) {}
   if (!aiProvider) {
-    report.push('⚠️  AI provider key — none set (OPENAI/GEMINI/XAI/ANTHROPIC/OPENROUTER). AI fallback disabled, bot still works with 18,725 keywords)');
+    report.push('⚠️  AI provider key — none set (OPENAI/GEMINI/XAI/ANTHROPIC/OPENROUTER/DEEPSEEK/GROQ/MISTRAL/TOGETHER/FIREWORKS/PERPLEXITY). AI fallback disabled, bot still runs on its keyword classifier)');
     warn++;
   } else {
     report.push('✅ AI provider — ' + aiProvider.keyName + ' set (AI fallback enabled, provider=' + aiProvider.provider + ')');
