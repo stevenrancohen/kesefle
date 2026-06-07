@@ -278,14 +278,14 @@ async function handlerImpl(req, res) {
         userRec.provisioned = record.provisioned;
         await kvSetSimple('user:' + userSub, userRec);
       }
-    } catch (e) { console.warn('user_record_merge_failed', e); }
+    } catch (e) { log.warn('provision.user_record_merge_failed', { reqId: req.reqId, error: e.message }); }
 
     try {
       const tokRes = await fetch(`${kvUrl}/get/${encodeURIComponent('token:' + userSub)}`, { headers: { 'Authorization': `Bearer ${kvToken}` } });
       const tokJson = await tokRes.json();
       const tokRec = tokJson?.result ? JSON.parse(tokJson.result) : null;
       if (tokRec) { tokRec.sheetId = spreadsheetId; await kvSetSimple('token:' + userSub, tokRec); }
-    } catch (e) { console.warn('token_record_merge_failed', e); }
+    } catch (e) { log.warn('provision.token_record_merge_failed', { reqId: req.reqId, error: e.message }); }
   } else {
     // 2026-05-29 resweep R5: was raw console.log of the full record (userSub,
     // userEmail, spreadsheetId, spreadsheetUrl). Only fires when KV is not

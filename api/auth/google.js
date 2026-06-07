@@ -3,6 +3,7 @@
 
 import crypto from 'node:crypto';
 import { rateLimit } from '../_lib/rateLimit.js';
+import { log } from '../../lib/log.js';
 
 function b64urlToBuf(s) {
   s = s.replace(/-/g, '+').replace(/_/g, '/');
@@ -100,7 +101,7 @@ export default async function handler(req, res) {
         headers: { 'Authorization': `Bearer ${kvToken}` },
       });
     } catch (e) {
-      console.error('KV write failed', e);
+      log.error('auth.kv_write_failed', { error: e.message });
     }
   } else {
     // KV not configured (local dev / mis-provisioned staging). Log a
