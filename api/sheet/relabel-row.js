@@ -24,7 +24,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { constantTimeEqual, decryptRefreshToken } from '../../lib/crypto.js';
-import { exchangeRefreshForAccess, sanitizeCell } from '../../lib/sheet-writer.js';
+import { exchangeRefreshForAccess, sanitizeCell, normalizeSubcategoryForDashboard } from '../../lib/sheet-writer.js';
 import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
@@ -131,7 +131,19 @@ async function handlerImpl(req, res) {
   const range = encodeURIComponent(`'${TX_TAB}'!D${rowIndex}:E${rowIndex}`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=RAW`;
   const cellD = sanitizeCell(newCategory);
-  const cellE = sanitizeCell(newSubcategory || newCategory);
+  // Canonicalize col E to a real dashboard ROW LABEL (or the שונות catch-all) so
+  // a relabel can NEVER make the amount invisible to the personal-dashboard
+  // SUMIFS -- mirrors the protected append path (buildExpenseRow). Falls back to
+  // the raw value only if the helper is somehow unavailable.
+  let dashSub;
+  try {
+    dashSub = typeof normalizeSubcategoryForDashboard === 'function'
+      ? normalizeSubcategoryForDashboard(newSubcategory || newCategory, newCategory)
+      : (newSubcategory || newCategory);
+  } catch (_normErr) {
+    dashSub = newSubcategory || newCategory;
+  }
+  const cellE = sanitizeCell(dashSub || newCategory);
   let r;
   try {
     r = await fetch(url, {

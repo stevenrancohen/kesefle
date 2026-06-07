@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-ux-learn';
+const KFL_BUILD_VERSION = '2026-06-07-picker-safe';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1398,13 +1398,17 @@ function _sheetLinkLine_(fromPhone) {
   return u ? ('\n\n📊 הגיליון שלך: ' + u) : '';
 }
 
-// SHORT, link-free nudge for the END of an expense CONFIRMATION (Steven
-// 2026-06-03, change 2). The long docs.google.com URL was noise on every
-// single confirmation — the user already has their sheet bookmarked, and the
-// tappable category dropdown is the real call-to-action now. This replaces the
-// long-URL line on confirmations only; _sheetLinkLine_ above is kept for the
-// explicit "show me my sheet" command where the actual URL is what's wanted.
-// No fromPhone needed — it never prints an id, so it's tenant-safe by design.
+// Sheet-link line appended to the END of an expense CONFIRMATION. Steven
+// (2026-06-07) wanted the link present again, with guidance on how to use it.
+// Prints the user's OWN sheet URL when resolvable: the verified owner gets the
+// company SHEET_ID, a tenant gets their own sheet resolved from KV via
+// _userSheetUrl_ (leak-safe -- a non-owner never gets the owner sheet), plus a
+// short note that the link is tappable on a computer and copy/open-in-Sheets on
+// a phone. REQUIRES fromPhone for that leak-safe resolution; if fromPhone is
+// missing or the URL cannot be resolved, _userSheetUrl_ returns '' and we fall
+// back to a link-free line (so it never prints a wrong or leaked id).
+// (_sheetLinkLine_ above is the older URL-only helper kept for the explicit
+// "show me my sheet" command.)
 function _sheetNudgeLine_(fromPhone) {
   var url = '';
   try { if (fromPhone && typeof _userSheetUrl_ === 'function') url = _userSheetUrl_(fromPhone); } catch (_e) {}
@@ -6943,13 +6947,52 @@ function _kfl_pushRecentCat_(phone, cat) {
 function _kfl_buildRecentSection_(phone, current) {
   var recents = _kfl_recentCats_(phone) || [];
   var rows = [];
-  for (var i = 0; i < recents.length && rows.length < 6; i++) {
+  for (var i = 0; i < recents.length && rows.length < 5; i++) {
     if (recents[i] && recents[i] !== current) rows.push({ name: recents[i], icon: '⭐' });
   }
-  // Escapes ALWAYS present in this first section so the 10-row cap can't hide them.
-  rows.push({ name: '__full_list__', icon: '📋', display: 'כל הקטגוריות' });
-  rows.push({ name: '__custom__', icon: '🆕', display: 'קטגוריה חדשה' });
+  // No recents -> no "personalized" section at all. The escape rows live in the
+  // dedicated escape section the picker always appends, so they are never lost.
+  if (!rows.length) return null;
   return { title: 'מותאם לך', rows: rows };
+}
+
+// Pure assembly of the change-category list: flatten `sections` into a
+// de-duplicated set of rows under WhatsApp's hard 10-row-TOTAL cap, then append
+// a guaranteed escape section (full list / new category) as the final 2 rows.
+// Kept as its own function (not inlined) so tests can assert id-uniqueness and
+// escape-presence on the exact runtime output. Invariants enforced here:
+//   - every row id is unique (Meta rejects the whole list on a duplicate id),
+//   - __-prefixed escape names are emitted ONLY by the escape section,
+//   - the current pick is skipped, and the total never exceeds 10 rows.
+function _kfl_buildPickerSections_(sections, currentCategory) {
+  var sectionsOut = [];
+  var seen = {};
+  var budget = 8; // reserve 2 of the 10 rows for the escape section below
+  for (var s = 0; s < sections.length && budget > 0 && sectionsOut.length < 9; s++) {
+    var sec = sections[s];
+    if (!sec || !sec.rows) continue;
+    var rows = [];
+    for (var i = 0; i < sec.rows.length && budget > 0; i++) {
+      var c = sec.rows[i];
+      if (!c || !c.name) continue;
+      if (c.name.indexOf('__') === 0) continue;   // escapes handled below
+      if (c.name === currentCategory) continue;    // skip the current pick
+      var id = 'relabel|' + c.name;
+      if (seen[id]) continue;                      // unique ids only
+      seen[id] = 1;
+      rows.push({ id: id, title: (c.icon + ' ' + (c.display || c.name)).slice(0, 24), description: '' });
+      budget--;
+    }
+    if (rows.length) sectionsOut.push({ title: String(sec.title || '').slice(0, 24), rows: rows });
+  }
+  sectionsOut.push({
+    title: '➕ עוד',
+    rows: [
+      { id: 'relabel|__full_list__', title: '📋 כל הקטגוריות', description: '' },
+      { id: 'relabel|__custom__',    title: '🆕 קטגוריה חדשה', description: '' }
+    ]
+  });
+  return sectionsOut;
 }
 
 function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
@@ -7090,33 +7133,12 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
       },
     ];
 
-    // Learn from the user: lead with the categories THEY actually use (most-
-    // recent first), then the curated groups. Also guarantee the escapes (full
-    // list / new category) sit in the first 10 rows so the 10-row cap can't hide
-    // the way to reach every category.
-    try { _kfl_pushRecentCat_(fromPhone, currentCategory); } catch (_rcw) {}
+    // Learn from the user: lead with the subcategories THEY corrected to before
+    // (fed by _handleRelabelTap_), then the curated groups. Assembly + dedup +
+    // guaranteed escapes live in _kfl_buildPickerSections_ (kept pure for tests).
     var __recentSec = _kfl_buildRecentSection_(fromPhone, currentCategory);
     if (__recentSec && __recentSec.rows && __recentSec.rows.length) SECTIONS.unshift(__recentSec);
-
-    var sectionsOut = [];
-    for (var s = 0; s < SECTIONS.length; s++) {
-      var sec = SECTIONS[s];
-      var rows = [];
-      for (var i = 0; i < sec.rows.length; i++) {
-        var c = sec.rows[i];
-        // Skip the row that matches the current pick to avoid wasted taps.
-        if (c.name === currentCategory) continue;
-        rows.push({
-          id: 'relabel|' + c.name,
-          title: (c.icon + ' ' + (c.display || c.name)).slice(0, 24),
-          description: '',
-        });
-        if (rows.length >= 10) break; // WhatsApp cap per section
-      }
-      if (rows.length) sectionsOut.push({ title: sec.title.slice(0, 24), rows: rows });
-      if (sectionsOut.length >= 10) break; // WhatsApp cap on sections
-    }
-    if (!sectionsOut.length) return;
+    var sectionsOut = _kfl_buildPickerSections_(SECTIONS, currentCategory);
 
     // The dropdown is now attached to EVERY confirmation (Steven 2026-06-03,
     // change 1) and the old text "change category" instruction was removed from
@@ -7199,9 +7221,13 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       // Update lastExp so a re-tap on the picker still works.
       try {
         last.category = newCategory;
-        last.subcategory = '';
+        last.subcategory = newCategory;
         cache.put('lastTenantExp:' + clean, JSON.stringify(last), 1800);
       } catch (_pe) {}
+      // Learn the user's OWN categories: remember what they corrected TO so the
+      // next picker leads with it. This name is dashboard-valid (normalized to a
+      // real row on write); the bot's pre-correction guess is no longer stored.
+      try { _kfl_pushRecentCat_(clean, newCategory); } catch (_rcp) {}
       // Steven 2026-05-25: TEACH the bot from every tap. Without this the
       // user retags the same expense over and over and the bot never learns.
       // _learnedSave with 'user-correction' source auto-publishes to the
@@ -7209,7 +7235,7 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       // classifier for EVERY future user typing the same description.
       try {
         if (typeof _learnedSave === 'function' && last.description) {
-          _learnedSave(last.description, { category: newCategory, subcategory: '' }, 'user-correction');
+          _learnedSave(last.description, { category: newCategory, subcategory: newCategory }, 'user-correction');
         }
       } catch (_lsErr) { Logger.log('_handleRelabelTap_ learnedSave err: ' + (_lsErr && _lsErr.message)); }
       return { replyText: '✅ עברה ל-' + newCategory + ' (ולמדתי — בפעם הבאה אזהה לבד). השורה בגיליון מעודכנת.' };
@@ -13578,15 +13604,23 @@ function sendWhatsAppInteractiveList(to, headerText, bodyText, footerText, butto
     return;
   }
 
-  // Meta caps interactive lists at 10 ROWS TOTAL across all sections; an over-
-  // sized list is rejected outright (the user would then see NO buttons). Trim to
-  // a valid 10 rows so the picker always sends.
-  var __secOut = [], __rowBudget = 10;
+  // Meta caps interactive lists at 10 ROWS TOTAL across all sections AND requires
+  // every row id to be UNIQUE across the whole list; either violation makes Meta
+  // reject the message outright (the user then sees NO buttons). Trim to 10 rows
+  // and drop any duplicate row id so the list always sends.
+  var __secOut = [], __rowBudget = 10, __seenId = {};
   (sections || []).forEach(function (sec) {
     if (__rowBudget <= 0 || !sec || !sec.rows || !sec.rows.length) return;
-    var __r = sec.rows.slice(0, __rowBudget);
-    __rowBudget -= __r.length;
-    __secOut.push({ title: sec.title, rows: __r });
+    var __r = [];
+    for (var __ri = 0; __ri < sec.rows.length && __rowBudget > 0; __ri++) {
+      var __row = sec.rows[__ri];
+      var __id = __row && __row.id;
+      if (__id && __seenId[__id]) continue;
+      if (__id) __seenId[__id] = 1;
+      __r.push(__row);
+      __rowBudget--;
+    }
+    if (__r.length) __secOut.push({ title: sec.title, rows: __r });
   });
   sections = __secOut;
 
@@ -15926,9 +15960,23 @@ function cronRandomEncouragement() {
     if (Math.random() > 0.45) { Logger.log('cronRandomEncouragement: skipped (dice)'); return; }
     var msg = _kfl_buildEncouragement_();
     if (!msg) return;
-    sendWhatsAppMessage(to, msg);
+    var sendRes = sendWhatsAppMessage(to, msg);
+    if (sendRes && sendRes.ok === false) {
+      Logger.log('cronRandomEncouragement: send failed -- weekly slot NOT consumed');
+      return;
+    }
     props.setProperty(key, String(sent + 1));
     Logger.log('cronRandomEncouragement: sent (' + (sent + 1) + '/' + maxWk + ' this week)');
+    // Prune stale weekly counters so this single-tenant cron never grows the
+    // Script-Property store unbounded (~52/yr) against the soft ~50-key cap.
+    try {
+      var allEnc = props.getProperties();
+      for (var encK in allEnc) {
+        if (encK.indexOf('KFL_ENCOURAGE_') === 0 && encK !== key && encK !== 'KFL_ENCOURAGE_MAX_PER_WEEK') {
+          props.deleteProperty(encK);
+        }
+      }
+    } catch (_pe) {}
   } catch (e) { Logger.log('cronRandomEncouragement error: ' + (e && e.stack || e)); }
 }
 
