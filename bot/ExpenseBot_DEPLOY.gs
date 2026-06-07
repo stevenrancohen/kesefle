@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-fx-cadaud';
+const KFL_BUILD_VERSION = '2026-06-07-esakim';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9239,6 +9239,13 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'סיכום' || trimmed === 'summary') {
     return { reply: getMonthlySummary(fromPhone) };
   }
+  // "esakim" (businesses) -- list the sender's registered businesses
+  // (read-only). Helps self-employed / multi-business users see what is
+  // registered and how to route by name or number. Steven 2026-06-07.
+  if (trimmed === 'עסקים' || trimmed === '/עסקים' || trimmed === 'עסקים שלי' ||
+      trimmed === 'businesses' || trimmed === 'my businesses') {
+    return { reply: _businessListReply_(fromPhone) };
+  }
   if (trimmed === 'הזמנות' || trimmed === 'orders' ||
       trimmed === 'הזמנות החודש' || trimmed === 'סיכום הזמנות') {
     return { reply: getOrdersSummary() };
@@ -13491,6 +13498,7 @@ function getHelpMessage() {
     '  • "מילון" — קישור ללשונית הלמידה\n' +
     '  • "מנוע" — מצב המנוע (AI/cache/keywords)\n' +
     '  • "אזור זמן" — הצג/שנה אזור זמן\n' +
+    '  • "עסקים" — רשימת העסקים שלך (רב-עסקי / עצמאי)\n' +
     '  • "ביקורת" — ספר לנו מה לא עובד, ונשפר 🙏\n' +
     '  • "עזרה" — הודעה זו\n\n' +
     '🧠 *המנוע:*\n' +
@@ -14661,6 +14669,35 @@ function _ownerBusinessList_(ownerPhone) {
     } catch (_e2) {}
   }
   return list;
+}
+
+// Build the reply for the "esakim" (businesses) command: a read-only list of
+// the sender's registered businesses + how to route by name/number and register
+// a new one. Pure formatting over _ownerBusinessList_ (no writes). 2026-06-07.
+function _businessListReply_(fromPhone) {
+  var list = [];
+  try { list = (typeof _ownerBusinessList_ === 'function') ? _ownerBusinessList_(fromPhone) : []; } catch (_e) {}
+  if (!Array.isArray(list) || !list.length) {
+    return '🏢 עוד לא רשמת עסקים.\n' +
+      'לרישום העסק הראשון שלח: "עסק 1 <שם>"\n' +
+      'לדוגמה: "עסק 1 כספלה"\n' +
+      'ואז תרשום: "עסק כספלה 250 שיווק" 💼';
+  }
+  var seen = {}, rows = [], maxN = 0, firstN = 0, firstName = '';
+  list.slice().sort(function (a, b) { return ((a && a.n) || 0) - ((b && b.n) || 0); }).forEach(function (b) {
+    if (!b || !b.n || seen[b.n]) return;
+    seen[b.n] = 1;
+    if (b.n > maxN) maxN = b.n;
+    if (!firstN) firstN = b.n;
+    var nm = b.name || b.tabName || ('עסק ' + b.n);
+    if (!firstName && b.name) firstName = b.name;
+    rows.push(b.n + '. ' + nm);
+  });
+  var nextN = maxN + 1;
+  var byNameHint = firstName ? (' או "עסק ' + firstName + ' 120 פייסבוק"') : '';
+  return '🏢 העסקים שלך:\n' + rows.join('\n') + '\n\n' +
+    'רישום הוצאה: "עסק ' + (firstN || 1) + ' 120 פייסבוק"' + byNameHint + '\n' +
+    'עסק חדש: "עסק ' + nextN + ' <שם>"';
 }
 
 // Sanitize a string for use as a Google Sheets tab name. Sheets blocks
