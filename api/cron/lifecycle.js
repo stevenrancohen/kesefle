@@ -79,6 +79,99 @@ function firstNameFromUser(u) {
   return 'שלום';
 }
 
+// Hebrew "DD-DD בחודש" label for the 7 days ending `endDate` (inclusive).
+// e.g. new Date('2026-05-18') -> "12-18 במאי". Used for the weekly digest
+// header. Pure date math (no locale dependency on the serverless runtime).
+const HE_MONTHS = ['בינואר', 'בפברואר', 'במרץ', 'באפריל', 'במאי', 'ביוני',
+  'ביולי', 'באוגוסט', 'בספטמבר', 'באוקטובר', 'בנובמבר', 'בדצמבר'];
+function weekRangeLabel(endDate) {
+  const end = new Date(endDate);
+  const start = new Date(end.getTime() - 6 * 24 * 3600 * 1000);
+  const sameMonth = start.getUTCMonth() === end.getUTCMonth();
+  const endMonth = HE_MONTHS[end.getUTCMonth()] || '';
+  if (sameMonth) return `${start.getUTCDate()}-${end.getUTCDate()} ${endMonth}`;
+  const startMonth = HE_MONTHS[start.getUTCMonth()] || '';
+  return `${start.getUTCDate()} ${startMonth} - ${end.getUTCDate()} ${endMonth}`;
+}
+
+// Bare Hebrew month names (no "ב" prefix) for a standalone date like the
+// dunning grace deadline: "17 ביוני 2026".
+const HE_MONTHS_BARE = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+function hebrewDate(d) {
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return '';
+  return `${dt.getUTCDate()} ב${HE_MONTHS_BARE[dt.getUTCMonth()] || ''} ${dt.getUTCFullYear()}`;
+}
+
+// Build the full variable set the weekly-digest.html template expects (see
+// templates/email/README.md). The template uses RICH names (totalSpend,
+// cat1Name.., exp1Desc.., spike*, delta*) -- NOT the day_7 drip names
+// (week_total/top_category/transactions). Passing the wrong names rendered the
+// whole digest blank. We map the available aggregate to the real names and
+// fill every remaining slot with a graceful neutral default so an engaged user
+// with only a summary aggregate still gets a clean, non-broken email. Richer
+// per-category / per-expense rows are populated when a forward-compatible
+// `digest:{sub}:7d` record exists; otherwise they degrade to a single
+// summary row + neutral (no false "spike alert", no fake week-over-week jump).
+function buildWeeklyDigestVars(baseVars, stats7w, rich, now) {
+  const s = stats7w || {};
+  const r = rich || {};
+  const total = Number(s.total || 0);
+  const count = Number(s.count || 0);
+  const top = s.top_category || r.topCategory || 'כללי';
+  const categoryCount = Number(r.categoryCount || s.categories_count || (total > 0 ? 1 : 0));
+
+  // Week-over-week delta: only show a real arrow/colour when we actually have a
+  // prior-week figure. Otherwise render a neutral 0% (grey-ish) so we never
+  // fabricate a "spent X% more" claim from missing data.
+  const hasDelta = r.deltaPercent != null && r.prevWeekTotal != null;
+  const deltaPercent = hasDelta ? Math.abs(Math.round(Number(r.deltaPercent))) : 0;
+  const deltaArrow = hasDelta ? (Number(r.deltaPercent) >= 0 ? '▲' : '▼') : '—';
+  const deltaColor = hasDelta ? (Number(r.deltaPercent) >= 0 ? '#ef4444' : '#10b981') : '#5a7479';
+
+  // Spike alert: only surface when the producer flagged one. With no rich data
+  // we suppress the red alarm box content (neutral category + the same top
+  // figure) rather than screaming a fake anomaly.
+  const hasSpike = !!r.spikeCategoryName;
+
+  const out = {
+    ...baseVars,
+    weekRange: weekRangeLabel(now),
+    totalSpend: String(total),
+    transactionCount: String(count),
+    categoryCount: String(categoryCount),
+    topCategory: top,
+    deltaPercent: String(deltaPercent),
+    deltaArrow,
+    deltaColor,
+    spikeCategoryName: hasSpike ? r.spikeCategoryName : top,
+    spikeAmount: String(r.spikeAmount != null ? r.spikeAmount : total),
+    spikeMultiplier: String(r.spikeMultiplier != null ? r.spikeMultiplier : 1),
+    spikeAverage: String(r.spikeAverage != null ? r.spikeAverage : total),
+    spikeCount: String(hasSpike ? 1 : 0),
+  };
+
+  // Category + expense rows. Use the rich arrays when present; otherwise the
+  // first category row mirrors the summary (top category = full spend) and the
+  // rest stay as em-dashes so the table reads "no further breakdown" instead of
+  // a wall of bare shekel signs.
+  const cats = Array.isArray(r.categories) ? r.categories : [];
+  const exps = Array.isArray(r.expenses) ? r.expenses : [];
+  for (let i = 1; i <= 5; i++) {
+    const c = cats[i - 1];
+    out[`cat${i}Name`] = c ? String(c.name) : (i === 1 && total > 0 ? top : '—');
+    out[`cat${i}Amount`] = c ? String(c.amount) : (i === 1 && total > 0 ? String(total) : '0');
+    out[`cat${i}Pct`] = c ? String(c.pct) : (i === 1 && total > 0 ? '100' : '0');
+    out[`cat${i}Count`] = c ? String(c.count) : (i === 1 && total > 0 ? String(count) : '0');
+    const e = exps[i - 1];
+    out[`exp${i}Date`] = e ? String(e.date) : '—';
+    out[`exp${i}Desc`] = e ? String(e.desc) : '—';
+    out[`exp${i}Amount`] = e ? String(e.amount) : '0';
+  }
+  return out;
+}
+
 function unsubscribeUrlFor(userSub) {
   // Signed, single-click unsubscribe (lib/email-unsub.js) backed by
   // /api/account/unsubscribe + /unsubscribe.html. Replaces the earlier unsigned
@@ -190,12 +283,12 @@ async function handlerImpl(req, res) {
         var alreadyWeekly = await kvGet(weeklyGuardKey);
         if (!alreadyWeekly) {
           var stats7w = await kvGet(`stats:${u.userSub}:7d`) || {};
-          var digestVars = {
-            ...baseVars,
-            week_total: stats7w.total || 0,
-            transactions: stats7w.count || 0,
-            top_category: stats7w.top_category || 'מזון',
-          };
+          // Optional richer breakdown (per-category / per-expense / spike /
+          // week-over-week). Forward-compatible: a future stats job can write
+          // `digest:{sub}:7d` and the template will light up fully. Until then
+          // buildWeeklyDigestVars degrades to a clean summary-only digest.
+          var digestRich = await kvGet(`digest:${u.userSub}:7d`);
+          var digestVars = buildWeeklyDigestVars(baseVars, stats7w, digestRich, now);
           var rd = await sendTemplate({ to: u.email, template: 'weekly-digest', vars: digestVars });
           if (rd.ok || rd.skipped) {
             await kvSetEx(weeklyGuardKey, JSON.stringify({ at: new Date().toISOString(), id: rd.id || null, skipped: !!rd.skipped }), 14 * 24 * 3600);
@@ -220,10 +313,19 @@ async function handlerImpl(req, res) {
       const pf = await kvGet(`payment_failed:${u.userSub}`);
       if (pf?.firstFailureAt) {
         const failureDays = daysBetween(new Date(pf.firstFailureAt), now);
+        // payment-failed.html renders {{reason}} (why the charge failed) and
+        // {{gracePeriodEnd}} (when the account suspends). The PayPal webhook
+        // record carries neither, so without these two the dunning email shows
+        // a blank reason box and "יושעה ב-" with nothing after it. Compute a
+        // 14-day grace deadline from the first failure and a neutral, accurate
+        // Hebrew reason (the webhook doesn't expose the issuer decline code).
+        const graceEnd = new Date(new Date(pf.firstFailureAt).getTime() + 14 * 24 * 3600 * 1000);
         const dunningVars = {
           ...baseVars,
           planName: pf.plan === 'family' ? 'Family' : 'Pro',
           amount: String(pf.amountIls || 19),
+          reason: pf.reason || 'אמצעי התשלום נדחה. ייתכן שפג תוקף הכרטיס, אין יתרה מספקת, או שחברת האשראי חסמה את החיוב.',
+          gracePeriodEnd: hebrewDate(graceEnd),
         };
         if (failureDays === 3) {
           const r = await maybeSend(u.userSub, 'payment-failed_day3', dunningVars, 30 * 24 * 3600);
