@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-esakim';
+const KFL_BUILD_VERSION = '2026-06-07-newbiz';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2762,6 +2762,14 @@ function handleInteractiveReply_(fromPhone, interactive) {
   if (!picked) {
     Logger.log('handleInteractiveReply_: no id in interactive payload');
     return null;
+  }
+
+  // "+ new business" button from the businesses list -> start the create flow.
+  // OWNER-ONLY: business tabs are created in the owner spreadsheet.
+  if (String(picked) === 'kfl_newbiz') {
+    if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return null;
+    var __sb = (typeof _startNewBusinessFlow_ === 'function') ? _startNewBusinessFlow_(fromPhone) : null;
+    return { replyText: (__sb && __sb.reply) || '🏢 מה השם של העסק החדש?' };
   }
 
   // Family approval/denial taps from _familyJoinRequest_.
@@ -8563,6 +8571,32 @@ function processExpense(text, fromPhone) {
     }
   } catch (__fbErr) { Logger.log('feedback capture err: ' + (__fbErr && __fbErr.message)); }
 
+  // ----- NEW-BUSINESS name capture (OWNER-ONLY) -----------------------------
+  // The "+ esek hadash" button (or the "esek hadash" command) armed
+  // awaitingNewBizName; THIS message is the new business name. Owner-gated
+  // because creating a business writes a tab to the owner spreadsheet
+  // (SHEET_ID) -- a tenant must never reach the create path. Runs early so the
+  // name is not parsed as an expense.
+  try {
+    var __nbClean = String(fromPhone || '').replace(/[^0-9]/g, '');
+    var __nbCache = CacheService.getScriptCache();
+    if (__nbClean && __nbCache.get('awaitingNewBizName:' + __nbClean)) {
+      __nbCache.remove('awaitingNewBizName:' + __nbClean);
+      if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) {
+        return { reply: '' };
+      }
+      var __nbName = String(text || '').replace(/[\u00a0\u202f\u200b]/g, ' ').trim();
+      if (/^(ביטול|בטל|cancel)[!.?\s]*$/i.test(__nbName)) {
+        return { reply: 'בוטל 👍 תמיד אפשר "עסקים" כדי לנהל את העסקים.' };
+      }
+      __nbName = __nbName.slice(0, 40).trim();
+      if (!__nbName) {
+        return { reply: 'לא קלטתי שם. נסה שוב: כתוב "עסק חדש".' };
+      }
+      return { reply: _createBusinessFromTemplate_(fromPhone, __nbName) };
+    }
+  } catch (__nbErr) { Logger.log('new-biz capture err: ' + (__nbErr && __nbErr.message)); }
+
   // ───── GROUP COMMAND ROUTER ─────
   // Any message starting with "כספלה" enters Splitwise-style group mode.
   // Also accept the legacy family aliases ("הקמת משפחה", "הצטרפות
@@ -9239,12 +9273,24 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'סיכום' || trimmed === 'summary') {
     return { reply: getMonthlySummary(fromPhone) };
   }
-  // "esakim" (businesses) -- list the sender's registered businesses
-  // (read-only). Helps self-employed / multi-business users see what is
-  // registered and how to route by name or number. Steven 2026-06-07.
-  if (trimmed === 'עסקים' || trimmed === '/עסקים' || trimmed === 'עסקים שלי' ||
-      trimmed === 'businesses' || trimmed === 'my businesses') {
-    return { reply: _businessListReply_(fromPhone) };
+  // "esakim" (businesses) -- list the sender's registered businesses + a
+  // one-tap "+ new business" button (duplicates the business template).
+  // OWNER-ONLY: multi-business writes to the owner spreadsheet, so the command
+  // and the create button are gated to the owner. Steven 2026-06-07.
+  if ((trimmed === 'עסקים' || trimmed === '/עסקים' || trimmed === 'עסקים שלי' ||
+       trimmed === 'businesses' || trimmed === 'my businesses' ||
+       trimmed === 'עסק חדש' || trimmed === 'עסק חדש?' || trimmed === 'עסק חדש!') &&
+      (typeof _isOwnerPhone_ !== 'function' || _isOwnerPhone_(fromPhone))) {
+    // "esek hadash" (new business) jumps straight into the create flow.
+    if (/^\s*עסק חדש/.test(trimmed)) { return _startNewBusinessFlow_(fromPhone); }
+    var __bizListText = _businessListReply_(fromPhone);
+    try {
+      if (typeof sendWhatsAppQuickButtons === 'function') {
+        sendWhatsAppQuickButtons(fromPhone, __bizListText, [{ id: 'kfl_newbiz', title: '➕ עסק חדש' }]);
+        return {}; // the interactive message IS the reply
+      }
+    } catch (_bizBtnErr) { Logger.log('biz list buttons err: ' + (_bizBtnErr && _bizBtnErr.message)); }
+    return { reply: __bizListText };
   }
   if (trimmed === 'הזמנות' || trimmed === 'orders' ||
       trimmed === 'הזמנות החודש' || trimmed === 'סיכום הזמנות') {
@@ -14698,6 +14744,50 @@ function _businessListReply_(fromPhone) {
   return '🏢 העסקים שלך:\n' + rows.join('\n') + '\n\n' +
     'רישום הוצאה: "עסק ' + (firstN || 1) + ' 120 פייסבוק"' + byNameHint + '\n' +
     'עסק חדש: "עסק ' + nextN + ' <שם>"';
+}
+
+// Arm the "new business" name capture (owner-only) and ask for the name. Used
+// by both the "+ esek hadash" button and the "esek hadash" command. 2026-06-07.
+function _startNewBusinessFlow_(fromPhone) {
+  if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return { reply: '' };
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  try { CacheService.getScriptCache().put('awaitingNewBizName:' + clean, '1', 600); } catch (_e) {}
+  return { reply: '🏢 מה השם של העסק החדש?\nכתוב/י שם קצר (לדוגמה: כספלה) ואכין לו לשונית משלו עם אותו תבנית עסקית.\n(לביטול: "ביטול")' };
+}
+
+// Next free business number (>=2; N=1 is always the main transactions tab).
+function _nextBusinessNumber_(fromPhone) {
+  var maxN = 1;
+  try {
+    var list = (typeof _ownerBusinessList_ === 'function') ? _ownerBusinessList_(fromPhone) : [];
+    if (Array.isArray(list)) for (var i = 0; i < list.length; i++) { if (list[i] && list[i].n > maxN) maxN = list[i].n; }
+  } catch (_e) {}
+  return maxN + 1;
+}
+
+// Create the next business by duplicating the business template tab (the same
+// path the numbered route uses on first write) and registering it. OWNER-ONLY:
+// the tab is created in the owner spreadsheet (SHEET_ID), so a tenant must never
+// reach this. Returns a Hebrew reply string. Steven 2026-06-07.
+function _createBusinessFromTemplate_(fromPhone, name) {
+  if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return '';
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return '😬 לא זוהה מספר.';
+  var nm = String(name || '').trim().slice(0, 40);
+  if (!nm) return 'לא קלטתי שם. נסה שוב: כתוב "עסק חדש".';
+  var n = _nextBusinessNumber_(fromPhone);
+  try {
+    var t = (typeof _getOrCreateBusinessTab_ === 'function') ? _getOrCreateBusinessTab_(fromPhone, n, nm) : null;
+    if (!t) return '😬 לא הצלחתי ליצור את העסק. נסה שוב, או כתוב "ביקורת".';
+    var shownName = t.name || nm;
+    return '✅ העסק "' + shownName + '" מוכן! 🏢 (עסק ' + n + ')\n' +
+      'רישום הוצאה: "עסק ' + shownName + ' 250 שיווק" או "עסק ' + n + ' 250 שיווק"\n' +
+      'לכל העסקים: "עסקים"';
+  } catch (e) {
+    Logger.log('_createBusinessFromTemplate_ err: ' + (e && e.message));
+    try { if (typeof _adminAlertOnce_ === 'function') _adminAlertOnce_('🚨 כשל ביצירת עסק חדש (' + clean + '): ' + (e && e.message), 'newbiz:' + clean); } catch (_a) {}
+    return '😬 תקלה ביצירת העסק. הצוות קיבל התראה ויטפל 🙏';
+  }
 }
 
 // Sanitize a string for use as a Google Sheets tab name. Sheets blocks

@@ -55,5 +55,25 @@ ok('reads _ownerBusinessList_', /_ownerBusinessList_\(fromPhone\)/.test(BODY));
 ok('read-only (no sheet/registry write in the helper)', !/kvSet|setValue|setFormula|appendRow|\/api\/sheet\/append/.test(BODY));
 ok('help mentions "עסקים"', /"עסקים" — רשימת העסקים/.test(SRC));
 
+// --- one-click create-business flow (owner-gated) ---
+const bizCmdBlock = SRC.slice(SRC.indexOf("trimmed === 'עסקים'"), SRC.indexOf('_businessListReply_(fromPhone)'));
+ok('עסקים command is owner-gated', /_isOwnerPhone_/.test(bizCmdBlock));
+ok('sends "+ new business" button (kfl_newbiz)', /kfl_newbiz/.test(SRC) && /sendWhatsAppQuickButtons/.test(SRC));
+ok('tap handler for kfl_newbiz', /String\(picked\) === 'kfl_newbiz'/.test(SRC));
+ok('tap handler is owner-gated', /String\(picked\) === 'kfl_newbiz'[\s\S]{0,170}_isOwnerPhone_/.test(SRC));
+ok('arms awaitingNewBizName flag', /awaitingNewBizName:/.test(SRC));
+ok('name-capture hook is owner-gated', /awaitingNewBizName:[\s\S]{0,260}_isOwnerPhone_/.test(SRC));
+ok('_startNewBusinessFlow_ defined', /function _startNewBusinessFlow_\(/.test(SRC));
+ok('_createBusinessFromTemplate_ owner-gated', /function _createBusinessFromTemplate_\([\s\S]{0,120}_isOwnerPhone_/.test(SRC));
+ok('create duplicates the template via _getOrCreateBusinessTab_', /_getOrCreateBusinessTab_\(fromPhone, n, nm\)/.test(SRC));
+
+// unit-test _nextBusinessNumber_ against a stubbed registry
+const NEXTBODY = extractFn('_nextBusinessNumber_');
+function nextNum(list) { return new Function('_ownerBusinessList_', NEXTBODY + '\nreturn _nextBusinessNumber_;')(function () { return list; }); }
+ok('nextNum empty -> 2', nextNum([])('x') === 2);
+ok('nextNum [1] -> 2', nextNum([{ n: 1, name: 'a' }])('x') === 2);
+ok('nextNum [1,2,3] -> 4', nextNum([{ n: 1 }, { n: 2 }, { n: 3 }])('x') === 4);
+ok('nextNum [2,5] -> 6', nextNum([{ n: 2 }, { n: 5 }])('x') === 6);
+
 console.log('test_business_list_command: ' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
