@@ -632,7 +632,7 @@ function CLEAN_BROKEN_FORMULAS() {
   // Recompute totals from תנועות (same source-of-truth pass).
   var lastRow = tx.getLastRow();
   if (lastRow < 2) { Logger.log('!! תנועות empty'); return; }
-  var txData = tx.getRange(2, 1, lastRow - 1, 6).getValues();
+  var txData = tx.getRange(2, 1, lastRow - 1, 8).getValues();
   var totals = {};
   for (var i = 0; i < txData.length; i++) {
     var r = txData[i];
@@ -646,6 +646,14 @@ function CLEAN_BROKEN_FORMULAS() {
     var monthIdx = parseInt(m[2], 10);
     var bucket = _bucketForBizSub_(sub);
     if (!bucket) continue;
+    // Sign-aware (2026-06-07): a business INCOME/refund row (col H FALSE) must not
+    // inflate COST buckets. The revenue bucket is unaffected; legacy rows with an
+    // empty col H still sum.
+    if (bucket !== 'מחזור ברוטו') {
+      var __st = r[7];
+      var __ss = String(__st == null ? '' : __st).trim().toLowerCase();
+      if (__st === false || __ss === 'income' || __ss === 'הכנסה' || __ss === 'false') continue;
+    }
     if (!totals[bucket]) totals[bucket] = {};
     totals[bucket][monthIdx] = (totals[bucket][monthIdx] || 0) + Math.abs(amount);
   }
@@ -722,7 +730,7 @@ function RECOMPUTE_COMPANY_DASHBOARD() {
   // Sum תנועות by (bucket -> month). Skip rows with no amount or wrong year.
   var lastRow = tx.getLastRow();
   if (lastRow < 2) { Logger.log('!! תנועות is empty'); return; }
-  var txData = tx.getRange(2, 1, lastRow - 1, 6).getValues();
+  var txData = tx.getRange(2, 1, lastRow - 1, 8).getValues();
   var totals = {}; // {label -> {1..12 -> sumAmount}}
   var seen = 0;
   for (var i = 0; i < txData.length; i++) {
@@ -739,6 +747,14 @@ function RECOMPUTE_COMPANY_DASHBOARD() {
     if (monthIdx < 1 || monthIdx > 12) continue;
     var bucket = _bucketForBizSub_(sub);
     if (!bucket) continue;
+    // Sign-aware (2026-06-07): a business INCOME/refund row (col H FALSE) must not
+    // inflate COST buckets. The revenue bucket is unaffected; legacy rows with an
+    // empty col H still sum.
+    if (bucket !== 'מחזור ברוטו') {
+      var __st = r[7];
+      var __ss = String(__st == null ? '' : __st).trim().toLowerCase();
+      if (__st === false || __ss === 'income' || __ss === 'הכנסה' || __ss === 'false') continue;
+    }
     if (!totals[bucket]) totals[bucket] = {};
     totals[bucket][monthIdx] = (totals[bucket][monthIdx] || 0) + Math.abs(amount);
     seen++;
@@ -1120,7 +1136,7 @@ function CLEAN_BROKEN_FORMULAS_ALL_YEARS() {
   // Build totals once: { year -> { bucket -> { 1..12 -> sum } } }
   var lastRow = tx.getLastRow();
   if (lastRow < 2) { Logger.log('!! תנועות empty'); return; }
-  var txData = tx.getRange(2, 1, lastRow - 1, 6).getValues();
+  var txData = tx.getRange(2, 1, lastRow - 1, 8).getValues();
   var totals = {};
   for (var i = 0; i < txData.length; i++) {
     var r = txData[i];
@@ -1135,6 +1151,14 @@ function CLEAN_BROKEN_FORMULAS_ALL_YEARS() {
     var mn = parseInt(m[2], 10);
     var bucket = _bucketForBizSub_(sub);
     if (!bucket) continue;
+    // Sign-aware (2026-06-07): a business INCOME/refund row (col H FALSE) must not
+    // inflate COST buckets. The revenue bucket is unaffected; legacy rows with an
+    // empty col H still sum.
+    if (bucket !== 'מחזור ברוטו') {
+      var __st = r[7];
+      var __ss = String(__st == null ? '' : __st).trim().toLowerCase();
+      if (__st === false || __ss === 'income' || __ss === 'הכנסה' || __ss === 'false') continue;
+    }
     if (!totals[yr]) totals[yr] = {};
     if (!totals[yr][bucket]) totals[yr][bucket] = {};
     totals[yr][bucket][mn] = (totals[yr][bucket][mn] || 0) + Math.abs(amount);

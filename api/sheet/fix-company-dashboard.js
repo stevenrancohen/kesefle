@@ -31,13 +31,16 @@ const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 const BOT_SECRET = process.env.KESEFLE_BOT_SECRET;
 
-// MUST match COMPANY_EXPENSE_ROWS in lib/sheet-writer.js. Keep in sync
-// with that file — both should evolve together.
+// MUST match COMPANY_EXPENSE_ROWS in lib/sheet-writer.js (same label order +
+// same criteria arrays). tests/test_company_dashboard_parity.js fails CI if the
+// two ever drift, so the live "fix" button and the fresh-tenant template always
+// produce identical totals. All criteria are wildcards (only ever WIDEN, tenant-
+// safe); the ops row carries the full advisor/accountant/collection vocabulary.
 const COMPANY_EXPENSE_ROWS = [
-  { criteria: ['*חומרי גלם*'] },
-  { criteria: ['*שיווק*'] },
-  { criteria: ['*משלוח*', '*אריזה*'] },
-  { criteria: ['*תפעולי*', 'יועצים', 'תוכנות', 'ציוד עסקי', 'מיסים'] },
+  { label: '🎨 עלות חומרי גלם',  criteria: ['*חומרי גלם*'] },
+  { label: '📣 עלות שיווק',      criteria: ['*שיווק*'] },
+  { label: '🚚 משלוחים והתקנות', criteria: ['*משלוח*', '*אריזה*'] },
+  { label: '🏢 הוצאות תפעוליות', criteria: ['*תפעולי*', '*הוצאות תפעוליות*', '*יועצ*', '*יועץ*', '*ייעוץ*', '*רואה חשבון*', '*קולקצי*', '*תוכנות*', '*תוכנה*', '*ציוד עסקי*', '*מיסים*'] },
 ];
 
 async function kvGet(key) {
@@ -73,7 +76,10 @@ function buildBusinessRowFormulas() {
       const mm = String(m).padStart(2, '0');
       const parts = crits.map((cr) => {
         const safe = String(cr).replace(/"/g, '""');
-        return `SUMIFS('${TX_TAB}'!C:C, '${TX_TAB}'!B:B, $B$4&"-${mm}", '${TX_TAB}'!D:D, "עסק", '${TX_TAB}'!E:E, "${safe}")`;
+        // col H:H, TRUE = expense-only (sign filter). Without it a business
+        // income/refund row whose col E matched a cost wildcard inflated costs.
+        // Mirrors COMPANY_EXPENSE_ROWS SUMIFS in lib/sheet-writer.js exactly.
+        return `SUMIFS('${TX_TAB}'!C:C, '${TX_TAB}'!B:B, $B$4&"-${mm}", '${TX_TAB}'!D:D, "עסק", '${TX_TAB}'!E:E, "${safe}", '${TX_TAB}'!H:H, TRUE)`;
       });
       const sumExpr = parts.length ? parts.join(' + ') : '0';
       cells.push(`=IFERROR(${sumExpr}, 0)`);
