@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-ux-encourage';
+const KFL_BUILD_VERSION = '2026-06-07-ux-learn';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -6917,6 +6917,41 @@ function _tenantCategoryMtdLine_(fromPhone, category) {
 //   - section title max 24 chars
 //   - section ids start with "relabel|" so _handleRelabelTap_ routes them
 //   - sections capped at 10 rows each, sections capped at 10 total
+// Per-user "recent categories" store (Script Properties, capped at 8). Powers the
+// learned ordering in the change-category picker so a user's own categories lead
+// the list. Small N of users today; at scale this moves to KV. Never throws.
+function _kfl_recentCats_(phone) {
+  try {
+    var clean = String(phone || '').replace(/[^0-9]/g, '');
+    if (!clean) return [];
+    var raw = PropertiesService.getScriptProperties().getProperty('KFL_RC_' + clean);
+    var arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (_e) { return []; }
+}
+function _kfl_pushRecentCat_(phone, cat) {
+  try {
+    var clean = String(phone || '').replace(/[^0-9]/g, '');
+    cat = String(cat || '').trim();
+    if (!clean || !cat || cat.indexOf('__') === 0) return;
+    var arr = _kfl_recentCats_(clean).filter(function (x) { return x && x !== cat; });
+    arr.unshift(cat);
+    if (arr.length > 8) arr = arr.slice(0, 8);
+    PropertiesService.getScriptProperties().setProperty('KFL_RC_' + clean, JSON.stringify(arr));
+  } catch (_e) {}
+}
+function _kfl_buildRecentSection_(phone, current) {
+  var recents = _kfl_recentCats_(phone) || [];
+  var rows = [];
+  for (var i = 0; i < recents.length && rows.length < 6; i++) {
+    if (recents[i] && recents[i] !== current) rows.push({ name: recents[i], icon: '⭐' });
+  }
+  // Escapes ALWAYS present in this first section so the 10-row cap can't hide them.
+  rows.push({ name: '__full_list__', icon: '📋', display: 'כל הקטגוריות' });
+  rows.push({ name: '__custom__', icon: '🆕', display: 'קטגוריה חדשה' });
+  return { title: 'מותאם לך', rows: rows };
+}
+
 function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
   try {
     if (!fromPhone) return;
@@ -7055,6 +7090,14 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
       },
     ];
 
+    // Learn from the user: lead with the categories THEY actually use (most-
+    // recent first), then the curated groups. Also guarantee the escapes (full
+    // list / new category) sit in the first 10 rows so the 10-row cap can't hide
+    // the way to reach every category.
+    try { _kfl_pushRecentCat_(fromPhone, currentCategory); } catch (_rcw) {}
+    var __recentSec = _kfl_buildRecentSection_(fromPhone, currentCategory);
+    if (__recentSec && __recentSec.rows && __recentSec.rows.length) SECTIONS.unshift(__recentSec);
+
     var sectionsOut = [];
     for (var s = 0; s < SECTIONS.length; s++) {
       var sec = SECTIONS[s];
@@ -7065,7 +7108,7 @@ function _sendChangeCategoryPicker_(fromPhone, currentCategory) {
         if (c.name === currentCategory) continue;
         rows.push({
           id: 'relabel|' + c.name,
-          title: (c.icon + ' ' + c.name).slice(0, 24),
+          title: (c.icon + ' ' + (c.display || c.name)).slice(0, 24),
           description: '',
         });
         if (rows.length >= 10) break; // WhatsApp cap per section
