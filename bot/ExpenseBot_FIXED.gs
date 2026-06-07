@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-bot-ux';
+const KFL_BUILD_VERSION = '2026-06-07-named-biz';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2385,7 +2385,15 @@ function _doPostRouter_(e) {
           // the normal expense flow so the row lands in THEIR own sheet.
           if (typeof _parseBusinessNumberPrefix_ === "function" && _isOwnerPhone_(__from_)) {
             try {
+              // (1) numbered route first ("<marker> 2 320 ...") wins unchanged.
               var __bizPref = _parseBusinessNumberPrefix_(__text_);
+              // (2) NAMED route: resolve a registered business by name (registry-
+              //     gated; an unknown name returns null and falls through).
+              if (!__bizPref && typeof _resolveBusinessNamePrefix_ === "function") {
+                var __bizList = (typeof _ownerBusinessList_ === "function") ? _ownerBusinessList_(__from_) : [];
+                __bizPref = _resolveBusinessNamePrefix_(__text_, __bizList);
+                if (__bizPref) Logger.log('doPost: named-biz resolved -> N=' + __bizPref.n);
+              }
               if (__bizPref) {
                 var __bizRes = _writeBusinessNExpense_(__from_, __bizPref.n, __bizPref.name || null, __bizPref.rest, __msgId_ || null);
                 if (__bizRes && __bizRes.handled) {
@@ -14465,6 +14473,64 @@ function _parseBusinessNumberPrefix_(text) {
   return { n: n, name: name, rest: rest };
 }
 
+// Named-business registry lookup (Steven 2026-06-07). Resolve a business named
+// (NOT numbered) message to a registered business N using the per-owner registry
+// list (biz:owner:{phone}:list = [{n, tabName, name}, ...]). Numbered routing
+// already works; once a business has a NAME the user types it by name and expects
+// the right tab. PURE function (no I/O) so it is unit-testable; the caller passes
+// the list. Registry-gated: only registered names resolve, so the legacy
+// unknown-word -> null contract is preserved and the message falls through.
+// Returns { n, name, rest } on a hit, else null.
+function _resolveBusinessNamePrefix_(text, list) {
+  if (!text || !Array.isArray(list) || !list.length) return null;
+  var t = String(text).replace(/[\u00a0\u202f\u200b]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t) return null;
+  // strip an optional single lead-in word (expense / income)
+  t = t.replace(/^(?:הוצאה|הוצאת|הכנסה|הכנסת)\s+/, '');
+  // require a leading business marker (standalone / clitic / deal form)
+  var mk = t.match(/^(?:[בלמהו]?עסק(?:ה|ת)?)\s+(.+)$/);
+  if (!mk) return null;
+  var afterMarker = String(mk[1] || '').trim();
+  if (!afterMarker) return null;
+  // the numbered route owns the "<marker> <N> ..." shape -- never hijack it
+  if (/^[+-]?\d/.test(afterMarker)) return null;
+  // longest registered name first so a multi-word name beats its prefix
+  var byNameLen = list
+    .filter(function (r) { return r && r.n && r.name && String(r.name).trim(); })
+    .map(function (r) { return { n: r.n, name: String(r.name).trim() }; })
+    .sort(function (a, b) { return b.name.length - a.name.length; });
+  if (!byNameLen.length) return null;
+  var low = afterMarker.toLowerCase();
+  for (var i = 0; i < byNameLen.length; i++) {
+    var nm = byNameLen[i].name;
+    if (low.indexOf(nm.toLowerCase()) !== 0) continue;
+    var after = afterMarker.slice(nm.length);
+    if (after.length && !/^[\s:\-—–]/.test(after)) continue; // glued word -> not a name hit
+    var rest = after.replace(/^[\s]*[-—–:]?\s*/, '').replace(/^(?:הוצאה|הוצאת|הכנסה|הכנסת)\s+/, '').trim();
+    return { n: byNameLen[i].n, name: nm, rest: rest };
+  }
+  return null;
+}
+
+// Load the per-owner business registry list (keeps the resolver pure). Includes
+// biz #1's persisted name so a named message can target the main transactions tab.
+function _ownerBusinessList_(ownerPhone) {
+  var clean = String(ownerPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return [];
+  var list = [];
+  try { list = kvGet('biz:owner:' + clean + ':list') || []; } catch (_e) {}
+  if (!Array.isArray(list)) list = [];
+  var has1 = false;
+  for (var i = 0; i < list.length; i++) { if (list[i] && list[i].n === 1) { has1 = true; break; } }
+  if (!has1) {
+    try {
+      var b1 = kvGet('biz:' + clean + ':1');
+      if (b1 && b1.name) list = list.concat([{ n: 1, tabName: (typeof TRANSACTIONS_SHEET !== 'undefined' ? TRANSACTIONS_SHEET : 'תנועות'), name: b1.name }]);
+    } catch (_e2) {}
+  }
+  return list;
+}
+
 // Sanitize a string for use as a Google Sheets tab name. Sheets blocks
 // these chars: : \ / ? * [ ] and tab names cap at 100 chars.
 function _sanitizeTabName_(s) {
@@ -14709,17 +14775,40 @@ function _writeBusinessNExpense_(fromPhone, n, nameOpt, rest, messageId, bypassG
   }
 
   // Accept "<amount> <description>" or "+<amount> <description>" (income).
-  var m = String(rest || '').trim().match(/^([+-]?\d+(?:\.\d+)?)\s+(.+)$/);
-  if (!m) {
-    return { handled: true, replyText:
-      '😬 פורמט: "עסק ' + n + (effectiveName ? ' ' + effectiveName : '') + ' <סכום> <תיאור>"\n' +
-      'לדוגמה: "עסק ' + n + ' 320 שיווק פייסבוק"\n' +
-      'או הכנסה: "עסק ' + n + ' +1500 מכירת תמונה"' };
+  // Strip an optional lead-in word (expense/income) so a body that starts with a
+  // word still parses, then run the SAME foreign-currency engine the personal
+  // path uses so a foreign amount ("5 dollars", "$5", "5 usd", and CAD/AUD)
+  // converts to ILS -- a business row MUST convert exactly like a personal one.
+  var bodyRaw = String(rest || '').replace(/^\s*(?:הוצאה|הוצאת|הכנסה|הכנסת)\s+/, '').trim();
+  var amount, description, isIncome;
+  var fxConvBiz = null, fxNoteBiz = '';
+  if (typeof parseForeignCurrencyHint === 'function') {
+    try {
+      var fxBiz = parseForeignCurrencyHint(bodyRaw);
+      if (fxBiz && fxBiz.autoConverted && fxBiz.ilsAmount > 0) {
+        fxConvBiz = fxBiz.ilsAmount;
+        fxNoteBiz = fxBiz.note || '';
+        description = String(fxBiz.cleanedText || '').replace(/\s+/g, ' ').trim();
+      }
+    } catch (_fxErr) { Logger.log('biz fx err: ' + (_fxErr && _fxErr.message)); }
   }
-  var raw = m[1];
-  var amount = Math.abs(parseFloat(raw));
-  var description = String(m[2] || '').trim();
-  var isIncome = raw.charAt(0) === '+';
+  if (fxConvBiz != null) {
+    amount = fxConvBiz;
+    isIncome = /^\s*\+/.test(bodyRaw);
+    if (!description) description = bodyRaw.replace(/[+\-]?\d+(?:[.,]\d+)?/, '').replace(/\s+/g, ' ').trim() || 'הוצאה';
+  } else {
+    var m = bodyRaw.match(/^([+-]?\d+(?:\.\d+)?)\s+(.+)$/);
+    if (!m) {
+      return { handled: true, replyText:
+        '😬 פורמט: "עסק ' + n + (effectiveName ? ' ' + effectiveName : '') + ' <סכום> <תיאור>"\n' +
+        'לדוגמה: "עסק ' + n + ' 320 שיווק פייסבוק"\n' +
+        'או הכנסה: "עסק ' + n + ' +1500 מכירת תמונה"' };
+    }
+    var raw = m[1];
+    amount = Math.abs(parseFloat(raw));
+    description = String(m[2] || '').trim();
+    isIncome = raw.charAt(0) === '+';
+  }
   if (!amount || isNaN(amount)) return { handled: true, replyText: '😬 סכום לא חוקי.' };
 
   // Dedupe: skip if we already wrote a row for this messageId in the last 30 days.
