@@ -114,6 +114,21 @@ const TRANSACTIONS_SHEET = 'תנועות';
 const DASHBOARD_SHEET = 'מאזן שנתי';
 
 const VERIFY_TOKEN = 'expense_bot_verify_2026';
+// Admin-action secret: the destructive ?action= maintenance endpoints prefer a
+// PRIVATE Script Property ADMIN_ACTION_SECRET. Set + rotate it to lock them down
+// (the public VERIFY_TOKEN below stops triggering them). Falls back to
+// VERIFY_TOKEN so behavior is UNCHANGED until you set the property. The Meta
+// webhook 'hub.verify_token' check keeps using VERIFY_TOKEN (Meta config needs it).
+function _kfl_adminSecret_() {
+  try { var v = PropertiesService.getScriptProperties().getProperty('ADMIN_ACTION_SECRET'); if (v && String(v).trim()) return String(v).trim(); } catch (_e) {}
+  return VERIFY_TOKEN;
+}
+function _kfl_ctEq_(a, b) {
+  a = String(a == null ? '' : a); b = String(b == null ? '' : b);
+  if (a.length !== b.length) return false;
+  var r = 0; for (var i = 0; i < a.length; i++) r |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+  return r === 0;
+}
 const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHATSAPP_TOKEN') || '';
 // Live bot number: +1 555 640 8123 (Meta TEST number) → Phone Number ID
 // 1086749664527399. Site links + outbound sends all use this number now.
@@ -134,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-kw-index';
+const KFL_BUILD_VERSION = '2026-06-07-admin-secret';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -918,7 +933,7 @@ function doGet(e) {
   e = e || { parameter: {} };
   const action = e.parameter.action;
 
-  if (action === 'migrate' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'migrate' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       migrateDashboardToSUMIFS();
       return ContentService.createTextOutput('Migration completed successfully');
@@ -927,7 +942,7 @@ function doGet(e) {
     }
   }
 
-  if (action === 'buildbot' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'buildbot' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       cleanupAndBuildBotDashboard();
       return ContentService.createTextOutput('Bot dashboard built successfully');
@@ -936,7 +951,7 @@ function doGet(e) {
     }
   }
 
-  if (action === 'fullrebuild' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'fullrebuild' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       fullRebuildAllYears();
       return ContentService.createTextOutput('Full rebuild completed - all 4 years imported');
@@ -948,7 +963,7 @@ function doGet(e) {
   // Sort the תנועות sheet ascending (oldest top, newest bottom) — one-shot
   // remediation for sheets whose existing data is in wrong order. Safe to call
   // multiple times: the bot's auto-sort-after-append will keep it correct.
-  if (action === 'sortchrono' && e.parameter.secret === VERIFY_TOKEN) {
+  if (action === 'sortchrono' && _kfl_ctEq_(e.parameter.secret, _kfl_adminSecret_())) {
     try {
       sortTransactionsChronological();
       var ss = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
