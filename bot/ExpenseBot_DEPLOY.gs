@@ -9835,7 +9835,7 @@ function parseForeignCurrencyHint(text) {
   if (!text) return null;
   var s = String(text);
   // Broader currency detection — symbols, ISO codes, Hebrew names.
-  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק)/i;
+  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק|\bdollars?\b|\beuros?\b|\bpounds?\b|\byen\b|\bfrancs?\b)/i;
   if (!foreignRe.test(s)) return null;
 
   // Path A — user gave both amounts (e.g. "50$ amazon 180 שח")
@@ -9988,7 +9988,9 @@ function _kfl_nonAdjacentCurrency_(text) {
     { re: '\\bchf\\b', symbol: 'CHF', wordRe: '\\bchf\\b' },
     { re: '\\bdollars?\\b', symbol: 'USD', wordRe: '\\bdollars?\\b' },
     { re: '\\beuros?\\b', symbol: 'EUR', wordRe: '\\beuros?\\b' },
-    { re: '\\bpounds?\\b', symbol: 'GBP', wordRe: '\\bpounds?\\b' }
+    { re: '\\bpounds?\\b', symbol: 'GBP', wordRe: '\\bpounds?\\b' },
+    { re: '\\byen\\b', symbol: 'JPY', wordRe: '\\byen\\b' },
+    { re: '\\bfrancs?\\b', symbol: 'CHF', wordRe: '\\bfrancs?\\b' }
   ];
   // Car-rental guard: if a rental word sits right next to the currency token,
   // it is almost certainly "Dollar Rent A Car" (car rental), not a USD amount.
@@ -10467,6 +10469,35 @@ function _matchCategory_orig(description) {
 // Smart entry-point: tries (1) learned cache from user corrections,
 // (2) keyword maps, (3) LLM fallback via Claude API for the long tail.
 // Falls back to DEFAULT_CATEGORY only if everything fails.
+
+// Big keyword fallback index. Data (KFL_KW_BUCKETS + KFL_KW_INDEX) lives in the
+// separate ExpenseBot_KEYWORDS.gs data file (auto-generated from bot/keywords/packs
+// by bot/keywords/build_index.js). Whole-word ngram lookup (1-4 words, longest
+// char match wins) so it is immune to the substring false-positives the primary
+// map guards against. Returns {category, subcategory, isIncome} or null. NO-OPS
+// (returns null) when the data file is not deployed, so the bot works without it.
+function _kfl_bigIndexLookup(text) {
+  if (typeof KFL_KW_INDEX === 'undefined' || typeof KFL_KW_BUCKETS === 'undefined' || !text) return null;
+  var words = String(text).toLowerCase().split(/[^0-9a-z֐-׿]+/);
+  var toks = [];
+  for (var i = 0; i < words.length; i++) { if (words[i]) toks.push(words[i]); }
+  if (!toks.length) return null;
+  var best = null, bestLen = -1;
+  var maxN = toks.length < 4 ? toks.length : 4;
+  for (var n = maxN; n >= 1; n--) {
+    for (var s = 0; s + n <= toks.length; s++) {
+      var phrase = toks.slice(s, s + n).join(' ');
+      if (Object.prototype.hasOwnProperty.call(KFL_KW_INDEX, phrase) && phrase.length > bestLen) {
+        best = KFL_KW_INDEX[phrase]; bestLen = phrase.length;
+      }
+    }
+  }
+  if (best == null) return null;
+  var b = KFL_KW_BUCKETS[best];
+  if (!b) return null;
+  return { category: b[0], subcategory: b[1], isIncome: !!b[2] };
+}
+
 function matchCategorySmart(text, fromPhone) {
   // Step 1: learned cache (user-corrected categorizations)
   var cached = _learnedLookup(text);
@@ -10511,6 +10542,18 @@ function matchCategorySmart(text, fromPhone) {
       return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category, fromGlobal: true };
     }
   } catch (_glLookErr) { Logger.log('matchCategorySmart global err: ' + _glLookErr.message); }
+
+  // Step 2.8: big keyword fallback index (ExpenseBot_KEYWORDS.gs). Local + cheap,
+  // so it runs after the dictionary/global-learn miss but BEFORE the paid LLM hop.
+  // Whole-word ngram match (immune to substring false-hits). No-ops when the data
+  // file isn't deployed.
+  try {
+    var bigHit = _kfl_bigIndexLookup(text);
+    if (bigHit && bigHit.category) {
+      Logger.log('matchCategorySmart: big-index hit "' + text + '" -> ' + bigHit.subcategory);
+      return { category: bigHit.category, subcategory: bigHit.subcategory || bigHit.category, isIncome: bigHit.isIncome, fromBigIndex: true };
+    }
+  } catch (_bigErr) { Logger.log('matchCategorySmart big-index err: ' + (_bigErr && _bigErr.message)); }
 
   // Step 3: LLM fallback for ambiguous / new vendor names (Pro+ only).
   //
