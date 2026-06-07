@@ -1,20 +1,26 @@
 #!/usr/bin/env node
-// Pins the CURRENT contract that the bot writes every expense as currency 'ILS'
-// regardless of input symbol (₪, $, €, £, dollars, euro, etc.).
+// Pins the REAL current currency contract of the bot (rewritten 2026-06-07).
 //
-// Why this exists:
-//   - bot/ExpenseBot_FIXED.gs hardcodes `currency: 'ILS'` at multiple write
-//     sites (around lines 6281, 6371, 6551 at time of writing).
-//   - There is currently NO FX conversion. Users who send "100$ Amazon" get
-//     a row written as 100 ILS with note 'Amazon'.
-//   - When/if FX is added (Gap 6 in QA_RUN_REPORT_AUTONOMOUS_BLOCK.md), this
-//     test SHOULD start failing — at which point the author updates it
-//     intentionally to reflect the new multi-currency contract.
+// HISTORY: this test used to assert "there is NO FX conversion; every row is
+// written as ILS with the raw number". That contract is OBSOLETE. The bot now
+// auto-converts foreign currency to ILS at fixed rates via
+// parseForeignCurrencyHint (Paths A/B/C) before writing the row. The old test
+// still "passed" only because it scanned for FX functions by the wrong names
+// (getExchangeRate/fxConvert), so it silently lied. This rewrite asserts what is
+// actually true today.
 //
-// This test is a CONTRACT PIN, not an aspiration. If it fails it means
-// someone added multi-currency handling without updating the spec.
+// THE REAL CONTRACT
+//   1. The sheet column is always ILS — the row's `currency` field is 'ILS'
+//      (we store the CONVERTED shekel amount, never a foreign code).
+//   2. An FX engine exists: parseForeignCurrencyHint + _kfl_fxRate + _kfl_fxLookup.
+//   3. A static rate table defines USD/EUR/GBP/CAD/AUD/JPY/CHF.
+//   4. Hebrew multi-word names ("דולר קנדי"=CAD, "דולר אוסטרלי"=AUD) are matched
+//      BEFORE the generic "דולר" (=USD), so a Canadian/Australian dollar never
+//      converts at the US rate. (This is the money bug fixed 2026-06-07.)
+//   5. The note field still has its currency-symbol strip step.
 //
-// Pattern: load real source via fs, scan for the contract markers.
+// This is a CONTRACT PIN: if the FX design changes, update these assertions
+// deliberately. Behavioral rate values live in tests/test_fx_cad_aud_rate.js.
 
 const fs = require('fs');
 const path = require('path');
@@ -32,51 +38,47 @@ console.log('\ntests/test_currency_hardcoded_ils_contract.js\n');
 
 const src = fs.readFileSync(BOT_PATH, 'utf8');
 
-// 1. The literal string `currency: 'ILS'` appears multiple times — confirms
-//    the bot writes ILS on every expense row.
-const ilsLiteralRe = /currency\s*:\s*['"]ILS['"]/g;
-const ilsLiteralMatches = src.match(ilsLiteralRe) || [];
+// 1. Rows are still written with currency:'ILS' (we store converted shekels).
+const ilsLiteralMatches = src.match(/currency\s*:\s*['"]ILS['"]/g) || [];
 assert(ilsLiteralMatches.length >= 3,
-  "bot hardcodes currency:'ILS' at >= 3 write sites (found " +
-  ilsLiteralMatches.length + ')');
+  "bot writes currency:'ILS' on every row (converted shekels) — found " + ilsLiteralMatches.length);
 
-// 2. No OTHER hardcoded currency literal appears as a write value (would
-//    indicate partial / accidental FX support).
-// Allow currency strings inside comments, but not as a key:value write.
-const otherCurrencyWriteRe = /currency\s*:\s*['"](?:USD|EUR|GBP|JPY|CHF|CAD|AUD)['"]/g;
-const otherCurrencyMatches = src.match(otherCurrencyWriteRe) || [];
-assert(otherCurrencyMatches.length === 0,
-  'no non-ILS currency literal appears as a write value (found ' +
-  otherCurrencyMatches.length + ')');
+// 2. The FX engine exists (the old test wrongly assumed it did not).
+assert(/function\s+parseForeignCurrencyHint\s*\(/.test(src), 'parseForeignCurrencyHint() is defined (FX engine present)');
+assert(/function\s+_kfl_fxRate\s*\(/.test(src), '_kfl_fxRate() is defined');
+assert(/function\s+_kfl_fxLookup\s*\(/.test(src), '_kfl_fxLookup() is defined');
 
-// 3. There is no `getExchangeRate` / `fxConvert` / `convertCurrency` call
-//    in the bot source — that would indicate live FX is wired up.
-const fxCallRe = /(getExchangeRate|fxConvert|convertCurrency|exchangeRate\()/;
-assert(!fxCallRe.test(src),
-  'no FX conversion call in bot source (currently single-currency-only)');
+// 3. A static rate table covers all 7 supported currencies.
+['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF'].forEach(function (code) {
+  assert(new RegExp('\\b' + code + '\\b').test(src), 'static FX table references ' + code);
+});
 
-// 4. The numeric parser strips currency-symbol noise consistently. We don't
-//    test it parses the AMOUNT correctly here — that's bot/test_parser.js —
-//    but we DO confirm the parser file does mention $ / dollar / euro / etc.
-//    so that when FX is added, the test author knows where the parsing lives.
-const parserMentionsCurrencySymbols =
-  /\$|דולר|euro|יורו|פאונד|GBP|£|€/.test(src);
-assert(parserMentionsCurrencySymbols,
-  'parser code references currency symbols ($/€/£/דולר/יורו) somewhere — when FX lands, update those sites');
+// 4. THE FIX: in _kfl_fxLookup, the Hebrew CAD/AUD branches must come BEFORE the
+//    generic USD branch, or "דולר קנדי" falls through to USD (wrong rate).
+const lookupBody = src.slice(src.indexOf('function _kfl_fxLookup'), src.indexOf('function _kfl_fxLookup') + 1200);
+// The Hebrew CAD/AUD return statements must precede the Hebrew GENERIC-"דולר"
+// USD return (the LAST _kfl_fxRate('USD') in the function), or "דולר קנדי" falls
+// through to USD. (The first _kfl_fxRate('USD') is the '$' symbol branch — not
+// relevant to ordering, so we anchor on lastIndexOf for the Hebrew branch.)
+const idxCadReturn = lookupBody.indexOf("_kfl_fxRate('CAD')");
+const idxAudReturn = lookupBody.indexOf("_kfl_fxRate('AUD')");
+const idxHebUsdReturn = lookupBody.lastIndexOf("_kfl_fxRate('USD')");
+assert(idxCadReturn > -1 && idxHebUsdReturn > -1 && idxCadReturn < idxHebUsdReturn,
+  '_kfl_fxLookup resolves CAD (דולר קנדי) before the generic USD branch');
+assert(idxAudReturn > -1 && idxHebUsdReturn > -1 && idxAudReturn < idxHebUsdReturn,
+  '_kfl_fxLookup resolves AUD (דולר אוסטרלי) before the generic USD branch');
 
-// 5. The note field on a write is NOT silently corrupted by currency symbols.
-//    We verify there's a strip step (₪ / שח / שקל) that drops them from the
-//    note before write. This already passes in bot/test_parser.js but we
-//    re-anchor it here as a currency-contract concern.
-const noteStripRe = /(replace\([^)]*₪|replace\([^)]*שח|replace\([^)]*שקל)/;
-assert(noteStripRe.test(src),
+// 4b. The multi-word CAD/AUD tokens are woven through every FX path (lookup,
+//     Path B amount-adjacent, Path C non-adjacent, cleanup, note), so every
+//     word order is covered. Count occurrences as a cheap structural proxy.
+assert((src.match(/קנדי/g) || []).length >= 4, '"קנדי" (Canadian) appears across multiple FX paths');
+assert((src.match(/אוסטרלי/g) || []).length >= 4, '"אוסטרלי" (Australian) appears across multiple FX paths');
+
+// 5. The note still strips currency symbols (₪ / שח / שקל) before writing.
+assert(/(replace\([^)]*₪|replace\([^)]*שח|replace\([^)]*שקל)/.test(src),
   'bot strips currency symbols from the note field before writing the row');
 
 console.log('');
-console.log('When multi-currency FX support is added (per Gap 6), this test');
-console.log('is EXPECTED to fail and force a deliberate contract update.');
-console.log('');
-
 if (failures.length) {
   console.error('FAIL: ' + failures.length + ' assertion(s) failed');
   process.exit(1);
