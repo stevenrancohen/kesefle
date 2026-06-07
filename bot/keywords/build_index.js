@@ -76,9 +76,13 @@ function main() {
   let okPacks = 0;
 
   for (const f of files) {
-    let pack;
-    try { pack = JSON.parse(fs.readFileSync(path.join(PACKS_DIR, f), 'utf8')); }
+    let parsed;
+    try { parsed = JSON.parse(fs.readFileSync(path.join(PACKS_DIR, f), 'utf8')); }
     catch (e) { console.error('SKIP malformed pack ' + f + ': ' + e.message); continue; }
+    // A pack file is one bucket object OR an array of bucket objects, so one
+    // file (e.g. english_generic) can define several category buckets.
+    const entries = Array.isArray(parsed) ? parsed : [parsed];
+    for (const pack of entries) {
     const cat = pack.category, sub = pack.subcategory;
     if (!cat || !sub || !Array.isArray(pack.keywords)) { console.error('SKIP invalid shape ' + f); continue; }
     okPacks++;
@@ -93,6 +97,7 @@ function main() {
       if (inc === 1 && INCOME_STOP.has(k)) { incomeStopped++; continue; }
       if (bucketSet[bidx].has(k)) { dupSameBucket++; continue; }
       bucketSet[bidx].add(k); bucketKws[bidx].push(k);
+    }
     }
   }
 
