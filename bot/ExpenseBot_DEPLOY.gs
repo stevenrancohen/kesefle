@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-named-biz';
+const KFL_BUILD_VERSION = '2026-06-07-feedback';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -6978,7 +6978,24 @@ function _kvLookupPhone_(phoneClean) {
 function _mtdTail_(fromPhone, category) {
   try {
     var line = _tenantCategoryMtdLine_(fromPhone, category);
-    return line ? (line + '\n') : '';
+    var base = line ? (line + '\n') : '';
+    return base + _feedbackNudge_(fromPhone);
+  } catch (_e) { return ''; }
+}
+
+// Gently remind the user that they can type "bikoret" to report anything wrong.
+// Cache-gated (ScriptCache TTL caps at 6h) so confirmations stay short and it
+// is not repeated on every message. Returns '' when recently shown. Steven
+// 2026-06-07 ("inform the customer at every stage"). Also in the help command.
+function _feedbackNudge_(fromPhone) {
+  try {
+    var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+    if (!clean) return '';
+    var cache = CacheService.getScriptCache();
+    var ck = 'fbNudge:' + clean;
+    if (cache.get(ck)) return '';
+    cache.put(ck, '1', 21600); // 6h, the ScriptCache maximum
+    return '💬 משהו לא מדויק? כתוב "ביקורת" ונתקן.\n';
   } catch (_e) { return ''; }
 }
 
@@ -8511,6 +8528,40 @@ function processExpense(text, fromPhone) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
   }
+
+  // ----- FEEDBACK ("bikoret") CAPTURE (Steven 2026-06-07) -----
+  // A customer (or Steven) types the single word "bikoret" (Hebrew) to report
+  // what is not working. Two-step: (1) the standalone trigger word arms a
+  // 10-min cache flag and asks for the problem; (2) the NEXT message is the
+  // feedback -- forwarded to the owner on WhatsApp and best-effort persisted to
+  // the admin inbox via /api/feedback. Runs BEFORE every router so the captured
+  // text is never booked as an expense. Cache + alert only; no sheet write, so
+  // the never-corrupt floor is respected.
+  try {
+    var __fbClean = String(fromPhone || '').replace(/[^0-9]/g, '');
+    var __fbCache = CacheService.getScriptCache();
+    var __fbT = String(text || '').replace(/[\u00a0\u202f\u200b]/g, ' ').trim();
+    var __fbTrigger = /^(ביקורת|בקורת|פידבק|פדבק|feedback)[!.?\s]*$/i;
+    var __fbCancel = /^(ביטול|בטל|cancel)[!.?\s]*$/i;
+    if (__fbClean) {
+      if (__fbCache.get('awaitingFeedback:' + __fbClean)) {
+        if (__fbCancel.test(__fbT)) {
+          __fbCache.remove('awaitingFeedback:' + __fbClean);
+          return { reply: 'בוטל 👍 תמיד אפשר לכתוב "ביקורת" כשמשהו לא עובד.' };
+        }
+        if (!__fbTrigger.test(__fbT)) {
+          __fbCache.remove('awaitingFeedback:' + __fbClean);
+          if (typeof _captureFeedback_ === 'function') _captureFeedback_(fromPhone, text);
+          return { reply: 'תודה רבה! 🙏 העברתי את ההערה לצוות — בדיוק מה שעוזר לנו להשתפר.\nאפשר להמשיך לרשום הוצאות כרגיל.' };
+        }
+        // re-typed the trigger word while armed -> fall through and re-prompt.
+      }
+      if (__fbTrigger.test(__fbT)) {
+        __fbCache.put('awaitingFeedback:' + __fbClean, '1', 600);
+        return { reply: '🙏 מה לא עובד טוב? כתוב לי בהודעה אחת כל מה שמפריע — קטגוריה שגויה, הודעה לא ברורה, תכונה חסרה, כל דבר.\nאני מעביר את זה ישירות לצוות.\nלביטול כתוב "ביטול".' };
+      }
+    }
+  } catch (__fbErr) { Logger.log('feedback capture err: ' + (__fbErr && __fbErr.message)); }
 
   // ───── GROUP COMMAND ROUTER ─────
   // Any message starting with "כספלה" enters Splitwise-style group mode.
@@ -13435,6 +13486,7 @@ function getHelpMessage() {
     '  • "מילון" — קישור ללשונית הלמידה\n' +
     '  • "מנוע" — מצב המנוע (AI/cache/keywords)\n' +
     '  • "אזור זמן" — הצג/שנה אזור זמן\n' +
+    '  • "ביקורת" — ספר לנו מה לא עובד, ונשפר 🙏\n' +
     '  • "עזרה" — הודעה זו\n\n' +
     '🧠 *המנוע:*\n' +
     'המנוע מקטלג ב-3 שכבות — cache, אלפי מילות מפתח, ו-Claude AI לגיבוי.\n' +
@@ -18572,6 +18624,35 @@ function _adminAlertOnce_(message, fromPhone) {
   } catch (e) {
     Logger.log('_adminAlertOnce_ err: ' + e.message);
   }
+}
+
+// Capture a customer "bikoret" (feedback) message: forward it to the owner on
+// WhatsApp (the guaranteed path) and best-effort persist it to the admin inbox
+// via /api/feedback so it survives for the team and Claude to review and act
+// on. Never throws to the caller. Steven 2026-06-07.
+function _captureFeedback_(fromPhone, message) {
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  var msg = String(message == null ? '' : message).slice(0, 1000);
+  try {
+    var who = clean ? ('+' + clean) : 'לקוח';
+    if (typeof _adminAlertOnce_ === 'function') {
+      _adminAlertOnce_('📣 ביקורת מלקוח (' + who + '):\n"' + msg + '"\n\nאפשר לענות לו ישירות בוואטסאפ.', 'feedback:' + clean);
+    }
+  } catch (_e1) { Logger.log('feedback alert err: ' + (_e1 && _e1.message)); }
+  try {
+    var apiBase = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') ||
+      (typeof KESEFLE_API_BASE !== 'undefined' ? KESEFLE_API_BASE : 'https://kesefle.com');
+    var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET');
+    if (botSecret) {
+      UrlFetchApp.fetch(apiBase + '/api/feedback', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'x-kesefle-bot-secret': botSecret },
+        payload: JSON.stringify({ phone: clean, message: msg, source: 'whatsapp' }),
+        muteHttpExceptions: true,
+      });
+    }
+  } catch (_e2) { Logger.log('feedback persist err: ' + (_e2 && _e2.message)); }
 }
 
 // Bot-side helper: GET announcements via /api/announcements with bot-secret.
