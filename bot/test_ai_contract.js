@@ -337,8 +337,8 @@ console.log('\n=== (4) SOURCE: env-only keys, single LLM path, version bump ===\
   ['OPENAI_API_KEY','GEMINI_API_KEY','XAI_API_KEY','ANTHROPIC_API_KEY','OPENROUTER_API_KEY'].forEach(function (k) {
     check('priority table references ' + k, sandbox.PRIORITY.some(function (e) { return e.key === k; }));
   });
-  check('priority order is OPENAI,GEMINI,XAI,ANTHROPIC,OPENROUTER',
-    sandbox.PRIORITY.map(function (e) { return e.provider; }).join(',') === 'openai,gemini,xai,anthropic,openrouter');
+  check('priority order STARTS WITH the original 5 (openai,gemini,xai,anthropic,openrouter)',
+    sandbox.PRIORITY.map(function (e) { return e.provider; }).join(',').indexOf('openai,gemini,xai,anthropic,openrouter') === 0);
 
   // _aiCategorizeRich now resolves a provider rather than reading ANTHROPIC
   // directly, and routes through the single _aiChatComplete_ dispatcher (the
@@ -349,8 +349,15 @@ console.log('\n=== (4) SOURCE: env-only keys, single LLM path, version bump ===\
     /_aiProviderResolve_\(\)/.test(richBody));
   check('_aiCategorizeRich does NOT read ANTHROPIC_API_KEY directly anymore',
     !/getProperty\('ANTHROPIC_API_KEY'\)/.test(richBody));
-  check('_aiCategorizeRich routes through the single _aiChatComplete_ dispatcher',
-    /_aiChatComplete_\(ai\.provider, ai\.key, systemPrompt, userMsg\)/.test(richBody));
+  check('_aiCategorizeRich routes through the resilient dispatcher wrapper',
+    /_aiChatCompleteResilient_\(systemPrompt, userMsg\)/.test(richBody));
+  // The resilient wrapper adds opt-in cross-provider failover but is the ONLY
+  // new indirection: it still funnels every provider through the single
+  // _aiChatComplete_ dispatcher and makes no inline provider fetch of its own.
+  const resFn = SRC.slice(SRC.indexOf('function _aiChatCompleteResilient_('));
+  const resBody = resFn.slice(0, resFn.indexOf('\n}\n'));
+  check('_aiChatCompleteResilient_ funnels through _aiChatComplete_ (no inline fetch)',
+    /_aiChatComplete_\(/.test(resBody) && !/api\.anthropic\.com|generativelanguage|chat\/completions/.test(resBody));
   // The classify path must NOT make its own inline anthropic fetch — it routes
   // through the dispatcher (the EXISTING LLM path was refactored, not
   // duplicated). The other anthropic calls in the file (receipt-OCR vision,
