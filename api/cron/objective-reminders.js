@@ -161,10 +161,17 @@ async function sendDM(toPhone, text) {
 }
 
 async function handlerImpl(req, res) {
-  // Vercel cron protection
-  if (CRON_SECRET) {
+  // Vercel cron protection. Fail CLOSED when CRON_SECRET is unset (an
+  // unprotected cron endpoint is a public DM-trigger), and use a constant-time
+  // compare when it is set — mirrors api/cron/reminders.js.
+  if (!CRON_SECRET) {
+    log.error('cron.objective_reminders.cron_secret_unset', { reqId: req.reqId });
+    return res.status(503).json({ ok: false, error: 'cron_secret_not_configured' });
+  }
+  {
     const hdr = req.headers.authorization || '';
-    if (hdr !== `Bearer ${CRON_SECRET}`) {
+    const { constantTimeEqual } = await import('../../lib/crypto.js');
+    if (!hdr || !constantTimeEqual(`Bearer ${CRON_SECRET}`, String(hdr))) {
       log.warn('cron.objective_reminders.unauthorized', { reqId: req.reqId });
       return res.status(401).json({ ok: false, error: 'unauthorized' });
     }

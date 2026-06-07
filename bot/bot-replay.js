@@ -117,8 +117,16 @@ const code = [
   extractFn('_kfl_currencyDisplay_') || '',
   extractFn('_kfl_nonAdjacentCurrency_') || '',
   extractFn('parseForeignCurrencyHint') || '',
+  // Amount parser chain (2026-06-07). Load the REAL parseAmountAndDescription +
+  // its _parseIsraeliNumber_ helper from source so the replay's amount preview
+  // matches EXACTLY what the bot writes (multi-amount "50+30 קפה", Israeli
+  // 1,200 grouping, phone-number guard, ₪/שח stripping) instead of an inline
+  // regex approximation. Both are pure string functions with no Apps Script
+  // global dependency, so they run cleanly in this offline sandbox.
+  extractFn('_parseIsraeliNumber_') || '',
+  extractFn('parseAmountAndDescription') || '',
   // Export the things we want to use
-  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, parseForeignCurrencyHint, CATEGORY_MAP };',
+  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, parseForeignCurrencyHint, parseAmountAndDescription, CATEGORY_MAP };',
 ].join('\n\n');
 
 vm.createContext(sandbox);
@@ -177,14 +185,42 @@ function replay(input) {
     }
   }
 
-  // 1) Amount parse
-  const amountMatch = text.match(/^([+-]?\d+(?:[.,]\d+)?)\s+(.+)$/) ||
-                      text.match(/(\d+(?:[.,]\d+)?)\s*([֐-׿]+)/);
-  out.decisions.amountMatch = amountMatch ? {
-    amount: parseFloat((amountMatch[1] || '').replace(',', '')),
-    rest: amountMatch[2] || '',
-    leadChar: amountMatch[1] ? amountMatch[1].charAt(0) : null,
-  } : null;
+  // 1) Amount parse — use the REAL parseAmountAndDescription so the preview
+  // matches what the bot actually writes (multi-amount, Israeli 1,200 grouping,
+  // phone-number guard, ₪/שח stripping). Mirror processExpense's FX path: when
+  // FX auto-converted, the bot parses `fx.ilsAmount + ' ' + fx.cleanedText`,
+  // otherwise the raw text. items[] carries one {amount, description} per
+  // detected amount; amountMatch reports the first plus the full list.
+  if (typeof bot.parseAmountAndDescription === 'function') {
+    try {
+      const fxDec = out.decisions.fx;
+      const amountText = (fxDec && fxDec.autoConverted && fxDec.cleanedText)
+        ? (fxDec.ilsAmount + ' ' + fxDec.cleanedText)
+        : text;
+      const parsed = bot.parseAmountAndDescription(amountText);
+      const items = (parsed && Array.isArray(parsed.items)) ? parsed.items : [];
+      out.decisions.amountMatch = items.length ? {
+        source: 'parseAmountAndDescription (real bot parser)',
+        amount: items[0].amount,
+        rest: items[0].description || '',
+        items: items.map(function (it) { return { amount: it.amount, description: it.description }; }),
+      } : null;
+    } catch (e) {
+      out.decisions.amountMatch = { error: e.message, source: 'parseAmountAndDescription (real bot parser)' };
+    }
+  } else {
+    // Fallback only if the parser could not be extracted from source. This
+    // inline regex is an APPROXIMATION (single amount, no multi-amount /
+    // grouping / phone-guard) — use the bot for exact amounts.
+    const amountMatch = text.match(/^([+-]?\d+(?:[.,]\d+)?)\s+(.+)$/) ||
+                        text.match(/(\d+(?:[.,]\d+)?)\s*([֐-׿]+)/);
+    out.decisions.amountMatch = amountMatch ? {
+      source: 'inline regex (APPROXIMATE — parser not loaded; use the bot for exact amounts)',
+      amount: parseFloat((amountMatch[1] || '').replace(',', '')),
+      rest: amountMatch[2] || '',
+      leadChar: amountMatch[1] ? amountMatch[1].charAt(0) : null,
+    } : null;
+  }
 
   // 2) Business order parse
   if (typeof bot.parseBusinessOrder_ === 'function') {

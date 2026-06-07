@@ -336,6 +336,22 @@ const GOLDEN = [
   // not a personal electronics buy.
   ['מצלמה מקצועית לעסק 4000', 'עסק'],
 
+  // ── 2026-06-07 ENGLISH / TRANSLITERATED coverage (ADDITIVE). Many users type
+  // global brand names in Latin script. These anchors lock the classifier's
+  // CURRENT correct behavior so a future vocabulary edit can't silently regress
+  // a recognised English brand back to שונות. Each was verified against the
+  // REAL classifier (bot/bot-replay.js) before being added — none is rigged.
+  ['uber 35', 'תחבורה'],            // ride-hailing → transport (matches "מונית" sub)
+  ['netflix 55', 'הוצאות קבועות'],  // streaming subscription → recurring fixed cost
+  ['amazon 120', 'קניות'],          // online retail → shopping
+  // ── DEFAULT-labeled English GAPS. These common English words have NO keyword
+  // today, so the classifier correctly falls back to the catch-all (= the bot
+  // ASKS rather than mis-files). Labeled DEFAULT to (a) document the gap and
+  // (b) trip the build if a future over-broad keyword ever mis-files them
+  // instead of asking. Adding real keywords later = flip the label, not silent.
+  ['salary 12000', 'DEFAULT'],      // English "salary" not yet a keyword (Hebrew משכורת is)
+  ['rent 4500', 'DEFAULT'],         // English "rent" not yet a keyword (Hebrew שכירות is)
+  ['groceries 250', 'DEFAULT'],     // English "groceries" not yet a keyword (Hebrew סופר is)
   // ── 2026-06-03 NATIONAL-INSURANCE ALLOWANCE sign-flip hunt — regression
   // guards (ADDITIVE). A fresh Hebrew corpus was replayed through the REAL
   // classifier hunting income/expense sign-flips the prior cycle missed; see
