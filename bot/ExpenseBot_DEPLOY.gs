@@ -2310,6 +2310,31 @@ function _doPostRouter_(e) {
           }
         }
 
+        // Unsure-picker numbered reply (Steven 2026-06-07, "50 options"): when the
+        // bot asked via the category list (pending:<phone> is set) and the user
+        // replies with a SMALL number = the option index from the full text list,
+        // map it to that {category, subcategory} and route through the SAME write
+        // as a tap. A 3+ digit number is left alone (treated as a new expense).
+        try {
+          var __ambRaw = PropertiesService.getScriptProperties().getProperty('pending:' + __from_);
+          var __ambNum = String(__text_ || '').trim().match(/^(\d{1,2})$/);
+          if (__ambRaw && __ambNum && typeof _KFL_FULL_PICK_OPTIONS_ === 'function') {
+            var __opts = _KFL_FULL_PICK_OPTIONS_();
+            var __oi = parseInt(__ambNum[1], 10) - 1;
+            if (__oi >= 0 && __oi < __opts.length) {
+              var __amb = null; try { __amb = JSON.parse(__ambRaw); } catch (_ae) {}
+              var __ambAmt = (__amb && __amb.amount) || 0;
+              var __synthId = _encodeCategoryOptionId(__opts[__oi].c, __opts[__oi].s, __ambAmt, (__amb && __amb.description) || '');
+              var __ambReply = handleInteractiveReply_(__from_, { type: 'list_reply', list_reply: { id: __synthId } });
+              if (__ambReply && __ambReply.replyText && typeof sendWhatsAppMessage === 'function') {
+                sendWhatsAppMessage(__from_, __ambReply.replyText);
+              }
+              Logger.log('doPost: unsure-picker numbered reply handled (#' + (__oi + 1) + ')');
+              return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+            }
+          }
+        } catch (_ambErr) { Logger.log('unsure numbered reply: ' + (_ambErr && _ambErr.message)); }
+
         // === PENDING CATEGORY RESPONSE ===
         // Steven 2026-05-25: when the bot asked "which category?" via
         // _askBeforeDefaulting_ and the user replied with text instead of
@@ -9627,6 +9652,9 @@ function processExpense(text, fromPhone) {
               'בחר',
               sections
             );
+            // Full ~46-option list so the user can pick any category by number
+            // (the tappable list above is capped at 10 by WhatsApp).
+            try { sendWhatsAppMessage(fromPhone, _buildAmbiguityTextList_(Math.abs(soleItem.amount))); } catch (_ambTxtErr) {}
             try {
               _logMLAudit_({
                 user_text: soleItem.description,
@@ -10832,6 +10860,40 @@ function _decodeCategoryOptionId(id) {
     amount: parseFloat(parts[3]) || 0,
     textKey: parts.slice(4).join('|')
   };
+}
+
+// Full category list (~46 EXPENSE options) the user can reach by replying with a
+// number after the unsure-picker. Income categories are excluded on purpose: the
+// ambiguity write path is expense-only, so an income pick would be booked as a
+// cost. Every subcategory normalizes to a real dashboard row (or the visible
+// catch-all) on write, so nothing here can make money invisible.
+function _KFL_FULL_PICK_OPTIONS_() {
+  return [
+    { c: 'אוכל', s: 'אוכל לבית' }, { c: 'אוכל', s: 'אוכל בחוץ' }, { c: 'אוכל', s: 'סופר ומכולת' }, { c: 'אוכל', s: 'קפה ומאפה' }, { c: 'אוכל', s: 'משלוחי אוכל' },
+    { c: 'תחבורה', s: 'דלק' }, { c: 'תחבורה', s: 'תחבורה ציבורית' }, { c: 'תחבורה', s: 'מוניות' }, { c: 'תחבורה', s: 'חניה' }, { c: 'תחבורה', s: 'ביטוח רכב' }, { c: 'תחבורה', s: 'תחזוקת רכב' },
+    { c: 'דיור', s: 'שכר דירה' }, { c: 'דיור', s: 'משכנתה' }, { c: 'דיור', s: 'חשמל' }, { c: 'דיור', s: 'מים' }, { c: 'דיור', s: 'גז' }, { c: 'דיור', s: 'ארנונה' }, { c: 'דיור', s: 'ועד בית' },
+    { c: 'בריאות', s: 'תרופות' }, { c: 'בריאות', s: 'רופא' }, { c: 'בריאות', s: 'ביטוח בריאות' }, { c: 'בריאות', s: 'טיפול שיניים' },
+    { c: 'קניות', s: 'ביגוד' }, { c: 'קניות', s: 'נעליים' }, { c: 'קניות', s: 'אלקטרוניקה' }, { c: 'קניות', s: 'מוצרים לבית' },
+    { c: 'חינוך', s: 'בית ספר' }, { c: 'חינוך', s: 'חוגים' }, { c: 'חינוך', s: 'צהרון' }, { c: 'חינוך', s: 'שיעור פרטי' },
+    { c: 'בידור', s: 'מסעדות' }, { c: 'בידור', s: 'סרטים והופעות' }, { c: 'בידור', s: 'חופשות' }, { c: 'בידור', s: 'מתנות' },
+    { c: 'הוצאות קבועות', s: 'מנויים דיגיטליים' }, { c: 'הוצאות קבועות', s: 'תקשורת וסלולר' }, { c: 'הוצאות קבועות', s: 'ביטוחים' }, { c: 'הוצאות קבועות', s: 'מיסים ואגרות' },
+    { c: 'פיננסים', s: 'עמלות בנק' }, { c: 'פיננסים', s: 'ריבית והלוואות' }, { c: 'פיננסים', s: 'חיסכון והשקעות' },
+    { c: 'עסק', s: 'חומרי גלם' }, { c: 'עסק', s: 'שיווק' }, { c: 'עסק', s: 'ציוד ותוכנה' }, { c: 'עסק', s: 'משלוחים עסקיים' },
+    { c: 'שונות', s: 'שונות' }
+  ];
+}
+
+// Numbered "all categories" text block sent after the unsure-picker so the user
+// can reach ALL ~46 options (WhatsApp caps the tappable list at 10 rows).
+function _buildAmbiguityTextList_(amount) {
+  var opts = _KFL_FULL_PICK_OPTIONS_();
+  var lines = ['📋 כל הקטגוריות — השב/י עם מספר (1-' + opts.length + '):'];
+  for (var i = 0; i < opts.length; i++) {
+    lines.push((i + 1) + '. ' + opts[i].c + ' / ' + opts[i].s);
+  }
+  lines.push('');
+  lines.push('או כתוב/י "צור קטגוריה <שם>" כדי להוסיף קטגוריה משלך.');
+  return lines.join('\n');
 }
 
 // Builds the section list for a WhatsApp interactive list — used when bot is unsure.
