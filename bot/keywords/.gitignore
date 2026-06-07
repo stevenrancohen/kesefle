@@ -1,0 +1,4 @@
+# Build artifacts (regenerate with build_index.js). The deployed data lives in
+# ../ExpenseBot_KEYWORDS.gs which IS committed; these are reference/debug only.
+INDEX.json
+COLLISIONS.json

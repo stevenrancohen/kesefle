@@ -352,6 +352,59 @@ const GOLDEN = [
   ['salary 12000', 'DEFAULT'],      // English "salary" not yet a keyword (Hebrew משכורת is)
   ['rent 4500', 'DEFAULT'],         // English "rent" not yet a keyword (Hebrew שכירות is)
   ['groceries 250', 'DEFAULT'],     // English "groceries" not yet a keyword (Hebrew סופר is)
+  // ── 2026-06-03 NATIONAL-INSURANCE ALLOWANCE sign-flip hunt — regression
+  // guards (ADDITIVE). A fresh Hebrew corpus was replayed through the REAL
+  // classifier hunting income/expense sign-flips the prior cycle missed; see
+  // docs/BOT_MISROUTE_FINDINGS_2026-06-03.md. The corpus surfaced a NEW class:
+  // National-Insurance ALLOWANCES / benefits (קצבת ילדים, דמי לידה, פיצויי
+  // פיטורין ...) are MONEY IN but currently book as a ממשלה ומיסים EXPENSE — a
+  // sign-flip on personal income. Those failing inputs are NOT anchored here
+  // (they fail today; the doc carries the exact additive fix + the anchors to
+  // add the moment it lands). The block below pins ONLY currently-correct
+  // adjacent cases so the prescribed fix can be applied WITHOUT collateral
+  // damage and so a future taxonomy edit can't silently flip their polarity.
+  //
+  // (F) GOVERNMENT TAX / FEE / FINE OUTFLOWS stay EXPENSE. These are exactly
+  // what the allowance income-row fix must NOT relax (money you PAY the state,
+  // not money you receive). If a future over-broad income keyword swallowed any
+  // of these into הכנסות, this trips.
+  ['מס שבח 5000', 'הוצאות קבועות'],
+  ['מס רכישה 30000', 'הוצאות קבועות'],
+  ['קנס משטרה 250', 'ממשלה ומיסים'],
+  ['דוח חניה 100', 'תחבורה'],
+  ['אגרת רישוי 430', 'תחבורה'],
+  ['דרכון 600', 'הוצאות קבועות'],
+  //
+  // (G) DEBT REPAYMENTS are money OUT — must stay EXPENSE. This is the prior
+  // cycle's stated reason NOT to add a blanket "החזר" income keyword: a refund
+  // IS income, but "החזר חוב/הלוואה/משכנתא" are outflows. The allowance fix
+  // touches none of these (it lists קצבת/מענק/פיצויי/דמי-לידה phrases, never a
+  // bare החזר), and these guards prove it.
+  ['החזר הלוואה 800', 'בנקאות'],
+  ['החזר משכנתא 5200', 'הוצאות קבועות'],
+  ['החזר חוב 200', 'DEFAULT'],
+  //
+  // (H) SAVINGS / PENSION DEPOSITS are money OUT — must stay EXPENSE (you are
+  // funding the account, not drawing from it). Guards the allowance fix against
+  // mis-flipping a deposit into income.
+  ['קרן השתלמות 1500', 'פיננסים'],
+  ['קופת גמל 2000', 'פיננסים'],
+  ['ביטוח מנהלים 800', 'הוצאות קבועות'],
+  //
+  // (I) currently-correct INCOME polarity (the natural "קיבלתי משכורת" + the two
+  // catch-all income rows) — pinned so they can never silently flip to expense.
+  ['קיבלתי משכורת 9000', 'הכנסות'],
+  ['בונוס 5000', 'הכנסות'],
+  ['תקבול 3000', 'הכנסות'],
+  //
+  // (J) BARE refund/credit forms with no business/tax context are genuinely
+  // ambiguous (could net an upcoming bill or be true cash back) -> the bot
+  // ASKS (DEFAULT), which is the correct product behavior, NOT a misroute. The
+  // allowance fix deliberately does NOT add these (only the specific named
+  // allowance phrases), so they must stay DEFAULT.
+  ['זיכוי 300', 'DEFAULT'],
+  ['החזר כספי 400', 'DEFAULT'],
+  ['קיבלתי החזר 500', 'DEFAULT'],
 ];
 
 // ── Run ──────────────────────────────────────────────────────────────────────
