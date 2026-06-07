@@ -138,8 +138,16 @@ assert(/^\d{4}-\d{2}-\d{2}/.test(v || ''),
 console.log('\nWhatsApp wiring:');
 assert(/sendWhatsAppInteractiveList\(/.test(PICKER),
   'picker still calls sendWhatsAppInteractiveList');
-assert(/relabel\|/.test(PICKER),
-  'picker still uses "relabel|" id prefix (for handleInteractiveReply_)');
+assert(/_kfl_buildPickerSections_\(/.test(PICKER),
+  'picker delegates row assembly to _kfl_buildPickerSections_');
+const PICKER_BUILDER = (function () {
+  const s = BOT.indexOf('function _kfl_buildPickerSections_(');
+  if (s < 0) return '';
+  const e = BOT.indexOf('\nfunction ', s + 1);
+  return BOT.slice(s, e > s ? e : s + 4000);
+})();
+assert(/relabel\|/.test(PICKER_BUILDER),
+  '_kfl_buildPickerSections_ builds "relabel|" ids (for handleInteractiveReply_)');
 
 // ── 9) Cap check: no section exceeds WhatsApp's 10-row hard limit ───────
 // We cap programmatically in the loop ('if (rows.length >= 10) break'), but
