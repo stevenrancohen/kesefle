@@ -25,6 +25,7 @@ const path = require('path');
 const PACKS_DIR = path.join(__dirname, 'packs');
 const OUT_JSON = path.join(__dirname, 'INDEX.json');
 const OUT_GS = path.join(__dirname, '..', 'ExpenseBot_KEYWORDS.gs');
+const INCOME_STOP = new Set(['pension', 'pension fund', 'pension contribution', 'pensions', 'grant', 'grants', 'stipend', 'stipends', 'allowance', 'allowances', 'entitlement', 'entitlements', 'benefit', 'benefits', 'המוסד', 'רנטה', 'fund', 'contribution']);
 const CAP = 2500; // max keywords per bucket after prefix filtering (keeps file ~3MB for the manual paste)
 
 // Hebrew clitic prefixes (longest first). Stripping one from a padded variant yields the base.
@@ -64,7 +65,7 @@ function main() {
   const bucketKey = new Map();
   const bucketKws = [];
   const bucketSet = [];
-  let rawCount = 0, junkCount = 0, dupSameBucket = 0;
+  let rawCount = 0, junkCount = 0, dupSameBucket = 0, incomeStopped = 0;
   let okPacks = 0;
 
   for (const f of files) {
@@ -82,6 +83,7 @@ function main() {
       rawCount++;
       const k = norm(raw);
       if (isJunk(k)) { junkCount++; continue; }
+      if (inc === 1 && INCOME_STOP.has(k)) { incomeStopped++; continue; }
       if (bucketSet[bidx].has(k)) { dupSameBucket++; continue; }
       bucketSet[bidx].add(k); bucketKws[bidx].push(k);
     }
@@ -138,6 +140,7 @@ function main() {
   console.log('RAW keywords seen: ' + rawCount);
   console.log('  junk dropped:           ' + junkCount);
   console.log('  dup (same bucket):      ' + dupSameBucket);
+  console.log('  income-ambiguous dropped: ' + incomeStopped);
   console.log('  prefix-variant dropped: ' + prefixDropped);
   console.log('  cap dropped:            ' + capDropped);
   console.log('  cross-bucket collisions (first kept): ' + collisions.length);

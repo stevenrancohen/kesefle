@@ -25,9 +25,9 @@ let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) pass++; else { fail++; console.log('  FAIL ' + name + (extra ? ' :: ' + extra : '')); } }
 
 // ---- FX: English currency WORDS convert in the PLURAL only (the noun-phrase bug) ----
-const fxNoConvert = ['pound cake 30', '5 dollar menu', 'dollar store 50', 'euro disney 200', 'pound sign 12', 'dollar tree 25'];
+const fxNoConvert = ['pound cake 30', '5 dollar menu', 'dollar store 50', 'euro disney 200', 'pound sign 12', 'dollar tree 25', 'pounds of flour 30', 'pounds protein 80', '100 pounds hotel'];
 for (const m of fxNoConvert) ok('FX stays ILS: ' + m, !converted(replay(m)), 'wrongly converted');
-const fxConvert = ['30 dollars netflix', '100 pounds hotel', '50 euros spotify', '5000 yen sushi', '$70 chatgpt', 'דולר אפליקציה chatgpt 70'];
+const fxConvert = ['30 dollars netflix', '50 euros spotify', '5000 yen sushi', '$70 chatgpt', 'דולר אפליקציה chatgpt 70'];
 for (const m of fxConvert) ok('FX converts: ' + m, converted(replay(m)), 'did not convert');
 
 // ---- classifier precision fixes ----
@@ -36,7 +36,8 @@ const routes = [
   ['מונית 38', 'תחבורה / מונית'],
   ['זיכוי מעמ 500', 'עסק / מחזור'],           // VAT-credit -> business income (sign-flip)
   ['החזר מעמ 900', 'עסק / מחזור'],
-  ['תרופות 30', 'בריאות / תרופות'],           // meds subcategory (was general health)
+  ['תרופות 30', 'בריאות / תרופות'],
+  ['תרופה 30', 'בריאות / תרופות'],           // meds subcategory (was general health)
   ['נטפליקס 55', 'בידור / מנויים דיגיטליים'], // entertainment unchanged
   ['ספוטיפיי 20', 'בידור / מנויים דיגיטליים'],
   ['פנסיון 300', 'תחבורה / מלונות'],          // Hebrew guesthouse kept

@@ -30,7 +30,7 @@ new Function('__x', src + '\n__x.B = KFL_KW_BUCKETS; __x.I = KFL_KW_INDEX;')(san
 const BUCKETS = sandbox.B, INDEX = sandbox.I;
 
 // Mirror of bot _kfl_bigIndexLookup (kept in sync with ExpenseBot_FIXED.gs).
-const PFX = ['וכשה', 'מהה', 'כשה', 'בהה', 'והה', 'ומ', 'ול', 'וב', 'וה', 'של', 'אצל', 'עם', 'כש', 'מה', 'בה', 'לה', 'כה', 'שה', 'ב', 'ל', 'מ', 'ה', 'ו', 'ש', 'כ'];
+const PFX = ['ב', 'ל', 'מ', 'ה', 'ו', 'ש', 'כ', 'מה', 'בה', 'לה', 'כה', 'שה', 'וה', 'של', 'כש', 'עם', 'ומ', 'ול', 'וב', 'מהה', 'כשה', 'בהה', 'והה', 'וכשה', 'אצל'];
 function bucketFor(phrase) {
   if (Object.prototype.hasOwnProperty.call(INDEX, phrase)) return INDEX[phrase];
   if (phrase.indexOf(' ') < 0 && /[֐-׿]/.test(phrase)) {
@@ -105,6 +105,14 @@ for (let i = 0; i < keys.length && pfxSampled < 80; i += Math.max(1, Math.floor(
   if (got !== INDEX[k]) pfxFail++;
 }
 check('prefix-glued Hebrew word recovers its base bucket', pfxFail === 0, 'fail=' + pfxFail + '/' + pfxSampled);
+
+// 3c. income sign-flip guard: ambiguous expense-capable tokens must NEVER resolve to an income bucket.
+const incBuckets = {}; BUCKETS.forEach((b, i) => { if (b[2]) incBuckets[i] = true; });
+let signFlip = 0;
+for (const tok of ['pension', 'grant', 'stipend', 'allowance', 'benefits', 'entitlement', 'המוסד', 'רנטה']) { const v = bucketFor(tok); if (v !== undefined && incBuckets[v]) signFlip++; }
+check('ambiguous tokens never resolve to an income bucket', signFlip === 0, signFlip + ' flipped');
+// 3d. prefix over-strip: מהX must keep the definite article (-> הX bucket, not X).
+if (Object.prototype.hasOwnProperty.call(INDEX, 'העמק')) check('מהעמק keeps the definite article (not the bare-עמק bucket)', bucketFor('מהעמק') === INDEX['העמק'], 'got ' + bucketFor('מהעמק'));
 
 // 4. lookup is null-safe on junk
 check('lookup("") is null', lookup('') === null);

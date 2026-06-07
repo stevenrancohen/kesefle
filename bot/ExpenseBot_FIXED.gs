@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-fx-plural';
+const KFL_BUILD_VERSION = '2026-06-07-review-fixes';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -402,7 +402,7 @@ const CATEGORY_MAP = [
   {"keywords":["דמי חניה","כרטיס חניה","תשלום חניון","חניון בתשלום"],"category":"תחבורה","subcategory":"חניה"},
   {"keywords":["כרטיס אוטובוס","נסיעה ברכבת","כרטיס רכבת","טעינת רב קו","נסיעה באוטובוס"],"category":"תחבורה","subcategory":"תחבורה ציבורית"},
   {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית"],"category":"בריאות","subcategory":"בריאות"},
-  {"keywords":["תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
+  {"keywords":["תרופה","תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["טיפול שיניים","רופא שיניים","ניקוי אבנית","סתימה אצל שיניים"],"category":"בריאות","subcategory":"שיניים"},
   {"keywords":["בית הספר","בית ספר","גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
   {"keywords":["מתנה ליום הולדת","מתנה לחתונה","מתנה לחבר","מתנה לחברה","שי לחג","מתנת יום נישואין"],"category":"מתנות","subcategory":"מתנות"},
@@ -9779,7 +9779,7 @@ function parseForeignCurrencyHint(text) {
   // singular is almost always an adjective in a noun phrase ("5 dollar menu",
   // "pound cake", "dollar store", "euro disney") and must NOT trigger an FX
   // conversion. Symbols ($), ISO codes (usd) and Hebrew (דולר) are unaffected.
-  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק|\bdollars\b|\beuros\b|\bpounds\b|\byen\b|\bfrancs\b)/i;
+  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק|\bdollars\b|\beuros\b|\byen\b|\bfrancs\b)/i;
   if (!foreignRe.test(s)) return null;
 
   // Path A — user gave both amounts (e.g. "50$ amazon 180 שח")
@@ -9932,7 +9932,6 @@ function _kfl_nonAdjacentCurrency_(text) {
     { re: '\\bchf\\b', symbol: 'CHF', wordRe: '\\bchf\\b' },
     { re: '\\bdollars\\b', symbol: 'USD', wordRe: '\\bdollars\\b' },
     { re: '\\beuros\\b', symbol: 'EUR', wordRe: '\\beuros\\b' },
-    { re: '\\bpounds\\b', symbol: 'GBP', wordRe: '\\bpounds\\b' },
     { re: '\\byen\\b', symbol: 'JPY', wordRe: '\\byen\\b' },
     { re: '\\bfrancs\\b', symbol: 'CHF', wordRe: '\\bfrancs\\b' }
   ];
@@ -10423,7 +10422,7 @@ function _matchCategory_orig(description) {
 // Hebrew clitic prefixes tried on a miss so "באיקאה" still resolves to the stored
 // base "איקאה". The build step (build_index.js) drops such prefix-variants to shrink
 // the embedded file; this restores their coverage. Longest-first.
-var _KFL_KW_PFX = ['וכשה', 'מהה', 'כשה', 'בהה', 'והה', 'ומ', 'ול', 'וב', 'וה', 'של', 'אצל', 'עם', 'כש', 'מה', 'בה', 'לה', 'כה', 'שה', 'ב', 'ל', 'מ', 'ה', 'ו', 'ש', 'כ'];
+var _KFL_KW_PFX = ['ב', 'ל', 'מ', 'ה', 'ו', 'ש', 'כ', 'מה', 'בה', 'לה', 'כה', 'שה', 'וה', 'של', 'כש', 'עם', 'ומ', 'ול', 'וב', 'מהה', 'כשה', 'בהה', 'והה', 'וכשה', 'אצל'];
 function _kfl_kwBucketFor_(phrase) {
   if (Object.prototype.hasOwnProperty.call(KFL_KW_INDEX, phrase)) return KFL_KW_INDEX[phrase];
   if (phrase.indexOf(' ') < 0 && /[֐-׿]/.test(phrase)) {
