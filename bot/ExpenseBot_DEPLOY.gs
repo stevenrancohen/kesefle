@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-fx-cadaud';
+const KFL_BUILD_VERSION = '2026-06-07-livefx';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2762,6 +2762,14 @@ function handleInteractiveReply_(fromPhone, interactive) {
   if (!picked) {
     Logger.log('handleInteractiveReply_: no id in interactive payload');
     return null;
+  }
+
+  // "+ new business" button from the businesses list -> start the create flow.
+  // OWNER-ONLY: business tabs are created in the owner spreadsheet.
+  if (String(picked) === 'kfl_newbiz') {
+    if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return null;
+    var __sb = (typeof _startNewBusinessFlow_ === 'function') ? _startNewBusinessFlow_(fromPhone) : null;
+    return { replyText: (__sb && __sb.reply) || '🏢 מה השם של העסק החדש?' };
   }
 
   // Family approval/denial taps from _familyJoinRequest_.
@@ -8563,6 +8571,32 @@ function processExpense(text, fromPhone) {
     }
   } catch (__fbErr) { Logger.log('feedback capture err: ' + (__fbErr && __fbErr.message)); }
 
+  // ----- NEW-BUSINESS name capture (OWNER-ONLY) -----------------------------
+  // The "+ esek hadash" button (or the "esek hadash" command) armed
+  // awaitingNewBizName; THIS message is the new business name. Owner-gated
+  // because creating a business writes a tab to the owner spreadsheet
+  // (SHEET_ID) -- a tenant must never reach the create path. Runs early so the
+  // name is not parsed as an expense.
+  try {
+    var __nbClean = String(fromPhone || '').replace(/[^0-9]/g, '');
+    var __nbCache = CacheService.getScriptCache();
+    if (__nbClean && __nbCache.get('awaitingNewBizName:' + __nbClean)) {
+      __nbCache.remove('awaitingNewBizName:' + __nbClean);
+      if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) {
+        return { reply: '' };
+      }
+      var __nbName = String(text || '').replace(/[\u00a0\u202f\u200b]/g, ' ').trim();
+      if (/^(ביטול|בטל|cancel)[!.?\s]*$/i.test(__nbName)) {
+        return { reply: 'בוטל 👍 תמיד אפשר "עסקים" כדי לנהל את העסקים.' };
+      }
+      __nbName = __nbName.slice(0, 40).trim();
+      if (!__nbName) {
+        return { reply: 'לא קלטתי שם. נסה שוב: כתוב "עסק חדש".' };
+      }
+      return { reply: _createBusinessFromTemplate_(fromPhone, __nbName) };
+    }
+  } catch (__nbErr) { Logger.log('new-biz capture err: ' + (__nbErr && __nbErr.message)); }
+
   // ───── GROUP COMMAND ROUTER ─────
   // Any message starting with "כספלה" enters Splitwise-style group mode.
   // Also accept the legacy family aliases ("הקמת משפחה", "הצטרפות
@@ -9239,6 +9273,25 @@ function processExpense(text, fromPhone) {
   if (trimmed === 'סיכום' || trimmed === 'summary') {
     return { reply: getMonthlySummary(fromPhone) };
   }
+  // "esakim" (businesses) -- list the sender's registered businesses + a
+  // one-tap "+ new business" button (duplicates the business template).
+  // OWNER-ONLY: multi-business writes to the owner spreadsheet, so the command
+  // and the create button are gated to the owner. Steven 2026-06-07.
+  if ((trimmed === 'עסקים' || trimmed === '/עסקים' || trimmed === 'עסקים שלי' ||
+       trimmed === 'businesses' || trimmed === 'my businesses' ||
+       trimmed === 'עסק חדש' || trimmed === 'עסק חדש?' || trimmed === 'עסק חדש!') &&
+      (typeof _isOwnerPhone_ !== 'function' || _isOwnerPhone_(fromPhone))) {
+    // "esek hadash" (new business) jumps straight into the create flow.
+    if (/^\s*עסק חדש/.test(trimmed)) { return _startNewBusinessFlow_(fromPhone); }
+    var __bizListText = _businessListReply_(fromPhone);
+    try {
+      if (typeof sendWhatsAppQuickButtons === 'function') {
+        sendWhatsAppQuickButtons(fromPhone, __bizListText, [{ id: 'kfl_newbiz', title: '➕ עסק חדש' }]);
+        return {}; // the interactive message IS the reply
+      }
+    } catch (_bizBtnErr) { Logger.log('biz list buttons err: ' + (_bizBtnErr && _bizBtnErr.message)); }
+    return { reply: __bizListText };
+  }
   if (trimmed === 'הזמנות' || trimmed === 'orders' ||
       trimmed === 'הזמנות החודש' || trimmed === 'סיכום הזמנות') {
     return { reply: getOrdersSummary() };
@@ -9899,14 +9952,15 @@ function processExpense(text, fromPhone) {
   }
 }
 
-// Rough fixed-rate conversion table — used when user writes "50$ amazon" without ILS amount.
-// Rates are 2026 estimates. Bot prefers user-supplied ILS amount when present.
-// Each rate can be overridden via Script Properties: FX_RATE_USD, FX_RATE_EUR,
-// FX_RATE_GBP, FX_RATE_CAD, FX_RATE_AUD, FX_RATE_JPY, FX_RATE_CHF.
+// LAST-RESORT fixed-rate table -- only used when BOTH the live daily fetch and a
+// manual FX_RATE_<code> Script Property override are unavailable. The live rate
+// (_kfl_fxRateLive_) is the real primary; these are just a sane floor refreshed
+// to actual market values on 2026-06-05 (ILS strengthened -- USD ~2.91, not the
+// old 3.65). Each can still be overridden via FX_RATE_USD / FX_RATE_EUR / etc.
 // installKesefleBot() surfaces the effective rates in its diagnostics report.
 var KFL_FX_DEFAULTS = {
-  USD: 3.65, EUR: 3.95, GBP: 4.65,
-  CAD: 2.65, AUD: 2.40, JPY: 0.024, CHF: 4.10
+  USD: 2.91, EUR: 3.39, GBP: 3.92,
+  CAD: 2.10, AUD: 2.07, JPY: 0.018, CHF: 3.69
 };
 
 // Live FX rate fetcher. Hits a free, no-key endpoint (Frankfurter) for the
@@ -9935,25 +9989,30 @@ function _kfl_fxRateLive_(code) {
       }
     } catch (_cg) {}
   }
-  try {
-    // Frankfurter: https://api.frankfurter.app/latest?from=USD&to=ILS
-    // -> {"amount":1.0,"base":"USD","date":"...","rates":{"ILS":3.71}}
-    var url = 'https://api.frankfurter.app/latest?from=' + encodeURIComponent(k) + '&to=ILS';
-    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
-    if (!resp || typeof resp.getResponseCode !== 'function' || resp.getResponseCode() !== 200) return null;
-    var body = resp.getContentText();
-    if (!body) return null;
-    var data = JSON.parse(body);
-    if (!data || !data.rates) return null;
-    var rate = parseFloat(data.rates.ILS);
-    if (isNaN(rate) || rate <= 0) return null;
-    if (cache) { try { cache.put(cacheKey, String(rate), _KFL_FX_LIVE_CACHE_SECONDS); } catch (_cp) {} }
-    Logger.log('_kfl_fxRateLive_: ' + k + '->ILS live=' + rate);
-    return rate;
-  } catch (_fe) {
-    Logger.log('_kfl_fxRateLive_: fetch failed for ' + k + ': ' + (_fe && _fe.message));
-    return null;
+  // Two free, no-key providers in order. frankfurter.app MOVED to
+  // frankfurter.dev -- the old host now 301-redirects to HTML and the fetch
+  // silently failed, so every conversion fell back to the stale static rate.
+  // We hit the new host directly and fall back to open.er-api.com. Both return
+  // {"rates":{"ILS":<n>}}, so one parse covers both. First positive wins; ~6h cache.
+  var _eps = [
+    'https://api.frankfurter.dev/v1/latest?from=' + encodeURIComponent(k) + '&to=ILS',
+    'https://open.er-api.com/v6/latest/' + encodeURIComponent(k)
+  ];
+  for (var _i = 0; _i < _eps.length; _i++) {
+    try {
+      var resp = UrlFetchApp.fetch(_eps[_i], { muteHttpExceptions: true, followRedirects: true });
+      if (!resp || typeof resp.getResponseCode !== 'function' || resp.getResponseCode() !== 200) continue;
+      var body = resp.getContentText();
+      if (!body) continue;
+      var data = JSON.parse(body);
+      var rate = parseFloat(data && data.rates ? data.rates.ILS : NaN);
+      if (isNaN(rate) || rate <= 0) continue;
+      if (cache) { try { cache.put(cacheKey, String(rate), _KFL_FX_LIVE_CACHE_SECONDS); } catch (_cp) {} }
+      Logger.log('_kfl_fxRateLive_: ' + k + '->ILS live=' + rate + ' (ep' + _i + ')');
+      return rate;
+    } catch (_fe) { Logger.log('_kfl_fxRateLive_ ep' + _i + ' fail ' + k + ': ' + (_fe && _fe.message)); }
   }
+  return null;
 }
 
 // Resolve the ILS rate for a currency CODE. Priority order (highest first):
@@ -11198,8 +11257,12 @@ function _aiProvidersAll_() {
 // provider outage or rate-limit never silently disables AI categorization.
 // Default (flag unset) is the previous single-provider behavior, unchanged.
 function _aiChatCompleteResilient_(systemPrompt, userMsg) {
+  // Failover is now ON by default (Steven 2026-06-07: "connect all the LLMs"):
+  // cascade across EVERY configured provider so one outage / rate-limit never
+  // disables AI understanding. With a single key it is identical to before. Set
+  // KFL_AI_FAILOVER=0 (or false) to force the old single-provider behavior.
   var fo = _aiReadKey_('KFL_AI_FAILOVER');
-  if (fo !== '1' && fo !== 'true') {
+  if (fo === '0' || fo === 'false') {
     var one = _aiProviderResolve_();
     return one ? _aiChatComplete_(one.provider, one.key, systemPrompt, userMsg) : null;
   }
@@ -13491,6 +13554,7 @@ function getHelpMessage() {
     '  • "מילון" — קישור ללשונית הלמידה\n' +
     '  • "מנוע" — מצב המנוע (AI/cache/keywords)\n' +
     '  • "אזור זמן" — הצג/שנה אזור זמן\n' +
+    '  • "עסקים" — רשימת העסקים שלך (רב-עסקי / עצמאי)\n' +
     '  • "ביקורת" — ספר לנו מה לא עובד, ונשפר 🙏\n' +
     '  • "עזרה" — הודעה זו\n\n' +
     '🧠 *המנוע:*\n' +
@@ -14596,10 +14660,21 @@ function _parseBusinessNumberPrefix_(text) {
     name = sep[1].trim();
     rest = sep[2].trim();
   } else if (!/^[+-]?\d/.test(rest)) {
-    // Pattern B: no separator AND rest does not start with a number
-    // -> the whole rest is the name (set-name-only command, no expense).
-    name = rest;
-    rest = '';
+    // Pattern B: rest starts with a NAME (no leading number, no separator).
+    // If an amount appears later ("<name> 15 ...", "<name> hotzaa 15 ...") split:
+    // leading words = the NAME, the amount onward = the EXPENSE, so a user can
+    // register AND record in one message. A trailing expense/income lead-in word
+    // is dropped from the name. No amount -> the whole rest is a set-name-only
+    // command (unchanged). Steven 2026-06-07.
+    var amtIdx = rest.search(/[+-]?\d/);
+    if (amtIdx > 0) {
+      var head = rest.slice(0, amtIdx).replace(/\s*(?:הוצאה|הוצאת|הכנסה|הכנסת)\s*$/, '').trim();
+      name = head || null;
+      rest = rest.slice(amtIdx).trim();
+    } else {
+      name = rest;
+      rest = '';
+    }
   }
   if (name && name.length > 40) name = name.slice(0, 40);
   return { n: n, name: name, rest: rest };
@@ -14661,6 +14736,79 @@ function _ownerBusinessList_(ownerPhone) {
     } catch (_e2) {}
   }
   return list;
+}
+
+// Build the reply for the "esakim" (businesses) command: a read-only list of
+// the sender's registered businesses + how to route by name/number and register
+// a new one. Pure formatting over _ownerBusinessList_ (no writes). 2026-06-07.
+function _businessListReply_(fromPhone) {
+  var list = [];
+  try { list = (typeof _ownerBusinessList_ === 'function') ? _ownerBusinessList_(fromPhone) : []; } catch (_e) {}
+  if (!Array.isArray(list) || !list.length) {
+    return '🏢 עוד לא רשמת עסקים.\n' +
+      'לרישום העסק הראשון שלח: "עסק 1 <שם>"\n' +
+      'לדוגמה: "עסק 1 כספלה"\n' +
+      'ואז תרשום: "עסק כספלה 250 שיווק" 💼';
+  }
+  var seen = {}, rows = [], maxN = 0, firstN = 0, firstName = '';
+  list.slice().sort(function (a, b) { return ((a && a.n) || 0) - ((b && b.n) || 0); }).forEach(function (b) {
+    if (!b || !b.n || seen[b.n]) return;
+    seen[b.n] = 1;
+    if (b.n > maxN) maxN = b.n;
+    if (!firstN) firstN = b.n;
+    var nm = b.name || b.tabName || ('עסק ' + b.n);
+    if (!firstName && b.name) firstName = b.name;
+    rows.push(b.n + '. ' + nm);
+  });
+  var nextN = maxN + 1;
+  var byNameHint = firstName ? (' או "עסק ' + firstName + ' 120 פייסבוק"') : '';
+  return '🏢 העסקים שלך:\n' + rows.join('\n') + '\n\n' +
+    'רישום הוצאה: "עסק ' + (firstN || 1) + ' 120 פייסבוק"' + byNameHint + '\n' +
+    'עסק חדש: "עסק ' + nextN + ' <שם>"';
+}
+
+// Arm the "new business" name capture (owner-only) and ask for the name. Used
+// by both the "+ esek hadash" button and the "esek hadash" command. 2026-06-07.
+function _startNewBusinessFlow_(fromPhone) {
+  if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return { reply: '' };
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  try { CacheService.getScriptCache().put('awaitingNewBizName:' + clean, '1', 600); } catch (_e) {}
+  return { reply: '🏢 מה השם של העסק החדש?\nכתוב/י שם קצר (לדוגמה: כספלה) ואכין לו לשונית משלו עם אותו תבנית עסקית.\n(לביטול: "ביטול")' };
+}
+
+// Next free business number (>=2; N=1 is always the main transactions tab).
+function _nextBusinessNumber_(fromPhone) {
+  var maxN = 1;
+  try {
+    var list = (typeof _ownerBusinessList_ === 'function') ? _ownerBusinessList_(fromPhone) : [];
+    if (Array.isArray(list)) for (var i = 0; i < list.length; i++) { if (list[i] && list[i].n > maxN) maxN = list[i].n; }
+  } catch (_e) {}
+  return maxN + 1;
+}
+
+// Create the next business by duplicating the business template tab (the same
+// path the numbered route uses on first write) and registering it. OWNER-ONLY:
+// the tab is created in the owner spreadsheet (SHEET_ID), so a tenant must never
+// reach this. Returns a Hebrew reply string. Steven 2026-06-07.
+function _createBusinessFromTemplate_(fromPhone, name) {
+  if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return '';
+  var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
+  if (!clean) return '😬 לא זוהה מספר.';
+  var nm = String(name || '').trim().slice(0, 40);
+  if (!nm) return 'לא קלטתי שם. נסה שוב: כתוב "עסק חדש".';
+  var n = _nextBusinessNumber_(fromPhone);
+  try {
+    var t = (typeof _getOrCreateBusinessTab_ === 'function') ? _getOrCreateBusinessTab_(fromPhone, n, nm) : null;
+    if (!t) return '😬 לא הצלחתי ליצור את העסק. נסה שוב, או כתוב "ביקורת".';
+    var shownName = t.name || nm;
+    return '✅ העסק "' + shownName + '" מוכן! 🏢 (עסק ' + n + ')\n' +
+      'רישום הוצאה: "עסק ' + shownName + ' 250 שיווק" או "עסק ' + n + ' 250 שיווק"\n' +
+      'לכל העסקים: "עסקים"';
+  } catch (e) {
+    Logger.log('_createBusinessFromTemplate_ err: ' + (e && e.message));
+    try { if (typeof _adminAlertOnce_ === 'function') _adminAlertOnce_('🚨 כשל ביצירת עסק חדש (' + clean + '): ' + (e && e.message), 'newbiz:' + clean); } catch (_a) {}
+    return '😬 תקלה ביצירת העסק. הצוות קיבל התראה ויטפל 🙏';
+  }
 }
 
 // Sanitize a string for use as a Google Sheets tab name. Sheets blocks
