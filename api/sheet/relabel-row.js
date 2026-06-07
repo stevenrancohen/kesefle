@@ -24,7 +24,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { constantTimeEqual, decryptRefreshToken } from '../../lib/crypto.js';
-import { exchangeRefreshForAccess, sanitizeCell } from '../../lib/sheet-writer.js';
+import { exchangeRefreshForAccess, sanitizeCell, normalizeSubcategoryForDashboard } from '../../lib/sheet-writer.js';
 import { TX_TAB } from '../../lib/sheet-tabs.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
@@ -131,7 +131,19 @@ async function handlerImpl(req, res) {
   const range = encodeURIComponent(`'${TX_TAB}'!D${rowIndex}:E${rowIndex}`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueInputOption=RAW`;
   const cellD = sanitizeCell(newCategory);
-  const cellE = sanitizeCell(newSubcategory || newCategory);
+  // Canonicalize col E to a real dashboard ROW LABEL (or the שונות catch-all) so
+  // a relabel can NEVER make the amount invisible to the personal-dashboard
+  // SUMIFS -- mirrors the protected append path (buildExpenseRow). Falls back to
+  // the raw value only if the helper is somehow unavailable.
+  let dashSub;
+  try {
+    dashSub = typeof normalizeSubcategoryForDashboard === 'function'
+      ? normalizeSubcategoryForDashboard(newSubcategory || newCategory, newCategory)
+      : (newSubcategory || newCategory);
+  } catch (_normErr) {
+    dashSub = newSubcategory || newCategory;
+  }
+  const cellE = sanitizeCell(dashSub || newCategory);
   let r;
   try {
     r = await fetch(url, {
@@ -160,9 +172,30 @@ async function handlerImpl(req, res) {
     });
   }
 
+  // Optional col H (status) correction. When the bot sends an explicit isIncome
+  // flag (a tagged business/income relabel), set col H so the row lands on the
+  // right side of the dashboards. col H is a boolean: TRUE = expense, FALSE =
+  // income (matches buildExpenseRow's `!isIncome`, and the company-dashboard
+  // SUMIFS filters col H = TRUE). Untagged personal taps omit isIncome, so col H
+  // is left untouched. Non-fatal on failure: col D/E are already written.
+  if (typeof body.isIncome === 'boolean') {
+    try {
+      const hRange = encodeURIComponent(`'${TX_TAB}'!H${rowIndex}`);
+      const hUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${hRange}?valueInputOption=RAW`;
+      const hResp = await fetch(hUrl, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[!body.isIncome]] }),
+      });
+      if (!hResp.ok) log.info('relabel_row.colH_write_failed', { reqId: req.reqId, rowIndex, status: hResp.status });
+    } catch (_he) {
+      log.info('relabel_row.colH_write_threw', { reqId: req.reqId, rowIndex });
+    }
+  }
+
   log.info('relabel_row.ok', {
     reqId: req.reqId, userSub, phone, rowIndex,
-    newCategory, newSubcategory,
+    newCategory, newSubcategory, isIncome: body.isIncome,
   });
 
   return res.status(200).json({ ok: true, rowIndex });
