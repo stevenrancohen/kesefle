@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-livefx';
+const KFL_BUILD_VERSION = '2026-06-07-bizpick';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -8783,16 +8783,21 @@ function processExpense(text, fromPhone) {
             if (__hPSheet) {
               var __hPNow = new Date();
               var __hPMonth = Utilities.formatDate(__hPNow, 'Asia/Jerusalem', 'yyyy-MM');
-              var __hPCategory = 'עסק';
-              var __hPSubcategory = __hPicked.subcategory || 'תפעוליות';
+              // The picker now offers business categories AND a few regular ones,
+              // so honor the picked option's category (Steven 2026-06-07: route an
+              // expense that is actually personal to the right place). Existing
+              // business options have no category field -> default to business.
+              var __hPCategory = __hPicked.category || 'עסק';
+              var __hPIsBiz = (__hPCategory === 'עסק');
+              var __hPSubcategory = __hPicked.subcategory || (__hPIsBiz ? 'תפעוליות' : '');
               var __hPDesc = __hPicked.label || __hPSubcategory;
-              // BUGFIX B1 (2026-05-28): if the user's smart_pending pick is
-              // 'מחזור' (business revenue) or the raw input had '+', flip col
-              // H to FALSE (income). Old code hardcoded TRUE here too.
+              // BUGFIX B1 (2026-05-28): a machzor (business revenue) pick or a '+' in
+              // raw input flips col H to FALSE (income); old code hardcoded TRUE.
               var __hPIsInc = _resolveIsIncome_(__hPicked, __hP.rawText, __hPCategory, __hPSubcategory);
-              // Canonicalize col E to a company-dashboard bucket (this path is
-              // always business) so the cost is visible on מאזן חברה.
-              var __hPDashSub = (typeof _normalizeSubForDashboard_ === 'function')
+              // Canonicalize col E to a company-dashboard bucket ONLY for a
+              // business pick; a personal pick keeps its own subcategory so it
+              // lands on the personal dashboard, not the company one.
+              var __hPDashSub = (__hPIsBiz && typeof _normalizeSubForDashboard_ === 'function')
                 ? _normalizeSubForDashboard_(__hPSubcategory, __hPCategory) : __hPSubcategory;
               __hPSheet.appendRow([__hPNow, __hPMonth, __hP.amount, sanitizeForSheet(__hPCategory), sanitizeForSheet(__hPDashSub), sanitizeForSheet(__hPDesc), 'WhatsApp', !__hPIsInc]);
               // Original-text cell note — preserves the business amount input + picked category.
@@ -8805,8 +8810,10 @@ function processExpense(text, fromPhone) {
                 var __hPLast = __hPSheet.getLastRow();
                 if (__hPLast > 2) __hPSheet.getRange(2, 1, __hPLast - 1, 8).sort({ column: 1, ascending: true });
               } catch (__hPSortErr) {}
-              try { _updateBusinessDashboard_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount); } catch (__hPDashErr) { Logger.log('smart_pending dashboard err: ' + (__hPDashErr && __hPDashErr.message)); }
-              try { _dashboardDetailNote_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount, __hPDesc, __hPNow); } catch (__hPDnErr) { Logger.log('smart_pending dashboard note err: ' + (__hPDnErr && __hPDnErr.message)); }
+              if (__hPIsBiz) {
+                try { _updateBusinessDashboard_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount); } catch (__hPDashErr) { Logger.log('smart_pending dashboard err: ' + (__hPDashErr && __hPDashErr.message)); }
+                try { _dashboardDetailNote_(__hPCategory, __hPSubcategory, __hPMonth, __hP.amount, __hPDesc, __hPNow); } catch (__hPDnErr) { Logger.log('smart_pending dashboard note err: ' + (__hPDnErr && __hPDnErr.message)); }
+              }
               return { reply: '✅ ₪' + __hP.amount.toLocaleString('he-IL') + ' ל' + __hPDesc + '. נשמר אצלך בגיליון\n📂 ' + __hPCategory + '\n🏷️ ' + __hPSubcategory };
             }
           } catch (__hPWriteErr) {
@@ -8994,7 +9001,13 @@ function processExpense(text, fromPhone) {
             { label: 'שונות עסק',       subcategory: 'תפעוליות' },
             { label: 'הזמנה לקוח',      subcategory: 'מחזור' },
             { label: 'תשלום מלקוח',     subcategory: 'מחזור' },
-            { label: 'החזר מס',         subcategory: 'מחזור' }
+            { label: 'החזר מס',         subcategory: 'מחזור' },
+            // --- regular (non-business) categories: route a personal expense to the right place ---
+            { label: '🍽️ אוכל לבית', category: 'אוכל',   subcategory: 'אוכל לבית' },
+            { label: '🍔 אוכל בחוץ',  category: 'אוכל',   subcategory: 'אוכל בחוץ' },
+            { label: '⛽ דלק',         category: 'תחבורה', subcategory: 'דלק' },
+            { label: '🛒 קניות',       category: 'קניות',  subcategory: 'קניות' },
+            { label: '🏥 בריאות',      category: 'בריאות', subcategory: 'בריאות' }
           ];
           var __payload = JSON.stringify({ amount: __hA, options: __hOpts, rawText: text, expiresAt: Math.floor(Date.now()/1000) + 900 });
           __hProps.setProperty('smart_pending', __payload);
@@ -9007,7 +9020,7 @@ function processExpense(text, fromPhone) {
             __hLn.push((__hK + 1) + '. ' + __hOpts[__hK].label);
           }
           __hLn.push('');
-          __hLn.push('או הקלד שם קטגוריה / בטל');
+          __hLn.push('או הקלד כל קטגוריה אחרת (גם רגילה) / בטל');
           return { reply: __hLn.join('\n') };
         }
       } else {
@@ -9023,7 +9036,13 @@ function processExpense(text, fromPhone) {
           { label: 'שונות עסק',       subcategory: 'תפעוליות' },
           { label: 'הזמנה לקוח',      subcategory: 'מחזור' },
           { label: 'תשלום מלקוח',     subcategory: 'מחזור' },
-          { label: 'החזר מס',         subcategory: 'מחזור' }
+          { label: 'החזר מס',         subcategory: 'מחזור' },
+          // --- regular (non-business) categories: route a personal expense to the right place ---
+          { label: '🍽️ אוכל לבית', category: 'אוכל',   subcategory: 'אוכל לבית' },
+          { label: '🍔 אוכל בחוץ',  category: 'אוכל',   subcategory: 'אוכל בחוץ' },
+          { label: '⛽ דלק',         category: 'תחבורה', subcategory: 'דלק' },
+          { label: '🛒 קניות',       category: 'קניות',  subcategory: 'קניות' },
+          { label: '🏥 בריאות',      category: 'בריאות', subcategory: 'בריאות' }
         ];
         var __payloadBare = JSON.stringify({ amount: __hA, options: __hOptsBare, rawText: text, expiresAt: Math.floor(Date.now()/1000) + 900 });
         __hProps.setProperty('smart_pending', __payloadBare);
@@ -9036,7 +9055,7 @@ function processExpense(text, fromPhone) {
           __hLnBare.push((__hKB + 1) + '. ' + __hOptsBare[__hKB].label);
         }
         __hLnBare.push('');
-        __hLnBare.push('או הקלד שם קטגוריה / בטל');
+        __hLnBare.push('או הקלד כל קטגוריה אחרת (גם רגילה) / בטל');
         return { reply: __hLnBare.join('\n') };
       }
     }
