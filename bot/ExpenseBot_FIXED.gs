@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-newbiz';
+const KFL_BUILD_VERSION = '2026-06-07-bizparse';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -14575,10 +14575,21 @@ function _parseBusinessNumberPrefix_(text) {
     name = sep[1].trim();
     rest = sep[2].trim();
   } else if (!/^[+-]?\d/.test(rest)) {
-    // Pattern B: no separator AND rest does not start with a number
-    // -> the whole rest is the name (set-name-only command, no expense).
-    name = rest;
-    rest = '';
+    // Pattern B: rest starts with a NAME (no leading number, no separator).
+    // If an amount appears later ("<name> 15 ...", "<name> hotzaa 15 ...") split:
+    // leading words = the NAME, the amount onward = the EXPENSE, so a user can
+    // register AND record in one message. A trailing expense/income lead-in word
+    // is dropped from the name. No amount -> the whole rest is a set-name-only
+    // command (unchanged). Steven 2026-06-07.
+    var amtIdx = rest.search(/[+-]?\d/);
+    if (amtIdx > 0) {
+      var head = rest.slice(0, amtIdx).replace(/\s*(?:הוצאה|הוצאת|הכנסה|הכנסת)\s*$/, '').trim();
+      name = head || null;
+      rest = rest.slice(amtIdx).trim();
+    } else {
+      name = rest;
+      rest = '';
+    }
   }
   if (name && name.length > 40) name = name.slice(0, 40);
   return { n: n, name: name, rest: rest };

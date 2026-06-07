@@ -59,5 +59,17 @@ ok('_writeBusinessNExpense_ strips the expense/income lead-in', /הוצאה\|ה�
 ok('doPost wires _resolveBusinessNamePrefix_', /_resolveBusinessNamePrefix_\(/.test(SRC));
 ok('_parseBusinessNumberPrefix_ still exists (numbered route intact)', /function _parseBusinessNumberPrefix_\(/.test(SRC));
 
+// Numbered route: a NAME followed by an amount splits into name + expense, so a
+// user can register AND record in one message (Steven 2026-06-07 -- the bug was
+// "עסק 2 כספלה הוצאה 15 דולר קלוד" registering a business named the whole string).
+const parseNum = new Function(extractFn('_parseBusinessNumberPrefix_') + '\nreturn _parseBusinessNumberPrefix_;')();
+eq('numbered split: name + leadin + amount', parseNum('עסק 2 כספלה הוצאה 15 דולר קלוד'), { n: 2, name: 'כספלה', rest: '15 דולר קלוד' });
+eq('numbered split: name + amount', parseNum('עסק 2 כספלה 15 דולר קלוד'), { n: 2, name: 'כספלה', rest: '15 דולר קלוד' });
+eq('numbered split: multiword name + amount', parseNum('עסק 2 כספלה סטודיו 30 שיווק'), { n: 2, name: 'כספלה סטודיו', rest: '30 שיווק' });
+eq('numbered name-only (register, unchanged)', parseNum('עסק 2 כספלה'), { n: 2, name: 'כספלה', rest: '' });
+eq('numbered amount-first (no name, unchanged)', parseNum('עסק 2 320 שיווק'), { n: 2, name: null, rest: '320 שיווק' });
+eq('numbered separator form (unchanged)', parseNum('עסק 2 כספלה - 320 שיווק'), { n: 2, name: 'כספלה', rest: '320 שיווק' });
+eq('numbered income amount preserved', parseNum('עסק 2 כספלה +1500 מכירה'), { n: 2, name: 'כספלה', rest: '+1500 מכירה' });
+
 console.log('test_named_business_routing: ' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
