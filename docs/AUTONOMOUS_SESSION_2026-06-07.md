@@ -56,6 +56,17 @@ These are real bugs the QA found; I'm holding them so this deploy stays focused:
 
 Tell me "do the parser PR" and I'll ship them golden-gated, separately, so you can test in one batch.
 
+## Self-review (post-build, before deploy)
+
+After building #274 I ran a 7-agent adversarial review of my own changes (since the bot writes real money). It found **4 real regressions** — all now fixed + regression-tested, committed to #274:
+
+1. **FX (high)** — `pounds` collided with the weight unit (`pounds of flour 30` → £30). Dropped `pounds` from the English currency words (£ symbol / `gbp` / `פאונד` still convert).
+2. **Income sign-flip (med)** — ambiguous tokens (`pension`/`grant`/`המוסד`) sat in income buckets → an expense booked as income. Stop-listed them out of income buckets.
+3. **Dashboard (med)** — bare `תרופה` routed to a subcategory no dashboard row sums (invisible). Added `תרופה` to the clean meds row.
+4. **Prefix (med)** — Hebrew clitic strip tried `מה` before `מ`, over-stripping the definite article (`מהעמק` hospital → groceries). Reordered shortest-first.
+
+Final bot version after fixes: **`2026-06-07-review-fixes`**. New regression test `tests/test_regressions_0607.js` + `tests/test_keyword_index.js` lock all of these.
+
 ## Health
 
-No critical security issues. Tenant isolation, owner-gate, link-code routing all verified; secret sweep over 711 files clean. Gauntlet 624 checks / 0 failures on every PR.
+No critical security issues. Tenant isolation, owner-gate, link-code routing all verified; secret sweep over 711 files clean. Gauntlet 626 checks / 0 failures.
