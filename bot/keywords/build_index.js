@@ -46,6 +46,12 @@ function isJunk(k) {
   // The bot lookup only checks ngrams up to 4 words, so 5+-word keys are
   // unreachable dead weight (and their sub-phrases can collide); drop them.
   if (k.split(' ').length > 4) return true;
+  // Mixed-script token (e.g. "בelectro" = Hebrew clitic glued to a Latin word)
+  // is padding junk a user would never type; drop the whole keyword.
+  const toks = k.split(' ');
+  for (let i = 0; i < toks.length; i++) {
+    if (/[֐-׿]/.test(toks[i]) && /[a-z]/.test(toks[i])) return true;
+  }
   return false;
 }
 
