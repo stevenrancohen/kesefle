@@ -134,7 +134,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-classifier-llm';
+const KFL_BUILD_VERSION = '2026-06-07-kw-index';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -10476,6 +10476,23 @@ function _matchCategory_orig(description) {
 // char match wins) so it is immune to the substring false-positives the primary
 // map guards against. Returns {category, subcategory, isIncome} or null. NO-OPS
 // (returns null) when the data file is not deployed, so the bot works without it.
+// Hebrew clitic prefixes tried on a miss so "באיקאה" still resolves to the stored
+// base "איקאה". The build step (build_index.js) drops such prefix-variants to shrink
+// the embedded file; this restores their coverage. Longest-first.
+var _KFL_KW_PFX = ['וכשה', 'מהה', 'כשה', 'בהה', 'והה', 'ומ', 'ול', 'וב', 'וה', 'של', 'אצל', 'עם', 'כש', 'מה', 'בה', 'לה', 'כה', 'שה', 'ב', 'ל', 'מ', 'ה', 'ו', 'ש', 'כ'];
+function _kfl_kwBucketFor_(phrase) {
+  if (Object.prototype.hasOwnProperty.call(KFL_KW_INDEX, phrase)) return KFL_KW_INDEX[phrase];
+  if (phrase.indexOf(' ') < 0 && /[֐-׿]/.test(phrase)) {
+    for (var pi = 0; pi < _KFL_KW_PFX.length; pi++) {
+      var p = _KFL_KW_PFX[pi];
+      if (phrase.length - p.length >= 3 && phrase.slice(0, p.length) === p) {
+        var base = phrase.slice(p.length);
+        if (Object.prototype.hasOwnProperty.call(KFL_KW_INDEX, base)) return KFL_KW_INDEX[base];
+      }
+    }
+  }
+  return undefined;
+}
 function _kfl_bigIndexLookup(text) {
   if (typeof KFL_KW_INDEX === 'undefined' || typeof KFL_KW_BUCKETS === 'undefined' || !text) return null;
   var words = String(text).toLowerCase().split(/[^0-9a-z֐-׿]+/);
@@ -10487,8 +10504,9 @@ function _kfl_bigIndexLookup(text) {
   for (var n = maxN; n >= 1; n--) {
     for (var s = 0; s + n <= toks.length; s++) {
       var phrase = toks.slice(s, s + n).join(' ');
-      if (Object.prototype.hasOwnProperty.call(KFL_KW_INDEX, phrase) && phrase.length > bestLen) {
-        best = KFL_KW_INDEX[phrase]; bestLen = phrase.length;
+      var bidx = _kfl_kwBucketFor_(phrase);
+      if (bidx !== undefined && phrase.length > bestLen) {
+        best = bidx; bestLen = phrase.length;
       }
     }
   }
