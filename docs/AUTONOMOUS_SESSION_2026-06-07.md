@@ -25,8 +25,9 @@ All 6 are **MERGEABLE + CLEAN**.
 - **Substring misroutes**: `supermarket`→clothing, `restaurant`→visa, `makeup`→SaaS — fixed (ASCII keywords now match whole-words).
 - **`תרופות`** → medications subcategory (was general health).
 - **FX money-accuracy**: `20 dollars netflix`, `50 euros`, `100 pounds`, `5000 yen`, `200 francs` now convert to ILS (were booked at face value).
-- **100k+ keywords**: a new fallback index (`ExpenseBot_KEYWORDS.gs`, **106,850** keywords / 44 buckets) covering Israeli + global merchants — consulted only when the main dictionary is unsure, before any LLM call. Verified: שופרסל→groceries, claude/chatgpt→apps, ארנונה→taxes, קצבת ילדים→income.
+- **100k+ keywords**: a new fallback index (`ExpenseBot_KEYWORDS.gs`, **108,152** keywords / 44 buckets) covering Israeli + global merchants — consulted only when the main dictionary is unsure, before any LLM call. Verified: שופרסל→groceries, claude/chatgpt→apps, ארנונה→taxes, קצבת ילדים→income.
 - **More LLM**: 6 added providers (DeepSeek, Groq/Llama, Mistral, Together, Fireworks, Perplexity) + opt-in failover.
+- **Security**: destructive `?action=` admin endpoints now gate on a private `ADMIN_ACTION_SECRET` (constant-time), falling back to the old token so nothing breaks until you set it. Webhook verify untouched.
 
 ## TASKS FOR STEVEN (do these in order)
 
@@ -37,7 +38,7 @@ All 6 are **MERGEABLE + CLEAN**.
    c. Click **Deploy → Manage deployments → ✏️ (edit) → New version → Deploy**.
    d. Add a **NEW file** in the same project: click **+ → Script**, name it `ExpenseBot_KEYWORDS`, then open `bot/ExpenseBot_KEYWORDS.gs` from GitHub, copy ALL of it, paste in, **Save**. (This is the keyword data — paste once; only re-paste when keywords change.)
    e. Send yourself a WhatsApp test: `דולר אפליקציה chatgpt 70` (should convert + land in apps), `מונית 45` (should be taxi), `שופרסל 200` (groceries).
-3. **(Security) Rotate + move the admin token** — `VERIFY_TOKEN='expense_bot_verify_2026'` is in the public source and gates admin actions. Tell me to wire it to a Script Property `ADMIN_ACTION_SECRET` (I have the fix ready) and you set a new value + rotate it in Meta's webhook config.
+3. **(Security) Activate the admin lock-down** — now wired in #274. In Apps Script → Project Settings → Script Properties, set `ADMIN_ACTION_SECRET` to a new private value of your choice. The destructive `?action=` endpoints then stop accepting the old public token. (Until you set it, nothing changes — it falls back safely to the current behavior.)
 4. **(Optional) Add more LLMs** — in Apps Script → Project Settings → Script Properties, add any of `DEEPSEEK_API_KEY` / `GROQ_API_KEY` / `MISTRAL_API_KEY` / `TOGETHER_API_KEY` / `FIREWORKS_API_KEY` / `PERPLEXITY_API_KEY` (paste the keys yourself — I never enter them). Add `KFL_AI_FAILOVER` = `1` to try multiple providers on failure.
 5. **Twilio sandbox** (when you want to test the WhatsApp number) — say the word and I'll give the exact 3 steps; you sign up + paste the SID/token yourself.
 6. **PayPal** — same: I'll give numbered steps; you paste keys into Vercel yourself.
