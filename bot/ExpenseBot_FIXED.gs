@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-feedback';
+const KFL_BUILD_VERSION = '2026-06-07-fx-cadaud';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9987,7 +9987,7 @@ function parseForeignCurrencyHint(text) {
       var fxBlockRe = /(\$|€|£|¥|\d)[^,\n]{0,80}?(שקל|ש["״']?ח|nis|ils)/i;
       var blockMatch = s.match(fxBlockRe);
       if (blockMatch && blockMatch[0].length < note.length) note = blockMatch[0].trim();
-      var cleanedTextA = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק|שקל(?:ים)?|ש["״']?ח|nis|ils)/gi, '').replace(/[\\\/]+/g, ' ').replace(/\s+/g, ' ').trim();
+      var cleanedTextA = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר\s*קנדי|דולר\s*אוסטרלי|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק|שקל(?:ים)?|ש["״']?ח|nis|ils)/gi, '').replace(/[\\\/]+/g, ' ').replace(/\s+/g, ' ').trim();
       return { ilsAmount: ilsAmount, note: note, cleanedText: cleanedTextA, autoConverted: false };
     }
   }
@@ -9995,7 +9995,7 @@ function parseForeignCurrencyHint(text) {
   // Path B — auto-convert from foreign currency using fixed rates.
   // Patterns: "50$ amazon", "$50 amazon", "50 usd amazon", "50 דולר", "12 יורו spotify",
   // "100 cad uber", "5000 jpy sushi", "80 chf hotel"
-  var foreignAmountRe = /(\d+(?:[.,]\d+)?)\s*(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/i;
+  var foreignAmountRe = /(\d+(?:[.,]\d+)?)\s*(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר\s*קנדי|דולר\s*אוסטרלי|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/i;
   var foreignSymRe = /(\$|€|£|¥)\s*(\d+(?:[.,]\d+)?)/i;
   var fm = s.match(foreignAmountRe) || s.match(foreignSymRe);
   if (fm) {
@@ -10009,7 +10009,7 @@ function parseForeignCurrencyHint(text) {
     var rate = _kfl_fxLookup(sym);
     if (!rate) return null;
     var converted = Math.round(amount * rate * 100) / 100;
-    var cleanedTextB = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/gi, '').replace(/(\$|€|£|¥)\s*\d+(?:[.,]\d+)?/gi, '').replace(/\s+/g, ' ').trim();
+    var cleanedTextB = s.replace(/\d+(?:[.,]\d+)?\s*(?:\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר\s*קנדי|דולר\s*אוסטרלי|דולר(?:ים)?|יורו|אירו|פאונד|יין|פרנק)/gi, '').replace(/(\$|€|£|¥)\s*\d+(?:[.,]\d+)?/gi, '').replace(/\s+/g, ' ').trim();
     Logger.log('parseForeignCurrencyHint: ' + amount + ' ' + sym + ' * ' + rate + ' = ₪' + converted);
     return { ilsAmount: converted, note: _kfl_fxNote_(sym, amount, rate, converted), cleanedText: cleanedTextB, autoConverted: true, fxRate: rate, foreignAmount: amount, foreignSymbol: sym };
   }
@@ -10076,12 +10076,12 @@ function _kfl_fxNote_(sym, amount, rate, converted) {
 function _kfl_currencyDisplay_(sym) {
   var raw = String(sym || '').trim();
   var k = raw.toUpperCase();
+  if (k === 'CAD' || /דולר\s*קנדי/.test(raw)) return 'CAD ';
+  if (k === 'AUD' || /דולר\s*אוסטרלי/.test(raw)) return 'AUD ';
   if (raw === '$' || k === 'USD' || /דולר/.test(raw)) return '$';
   if (raw === '€' || k === 'EUR' || /יורו|אירו/.test(raw)) return '€';
   if (raw === '£' || k === 'GBP' || /פאונד/.test(raw)) return '£';
   if (raw === '¥' || k === 'JPY' || /יין/.test(raw)) return '¥';
-  if (k === 'CAD') return 'CAD ';
-  if (k === 'AUD') return 'AUD ';
   if (k === 'CHF' || /פרנק/.test(raw)) return 'CHF ';
   return raw + ' ';
 }
@@ -10106,6 +10106,11 @@ function _kfl_nonAdjacentCurrency_(text) {
   //   guard   -> optional source string; if it matches near the token, skip.
   var H = 'A-Za-z\\u0590-\\u05FF'; // word-char class: Latin + Hebrew letters
   var cands = [
+    // Hebrew "dolar kanadi" (CAD) / "dolar ostrali" (AUD) -- MUST precede the
+    // generic "dolar" (USD) entry below, or the modifier is swallowed by USD and
+    // the amount converts at the wrong (US) rate. Steven 2026-06-07.
+    { re: '(^|[^' + H + '])דולר\\s*קנדי([^' + H + ']|$)', symbol: 'CAD', wordRe: 'דולר\\s*קנדי' },
+    { re: '(^|[^' + H + '])דולר\\s*אוסטרלי([^' + H + ']|$)', symbol: 'AUD', wordRe: 'דולר\\s*אוסטרלי' },
     // Hebrew "dolar" / "dolarim" (USD). Whole word = not glued to another letter.
     { re: '(^|[^' + H + '])דולר(ים)?([^' + H + ']|$)', symbol: 'דולר', wordRe: 'דולר(ים)?' },
     { re: '(^|[^' + H + '])(יורו|אירו)([^' + H + ']|$)', symbol: 'יורו', wordRe: '(יורו|אירו)' },
