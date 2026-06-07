@@ -26,7 +26,14 @@ const PACKS_DIR = path.join(__dirname, 'packs');
 const OUT_JSON = path.join(__dirname, 'INDEX.json');
 const OUT_GS = path.join(__dirname, '..', 'ExpenseBot_KEYWORDS.gs');
 const INCOME_STOP = new Set(['pension', 'pension fund', 'pension contribution', 'pensions', 'grant', 'grants', 'stipend', 'stipends', 'allowance', 'allowances', 'entitlement', 'entitlements', 'benefit', 'benefits', 'המוסד', 'רנטה', 'fund', 'contribution']);
-const CAP = 2500; // max keywords per bucket after prefix filtering (keeps file ~3MB for the manual paste)
+// Per-bucket cap after prefix filtering. Raised 2500 -> 3200 (Steven 2026-06-07:
+// "+30,000 words customers can write") which surfaces +30,287 already-vetted
+// keywords from the existing packs (313k unique source kw; ~205k were trimmed).
+// These are dedup'd, prefix-filtered, junk-filtered and INCOME_STOP-guarded by
+// this same builder, so it is purely additive fallback coverage with no new
+// misroute risk; the golden-set gauntlet is the regression guard. Override with
+// KFL_CAP=<n> for experiments; the committed default is the verified value.
+const CAP = parseInt(process.env.KFL_CAP, 10) || 3200;
 
 // Hebrew clitic prefixes (longest first). Stripping one from a padded variant yields the base.
 const PFX = ['וכשה', 'ומה', 'וכש', 'כשה', 'מהה', 'בהה', 'והה', 'שהה', 'לכש',
