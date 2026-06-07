@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-admin-secret';
+const KFL_BUILD_VERSION = '2026-06-07-fx-plural';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9775,7 +9775,11 @@ function parseForeignCurrencyHint(text) {
   if (!text) return null;
   var s = String(text);
   // Broader currency detection — symbols, ISO codes, Hebrew names.
-  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק|\bdollars?\b|\beuros?\b|\bpounds?\b|\byen\b|\bfrancs?\b)/i;
+  // English currency WORDS only in the PLURAL ("30 dollars", "100 pounds"). The
+  // singular is almost always an adjective in a noun phrase ("5 dollar menu",
+  // "pound cake", "dollar store", "euro disney") and must NOT trigger an FX
+  // conversion. Symbols ($), ISO codes (usd) and Hebrew (דולר) are unaffected.
+  var foreignRe = /(\$|€|£|¥|usd|eur|gbp|cad|aud|jpy|chf|דולר|דולרים|יורו|אירו|פאונד|יין|פרנק|\bdollars\b|\beuros\b|\bpounds\b|\byen\b|\bfrancs\b)/i;
   if (!foreignRe.test(s)) return null;
 
   // Path A — user gave both amounts (e.g. "50$ amazon 180 שח")
@@ -9926,11 +9930,11 @@ function _kfl_nonAdjacentCurrency_(text) {
     { re: '\\baud\\b', symbol: 'AUD', wordRe: '\\baud\\b' },
     { re: '\\bjpy\\b', symbol: 'JPY', wordRe: '\\bjpy\\b' },
     { re: '\\bchf\\b', symbol: 'CHF', wordRe: '\\bchf\\b' },
-    { re: '\\bdollars?\\b', symbol: 'USD', wordRe: '\\bdollars?\\b' },
-    { re: '\\beuros?\\b', symbol: 'EUR', wordRe: '\\beuros?\\b' },
-    { re: '\\bpounds?\\b', symbol: 'GBP', wordRe: '\\bpounds?\\b' },
+    { re: '\\bdollars\\b', symbol: 'USD', wordRe: '\\bdollars\\b' },
+    { re: '\\beuros\\b', symbol: 'EUR', wordRe: '\\beuros\\b' },
+    { re: '\\bpounds\\b', symbol: 'GBP', wordRe: '\\bpounds\\b' },
     { re: '\\byen\\b', symbol: 'JPY', wordRe: '\\byen\\b' },
-    { re: '\\bfrancs?\\b', symbol: 'CHF', wordRe: '\\bfrancs?\\b' }
+    { re: '\\bfrancs\\b', symbol: 'CHF', wordRe: '\\bfrancs\\b' }
   ];
   // Car-rental guard: if a rental word sits right next to the currency token,
   // it is almost certainly "Dollar Rent A Car" (car rental), not a USD amount.
