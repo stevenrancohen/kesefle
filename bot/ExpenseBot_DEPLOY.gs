@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-biz-route';
+const KFL_BUILD_VERSION = '2026-06-07-bot-ux';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2898,12 +2898,10 @@ function handleInteractiveReply_(fromPhone, interactive) {
     try { PropertiesService.getScriptProperties().deleteProperty(pendingKey); } catch (_dpErr) {}
 
     return {
-      replyText: '✅ נרשם!\n' +
-        '━━━━━━━━━━━━━━━━━━\n' +
-        '💰 סכום: ₪' + amount + '\n' +
-        '📁 קטגוריה: ' + category + ' / ' + subcategory + '\n' +
-        '📝 פירוט: ' + description + '\n\n' +
-        '💡 בפעם הבאה שתשלח "' + description + '" — אזכור את הקטגוריה הזו אוטומטית.' +
+      replyText: '✅ נרשם: ₪' + amount + ' · ' + category + ' / ' + subcategory + '\n' +
+        _mtdTail_(fromPhone, category) +
+        '💡 בפעם הבאה "' + description + '" יזוהה אוטומטית.' +
+        _sheetNudgeLine_(fromPhone) +
         _celebrateIfFirstExpense_(fromPhone)
     };
   } catch (e) {
@@ -6944,6 +6942,13 @@ function _kvLookupPhone_(phoneClean) {
 // Calls /api/sheet/bot-query (already exists) with queryType=category,
 // caches the answer per (phone, category) for 5 min so a chatty user
 // who logs five "סופר" expenses doesn't hit the API five times.
+function _mtdTail_(fromPhone, category) {
+  try {
+    var line = _tenantCategoryMtdLine_(fromPhone, category);
+    return line ? (line + '\n') : '';
+  } catch (_e) { return ''; }
+}
+
 function _tenantCategoryMtdLine_(fromPhone, category) {
   try {
     if (!fromPhone || !category) return '';
@@ -7849,8 +7854,9 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
         }
       } catch (_lsErr) {}
       return { replyText:
-        '✅ נרשם: ₪' + Number(pending.amount).toLocaleString('he-IL') + ' · ' + pickedCategory +
-        ' (ולמדתי — בפעם הבאה אזהה לבד).' + _sheetLinkLine_(fromPhone)
+        '✅ נרשם: ₪' + Number(pending.amount).toLocaleString('he-IL') + ' · ' + pickedCategory + '\n' +
+        _mtdTail_(fromPhone, pickedCategory) +
+        '💡 בפעם הבאה אזהה לבד.' + _sheetNudgeLine_(fromPhone)
       };
     }
     return { replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה/י שוב.' };
@@ -7938,7 +7944,8 @@ function _handlePendingCategoryText_(fromPhone, text) {
           }
         } catch (_lsErr) {}
         return { handled: true, replyText:
-          '✅ נרשם: ₪' + Number(pending.amount).toLocaleString('he-IL') + ' · ' + category + _sheetLinkLine_(fromPhone)
+          '✅ נרשם: ₪' + Number(pending.amount).toLocaleString('he-IL') + ' · ' + category + '\n' +
+          _mtdTail_(fromPhone, category) + _sheetNudgeLine_(fromPhone)
         };
       }
       return { handled: true, replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה/י שוב.' };
@@ -9532,7 +9539,6 @@ function processExpense(text, fromPhone) {
         var apiKeyAvail = !!_aiProviderResolve_();
         var aiRich = null;
         if (apiKeyAvail) {
-          try { sendWhatsAppMessage(fromPhone, '🤖 מנתח את ההוצאה...'); } catch (_pmErr) {}
           try { aiRich = _aiCategorizeRich(soleItem.description); } catch (_aiErr) { Logger.log('processExpense: AI rich error: ' + _aiErr.message); }
         }
 
