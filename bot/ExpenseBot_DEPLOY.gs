@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-ux';
+const KFL_BUILD_VERSION = '2026-06-07-ux-encourage';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -15905,6 +15905,76 @@ function installWeeklySavingsProjectionTrigger() {
 }
 
 // ============================================================
+// 🎉 RANDOM ENCOURAGEMENT — praise / improve / reduce, max 3 per ISO-week.
+// ============================================================
+// Steven (2026-06-07): during the week send a few RANDOM nudges — "well done" /
+// "you can improve" / "consider cutting expenses". Capped at
+// KFL_ENCOURAGE_MAX_PER_WEEK (default 3) per ISO-week, with a daily dice roll so
+// the timing feels random. Owner-targeted (matches the other proactive crons; a
+// multi-tenant rollout would iterate registered phones — future). Set the cap to
+// 0 to disable. Keeps emoji minimal per Steven's note.
+function _kfl_isoWeekKey_(d) {
+  d = d || new Date();
+  var dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var day = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - day);
+  var yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+  var wk = Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+  return dt.getUTCFullYear() + '-W' + (wk < 10 ? '0' + wk : wk);
+}
+
+function _kfl_buildEncouragement_() {
+  var r = Math.random();
+  // ~1/3 of the time, a data-driven "cut a category" nudge (only if there is data).
+  if (r < 0.34) {
+    try { var sp = _buildSavingsProjectionMessage_(); if (sp) return sp; } catch (_e) {}
+  }
+  var praise = [
+    'כל הכבוד! אתה עקבי ברישום ההוצאות — בדיוק ככה בונים שליטה בכסף.',
+    'יפה מאוד! כל הוצאה שאתה רושם מקרבת אותך לתמונה ברורה של הכסף שלך.',
+    'מרשים! ההתמדה שלך משתלמת — אתה יודע בדיוק לאן הכסף הולך.'
+  ];
+  var improve = [
+    'טיפ: נסה לרשום כל הוצאה ברגע שהיא קורית — ככה התמונה תמיד מדויקת.',
+    'רעיון לשיפור: כתוב "סיכום" מדי פעם כדי לראות איפה אתה עומד החודש.',
+    'אפשר להשתפר: שים תקציב חודשי לקטגוריה אחת — קל יותר לעקוב ולחסוך.'
+  ];
+  if (r < 0.67) return praise[Math.floor(Math.random() * praise.length)];
+  return improve[Math.floor(Math.random() * improve.length)];
+}
+
+function cronRandomEncouragement() {
+  try {
+    var to = (typeof ALLOWED_PHONE !== 'undefined' && ALLOWED_PHONE) ||
+             PropertiesService.getScriptProperties().getProperty('WEEKLY_SUMMARY_PHONE') || '';
+    if (!to) { Logger.log('cronRandomEncouragement: no recipient'); return; }
+    var props = PropertiesService.getScriptProperties();
+    var maxWk = parseInt(props.getProperty('KFL_ENCOURAGE_MAX_PER_WEEK') || '3', 10);
+    if (isNaN(maxWk) || maxWk < 0) maxWk = 3;
+    if (maxWk === 0) { Logger.log('cronRandomEncouragement: disabled (cap 0)'); return; }
+    var key = 'KFL_ENCOURAGE_' + _kfl_isoWeekKey_(new Date());
+    var sent = parseInt(props.getProperty(key) || '0', 10) || 0;
+    if (sent >= maxWk) { Logger.log('cronRandomEncouragement: weekly cap reached'); return; }
+    if (Math.random() > 0.45) { Logger.log('cronRandomEncouragement: skipped (dice)'); return; }
+    var msg = _kfl_buildEncouragement_();
+    if (!msg) return;
+    sendWhatsAppMessage(to, msg);
+    props.setProperty(key, String(sent + 1));
+    Logger.log('cronRandomEncouragement: sent (' + (sent + 1) + '/' + maxWk + ' this week)');
+  } catch (e) { Logger.log('cronRandomEncouragement error: ' + (e && e.stack || e)); }
+}
+
+function installRandomEncouragementTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'cronRandomEncouragement') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger('cronRandomEncouragement')
+    .timeBased().everyDays(1).atHour(11).inTimezone('Asia/Jerusalem').create();
+  Logger.log('✅ Random encouragement trigger installed (daily ~11am, max 3/week)');
+}
+
+// ============================================================
 // 🎁 ONE-LINER INSTALLERS — make Steven's life easy.
 // ============================================================
 // Run installAllMotivationTriggers() once from the editor to enable both
@@ -15912,6 +15982,7 @@ function installWeeklySavingsProjectionTrigger() {
 function installAllMotivationTriggers() {
   installDailyMotivationTrigger();
   installWeeklySavingsProjectionTrigger();
+  installRandomEncouragementTrigger();
   Logger.log('✅ All motivation triggers installed.');
 }
 
@@ -15922,7 +15993,7 @@ function uninstallMotivationTriggers() {
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
     var fn = triggers[i].getHandlerFunction();
-    if (fn === 'cronDailyMotivation' || fn === 'cronWeeklySavingsProjection') {
+    if (fn === 'cronDailyMotivation' || fn === 'cronWeeklySavingsProjection' || fn === 'cronRandomEncouragement') {
       ScriptApp.deleteTrigger(triggers[i]);
       killed++;
     }
