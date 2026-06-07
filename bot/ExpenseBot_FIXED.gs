@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-bizparse';
+const KFL_BUILD_VERSION = '2026-06-07-livefx';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9877,14 +9877,15 @@ function processExpense(text, fromPhone) {
   }
 }
 
-// Rough fixed-rate conversion table — used when user writes "50$ amazon" without ILS amount.
-// Rates are 2026 estimates. Bot prefers user-supplied ILS amount when present.
-// Each rate can be overridden via Script Properties: FX_RATE_USD, FX_RATE_EUR,
-// FX_RATE_GBP, FX_RATE_CAD, FX_RATE_AUD, FX_RATE_JPY, FX_RATE_CHF.
+// LAST-RESORT fixed-rate table -- only used when BOTH the live daily fetch and a
+// manual FX_RATE_<code> Script Property override are unavailable. The live rate
+// (_kfl_fxRateLive_) is the real primary; these are just a sane floor refreshed
+// to actual market values on 2026-06-05 (ILS strengthened -- USD ~2.91, not the
+// old 3.65). Each can still be overridden via FX_RATE_USD / FX_RATE_EUR / etc.
 // installKesefleBot() surfaces the effective rates in its diagnostics report.
 var KFL_FX_DEFAULTS = {
-  USD: 3.65, EUR: 3.95, GBP: 4.65,
-  CAD: 2.65, AUD: 2.40, JPY: 0.024, CHF: 4.10
+  USD: 2.91, EUR: 3.39, GBP: 3.92,
+  CAD: 2.10, AUD: 2.07, JPY: 0.018, CHF: 3.69
 };
 
 // Live FX rate fetcher. Hits a free, no-key endpoint (Frankfurter) for the
@@ -9913,25 +9914,30 @@ function _kfl_fxRateLive_(code) {
       }
     } catch (_cg) {}
   }
-  try {
-    // Frankfurter: https://api.frankfurter.app/latest?from=USD&to=ILS
-    // -> {"amount":1.0,"base":"USD","date":"...","rates":{"ILS":3.71}}
-    var url = 'https://api.frankfurter.app/latest?from=' + encodeURIComponent(k) + '&to=ILS';
-    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
-    if (!resp || typeof resp.getResponseCode !== 'function' || resp.getResponseCode() !== 200) return null;
-    var body = resp.getContentText();
-    if (!body) return null;
-    var data = JSON.parse(body);
-    if (!data || !data.rates) return null;
-    var rate = parseFloat(data.rates.ILS);
-    if (isNaN(rate) || rate <= 0) return null;
-    if (cache) { try { cache.put(cacheKey, String(rate), _KFL_FX_LIVE_CACHE_SECONDS); } catch (_cp) {} }
-    Logger.log('_kfl_fxRateLive_: ' + k + '->ILS live=' + rate);
-    return rate;
-  } catch (_fe) {
-    Logger.log('_kfl_fxRateLive_: fetch failed for ' + k + ': ' + (_fe && _fe.message));
-    return null;
+  // Two free, no-key providers in order. frankfurter.app MOVED to
+  // frankfurter.dev -- the old host now 301-redirects to HTML and the fetch
+  // silently failed, so every conversion fell back to the stale static rate.
+  // We hit the new host directly and fall back to open.er-api.com. Both return
+  // {"rates":{"ILS":<n>}}, so one parse covers both. First positive wins; ~6h cache.
+  var _eps = [
+    'https://api.frankfurter.dev/v1/latest?from=' + encodeURIComponent(k) + '&to=ILS',
+    'https://open.er-api.com/v6/latest/' + encodeURIComponent(k)
+  ];
+  for (var _i = 0; _i < _eps.length; _i++) {
+    try {
+      var resp = UrlFetchApp.fetch(_eps[_i], { muteHttpExceptions: true, followRedirects: true });
+      if (!resp || typeof resp.getResponseCode !== 'function' || resp.getResponseCode() !== 200) continue;
+      var body = resp.getContentText();
+      if (!body) continue;
+      var data = JSON.parse(body);
+      var rate = parseFloat(data && data.rates ? data.rates.ILS : NaN);
+      if (isNaN(rate) || rate <= 0) continue;
+      if (cache) { try { cache.put(cacheKey, String(rate), _KFL_FX_LIVE_CACHE_SECONDS); } catch (_cp) {} }
+      Logger.log('_kfl_fxRateLive_: ' + k + '->ILS live=' + rate + ' (ep' + _i + ')');
+      return rate;
+    } catch (_fe) { Logger.log('_kfl_fxRateLive_ ep' + _i + ' fail ' + k + ': ' + (_fe && _fe.message)); }
   }
+  return null;
 }
 
 // Resolve the ILS rate for a currency CODE. Priority order (highest first):
@@ -11176,8 +11182,12 @@ function _aiProvidersAll_() {
 // provider outage or rate-limit never silently disables AI categorization.
 // Default (flag unset) is the previous single-provider behavior, unchanged.
 function _aiChatCompleteResilient_(systemPrompt, userMsg) {
+  // Failover is now ON by default (Steven 2026-06-07: "connect all the LLMs"):
+  // cascade across EVERY configured provider so one outage / rate-limit never
+  // disables AI understanding. With a single key it is identical to before. Set
+  // KFL_AI_FAILOVER=0 (or false) to force the old single-provider behavior.
   var fo = _aiReadKey_('KFL_AI_FAILOVER');
-  if (fo !== '1' && fo !== 'true') {
+  if (fo === '0' || fo === 'false') {
     var one = _aiProviderResolve_();
     return one ? _aiChatComplete_(one.provider, one.key, systemPrompt, userMsg) : null;
   }

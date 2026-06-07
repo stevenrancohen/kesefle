@@ -11,8 +11,10 @@
 // converted rate + ILS amount, and that the description is cleaned (no leftover
 // "קנדי"/"אוסטרלי"). USD/other currencies are asserted unchanged (no regression).
 //
-// Rates are the committed STATIC fallbacks (_kfl_fxRateStatic_): USD 3.65,
-// CAD 2.65, AUD 2.40. If those are retuned, update the expectations here.
+// Offline (no UrlFetchApp) the engine uses the STATIC fallbacks, refreshed
+// 2026-06-05 as the shekel strengthened: USD 2.91, CAD 2.10, AUD 2.07. In
+// production the live daily rate (_kfl_fxRateLive_) is used instead. If the
+// static floor is retuned, update these expectations.
 
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
@@ -34,12 +36,12 @@ function near(a, b) { return typeof a === 'number' && Math.abs(a - b) < 0.001; }
 
 // --- THE FIX: CAD in both word orders, amount-adjacent and non-adjacent ---
 [
-  { msg: '100 דולר קנדי uber', rate: 2.65, ils: 265 },
-  { msg: 'דולר קנדי 100 uber', rate: 2.65, ils: 265 },
-  { msg: '100 דולר אוסטרלי קפה', rate: 2.40, ils: 240 },
-  { msg: 'דולר אוסטרלי 50 קפה', rate: 2.40, ils: 120 },
-  { msg: '100 cad uber', rate: 2.65, ils: 265 },
-  { msg: '100 aud sushi', rate: 2.40, ils: 240 },
+  { msg: '100 דולר קנדי uber', rate: 2.10, ils: 210 },
+  { msg: 'דולר קנדי 100 uber', rate: 2.10, ils: 210 },
+  { msg: '100 דולר אוסטרלי קפה', rate: 2.07, ils: 207 },
+  { msg: 'דולר אוסטרלי 50 קפה', rate: 2.07, ils: 103.5 },
+  { msg: '100 cad uber', rate: 2.10, ils: 210 },
+  { msg: '100 aud sushi', rate: 2.07, ils: 207 },
 ].forEach(function (c) {
   const fx = fxOf(c.msg);
   ok('rate "' + c.msg + '" = ' + c.rate, near(fx.fxRate, c.rate), 'got ' + fx.fxRate + (fx._err || ''));
@@ -53,12 +55,12 @@ function near(a, b) { return typeof a === 'number' && Math.abs(a - b) < 0.001; }
 
 // --- REGRESSION: generic USD must STILL be USD (3.65), not CAD/AUD ---
 [
-  { msg: '100 דולר amazon', rate: 3.65 },
-  { msg: '50 דולר', rate: 3.65 },
+  { msg: '100 דולר amazon', rate: 2.91 },
+  { msg: '50 דולר', rate: 2.91 },
 ].forEach(function (c) {
   const fx = fxOf(c.msg);
-  ok('USD unchanged "' + c.msg + '" = ' + c.rate, near(fx.fxRate, c.rate), 'got ' + fx.fxRate);
-  ok('USD not CAD/AUD "' + c.msg + '"', fx.fxRate !== 2.65 && fx.fxRate !== 2.40, 'got ' + fx.fxRate);
+  ok('USD "' + c.msg + '" = ' + c.rate, near(fx.fxRate, c.rate), 'got ' + fx.fxRate);
+  ok('USD not CAD/AUD "' + c.msg + '"', fx.fxRate !== 2.10 && fx.fxRate !== 2.07, 'got ' + fx.fxRate);
 });
 
 console.log('test_fx_cad_aud_rate: ' + pass + ' passed, ' + fail + ' failed');

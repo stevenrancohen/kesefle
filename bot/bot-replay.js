@@ -108,8 +108,9 @@ const code = [
   // currency path processExpense uses: parseForeignCurrencyHint -> convert ->
   // classify on the cleaned (currency-stripped) description. _kfl_fxRateLive_ is
   // a no-op offline (UrlFetchApp is undefined in this sandbox), so rates come
-  // from the hardcoded KFL_FX_DEFAULTS -- deterministic + network-free.
-  'var KFL_FX_DEFAULTS = ' + JSON.stringify({ USD: 3.65, EUR: 3.95, GBP: 4.65, CAD: 2.65, AUD: 2.40, JPY: 0.024, CHF: 4.10 }) + ';',
+  // from KFL_FX_DEFAULTS. Pull the REAL defaults straight from the source so the
+  // replay never drifts from the production static floor.
+  (SRC.match(/var KFL_FX_DEFAULTS = \{[\s\S]*?\};/) || ['var KFL_FX_DEFAULTS = { USD: 2.91 };'])[0],
   extractFn('_kfl_fxRateLive_') || '',
   extractFn('_kfl_fxRate') || '',
   extractFn('_kfl_fxLookup') || '',
