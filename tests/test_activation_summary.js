@@ -1,7 +1,9 @@
-// Unit test: api/admin/activation-summary.js
-// Mocks Upstash KV (scan + get), calls handlerImpl directly (bypasses
-// requireAdmin), and asserts the activation cohort math + kill-criterion verdict
-// the LLM Council asked for. Run: node tests/test_activation_summary.js
+// Unit test: api/admin/activation-summary.js + lib/activation.js
+// Mocks Upstash KV (scan + get for user/sheet/phone), calls handlerImpl directly
+// (bypasses requireAdmin), and asserts the HEALTH-segmented activation the LLM
+// Council asked for: "0% activation" is meaningless until you separate users who
+// COULD use the bot (sheet + WhatsApp linked) from those physically blocked.
+// Run: node tests/test_activation_summary.js
 process.env.KV_REST_API_URL = 'https://kv.test';
 process.env.KV_REST_API_TOKEN = 'tok';
 
@@ -9,76 +11,62 @@ const now = Date.now();
 const iso = (ms) => new Date(ms).toISOString();
 const DAY = 86400000;
 
-// Build a user set: 12 signed up "now" (3 with >=2 expenses, 4 with exactly 1,
-// 5 with zero) + 2 old signups (60d ago) with 10 expenses each (all-time only).
-const users = {};
-for (let i = 0; i < 12; i++) {
-  const count = i < 3 ? [2, 3, 5][i] : (i < 7 ? 1 : 0);
-  users['user:c' + i] = {
-    email: 'c' + i + '@x.com', connectedAt: iso(now - 60000),
-    expensesCount: count, lastActive: count ? iso(now - 60000) : null,
-    firstExpenseAt: count ? iso(now - 60000) : null,
-  };
+let users = {}, sheets = {}, phones = {};
+function mk(id, { count = 0, linked = false, hasSheet = false, daysAgo = 0 } = {}) {
+  users['user:' + id] = { email: id + '@x.com', connectedAt: iso(now - daysAgo * DAY - 60000), expensesCount: count, lastActive: count ? iso(now - 60000) : null };
+  if (hasSheet || linked) sheets['sheet:' + id] = { spreadsheetId: 'sheet-' + id };
+  if (linked) phones['userPhone:' + id] = { phone: '97250' + id };
 }
-for (let i = 0; i < 2; i++) {
-  users['user:o' + i] = {
-    email: 'o' + i + '@x.com', connectedAt: iso(now - 60 * DAY),
-    expensesCount: 10, lastActive: iso(now - 60 * DAY),
-  };
-}
-// noise records that must be ignored
-users['user:empty'] = {}; // not looksReal -> skipped
-users['user:c0:archived'] = { email: 'x', expensesCount: 99 }; // sub-key -> filtered out
+function reset() { users = {}; sheets = {}; phones = {}; }
 
 global.fetch = async (url) => {
   const u = String(url);
-  if (u.includes('/scan/')) {
-    const keys = Object.keys(users);
-    return new Response(JSON.stringify({ result: ['0', keys] }), { status: 200 });
-  }
+  if (u.includes('/scan/')) return new Response(JSON.stringify({ result: ['0', Object.keys(users)] }), { status: 200 });
   const m = u.match(/\/get\/(.+)$/);
   if (m) {
     const key = decodeURIComponent(m[1]);
-    const rec = users[key];
+    const rec = users[key] || sheets[key] || phones[key] || null;
     return new Response(JSON.stringify({ result: rec ? JSON.stringify(rec) : null }), { status: 200 });
   }
   return new Response('{}', { status: 404 });
 };
 
 const { handlerImpl } = await import('../api/admin/activation-summary.js');
-
-function res() {
-  return { statusCode: 200, body: null,
-    setHeader() {}, status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; return this; } };
-}
+const res = () => ({ statusCode: 200, body: null, setHeader() {}, status(c) { this.statusCode = c; return this; }, json(b) { this.body = b; return this; } });
+const run = async () => { const r = res(); await handlerImpl({ method: 'GET', query: { days: '30' } }, r); return r.body; };
 
 let pass = 0, fail = 0;
 const ok = (l, c) => { if (c) pass++; else { fail++; console.log('  FAIL ' + l); } };
 
-const r = res();
-await handlerImpl({ method: 'GET', query: { days: '30' } }, r);
+// ---- main: 6 linked (3 returned), 4 pending-link, 2 no-sheet ----
+reset();
+['l0', 'l1', 'l2', 'l3', 'l4', 'l5'].forEach((id, i) => mk(id, { count: [2, 3, 5, 1, 1, 0][i], linked: true })); // e1=5, e2=3
+['p0', 'p1', 'p2', 'p3'].forEach((id) => mk(id, { count: 0, hasSheet: true })); // pending link
+['n0', 'n1'].forEach((id) => mk(id, { count: 0 }));                              // no sheet
+let b = await run();
+const h = b.headline, rh = b.registration_health;
+ok('200 ok', b.ok === true);
+ok('healthy_signups = 6 (fully-linked only)', h.healthy_signups === 6);
+ok('healthy_logged_2nd = 3', h.healthy_logged_2nd === 3);
+ok('healthy activation rate = 50%', h.activation_rate_pct === 50);
+ok('raw_signups = 12 (everyone)', h.raw_signups === 12);
+ok('raw rate = 25% (3 of 12) -- the misleading number', h.raw_rate_pct === 25);
+ok('verdict OK (>=5 linked, rate >= 30%)', h.verdict === 'OK');
+ok('registration_health: linked 6 / pending 4 / no_sheet 2', rh.linked === 6 && rh.pending_link === 4 && rh.no_sheet === 2);
+ok('blocked = 6 (the plumbing-stuck users)', rh.blocked === 6);
 
-ok('200 ok', r.statusCode === 200 && r.body && r.body.ok);
-const h = r.body.headline, f = r.body.cohort_funnel, a = r.body.all_time;
-ok('cohort signups = 12 (excludes old + noise)', h.signups === 12);
-ok('logged 2nd expense = 3', h.logged_2nd_expense === 3);
-ok('activation rate = 25%', h.activation_rate_pct === 25);
-ok('verdict = FREEZE_FEATURES (25% < 30%)', h.verdict === 'FREEZE_FEATURES');
-ok('cohort logged 1st = 7', f.logged_1st_expense === 7);
-ok('cohort logged 5+ = 1', f.logged_5plus === 1);
-ok('first->2nd pct = 42.9 (3 of 7)', f.pct.first_to_2nd === 42.9);
-ok('all-time real users = 14 (12 cohort + 2 old, noise excluded)', a.total_real_users === 14);
-ok('all-time ever logged 2 = 5 (3 + 2 old)', a.ever_logged_2 === 5);
-ok('sub-key user:c0:archived filtered out', r.body.meta.user_keys_scanned === 14);
+// ---- PLUMBING: most signups stuck unlinked (<5 linked) ----
+reset();
+['l0', 'l1', 'l2'].forEach((id) => mk(id, { count: 2, linked: true }));
+['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'].forEach((id) => mk(id, { count: 0, hasSheet: true }));
+b = await run();
+ok('PLUMBING verdict when <5 are fully linked', b.headline.verdict === 'PLUMBING');
 
-// small-sample branch
-const r2 = res();
-global.fetch = (orig => async (url) => {
-  if (String(url).includes('/scan/')) return new Response(JSON.stringify({ result: ['0', ['user:c0', 'user:c1', 'user:c2']] }), { status: 200 });
-  return orig(url);
-})(global.fetch);
-await handlerImpl({ method: 'GET', query: { days: '30' } }, r2);
-ok('small cohort -> SAMPLE_TOO_SMALL', r2.body.headline.verdict === 'SAMPLE_TOO_SMALL');
+// ---- VALUE_PROBLEM: enough linked, but they don't return ----
+reset();
+['l0', 'l1', 'l2', 'l3', 'l4', 'l5'].forEach((id) => mk(id, { count: 1, linked: true })); // all logged once, none twice
+b = await run();
+ok('VALUE_PROBLEM verdict when >=5 linked but 0% return', b.headline.verdict === 'VALUE_PROBLEM' && b.headline.activation_rate_pct === 0);
 
 console.log('\n' + (fail === 0 ? '✅ test_activation_summary: ALL ' + pass + ' PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
