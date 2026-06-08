@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-qafix';
+const KFL_BUILD_VERSION = '2026-06-08-qafix2';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -363,6 +363,12 @@ const CATEGORY_MAP = [
   // Placed FIRST so the income entry wins the length-tie (V8 stable sort) vs the identical
   // phrases on the government-EXPENSE rows below. Purely additive -- removes/reorders nothing.
   {"keywords":["קצבת ילדים","קצבת זקנה","קצבת נכות","קצבת שאירים","קצבת אזרח ותיק","קצבת ניידות","קצבת הבטחת הכנסה","הבטחת הכנסה","השלמת הכנסה","דמי לידה","מענק לידה","דמי אבטלה","מענק עבודה","מענק שחרור","מענק קורונה","תגמולי מילואים","דמי מילואים","פיצויי פיטורין","פיצויי פרישה","פדיון ימי חופשה","פדיון ימי מחלה","גמלת סיעוד"],"category":"הכנסות","subcategory":"קצבאות וזכאויות","isIncome":true},
+  // App/AI subscriptions in the PRIMARY map so they work without the big keyword
+  // index file (Steven 2026-06-08: "klod" was only in KEYWORDS.gs). Apps bucket.
+  {"keywords":["קלוד","קלוד פרו","קלוד מקס","קלוד טים","מנוי קלוד","claude pro","claude max","claude code","claude ai","gemini","midjourney","perplexity","copilot","cursor"],"category":"הוצאות קבועות","subcategory":"אפליקציות"},
+  // Misc income (freelance / bonus / grants / convalescence) in the PRIMARY map so
+  // a refund/bonus is flagged income even without the index. Placed early to win ties.
+  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // ===== INCOME -- income-tax refund -> income (Fix C, per bot/BOT_IMPROVEMENTS.md).
   // At top so "hahzer mas" wins the length-tie vs the government-EXPENSE row. Additive.
   {"keywords":["החזר מס הכנסה","החזר ממס הכנסה","מס הכנסה החזר","זיכוי מס","החזר מס"],"category":"הכנסות","subcategory":"החזר מס","isIncome":true},
