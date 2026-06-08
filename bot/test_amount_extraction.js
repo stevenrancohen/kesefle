@@ -26,6 +26,10 @@ const CASES = [
   ['כביש 6 אגרה 38.50', 38.5],
   // currency anchor beats a leftover quantity
   ['3 חולצות 240 שקל', 240],
+  // quantity-noun + unit + product-code + brand-number (QA fleet round 3)
+  ["סושי 8 פיסות 90", 90], ["3 פלאפלים 36", 36], ["factory 54 נעליים 899", 899],
+  ["אומגה 3 קניתי ב 199", 199], ["ויטמין B12 זריקה 90", 90], ["תוסף אבץ 50 מ״ג 45", 45],
+  ["פנסיון לחתול 7 ימים 420", 420], ["קרם SPF 50 בסופר פארם 89", 89],
   // unchanged: single number + genuine multi-expense (first item)
   ['85 קפה', 85], ['8500 משכורת', 8500], ['50 קפה + 30 חניה', 50],
 ];

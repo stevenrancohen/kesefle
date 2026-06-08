@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-amtfix';
+const KFL_BUILD_VERSION = '2026-06-08-amtfix2';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -10321,14 +10321,17 @@ function parseAmountAndDescription(text) {
     if (!isNaN(_n) && _n > 0) _found.push({ n: _n, i: match.index, len: match[0].length });
   }
   if (_found.length === 0) return null;
-  // A number is NOISE (not the price) when immediately followed by a unit word
-  // (oktan/km/gb/watt/liter/yehidot/kilo/meter...) or preceded by "kvish" (road).
-  var _UNIT_AFTER = /^[\s.,'"׳״-]*(?:אוקטן|ק"?מ|ק״מ|קמ|קילומטר|קילו|ק"?ג|ק״ג|קג|גרם|ליטר|ליט|מ"?ל|מ״ל|מיל|יחידות|יחי|יח|אינטש|אינצ|וולט|וואט|ואט|מטר|שעתיים|שעות|שעה|דקות|מגה|גיגה|טרה|אחוז|gb|mb|tb|kb|ghz|mhz|kwh|kw|kg|km|ml|cl|oz|lb|inch|inches|watts?|volts?|li?tres?|liters?|grams?|meters?|hours?|mins?|minutes?)(?![א-תa-zA-Z])/i;
-  var _ROAD_BEFORE = /כביש\s*$/;
+  // A number is NOISE (not the price) when it is: followed by a unit word
+  // (oktan/km/gb/mg/liter/yom/...), preceded by a brand/spec word (kvish/omega/
+  // SPF/factory/...), or glued to a preceding Latin letter (B12, iPhone15) --
+  // but NOT a multiplier "x" (3x450 keeps the 450).
+  var _UNIT_AFTER = /^[\s.,'"׳״-]*(?:אוקטן|ק"?מ|ק״מ|קמ|קילומטר|קילו|ק"?ג|ק״ג|קג|גרם|גר|מ"?ג|מ״ג|מג|ליטר|ליט|מ"?ל|מ״ל|מיל|יחידות|יחי|יח|אינטש|אינצ|וולט|וואט|ואט|מטר|שעתיים|שעות|שעה|דקות|ימים|יום|שבועות|שבוע|חודשים|חודש|שנים|שנה|מגה|גיגה|טרה|אחוז|gb|mb|tb|kb|ghz|mhz|kwh|kw|kg|km|ml|mg|cl|oz|lb|spf|inch|inches|watts?|volts?|li?tres?|liters?|grams?|meters?|days?|weeks?|months?|years?|hours?|mins?|minutes?)(?![א-תa-zA-Z])/i;
+  var _SPEC_BEFORE = /(?:כביש|פקטורי|factory|אומגה|ויטמין|spf|דגם|מספר|רחוב)\s*$/i;
   function _amtNoise(f) {
     var a = phoneStripped.slice(f.i + f.len, f.i + f.len + 16);
-    var b = phoneStripped.slice(Math.max(0, f.i - 8), f.i);
-    return _UNIT_AFTER.test(a) || _ROAD_BEFORE.test(b);
+    var b = phoneStripped.slice(Math.max(0, f.i - 10), f.i);
+    var bc = f.i > 0 ? phoneStripped.charAt(f.i - 1) : '';
+    return _UNIT_AFTER.test(a) || _SPEC_BEFORE.test(b) || /[a-wyzA-WYZ]$/.test(bc);
   }
   var _surv = _found.filter(function (f) { return !_amtNoise(f); });
   if (!_surv.length) _surv = _found; // never lose the whole expense
@@ -10350,7 +10353,24 @@ function parseAmountAndDescription(text) {
       var bc = f.i > 0 ? phoneStripped.charAt(f.i - 1) : '';
       return _CUR_AFTER.test(a) || bc === 'ב';
     });
-    nums = (_anc.length === 1 ? _anc : _surv).map(function (f) { return f.n; });
+    if (_anc.length === 1) {
+      nums = [_anc[0].n];
+    } else if (_surv.length === 2) {
+      // Quantity-noun ("8 pisot 90", "3 falafelim 36"): a small leading count,
+      // a noun, then the price LAST. Only when the message ENDS with the price
+      // (a trailing noun means a genuine two-expense line -> keep both numbers).
+      var _f1 = _surv[0].i < _surv[1].i ? _surv[0] : _surv[1];
+      var _f2 = _surv[0].i < _surv[1].i ? _surv[1] : _surv[0];
+      var _tail = phoneStripped.slice(_f2.i + _f2.len).replace(/\s*(?:₪|שח|ש"ח|ש״ח|שקלים|שקל|nis|ils)?\s*$/i, '');
+      var _mid = phoneStripped.slice(_f1.i + _f1.len, _f2.i);
+      if (_f1.n <= 30 && _f2.n > _f1.n && _tail === '' && /[א-תa-zA-Z]/.test(_mid)) {
+        nums = [_f2.n];
+      } else {
+        nums = _surv.map(function (f) { return f.n; });
+      }
+    } else {
+      nums = _surv.map(function (f) { return f.n; });
+    }
   }
   // Strip digits/punctuation, the ₪ symbol, and standalone currency words so
   // they don't pollute the saved description or the category match
