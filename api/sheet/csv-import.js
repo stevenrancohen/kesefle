@@ -352,12 +352,14 @@ async function handlerImpl(req, res) {
     const tuple = rec.date + '|' + rec.amount + '|' + String(rec.description || '').trim().toLowerCase();
     if (existingTuples.has(tuple)) { skipped.push(rec); continue; }
     toWrite.push([
-      sanitizeCell(rec.date),
-      sanitizeCell(rec.monthKey),
-      rec.amount,
-      sanitizeCell(rec.category),
-      sanitizeCell(rec.isIncome ? 'הכנסות' : ''),
-      sanitizeCell(rec.description),
+      sanitizeCell(rec.date),                                    // A date
+      sanitizeCell(rec.monthKey),                                // B YYYY-MM
+      rec.amount,                                                // C amount
+      sanitizeCell(rec.category),                                // D category
+      sanitizeCell(rec.isIncome ? 'הכנסות שונות' : ''),          // E subcategory
+      sanitizeCell(rec.description),                             // F description
+      'ייבוא CSV',                                               // G source
+      !rec.isIncome,                                             // H הוצאה? (TRUE=expense, FALSE=income)
     ]);
   }
 
@@ -372,7 +374,7 @@ async function handlerImpl(req, res) {
   }
 
   try {
-    const range = encodeURIComponent(`'${TX_TAB}'!A:F`);
+    const range = encodeURIComponent(`'${TX_TAB}'!A:H`);
     // RAW (not USER_ENTERED) — consistent with every other Kesefle writer
     // (lib/sheet-writer.js, bank-csv.js, relabel-row.js, mark-vat.js). RAW
     // stores each cell verbatim instead of re-parsing it as if a user typed
