@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-qafix2';
+const KFL_BUILD_VERSION = '2026-06-08-amtfix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -10310,13 +10310,48 @@ function parseAmountAndDescription(text) {
   // is followed by exactly three digits AND another digit/comma group is a
   // thousand separator; anything else is the decimal point.
   var numberRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
-  var nums = [];
+  // Find numbers WITH position so we can separate the PRICE from quantity/unit/
+  // count noise (Steven 2026-06-08 QA fleet: "5 tashlumim shel 99" recorded 5
+  // AND 99 as two rows; "dlek 95 oktan 250" recorded 95; "tipul 10000 km 850"
+  // recorded 10000). Unit/count words live in the regex string literals below.
+  var _found = [];
   var match;
   while ((match = numberRe.exec(phoneStripped)) !== null) {
-    var n = _parseIsraeliNumber_(match[0]);
-    if (!isNaN(n) && n > 0) nums.push(n);
+    var _n = _parseIsraeliNumber_(match[0]);
+    if (!isNaN(_n) && _n > 0) _found.push({ n: _n, i: match.index, len: match[0].length });
   }
-  if (nums.length === 0) return null;
+  if (_found.length === 0) return null;
+  // A number is NOISE (not the price) when immediately followed by a unit word
+  // (oktan/km/gb/watt/liter/yehidot/kilo/meter...) or preceded by "kvish" (road).
+  var _UNIT_AFTER = /^[\s.,'"׳״-]*(?:אוקטן|ק"?מ|ק״מ|קמ|קילומטר|קילו|ק"?ג|ק״ג|קג|גרם|ליטר|ליט|מ"?ל|מ״ל|מיל|יחידות|יחי|יח|אינטש|אינצ|וולט|וואט|ואט|מטר|שעתיים|שעות|שעה|דקות|מגה|גיגה|טרה|אחוז|gb|mb|tb|kb|ghz|mhz|kwh|kw|kg|km|ml|cl|oz|lb|inch|inches|watts?|volts?|li?tres?|liters?|grams?|meters?|hours?|mins?|minutes?)(?![א-תa-zA-Z])/i;
+  var _ROAD_BEFORE = /כביש\s*$/;
+  function _amtNoise(f) {
+    var a = phoneStripped.slice(f.i + f.len, f.i + f.len + 16);
+    var b = phoneStripped.slice(Math.max(0, f.i - 8), f.i);
+    return _UNIT_AFTER.test(a) || _ROAD_BEFORE.test(b);
+  }
+  var _surv = _found.filter(function (f) { return !_amtNoise(f); });
+  if (!_surv.length) _surv = _found; // never lose the whole expense
+  var nums;
+  // Installment / multiplier ("X tashlumim shel Y", "8 x 200"): one purchase
+  // split into payments -> the price is the largest surviving number.
+  var _INSTALL = /תשלומ|תשלום|פעמ|פעמים|\btashlum|\bpeamim|\d\s*[x×✕*]\s*\d|\bpayments?\b|\binstallments?\b|\btimes\b|\bof\b/i;
+  if (_INSTALL.test(phoneStripped) && _surv.length > 1) {
+    var _mx = _surv[0];
+    for (var _k = 1; _k < _surv.length; _k++) { if (_surv[_k].n > _mx.n) _mx = _surv[_k]; }
+    nums = [_mx.n];
+  } else {
+    // Currency anchor: a number marked with shekel/NIS (after) or glued to a
+    // leading "be-" (before) is the price; if exactly one survivor is anchored
+    // it wins (drops a leftover quantity noun: "3 hultzot 240 shekel" -> 240).
+    var _CUR_AFTER = /^\s*(?:₪|שח|ש"ח|ש״ח|שקלים|שקל|nis|ils)(?![א-תa-zA-Z])/i;
+    var _anc = _surv.filter(function (f) {
+      var a = phoneStripped.slice(f.i + f.len, f.i + f.len + 8);
+      var bc = f.i > 0 ? phoneStripped.charAt(f.i - 1) : '';
+      return _CUR_AFTER.test(a) || bc === 'ב';
+    });
+    nums = (_anc.length === 1 ? _anc : _surv).map(function (f) { return f.n; });
+  }
   // Strip digits/punctuation, the ₪ symbol, and standalone currency words so
   // they don't pollute the saved description or the category match
   // (e.g. "50 שח קפה" → "קפה", "₪50 קפה" → "קפה").
