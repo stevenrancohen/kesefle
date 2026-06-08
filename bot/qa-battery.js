@@ -101,6 +101,19 @@ const BATTERY = [
   { msg: '100 דולר קנדי uber', lang: 'he', fxRate: 2.10 },
   { msg: '100 cad uber', lang: 'en', fxRate: 2.10 },
   { msg: '20 euro spotify', lang: 'en', fxRate: 3.39 },
+  // ---------- apps / subscriptions (Steven: bot must know it is an app) ----------
+  { msg: '200 דולר קלוד', lang: 'he', cat: 'הוצאות קבועות' },
+  { msg: '200 קלוד אפליקציה', lang: 'he', cat: 'הוצאות קבועות' },
+  { msg: '80 chatgpt', lang: 'en', cat: 'הוצאות קבועות' },
+  { msg: '100 spotify', lang: 'en', cat: 'בידור' },
+  { msg: '99 נטפליקס מנוי', lang: 'he', cat: 'בידור' },
+  // ---------- income (Hebrew + English) ----------
+  { msg: '+5000 בונוס', lang: 'he', income: true },
+  { msg: 'refund 200', lang: 'en', income: true },
+  { msg: 'החזר מס 150', lang: 'he', income: true },
+  // ---------- edge cases ----------
+  { msg: 'אתמול 60 מכולת', lang: 'he', cat: 'אוכל' },
+  { msg: '250 coffee ארומה', lang: 'mix', cat: 'אוכל' },
 ];
 
 let pass = 0, fail = 0;
@@ -109,6 +122,7 @@ const byLang = { he: { p: 0, t: 0 }, en: { p: 0, t: 0 } };
 
 for (const c of BATTERY) {
   const r = run(c.msg);
+  if (!byLang[c.lang]) byLang[c.lang] = { p: 0, t: 0 };
   byLang[c.lang].t++;
   let ok = !r._err && r.amount !== undefined && r.amount !== null;
   const reasons = [];
