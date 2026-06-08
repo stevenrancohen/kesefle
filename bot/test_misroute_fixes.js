@@ -23,6 +23,14 @@ const CASES = [
   { msg: 'מענק שנתי 5000', wantIncome: true, why: 'annual grant = income' },
   { msg: 'דמי הבראה 2700', wantIncome: true, why: 'convalescence pay = income' },
   { msg: 'client paid the invoice 6700', wantIncome: true, why: 'client paid = income' },
+  // QA fleet round 3 category fixes
+  { msg: "פלאפון 120 לחודש", wantCat: "הוצאות קבועות", why: "Pelephone is telecom, not electronics" },
+  { msg: "בזק טלפון 65", wantCat: "הוצאות קבועות", why: "Bezeq landline is telecom" },
+  { msg: "פנסיון כלבים לשבוע 250", wantCat: "חיות מחמד", why: "dog boarding is pets, not hotels" },
+  { msg: "חיסון לכלב 95", wantCat: "חיות מחמד", why: "dog vaccine is pets, not kids health" },
+  { msg: "חיתולים האגיס מסופר פארם 95", wantCat: "חינוך וילדים", why: "diapers are kids, not health" },
+  { msg: "כדורסל חוג שבועי 90", wantCat: "חינוך וילדים", why: "kids class, not business SaaS" },
+  { msg: "זיכוי כספי 300", wantIncome: true, why: "store refund is income" },
 ];
 let pass = 0, fail = 0;
 for (const c of CASES) {

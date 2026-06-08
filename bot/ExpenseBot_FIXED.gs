@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-amtfix2';
+const KFL_BUILD_VERSION = '2026-06-08-r3cat';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -294,6 +294,17 @@ const CATEGORY_MAP = [
   // Misc income (freelance / bonus / grants / convalescence) in the PRIMARY map so
   // a refund/bonus is flagged income even without the index. Placed early to win ties.
   {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
+  // QA fleet round 3 category fixes (Steven 2026-06-08). Placed early + multi-word
+  // so they win the longest-match over a generic keyword in another bucket.
+  // Telecom brands -> tikshoret (Pelephone/Bezeq + "phone" matched electronics).
+  {"keywords":["פלאפון","בזק","סלקום","פרטנר","הוט מובייל","גולן טלקום","רמי לוי תקשורת","חבילת סלולר","חשבון טלפון","חשבון סלולר","קו טלפון","בזק בינלאומי","פלאפון סלולר","בזק טלפון"],"category":"הוצאות קבועות","subcategory":"תקשורת"},
+  // Pets -> pet bucket (matched hotels / kids-vaccine / generic health).
+  {"keywords":["פנסיון כלבים","פנסיון לכלב","פנסיון כלב","פנסיון חתולים","פנסיון לחתול","פנסיון חתול","חול לחתול","חול חתולים","חול לחתולים","חיסון לכלב","חיסון לחתול","חיסון כלבת","וטרינר","וטרינרי","מזון לכלב","מזון לחתול","אוכל לכלב","אוכל לחתול","חנות חיות","פטשופ","תספורת לכלב","טיפוח לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
+  // Kids: diapers + after-school classes (merchant / "weekly" were winning).
+  {"keywords":["חיתולים האגיס","חיתולים האגיז","חיתולים פמפרס","חיתולים בסופר פארם","חיתולים האגיס סופר פארם","מגבונים האגיס"],"category":"חינוך וילדים","subcategory":"חיתולים ותינוקות"},
+  {"keywords":["חוג כדורסל","כדורסל חוג","חוג כדורגל","חוג שחייה","חוג שחיה","חוג ריקוד","חוג התעמלות","חוג ספורט","חוג אומנות","חוגים לילדים","חוג לילד","חוג לילדה","חוג מוזיקה"],"category":"חינוך וילדים","subcategory":"חינוך וטיפול"},
+  // Refund / store credit -> income (was booked as a merchant expense).
+  {"keywords":["זיכוי כספי","החזר על קנייה","החזר על רכישה","החזר קנייה","החזר רכישה","החזר מהחנות","החזר כספי מהחנות","קרדיט בחנות","store credit","refund"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // ===== INCOME -- income-tax refund -> income (Fix C, per bot/BOT_IMPROVEMENTS.md).
   // At top so "hahzer mas" wins the length-tie vs the government-EXPENSE row. Additive.
   {"keywords":["החזר מס הכנסה","החזר ממס הכנסה","מס הכנסה החזר","זיכוי מס","החזר מס"],"category":"הכנסות","subcategory":"החזר מס","isIncome":true},
