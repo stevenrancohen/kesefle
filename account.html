@@ -368,7 +368,7 @@
                       <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
                       <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
                     </span>
-                    ממתינה לקוד מהוואטסאפ…
+                    <span id="link-waiting-status">ממתינה לקוד מהוואטסאפ…</span>
                   </div>
                 </div>
                 <div class="mt-2 text-[11px] text-ink-500 dark:text-ink-400">
@@ -968,11 +968,11 @@ function _kflStartPolling(phone) {
   var startedAt = Date.now();
   var POLL_FAST_MS = 6000;   // 6s for the first 30s (was 4s -> ~50% fewer commands)
   var POLL_SLOW_MS = 15000;  // 15s after that
-  var POLL_MAX_MS = 3 * 60 * 1000; // give up after 3 min total
+  var POLL_MAX_MS = 10 * 60 * 1000; // poll the full code TTL (link.js EX=600s); the visibility guard pauses when the tab is hidden, so this stays KV-cheap
 
   function tick() {
     var elapsed = Date.now() - startedAt;
-    if (elapsed > POLL_MAX_MS) { _kflStopPolling(); return; }
+    if (elapsed > POLL_MAX_MS) { _kflStopPolling(); var _ws = document.getElementById('link-waiting-status'); if (_ws) _ws.textContent = 'אם שלחת ולא קרה כלום — רענני את הדף או צרי קוד חדש.'; return; }
     var nextDelay = elapsed < 30000 ? POLL_FAST_MS : POLL_SLOW_MS;
     fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone), { credentials: 'include' })
       .then(function (r) { return r.json(); })
@@ -1019,7 +1019,7 @@ function _kflStopPolling() {
         if (kflLinkPollTimer) { _kflStopPolling(); }
       } else if (document.visibilityState === 'visible' && savedPhone && !kflLinkPollTimer) {
         // Only resume if the user is still in the "waiting for confirm" state.
-        var st = document.getElementById('link-code-card');
+        var st = document.getElementById('link-state-code');
         if (st && !st.classList.contains('hidden')) {
           try { (window._kflStartPolling || __origStart)(savedPhone); } catch (e) {}
         }
