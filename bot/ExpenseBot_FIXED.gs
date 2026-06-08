@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-r3cat';
+const KFL_BUILD_VERSION = '2026-06-08-refund';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -797,6 +797,11 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   if (matched && matched.isIncome) return true;
   var s = String(rawText || '').trim();
   if (s.charAt(0) === '+') return true;
+  // Refund / store credit FROM a place -> income (a return is money coming
+  // back). Specific patterns only ("zikui me-X", "hechzer al kniya",
+  // "kibalti hechzer") so a loan repayment ("hechzer halvaa") or a bare,
+  // ambiguous "zikui" is NOT flipped. Steven 2026-06-08 (QA fleet r3).
+  if (/(?:זיכוי|החזר)\s+מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי/.test(s)) return true;
   return _isIncomeCategory_(category, subcategory);
 }
 
