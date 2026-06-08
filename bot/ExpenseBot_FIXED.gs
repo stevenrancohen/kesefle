@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-refund';
+const KFL_BUILD_VERSION = '2026-06-08-bizdash';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -14900,6 +14900,59 @@ function _sanitizeTabName_(s) {
 //   - n>=2  -> tabName = sanitized(nameOpt) or "עסק N" if no name
 //   - When the user later passes a NEW name, we RENAME the existing tab
 //     (no data loss) and update KV.
+// Build a per-business company dashboard (Maazan Hevra style) for a NEW business
+// tab, so a business created via the bot gets the FULL template -- not just a
+// bare expense list (Steven 2026-06-08). APPEND-ONLY: inserts a new tab, never
+// touches existing data. Every formula points at the business's own tx tab and
+// uses the B4 year selector, mirroring lib/sheet-writer.js buildTenantSheetSpec.
+function _createBusinessDashboard_(ss, bizTabName, displayName) {
+  var TX = bizTabName;
+  var nm = String(displayName || bizTabName).trim();
+  var dashName = (typeof _sanitizeTabName_ === 'function' ? _sanitizeTabName_('מאזן ' + nm) : ('מאזן ' + nm)) || ('מאזן ' + bizTabName);
+  if (ss.getSheetByName(dashName)) return ss.getSheetByName(dashName);
+  var sh;
+  try { sh = ss.insertSheet(dashName); } catch (e) { Logger.log('biz dash insert: ' + (e && e.message)); return null; }
+  try { sh.setRightToLeft(true); } catch (_e) {}
+  var YR = '$B$4';
+  var COLS = 'CDEFGHIJKLMN'.split('');
+  var months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  function rev(r){ var c=['💰 מחזור ברוטו','=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=IFERROR(SUMIFS('"+TX+"'!C:C, '"+TX+"'!B:B, "+YR+"&\"-"+mm+"\", '"+TX+"'!H:H, FALSE), 0)");} return c; }
+  function cnt(r){ var c=['📦 מס׳ תנועות','=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=COUNTIFS('"+TX+"'!B:B, "+YR+"&\"-"+mm+"\")");} return c; }
+  function cost(r,label,crit){ var c=[label,'=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=IFERROR(SUMIFS('"+TX+"'!C:C, '"+TX+"'!B:B, "+YR+"&\"-"+mm+"\", '"+TX+"'!E:E, \"*"+crit+"*\", '"+TX+"'!H:H, TRUE), 0)");} return c; }
+  function totRow(label,a,b){ var c=[label,'=SUM(B'+a+':B'+b+')']; COLS.forEach(function(cl){c.push('=SUM('+cl+a+':'+cl+b+')');}); return c; }
+  function netRow(){ var c=['📈 רווח נטו חודשי','=B6-B12']; COLS.forEach(function(cl){c.push('='+cl+'6-'+cl+'12');}); return c; }
+  function pctRow(){ var c=['📊 אחוז רווחיות','=IFERROR(B13/B6,0)']; COLS.forEach(function(cl){c.push('=IFERROR('+cl+'13/'+cl+'6,0)');}); return c; }
+  function pad(a){ while(a.length<14)a.push(''); return a; }
+  var yNow = (new Date()).getFullYear();
+  var grid = [];
+  grid.push(pad(['📊 מאזן ' + nm + ' — מחזור והוצאות עסקיות']));
+  grid.push(pad(["נתונים מחושבים אוטומטית מהלשונית '" + bizTabName + "'"]));
+  grid.push(pad([]));
+  grid.push(pad(['📅 שנת:', yNow]));
+  grid.push(['קטגוריה','סיכום שנתי'].concat(months));
+  grid.push(rev(6));
+  grid.push(cnt(7));
+  grid.push(cost(8,'🎨 עלות חומרי גלם','חומרי גלם'));
+  grid.push(cost(9,'📣 עלות שיווק','שיווק'));
+  grid.push(cost(10,'🚚 משלוחים והתקנות','משלוח'));
+  grid.push(cost(11,'🏢 הוצאות תפעוליות','תפעולי'));
+  grid.push(totRow('🧮 סה״כ הוצאות עסקיות',8,11));
+  grid.push(netRow());
+  grid.push(pctRow());
+  try {
+    sh.getRange(1,1,grid.length,14).setValues(grid);
+    sh.setFrozenRows(5);
+    try { sh.setFrozenColumns(2); } catch(_f){}
+    var years=[]; for(var y=yNow-3;y<=yNow+1;y++)years.push(String(y));
+    try { sh.getRange('B4').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(years,true).build()); } catch(_v){}
+    sh.getRange(1,1,1,14).setFontWeight('bold');
+    sh.getRange(5,1,1,14).setFontWeight('bold');
+    sh.getRange(12,1,1,14).setFontWeight('bold');
+    SpreadsheetApp.flush();
+  } catch (e) { Logger.log('biz dash write: ' + (e && e.message)); }
+  return sh;
+}
+
 function _getOrCreateBusinessTab_(ownerPhone, n, nameOpt) {
   if (!n || n < 1) return null;
   var clean = String(ownerPhone || '').replace(/[^0-9]/g, '');
@@ -14967,6 +15020,7 @@ function _getOrCreateBusinessTab_(ownerPhone, n, nameOpt) {
       try { tab.setFrozenRows(1); } catch (_) {}
       try { tab.setRightToLeft(true); } catch (_) {}
       isNew = true;
+      try { _createBusinessDashboard_(ss, desiredTabName, nameClean || desiredTabName); } catch (_de) { Logger.log('biz dash err: ' + (_de && _de.message)); }
     } catch (e) {
       Logger.log('_getOrCreateBusinessTab_ insertSheet err: ' + (e && e.message));
       return null;
