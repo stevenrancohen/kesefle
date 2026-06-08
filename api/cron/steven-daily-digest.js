@@ -210,14 +210,12 @@ async function handlerImpl(req, res) {
     if (act && act.ok) {
       var h = act.headline;
       var line;
-      if (h.verdict === 'FREEZE_FEATURES') {
-        line = '🛑 *הפעלה: ' + h.activation_rate_pct + '%* (' + h.logged_2nd_expense + '/' + h.signups +
-          ' רשמו הוצאה שנייה ב-30 יום) — מתחת ל-30%. הבעיה היא ערך המוצר, לא פיצ\'רים. הקפא בנייה עד שהמספר זז.';
-      } else if (h.verdict === 'SAMPLE_TOO_SMALL') {
-        line = '⚠️ *הפעלה: רק ' + h.signups + ' נרשמו ב-30 יום* — מעט מדי כדי לשפוט. הבעיה היא רכישה: גייס ידנית 10–20 לקוחות אמיתיים לפני שבונים.';
+      if (h.verdict === 'PLUMBING') {
+        line = '🔧 *הפעלה: ' + h.healthy_signups + ' מחוברים מתוך ' + h.raw_signups + ' נרשמו* — רוב הנרשמים תקועים בלי קישור וואטסאפ. תקן את החיבור קודם (זה באג, לא חוסר עניין).';
+      } else if (h.verdict === 'VALUE_PROBLEM') {
+        line = '🛑 *הפעלה: ' + h.activation_rate_pct + '%* (' + h.healthy_logged_2nd + '/' + h.healthy_signups + ' מחוברים חזרו) — גם מי שמחובר לא חוזר. בעיית ערך, לא פיצרים.';
       } else {
-        line = '✅ *הפעלה: ' + h.activation_rate_pct + '%* (' + h.logged_2nd_expense + '/' + h.signups +
-          ' רשמו הוצאה שנייה ב-30 יום) — מעל סף ה-30%. אפשר להמשיך לבנות.';
+        line = '✅ *הפעלה: ' + h.activation_rate_pct + '%* (' + h.healthy_logged_2nd + '/' + h.healthy_signups + ' מחוברים חזרו) — תקין.';
       }
       body = line + '\n\n' + body;
     }
