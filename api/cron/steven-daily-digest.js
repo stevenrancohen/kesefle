@@ -201,6 +201,28 @@ async function handlerImpl(req, res) {
 
   var body = buildDigest(commits, isFirstRun, isAfternoon);
 
+  // Activation header (LLM Council 2026-06-08): push THE number daily so the
+  // kill-criterion can't be rationalized away. Best-effort -- never blocks the
+  // digest if KV is slow/unavailable.
+  try {
+    var actMod = await import('../../lib/activation.js');
+    var act = await actMod.computeActivationCohort(30);
+    if (act && act.ok) {
+      var h = act.headline;
+      var line;
+      if (h.verdict === 'FREEZE_FEATURES') {
+        line = '🛑 *הפעלה: ' + h.activation_rate_pct + '%* (' + h.logged_2nd_expense + '/' + h.signups +
+          ' רשמו הוצאה שנייה ב-30 יום) — מתחת ל-30%. הבעיה היא ערך המוצר, לא פיצ\'רים. הקפא בנייה עד שהמספר זז.';
+      } else if (h.verdict === 'SAMPLE_TOO_SMALL') {
+        line = '⚠️ *הפעלה: רק ' + h.signups + ' נרשמו ב-30 יום* — מעט מדי כדי לשפוט. הבעיה היא רכישה: גייס ידנית 10–20 לקוחות אמיתיים לפני שבונים.';
+      } else {
+        line = '✅ *הפעלה: ' + h.activation_rate_pct + '%* (' + h.logged_2nd_expense + '/' + h.signups +
+          ' רשמו הוצאה שנייה ב-30 יום) — מעל סף ה-30%. אפשר להמשיך לבנות.';
+      }
+      body = line + '\n\n' + body;
+    }
+  } catch (_actErr) { log.warn('steven_digest.activation_failed', { error: _actErr.message }); }
+
   // אם הודעת הטקסט ארוכה מ-4096 תווים (הגבול של WhatsApp), נחתוך
   if (body.length > 4000) {
     body = body.slice(0, 3900) + '\n\n…(הקטע נחתך מסיבות אורך — ראה את ההיסטוריה המלאה ב-GitHub)';
