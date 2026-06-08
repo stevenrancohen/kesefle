@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-qafix';
+const KFL_BUILD_VERSION = '2026-06-08-profwire';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -363,6 +363,23 @@ const CATEGORY_MAP = [
   // Placed FIRST so the income entry wins the length-tie (V8 stable sort) vs the identical
   // phrases on the government-EXPENSE rows below. Purely additive -- removes/reorders nothing.
   {"keywords":["קצבת ילדים","קצבת זקנה","קצבת נכות","קצבת שאירים","קצבת אזרח ותיק","קצבת ניידות","קצבת הבטחת הכנסה","הבטחת הכנסה","השלמת הכנסה","דמי לידה","מענק לידה","דמי אבטלה","מענק עבודה","מענק שחרור","מענק קורונה","תגמולי מילואים","דמי מילואים","פיצויי פיטורין","פיצויי פרישה","פדיון ימי חופשה","פדיון ימי מחלה","גמלת סיעוד"],"category":"הכנסות","subcategory":"קצבאות וזכאויות","isIncome":true},
+  // App/AI subscriptions in the PRIMARY map so they work without the big keyword
+  // index file (Steven 2026-06-08: "klod" was only in KEYWORDS.gs). Apps bucket.
+  {"keywords":["קלוד","קלוד פרו","קלוד מקס","קלוד טים","מנוי קלוד","claude pro","claude max","claude code","claude ai","gemini","midjourney","perplexity","copilot","cursor"],"category":"הוצאות קבועות","subcategory":"אפליקציות"},
+  // Misc income (freelance / bonus / grants / convalescence) in the PRIMARY map so
+  // a refund/bonus is flagged income even without the index. Placed early to win ties.
+  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
+  // QA fleet round 3 category fixes (Steven 2026-06-08). Placed early + multi-word
+  // so they win the longest-match over a generic keyword in another bucket.
+  // Telecom brands -> tikshoret (Pelephone/Bezeq + "phone" matched electronics).
+  {"keywords":["פלאפון","בזק","סלקום","פרטנר","הוט מובייל","גולן טלקום","רמי לוי תקשורת","חבילת סלולר","חשבון טלפון","חשבון סלולר","קו טלפון","בזק בינלאומי","פלאפון סלולר","בזק טלפון"],"category":"הוצאות קבועות","subcategory":"תקשורת"},
+  // Pets -> pet bucket (matched hotels / kids-vaccine / generic health).
+  {"keywords":["פנסיון כלבים","פנסיון לכלב","פנסיון כלב","פנסיון חתולים","פנסיון לחתול","פנסיון חתול","חול לחתול","חול חתולים","חול לחתולים","חיסון לכלב","חיסון לחתול","חיסון כלבת","וטרינר","וטרינרי","מזון לכלב","מזון לחתול","אוכל לכלב","אוכל לחתול","חנות חיות","פטשופ","תספורת לכלב","טיפוח לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
+  // Kids: diapers + after-school classes (merchant / "weekly" were winning).
+  {"keywords":["חיתולים האגיס","חיתולים האגיז","חיתולים פמפרס","חיתולים בסופר פארם","חיתולים האגיס סופר פארם","מגבונים האגיס"],"category":"חינוך וילדים","subcategory":"חיתולים ותינוקות"},
+  {"keywords":["חוג כדורסל","כדורסל חוג","חוג כדורגל","חוג שחייה","חוג שחיה","חוג ריקוד","חוג התעמלות","חוג ספורט","חוג אומנות","חוגים לילדים","חוג לילד","חוג לילדה","חוג מוזיקה"],"category":"חינוך וילדים","subcategory":"חינוך וטיפול"},
+  // Refund / store credit -> income (was booked as a merchant expense).
+  {"keywords":["זיכוי כספי","החזר על קנייה","החזר על רכישה","החזר קנייה","החזר רכישה","החזר מהחנות","החזר כספי מהחנות","קרדיט בחנות","store credit","refund"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // ===== INCOME -- income-tax refund -> income (Fix C, per bot/BOT_IMPROVEMENTS.md).
   // At top so "hahzer mas" wins the length-tie vs the government-EXPENSE row. Additive.
   {"keywords":["החזר מס הכנסה","החזר ממס הכנסה","מס הכנסה החזר","זיכוי מס","החזר מס"],"category":"הכנסות","subcategory":"החזר מס","isIncome":true},
@@ -855,6 +872,11 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   if (matched && matched.isIncome) return true;
   var s = String(rawText || '').trim();
   if (s.charAt(0) === '+') return true;
+  // Refund / store credit FROM a place -> income (a return is money coming
+  // back). Specific patterns only ("zikui me-X", "hechzer al kniya",
+  // "kibalti hechzer") so a loan repayment ("hechzer halvaa") or a bare,
+  // ambiguous "zikui" is NOT flipped. Steven 2026-06-08 (QA fleet r3).
+  if (/(?:זיכוי|החזר)\s+מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי/.test(s)) return true;
   return _isIncomeCategory_(category, subcategory);
 }
 
@@ -9363,6 +9385,11 @@ function processExpense(text, fromPhone) {
     } catch (_bizBtnErr) { Logger.log('biz list buttons err: ' + (_bizBtnErr && _bizBtnErr.message)); }
     return { reply: __bizListText };
   }
+  if ((trimmed === 'שדרג עסקים' || trimmed === 'שדרג עסק' || trimmed === 'שדרג' ||
+       trimmed === 'דשבורד עסקים' || trimmed === 'upgrade businesses') &&
+      (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(fromPhone))) {
+    return { reply: _backfillBusinessDashboards_(fromPhone) };
+  }
   if (trimmed === 'הזמנות' || trimmed === 'orders' ||
       trimmed === 'הזמנות החודש' || trimmed === 'סיכום הזמנות') {
     return { reply: getOrdersSummary() };
@@ -9747,7 +9774,7 @@ function processExpense(text, fromPhone) {
         var apiKeyAvail = !!_aiProviderResolve_();
         var aiRich = null;
         if (apiKeyAvail) {
-          try { aiRich = _aiCategorizeRich(soleItem.description); } catch (_aiErr) { Logger.log('processExpense: AI rich error: ' + _aiErr.message); }
+          try { aiRich = _aiCategorizeRich(soleItem.description, fromPhone); } catch (_aiErr) { Logger.log('processExpense: AI rich error: ' + _aiErr.message); }
         }
 
         var aiConf = (aiRich && typeof aiRich.confidence === 'number') ? aiRich.confidence : 0;
@@ -9861,7 +9888,7 @@ function processExpense(text, fromPhone) {
     }
 
     parsed.items.forEach(function(item){
-      const matched = matchCategorySmart(item.description);
+      const matched = matchCategorySmart(item.description, fromPhone);
       const finalAmount = Math.abs(item.amount);
       runningTotal += finalAmount;
       _coerceCategoryBySubcategory(matched);
@@ -9941,7 +9968,7 @@ function processExpense(text, fromPhone) {
     try {
       if (!_anomalyAlertsDisabled_()) {
         var __lastItem = parsed.items[parsed.items.length - 1];
-        var __lastMatched = matchCategorySmart(__lastItem.description);
+        var __lastMatched = matchCategorySmart(__lastItem.description, fromPhone);
         var __anom = detectAnomalies(Math.abs(__lastItem.amount), __lastMatched.category, __lastItem.description);
         if (__anom && __anom.message) __anomalyTail = '\n\n' + __anom.message;
       }
@@ -9953,7 +9980,7 @@ function processExpense(text, fromPhone) {
     var __budgetTail = '';
     try {
       var __budgetLastItem = parsed.items[parsed.items.length - 1];
-      var __budgetLastMatched = matchCategorySmart(__budgetLastItem.description);
+      var __budgetLastMatched = matchCategorySmart(__budgetLastItem.description, fromPhone);
       if (!__budgetLastMatched.isIncome) {
         __budgetTail = _budgetAlertTail_(__budgetLastMatched.category, fromPhone) || '';
       }
@@ -9961,7 +9988,7 @@ function processExpense(text, fromPhone) {
 
     if (parsed.items.length === 1) {
       const it = parsed.items[0];
-      const matched = matchCategorySmart(it.description);
+      const matched = matchCategorySmart(it.description, fromPhone);
       try { _saveLastExpense_(fromPhone, sheet.getLastRow(), it, matched); } catch (_seErr) { Logger.log('saveLastExp: ' + _seErr.message); }
       // 💡 Optional month-to-date context for the category just logged.
       var __catCtx = '';
@@ -10379,13 +10406,68 @@ function parseAmountAndDescription(text) {
   // is followed by exactly three digits AND another digit/comma group is a
   // thousand separator; anything else is the decimal point.
   var numberRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
-  var nums = [];
+  // Find numbers WITH position so we can separate the PRICE from quantity/unit/
+  // count noise (Steven 2026-06-08 QA fleet: "5 tashlumim shel 99" recorded 5
+  // AND 99 as two rows; "dlek 95 oktan 250" recorded 95; "tipul 10000 km 850"
+  // recorded 10000). Unit/count words live in the regex string literals below.
+  var _found = [];
   var match;
   while ((match = numberRe.exec(phoneStripped)) !== null) {
-    var n = _parseIsraeliNumber_(match[0]);
-    if (!isNaN(n) && n > 0) nums.push(n);
+    var _n = _parseIsraeliNumber_(match[0]);
+    if (!isNaN(_n) && _n > 0) _found.push({ n: _n, i: match.index, len: match[0].length });
   }
-  if (nums.length === 0) return null;
+  if (_found.length === 0) return null;
+  // A number is NOISE (not the price) when it is: followed by a unit word
+  // (oktan/km/gb/mg/liter/yom/...), preceded by a brand/spec word (kvish/omega/
+  // SPF/factory/...), or glued to a preceding Latin letter (B12, iPhone15) --
+  // but NOT a multiplier "x" (3x450 keeps the 450).
+  var _UNIT_AFTER = /^[\s.,'"׳״-]*(?:אוקטן|ק"?מ|ק״מ|קמ|קילומטר|קילו|ק"?ג|ק״ג|קג|גרם|גר|מ"?ג|מ״ג|מג|ליטר|ליט|מ"?ל|מ״ל|מיל|יחידות|יחי|יח|אינטש|אינצ|וולט|וואט|ואט|מטר|שעתיים|שעות|שעה|דקות|ימים|יום|שבועות|שבוע|חודשים|חודש|שנים|שנה|מגה|גיגה|טרה|אחוז|gb|mb|tb|kb|ghz|mhz|kwh|kw|kg|km|ml|mg|cl|oz|lb|spf|inch|inches|watts?|volts?|li?tres?|liters?|grams?|meters?|days?|weeks?|months?|years?|hours?|mins?|minutes?)(?![א-תa-zA-Z])/i;
+  var _SPEC_BEFORE = /(?:כביש|פקטורי|factory|אומגה|ויטמין|spf|דגם|מספר|רחוב)\s*$/i;
+  function _amtNoise(f) {
+    var a = phoneStripped.slice(f.i + f.len, f.i + f.len + 16);
+    var b = phoneStripped.slice(Math.max(0, f.i - 10), f.i);
+    var bc = f.i > 0 ? phoneStripped.charAt(f.i - 1) : '';
+    return _UNIT_AFTER.test(a) || _SPEC_BEFORE.test(b) || /[a-wyzA-WYZ]$/.test(bc);
+  }
+  var _surv = _found.filter(function (f) { return !_amtNoise(f); });
+  if (!_surv.length) _surv = _found; // never lose the whole expense
+  var nums;
+  // Installment / multiplier ("X tashlumim shel Y", "8 x 200"): one purchase
+  // split into payments -> the price is the largest surviving number.
+  var _INSTALL = /תשלומ|תשלום|פעמ|פעמים|\btashlum|\bpeamim|\d\s*[x×✕*]\s*\d|\bpayments?\b|\binstallments?\b|\btimes\b|\bof\b/i;
+  if (_INSTALL.test(phoneStripped) && _surv.length > 1) {
+    var _mx = _surv[0];
+    for (var _k = 1; _k < _surv.length; _k++) { if (_surv[_k].n > _mx.n) _mx = _surv[_k]; }
+    nums = [_mx.n];
+  } else {
+    // Currency anchor: a number marked with shekel/NIS (after) or glued to a
+    // leading "be-" (before) is the price; if exactly one survivor is anchored
+    // it wins (drops a leftover quantity noun: "3 hultzot 240 shekel" -> 240).
+    var _CUR_AFTER = /^\s*(?:₪|שח|ש"ח|ש״ח|שקלים|שקל|nis|ils)(?![א-תa-zA-Z])/i;
+    var _anc = _surv.filter(function (f) {
+      var a = phoneStripped.slice(f.i + f.len, f.i + f.len + 8);
+      var bc = f.i > 0 ? phoneStripped.charAt(f.i - 1) : '';
+      return _CUR_AFTER.test(a) || bc === 'ב';
+    });
+    if (_anc.length === 1) {
+      nums = [_anc[0].n];
+    } else if (_surv.length === 2) {
+      // Quantity-noun ("8 pisot 90", "3 falafelim 36"): a small leading count,
+      // a noun, then the price LAST. Only when the message ENDS with the price
+      // (a trailing noun means a genuine two-expense line -> keep both numbers).
+      var _f1 = _surv[0].i < _surv[1].i ? _surv[0] : _surv[1];
+      var _f2 = _surv[0].i < _surv[1].i ? _surv[1] : _surv[0];
+      var _tail = phoneStripped.slice(_f2.i + _f2.len).replace(/\s*(?:₪|שח|ש"ח|ש״ח|שקלים|שקל|nis|ils)?\s*$/i, '');
+      var _mid = phoneStripped.slice(_f1.i + _f1.len, _f2.i);
+      if (_f1.n <= 30 && _f2.n > _f1.n && _tail === '' && /[א-תa-zA-Z]/.test(_mid)) {
+        nums = [_f2.n];
+      } else {
+        nums = _surv.map(function (f) { return f.n; });
+      }
+    } else {
+      nums = _surv.map(function (f) { return f.n; });
+    }
+  }
   // Strip digits/punctuation, the ₪ symbol, and standalone currency words so
   // they don't pollute the saved description or the category match
   // (e.g. "50 שח קפה" → "קפה", "₪50 קפה" → "קפה").
@@ -12144,7 +12226,7 @@ function _handleReceiptImage_(fromPhone, image) {
 
   // Step 4 — Reuse the same category matcher as text expenses.
   var matched = (typeof matchCategorySmart === 'function')
-    ? matchCategorySmart((vendor ? vendor + ' ' : '') + description)
+    ? matchCategorySmart((vendor ? vendor + ' ' : '') + description, fromPhone)
     : { category: 'שונות ואחרים', subcategory: 'שונות' };
   if (typeof _coerceCategoryBySubcategory === 'function') {
     try { _coerceCategoryBySubcategory(matched); } catch (__) {}
@@ -14898,6 +14980,99 @@ function _sanitizeTabName_(s) {
 //   - n>=2  -> tabName = sanitized(nameOpt) or "עסק N" if no name
 //   - When the user later passes a NEW name, we RENAME the existing tab
 //     (no data loss) and update KV.
+// OWNER backfill: give EXISTING business tabs the full company dashboard they
+// missed if they were created before _createBusinessDashboard_ existed. Scans
+// every tab, finds business transaction tabs (8-col tx header, not the main tab,
+// not a dashboard) that have no "Maazan <name>" dashboard yet, and builds one.
+// APPEND-ONLY (new tabs only, never touches data). Steven 2026-06-08.
+function _backfillBusinessDashboards_(ownerPhone) {
+  var ss;
+  try { ss = SpreadsheetApp.openById(SHEET_ID); }
+  catch (e) { return '😬 לא הצלחתי לפתוח את הגיליון: ' + (e && e.message); }
+  var sheets = ss.getSheets();
+  var names = {};
+  for (var i = 0; i < sheets.length; i++) names[sheets[i].getName()] = true;
+  var created = [], already = [];
+  for (var j = 0; j < sheets.length; j++) {
+    var sh = sheets[j];
+    var nm = sh.getName();
+    if (nm === TRANSACTIONS_SHEET) continue;        // the main tab already has Maazan Hevra
+    if (nm.indexOf('מאזן') === 0) continue;          // a dashboard, not a business tab
+    var isBiz = false;
+    try {
+      if (sh.getLastRow() >= 1 && sh.getLastColumn() >= 8) {
+        var h = sh.getRange(1, 1, 1, 8).getValues()[0];
+        isBiz = (String(h[0]).trim() === 'תאריך' && String(h[2]).trim() === 'סכום' &&
+                 String(h[3]).trim() === 'קטגוריה' && String(h[7]).trim().indexOf('הוצאה') === 0);
+      }
+    } catch (_e) {}
+    if (!isBiz) continue;
+    var dashName = (typeof _sanitizeTabName_ === 'function' ? _sanitizeTabName_('מאזן ' + nm) : ('מאזן ' + nm)) || ('מאזן ' + nm);
+    if (names[dashName]) { already.push(nm); continue; }
+    var res = _createBusinessDashboard_(ss, nm, nm);
+    if (res) { created.push(nm); names[dashName] = true; }
+  }
+  if (!created.length && !already.length) return 'לא נמצאו לשוניות עסק לשדרוג. (העסק הראשי כבר כולל "מאזן חברה".)';
+  var out = [];
+  if (created.length) out.push('✅ נוצר דשבורד עסקי מסודר ל: ' + created.join(', '));
+  if (already.length) out.push('ℹ️ כבר היה דשבורד ל: ' + already.join(', '));
+  out.push('📊 רענן/י את הגיליון כדי לראות.');
+  return out.join('\n');
+}
+
+// Build a per-business company dashboard (Maazan Hevra style) for a NEW business
+// tab, so a business created via the bot gets the FULL template -- not just a
+// bare expense list (Steven 2026-06-08). APPEND-ONLY: inserts a new tab, never
+// touches existing data. Every formula points at the business's own tx tab and
+// uses the B4 year selector, mirroring lib/sheet-writer.js buildTenantSheetSpec.
+function _createBusinessDashboard_(ss, bizTabName, displayName) {
+  var TX = bizTabName;
+  var nm = String(displayName || bizTabName).trim();
+  var dashName = (typeof _sanitizeTabName_ === 'function' ? _sanitizeTabName_('מאזן ' + nm) : ('מאזן ' + nm)) || ('מאזן ' + bizTabName);
+  if (ss.getSheetByName(dashName)) return ss.getSheetByName(dashName);
+  var sh;
+  try { sh = ss.insertSheet(dashName); } catch (e) { Logger.log('biz dash insert: ' + (e && e.message)); return null; }
+  try { sh.setRightToLeft(true); } catch (_e) {}
+  var YR = '$B$4';
+  var COLS = 'CDEFGHIJKLMN'.split('');
+  var months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  function rev(r){ var c=['💰 מחזור ברוטו','=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=IFERROR(SUMIFS('"+TX+"'!C:C, '"+TX+"'!B:B, "+YR+"&\"-"+mm+"\", '"+TX+"'!H:H, FALSE), 0)");} return c; }
+  function cnt(r){ var c=['📦 מס׳ תנועות','=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=COUNTIFS('"+TX+"'!B:B, "+YR+"&\"-"+mm+"\")");} return c; }
+  function cost(r,label,crits){ var c=[label,'=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);var parts=crits.map(function(cr){return "SUMIFS('"+TX+"'!C:C, '"+TX+"'!B:B, "+YR+"&\"-"+mm+"\", '"+TX+"'!E:E, \""+cr+"\", '"+TX+"'!H:H, TRUE)";});c.push("=IFERROR("+parts.join(" + ")+", 0)");} return c; }
+  function totRow(label,a,b){ var c=[label,'=SUM(B'+a+':B'+b+')']; COLS.forEach(function(cl){c.push('=SUM('+cl+a+':'+cl+b+')');}); return c; }
+  function netRow(){ var c=['📈 רווח נטו חודשי','=B6-B12']; COLS.forEach(function(cl){c.push('='+cl+'6-'+cl+'12');}); return c; }
+  function pctRow(){ var c=['📊 אחוז רווחיות','=IFERROR(B13/B6,0)']; COLS.forEach(function(cl){c.push('=IFERROR('+cl+'13/'+cl+'6,0)');}); return c; }
+  function pad(a){ while(a.length<14)a.push(''); return a; }
+  var yNow = (new Date()).getFullYear();
+  var grid = [];
+  grid.push(pad(['📊 מאזן ' + nm + ' — מחזור והוצאות עסקיות']));
+  grid.push(pad(["נתונים מחושבים אוטומטית מהלשונית '" + bizTabName + "'"]));
+  grid.push(pad([]));
+  grid.push(pad(['📅 שנת:', yNow]));
+  grid.push(['קטגוריה','סיכום שנתי'].concat(months));
+  grid.push(rev(6));
+  grid.push(cnt(7));
+  grid.push(cost(8,'🎨 עלות חומרי גלם',['*חומרי גלם*']));
+  grid.push(cost(9,'📣 עלות שיווק',['*שיווק*']));
+  grid.push(cost(10,'🚚 משלוחים והתקנות',['*משלוח*','*אריזה*']));
+  grid.push(cost(11,'🏢 הוצאות תפעוליות',['*תפעולי*','*הוצאות תפעוליות*','*יועצ*','*יועץ*','*ייעוץ*','*רואה חשבון*','*קולקצי*','*תוכנות*','*תוכנה*','*ציוד עסקי*','*מיסים*']));
+  grid.push(totRow('🧮 סה״כ הוצאות עסקיות',8,11));
+  grid.push(netRow());
+  grid.push(pctRow());
+  try {
+    sh.getRange(1,1,grid.length,14).setValues(grid);
+    sh.setFrozenRows(5);
+    try { sh.setFrozenColumns(2); } catch(_f){}
+    var years=[]; for(var y=yNow-3;y<=yNow+1;y++)years.push(String(y));
+    try { sh.getRange('B4').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(years,true).build()); } catch(_v){}
+    sh.getRange(1,1,1,14).setFontWeight('bold');
+    sh.getRange(5,1,1,14).setFontWeight('bold');
+    sh.getRange(12,1,1,14).setFontWeight('bold');
+    SpreadsheetApp.flush();
+  } catch (e) { Logger.log('biz dash write: ' + (e && e.message)); }
+  return sh;
+}
+
 function _getOrCreateBusinessTab_(ownerPhone, n, nameOpt) {
   if (!n || n < 1) return null;
   var clean = String(ownerPhone || '').replace(/[^0-9]/g, '');
@@ -14965,6 +15140,7 @@ function _getOrCreateBusinessTab_(ownerPhone, n, nameOpt) {
       try { tab.setFrozenRows(1); } catch (_) {}
       try { tab.setRightToLeft(true); } catch (_) {}
       isNew = true;
+      try { _createBusinessDashboard_(ss, desiredTabName, nameClean || desiredTabName); } catch (_de) { Logger.log('biz dash err: ' + (_de && _de.message)); }
     } catch (e) {
       Logger.log('_getOrCreateBusinessTab_ insertSheet err: ' + (e && e.message));
       return null;
@@ -18602,7 +18778,7 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
   }
 
   var matched = (typeof matchCategorySmart === 'function')
-    ? matchCategorySmart(description)
+    ? matchCategorySmart(description, fromPhone)
     : { category: 'שונות', subcategory: 'שונות' };
   var category = (matched && matched.category) || 'שונות';
 

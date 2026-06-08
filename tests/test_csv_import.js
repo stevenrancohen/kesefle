@@ -17,6 +17,7 @@ const setKv = (k, v) => kv.set(k, typeof v === 'string' ? v : JSON.stringify(v))
 // valueInputOption=RAW (consistent with every other Kesefle writer; USER_ENTERED
 // would let Sheets re-interpret imported free-text into formulas/dates).
 let lastAppendUrl = null;
+let lastAppendBody = null;
 
 global.fetch = async (url, opts) => {
   opts = opts || {};
@@ -33,7 +34,7 @@ global.fetch = async (url, opts) => {
   if (/spreadsheets\/.+\/values\/.+/.test(u) && (!opts.method || opts.method.toUpperCase() === 'GET')) {
     return new Response(JSON.stringify({ values: [['2026-04-15','2026-04','99','אוכל','','קפה ארומה']] }), { status: 200 });
   }
-  if (/:append/.test(u)) { lastAppendUrl = u; return new Response('{"updates":{}}', { status: 200 }); }
+  if (/:append/.test(u)) { lastAppendUrl = u; lastAppendBody = opts.body; return new Response('{"updates":{}}', { status: 200 }); }
   return new Response('{}', { status: 404 });
 };
 
@@ -161,6 +162,29 @@ console.log('\n=== COMMIT (tenant isolation) ===\n');
   const r = res();
   await handler(req({ phone: '972501111111', csv, mode: 'commit' }, { 'x-kesefle-bot-secret': BOT_SECRET }), r);
   check('dedup: matching existing row skipped', r.body.skippedDuplicates >= 1, 'skipped=' + r.body.skippedDuplicates);
+}
+
+console.log('\n=== COMMIT WRITES col G (source) + col H (expense flag) so rows are dashboard-visible ===\n');
+{
+  kv.clear();
+  setKv('phone:972501111111', { userSub: 'sub-B' });
+  setKv('user:sub-B', { refreshToken: 'rt', spreadsheetId: 'sheet-B' });
+  setKv('sheet:sub-B', { spreadsheetId: 'sheet-B' });
+  const csv = 'תאריך,סכום,תיאור\n01/05/2026,250,דלק פז\n05/05/2026,15000,משכורת מאי\n';
+  const r = res();
+  await handler(req({ phone: '972501111111', csv, mode: 'commit' }, { 'x-kesefle-bot-secret': BOT_SECRET }), r);
+  check('commit imported 2 rows', r.body.imported === 2, JSON.stringify(r.body));
+  check('append writes the A:H range (8 columns)', /!A%3AH|!A:H/.test(lastAppendUrl || ''), lastAppendUrl);
+  const body = lastAppendBody ? JSON.parse(lastAppendBody) : null;
+  const vals = body && body.values;
+  check('each written row has 8 columns', vals && vals.length === 2 && vals.every(function(x){return x.length === 8;}));
+  const expenseRow = vals && vals.find(function(x){return String(x[5]).indexOf('דלק') >= 0;});
+  const incomeRow = vals && vals.find(function(x){return String(x[5]).indexOf('משכורת') >= 0;});
+  check('expense row col G = source label', expenseRow && expenseRow[6] === 'ייבוא CSV');
+  check('expense row col H = TRUE (expense, dashboard sums it)', expenseRow && expenseRow[7] === true);
+  check('income row col H = FALSE (income, dashboard sums it)', incomeRow && incomeRow[7] === false);
+  check('income row col E = הכנסות שונות (visible income bucket)', incomeRow && incomeRow[4] === 'הכנסות שונות');
+  check('income row col D = הכנסות (category)', incomeRow && incomeRow[3] === 'הכנסות');
 }
 
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
