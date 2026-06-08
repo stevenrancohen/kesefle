@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-bizcrit';
+const KFL_BUILD_VERSION = '2026-06-08-profwire';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9699,7 +9699,7 @@ function processExpense(text, fromPhone) {
         var apiKeyAvail = !!_aiProviderResolve_();
         var aiRich = null;
         if (apiKeyAvail) {
-          try { aiRich = _aiCategorizeRich(soleItem.description); } catch (_aiErr) { Logger.log('processExpense: AI rich error: ' + _aiErr.message); }
+          try { aiRich = _aiCategorizeRich(soleItem.description, fromPhone); } catch (_aiErr) { Logger.log('processExpense: AI rich error: ' + _aiErr.message); }
         }
 
         var aiConf = (aiRich && typeof aiRich.confidence === 'number') ? aiRich.confidence : 0;
@@ -9813,7 +9813,7 @@ function processExpense(text, fromPhone) {
     }
 
     parsed.items.forEach(function(item){
-      const matched = matchCategorySmart(item.description);
+      const matched = matchCategorySmart(item.description, fromPhone);
       const finalAmount = Math.abs(item.amount);
       runningTotal += finalAmount;
       _coerceCategoryBySubcategory(matched);
@@ -9893,7 +9893,7 @@ function processExpense(text, fromPhone) {
     try {
       if (!_anomalyAlertsDisabled_()) {
         var __lastItem = parsed.items[parsed.items.length - 1];
-        var __lastMatched = matchCategorySmart(__lastItem.description);
+        var __lastMatched = matchCategorySmart(__lastItem.description, fromPhone);
         var __anom = detectAnomalies(Math.abs(__lastItem.amount), __lastMatched.category, __lastItem.description);
         if (__anom && __anom.message) __anomalyTail = '\n\n' + __anom.message;
       }
@@ -9905,7 +9905,7 @@ function processExpense(text, fromPhone) {
     var __budgetTail = '';
     try {
       var __budgetLastItem = parsed.items[parsed.items.length - 1];
-      var __budgetLastMatched = matchCategorySmart(__budgetLastItem.description);
+      var __budgetLastMatched = matchCategorySmart(__budgetLastItem.description, fromPhone);
       if (!__budgetLastMatched.isIncome) {
         __budgetTail = _budgetAlertTail_(__budgetLastMatched.category, fromPhone) || '';
       }
@@ -9913,7 +9913,7 @@ function processExpense(text, fromPhone) {
 
     if (parsed.items.length === 1) {
       const it = parsed.items[0];
-      const matched = matchCategorySmart(it.description);
+      const matched = matchCategorySmart(it.description, fromPhone);
       try { _saveLastExpense_(fromPhone, sheet.getLastRow(), it, matched); } catch (_seErr) { Logger.log('saveLastExp: ' + _seErr.message); }
       // 💡 Optional month-to-date context for the category just logged.
       var __catCtx = '';
@@ -12151,7 +12151,7 @@ function _handleReceiptImage_(fromPhone, image) {
 
   // Step 4 — Reuse the same category matcher as text expenses.
   var matched = (typeof matchCategorySmart === 'function')
-    ? matchCategorySmart((vendor ? vendor + ' ' : '') + description)
+    ? matchCategorySmart((vendor ? vendor + ' ' : '') + description, fromPhone)
     : { category: 'שונות ואחרים', subcategory: 'שונות' };
   if (typeof _coerceCategoryBySubcategory === 'function') {
     try { _coerceCategoryBySubcategory(matched); } catch (__) {}
@@ -18703,7 +18703,7 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
   }
 
   var matched = (typeof matchCategorySmart === 'function')
-    ? matchCategorySmart(description)
+    ? matchCategorySmart(description, fromPhone)
     : { category: 'שונות', subcategory: 'שונות' };
   var category = (matched && matched.category) || 'שונות';
 
