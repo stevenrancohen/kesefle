@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-bizfill';
+const KFL_BUILD_VERSION = '2026-06-08-bizcrit';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -14963,7 +14963,7 @@ function _createBusinessDashboard_(ss, bizTabName, displayName) {
   var months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   function rev(r){ var c=['💰 מחזור ברוטו','=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=IFERROR(SUMIFS('"+TX+"'!C:C, '"+TX+"'!B:B, "+YR+"&\"-"+mm+"\", '"+TX+"'!H:H, FALSE), 0)");} return c; }
   function cnt(r){ var c=['📦 מס׳ תנועות','=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=COUNTIFS('"+TX+"'!B:B, "+YR+"&\"-"+mm+"\")");} return c; }
-  function cost(r,label,crit){ var c=[label,'=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);c.push("=IFERROR(SUMIFS('"+TX+"'!C:C, '"+TX+"'!B:B, "+YR+"&\"-"+mm+"\", '"+TX+"'!E:E, \"*"+crit+"*\", '"+TX+"'!H:H, TRUE), 0)");} return c; }
+  function cost(r,label,crits){ var c=[label,'=SUM(C'+r+':N'+r+')']; for(var m=1;m<=12;m++){var mm=('0'+m).slice(-2);var parts=crits.map(function(cr){return "SUMIFS('"+TX+"'!C:C, '"+TX+"'!B:B, "+YR+"&\"-"+mm+"\", '"+TX+"'!E:E, \""+cr+"\", '"+TX+"'!H:H, TRUE)";});c.push("=IFERROR("+parts.join(" + ")+", 0)");} return c; }
   function totRow(label,a,b){ var c=[label,'=SUM(B'+a+':B'+b+')']; COLS.forEach(function(cl){c.push('=SUM('+cl+a+':'+cl+b+')');}); return c; }
   function netRow(){ var c=['📈 רווח נטו חודשי','=B6-B12']; COLS.forEach(function(cl){c.push('='+cl+'6-'+cl+'12');}); return c; }
   function pctRow(){ var c=['📊 אחוז רווחיות','=IFERROR(B13/B6,0)']; COLS.forEach(function(cl){c.push('=IFERROR('+cl+'13/'+cl+'6,0)');}); return c; }
@@ -14977,10 +14977,10 @@ function _createBusinessDashboard_(ss, bizTabName, displayName) {
   grid.push(['קטגוריה','סיכום שנתי'].concat(months));
   grid.push(rev(6));
   grid.push(cnt(7));
-  grid.push(cost(8,'🎨 עלות חומרי גלם','חומרי גלם'));
-  grid.push(cost(9,'📣 עלות שיווק','שיווק'));
-  grid.push(cost(10,'🚚 משלוחים והתקנות','משלוח'));
-  grid.push(cost(11,'🏢 הוצאות תפעוליות','תפעולי'));
+  grid.push(cost(8,'🎨 עלות חומרי גלם',['*חומרי גלם*']));
+  grid.push(cost(9,'📣 עלות שיווק',['*שיווק*']));
+  grid.push(cost(10,'🚚 משלוחים והתקנות',['*משלוח*','*אריזה*']));
+  grid.push(cost(11,'🏢 הוצאות תפעוליות',['*תפעולי*','*הוצאות תפעוליות*','*יועצ*','*יועץ*','*ייעוץ*','*רואה חשבון*','*קולקצי*','*תוכנות*','*תוכנה*','*ציוד עסקי*','*מיסים*']));
   grid.push(totRow('🧮 סה״כ הוצאות עסקיות',8,11));
   grid.push(netRow());
   grid.push(pctRow());

@@ -65,6 +65,10 @@ if (captured) {
   ok('total row sums the 4 cost rows', tot && /=SUM\(C8:C11\)/.test(tot[2]));
   ok('net profit = revenue - total', net && /=C6-C12/.test(net[2]));
   ok('profit % = net / revenue', pct && /=IFERROR\(C13\/C6/.test(pct[2]));
+  const opex = find('תפעוליות'), ship = find('משלוחים');
+  ok('opex row covers consultants + software + taxes (matches COMPANY_EXPENSE_ROWS)',
+    opex && /\*יועצ\*/.test(opex[2]) && /\*תוכנות\*/.test(opex[2]) && /\*מיסים\*/.test(opex[2]));
+  ok('shipping row covers packaging (*ariza*)', ship && /\*אריזה\*/.test(ship[2]));
   ok('year selector cell B4 holds the year', captured[3][1] && /^\d{4}$/.test(String(captured[3][1])));
 }
 
