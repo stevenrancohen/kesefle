@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-bizdash';
+const KFL_BUILD_VERSION = '2026-06-08-bizfill';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9385,6 +9385,11 @@ function processExpense(text, fromPhone) {
     } catch (_bizBtnErr) { Logger.log('biz list buttons err: ' + (_bizBtnErr && _bizBtnErr.message)); }
     return { reply: __bizListText };
   }
+  if ((trimmed === 'שדרג עסקים' || trimmed === 'שדרג עסק' || trimmed === 'שדרג' ||
+       trimmed === 'דשבורד עסקים' || trimmed === 'upgrade businesses') &&
+      (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(fromPhone))) {
+    return { reply: _backfillBusinessDashboards_(fromPhone) };
+  }
   if (trimmed === 'הזמנות' || trimmed === 'orders' ||
       trimmed === 'הזמנות החודש' || trimmed === 'סיכום הזמנות') {
     return { reply: getOrdersSummary() };
@@ -14975,6 +14980,46 @@ function _sanitizeTabName_(s) {
 //   - n>=2  -> tabName = sanitized(nameOpt) or "עסק N" if no name
 //   - When the user later passes a NEW name, we RENAME the existing tab
 //     (no data loss) and update KV.
+// OWNER backfill: give EXISTING business tabs the full company dashboard they
+// missed if they were created before _createBusinessDashboard_ existed. Scans
+// every tab, finds business transaction tabs (8-col tx header, not the main tab,
+// not a dashboard) that have no "Maazan <name>" dashboard yet, and builds one.
+// APPEND-ONLY (new tabs only, never touches data). Steven 2026-06-08.
+function _backfillBusinessDashboards_(ownerPhone) {
+  var ss;
+  try { ss = SpreadsheetApp.openById(SHEET_ID); }
+  catch (e) { return '😬 לא הצלחתי לפתוח את הגיליון: ' + (e && e.message); }
+  var sheets = ss.getSheets();
+  var names = {};
+  for (var i = 0; i < sheets.length; i++) names[sheets[i].getName()] = true;
+  var created = [], already = [];
+  for (var j = 0; j < sheets.length; j++) {
+    var sh = sheets[j];
+    var nm = sh.getName();
+    if (nm === TRANSACTIONS_SHEET) continue;        // the main tab already has Maazan Hevra
+    if (nm.indexOf('מאזן') === 0) continue;          // a dashboard, not a business tab
+    var isBiz = false;
+    try {
+      if (sh.getLastRow() >= 1 && sh.getLastColumn() >= 8) {
+        var h = sh.getRange(1, 1, 1, 8).getValues()[0];
+        isBiz = (String(h[0]).trim() === 'תאריך' && String(h[2]).trim() === 'סכום' &&
+                 String(h[3]).trim() === 'קטגוריה' && String(h[7]).trim().indexOf('הוצאה') === 0);
+      }
+    } catch (_e) {}
+    if (!isBiz) continue;
+    var dashName = (typeof _sanitizeTabName_ === 'function' ? _sanitizeTabName_('מאזן ' + nm) : ('מאזן ' + nm)) || ('מאזן ' + nm);
+    if (names[dashName]) { already.push(nm); continue; }
+    var res = _createBusinessDashboard_(ss, nm, nm);
+    if (res) { created.push(nm); names[dashName] = true; }
+  }
+  if (!created.length && !already.length) return 'לא נמצאו לשוניות עסק לשדרוג. (העסק הראשי כבר כולל "מאזן חברה".)';
+  var out = [];
+  if (created.length) out.push('✅ נוצר דשבורד עסקי מסודר ל: ' + created.join(', '));
+  if (already.length) out.push('ℹ️ כבר היה דשבורד ל: ' + already.join(', '));
+  out.push('📊 רענן/י את הגיליון כדי לראות.');
+  return out.join('\n');
+}
+
 // Build a per-business company dashboard (Maazan Hevra style) for a NEW business
 // tab, so a business created via the bot gets the FULL template -- not just a
 // bare expense list (Steven 2026-06-08). APPEND-ONLY: inserts a new tab, never
