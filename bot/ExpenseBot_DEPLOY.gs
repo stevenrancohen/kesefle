@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-07-bizpick';
+const KFL_BUILD_VERSION = '2026-06-08-owncat';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -4837,6 +4837,13 @@ function _addCategoryRows_(fromPhone, rawNames) {
   var emoji = '✨';
   if (pieces.length > 1 || pieces.some(function (p) { return p.length <= 10 && !/[A-Za-z0-9]/.test(p); })) emoji = '👶';
 
+  // OWNER path (Steven 2026-06-08): the tenant API (/api/sheet/add-category-row)
+  // deliberately never touches the owner sheet, so the owner got a false "not
+  // linked" reply. Handle the owner directly -- append-only to Maazan Ishi.
+  if (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(fromPhone)) {
+    return _addOwnerCategoryRows_(pieces, emoji);
+  }
+
   for (var i = 0; i < pieces.length; i++) {
     var name = pieces[i];
     try {
@@ -4886,6 +4893,51 @@ function _addCategoryRows_(fromPhone, rawNames) {
     if (sheetUrl) lines.push('📊 ' + sheetUrl);
   }
   return lines.join('\n');
+}
+
+// OWNER-only: append custom category rows straight to the owner Maazan Ishi
+// tab in SHEET_ID, mirroring the tenant API formula (api/sheet/add-category-row).
+// APPEND-ONLY (never overwrites a cell), dup-checked against col A. The SUMPRODUCT
+// REGEXMATCH formula is copied verbatim from the proven tenant path so future
+// expenses that mention the name light up the new row. Steven 2026-06-08.
+function _addOwnerCategoryRows_(pieces, emoji) {
+  var TAB = 'מאזן אישי';
+  var TX = (typeof TRANSACTIONS_SHEET !== 'undefined' ? TRANSACTIONS_SHEET : 'תנועות');
+  var sheet;
+  try { sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TAB); }
+  catch (e) { return '😬 לא הצלחתי לפתוח את הגיליון: ' + (e && e.message); }
+  if (!sheet) return '😬 לא נמצאה לשונית "מאזן אישי" בגיליון.';
+  var labels = [];
+  try {
+    var lastA = sheet.getLastRow();
+    if (lastA >= 1) labels = sheet.getRange(1, 1, lastA, 1).getValues().map(function (r) { return String(r[0] || ''); });
+  } catch (_le) {}
+  function stripEmoji(s) { return String(s || '').replace(/^[^֐-׿A-Za-z0-9]+\s*/, '').trim(); }
+  var added = [], dup = [];
+  for (var i = 0; i < pieces.length; i++) {
+    var name = String(pieces[i] || '').trim();
+    if (!name) continue;
+    var isDup = false;
+    for (var j = 0; j < labels.length; j++) { if (stripEmoji(labels[j]) === name) { isDup = true; break; } }
+    if (isDup) { dup.push(name); continue; }
+    var reEsc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/"/g, '""');
+    var pat = '(?i)(^|[^֐-׿A-Za-z0-9])' + reEsc + '([^֐-׿A-Za-z0-9]|$)';
+    var formula = "=IFERROR(SUMPRODUCT(('" + TX + "'!C2:C5000)*" +
+      "((IFERROR(REGEXMATCH('" + TX + "'!D2:D5000,\"" + pat + "\"),FALSE))+" +
+      "(IFERROR(REGEXMATCH('" + TX + "'!E2:E5000,\"" + pat + "\"),FALSE))+" +
+      "(IFERROR(REGEXMATCH('" + TX + "'!F2:F5000,\"" + pat + "\"),FALSE))>0)),0)";
+    try {
+      sheet.appendRow([emoji + ' ' + name, formula]);
+      added.push(name);
+      labels.push(emoji + ' ' + name);
+    } catch (_we) { Logger.log('owner add-cat write err: ' + (_we && _we.message)); }
+  }
+  if (!added.length && dup.length) return 'ℹ️ כבר קיים: ' + dup.join(', ');
+  if (!added.length) return '😬 לא הצלחתי להוסיף את הקטגוריה. נסה שוב.';
+  var msg = '✅ נוספו ל*מאזן אישי*: ' + added.map(function (n) { return emoji + ' ' + n; }).join(', ');
+  if (dup.length) msg += '\nℹ️ כבר קיים: ' + dup.join(', ');
+  msg += '\nמעכשיו כל הוצאה שמזכירה את השם תיכנס לשורה הזו אוטומטית. 📊';
+  return msg;
 }
 
 // --- Survey state helpers (CacheService, 1h TTL — long enough for a user
