@@ -243,6 +243,37 @@
   .scroll-x::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
   html.dark .scroll-x::-webkit-scrollbar-thumb { background: #475569; }
 
+  /* 2026-06-08 (Steven): dark-mode readability fix. This admin page is
+     light-first, so its INLINE dark text colors (#0f1422 / #1E293B / #41506f /
+     #475569 / #64748B) and blue accents (#1d4ed8) were unreadable on the dark
+     background. Remap them to readable light tones in dark mode. Inline styles
+     outrank class rules, so these use attribute selectors + !important. */
+  html.dark .kfl-section-eyebrow { color: #7dd3fc; }
+  html.dark .kfl-accent-gradient {
+    background: none !important;
+    -webkit-text-fill-color: #ffffff !important;
+    color: #ffffff !important;
+  }
+  /* near-black / dark-blue inline text -> near-white */
+  html.dark [style*="color:#0f1422"], html.dark [style*="color: #0f1422"],
+  html.dark [style*="color:#0F1422"], html.dark [style*="color: #0F1422"],
+  html.dark [style*="color:#1E293B"], html.dark [style*="color: #1E293B"],
+  html.dark [style*="color:#1e293b"], html.dark [style*="color: #1e293b"],
+  html.dark [style*="color:#0F172A"], html.dark [style*="color: #0F172A"],
+  html.dark [style*="color:#334155"], html.dark [style*="color: #334155"]
+    { color: #EAF1FB !important; }
+  /* blue accents -> light blue (readable on dark) */
+  html.dark [style*="color:#1d4ed8"], html.dark [style*="color: #1d4ed8"],
+  html.dark [style*="color:#1D4ED8"], html.dark [style*="color: #1D4ED8"]
+    { color: #93C5FD !important; }
+  /* slate secondary text -> lighter slate */
+  html.dark [style*="color:#41506f"], html.dark [style*="color: #41506f"],
+  html.dark [style*="color:#475569"], html.dark [style*="color: #475569"],
+  html.dark [style*="color:#5d6b8f"], html.dark [style*="color: #5d6b8f"],
+  html.dark [style*="color:#64748B"], html.dark [style*="color: #64748B"],
+  html.dark [style*="color:#64748b"], html.dark [style*="color: #64748b"]
+    { color: #AEBAD0 !important; }
+
   /* Gate blur */
   .gate-blur { filter: blur(6px); pointer-events: none; user-select: none; }
 
