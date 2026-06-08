@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-profwire';
+const KFL_BUILD_VERSION = '2026-06-08-linkfix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2062,6 +2062,22 @@ function _doPostRouter_(e) {
       var __interactive_ = __msg_.interactive || null;
       var __msgId_ = __msg_.id || '';
       Logger.log('doPost: from=' + __from_ + ' text="' + __text_ + '" interactive=' + (__interactive_ ? __interactive_.type : 'no'));
+
+      // LINK CODE -- HIGHEST priority (Steven 2026-06-08). A user linking their
+      // WhatsApp sends "kod 123456" / "code 123456". Intercept it HERE, before
+      // the fast-path + every router, so it is never mis-parsed as a 123456
+      // expense. The matcher in processExpense (8631) was being bypassed by an
+      // upstream router for this exact message, leaving users unable to link
+      // (the broken plumbing behind the 0% activation). This entry point cannot
+      // be bypassed. handleLinkCode_ is idempotent (it checks already-linked).
+      var __linkCodeM = __text_ && String(__text_).match(/(?:קוד|code|link)\s*[:\-]?\s*(\d{6})\b/i);
+      if (__linkCodeM && typeof handleLinkCode_ === 'function') {
+        try {
+          var __lcReply = handleLinkCode_(__linkCodeM[1], __from_);
+          if (typeof sendWhatsAppMessage === 'function' && __lcReply) sendWhatsAppMessage(__from_, __lcReply);
+        } catch (__lcErr) { Logger.log('doPost: link-code intercept err: ' + (__lcErr && __lcErr.message)); }
+        return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+      }
 
       // 🔁 IDEMPOTENCY — Meta retries webhook delivery when our response is
       // slow (>~20s) or on transient errors, sending the SAME message id
