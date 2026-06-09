@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-08-linkfix';
+const KFL_BUILD_VERSION = '2026-06-09-pickerfix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -7938,7 +7938,14 @@ function _sendPendingCategoryPicker_(fromPhone, amount, description, page) {
       fromPhone, header, body, 'תוקף הבחירה: 30 דקות', 'בחר',
       [{ title: 'קטגוריות', rows: rows }]
     );
-  } catch (_sErr) { Logger.log('_sendPendingCategoryPicker_ send err: ' + (_sErr && _sErr.message)); }
+  } catch (_sErr) {
+    Logger.log('_sendPendingCategoryPicker_ send err: ' + (_sErr && _sErr.message));
+    // The interactive list failed to send (a Meta blip). NEVER leave the user
+    // with silence on their (often first) expense -- that reads as a dead bot
+    // and is a likely activation killer. Fall back to a text prompt so they
+    // know it did not record and can resend.
+    return { reply: '😬 לא הצלחתי להציג כרגע את כפתורי הקטגוריות.\nההוצאה לא נרשמה. שלח אותה שוב (למשל "' + Number(amount).toLocaleString('he-IL') + ' ' + String(description || '').slice(0, 24) + '") ואכניס אותה.' };
+  }
   return { reply: '' };
 }
 
