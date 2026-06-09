@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-09-pickerfix';
+const KFL_BUILD_VERSION = '2026-06-09-botfixes';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -8222,6 +8222,15 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
       try {
         var __j = JSON.parse(body);
         if (__j && __j.rowIndex) __rowIndex = Number(__j.rowIndex) || 0;
+        // Cache the user's OWN sheet URL from the append response so the FIRST
+        // expense confirmation can show a tappable link. _userSheetUrl_ checks
+        // this same 'sheeturl:' cache before its KV lookup, which is empty for a
+        // brand-new user until the server self-heals the phone record -- without
+        // this the dashboard link only appears from expense #2 (audit 2026-06-09).
+        if (__j && __j.spreadsheetUrl) {
+          var __suC = String(fromPhone || '').replace(/[^0-9]/g, '');
+          if (__suC) CacheService.getScriptCache().put('sheeturl:' + __suC, String(__j.spreadsheetUrl), 3600);
+        }
       } catch (_pe) {}
       // Steven 2026-05-24: stash last-expense in cache + send the change-
       // category picker as a follow-up. Both are best-effort -- the
