@@ -11,7 +11,6 @@ Disallow: /dashboard
 Disallow: /automations
 Disallow: /seo
 Disallow: /welcome
-Disallow: /welcome.html
 Disallow: /test
 Disallow: /thanks
 Crawl-delay: 1
