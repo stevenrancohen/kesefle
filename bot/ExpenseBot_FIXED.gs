@@ -66,7 +66,7 @@ const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHAT
 // auto-target the inbound number via _ACTIVE_PHONE_NUMBER_ID_, set in doPost.)
 // WABA ID: 986476207210292. Test numbers deliver only to allow-listed recipients.
 const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1086749664527399';
-const BOT_PHONE_E164 = '+15556408123';
+const BOT_PHONE_E164 = '+972547760643';
 
 // Set per-request from the inbound webhook metadata (phone_number_id) so the
 // bot ALWAYS replies from the SAME number the user messaged — even if the
@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+15556408123';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-09-pickerfix';
+const KFL_BUILD_VERSION = '2026-06-10-realnumber';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -9274,7 +9274,7 @@ function processExpense(text, fromPhone) {
         try { PropertiesService.getScriptProperties().deleteProperty(__npsCtxKey); } catch (_npsCtxErr) {}
       } catch (_npsSubErr) { Logger.log('nps submit err: ' + (_npsSubErr && _npsSubErr.message)); }
       var __npsThanks = __npsScore >= 9
-        ? 'תודה רבה! 🙏 שמחים שאתה ממליץ. אם מתחשק לך לעזור לחבר/ה — ' + 'wa.me/15556408123?text=שלום'
+        ? 'תודה רבה! 🙏 שמחים שאתה ממליץ. אם מתחשק לך לעזור לחבר/ה — ' + 'wa.me/972547760643?text=שלום'
         : __npsScore >= 7
         ? 'תודה על המשוב! 🙏 איפה אנחנו יכולים להשתפר?'
         : 'תודה על הכנות. 🙏 נשמח שתשלח לנו הצעות שיפור ל-info@kesefle.com';
@@ -17419,7 +17419,7 @@ function installKesefleBot() {
 
   // Optional: send a test WhatsApp message to ALLOWED_PHONE (if it's set somewhere)
   // Skipped to avoid spamming during setup. To test manually, send a WhatsApp message
-  // to +15556408123 (allow-listed recipients only) and check for a reply.
+  // to BOT_PHONE_E164 (allow-listed recipients only) and check for a reply.
 
   return report.join('\n');
 }
