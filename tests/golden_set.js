@@ -322,6 +322,7 @@ const GOLDEN = [
   // (C) PERSONAL income: salary (incl. the natural "קיבלתי משכורת") and the
   // business-income personal row stay income, top-level הכנסות.
   ['קיבלתי משכורת 9000', 'הכנסות'],
+  ['לקוח שילם לי 4500', 'עסק'], ['משכורת לעובד 6000', 'עסק'], ['מלגה 1200', 'הכנסות'], ['הכנסה משכירות 3000', 'הכנסות'],
   ['הכנסה עסקית 10000', 'הכנסות'],
   //
   // (D) INSTALLMENTS (תשלומים / "N תשלומים" / "תשלום X מתוך Y"): the multi-

@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-10-realnumber';
+const KFL_BUILD_VERSION = '2026-06-11-incomefix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -368,7 +368,7 @@ const CATEGORY_MAP = [
   {"keywords":["קלוד","קלוד פרו","קלוד מקס","קלוד טים","מנוי קלוד","claude pro","claude max","claude code","claude ai","gemini","midjourney","perplexity","copilot","cursor"],"category":"הוצאות קבועות","subcategory":"אפליקציות"},
   // Misc income (freelance / bonus / grants / convalescence) in the PRIMARY map so
   // a refund/bonus is flagged income even without the index. Placed early to win ties.
-  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
+  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","מלגה","מילגה","מלגת לימודים","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // QA fleet round 3 category fixes (Steven 2026-06-08). Placed early + multi-word
   // so they win the longest-match over a generic keyword in another bucket.
   // Telecom brands -> tikshoret (Pelephone/Bezeq + "phone" matched electronics).
@@ -410,7 +410,8 @@ const CATEGORY_MAP = [
   {"keywords":["software","saas","subscription tool","tool","app","application","license","software license","cloud service","אופיס","תוכנה","תוכנת חשבוניות","סאאס","רישיון","כלי עבודה"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["business equipment","office equipment","equipment","printer","scanner","laptop","monitor","desk","office chair","ציוד עסקי","ציוד למשרד","מדפסת","סורק","ציוד משרד"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["business tax","corporate tax","vat","vat payment","income tax","tax payment","sales tax","מע\"מ","מעמ","תשלום מעמ","מס הכנסה עסקי","מסי עסק","ביטוח לאומי עצמאי"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
-  {"keywords":["revenue","sale","sales","income payment","customer payment","invoice paid","order received","קבלת תשלום","תשלום לקוח","הזמנה","מחזור","מכירה","מכירות","ssayhe","החזר מעמ","החזר מע\"מ"],"category":"עסק","subcategory":"מחזור","isIncome":true},
+  {"keywords":["משכורת לעובד","משכורת לעובדת","משכורת לעובדים","משכורות לעובדים","שכר לעובד","שכר לעובדים","תשלום משכורת לעובד","שילמתי משכורת"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["revenue","sale","sales","income payment","customer payment","invoice paid","order received","קבלת תשלום","תשלום לקוח","לקוח שילם","לקוח שילם לי","תשלום מהלקוח","קיבלתי מלקוח","הזמנה","מחזור","מכירה","מכירות","ssayhe","החזר מעמ","החזר מע\"מ"],"category":"עסק","subcategory":"מחזור","isIncome":true},
 
   // ===== FAMILY + KIDS + BABY (expanded 2026-05-24 per Steven's request) =====
   {"keywords":["טיטול","טיטולים","האגיס","פמפרס","ליברה","מוליקס","מגבונים לחים","מגבונים לתינוק","חיתולים","חיתול","דיאפר","פמפרסים","חיתולי לילה","חיתולי בריכה","חיתול בריכה","תחתוני אימון","פולים","טיטולי גמילה"],"category":"חינוך וילדים","subcategory":"חיתולים ותינוקות"},
@@ -501,7 +502,7 @@ const CATEGORY_MAP = [
   {"keywords":["אוכל לכלב","אוכל לחתול","מזון לכלב","מזון לחתול","ביקור אצל וטרינר","חיסון לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
   {"keywords":["משכורת","שכר חודש","שכר עבודה"],"category":"הכנסות","subcategory":"הכנסה 1 — משכורת","isIncome":true},
   {"keywords":["income 2","הכנסה 2","הכנסה עסקית","תשלום מלקוח"],"category":"הכנסות","subcategory":"הכנסה 2 — עסק","isIncome":true},
-  {"keywords":["הכנסה - טלפוניה","טלפונים","מכירת טלפון","income 3","הכנסה 3","הכנסה נוספת"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
+  {"keywords":["הכנסה - טלפוניה","טלפונים","מכירת טלפון","income 3","הכנסה 3","הכנסה נוספת","הכנסה משכירות","הכנסות משכירות","הכנסה מהשכרה"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   {"keywords":["בונוס","תקבול"],"category":"הכנסות","subcategory":"שונות (הכנסות)","isIncome":true},
   {"keywords":["am pm","ampm","אוכל בבית","אוכל לבית","אושר עד","אם המושבות","אם פי אם","בשר","גבינות","דגים","ויקטורי","חצי חינם","טיב טעם","יוחננוף","יינות ביתן","ירקות","מאפיה","מגה","מחסני השוק","מעיין 2000","סופר","פירות","קינג סטור","קרפור","רמי לוי","שופרסל","שופרסל אקספרס"],"category":"אוכל","subcategory":"אוכל לבית"},
   {"keywords":["aroma","bbb","cibus","cofix","kfc","mcdonald","nespresso","starbucks","ten bis","wolt","אוכל בחוץ","אוכל חוץ","אספרסו","ארומה","בורגר","בורגר קינג","בית קפה","גרג","גרג קפה","דומינוס","המבורגר","וולט","לחם ארז","מוזס","מסעדה","מסעדות","מקדונלדס","משלוח","משלוח אוכל","נספרסו","סושי","סיבוס","פיצה","פיצה האט","קופיקס","קפה","רולדין","שווארמה","שטראוס","תן ביס"],"category":"אוכל","subcategory":"אוכל בחוץ"},
@@ -869,9 +870,16 @@ function _isIncomeCategory_(category, subcategory) {
  * the inverse ( !resolveIsIncome(...) ) into col H of תנועות.
  */
 function _resolveIsIncome_(matched, rawText, category, subcategory) {
-  if (matched && matched.isIncome) return true;
   var s = String(rawText || '').trim();
+  // PAYROLL OVERRIDE (before any income match): paying a salary TO an employee
+  // is a business EXPENSE even though bare maskoret maps to income. QA 2026-06-11:
+  // 'maskoret le-oved 6000' was booked as +6000 income (a 12K dashboard swing).
+  if (/(?:משכורת|שכר)\s+ל(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+משכורת/.test(s)) return false;
+  if (matched && matched.isIncome) return true;
   if (s.charAt(0) === '+') return true;
+  // Money-RECEIVED phrasings -> income: shilem/shilmu li, heevir(u) li,
+  // hechzir(u) li, hachnasa me-X, leading hachnasa. QA 2026-06-11.
+  if (/שיל(?:ם|מה|מו)\s+לי(?=\s|$)|העביר(?:ה|ו)?\s+לי(?=\s|$)|החזיר(?:ה|ו)?\s+לי(?=\s|$)|הכנס(?:ה|ות)\s+מ[א-ת]|^הכנס(?:ה|ות)\b/.test(s)) return true;
   // Refund / store credit FROM a place -> income (a return is money coming
   // back). Specific patterns only ("zikui me-X", "hechzer al kniya",
   // "kibalti hechzer") so a loan repayment ("hechzer halvaa") or a bare,
@@ -1777,6 +1785,13 @@ var _BOT_ECHO_REGEXES_ = [
   /💰\s*מחזור:\s*₪?\d/,                       // gross revenue line in confirmation
   /🏭\s*עלות\s+ייצור:\s*₪?\d/,                // production cost line
   /📈\s*רווח:\s*₪?[-]?\d/,                    // profit line (allow negative for losses)
+  // 2026-06-11: newer reply families (picker fallback, link confirmations,
+  // activation digest header, business-dashboard backfill confirmation).
+  /ההוצאה\s+לא\s+נרשמה/,
+  /הקישור\s+הושלם/,
+  /אתה\s+כבר\s+מחובר/,
+  /הפעלה:\s*\d/,
+  /נוצר\s+דשבורד\s+עסקי/,
 ];
 
 function _looksLikeBotEcho_(text, interactive) {
