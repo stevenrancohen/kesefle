@@ -25,6 +25,9 @@ try { j = JSON.parse(execFileSync('node', [REPLAY, '--json', msg], { encoding: '
 const d = j.decisions || {}, mc = d.matchCategory || {}, am = d.amountMatch || {}, fx = d.fx || {};
 let cat = mc.category || null, sub = mc.subcategory || null;
 let income = mc.isIncome === true || am.isIncome === true || /^\s*\+/.test(msg);
+// Mirror _resolveIsIncome_ rawText rules so this tool reports PROD sign behavior
+if (/(?:משכורת|שכר)\s+ל(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+משכורת/.test(msg)) income = false;
+else if (/(?:זיכוי|החזר)\s+מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי|שיל(?:ם|מה|מו)\s+לי(?=\s|$)|העביר(?:ה|ו)?\s+לי(?=\s|$)|החזיר(?:ה|ו)?\s+לי(?=\s|$)|הכנס(?:ה|ות)\s+מ[א-ת]|^הכנס(?:ה|ות)\b/.test(msg)) income = true;
 if (!cat || cat.indexOf('שונות') >= 0) {
   const fb = fallback(msg.replace(/[+\-]?\d[\d.,]*/g, ' '));
   if (fb) { cat = fb.category; sub = fb.subcategory; if (fb.isIncome) income = true; }
