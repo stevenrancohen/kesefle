@@ -68,5 +68,21 @@ reset();
 b = await run();
 ok('VALUE_PROBLEM verdict when >=5 linked but 0% return', b.headline.verdict === 'VALUE_PROBLEM' && b.headline.activation_rate_pct === 0);
 
+// ---- cache: a primed activation:summary:30 key short-circuits the scan ----
+reset();
+const CACHED = { ok: true, cohort_window_days: 30, headline: { verdict: "OK", activation_rate_pct: 55 } };
+const origFetch = global.fetch;
+global.fetch = async (url) => {
+  const u = String(url);
+  if (u.includes(encodeURIComponent("activation:summary:30")) && u.includes("/get/"))
+    return new Response(JSON.stringify({ result: JSON.stringify(CACHED) }), { status: 200 });
+  return origFetch(url);
+};
+b = await run();
+ok("cache hit returns cached:true + cached verdict", b.cached === true && b.headline.verdict === "OK" && b.headline.activation_rate_pct === 55);
+const rf = res();
+await handlerImpl({ method: "GET", query: { days: "30", fresh: "1" } }, rf);
+ok("fresh=1 bypasses cache", rf.body.cached !== true && rf.body.headline.activation_rate_pct !== 55);
+
 console.log('\n' + (fail === 0 ? '✅ test_activation_summary: ALL ' + pass + ' PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);

@@ -17,7 +17,7 @@ async function handlerImpl(req, res) {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
   const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
-  const data = await computeActivationCohort(days);
+  const data = await computeActivationCohort(days, { fresh: req.query.fresh === '1' });
   if (!data.ok) return res.status(503).json(data);
   return res.status(200).json({ at: new Date().toISOString(), ...data });
 }

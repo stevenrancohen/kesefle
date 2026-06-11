@@ -132,8 +132,17 @@ function normalizeE164(input) {
   if (!input) return null;
   let s = String(input).replace(/\D+/g, '');
   if (!s) return null;
+  // Paste artifacts seen in the wild (audit 2026-06-10) -- each produced a
+  // DIFFERENT KV key than the bot computes, so the user linked under one key
+  // and the bot looked up another ("linked but the bot ignores me"):
+  // "+972 054-..." keeps the zero after the country code.
+  if (s.startsWith('9720')) s = '972' + s.slice(4);
+  // double country code from a double paste: 972972...
+  if (s.startsWith('972972')) s = s.slice(3);
   // If it starts with 0 (e.g., 0541234567), assume Israel and prepend 972.
   if (s.startsWith('0')) s = '972' + s.slice(1);
+  // bare Israeli mobile without the leading zero: 5XXXXXXXX (9 digits)
+  if (/^5\d{8}$/.test(s)) s = '972' + s;
   // Length sanity: 7-15 digits per E.164
   if (s.length < 7 || s.length > 15) return null;
   return s;
