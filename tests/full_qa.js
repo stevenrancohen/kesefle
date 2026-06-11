@@ -262,7 +262,7 @@ ok('every /messages send targets the inbound number via _waSendConfig_ (no bare 
    /_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID/.test(BOT) &&
    /https:\/\/graph\.facebook\.com\/v21\.0\/' \+ \(_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID\) \+ '\/messages'/.test(BOT) &&
    (BOT.match(/_waSendConfig_\(\)/g) || []).length >= 4);
-ok('BOT_PHONE_E164 display number matches the test number', /BOT_PHONE_E164 = '\+15556408123'/.test(BOT));
+ok('BOT_PHONE_E164 displays the real production number', /BOT_PHONE_E164 = '\+972547760643'/.test(BOT));
 
 // ── 5e. Minimal OAuth scope (drive.file) — publishable without CASA audit ────
 // Provisioning must CREATE a fresh sheet (app-created → drive.file) rather than
