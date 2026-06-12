@@ -131,6 +131,7 @@ eq(byEnv.PAYPAL_PLAN_FAMILY_YEAR.priceIls, priceILS('family', 'year'), 'PAYPAL_P
 // the monthly path is byte-for-byte unchanged AND the annual path flips only
 // the interval unit (interval_count stays 1).
 console.log('\ncreatePlan() request body:');
+eval(fnSrc(PP, 'paypalEnvName')); // paypalBase() now delegates to this (sandbox default)
 eval(fnSrc(PP, 'paypalBase'));
 eval(fnSrc(PP, 'createPlan'));
 const _realFetch = global.fetch;
@@ -168,6 +169,10 @@ async function captureCreatePlan(unit) {
   let _stubId = 0;
   async function getAccessToken() { return 'TOK'; }       // eslint-disable-line no-unused-vars
   async function createProduct() { return 'PROD-1'; }     // eslint-disable-line no-unused-vars
+  // setup-plans is now KV-idempotent (paypal_plans:<env>); stub the KV pair so
+  // the handler takes the fresh-creation path (no existing record).
+  async function billingKvGet() { return null; }          // eslint-disable-line no-unused-vars
+  async function billingKvSet() { return true; }          // eslint-disable-line no-unused-vars
   // Re-bind createPlan to a recording stub for the handler's scope.
   /* eslint-disable no-func-assign */
   const realCreatePlan = createPlan;

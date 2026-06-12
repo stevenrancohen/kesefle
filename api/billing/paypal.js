@@ -1,18 +1,24 @@
 // /api/billing/paypal
-// PayPal recurring subscriptions for Pro / Family. ONE function serves two
+// PayPal recurring subscriptions for Pro / Family. ONE function serves four
 // actions (keeps the serverless function count down):
 //   POST /api/billing/paypal?action=subscribe   (auth'd) → { ok, url }  approval link
+//   POST /api/billing/paypal?action=confirm     (auth'd) → return-leg activation
 //   POST /api/billing/paypal?action=webhook      (PayPal)  → lifecycle events
+//   POST /api/billing/paypal?action=setup-plans  (admin)   → bootstrap plans
 //
 // Model: accessUntil is always set to the subscription's next_billing_time + a
 // few days of grace. While PayPal keeps charging, next_billing_time marches
 // forward so access stays ahead; once it cancels, access lapses after the last
 // paid period. That keeps it consistent with the prepaid methods.
 //
-// Env: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_ENV ('live'|'sandbox'),
+// Env: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET,
+//      PAYPAL_ENV ('live'|'sandbox', DEFAULT sandbox — money only moves after
+//      the owner explicitly sets PAYPAL_ENV=live, see
+//      docs/PAYPAL_GO_LIVE_RUNBOOK.md),
 //      PAYPAL_PLAN_PRO, PAYPAL_PLAN_FAMILY (monthly),
-//      PAYPAL_PLAN_PRO_YEAR, PAYPAL_PLAN_FAMILY_YEAR (annual, optional —
-//      planIdFor falls back to the monthly plan if a yearly one is unset),
+//      PAYPAL_PLAN_PRO_YEAR, PAYPAL_PLAN_FAMILY_YEAR (annual — when a yearly
+//      plan id is unset, a yearly subscribe returns paypal_plan_not_configured
+//      instead of silently billing monthly),
 //      PAYPAL_WEBHOOK_ID
 
 import { requireAuth, requireAdmin } from '../../lib/auth.js';
@@ -20,17 +26,42 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import {
   activatePremium, deactivatePremium, priceILS,
-  billingKvGet, billingKvSet,
+  billingKvGet, billingKvSet, notifyOwner,
 } from '../../lib/billing.js';
 import { createInvoice } from '../../lib/invoice.js';
 
+// CRITICAL: capture the RAW delivered bytes for webhook signature verification.
+// PayPal's verify-webhook-signature validates the bytes it transmitted; letting
+// Vercel re-parse + re-serialize the JSON (number/key reformatting) makes the
+// verify call fail intermittently and drop real lifecycle events. The router
+// reads the raw body once and JSON-parses it itself for every action.
+export const config = { api: { bodyParser: false } };
+
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', (c) => chunks.push(typeof c === 'string' ? Buffer.from(c) : c));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
 const GRACE_DAYS = 3;
+// paypal_event:* idempotency keys expire after 90 days — comfortably past
+// PayPal's ~3-day webhook retry window, without growing the KV store forever.
+const SEEN_EVENT_TTL_SEC = 90 * 24 * 3600;
 const SITE = process.env.PUBLIC_SITE_URL || 'https://kesefle.com';
 
+function paypalEnvName() {
+  // DEFAULT SANDBOX. Real charges require the owner to explicitly set
+  // PAYPAL_ENV=live in Vercel (docs/PAYPAL_GO_LIVE_RUNBOOK.md).
+  return String(process.env.PAYPAL_ENV || 'sandbox').toLowerCase() === 'live' ? 'live' : 'sandbox';
+}
+
 function paypalBase() {
-  return String(process.env.PAYPAL_ENV || 'live').toLowerCase() === 'sandbox'
-    ? 'https://api-m.sandbox.paypal.com'
-    : 'https://api-m.paypal.com';
+  return paypalEnvName() === 'live'
+    ? 'https://api-m.paypal.com'
+    : 'https://api-m.sandbox.paypal.com';
 }
 
 async function getAccessToken() {
@@ -49,19 +80,19 @@ async function getAccessToken() {
 }
 
 // Plan ID resolution per (plan, period). Each (Pro|Family) x (month|year)
-// pair is a SEPARATE PayPal subscription plan. Annual env vars are optional:
-// if a yearly plan isn't configured, we fall back to the monthly plan so
-// the user can still subscribe (slightly worse UX than a hard error but
-// preserves the conversion).
+// pair is a SEPARATE PayPal subscription plan. NO silent fallback: a user who
+// clicked "190/390 ₪ לשנה" must never be put on a monthly plan because the
+// yearly env var is missing — subscribe returns paypal_plan_not_configured
+// (which account.html/pricing.html already render as a friendly message).
 function planIdFor(plan, period) {
   var per = period === 'year' ? 'year' : 'month';
   if (plan === 'family') {
     return per === 'year'
-      ? (process.env.PAYPAL_PLAN_FAMILY_YEAR || process.env.PAYPAL_PLAN_FAMILY)
+      ? process.env.PAYPAL_PLAN_FAMILY_YEAR
       : process.env.PAYPAL_PLAN_FAMILY;
   }
   return per === 'year'
-    ? (process.env.PAYPAL_PLAN_PRO_YEAR || process.env.PAYPAL_PLAN_PRO)
+    ? process.env.PAYPAL_PLAN_PRO_YEAR
     : process.env.PAYPAL_PLAN_PRO;
 }
 function planFromPlanId(planId) {
@@ -72,9 +103,14 @@ function planFromPlanId(planId) {
   return { plan: 'pro', period: 'month' };
 }
 
-function accessUntilFromNextBilling(nextBillingTime) {
+// `period` matters for the fallback: when PayPal omits next_billing_time we
+// must grant the FULL paid window — an annual payer (190/390 ILS) granted the
+// old 30-day fallback would lapse to free after ~33 days with no corrective
+// webhook for a year.
+function accessUntilFromNextBilling(nextBillingTime, period) {
   const base = nextBillingTime ? Date.parse(nextBillingTime) : NaN;
-  const ms = (Number.isNaN(base) ? Date.now() + 30 * 86400000 : base) + GRACE_DAYS * 86400000;
+  const fallbackDays = period === 'year' ? 365 : 30;
+  const ms = (Number.isNaN(base) ? Date.now() + fallbackDays * 86400000 : base) + GRACE_DAYS * 86400000;
   return new Date(ms).toISOString();
 }
 
@@ -224,22 +260,31 @@ async function subscribeImpl(req, res) {
 }
 
 // ── action=webhook ───────────────────────────────────────────────────────────
+// Fail-closed signature verification. The webhook_event MUST be the raw bytes
+// PayPal delivered (req.rawBody, captured by the router with bodyParser off):
+// re-serializing the parsed object can differ byte-for-byte from the original
+// (number formatting, key order) and PayPal then answers FAILURE.
 async function verifyWebhook(req, token) {
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
   if (!webhookId) return false;
   try {
+    const head = JSON.stringify({
+      auth_algo: req.headers['paypal-auth-algo'],
+      cert_url: req.headers['paypal-cert-url'],
+      transmission_id: req.headers['paypal-transmission-id'],
+      transmission_sig: req.headers['paypal-transmission-sig'],
+      transmission_time: req.headers['paypal-transmission-time'],
+      webhook_id: webhookId,
+    });
+    // Splice the raw event bytes in verbatim (no re-serialization).
+    const raw = (typeof req.rawBody === 'string' && req.rawBody.length)
+      ? req.rawBody
+      : JSON.stringify(req.body || {});
+    const payload = head.slice(0, -1) + ',"webhook_event":' + raw + '}';
     const r = await fetch(`${paypalBase()}/v1/notifications/verify-webhook-signature`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        auth_algo: req.headers['paypal-auth-algo'],
-        cert_url: req.headers['paypal-cert-url'],
-        transmission_id: req.headers['paypal-transmission-id'],
-        transmission_sig: req.headers['paypal-transmission-sig'],
-        transmission_time: req.headers['paypal-transmission-time'],
-        webhook_id: webhookId,
-        webhook_event: req.body,
-      }),
+      body: payload,
     });
     const j = await r.json().catch(() => ({}));
     return j.verification_status === 'SUCCESS';
@@ -272,6 +317,11 @@ async function webhookImpl(req, res) {
     return res.status(200).json({ ok: true, duplicate: event.id });
   }
 
+  // Set when an event we DO care about could not be applied (no user mapping).
+  // Such events are NOT marked seen, so a manual resend from the PayPal
+  // dashboard (after the mapping exists) is re-processed instead of answering
+  // `duplicate`. The owner is alerted so nothing fails silently.
+  let unhandled = false;
   try {
     if (type === 'BILLING.SUBSCRIPTION.ACTIVATED') {
       const subId = resource.id;
@@ -285,8 +335,14 @@ async function webhookImpl(req, res) {
         await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
         await activatePremium(userSub, {
           plan, period, method: 'paypal', recurring: true, externalId: subId,
-          accessUntil: accessUntilFromNextBilling(nextBilling),
+          accessUntil: accessUntilFromNextBilling(nextBilling, period),
         });
+      } else {
+        // Activation we cannot map to a user — a paying customer would get
+        // NOTHING. Alert the owner instead of no-op'ing silently.
+        unhandled = true;
+        log.error('paypal_activation_unmappable', { reqId: req.reqId, eventId: event.id, subId: subId || null });
+        notifyOwner(`PayPal ALERT: subscription ACTIVATED event ${event.id || ''} has no custom_id - cannot map to a user. Sub: ${subId || 'unknown'}. Check PayPal dashboard + activate manually.`).catch(() => {});
       }
     } else if (type === 'PAYMENT.SALE.COMPLETED') {
       // Renewal (or first) payment. Map agreement → user, then refresh accessUntil
@@ -294,14 +350,31 @@ async function webhookImpl(req, res) {
       const subId = resource.billing_agreement_id;
       if (subId) {
         const map = await billingKvGet(`paypalSub:${subId}`);
-        if (map?.userSub) {
-          const sub = await getSubscription(token, subId);
+        const sub = await getSubscription(token, subId);
+        let userSub = map?.userSub || null;
+        let plan = map?.plan;
+        let period = map?.period;
+        if (!userSub) {
+          // PAYMENT.SALE.COMPLETED frequently arrives BEFORE
+          // BILLING.SUBSCRIPTION.ACTIVATED (common PayPal ordering). Fall back
+          // to the sale's custom field / the live subscription's custom_id and
+          // create the paypalSub mapping here so the first payment (and its
+          // legally required VAT invoice) is never dropped.
+          userSub = resource.custom || resource.custom_id || sub?.custom_id || null;
+          if (userSub) {
+            const fromPlan = planFromPlanId(sub?.plan_id);
+            plan = fromPlan.plan;
+            period = fromPlan.period;
+            await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
+          }
+        }
+        if (userSub) {
+          plan = plan || 'pro';
+          period = period === 'year' ? 'year' : 'month';
           const nextBilling = sub?.billing_info?.next_billing_time;
-          const plan = map.plan || 'pro';
-          const period = map.period === 'year' ? 'year' : 'month';
-          await activatePremium(map.userSub, {
+          await activatePremium(userSub, {
             plan, period, method: 'paypal', recurring: true, externalId: subId,
-            accessUntil: accessUntilFromNextBilling(nextBilling),
+            accessUntil: accessUntilFromNextBilling(nextBilling, period),
           });
           // Fire-and-forget Israeli VAT invoice. Use the SALE's resource.id as
           // the paymentReference (not the subscription id) so each renewal
@@ -311,13 +384,20 @@ async function webhookImpl(req, res) {
           const amountILS = Number(resource.amount?.total) || priceILS(plan, period);
           maybeIssueInvoiceForPayment({
             reqId: req.reqId,
-            userSub: map.userSub,
+            userSub,
             plan,
             amountILS,
             externalId: resource.id || subId,
           }).catch((e) => {
             log.warn('paypal.invoice_unhandled', { reqId: req.reqId, error: e.message });
           });
+        } else {
+          // Real money arrived and we cannot attribute it. Don't mark seen
+          // (a dashboard resend after the ACTIVATED mapping lands will work)
+          // and alert the owner.
+          unhandled = true;
+          log.error('paypal_sale_unmappable', { reqId: req.reqId, eventId: event.id, subId });
+          notifyOwner(`PayPal ALERT: payment received for subscription ${subId} but no user mapping/custom_id found (event ${event.id || ''}). Activate + invoice manually, then resend the webhook from the PayPal dashboard.`).catch(() => {});
         }
       }
     } else if (
@@ -371,13 +451,71 @@ async function webhookImpl(req, res) {
         }
       }
     }
-    if (event.id) await billingKvSet(seenKey, { type, ts: new Date().toISOString() });
+    // Mark seen ONLY when the event was actually applied (or needs no action),
+    // and with a TTL so paypal_event:* keys don't grow the KV store forever.
+    if (event.id && !unhandled) {
+      await billingKvSet(seenKey, { type, ts: new Date().toISOString() }, { ttlSec: SEEN_EVENT_TTL_SEC });
+    }
   } catch (e) {
     log.error('paypal_webhook_handler_failed', { reqId: req.reqId, type, error: e.message });
     return res.status(500).json({ ok: false, error: 'handler_failed' });
   }
 
-  return res.status(200).json({ ok: true, processed: type });
+  return res.status(200).json({ ok: true, processed: type, ...(unhandled ? { unmapped: true } : {}) });
+}
+
+// ── action=confirm (post-approval return leg) ────────────────────────────────
+// PayPal appends ?subscription_id=I-XXX to the return_url. upgrade.html POSTs
+// it here (cookie-auth'd) so activation does NOT depend solely on webhook
+// delivery — if the webhook is misconfigured/late, the paying customer still
+// gets premium the second they land back on /upgrade. Fail-closed: we activate
+// only when PayPal itself reports the subscription ACTIVE and its custom_id
+// matches the signed-in user (a stranger can't activate someone else's sub or
+// replay an id). Idempotent: when the webhook already applied this
+// subscription with the same-or-later accessUntil we return alreadyActive
+// without re-activating (no duplicate WhatsApp confirmation).
+async function confirmImpl(req, res) {
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+  const subId = String(body?.subscriptionId || '').trim();
+  if (!subId || subId.length > 64 || !/^[A-Za-z0-9_-]+$/.test(subId)) {
+    return res.status(400).json({ ok: false, error: 'invalid_subscription_id' });
+  }
+
+  let token;
+  try { token = await getAccessToken(); }
+  catch (e) {
+    log.error('paypal_get_token_failed', { reqId: req.reqId, where: 'confirm', error: e.message });
+    return res.status(502).json({ ok: false, error: 'paypal_unreachable' });
+  }
+
+  const sub = await getSubscription(token, subId);
+  if (!sub) return res.status(404).json({ ok: false, error: 'subscription_not_found' });
+
+  const userSub = req.user.sub;
+  if (!sub.custom_id || String(sub.custom_id) !== String(userSub)) {
+    log.warn('paypal_confirm_user_mismatch', { reqId: req.reqId, subId });
+    return res.status(403).json({ ok: false, error: 'subscription_user_mismatch' });
+  }
+  if (sub.status !== 'ACTIVE') {
+    return res.status(409).json({ ok: false, error: 'subscription_not_active', status: sub.status || null });
+  }
+
+  const { plan, period } = planFromPlanId(sub.plan_id);
+  const accessUntil = accessUntilFromNextBilling(sub.billing_info?.next_billing_time, period);
+
+  const existing = await billingKvGet(`user:${userSub}`);
+  if (existing?.subscriptionId === subId && existing.accessUntil &&
+      Date.parse(existing.accessUntil) >= Date.parse(accessUntil)) {
+    return res.status(200).json({ ok: true, alreadyActive: true, plan: existing.plan, period, accessUntil: existing.accessUntil });
+  }
+
+  await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
+  await activatePremium(userSub, {
+    plan, period, method: 'paypal', recurring: true, externalId: subId, accessUntil,
+  });
+  log.info('paypal.confirm_activated', { reqId: req.reqId, userSub, plan, period });
+  return res.status(200).json({ ok: true, plan, period, accessUntil });
 }
 
 // ── action=setup-plans (admin) ───────────────────────────────────────────────
@@ -447,6 +585,30 @@ function buildPlansToCreate() {
 }
 
 async function setupPlansImpl(req, res) {
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+
+  // IDEMPOTENT: created plan ids are persisted in KV per PayPal environment
+  // (sandbox/live). Re-running returns the SAME ids instead of duplicating the
+  // product + 4 plans. This matters beyond tidiness — swapping the env vars to
+  // a NEW set of plan ids while live subscribers exist breaks planFromPlanId
+  // for them (a family/year sub would reclassify as pro/month on its next
+  // webhook). Pass {"force":true} only to intentionally mint a fresh set.
+  const setupKey = `paypal_plans:${paypalEnvName()}`;
+  const existing = await billingKvGet(setupKey);
+  if (existing?.PAYPAL_PLAN_PRO && body?.force !== true) {
+    return res.status(200).json({
+      ok: true,
+      reused: true,
+      productId: existing.productId,
+      PAYPAL_PLAN_PRO: existing.PAYPAL_PLAN_PRO,
+      PAYPAL_PLAN_PRO_YEAR: existing.PAYPAL_PLAN_PRO_YEAR,
+      PAYPAL_PLAN_FAMILY: existing.PAYPAL_PLAN_FAMILY,
+      PAYPAL_PLAN_FAMILY_YEAR: existing.PAYPAL_PLAN_FAMILY_YEAR,
+      next: 'Plans already exist for this PayPal environment — reusing the stored IDs. Paste them into Vercel as PAYPAL_PLAN_PRO, PAYPAL_PLAN_PRO_YEAR, PAYPAL_PLAN_FAMILY and PAYPAL_PLAN_FAMILY_YEAR, then redeploy. NEVER swap these env vars to new ids while live subscribers exist; pass {"force":true} only if you really need a fresh set.',
+    });
+  }
+
   let token;
   try { token = await getAccessToken(); }
   catch (e) {
@@ -460,6 +622,8 @@ async function setupPlansImpl(req, res) {
     for (const spec of buildPlansToCreate()) {
       out[spec.envKey] = await createPlan(token, productId, spec.name, spec.priceIls, spec.intervalUnit);
     }
+    // Persist for idempotent re-runs (per env, never expires).
+    await billingKvSet(setupKey, { productId, ...out, createdAt: new Date().toISOString() });
     log.info('paypal.plans_created', { reqId: req.reqId, productId, count: Object.keys(out).length });
     return res.status(200).json({
       ok: true,
@@ -485,6 +649,12 @@ const subscribeHandler = withRateLimit({ key: 'billing_paypal', limit: 30, windo
   requireAuth(subscribeImpl)
 );
 
+// confirm is user-triggered from the /upgrade return page — same posture as
+// subscribe (auth'd + rate-limited).
+const confirmHandler = withRateLimit({ key: 'billing_paypal_confirm', limit: 30, windowSec: 3600 })(
+  requireAuth(confirmImpl)
+);
+
 // setup-plans is an admin-only, one-time bootstrap that creates PayPal products
 // + billing plans (write calls to PayPal's API). Behind requireAdmin already,
 // but — like every other admin endpoint — also rate-limited so a leaked/abused
@@ -498,9 +668,18 @@ export default withRequestId(async function paypalRouter(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
+  // bodyParser is disabled (the webhook signature verify needs the raw bytes),
+  // so read the body once here and JSON-parse it for every action.
+  if (req.rawBody === undefined) {
+    let raw = Buffer.alloc(0);
+    try { raw = await readRawBody(req); } catch (_e) { /* treat as empty */ }
+    req.rawBody = raw.toString('utf8');
+    try { req.body = req.rawBody ? JSON.parse(req.rawBody) : {}; } catch { req.body = {}; }
+  }
   const action = String(req.query.action || '').toLowerCase();
   if (action === 'subscribe') return subscribeHandler(req, res);
   if (action === 'webhook') return webhookImpl(req, res);
+  if (action === 'confirm') return confirmHandler(req, res);
   if (action === 'setup-plans') return setupPlansHandler(req, res);
-  return res.status(400).json({ ok: false, error: 'unknown_action', allowed: ['subscribe', 'webhook', 'setup-plans'] });
+  return res.status(400).json({ ok: false, error: 'unknown_action', allowed: ['subscribe', 'webhook', 'confirm', 'setup-plans'] });
 });

@@ -95,7 +95,7 @@ tailwind.config = {
          page keeps exactly one top-level heading. Defaults to success wording. -->
     <div id="state-icon" class="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl mb-6 shadow-lg shadow-brand-500/30">✓</div>
     <h1 id="upgrade-title" class="text-3xl md:text-5xl font-black tracking-tight">השדרוג הושלם!</h1>
-    <p id="upgrade-sub" class="mt-4 text-lg text-ink-600">תודה שהצטרפת לכספ'לה. אישור התשלום מ-PayPal התקבל וחשבונך משודרג עכשיו.</p>
+    <p id="upgrade-sub" class="mt-4 text-lg text-ink-600">תודה שהצטרפת לכספ'לה! קיבלנו אותך בחזרה מ-PayPal ואנחנו מאשרים ומפעילים את המנוי שלך ממש עכשיו.</p>
 
     <!-- ===== SUCCESS ===== -->
     <div id="state-success">
@@ -136,29 +136,43 @@ tailwind.config = {
 <script>
   // Decide which state to show from ?paypal=. PayPal returns ?paypal=success
   // on approval and ?paypal=cancel on cancel (api/billing/paypal.js return_url
-  // / cancel_url). We treat anything that is not an explicit cancel as success
-  // so a slightly-different param never strands the buyer on a blank page.
+  // / cancel_url). HONEST states: the celebratory success state (confetti +
+  // "completed") requires the EXPLICIT paypal=success param; cancel variants
+  // show the cancel state; anything else (direct visit, mangled param) shows a
+  // neutral status page — never a fake celebration.
   (function () {
+    var params = null;
     var paypal = '';
-    try { paypal = (new URLSearchParams(window.location.search).get('paypal') || '').toLowerCase(); } catch (_e) {}
+    var subscriptionId = '';
+    try {
+      params = new URLSearchParams(window.location.search);
+      paypal = (params.get('paypal') || '').toLowerCase();
+      subscriptionId = params.get('subscription_id') || '';
+    } catch (_e) {}
     var isCancel = paypal === 'cancel' || paypal === 'cancelled' || paypal === 'canceled';
+    var isSuccess = paypal === 'success';
     var success = document.getElementById('state-success');
     var cancel = document.getElementById('state-cancel');
+    var titleEl = document.getElementById('upgrade-title');
+    var subEl = document.getElementById('upgrade-sub');
+    var iconEl = document.getElementById('state-icon');
     if (isCancel) {
       if (success) success.hidden = true;
       if (cancel) cancel.hidden = false;
       // Repoint the shared heading/icon to the cancel wording (textContent =
       // XSS-safe). One heading total; we only swap its text.
-      var titleEl = document.getElementById('upgrade-title');
-      var subEl = document.getElementById('upgrade-sub');
-      var iconEl = document.getElementById('state-icon');
       if (titleEl) titleEl.textContent = 'ביטלת את השדרוג';
       if (subEl) subEl.textContent = 'לא בוצע שום חיוב. החשבון שלך נשאר בדיוק כפי שהיה — אפשר לשדרג בכל רגע שתרצה.';
       if (iconEl) { iconEl.className = 'mx-auto w-20 h-20 rounded-full bg-ink-100 ring-1 ring-ink-200 flex items-center justify-center text-4xl mb-6'; iconEl.textContent = '↩'; }
       try { document.title = "בוטל — כספ'לה"; } catch (_t) {}
+    } else if (!isSuccess) {
+      // Direct visit / unknown param: neutral status, no celebration.
+      if (titleEl) titleEl.textContent = 'סטטוס שדרוג';
+      if (subEl) subEl.textContent = 'אם השלמת תשלום ב-PayPal, האישור מתעדכן בחשבונך תוך כמה דקות. אפשר לבדוק את המסלול בדשבורד או בעמוד החשבון.';
+      if (iconEl) { iconEl.className = 'mx-auto w-20 h-20 rounded-full bg-ink-100 ring-1 ring-ink-200 flex items-center justify-center text-4xl mb-6'; iconEl.textContent = '…'; }
     }
-    // Confetti only on success.
-    if (!isCancel) {
+    // Confetti ONLY on explicit success.
+    if (isSuccess) {
       var c = document.getElementById('confetti');
       if (c) {
         c.hidden = false;
@@ -172,6 +186,22 @@ tailwind.config = {
           c.appendChild(s);
         }
         setTimeout(function () { c.remove(); }, 5500);
+      }
+      // Return-leg activation: PayPal appends ?subscription_id=I-XXX to the
+      // return URL. Confirm it server-side (cookie-auth'd) so the account is
+      // upgraded even if the webhook is delayed/misconfigured. Best-effort —
+      // the webhook remains the primary path; failures here change nothing.
+      if (subscriptionId) {
+        fetch('/api/billing/paypal?action=confirm', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscriptionId: subscriptionId })
+        }).then(function (r) { return r.json().catch(function () { return {}; }); }).then(function (j) {
+          if (j && j.ok && subEl) {
+            subEl.textContent = 'המנוי שלך אושר ופעיל! כל יכולות הפרימיום פתוחות עכשיו.';
+          }
+        }).catch(function () { /* webhook path still covers activation */ });
       }
     }
   })();
