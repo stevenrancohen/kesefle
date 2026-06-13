@@ -60,11 +60,14 @@ function monthlyRevenueFor(user) {
 
 function isTrial(user) {
   if (!user) return false;
-  // Trial heuristic: subscriptionStatus === 'trial' OR (plan=pro/family AND no externalId AND in 14d window).
+  // Trial heuristic: subscriptionStatus === 'trial' OR (plan=pro/family AND no payment ref AND in 14d window).
   if (String(user.subscriptionStatus || '').toLowerCase() === 'trial') return true;
   const plan = String(user.plan || '').toLowerCase();
   if (plan !== 'pro' && plan !== 'family') return false;
-  if (user.externalId || user.paymentMethod === 'paypal') return false; // real paying
+  // activatePremium stores the provider charge id as lastPaymentRef (never as
+  // externalId) — checking it keeps crypto/Bit/bank payers who paid inside the
+  // 14-day window counted as PAID, not trial.
+  if (user.externalId || user.lastPaymentRef || user.paymentMethod === 'paypal') return false; // real paying
   const created = Date.parse(user.connectedAt || user.createdAt || '');
   if (!isFinite(created)) return false;
   const trialDays = (Date.now() - created) / (1000 * 60 * 60 * 24);

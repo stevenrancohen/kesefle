@@ -70,9 +70,11 @@ async function probePaypal() {
   }
   const start = Date.now();
   try {
-    const base = (process.env.PAYPAL_ENV || 'live').toLowerCase() === 'sandbox'
-      ? 'https://api-m.sandbox.paypal.com'
-      : 'https://api-m.paypal.com';
+    // Default SANDBOX — must match api/billing/paypal.js's paypalBase() so the
+    // health probe exercises the same environment billing actually uses.
+    const base = (process.env.PAYPAL_ENV || 'sandbox').toLowerCase() === 'live'
+      ? 'https://api-m.paypal.com'
+      : 'https://api-m.sandbox.paypal.com';
     const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64');
     const r = await fetch(`${base}/v1/oauth2/token`, {
       method: 'POST',

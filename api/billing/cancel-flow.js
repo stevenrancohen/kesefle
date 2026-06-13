@@ -6,13 +6,16 @@
 //                                          + email confirmation
 //   pause             { days }         -- mark subscription paused for N days
 //                                          (Steven processes via PayPal admin)
-//   cancel            { reason, comment } -- store exit-survey + fire PayPal
-//                                          cancel + email confirmation
+//   cancel            { reason, comment } -- store exit-survey + REALLY cancel
+//                                          the PayPal subscription + flip the
+//                                          entitlement off (access rides out
+//                                          the already-paid period)
 //   resume                              -- undo pause (for /account "resume me")
 //
 // All writes are KV-backed and idempotent. The actual PayPal sub-modification
 // is best-effort -- if PayPal's API errors, we still record the customer
-// intent and Steven processes manually from /admin.
+// intent, deactivate the entitlement, and alert Steven to finish the PayPal
+// side manually from /admin.
 //
 // Auth: requireAuth (session cookie or Bearer). Rate limit 10/hour/userSub.
 
@@ -20,6 +23,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { requireAuth } from '../../lib/auth.js';
 import { sendAlert } from '../../lib/alert.js';
+import { cancelPaypalSubscription, deactivatePremium } from '../../lib/billing.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -112,16 +116,38 @@ async function handlerImpl(req, res) {
       };
       // Permanent survey log (1 year) so Steven has feedback for product decisions.
       await kvSetEx(`exit_survey:${userSub}`, survey, 365 * 24 * 3600);
-      log.info('cancel_flow.cancel_confirmed', { reqId: req.reqId, userSub, reason });
+
+      // Actually stop the money. A recurring PayPal subscriber who cancels
+      // here must NOT keep getting charged until an alert is processed by
+      // hand (consumer-protection + trust). Best-effort: a PayPal API failure
+      // still deactivates the entitlement + alerts Steven to finish manually.
+      let paypalCancelled = false;
+      const userRec = await kvGet(`user:${userSub}`);
+      const subscriptionId = userRec?.subscriptionId || null;
+      if (subscriptionId && (userRec?.paymentMethod === 'paypal' || userRec?.recurring)) {
+        paypalCancelled = await cancelPaypalSubscription(subscriptionId, `kesefle cancel-flow: ${reason}`);
+      }
+      // Flip the entitlement off. deactivatePremium keeps accessUntil, so the
+      // customer rides out the period they already paid for and
+      // computeEntitlement lapses them automatically afterwards.
+      try { await deactivatePremium(userSub, 'canceled'); } catch (eDeact) {
+        log.error('cancel_flow.deactivate_failed', { reqId: req.reqId, userSub, error: eDeact.message });
+      }
+
+      log.info('cancel_flow.cancel_confirmed', { reqId: req.reqId, userSub, reason, paypalCancelled });
       sendAlert({
         severity: 'warning',
         title: `Cancellation: reason=${reason}`,
-        body: `userSub ${userSub} cancelled their subscription.\nReason: ${reason}\nComment: ${comment || '(none)'}\n\nProcess via PayPal admin + remove access at end of paid period.`,
+        body: `userSub ${userSub} cancelled their subscription.\nReason: ${reason}\nComment: ${comment || '(none)'}\n\n` +
+          `PayPal auto-cancel: ${paypalCancelled
+            ? 'OK (subscription cancelled, no further charges)'
+            : (subscriptionId
+              ? `FAILED for sub ${subscriptionId} - cancel it manually in PayPal admin NOW`
+              : 'no PayPal subscription on record (manual/crypto payer or already cancelled)')}\n` +
+          `Entitlement deactivated; access lapses at end of paid period.`,
         tags: ['churn', 'cancel'],
       }).catch(() => {});
-      // TODO(steven): when GreenInvoice + PayPal admin token are wired, fire
-      // PayPal /v1/billing/subscriptions/{id}/cancel here so it's auto-cancelled.
-      return res.status(200).json({ ok: true, action, reason });
+      return res.status(200).json({ ok: true, action, reason, paypalCancelled });
     }
 
     case 'resume': {
