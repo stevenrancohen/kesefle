@@ -12,7 +12,7 @@
 
 import crypto from 'node:crypto';
 import { constantTimeEqual } from '../../lib/crypto.js';
-import { rateLimit } from '../../lib/ratelimit.js';
+import { rateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { buildExpenseRow, appendRowToUserSheet } from '../../lib/sheet-writer.js';
 import { recordExpenseActivity } from '../../lib/user-activity.js';
@@ -202,6 +202,17 @@ async function handlerImpl(req, res) {
     }
     await sendReply(fromPhone, 'ברוך השב 👋 הבוט פעיל שוב. שלח הוצאה לדוגמה: "45 קפה".');
     return res.status(200).json({ ok: true, action: 'started' });
+  }
+
+  // Per-phone rate limit (audit 2026-06-15): after HMAC + STOP/START, cap how
+  // many messages one verified sender can drive into KV/Sheets writes. 40/min is
+  // far above human typing speed. Placed AFTER opt-out handlers so STOP always
+  // works. Fails OPEN on KV trouble (rateLimitId) so a real user is never blocked.
+  // Returns 200-ignored (not 429) so Meta does not retry-storm the limited sender.
+  const phoneRl = await rateLimitId(fromPhone, { key: 'wa_inbound_phone', limit: 40, windowSec: 60 });
+  if (!phoneRl.ok) {
+    log.warn('wa.webhook.phone_rate_limited', { reqId: req.reqId });
+    return res.status(200).json({ ok: true, ignored: 'per_phone_rate_limited' });
   }
 
   // If user previously opted out, don't process (Meta policy).
