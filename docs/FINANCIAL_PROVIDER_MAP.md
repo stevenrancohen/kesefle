@@ -1,5 +1,7 @@
 # FINANCIAL_PROVIDER_MAP — Integration Options for Kesefle (Israeli Hebrew-first Expense Tracker)
 
+> **⚠️ REFRESHED 2026-06-14 by [`OPEN_BANKING_ISRAEL_RESEARCH.md`](OPEN_BANKING_ISRAEL_RESEARCH.md)** — a newer, fact-checked research pass. Key correction: **Salt Edge's live Israeli-bank coverage is UNPROVEN** (its IL coverage page renders 0 banks; its only documented IL client connected *European* accounts, and no ISA license is confirmed) — do not architect a fallback on it without a live connect-test. The newer doc also adds the BoI Directive-368 / IG-v1.7 standard detail and the corporate-accounts-since-April-2024 timeline. Prefer the newer doc for regulation/provider facts; this file remains useful for the per-rail integration notes.
+
 > **Status:** DESIGN DOCUMENT ONLY. No integrations are to be built from this file without a separate
 > security + legal review. No credentials, no live calls, no production changes.
 > **Date:** 2026-06-11. Facts verified by web search where noted; anything not confirmed is tagged
