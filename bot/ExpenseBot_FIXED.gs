@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-11-incomefix';
+const KFL_BUILD_VERSION = '2026-06-14-parserfix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -429,7 +429,7 @@ const CATEGORY_MAP = [
   {"keywords":["income 2","הכנסה 2","הכנסה עסקית","תשלום מלקוח"],"category":"הכנסות","subcategory":"הכנסה 2 — עסק","isIncome":true},
   {"keywords":["הכנסה - טלפוניה","טלפונים","מכירת טלפון","income 3","הכנסה 3","הכנסה נוספת","הכנסה משכירות","הכנסות משכירות","הכנסה מהשכרה"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   {"keywords":["בונוס","תקבול"],"category":"הכנסות","subcategory":"שונות (הכנסות)","isIncome":true},
-  {"keywords":["am pm","ampm","אוכל בבית","אוכל לבית","אושר עד","אם המושבות","אם פי אם","בשר","גבינות","דגים","ויקטורי","חצי חינם","טיב טעם","יוחננוף","יינות ביתן","ירקות","מאפיה","מגה","מחסני השוק","מעיין 2000","סופר","פירות","קינג סטור","קרפור","רמי לוי","שופרסל","שופרסל אקספרס"],"category":"אוכל","subcategory":"אוכל לבית"},
+  {"keywords":["am pm","ampm","groceries","grocery","shufersal","supersol","supermarket","אוכל בבית","אוכל לבית","אושר עד","אם המושבות","אם פי אם","בשר","גבינות","דגים","ויקטורי","חצי חינם","טיב טעם","יוחננוף","יינות ביתן","ירקות","מאפיה","מגה","מחסני השוק","מעיין 2000","סופר","פירות","קינג סטור","קרפור","רמי לוי","שופרסל","שופרסל אקספרס"],"category":"אוכל","subcategory":"אוכל לבית"},
   {"keywords":["aroma","bbb","cibus","cofix","kfc","mcdonald","nespresso","starbucks","ten bis","wolt","אוכל בחוץ","אוכל חוץ","אספרסו","ארומה","בורגר","בורגר קינג","בית קפה","גרג","גרג קפה","דומינוס","המבורגר","וולט","לחם ארז","מוזס","מסעדה","מסעדות","מקדונלדס","משלוח","משלוח אוכל","נספרסו","סושי","סיבוס","פיצה","פיצה האט","קופיקס","קפה","רולדין","שווארמה","שטראוס","תן ביס"],"category":"אוכל","subcategory":"אוכל בחוץ"},
   {"keywords":["95 octane","98 octane","ad blue","adblue","almanhig","alonit","alonit fuel","delek","delek eilat","delek israel","delek menta","delek motors","diesel","diesel israel","diesel plus","dor alon","fill up","fuel card","fuel pass","fuel pass israel","fuel pump","fuel station israel","fuel up","gas pump","gas station","manofim supergas","mileage","mishavat delek","pangaia","pangaia fuel","paz","paz diesel plus","paz fuel","paz self gas","paz selfgas","paz yam","paz yellow","paz zriza","premium 95","refuel","refueling","refueling station","regular gasoline","sdom fuel","self fueling","self refuel","self service paz","smart card delek","smart card דלק","sodom fuel","solar fuel","sonol","sonol eilat","sonol go","sonol israel","sonol self service","sonol selfservice","ten","ten 95","ten 98","ten eilat","ten exclusive","ten fuel","ten go","ten premium","ten premium 95","ten אילת","ten בלעדי","yellow card","yellow card paz","אד בלו","אדבלו","אלונית","אלמנהיג","אלמנהיג דלק","בנזין","בנזין 95","בנזין 98","בנזין רגיל","דור אלון","דיזל","דיזל פלוס","דלק","דלק אילת","דלק חברה","דלק חברת דלק","דלק מנטה","טן בלעדי","טן גו","טן פרימיום","כרטיס דלק","מילאז\\\\","מילוי דלק","מנופים סופרגז","משאבת דלק","סדום דלק","סולר","סונול","סונול 24","סונול 98","סונול אילת","סונול גו","סונול גוו","סונול סלף","סונול שטינמץ","סונול שירות עצמי","סונול תחנת דלק","פז 24","פז 98","פז דיזל פלוס","פז דלק","פז זריזה","פז יילו","פז ים","פז כנען","פז סלף גז","פז סלפ","פז שירות מהיר","פז שירות עצמי","פנגאיה","פנגאיה דלק","תדלוק","תדלוק עצמי","תחנה גז","תחנת דלק","תחנת תדלוק"],"category":"תחבורה","subcategory":"דלק"},
   {"keywords":["bird","lime","wind","בירד","יומנגו","ליים"],"category":"תחבורה","subcategory":"ליים"},
@@ -9860,7 +9860,11 @@ function processExpense(text, fromPhone) {
       // prefixed the amount with '+'. _resolveIsIncome_ combines all three
       // signals (matched.isIncome, '+' prefix, categorical fallback) so
       // income rows write FALSE in col H, keeping dashboards correct.
-      var __isInc = _resolveIsIncome_(matched, item.originalText || text, matched.category, matched.subcategory);
+      // Use item.segment (per-item raw text from a comma-split multi-item message)
+      // so an income word in ONE item doesn't flip the sign of the others
+      // (e.g. "50 קפה, עסק הכנסה 10000" -> only the 10000 row is income). Single
+      // items have no .segment, so this falls back to the full originalText.
+      var __isInc = _resolveIsIncome_(matched, item.segment || item.originalText || text, matched.category, matched.subcategory);
       // ROOT-CAUSE FIX (disappearing money): canonicalize the granular sub to a
       // dashboard ROW LABEL before writing col E, else the SUMIFS misses it.
       var __dashSub = (typeof _normalizeSubForDashboard_ === 'function')
@@ -10353,6 +10357,53 @@ function _kfl_nonAdjacentCurrency_(text) {
 function parseAmountAndDescription(text) {
   var t = String(text || '').trim();
   if (!t) return null;
+  // ── MULTI-ITEM (Steven 2026-06-14): a comma / newline / semicolon separates
+  // DISTINCT expenses, each with its OWN description, so item N's category is
+  // derived from item N's words only (no cross-item description bleed -- the old
+  // code gave every item the whole stripped message as its note). Only splits
+  // when >=2 segments actually contain a number; otherwise it's one expense with
+  // an incidental comma and we keep the whole text (no regression on
+  // "תיקון מזגן, חלפים 350"). Thousands/decimal commas (1,800 / 12,5) are kept
+  // because the delimiter is only a comma NOT followed by a digit. A '+' inside a
+  // segment stays a same-description amount split (handled by the single path).
+  if (/[,\n;]/.test(t)) {
+    // Split on newline / semicolon, and on a comma ONLY when it is NOT a
+    // thousands separator. A thousands comma is always digit,digit ("1,800",
+    // "1,234,567") and a decimal comma is digit,digit ("12,5"), so a comma NOT
+    // followed by a digit is the item delimiter -- keeps 1,800 and 12,5 intact
+    // while splitting "42 cafe, 245 super".
+    var _segsRaw = t.split(/[\n;]+|,(?!\d)/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var _numbered = _segsRaw.filter(function (s) { return /\d/.test(s); });
+    if (_segsRaw.length > 1 && _numbered.length > 1) {
+      var _items = [];
+      var _carry = ''; // words from a no-number segment, attached to the next item
+      for (var _si = 0; _si < _segsRaw.length; _si++) {
+        var _seg = _segsRaw[_si];
+        if (!/\d/.test(_seg)) { _carry = (_carry ? _carry + ' ' : '') + _seg; continue; }
+        var _sub = parseAmountAndDescription(_seg); // recurse: single-expense path (comma-free)
+        if (_sub && _sub.items && _sub.items.length) {
+          for (var _k2 = 0; _k2 < _sub.items.length; _k2++) {
+            var _it = _sub.items[_k2];
+            if (_carry) {
+              _it.description = (_it.description && _it.description !== 'ללא פירוט')
+                ? (_carry + ' ' + _it.description) : _carry;
+            }
+            _it.segment = (_carry ? _carry + ' ' : '') + _seg; // per-item raw -> per-item income
+            _items.push(_it);
+          }
+          _carry = '';
+        }
+      }
+      if (_items.length) {
+        if (_carry) { // trailing no-number words -> attach to last item
+          var _last = _items[_items.length - 1];
+          _last.description = (_last.description && _last.description !== 'ללא פירוט')
+            ? (_last.description + ' ' + _carry) : _carry;
+        }
+        return { items: _items };
+      }
+    }
+  }
   // PHONE-NUMBER GUARD (Steven 2026-05-26): "050-1234567 דמי שיחה" or
   // "0512345678 לאיש קשר" must NOT be parsed as 3 separate amounts +
   // a single fragment. Strip dash-separated digit groups (Israeli mobile
@@ -10363,6 +10414,15 @@ function parseAmountAndDescription(text) {
     .replace(/(?:\+?972[-\s]?|0)\d{1,2}[-\s]?\d{3}[-\s]?\d{3,4}/g, ' ')
     .replace(/\b1[\s-]?700[\s-]?\d{3}[\s-]?\d{3}\b/g, ' '); // 1700 service numbers
   var phoneOnly = phoneStripped.trim() !== t.trim();
+  // DATE GUARD (Steven 2026-06-14): a slash date (15/6, 15/6/26) is NOT money.
+  // Strip it BEFORE the number scan so "...15/6 ... 200" records 200 -- never the
+  // day/month as phantom 15 + 6 rows. SLASH form only (nobody writes a shekel
+  // amount with "/"); the dot form stays a possible decimal and the leading-date
+  // case is handled upstream by _extractLeadingDate_. Day 1-31 + month 1-12 only.
+  phoneStripped = phoneStripped.replace(/(^|[^\d\/])(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?(?=$|[^\d\/])/g, function (m, pre, d, mo) {
+    var dd = parseInt(d, 10), mm = parseInt(mo, 10);
+    return (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12) ? (pre + ' ') : m;
+  });
   // Match Israeli-formatted numbers: optional thousand groups (1,234,567)
   // followed by an optional decimal part using period or comma. The thousand
   // groups are distinguished from a decimal-comma by length: any comma that
@@ -10377,7 +10437,16 @@ function parseAmountAndDescription(text) {
   var match;
   while ((match = numberRe.exec(phoneStripped)) !== null) {
     var _n = _parseIsraeliNumber_(match[0]);
-    if (!isNaN(_n) && _n > 0) _found.push({ n: _n, i: match.index, len: match[0].length });
+    if (isNaN(_n) || _n <= 0) continue;
+    // THOUSAND MULTIPLIER (Steven 2026-06-14): "2.5k" / "2.5 אלף" / "5k" -> x1000.
+    // Only a STANDALONE k/אלף (not glued to another letter), so "2.5kg" stays a
+    // 2.5 quantity and "12gb" is untouched. The suffix length is folded into len
+    // so the noise/anchor slices look past it and the desc strip drops it.
+    var _suffix = phoneStripped.slice(match.index + match[0].length, match.index + match[0].length + 10);
+    var _multM = _suffix.match(/^\s*(k|אלף|אלפים|אלפי)(?![0-9A-Za-zא-ת])/i);
+    var _len = match[0].length;
+    if (_multM) { _n = _n * 1000; _len += _multM[0].length; }
+    _found.push({ n: _n, i: match.index, len: _len });
   }
   if (_found.length === 0) return null;
   // A number is NOISE (not the price) when it is: followed by a unit word
@@ -10434,8 +10503,9 @@ function parseAmountAndDescription(text) {
   // Strip digits/punctuation, the ₪ symbol, and standalone currency words so
   // they don't pollute the saved description or the category match
   // (e.g. "50 שח קפה" → "קפה", "₪50 קפה" → "קפה").
-  var note = t.replace(/[\d.,+₪$€]/g, ' ')
+  var note = t.replace(/[\d.,+₪$€\/]/g, ' ')
               .replace(/(^|\s)(שח|ש"ח|ש״ח|שקל|שקלים|nis|ils|usd|eur)(?=\s|$)/gi, ' ')
+              .replace(/(^|\s)(k|אלף|אלפים|אלפי)(?=\s|$)/gi, ' ') // drop the x1000 multiplier word
               .replace(/\s+/g, ' ').trim();
   if (!note) note = 'ללא פירוט';
   // originalText preserves the EXACT raw input so callers can save it as a
@@ -10499,8 +10569,11 @@ function _extractLeadingDate_(text) {
   }
 
   // Numeric forms: D/M, DD/MM, D.M, DD.MM, with optional /YY or /YYYY tail.
-  // Must be followed by a space or end-of-string.
-  var numRe = /^(\d{1,2})([\/.])(\d{1,2})(?:[\/.](\d{2,4}))?(?=\s|$)/;
+  // Must be followed by a space or end-of-string. An optional leading clitic
+  // (בתאריך / ב / ל / מ) is allowed so "ב15/6 ב200 שח" dates the row 15/6 and
+  // parses ₪200 (Steven 2026-06-14). The clitic group is NON-capturing so the
+  // day/sep/month/year capture indices below stay 1..4.
+  var numRe = /^(?:בתאריך\s+|[בלמ])?(\d{1,2})([\/.])(\d{1,2})(?:[\/.](\d{2,4}))?(?=\s|$)/;
   var nm = s.match(numRe);
   if (nm) {
     var day = parseInt(nm[1], 10);

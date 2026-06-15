@@ -64,5 +64,35 @@ eq('"50 שח סופר" note (שח stripped)', P('50 שח סופר').note, 'סו�
 eq('"50 שקל קפה" note (שקל stripped)', P('50 שקל קפה').note, 'קפה');
 eq('"50 שקל" only → note fallback', P('50 שקל').note, 'ללא פירוט');
 
+// all parsed items (not just the first) for multi-item assertions
+function ALL(text){ var r = globalThis.parseAmountAndDescription(text); return (r && r.items) || []; }
+function pair(it){ return it ? (it.amount + '|' + it.description) : null; }
+
+console.log('\n── date tokens are NOT amounts (Steven 2026-06-14) ──');
+eq('"ב15/6 ב200 שח" → 1 item only', P('ב15/6 ב200 שח').count, 1);
+eq('"ב15/6 ב200 שח" amount = 200 (not 15/6)', P('ב15/6 ב200 שח').amount, 200);
+eq('"200 שח 15/6" amount = 200 (trailing date stripped)', P('200 שח 15/6').amount, 200);
+eq('"קפה 30/6" → 1 item, amount 30? NO -> date stripped, no amount', ALL('קפה 30/6').length, 0);
+
+console.log('\n── k / אלף thousand multiplier (Steven 2026-06-14) ──');
+eq('"2.5k" → 2500', P('2.5k').amount, 2500);
+eq('"2.5 אלף" → 2500', P('2.5 אלף').amount, 2500);
+eq('"5k קניות" → 5000', P('5k קניות').amount, 5000);
+eq('"5k קניות" note = "קניות"', P('5k קניות').note, 'קניות');
+eq('"2.5kg עגבניות" stays 2.5 (kg = unit, NOT x1000)', P('2.5kg עגבניות').amount, 2.5);
+
+console.log('\n── per-item multi-item descriptions (Steven 2026-06-14) ──');
+var _mm = ALL('42 קפה, 245 סופר, 1800 ארנונה');
+eq('comma list → 3 items', _mm.length, 3);
+eq('item1 = 42|קפה', pair(_mm[0]), '42|קפה');
+eq('item2 = 245|סופר', pair(_mm[1]), '245|סופר');
+eq('item3 = 1800|ארנונה', pair(_mm[2]), '1800|ארנונה');
+var _mb = ALL('50 קפה, עסק 601 שיווק');
+eq('biz/personal mix → 2 items', _mb.length, 2);
+eq('item1 = 50|קפה (personal)', pair(_mb[0]), '50|קפה');
+eq('item2 = 601|עסק שיווק (business)', pair(_mb[1]), '601|עסק שיווק');
+eq('"1,800 ארנונה" stays ONE item (thousands comma, not a delimiter)', ALL('1,800 ארנונה').length, 1);
+eq('"תיקון מזגן, חלפים 350" stays ONE item (only 1 number)', ALL('תיקון מזגן, חלפים 350').length, 1);
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' PARSER CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
