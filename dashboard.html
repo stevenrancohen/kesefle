@@ -214,10 +214,10 @@
       <span class="truncate">כספ'לה</span>
     </a>
     <div class="flex min-w-0 items-center gap-2 sm:gap-3">
-      <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden min-h-[44px] items-center rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 sm:inline-flex dark:border-ink-700 dark:text-ink-200 dark:hover:bg-white">📊 פתח גיליון</a>
+      <a href="#" id="sheet-link-nav" target="_blank" rel="noopener" class="hidden min-h-[44px] items-center rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 sm:inline-flex dark:border-ink-700 dark:text-ink-200 dark:hover:bg-white dark:hover:text-ink-900">📊 פתח גיליון</a>
       <img id="user-picture" class="hidden h-9 w-9 rounded-full ring-2 ring-brand-200" alt="" />
       <span id="user-name" class="hidden truncate text-sm font-semibold sm:inline">טוען...</span>
-      <button onclick="kesefleLogout()" class="min-h-[44px] rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-white">התנתק</button>
+      <button onclick="kesefleLogout()" class="min-h-[44px] rounded-2xl border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-100 dark:border-ink-700 dark:hover:bg-white dark:hover:text-ink-900">התנתק</button>
     </div>
   </nav>
 </header>
@@ -327,7 +327,7 @@
         <button onclick="kflBulkDelete()" class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-xs font-bold text-white transition" id="kfl-bulk-delete">
           🗑 מחק/י
         </button>
-        <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-white dark:hover:bg-ink-100">
+        <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-white dark:hover:bg-ink-100 dark:hover:text-ink-900">
           ביטול
         </button>
       </div>
@@ -919,7 +919,7 @@
         <button id="kfl-push-enable" type="button" class="min-h-[44px] rounded-2xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-700">
           הפעל התראות
         </button>
-        <button id="kfl-push-dismiss" type="button" class="min-h-[44px] rounded-2xl border border-ink-300 px-3 py-2 text-sm text-ink-600 hover:bg-white dark:border-ink-600 dark:text-ink-300 dark:hover:bg-white">
+        <button id="kfl-push-dismiss" type="button" class="min-h-[44px] rounded-2xl border border-ink-300 px-3 py-2 text-sm text-ink-600 hover:bg-white dark:border-ink-600 dark:text-ink-300 dark:hover:bg-white dark:hover:text-ink-900">
           לא עכשיו
         </button>
       </div>
@@ -1380,7 +1380,7 @@
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
             WhatsApp
           </a>
-          <a id="ref-share-email" href="#" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-ink-700 px-3 py-2 text-xs font-bold text-white hover:bg-white dark:bg-ink-200 dark:text-ink-900 dark:hover:bg-white">
+          <a id="ref-share-email" href="#" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl bg-ink-700 px-3 py-2 text-xs font-bold text-white hover:bg-white hover:text-ink-900 dark:bg-ink-200 dark:text-ink-900 dark:hover:bg-white">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             Email
           </a>
@@ -1388,7 +1388,7 @@
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             X / טוויטר
           </a>
-          <button type="button" onclick="kesefleRegenerateReferralCode()" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-white">
+          <button type="button" onclick="kesefleRegenerateReferralCode()" class="inline-flex min-h-[40px] items-center gap-1.5 rounded-2xl border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-100 dark:border-ink-700 dark:text-ink-200 dark:hover:bg-white dark:hover:text-ink-900">
             ↺ קוד חדש
           </button>
         </div>

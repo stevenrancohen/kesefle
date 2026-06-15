@@ -130,11 +130,11 @@ const H = sandbox.__exports__;
 // ── Test plumbing ────────────────────────────────────────────────────────────
 function makeRes() {
   return {
-    statusCode: 0, body: null,
+    statusCode: 0, body: null, headers: {},
     status(c) { this.statusCode = c; return this; },
     json(p) { this.body = p; return this; },
     send(p) { this.body = p; return this; },
-    setHeader() { return this; },
+    setHeader(k, v) { this.headers[String(k).toLowerCase()] = v; return this; },
   };
 }
 function req(query = {}) { return { method: 'GET', query, reqId: 'test', headers: {}, user: { email: 'admin@test' } }; }
@@ -195,6 +195,8 @@ for (const name of SCAN_HANDLERS) {
   check(name + ' answers 503 on KV outage', r.statusCode === 503, 'got ' + r.statusCode + ' ' + JSON.stringify(r.body));
   check(name + ' body error == kv_outage', r.body && r.body.error === 'kv_outage', JSON.stringify(r.body));
   check(name + ' did NOT return ok:true empty payload', !(r.body && r.body.ok === true), JSON.stringify(r.body));
+  // The cache header lives AFTER the kvOutage guards, so a 503 must never carry it.
+  check(name + ' did NOT set Cache-Control on a 503 outage', r.headers['cache-control'] === undefined, JSON.stringify(r.headers));
 }
 // getUser uses a direct kvFetch (r.kvOutage) — assert it stays consistent.
 {
@@ -222,6 +224,20 @@ for (const name of SCAN_HANDLERS) {
 {
   const r = makeRes(); await H.registrationHealth(req(), r);
   check('registrationHealth empty payload: totalUsers:0', r.body.totalUsers === 0 && Array.isArray(r.body.orphans), JSON.stringify(r.body));
+}
+
+// ── 3. Aggregate handlers set a short private cache header so the admin's ──────
+//     repeated polls don't re-scan the whole keyspace each time. These three
+//     each do a full-keyspace kvScan + MGET, so a 30s private cache is safe and
+//     meaningful. Asserted on a healthy 200 (header must be present on success).
+console.log('\n=== aggregate handlers set Cache-Control: private, max-age=30 ===\n');
+sandbox.__fetchImpl = healthyEmptyFetch();
+const CACHED_AGGREGATES = ['listUsers', 'getMetrics', 'registrationHealth'];
+for (const name of CACHED_AGGREGATES) {
+  const r = makeRes();
+  await H[name](req({ days: '7' }), r);
+  check(name + ' returned 200 (cache header asserted on success)', r.statusCode === 200, 'got ' + r.statusCode);
+  check(name + ' set Cache-Control: private, max-age=30', r.headers['cache-control'] === 'private, max-age=30', JSON.stringify(r.headers));
 }
 
 console.log('');

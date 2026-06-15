@@ -153,6 +153,13 @@ async function handlerImpl(req, res) {
       new_last_hour: newSignupsLastHour,
       new_last_day: newSignupsLastDay,
       sample_size: sampleSize,
+      // Honesty fields: the windowed counts above come from a bounded sample of
+      // user:* records (sampleSize, capped at 200) to protect the KV quota on a
+      // launch spike. They are NOT extrapolated. When complete === false the UI
+      // must label them "(sample of N)" -- they undercount the true totals.
+      sampled: sampleSize,
+      totalUsers: totalUsers,
+      complete: sampleSize === totalUsers,
     },
     bot: {
       last_successful_write: lastBotWrite,

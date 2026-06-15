@@ -109,6 +109,7 @@ async function listUsers(req, res) {
     lastActive: u.lastActive,
     hasSheet: !!u.spreadsheetId,
   }));
+  res.setHeader('Cache-Control', 'private, max-age=30'); // dedupe the admin's repeated polls; this handler does a full user:* kvScan + MGET every call
   return res.status(200).json({ ok: true, users: slice, total, page, limit });
 }
 
@@ -243,6 +244,7 @@ async function registrationHealth(req, res) {
   });
   orphans.sort((a, b) => String(b.connectedAt || '').localeCompare(String(a.connectedAt || '')));
   pendingPhoneLink.sort((a, b) => String(b.connectedAt || '').localeCompare(String(a.connectedAt || '')));
+  res.setHeader('Cache-Control', 'private, max-age=30'); // dedupe the admin's repeated polls; this handler does full user:* + phone:* kvScans + MGET every call
   return res.status(200).json({
     ok: true,
     totalUsers: subs.length,
@@ -283,6 +285,7 @@ async function getMetrics(req, res) {
   const inboundKeys = await kvScan('last_inbound:*');
   const inboundCount = (inboundKeys || []).length;
 
+  res.setHeader('Cache-Control', 'private, max-age=30'); // dedupe the admin's repeated polls; this handler does a full user:* + last_inbound:* kvScan + MGET every call
   return res.status(200).json({
     ok: true,
     metrics: {
