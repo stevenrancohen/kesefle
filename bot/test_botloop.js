@@ -83,5 +83,14 @@ expectFalse('', 'empty string');
 expectFalse(null, 'null input');
 expectFalse(undefined, 'undefined input');
 
+// 2026-06-15 audit: the PRIMARY write-confirmations must be caught as echoes so an
+// echoed bot reply is never re-booked as a duplicate expense.
+console.log('\n-- Primary write-confirmation echoes (must trigger) --');
+expectTrue('✅ ₪320 לשיווק. נשמר אצלך בגיליון', 'primary single-item write confirmation');
+expectTrue('✅ נרשמו 3 פעולות (סה"כ ₪450)', 'multi-item write confirmation');
+expectTrue('✅ נרשם בגיליון שלך!', 'receipt write confirmation');
+expectFalse('נרשמתי לחוג 200', 'user "I registered for a class" is a real expense');
+expectFalse('שמרתי כסף החודש', 'user talking about saving is not a sheet confirmation');
+
 console.log('\n=== RESULT: ' + pass + ' pass, ' + fail + ' fail ===');
 process.exit(fail === 0 ? 0 : 1);
