@@ -34,6 +34,15 @@ const CASES = [
   ['85 קפה', 'אוכל', 'אוכל בחוץ', false],
   // explicit income still income
   ['8500 משכורת', 'הכנסות', 'משכורת', true],
+  // audit 2026-06-15: "כספי" between the refund word and the מ-source must still
+  // flip to income (the regex previously required מ immediately after החזר/זיכוי)
+  ['החזר כספי מהמסעדה 120', 'אוכל', 'אוכל בחוץ', true],
+  ['זיכוי כספי מהחנות 90', 'קניות', 'ביגוד', true],
+  // control: a refund GIVEN TO someone (ל-prefix) stays an EXPENSE
+  ['החזר כספי לחבר 200', 'שונות ואחרים', 'שונות', false],
+  // audit 2026-06-15: a WhatsApp-pasted RLM (U+200F) before the '+' income
+  // convention must not defeat it (.trim() does not strip directional marks)
+  ['\u200F+3000 העברה', 'שונות ואחרים', 'שונות', true],
 ];
 let pass = 0, fail = 0;
 for (const [msg, cat, sub, exp] of CASES) {
