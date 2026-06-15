@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-16-echofix';
+const KFL_BUILD_VERSION = '2026-06-16-pctfix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -10451,6 +10451,11 @@ function parseAmountAndDescription(text) {
   while ((match = numberRe.exec(phoneStripped)) !== null) {
     var _n = _parseIsraeliNumber_(match[0]);
     if (isNaN(_n) || _n <= 0) continue;
+    // PERCENT GUARD (Steven 2026-06-16): a number glued to '%' ("10% טיפ",
+    // "הנחה 25%") is a RATE, never a shekel amount, so skip it -- otherwise
+    // "10% טיפ" was booked as a phantom 10 row. Only the immediately-following
+    // char counts (no space), matching how users write percentages.
+    if (phoneStripped.charAt(match.index + match[0].length) === '%') continue;
     // THOUSAND MULTIPLIER (Steven 2026-06-14): "2.5k" / "2.5 אלף" / "5k" -> x1000.
     // Only a STANDALONE k/אלף (not glued to another letter), so "2.5kg" stays a
     // 2.5 quantity and "12gb" is untouched. The suffix length is folded into len
@@ -10516,7 +10521,7 @@ function parseAmountAndDescription(text) {
   // Strip digits/punctuation, the ₪ symbol, and standalone currency words so
   // they don't pollute the saved description or the category match
   // (e.g. "50 שח קפה" → "קפה", "₪50 קפה" → "קפה").
-  var note = t.replace(/[\d.,+₪$€\/]/g, ' ')
+  var note = t.replace(/[\d.,+₪$€\/%]/g, ' ')
               .replace(/(^|\s)(שח|ש"ח|ש״ח|שקל|שקלים|nis|ils|usd|eur)(?=\s|$)/gi, ' ')
               .replace(/(^|\s)(k|אלף|אלפים|אלפי)(?=\s|$)/gi, ' ') // drop the x1000 multiplier word
               .replace(/\s+/g, ' ').trim();

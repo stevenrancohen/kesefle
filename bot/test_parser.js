@@ -94,5 +94,15 @@ eq('item2 = 601|עסק שיווק (business)', pair(_mb[1]), '601|עסק שיו�
 eq('"1,800 ארנונה" stays ONE item (thousands comma, not a delimiter)', ALL('1,800 ארנונה').length, 1);
 eq('"תיקון מזגן, חלפים 350" stays ONE item (only 1 number)', ALL('תיקון מזגן, חלפים 350').length, 1);
 
+console.log('\n── percentage is NOT a shekel amount (Steven 2026-06-16) ──');
+// "10% טיפ" is a tip RATE, never a ₪10 expense. Assert no item carries amount 10
+// and (with no other number) the whole message parses to nothing.
+var _pct = ALL('10% טיפ'); // "10% טיפ"
+eq('"10% טיפ" → no ₪10 item', _pct.some(function (it) { return it.amount === 10; }), false);
+eq('"10% טיפ" → no items at all (rate only)', _pct.length, 0);
+eq('"מסעדה 200 טיפ 10%" → real ₪200 kept', P('מסעדה 200 טיפ 10%').amount, 200);
+eq('"מסעדה 200 טיפ 10%" → exactly 1 item (10% dropped)', ALL('מסעדה 200 טיפ 10%').length, 1);
+eq('"מסעדה 200 טיפ 10%" → % stripped from note', /%/.test(P('מסעדה 200 טיפ 10%').note), false);
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' PARSER CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
