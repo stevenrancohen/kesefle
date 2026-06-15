@@ -87,13 +87,23 @@ async function handlerImpl(req, res) {
       });
     }
     // Append to today's event list (capped at 5000 entries, 48h TTL).
-    await fetch(`${KV_URL}/lpush/${encodeURIComponent('funnel_log:' + dayKey)}/${encodeURIComponent(entry)}`, {
-      method: 'POST', headers: { Authorization: `Bearer ${KV_TOKEN}` },
-    });
-    // Trim + TTL (only on first insert of the day -- but cheap to always do).
-    await fetch(`${KV_URL}/ltrim/${encodeURIComponent('funnel_log:' + dayKey)}/0/4999`, {
-      method: 'POST', headers: { Authorization: `Bearer ${KV_TOKEN}` },
-    });
+    // LPUSH returns the new length; only LTRIM when we actually exceed the cap.
+    // (audit 2026-06-15: the unconditional LTRIM was a 2nd KV write on EVERY
+    // event at up to 600/min — the list only grows past 5000 in rare bursts, so
+    // a lazy trim halves KV writes on this hot path without losing the cap.)
+    let _funnelLen = 0;
+    try {
+      const _lp = await fetch(`${KV_URL}/lpush/${encodeURIComponent('funnel_log:' + dayKey)}/${encodeURIComponent(entry)}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${KV_TOKEN}` },
+      });
+      const _lpj = await _lp.json();
+      _funnelLen = Number(_lpj && _lpj.result) || 0;
+    } catch (_) { /* non-fatal */ }
+    if (_funnelLen > 5000) {
+      await fetch(`${KV_URL}/ltrim/${encodeURIComponent('funnel_log:' + dayKey)}/0/4999`, {
+        method: 'POST', headers: { Authorization: `Bearer ${KV_TOKEN}` },
+      });
+    }
 
     // help_search query-text aggregation. We want top-N actual queries per day
     // (not just a count) so Steven can see what content people are looking
