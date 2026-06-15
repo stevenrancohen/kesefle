@@ -534,22 +534,22 @@
 
           <div class="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3">
             <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">צפי לסוף החודש</div>
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">צפי לסוף החודש</div>
               <div class="num mt-0.5 text-3xl font-black text-ink-900 dark:text-white" id="forecast-projected">—</div>
             </div>
             <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">הוצאת עד עכשיו</div>
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">הוצאת עד עכשיו</div>
               <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="forecast-mtd">—</div>
             </div>
             <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">ממוצע ליום</div>
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">ממוצע ליום</div>
               <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="forecast-daily">—</div>
             </div>
           </div>
 
           <!-- Month progress bar: portion of the month elapsed -->
           <div class="mt-4">
-            <div class="mb-1 flex items-center justify-between text-[10px] font-bold text-ink-500 dark:text-ink-500">
+            <div class="mb-1 flex items-center justify-between text-[10px] font-bold text-ink-500 dark:text-ink-400">
               <span id="forecast-days-label">—</span>
               <span id="forecast-progress-pct" class="num">—</span>
             </div>
@@ -571,7 +571,7 @@
             <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-xl bg-accent-500/10 text-base" aria-hidden="true">📊</span>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מגמה ל-3 חודשים</div>
           </div>
-          <p class="mt-1 text-[11px] text-ink-500 dark:text-ink-500">לפי הקטגוריות המובילות שלך</p>
+          <p class="mt-1 text-[11px] text-ink-500 dark:text-ink-400">לפי הקטגוריות המובילות שלך</p>
           <ul id="forecast-trend-list" class="mt-4 space-y-2.5"></ul>
           <div id="forecast-trend-empty" class="hidden mt-4 text-xs text-ink-500 dark:text-ink-400">אין מספיק היסטוריה לזיהוי מגמה.</div>
         </div>
@@ -586,7 +586,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מדד בריאות פיננסי</div>
-            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">חיסכון · גיוון קטגוריות · יציבות הוצאות</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">חיסכון · גיוון קטגוריות · יציבות הוצאות</div>
           </div>
           <div id="health-badge" class="hidden rounded-full px-3 py-1 text-xs font-bold">—</div>
         </div>
@@ -602,7 +602,7 @@
             <div class="absolute inset-0 grid place-items-center text-center">
               <div>
                 <div class="num text-4xl font-black" id="health-score">—</div>
-                <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">מתוך 100</div>
+                <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מתוך 100</div>
               </div>
             </div>
           </div>
@@ -671,7 +671,7 @@
           </div>
         </div>
         <div class="mt-5 rounded-2xl bg-ink-50 p-4 text-center">
-          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500" id="cf-net-label">יתרה</div>
+          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400" id="cf-net-label">יתרה</div>
           <div class="num mt-1 text-3xl font-black" id="cf-net">₪0</div>
           <div class="mt-1 text-xs" id="cf-net-detail">—</div>
         </div>
@@ -686,10 +686,10 @@
         <div class="flex items-center justify-between gap-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מגמת הוצאות (6 חודשים)</div>
-            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">קו אפור: ממוצע חודשי</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">קו אפור: ממוצע חודשי</div>
           </div>
           <div class="text-xs">
-            <span class="text-ink-500 dark:text-ink-500">ממוצע:</span>
+            <span class="text-ink-500 dark:text-ink-400">ממוצע:</span>
             <span class="num font-bold text-ink-700" id="trend-avg">—</span>
           </div>
         </div>
@@ -698,7 +698,7 @@
             <!-- gridlines + polyline injected by JS -->
           </svg>
         </div>
-        <div id="trend-labels" class="mt-2 flex justify-between text-[10px] font-bold text-ink-500 dark:text-ink-500">
+        <div id="trend-labels" class="mt-2 flex justify-between text-[10px] font-bold text-ink-500 dark:text-ink-400">
           <!-- month labels injected by JS -->
         </div>
       </div>
@@ -707,7 +707,7 @@
       <div class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
           <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">פילוח קטגוריות</div>
-          <span class="text-[10px] font-bold text-ink-500 dark:text-ink-500">החודש</span>
+          <span class="text-[10px] font-bold text-ink-500 dark:text-ink-400">החודש</span>
         </div>
         <div class="mt-4 flex items-center justify-center">
           <div class="relative h-40 w-40">
@@ -736,14 +736,14 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מנויים קבועים</div>
-            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">תשלומים שחוזרים 3+ חודשים</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">תשלומים שחוזרים 3+ חודשים</div>
           </div>
           <div class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
             <span class="num" id="rec-count">0</span> מנויים
           </div>
         </div>
         <div class="mt-4 rounded-2xl bg-ink-50 p-4 text-center">
-          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">סך מנויים לחודש</div>
+          <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">סך מנויים לחודש</div>
           <div class="num mt-1 text-3xl font-black text-amber-600" id="rec-total">₪0</div>
         </div>
         <ul id="rec-list" class="mt-4 space-y-2">
@@ -756,7 +756,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">החודש מול הקודם</div>
-            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">השינוי בקטגוריות המובילות</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">השינוי בקטגוריות המובילות</div>
           </div>
           <div id="mom-mover" class="hidden text-[10px] font-bold"></div>
         </div>
@@ -787,7 +787,7 @@
             <span class="text-lg" aria-hidden="true">🔁</span>
             <div>
               <h3 class="text-base font-black tracking-tight text-ink-900 dark:text-white">המנויים וההוצאות הקבועות שלך</h3>
-              <p class="mt-0.5 text-xs text-ink-500 dark:text-ink-500">חיובים שחוזרים כל חודש — כמה הם עולים לך בשנה</p>
+              <p class="mt-0.5 text-xs text-ink-500 dark:text-ink-400">חיובים שחוזרים כל חודש — כמה הם עולים לך בשנה</p>
             </div>
           </div>
           <!-- forgotten-subscription badge; shown only when we flag at least one -->
@@ -808,15 +808,15 @@
           <!-- Headline: total monthly + annualized -->
           <div class="mt-4 flex flex-wrap items-end gap-x-8 gap-y-3 rounded-2xl bg-ink-50 p-4 dark:bg-ink-700/40">
             <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">סך הוצאות קבועות לחודש</div>
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">סך הוצאות קבועות לחודש</div>
               <div class="num mt-0.5 text-3xl font-black text-amber-600" id="subs-monthly-total">₪0</div>
             </div>
             <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">בשנה</div>
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">בשנה</div>
               <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="subs-annual-total">₪0</div>
             </div>
             <div class="min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-500">מנויים שזוהו</div>
+              <div class="text-[10px] font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">מנויים שזוהו</div>
               <div class="num mt-0.5 text-lg font-bold text-ink-700 dark:text-ink-200" id="subs-detected-count">0</div>
             </div>
           </div>
@@ -824,7 +824,7 @@
           <!-- Per-subscription list -->
           <ul id="subs-list" class="mt-4 space-y-2.5"></ul>
 
-          <p class="mt-3 text-[11px] leading-4 text-ink-500 dark:text-ink-500">זוהה אוטומטית מהתנועות שלך (חיוב דומה שחוזר 3+ חודשים). הסכום השנתי הוא הערכה לפי הממוצע החודשי.</p>
+          <p class="mt-3 text-[11px] leading-4 text-ink-500 dark:text-ink-400">זוהה אוטומטית מהתנועות שלך (חיוב דומה שחוזר 3+ חודשים). הסכום השנתי הוא הערכה לפי הממוצע החודשי.</p>
         </div>
       </div>
     </div>
@@ -837,7 +837,7 @@
         <div class="flex items-center justify-between gap-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">10 ההוצאות הכי גדולות</div>
-            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">החודש בלבד</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">החודש בלבד</div>
           </div>
         </div>
         <ol id="splurge-list" class="mt-4 space-y-1.5 text-sm">
@@ -850,7 +850,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">יעדי חיסכון</div>
-            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">הגדר יעד וקבל מעקב חודשי</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">הגדר יעד וקבל מעקב חודשי</div>
           </div>
           <div class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
             <span class="num" id="goals-count">0</span> פעילים
@@ -874,7 +874,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">תקציבים</div>
-            <div class="mt-1 text-xs text-ink-500 dark:text-ink-500">מעקב חודשי לפי קטגוריה — התראה אוטומטית מעל 80%</div>
+            <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">מעקב חודשי לפי קטגוריה — התראה אוטומטית מעל 80%</div>
           </div>
           <div class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
             <span class="num" id="budget-active-count">0</span> פעילים
@@ -1048,7 +1048,7 @@
             <div class="px-1.5 py-2.5 sm:px-2 text-ink-600 dark:text-ink-600">—</div>
           </div>
         </div>
-        <div class="mt-3 text-center text-[11px] text-ink-500 dark:text-ink-500">השורה תופיע בגיליון שלך מיד כשתשלח את ההודעה</div>
+        <div class="mt-3 text-center text-[11px] text-ink-500 dark:text-ink-400">השורה תופיע בגיליון שלך מיד כשתשלח את ההודעה</div>
       </div>
     </div>
   </section>
@@ -1128,7 +1128,7 @@
       </div>
       <div class="mt-2 text-3xl font-black"><span class="num stat-num text-red-600 dark:text-red-600" id="month-expenses" data-target="0">₪0</span></div>
       <div class="mt-1 text-xs font-medium text-ink-500 dark:text-ink-400" id="month-expenses-delta">—</div>
-      <div class="text-[10px] font-medium text-ink-500 dark:text-ink-500" id="month-expenses-yoy"></div>
+      <div class="text-[10px] font-medium text-ink-500 dark:text-ink-400" id="month-expenses-yoy"></div>
       <svg class="sparkline" id="spark-expenses" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="grad-expenses" x1="0" x2="0" y1="0" y2="1">
@@ -1273,7 +1273,7 @@
     <div class="min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft sm:p-6 dark:border-ink-700 dark:bg-ink-800">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-bold">קטגוריות מובילות</h3>
-        <span class="text-[10px] font-bold text-ink-500 dark:text-ink-500">החודש</span>
+        <span class="text-[10px] font-bold text-ink-500 dark:text-ink-400">החודש</span>
       </div>
       <!-- donut chart -->
       <div class="mt-5 flex items-center justify-center">
@@ -1284,7 +1284,7 @@
           </svg>
           <div class="absolute inset-0 grid place-items-center text-center">
             <div>
-              <div class="text-[10px] font-bold text-ink-500 dark:text-ink-500">סה"כ</div>
+              <div class="text-[10px] font-bold text-ink-500 dark:text-ink-400">סה"כ</div>
               <div class="num text-xl font-black" id="cat-donut-total">₪0</div>
             </div>
           </div>
@@ -1561,7 +1561,7 @@
       <button type="button" onclick="kesefleCloseTxModal()" class="grid h-8 w-8 place-items-center rounded-full text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-700" aria-label="סגור">✕</button>
     </div>
     <div class="mt-5 rounded-2xl bg-ink-50 p-4 dark:bg-ink-950">
-      <div class="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-500">סכום</div>
+      <div class="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400">סכום</div>
       <div id="tx-modal-amount" class="num mt-1 text-2xl font-black">₪0</div>
       <div id="tx-modal-raw" class="mt-3 break-words text-sm text-ink-600 dark:text-ink-300"></div>
     </div>
@@ -4084,7 +4084,7 @@ function generatePseudoSeries(target, n, intLike) {
     var pct = Math.round(((thisTotal - lyTotal) / lyTotal) * 100);
     var sign = pct >= 0 ? '+' : '';
     el.textContent = 'vs לפני שנה: ' + sign + pct + '% (₪' + Math.round(lyTotal).toLocaleString('he-IL') + ')';
-    el.className = 'text-[10px] font-medium ' + (pct > 10 ? 'text-red-500' : pct < -10 ? 'text-brand-600 dark:text-brand-600' : 'text-ink-500 dark:text-ink-500');
+    el.className = 'text-[10px] font-medium ' + (pct > 10 ? 'text-red-500' : pct < -10 ? 'text-brand-600 dark:text-brand-600' : 'text-ink-500 dark:text-ink-400');
   }
 
   // Expose globally so kefleLiveDashboard can invoke after fetch resolves

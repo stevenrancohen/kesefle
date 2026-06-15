@@ -104,5 +104,23 @@ eq('"מסעדה 200 טיפ 10%" → real ₪200 kept', P('מסעדה 200 טיפ 
 eq('"מסעדה 200 טיפ 10%" → exactly 1 item (10% dropped)', ALL('מסעדה 200 טיפ 10%').length, 1);
 eq('"מסעדה 200 טיפ 10%" → % stripped from note', /%/.test(P('מסעדה 200 טיפ 10%').note), false);
 
+console.log('\n── range collapse (Steven 2026-06-16) ──');
+// 'N-M desc' is a price RANGE -> one expense at the larger operand
+eq('"50-70 קפה" → 1 item (not 2)', ALL('50-70 קפה').length, 1);
+eq('"50-70 קפה" amount = 70 (larger)', P('50-70 קפה').amount, 70);
+eq('"50-70 קפה" note (dash stripped)', P('50-70 קפה').note, 'קפה');
+// en-dash variant
+eq('"50\u201370 קפה" (en-dash) → 1 item', ALL('50\u201370 קפה').length, 1);
+eq('"50\u201370 קפה" amount = 70', P('50\u201370 קפה').amount, 70);
+
+console.log('\n── quantity multiplier x2 / כפול (Steven 2026-06-16) ──');
+// 'כריך x2 28': x-before-digit -> one purchase, price = 28
+eq('"כריך x2 28" → 1 item', ALL('כריך x2 28').length, 1);
+eq('"כריך x2 28" amount = 28 (price)', P('כריך x2 28').amount, 28);
+// '2 קפה כפול 13': Hebrew multiplier word -> largest wins (13), one item
+eq('"2 קפה כפול 13" → 1 item', ALL('2 קפה כפול 13').length, 1);
+var _kfl13 = P('2 קפה כפול 13').amount;
+eq('"2 קפה כפול 13" amount = 13 or 26 (single price)', _kfl13 === 13 || _kfl13 === 26, true);
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' PARSER CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);

@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-16-pctfix';
+const KFL_BUILD_VERSION = '2026-06-16-rangefix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -10436,6 +10436,14 @@ function parseAmountAndDescription(text) {
     var dd = parseInt(d, 10), mm = parseInt(mo, 10);
     return (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12) ? (pre + ' ') : m;
   });
+  // RANGE COLLAPSE (Steven 2026-06-16): "50-70 קפה" is a price RANGE, not two
+  // separate expenses. Collapse digit-hyphen/en-dash-digit (both <= 5 digits,
+  // phones already stripped above) into a single token equal to the larger
+  // operand. Does NOT fire when the pair was already eaten by the phone guard.
+  phoneStripped = phoneStripped.replace(/(^|[^\d])(\d{1,5})\s*[-–]\s*(\d{1,5})(?=[^\d]|$)/g, function (m, pre, a, b) {
+    var na = parseFloat(a), nb = parseFloat(b);
+    return pre + (na >= nb ? a : b);
+  });
   // Match Israeli-formatted numbers: optional thousand groups (1,234,567)
   // followed by an optional decimal part using period or comma. The thousand
   // groups are distinguished from a decimal-comma by length: any comma that
@@ -10484,7 +10492,7 @@ function parseAmountAndDescription(text) {
   var nums;
   // Installment / multiplier ("X tashlumim shel Y", "8 x 200"): one purchase
   // split into payments -> the price is the largest surviving number.
-  var _INSTALL = /תשלומ|תשלום|פעמ|פעמים|\btashlum|\bpeamim|\d\s*[x×✕*]\s*\d|\bpayments?\b|\binstallments?\b|\btimes\b|\bof\b/i;
+  var _INSTALL = /תשלומ|תשלום|פעמ|פעמים|\btashlum|\bpeamim|\d\s*[x×✕*]\s*\d|[x×✕]\s*\d|\bכפול\b|\bpayments?\b|\binstallments?\b|\btimes\b|\bof\b/i;
   if (_INSTALL.test(phoneStripped) && _surv.length > 1) {
     var _mx = _surv[0];
     for (var _k = 1; _k < _surv.length; _k++) { if (_surv[_k].n > _mx.n) _mx = _surv[_k]; }
@@ -10524,6 +10532,8 @@ function parseAmountAndDescription(text) {
   var note = t.replace(/[\d.,+₪$€\/%]/g, ' ')
               .replace(/(^|\s)(שח|ש"ח|ש״ח|שקל|שקלים|nis|ils|usd|eur)(?=\s|$)/gi, ' ')
               .replace(/(^|\s)(k|אלף|אלפים|אלפי)(?=\s|$)/gi, ' ') // drop the x1000 multiplier word
+              .replace(/(^|\s)כפול(?=\s|$)/g, ' ') // drop the Hebrew 'times' word
+              .replace(/(^|\s)[-–](?=\s|$)/g, ' ') // drop orphaned range dash (after digit removal)
               .replace(/\s+/g, ' ').trim();
   if (!note) note = 'ללא פירוט';
   // originalText preserves the EXACT raw input so callers can save it as a
