@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-15-signfix';
+const KFL_BUILD_VERSION = '2026-06-16-echofix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1720,6 +1720,12 @@ var _BOT_ECHO_REGEXES_ = [
   /אתה\s+כבר\s+מחובר/,
   /הפעלה:\s*\d/,
   /נוצר\s+דשבורד\s+עסקי/,
+  // 2026-06-15 (audit): the PRIMARY expense write-confirmations were NOT guarded,
+  // so an echoed "✅ ₪320 ל... נשמר אצלך בגיליון" could be re-parsed as a NEW
+  // expense (duplicate). These phrases are bot-only — no user types them.
+  /נשמר\s+אצלך\s+בגיליון/,                    // single-item confirmation (most common reply)
+  /^\s*✅\s*נרשמו\s+\d+\s+פעולות/,             // multi-item confirmation header
+  /^\s*✅\s*נרשם\s+בגיליון\s+שלך/,             // receipt confirmation
 ];
 
 function _looksLikeBotEcho_(text, interactive) {
