@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-14-parserfix';
+const KFL_BUILD_VERSION = '2026-06-15-receiptsign';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -12343,6 +12343,15 @@ function _handleReceiptImage_(fromPhone, image) {
     try { _coerceCategoryBySubcategory(matched); } catch (__) {}
   }
 
+  // Income/expense SIGN (audit 2026-06-15 sign-flip fix): receipts are usually
+  // expenses, but a refund / credit / revenue receipt must keep its true sign.
+  // Mirror processExpense's resolver instead of hardcoding expense, so an income
+  // receipt is not silently booked as an expense (double-count + invisible income).
+  var __rcptRaw = (vendor ? vendor + ' — ' : '') + description;
+  var __rcptIsIncome = (typeof _resolveIsIncome_ === 'function')
+    ? _resolveIsIncome_(matched, __rcptRaw, matched.category, matched.subcategory)
+    : !!(matched && matched.isIncome);
+
   // SECURITY: only the owner writes a receipt to the hardcoded SHEET_ID.
   // A non-owner's receipt must be written to THEIR OWN sheet via the tenant
   // bridge — never this one. (This path used to append every sender's
@@ -12355,7 +12364,7 @@ function _handleReceiptImage_(fromPhone, image) {
         category: matched.category,
         subcategory: matched.subcategory,
         rawText: (vendor ? vendor + ' — ' : '') + description,
-        isIncome: false,
+        isIncome: __rcptIsIncome,
       });
       if (__rr.ok) {
         return { replyText: '✅ נרשם בגיליון שלך מהקבלה!\n💰 ₪' + amount + '\n📁 ' + matched.category + (matched.subcategory ? ' / ' + matched.subcategory : '') + '\n📝 ' + (vendor || description) + _celebrateIfFirstExpense_(fromPhone) };
@@ -12395,7 +12404,7 @@ function _handleReceiptImage_(fromPhone, image) {
     sanitizeForSheet(__rcptDashSub),
     sanitizeForSheet(rowDescription),
     'WhatsApp (receipt)',
-    true
+    !__rcptIsIncome
   ]);
   // Original-text cell note — photo receipts have no typed text so we record
   // the OCR-extracted vendor/amount/date as the provenance string.
