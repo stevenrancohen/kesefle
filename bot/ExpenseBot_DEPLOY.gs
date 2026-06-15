@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-15-receiptsign';
+const KFL_BUILD_VERSION = '2026-06-15-signfix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -870,7 +870,10 @@ function _isIncomeCategory_(category, subcategory) {
  * the inverse ( !resolveIsIncome(...) ) into col H of תנועות.
  */
 function _resolveIsIncome_(matched, rawText, category, subcategory) {
-  var s = String(rawText || '').trim();
+  // Strip leading bidi/directional marks (LRM/RLM/isolates/BOM) that WhatsApp
+  // prepends to a copy-pasted RTL line — JS .trim() does NOT remove them, which
+  // otherwise defeats the '+' income convention below (audit 2026-06-15 sign-flip).
+  var s = String(rawText || '').replace(/^[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]+/, '').trim();
   // PAYROLL OVERRIDE (before any income match): paying a salary TO an employee
   // is a business EXPENSE even though bare maskoret maps to income. QA 2026-06-11:
   // 'maskoret le-oved 6000' was booked as +6000 income (a 12K dashboard swing).
@@ -884,7 +887,7 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // back). Specific patterns only ("zikui me-X", "hechzer al kniya",
   // "kibalti hechzer") so a loan repayment ("hechzer halvaa") or a bare,
   // ambiguous "zikui" is NOT flipped. Steven 2026-06-08 (QA fleet r3).
-  if (/(?:זיכוי|החזר)\s+מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי/.test(s)) return true;
+  if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי/.test(s)) return true;
   return _isIncomeCategory_(category, subcategory);
 }
 
@@ -10431,6 +10434,10 @@ function _kfl_nonAdjacentCurrency_(text) {
 
 function parseAmountAndDescription(text) {
   var t = String(text || '').trim();
+  // Strip WhatsApp bidi (LRM/RLM/isolates/BOM) + zero-width marks so they don't
+  // leak into the saved description / cell note or break number+keyword matching
+  // on copy-pasted RTL lines (audit 2026-06-15).
+  t = t.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u200B]/g, '').replace(/\s+/g, ' ').trim();
   if (!t) return null;
   // ── MULTI-ITEM (Steven 2026-06-14): a comma / newline / semicolon separates
   // DISTINCT expenses, each with its OWN description, so item N's category is
