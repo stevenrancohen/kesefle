@@ -193,7 +193,8 @@
     if(E&&E.errors_24h>0) items.push({sev:E.errors_24h>20?'crit':'warn',head:num(E.errors_24h)+' שגיאות ב-24ש׳',sub:'בדוק את בריאות הבוט',to:'#/bot-health'});
     if(R&&R.churn&&R.churn.cancellations_last_30d>0) items.push({sev:'warn',head:num(R.churn.cancellations_last_30d)+' ביטולים ב-30 ימ׳',sub:'נטישה '+(R.churn.monthly_churn_rate_pct||0)+'%',to:'#/revenue'});
     var order={crit:0,warn:1,info:2}; items.sort(function(a,b){return order[a.sev]-order[b.sev];});
-    $('#ov-decisions').innerHTML = items.length ? items.map(function(it){ return '<a href="'+it.to+'" class="card card-hover mb-3 flex items-start gap-3 p-4 hover:shadow-md">'+pill(it.sev==='crit'?'דחוף':it.sev==='warn'?'לטיפול':'מידע',it.sev)+'<div class="flex-1"><div class="font-semibold">'+esc(it.head)+'</div><div class="text-xs text-ink-400">'+esc(it.sub)+'</div></div><span class="text-ink-300">‹</span></a>'; }).join('') : card('<div class="py-6 text-center text-sm text-green-600">הכל נראה תקין ✓ אין פריטים דחופים</div>');
+    var anyData=R||A||G||E; // distinguish "genuinely all-clear" from "couldn't load (not authed)"
+    $('#ov-decisions').innerHTML = items.length ? items.map(function(it){ return '<a href="'+it.to+'" class="card card-hover mb-3 flex items-start gap-3 p-4 hover:shadow-md">'+pill(it.sev==='crit'?'דחוף':it.sev==='warn'?'לטיפול':'מידע',it.sev)+'<div class="flex-1"><div class="font-semibold">'+esc(it.head)+'</div><div class="text-xs text-ink-400">'+esc(it.sub)+'</div></div><span class="text-ink-300">‹</span></a>'; }).join('') : (anyData ? card('<div class="py-6 text-center text-sm text-green-600">הכל נראה תקין ✓ אין פריטים דחופים</div>') : errState(AuthError()));
     // Recent signups
     try {
       var rs=await adminGet('/api/admin/recent-signups?limit=8&hours=72');
