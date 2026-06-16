@@ -130,6 +130,7 @@
     {id:'funnel',label:'משפך',group:'צמיחה',icon:'⧗',title:'משפך הרשמה',render:renderFunnel},
     {id:'revenue',label:'הכנסות',group:'צמיחה',icon:'₪',title:'הכנסות',render:renderRevenue},
     {id:'referrals',label:'הפניות',group:'צמיחה',icon:'⇲',title:'הפניות',render:renderReferrals},
+    {id:'myagents',label:'הסוכנים שלי',group:'מערכת',icon:'✸',title:'הסוכנים שלי',render:renderMyAgents},
     {id:'agents',label:'אוטומציות',group:'מערכת',icon:'⚙',title:'אוטומציות ומשרות',render:renderAgents},
     {id:'flags',label:'דגלי פיצ׳רים',group:'מערכת',icon:'⚐',title:'דגלי פיצ׳רים',render:renderFlags},
     {id:'audit',label:'יומן ביקורת',group:'מערכת',icon:'≣',title:'יומן ביקורת',render:renderAudit},
@@ -364,6 +365,84 @@
     catch(e){ view.innerHTML+=errState(e); }
   }
 
+  // ───────── always-on agent workforce (client-side, like the SRC runner) ─────────
+  var DISMISS_KEY='kfl_admin_dismissed';
+  function dismissed(){ try { return JSON.parse(localStorage.getItem(DISMISS_KEY)||'{}'); } catch(e){ return {}; } }
+  function setDismissed(k){ var d=dismissed(); d[k]=Date.now(); localStorage.setItem(DISMISS_KEY,JSON.stringify(d)); }
+  var AGENTS=[
+    {id:'integrity',name:'שלמות נתונים',emoji:'⛃',schedule:'כל שעה',run:async function(){
+      var d=await adminGet('/api/admin?action=registration-health'); var f=[];
+      if(d.orphanCount>0) f.push({sev:'crit',head:d.orphanCount+' משתמשים ללא גיליון',detail:'נרשמו אך הגיליון לא נוצר — אינם יכולים לרשום הוצאה',to:'#/data-integrity'});
+      if(d.brokenPhoneCount>0) f.push({sev:'crit',head:d.brokenPhoneCount+' מיפויי טלפון שבורים',detail:'הטלפון מצביע על גיליון לא נכון',to:'#/data-integrity'});
+      if(d.pendingPhoneLinkCount>0) f.push({sev:'warn',head:d.pendingPhoneLinkCount+' ממתינים לקישור טלפון',detail:'יש גיליון אך הטלפון לא קושר עדיין',to:'#/data-integrity'});
+      return f;
+    }},
+    {id:'activation',name:'הפעלה ושימור',emoji:'↗',schedule:'יומי',run:async function(){
+      var d=await adminGet('/api/admin/activation-summary?days=30'); var h=d.headline||{}; var f=[];
+      if(h.verdict==='VALUE_PROBLEM') f.push({sev:'crit',head:'בעיית ערך בהפעלה',detail:'מספיק משתמשים מקושרים אך פחות מ-30% חוזרים — בעיה אמיתית בערך, לא בצנרת',to:'#/activation'});
+      else if(h.verdict==='PLUMBING') f.push({sev:'warn',head:'בעיית צנרת בהפעלה',detail:'רוב הנרשמים תקועים לפני קישור — תקן את האונבורדינג',to:'#/activation'});
+      return f;
+    }},
+    {id:'bot',name:'בריאות הבוט',emoji:'♥',schedule:'כל שעה',run:async function(){
+      var f=[];
+      var v=await adminGet('/api/admin/bot-version').catch(function(){return null;});
+      var e=await adminGet('/api/admin?action=errors-count').catch(function(){return null;});
+      var c=await adminGet('/api/admin/config-drift').catch(function(){return null;});
+      if(v&&v.match===false) f.push({sev:'warn',head:'גרסת הבוט אינה תואמת ל-repo',detail:'חי: '+(v.apps_script_deployed||'')+' · repo: '+(v.repo_latest||'')+' — צריך הדבקה מחדש',to:'#/bot-health'});
+      if(e&&e.errors_24h>20) f.push({sev:'crit',head:e.errors_24h+' שגיאות ב-24 שעות',detail:'בדוק את לוגי הבוט',to:'#/bot-health'});
+      if(c&&c.drifts&&c.drifts.length) f.push({sev:'crit',head:c.drifts.length+' משתני סביבה חסרים',detail:'סחיפת קונפיג — יכול לשבור פעולות',to:'#/bot-health'});
+      return f;
+    }},
+    {id:'revenue',name:'הכנסות ונטישה',emoji:'₪',schedule:'יומי',run:async function(){
+      var d=await adminGet('/api/admin/revenue'); var f=[];
+      if(d.churn&&d.churn.monthly_churn_rate_pct>8) f.push({sev:'warn',head:'נטישה גבוהה: '+d.churn.monthly_churn_rate_pct+'%',detail:(d.churn.cancellations_last_30d||0)+' ביטולים ב-30 ימ׳',to:'#/revenue'});
+      return f;
+    }},
+    {id:'funnel',name:'משפך הרשמה',emoji:'⧗',schedule:'יומי',run:async function(){
+      var d=await adminGet('/api/admin/funnel-summary'); var f=[];
+      if(d.biggest_leak&&d.biggest_leak.dropoff_pct>40) f.push({sev:'warn',head:'דליפה במשפך: '+(d.biggest_leak.label||d.biggest_leak.step||''),detail:(d.biggest_leak.dropoff_pct)+'% נושרים בשלב הזה',to:'#/funnel'});
+      return f;
+    }},
+    {id:'signals',name:'תיבת סיגנלים',emoji:'⚑',schedule:'כל שעה',run:async function(){
+      var d=await adminGet('/api/admin/inbox?limit=50'); var n=((d&&d.items)||[]).length; var f=[];
+      if(n>0) f.push({sev:n>10?'warn':'info',head:n+' סיגנלים פתוחים',detail:'דוחות משתמשים / סקרים שדורשים מענה',to:'#/needs-review'});
+      return f;
+    }},
+  ];
+  var agentState={results:{},ranAt:null,running:false};
+  function agentValue(findings){ return (findings||[]).reduce(function(s,x){return s+(x.sev==='crit'?3:x.sev==='warn'?1:0);},0); }
+  async function runAgents(){
+    if(agentState.running) return; agentState.running=true;
+    await Promise.all(AGENTS.map(function(a){ return Promise.resolve().then(a.run).then(function(fnd){ agentState.results[a.id]={findings:fnd||[],error:null,ranAt:Date.now()}; }).catch(function(e){ agentState.results[a.id]={findings:[],error:(e&&e.isAuth?'auth':(e.message||'error')),ranAt:Date.now()}; }); }));
+    agentState.ranAt=Date.now(); agentState.running=false;
+    try { window.dispatchEvent(new CustomEvent('kfl-agents-updated')); } catch(e){}
+  }
+  var _agentTimer=null;
+  function startAgents(){ runAgents(); if(_agentTimer) clearInterval(_agentTimer); _agentTimer=setInterval(runAgents,5*60*1000); }
+  async function renderMyAgents(view){
+    view.innerHTML=sectionTitle('הסוכנים שלי','צוות סוכנים שרץ ברקע כל 5 דקות, סורק את המערכת ומציף מה שדורש טיפול — לא תרשים נוי, חדר החלטות')+'<div id="agentsBody">'+loading()+'</div>';
+    function paint(){
+      var all=[]; AGENTS.forEach(function(a){ var r=agentState.results[a.id]; if(r&&r.findings) r.findings.forEach(function(f){ all.push({a:a,f:f}); }); });
+      var dis=dismissed(); var live=all.filter(function(x){ return !dis[x.a.id+':'+x.f.head]; });
+      var order={crit:0,warn:1,info:2}; live.sort(function(p,q){return order[p.f.sev]-order[q.f.sev];});
+      var anyRan=Object.keys(agentState.results).length>0;
+      var allAuth=anyRan && AGENTS.every(function(a){ var r=agentState.results[a.id]; return r&&r.error==='auth'; });
+      var head='<div class="card p-4 mb-5 flex flex-wrap items-center gap-5">'+
+        '<div><div class="text-xs text-ink-400">פתוחים</div><div class="font-display text-3xl">'+live.length+'</div></div>'+
+        '<div><div class="text-xs text-ink-400">דחופים</div><div class="font-display text-3xl text-red-500">'+live.filter(function(x){return x.f.sev==='crit';}).length+'</div></div>'+
+        '<div class="flex-1 text-xs text-ink-400">ריצה אחרונה: '+(agentState.ranAt?'לפני '+ago(agentState.ranAt):'…')+' · רצים אוטומטית כל 5 דק׳</div>'+
+        '<button id="runAll" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white">הרץ עכשיו</button></div>';
+      var feed= allAuth ? errState(AuthError()) : (live.length ? live.map(function(x){ return '<div class="card mb-2 flex items-start gap-3 p-3">'+pill(x.f.sev==='crit'?'דחוף':x.f.sev==='warn'?'לטיפול':'מידע',x.f.sev)+'<div class="flex-1 min-w-0"><div class="text-sm font-semibold">'+x.a.emoji+' '+esc(x.f.head)+'</div><div class="text-xs text-ink-400">'+esc(x.f.detail||'')+'</div></div><a class="text-brand-600 text-xs whitespace-nowrap" href="'+x.f.to+'">פתח</a><button class="dis text-ink-300 text-xs whitespace-nowrap" data-k="'+esc(x.a.id+':'+x.f.head)+'">סמן כטופל</button></div>'; }).join('') : card('<div class="py-6 text-center text-sm text-green-600">אין ממצאים פתוחים ✓ הכל תקין</div>'));
+      var cards='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">'+AGENTS.map(function(a){ var r=agentState.results[a.id]||{findings:[]}; var v=agentValue(r.findings); var lbl=r.error==='auth'?'דרוש אדמין':(r.error?'שגיאה':(r.findings.length+' ממצאים')); return '<div class="card p-4"><div class="flex items-center gap-2"><span class="text-lg">'+a.emoji+'</span><span class="font-semibold flex-1">'+esc(a.name)+'</span><button class="runOne text-xs text-brand-600" data-id="'+a.id+'">הרץ</button></div><div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-400"><span>'+esc(lbl)+'</span><span>·</span><span>ציון ערך '+v+'</span><span>·</span><span>'+esc(a.schedule)+'</span></div></div>'; }).join('')+'</div>';
+      $('#agentsBody').innerHTML=head+'<h3 class="font-display text-lg mb-3">ממצאים פתוחים</h3>'+feed+'<h3 class="font-display text-lg mt-6 mb-3">צוות הסוכנים</h3>'+cards;
+      var ra=$('#runAll'); if(ra) ra.onclick=async function(){ ra.textContent='...'; await runAgents(); paint(); };
+      document.querySelectorAll('.runOne').forEach(function(b){ b.onclick=async function(){ b.textContent='...'; await runAgents(); paint(); }; });
+      document.querySelectorAll('.dis').forEach(function(b){ b.onclick=function(){ setDismissed(b.getAttribute('data-k')); paint(); }; });
+    }
+    if(!agentState.ranAt) await runAgents();
+    paint();
+  }
+
   // ───────── modal ─────────
   function showModal(title,html){
     var m=document.createElement('div'); m.className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4';
@@ -406,6 +485,7 @@
     window.addEventListener('hashchange',function(){ route(); });
     if(!location.hash) location.hash='#/';
     route();
+    startAgents(); // always-on agent workforce: runs now + every 5 min while the console is open
   })();
   </script>
 </body>
