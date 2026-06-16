@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>מערכת ניהול — כספ'לה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&display=swap" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  <link rel="stylesheet" href="/css/brand.css" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {
+        fontFamily: {
+          sans: ['Inter', 'Heebo', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+          display: ['Rubik', 'Heebo', 'system-ui', 'sans-serif'],
+        },
+        colors: {
+          ink:    { 50:'#f7f8fb',100:'#eef0f6',200:'#dde1ec',300:'#bcc4d6',400:'#8a95b3',500:'#5d6b8f',600:'#41506f',700:'#2f3b54',800:'#1e2638',900:'#0f1422',950:'#070b16' },
+          brand:  { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' },
+          accent: { 400:'#38bdf8',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8' },
+        },
+      } },
+    };
+  </script>
+  <style>
+    h1,h2,h3{font-family:'Rubik','Heebo',system-ui,sans-serif;font-weight:900;letter-spacing:-0.035em;line-height:1}
+    body{font-family:'Inter','Heebo',system-ui,sans-serif;background:#f7f8fb;color:#0f1422}
+    html.dark body{background:#070b16;color:#eaf1fb}
+    .card{background:#fff;border:1px solid #eef0f6;border-radius:1rem;box-shadow:0 1px 2px rgba(15,20,34,.04)}
+    html.dark .card{background:#1e2638;border-color:#2f3b54}
+    .navlink{display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;border-radius:.7rem;font-size:.9rem;font-weight:600;color:#41506f;cursor:pointer}
+    .navlink:hover{background:#eef0f6}
+    html.dark .navlink{color:#bcc4d6}
+    html.dark .navlink:hover{background:#2f3b54}
+    .navlink.active{background:#e0f2fe;color:#1d4ed8}
+    html.dark .navlink.active{background:#1e293b;color:#7dd3fc}
+    .kbd{font-family:ui-monospace,monospace;font-size:.7rem;border:1px solid #dde1ec;border-radius:.35rem;padding:.05rem .35rem;color:#5d6b8f}
+    html.dark .kbd{border-color:#2f3b54;color:#8a95b3}
+    .skel{background:linear-gradient(90deg,#eef0f6 25%,#f7f8fb 37%,#eef0f6 63%);background-size:400% 100%;animation:sk 1.2s ease-in-out infinite;border-radius:.5rem}
+    html.dark .skel{background:linear-gradient(90deg,#1e2638 25%,#2f3b54 37%,#1e2638 63%);background-size:400% 100%}
+    @keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+    ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#dde1ec;border-radius:8px}
+    html.dark ::-webkit-scrollbar-thumb{background:#2f3b54}
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Shell -->
+  <div class="flex min-h-screen">
+    <!-- Sidebar (right in RTL) -->
+    <aside id="sidebar" class="fixed inset-y-0 right-0 z-40 w-64 -translate-x-0 border-l border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 hidden md:flex md:flex-col">
+      <div class="flex items-center gap-2 px-4 py-4 border-b border-ink-100 dark:border-ink-700">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-teal-400 text-white font-black">כ</span>
+        <div><div class="font-display text-lg leading-none">כספ'לה</div><div class="text-[11px] text-ink-400">מערכת ניהול</div></div>
+      </div>
+      <nav id="nav" class="flex-1 overflow-y-auto px-3 py-3 space-y-1"></nav>
+      <a href="/" class="m-3 rounded-xl border border-ink-100 dark:border-ink-700 px-3 py-2 text-center text-sm font-semibold text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-800">← חזרה לאתר</a>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 md:mr-64 flex flex-col min-w-0">
+      <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-ink-100 dark:border-ink-700 bg-white/80 dark:bg-ink-900/80 backdrop-blur px-4 py-3">
+        <button id="menuBtn" class="md:hidden rounded-lg border border-ink-100 dark:border-ink-700 p-2" aria-label="תפריט">☰</button>
+        <h1 id="pageTitle" class="font-display text-xl flex-1 truncate">סקירה</h1>
+        <button id="cmdBtn" class="hidden sm:flex items-center gap-2 rounded-xl border border-ink-100 dark:border-ink-700 px-3 py-1.5 text-sm text-ink-500 hover:bg-ink-50 dark:hover:bg-ink-800">חיפוש <span class="kbd">⌘K</span></button>
+        <button id="refreshBtn" class="rounded-lg border border-ink-100 dark:border-ink-700 p-2 text-ink-500 hover:bg-ink-50 dark:hover:bg-ink-800" title="רענון" aria-label="רענון">⟳</button>
+        <button id="themeBtn" class="rounded-lg border border-ink-100 dark:border-ink-700 p-2 text-ink-500 hover:bg-ink-50 dark:hover:bg-ink-800" title="מצב כהה/בהיר" aria-label="מצב תצוגה">◐</button>
+        <span id="whoami" class="hidden sm:block max-w-[180px] truncate text-xs text-ink-400"></span>
+      </header>
+      <main id="view" class="flex-1 p-4 md:p-6 max-w-7xl w-full mx-auto"></main>
+      <footer class="px-4 py-3 text-center text-[11px] text-ink-400">כל הנתונים אמיתיים ועדכניים — אין נתוני דמו · <span id="srcStamp"></span></footer>
+    </div>
+  </div>
+
+  <!-- Mobile drawer backdrop -->
+  <div id="backdrop" class="fixed inset-0 z-40 hidden bg-black/40"></div>
+
+  <!-- Command bar -->
+  <div id="cmd" class="fixed inset-0 z-50 hidden bg-black/40 p-4 sm:pt-24">
+    <div class="mx-auto max-w-xl card overflow-hidden">
+      <input id="cmdInput" type="text" placeholder="חיפוש מסכים, פעולות, משתמשים…" class="w-full border-0 bg-transparent px-4 py-3 text-base outline-none placeholder:text-ink-400" />
+      <div id="cmdList" class="max-h-80 overflow-y-auto border-t border-ink-100 dark:border-ink-700"></div>
+    </div>
+  </div>
+
+  <script>
+  'use strict';
+  // ───────── auth + fetch (identical pattern to admin.html) ─────────
+  function token(){ try { return (JSON.parse(localStorage.getItem('kesefle_user')||'{}')).idToken || ''; } catch(e){ return ''; } }
+  function authHeaders(extra){ var t=token(); var h=Object.assign({},extra||{}); if(t) h['Authorization']='Bearer '+t; return h; }
+  function AuthError(){ var e=new Error('auth'); e.isAuth=true; return e; }
+  async function adminGet(path){
+    var r=await fetch(path,{credentials:'include',headers:authHeaders()});
+    if(r.status===401||r.status===403) throw AuthError();
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }
+  async function adminPost(path,body){
+    var r=await fetch(path,{method:'POST',credentials:'include',headers:authHeaders({'Content-Type':'application/json'}),body:JSON.stringify(body||{})});
+    if(r.status===401||r.status===403) throw AuthError();
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }
+  // ───────── tiny DOM helpers ─────────
+  var $=function(s,r){return (r||document).querySelector(s);};
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function num(n){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('he-IL'); }
+  function money(n,cur){ if(n==null||isNaN(n)) return '—'; return (cur==='usd'?'$':'₪')+Number(n).toLocaleString('he-IL'); }
+  function ago(ts){ if(!ts) return '—'; var d=Date.now()-(typeof ts==='number'?ts:Date.parse(ts)); if(isNaN(d)) return '—'; var m=Math.round(d/60000); if(m<60) return m+' דק׳'; var h=Math.round(m/60); if(h<24) return h+' שע׳'; return Math.round(h/24)+' ימ׳'; }
+  function pill(text,tone){ var t={ok:'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300',warn:'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',crit:'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300',info:'bg-brand-50 text-brand-700 dark:bg-ink-700 dark:text-brand-200',neutral:'bg-ink-100 text-ink-600 dark:bg-ink-700 dark:text-ink-300'}[tone||'neutral']; return '<span class="inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold '+t+'">'+esc(text)+'</span>'; }
+  function card(inner,cls){ return '<div class="card p-4 '+(cls||'')+'">'+inner+'</div>'; }
+  function kpi(label,value,sub,tone){ return '<div class="card p-4"><div class="text-xs font-semibold text-ink-400">'+esc(label)+'</div><div class="mt-1 font-display text-3xl">'+value+'</div><div class="mt-1 text-xs '+(tone==='crit'?'text-red-500':tone==='warn'?'text-amber-600':'text-ink-400')+'">'+(sub||'')+'</div></div>'; }
+  function loading(){ return '<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+Array(4).fill('<div class="card p-4"><div class="skel h-3 w-20"></div><div class="skel mt-3 h-8 w-24"></div></div>').join('')+'</div>'; }
+  function emptyState(t){ return card('<div class="py-8 text-center text-ink-400"><div class="text-2xl">∅</div><div class="mt-2 text-sm">'+esc(t||'אין נתונים עדיין')+'</div></div>'); }
+  function errState(e){ if(e&&e.isAuth) return card('<div class="py-8 text-center"><div class="text-sm font-semibold">צריך להתחבר כמנהל</div><div class="mt-1 text-xs text-ink-400">התחבר/י עם חשבון אדמין מאושר ב-<a class="text-brand-600 underline" href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'">/account</a> (באותו דפדפן), ואז רענן/י.</div></div>'); return card('<div class="py-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'</div>'); }
+  function sectionTitle(t,sub){ return '<div class="mb-4"><h2 class="font-display text-2xl">'+esc(t)+'</h2>'+(sub?'<p class="mt-1 text-sm text-ink-400">'+esc(sub)+'</p>':'')+'</div>'; }
+
+  // ───────── sections registry (groups mirror the SRC admin) ─────────
+  var SECTIONS=[
+    {id:'',label:'סקירה',group:'סקירה',icon:'◎',title:'סקירה',render:renderOverview},
+    {id:'users',label:'משתמשים',group:'יומיומי',icon:'◍',title:'משתמשים',render:renderUsers},
+    {id:'needs-review',label:'טעון בדיקה',group:'יומיומי',icon:'⚑',title:'טעון בדיקה',render:renderNeedsReview},
+    {id:'conversations',label:'שיחות',group:'יומיומי',icon:'❝',title:'שיחות',render:renderConversations},
+    {id:'bot-health',label:'בריאות הבוט',group:'בריאות ונתונים',icon:'♥',title:'בריאות הבוט',render:renderBotHealth},
+    {id:'data-integrity',label:'תקינות נתונים',group:'בריאות ונתונים',icon:'⛃',title:'תקינות נתונים',render:renderDataIntegrity},
+    {id:'quota',label:'מכסות KV/Sheets',group:'בריאות ונתונים',icon:'▣',title:'מכסות',render:renderQuota},
+    {id:'activation',label:'הפעלה ושימור',group:'צמיחה',icon:'↗',title:'הפעלה ושימור',render:renderActivation},
+    {id:'funnel',label:'משפך',group:'צמיחה',icon:'⧗',title:'משפך הרשמה',render:renderFunnel},
+    {id:'revenue',label:'הכנסות',group:'צמיחה',icon:'₪',title:'הכנסות',render:renderRevenue},
+    {id:'referrals',label:'הפניות',group:'צמיחה',icon:'⇲',title:'הפניות',render:renderReferrals},
+    {id:'agents',label:'אוטומציות',group:'מערכת',icon:'⚙',title:'אוטומציות ומשרות',render:renderAgents},
+    {id:'flags',label:'דגלי פיצ׳רים',group:'מערכת',icon:'⚐',title:'דגלי פיצ׳רים',render:renderFlags},
+    {id:'audit',label:'יומן ביקורת',group:'מערכת',icon:'≣',title:'יומן ביקורת',render:renderAudit},
+  ];
+  var QUICK=[
+    {label:'רענן את כל הנתונים',run:function(){ route(true); }},
+    {label:'החלף מצב כהה/בהיר',run:toggleTheme},
+    {label:'פתח את הפאנל הקלאסי (admin.html)',run:function(){ location.href='/admin'; }},
+  ];
+
+  // ───────── nav build ─────────
+  function buildNav(){
+    var groups={}; SECTIONS.forEach(function(s){ (groups[s.group]=groups[s.group]||[]).push(s); });
+    var html=Object.keys(groups).map(function(g){
+      return '<div class="px-1 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-ink-400">'+esc(g)+'</div>'+
+        groups[g].map(function(s){ return '<a class="navlink" data-id="'+s.id+'" href="#/'+s.id+'"><span class="w-4 text-center text-ink-400">'+s.icon+'</span><span class="flex-1">'+esc(s.label)+'</span></a>'; }).join('');
+    }).join('');
+    $('#nav').innerHTML=html;
+  }
+  function setActiveNav(id){ document.querySelectorAll('#nav .navlink').forEach(function(a){ a.classList.toggle('active', a.getAttribute('data-id')===id); }); }
+
+  // ───────── router ─────────
+  function currentId(){ var h=(location.hash||'').replace(/^#\/?/,''); return h; }
+  async function route(force){
+    var id=currentId();
+    var sec=SECTIONS.filter(function(s){return s.id===id;})[0]||SECTIONS[0];
+    $('#pageTitle').textContent=sec.title;
+    setActiveNav(sec.id);
+    closeDrawer();
+    var view=$('#view');
+    view.innerHTML=sectionTitle(sec.title)+loading();
+    try { await sec.render(view); }
+    catch(e){ view.innerHTML=sectionTitle(sec.title)+errState(e); }
+  }
+
+  // ───────── SECTION: Overview (KPIs + decision feed) ─────────
+  async function renderOverview(view){
+    view.innerHTML=sectionTitle('סקירה','מבט מהיר על מצב המערכת — מה דורש את תשומת הלב שלך עכשיו')+'<div id="ov-kpi">'+loading()+'</div>'+
+      '<div class="mt-6 grid gap-4 lg:grid-cols-3"><div class="lg:col-span-2"><h3 class="font-display text-lg mb-3">דורש תשומת לב</h3><div id="ov-decisions"></div></div><div><h3 class="font-display text-lg mb-3">נרשמו לאחרונה</h3><div id="ov-signups"></div></div></div>';
+    // KPIs (revenue + activation + registration-health + errors) in parallel — each fails soft
+    var rev=adminGet('/api/admin/revenue').catch(function(){return null;});
+    var act=adminGet('/api/admin/activation-summary?days=30').catch(function(){return null;});
+    var reg=adminGet('/api/admin?action=registration-health').catch(function(){return null;});
+    var err=adminGet('/api/admin?action=errors-count').catch(function(){return null;});
+    var R=await rev, A=await act, G=await reg, E=await err;
+    var cells=[];
+    cells.push(kpi('משתמשים', R?num(R.counts&&R.counts.total):'—', R&&R.counts?num(R.counts.paid)+' משלמים · '+num(R.counts.trial)+' ניסיון':'—'));
+    cells.push(kpi('MRR', R&&R.mrr?money(R.mrr.ils):'—', R&&R.arr?'ARR '+money(R.arr.ils):''));
+    var verdict=A&&A.headline?A.headline.verdict:null; var vt=verdict==='OK'?'ok':verdict==='VALUE_PROBLEM'?'crit':'warn';
+    cells.push(kpi('הפעלה (30 ימ׳)', A&&A.headline?A.headline.activation_rate_pct+'%':'—', verdict?'מסקנה: '+verdict:'', vt));
+    var orph=G?(G.orphanCount||0):null;
+    cells.push(kpi('יתומים (ללא גיליון)', orph==null?'—':num(orph), orph?'דורש תיקון':'תקין', orph?'crit':'ok'));
+    $('#ov-kpi').innerHTML='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+cells.join('')+'</div>';
+    // Decision feed — synthesize ranked "attention" items from the same data
+    var items=[];
+    if(G&&G.orphanCount>0) items.push({sev:'crit',head:num(G.orphanCount)+' משתמשים ללא גיליון',sub:'נרשמו אך הגיליון לא נוצר — לא יכולים לרשום הוצאה',to:'#/data-integrity'});
+    if(G&&G.brokenPhoneCount>0) items.push({sev:'crit',head:num(G.brokenPhoneCount)+' מיפויי טלפון שבורים',sub:'הטלפון מצביע על גיליון לא נכון',to:'#/data-integrity'});
+    if(G&&G.pendingPhoneLinkCount>0) items.push({sev:'warn',head:num(G.pendingPhoneLinkCount)+' ממתינים לקישור טלפון',sub:'יש גיליון אך הטלפון לא קושר עדיין',to:'#/data-integrity'});
+    if(A&&A.headline&&A.headline.verdict==='VALUE_PROBLEM') items.push({sev:'crit',head:'בעיית ערך בהפעלה',sub:'מספיק משתמשים מקושרים אך פחות מ-30% חוזרים',to:'#/activation'});
+    if(A&&A.headline&&A.headline.verdict==='PLUMBING') items.push({sev:'warn',head:'בעיית צנרת בהפעלה',sub:'רוב הנרשמים תקועים לפני קישור — תקן את האונבורדינג',to:'#/activation'});
+    if(E&&E.errors_24h>0) items.push({sev:E.errors_24h>20?'crit':'warn',head:num(E.errors_24h)+' שגיאות ב-24ש׳',sub:'בדוק את בריאות הבוט',to:'#/bot-health'});
+    if(R&&R.churn&&R.churn.cancellations_last_30d>0) items.push({sev:'warn',head:num(R.churn.cancellations_last_30d)+' ביטולים ב-30 ימ׳',sub:'נטישה '+(R.churn.monthly_churn_rate_pct||0)+'%',to:'#/revenue'});
+    var order={crit:0,warn:1,info:2}; items.sort(function(a,b){return order[a.sev]-order[b.sev];});
+    $('#ov-decisions').innerHTML = items.length ? items.map(function(it){ return '<a href="'+it.to+'" class="card card-hover mb-3 flex items-start gap-3 p-4 hover:shadow-md">'+pill(it.sev==='crit'?'דחוף':it.sev==='warn'?'לטיפול':'מידע',it.sev)+'<div class="flex-1"><div class="font-semibold">'+esc(it.head)+'</div><div class="text-xs text-ink-400">'+esc(it.sub)+'</div></div><span class="text-ink-300">‹</span></a>'; }).join('') : card('<div class="py-6 text-center text-sm text-green-600">הכל נראה תקין ✓ אין פריטים דחופים</div>');
+    // Recent signups
+    try {
+      var rs=await adminGet('/api/admin/recent-signups?limit=8&hours=72');
+      var us=(rs&&rs.users)||[];
+      $('#ov-signups').innerHTML = us.length ? '<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+us.map(function(u){ var step=u.step||u.minutes_ago!=null?u.step:''; return '<div class="flex items-center justify-between p-3"><div class="min-w-0"><div class="truncate text-sm font-medium">'+esc(u.email||u.userSub||'—')+'</div><div class="text-[11px] text-ink-400">'+(u.linkedPhone?'מקושר':'ממתין')+' · לפני '+ago(u.lastLoginAt)+'</div></div>'+pill(u.linkedPhone?'מקושר':(u.sheetUrl?'יש גיליון':'OAuth בלבד'),u.linkedPhone?'ok':'warn')+'</div>'; }).join('')+'</div>' : emptyState('אין הרשמות חדשות ב-72 שעות');
+    } catch(e){ $('#ov-signups').innerHTML=errState(e); }
+  }
+
+  // ───────── SECTION: Users ─────────
+  async function renderUsers(view){
+    view.innerHTML=sectionTitle('משתמשים','חיפוש, פרטים ופעולות ניהול')+
+      '<div class="mb-3 flex gap-2"><input id="uq" type="search" placeholder="חיפוש לפי אימייל/שם…" class="flex-1 rounded-xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-800 px-3 py-2 text-sm outline-none" /><button id="ub" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white">חיפוש</button></div><div id="ulist">'+loading()+'</div>';
+    async function load(q){
+      $('#ulist').innerHTML=loading();
+      try {
+        var d=await adminGet('/api/admin?action=users&limit=40'+(q?'&q='+encodeURIComponent(q):''));
+        var us=(d&&d.users)||[];
+        if(!us.length){ $('#ulist').innerHTML=emptyState('לא נמצאו משתמשים'); return; }
+        $('#ulist').innerHTML='<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-ink-50 dark:bg-ink-800 text-ink-400"><tr><th class="p-3 text-right">אימייל</th><th class="p-3 text-right">תוכנית</th><th class="p-3 text-right">גיליון</th><th class="p-3 text-right">פעיל</th><th class="p-3"></th></tr></thead><tbody>'+us.map(function(u){ return '<tr class="border-t border-ink-100 dark:border-ink-700"><td class="p-3"><div class="font-medium">'+esc(u.email||'—')+'</div><div class="text-[11px] text-ink-400">'+esc(u.name||u.sub||'')+'</div></td><td class="p-3">'+pill(u.plan||'free',u.plan&&u.plan!=='free'?'ok':'neutral')+'</td><td class="p-3">'+(u.hasSheet?pill('יש','ok'):pill('אין','crit'))+'</td><td class="p-3 text-ink-400 text-xs">'+ago(u.lastActive)+'</td><td class="p-3 text-left"><button class="udet rounded-lg border border-ink-100 dark:border-ink-700 px-2 py-1 text-xs" data-sub="'+esc(u.sub)+'">פרטים</button></td></tr>'; }).join('')+'</tbody></table></div>';
+        document.querySelectorAll('.udet').forEach(function(b){ b.onclick=function(){ openUser(b.getAttribute('data-sub')); }; });
+      } catch(e){ $('#ulist').innerHTML=errState(e); }
+    }
+    $('#ub').onclick=function(){ load($('#uq').value.trim()); };
+    $('#uq').addEventListener('keydown',function(e){ if(e.key==='Enter') load($('#uq').value.trim()); });
+    load('');
+  }
+  async function openUser(sub){
+    if(!sub) return;
+    var d; try { d=await adminGet('/api/admin?action=user&sub='+encodeURIComponent(sub)); } catch(e){ alert('שגיאה: '+(e.message||e)); return; }
+    var u=(d&&d.user)||{};
+    var acts=[['resend_welcome','שלח שוב ברוכים הבאים'],['force_resync','סנכרון מחדש'],['reset_plan_to_free','אפס לתוכנית חינם'],['pause_account','השהה חשבון'],['unpause_account','בטל השהיה']];
+    var html='<div class="space-y-2 text-sm"><div><b>'+esc(u.email||sub)+'</b></div>'+
+      '<div class="text-ink-400 text-xs">תוכנית: '+esc(u.plan||'—')+' · סטטוס: '+esc(u.subscriptionStatus||'—')+'</div>'+
+      '<div class="text-ink-400 text-xs">גיליון: '+(u.spreadsheetId?'<a class="text-brand-600 underline" target="_blank" href="https://docs.google.com/spreadsheets/d/'+esc(u.spreadsheetId)+'">פתח</a>':'אין')+'</div>'+
+      '<div class="pt-2 flex flex-wrap gap-2">'+acts.map(function(a){ return '<button class="uact rounded-lg border border-ink-100 dark:border-ink-700 px-2 py-1 text-xs" data-a="'+a[0]+'">'+a[1]+'</button>'; }).join('')+'</div></div>';
+    showModal('פרטי משתמש',html);
+    document.querySelectorAll('.uact').forEach(function(b){ b.onclick=async function(){ if(!confirm('להריץ "'+b.textContent+'"?')) return; try { await adminPost('/api/admin?action=user-action',{action:b.getAttribute('data-a'),targetUserSub:sub}); b.textContent='בוצע ✓'; } catch(e){ alert('שגיאה: '+(e.message||e)); } }; });
+  }
+
+  // ───────── SECTION: Needs Review (inbox + reports) ─────────
+  async function renderNeedsReview(view){
+    view.innerHTML=sectionTitle('טעון בדיקה','דוחות משתמשים, סקרי יציאה, NPS וסיגנלים שדורשים מענה');
+    try {
+      var d=await adminGet('/api/admin/inbox?limit=50');
+      var items=(d&&d.items)||[];
+      view.innerHTML+=items.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+items.map(function(it){ return '<div class="flex items-start gap-3 p-3"><span class="mt-0.5">'+pill(it.kind||'signal','info')+'</span><div class="flex-1 min-w-0"><div class="text-sm">'+esc(it.summary||it.text||'—')+'</div><div class="text-[11px] text-ink-400">'+esc(it.userSub||'')+' · לפני '+ago(it.at)+'</div></div>'+(it.action_url?'<a class="text-brand-600 text-xs" href="'+esc(it.action_url)+'">פתח</a>':'')+'</div>'; }).join('')+'</div>':emptyState('אין פריטים שדורשים מענה');
+    } catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Conversations ─────────
+  async function renderConversations(view){
+    view.innerHTML=sectionTitle('שיחות','פינגים, דוחות וסקרי יציאה — ללא שמירת תוכן הודעות (פרטיות)');
+    try {
+      var d=await adminGet('/api/admin/conversations?limit=30');
+      var th=(d&&d.threads)||[];
+      view.innerHTML+=th.length?th.map(function(t){ return card('<div class="text-xs text-ink-400 mb-2">'+esc(t.thread_id||'')+'</div>'+((t.items||[]).map(function(i){ return '<div class="flex items-center gap-2 py-1 text-sm">'+pill(i.kind,'neutral')+'<span class="text-ink-400 text-[11px]">לפני '+ago(i.ts)+'</span><span class="truncate">'+esc(i.text_if_available||'')+'</span></div>'; }).join('')),'mb-3'); }).join(''):emptyState('אין שיחות אחרונות');
+    } catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Bot Health ─────────
+  async function renderBotHealth(view){
+    view.innerHTML=sectionTitle('בריאות הבוט','גרסה, סחיפת קונפיג, שגיאות ופינג');
+    var ver=adminGet('/api/admin/bot-version').catch(function(){return null;});
+    var drift=adminGet('/api/admin/config-drift').catch(function(){return null;});
+    var st=adminGet('/api/admin?action=bot-status').catch(function(){return null;});
+    var err=adminGet('/api/admin?action=errors-count').catch(function(){return null;});
+    var V=await ver,D=await drift,S=await st,E=await err;
+    var cells=[];
+    var match=V&&V.match;
+    cells.push(kpi('גרסת בוט (חי)', V?'<span class="text-base">'+esc(V.apps_script_deployed||'—')+'</span>':'—', V?(match?'תואם ל-repo ✓':'לא תואם! repo: '+esc(V.repo_latest||'')) : '', match===false?'crit':'ok'));
+    cells.push(kpi('שגיאות 24ש׳', E?num(E.errors_24h):'—', '', E&&E.errors_24h>20?'crit':E&&E.errors_24h>0?'warn':'ok'));
+    var drifts=D&&D.drifts?D.drifts.length:null;
+    cells.push(kpi('סחיפת קונפיג', drifts==null?'—':num(drifts), drifts?'משתני סביבה חסרים':'תקין', drifts?'crit':'ok'));
+    cells.push(kpi('Webhook', S&&S.bot?(S.bot.meta_access_token_configured?'מוגדר':'חסר'):'—', S&&S.bot?esc(S.bot.configured_bot_phone_e164||''):'', S&&S.bot&&!S.bot.meta_access_token_configured?'crit':'ok'));
+    view.innerHTML+='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+cells.join('')+'</div>';
+    if(D&&D.drifts&&D.drifts.length) view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">סחיפות קונפיג</div>'+D.drifts.map(function(x){ return '<div class="text-xs text-amber-600 py-0.5">• '+esc(typeof x==='string'?x:JSON.stringify(x))+'</div>'; }).join(''))+'</div>';
+    if(V&&V.fix) view.innerHTML+='<div class="mt-3 text-xs text-ink-400">'+esc(V.fix)+'</div>';
+  }
+
+  // ───────── SECTION: Data Integrity ─────────
+  async function renderDataIntegrity(view){
+    view.innerHTML=sectionTitle('תקינות נתונים','יתומים, קישורים ממתינים ומיפויי טלפון שבורים — עם תיקון בלחיצה');
+    try {
+      var d=await adminGet('/api/admin?action=registration-health');
+      var cells=[ kpi('בריאים',num(d.healthy),'יש גיליון + טלפון','ok'), kpi('יתומים',num(d.orphanCount),'ללא גיליון',d.orphanCount?'crit':'ok'), kpi('ממתינים לקישור',num(d.pendingPhoneLinkCount),'יש גיליון, אין טלפון',d.pendingPhoneLinkCount?'warn':'ok'), kpi('טלפון שבור',num(d.brokenPhoneCount),'מיפוי שגוי',d.brokenPhoneCount?'crit':'ok') ];
+      view.innerHTML+='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+cells.join('')+'</div>';
+      function tbl(title,rows,renderRow){ if(!rows||!rows.length) return ''; return '<div class="mt-4"><h3 class="font-display text-lg mb-2">'+esc(title)+'</h3><div class="card overflow-hidden"><table class="w-full text-sm"><tbody>'+rows.map(renderRow).join('')+'</tbody></table></div></div>'; }
+      view.innerHTML+=tbl('יתומים — דורש תיקון',d.orphans,function(o){ return '<tr class="border-t border-ink-100 dark:border-ink-700"><td class="p-3"><div class="font-medium">'+esc(o.email||o.sub)+'</div><div class="text-[11px] text-ink-400">'+esc(o.reason||'')+'</div></td><td class="p-3 text-left"><button class="fix rounded-lg bg-brand-600 px-2 py-1 text-xs text-white" data-sub="'+esc(o.sub)+'">צור גיליון מחדש</button></td></tr>'; });
+      view.innerHTML+=tbl('ממתינים לקישור טלפון',d.pendingPhoneLink,function(o){ return '<tr class="border-t border-ink-100 dark:border-ink-700"><td class="p-3">'+esc(o.email||o.sub)+'</td><td class="p-3 text-left text-ink-400 text-xs">'+esc(o.phone||'')+'</td></tr>'; });
+      view.innerHTML+=tbl('מיפויי טלפון שבורים',d.brokenPhone,function(o){ return '<tr class="border-t border-ink-100 dark:border-ink-700"><td class="p-3"><div>'+esc(o.phone||'')+'</div><div class="text-[11px] text-ink-400">'+esc(o.reason||'')+'</div></td></tr>'; });
+      document.querySelectorAll('.fix').forEach(function(b){ b.onclick=async function(){ if(!confirm('ליצור גיליון מחדש למשתמש זה?')) return; b.textContent='...'; try { await adminPost('/api/admin/reprovision-user-sheet',{sub:b.getAttribute('data-sub')}); b.textContent='בוצע ✓'; b.disabled=true; } catch(e){ b.textContent='שגיאה'; alert(e.message||e); } }; });
+    } catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Quota ─────────
+  async function renderQuota(view){
+    view.innerHTML=sectionTitle('מכסות','שימוש ב-Google Sheets API ובמכסת ה-KV');
+    try { var d=await adminGet('/api/admin/sheets-quota'); var q=(d&&d.quota)||{}; view.innerHTML+='<div class="grid gap-3 sm:grid-cols-3">'+kpi('שימוש היום',num(q.used_today),'מתוך '+num(q.daily_limit))+kpi('נותר',num(q.remaining),'')+'</div>'+(d&&d.note?'<div class="mt-3 text-xs text-ink-400">'+esc(d.note)+'</div>':''); }
+    catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Activation ─────────
+  async function renderActivation(view){
+    view.innerHTML=sectionTitle('הפעלה ושימור','מנרשם → הוצאה שנייה (המדד היחיד שקובע)');
+    try {
+      var d=await adminGet('/api/admin/activation-summary?days=30'); var h=(d&&d.headline)||{};
+      var vt=h.verdict==='OK'?'ok':h.verdict==='VALUE_PROBLEM'?'crit':'warn';
+      view.innerHTML+='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+kpi('אחוז הפעלה',(h.activation_rate_pct!=null?h.activation_rate_pct+'%':'—'),'30 ימ׳ אחרונים',vt)+kpi('מסקנה',h.verdict||'—','',vt)+kpi('רשמו הוצאה 2',num(h.healthy_logged_2nd),'מתוך '+num(h.healthy_signups)+' מקושרים')+'</div>';
+      view.innerHTML+='<div class="mt-3 text-xs text-ink-400">PLUMBING = רוב תקועים לפני קישור (תקן אונבורדינג) · VALUE_PROBLEM = מקושרים אך לא חוזרים · OK = בריא.</div>';
+    } catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Funnel ─────────
+  async function renderFunnel(view){
+    view.innerHTML=sectionTitle('משפך הרשמה','7 שלבים מנחיתה ועד ההודעה הראשונה (היום)');
+    try {
+      var d=await adminGet('/api/admin/funnel-summary'); var f=(d&&d.funnel)||[];
+      view.innerHTML+=f.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+f.map(function(s){ var pct=s.conversion_from_prev!=null?s.conversion_from_prev+'%':''; return '<div class="flex items-center gap-3 p-3"><div class="flex-1"><div class="text-sm font-medium">'+esc(s.label||s.step)+'</div><div class="h-2 mt-1 rounded-full bg-ink-100 dark:bg-ink-700 overflow-hidden"><div class="h-full bg-brand-500" style="width:'+(Math.min(100,s.conversion_from_prev||100))+'%"></div></div></div><div class="text-right"><div class="font-display text-lg">'+num(s.count)+'</div><div class="text-[11px] '+(s.dropoff_pct>40?'text-red-500':'text-ink-400')+'">'+pct+'</div></div></div>'; }).join('')+'</div>':emptyState('אין נתוני משפך להיום');
+      if(d&&d.biggest_leak) view.innerHTML+='<div class="mt-3">'+card('<div class="text-sm">הדליפה הגדולה ביותר: <b>'+esc(d.biggest_leak.label||d.biggest_leak.step||'')+'</b> ('+esc(d.biggest_leak.dropoff_pct||'')+'% נשירה)</div>')+'</div>';
+    } catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Revenue ─────────
+  async function renderRevenue(view){
+    view.innerHTML=sectionTitle('הכנסות','MRR, ARR, נטישה ו-LTV');
+    try {
+      var d=await adminGet('/api/admin/revenue');
+      var cells=[ kpi('MRR',money(d.mrr&&d.mrr.ils),'ARR '+money(d.arr&&d.arr.ils)), kpi('משלמים',num(d.counts&&d.counts.paid),num(d.counts&&d.counts.trial)+' בניסיון'), kpi('נטישה חודשית',(d.churn&&d.churn.monthly_churn_rate_pct!=null?d.churn.monthly_churn_rate_pct+'%':'—'),num(d.churn&&d.churn.cancellations_last_30d)+' ביטולים',d.churn&&d.churn.monthly_churn_rate_pct>8?'crit':'ok'), kpi('המרה לתשלום',(d.conversion&&d.conversion.trial_to_paid_pct!=null?d.conversion.trial_to_paid_pct+'%':'—'),'מניסיון') ];
+      view.innerHTML+='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+cells.join('')+'</div>';
+      if(d.by_plan) view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">לפי תוכנית</div>'+Object.keys(d.by_plan).map(function(k){ return '<div class="flex justify-between py-1 text-sm"><span class="text-ink-500">'+esc(k)+'</span><span class="font-semibold">'+num(d.by_plan[k])+'</span></div>'; }).join(''))+'</div>';
+    } catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Referrals ─────────
+  async function renderReferrals(view){
+    view.innerHTML=sectionTitle('הפניות','לוח מובילים של תוכנית ההפניות');
+    try { var d=await adminGet('/api/admin/referral-leaderboard?limit=20'); var l=(d&&d.leaderboard)||[]; view.innerHTML+=l.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+l.map(function(r,i){ return '<div class="flex items-center justify-between p-3"><div class="flex items-center gap-3"><span class="font-display text-lg text-ink-300 w-6">'+(i+1)+'</span><span class="text-sm">'+esc(r.email_masked||r.userSub||'—')+'</span></div><span class="font-semibold">'+num(r.referral_count)+'</span></div>'; }).join('')+'</div>':emptyState('אין הפניות עדיין'); }
+    catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Agents / Automations ─────────
+  async function renderAgents(view){
+    view.innerHTML=sectionTitle('אוטומציות ומשרות','תור עבודות, משרות שנכשלו ושידור עדכונים');
+    try {
+      var d=await adminGet('/api/admin?action=jobs'); var jobs=(d&&d.jobs)||[];
+      view.innerHTML+= jobs.length ? '<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-ink-50 dark:bg-ink-800 text-ink-400"><tr><th class="p-3 text-right">סוג</th><th class="p-3 text-right">ניסיונות</th><th class="p-3 text-right">שגיאה</th></tr></thead><tbody>'+jobs.map(function(j){ return '<tr class="border-t border-ink-100 dark:border-ink-700"><td class="p-3">'+esc(j.type||j.id)+'</td><td class="p-3">'+num(j.attempts)+'</td><td class="p-3 text-xs text-red-500">'+esc(j.lastError||'')+'</td></tr>'; }).join('')+'</tbody></table></div>' : card('<div class="py-4 text-center text-sm text-green-600">אין משרות תקועות ✓</div>');
+    } catch(e){ view.innerHTML+=errState(e); }
+    view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">שידור עדכון לכל המשתמשים</div><div class="text-xs text-ink-400 mb-3">שולח הודעת "מה חדש" לכל המשתמשים בוואטסאפ. פעולה רגישה — דורשת אישור.</div><button id="digestBtn" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white">הכן שידור</button> <span id="digestMsg" class="text-xs text-ink-400"></span>')+'</div>';
+    var db=$('#digestBtn'); if(db) db.onclick=async function(){ if(!confirm('להכין שידור לכל המשתמשים? (לא נשלח עד אישור סופי בצד השרת)')) return; try { await adminPost('/api/admin/customer-digest-set',{}); $('#digestMsg').textContent='נוסף לתור ✓'; } catch(e){ $('#digestMsg').textContent='שגיאה: '+(e.message||e); } };
+  }
+
+  // ───────── SECTION: Feature Flags ─────────
+  async function renderFlags(view){
+    view.innerHTML=sectionTitle('דגלי פיצ׳רים','הפעלה/כיבוי של יכולות ללא דיפלוי');
+    try {
+      var d=await adminGet('/api/admin?action=feature-flags'); var flags=(d&&d.flags)||{};
+      var keys=Object.keys(flags);
+      view.innerHTML+= keys.length ? '<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+keys.map(function(k){ var on=!!flags[k]; return '<div class="flex items-center justify-between p-3"><span class="text-sm font-medium">'+esc(k)+'</span><button class="flag rounded-full px-3 py-1 text-xs font-semibold '+(on?'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300':'bg-ink-100 text-ink-500 dark:bg-ink-700')+'" data-k="'+esc(k)+'" data-v="'+(on?'1':'0')+'">'+(on?'פעיל':'כבוי')+'</button></div>'; }).join('')+'</div>' : emptyState('אין דגלים מוגדרים');
+      document.querySelectorAll('.flag').forEach(function(b){ b.onclick=async function(){ var nv=b.getAttribute('data-v')==='1'?false:true; try { await adminPost('/api/admin?action=feature-flag-set',{key:b.getAttribute('data-k'),value:nv}); renderFlags(view); } catch(e){ alert(e.message||e); } }; });
+    } catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── SECTION: Audit log ─────────
+  async function renderAudit(view){
+    view.innerHTML=sectionTitle('יומן ביקורת','כל פעולות הניהול נרשמות');
+    try { var d=await adminGet('/api/admin?action=audit&limit=50'); var ev=(d&&d.events)||[]; view.innerHTML+=ev.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+ev.map(function(e){ return '<div class="flex items-center gap-3 p-3 text-sm"><span class="text-ink-400 text-[11px] w-20">לפני '+ago(e.ts||e.at)+'</span><span>'+esc(e.action||e.type||'')+'</span><span class="text-ink-400 text-xs flex-1 truncate">'+esc(e.actor||e.target||'')+'</span></div>'; }).join('')+'</div>':emptyState('אין רשומות ביקורת'); }
+    catch(e){ view.innerHTML+=errState(e); }
+  }
+
+  // ───────── modal ─────────
+  function showModal(title,html){
+    var m=document.createElement('div'); m.className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4';
+    m.innerHTML='<div class="card w-full max-w-md p-5"><div class="flex items-center justify-between mb-3"><h3 class="font-display text-xl">'+esc(title)+'</h3><button class="x text-ink-400 text-xl">×</button></div>'+html+'</div>';
+    m.addEventListener('click',function(e){ if(e.target===m||e.target.classList.contains('x')) m.remove(); });
+    document.body.appendChild(m);
+  }
+
+  // ───────── command bar ─────────
+  function openCmd(){ $('#cmd').classList.remove('hidden'); $('#cmdInput').value=''; renderCmd(''); $('#cmdInput').focus(); }
+  function closeCmd(){ $('#cmd').classList.add('hidden'); }
+  function renderCmd(q){
+    q=(q||'').trim().toLowerCase();
+    var secHits=SECTIONS.filter(function(s){ return !q||s.label.toLowerCase().indexOf(q)>=0||s.title.toLowerCase().indexOf(q)>=0; }).map(function(s){ return {label:s.label,kind:'מסך',go:'#/'+s.id}; });
+    var actHits=QUICK.filter(function(a){ return !q||a.label.toLowerCase().indexOf(q)>=0; }).map(function(a){ return {label:a.label,kind:'פעולה',run:a.run}; });
+    var all=actHits.concat(secHits).slice(0,12);
+    $('#cmdList').innerHTML=all.length?all.map(function(it,i){ return '<div class="cmdrow flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-ink-50 dark:hover:bg-ink-800'+(i===0?' bg-ink-50 dark:bg-ink-800':'')+'" data-i="'+i+'"><span class="flex-1 text-sm">'+esc(it.label)+'</span>'+pill(it.kind,'neutral')+'</div>'; }).join(''):'<div class="px-4 py-6 text-center text-sm text-ink-400">לא נמצא</div>';
+    window.__cmd=all;
+    document.querySelectorAll('.cmdrow').forEach(function(r){ r.onclick=function(){ runCmd(parseInt(r.getAttribute('data-i'),10)); }; });
+  }
+  function runCmd(i){ var it=(window.__cmd||[])[i]; if(!it) return; closeCmd(); if(it.run) it.run(); else if(it.go) location.hash=it.go; }
+
+  // ───────── theme + drawer ─────────
+  function applyTheme(t){ document.documentElement.classList.toggle('dark', t==='dark'); }
+  function toggleTheme(){ var t=document.documentElement.classList.contains('dark')?'light':'dark'; localStorage.setItem('kfl_admin_theme',t); applyTheme(t); }
+  function openDrawer(){ $('#sidebar').classList.remove('hidden'); $('#sidebar').classList.add('flex'); $('#backdrop').classList.remove('hidden'); }
+  function closeDrawer(){ if(window.innerWidth<768){ $('#sidebar').classList.add('hidden'); $('#sidebar').classList.remove('flex'); $('#backdrop').classList.add('hidden'); } }
+
+  // ───────── boot ─────────
+  (function(){
+    applyTheme(localStorage.getItem('kfl_admin_theme')|| (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
+    try { var u=JSON.parse(localStorage.getItem('kesefle_user')||'{}'); if(u&&u.email) $('#whoami').textContent=u.email; } catch(e){}
+    $('#srcStamp').textContent=new Date().toLocaleString('he-IL');
+    buildNav();
+    $('#menuBtn').onclick=openDrawer; $('#backdrop').onclick=closeDrawer;
+    $('#cmdBtn').onclick=openCmd; $('#themeBtn').onclick=toggleTheme; $('#refreshBtn').onclick=function(){ route(true); };
+    $('#cmdInput').addEventListener('input',function(e){ renderCmd(e.target.value); });
+    $('#cmd').addEventListener('click',function(e){ if(e.target===$('#cmd')) closeCmd(); });
+    document.addEventListener('keydown',function(e){ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openCmd(); } if(e.key==='Escape'){ closeCmd(); } if(e.key==='Enter'&&!$('#cmd').classList.contains('hidden')){ runCmd(0); } });
+    window.addEventListener('hashchange',function(){ route(); });
+    if(!location.hash) location.hash='#/';
+    route();
+  })();
+  </script>
+</body>
+</html>
