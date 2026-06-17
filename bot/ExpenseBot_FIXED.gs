@@ -287,13 +287,13 @@ const CATEGORY_MAP = [
   // ===== INCOME -- National-Insurance allowances / benefits / grants (2026-06-03 sign-flip fix).
   // Placed FIRST so the income entry wins the length-tie (V8 stable sort) vs the identical
   // phrases on the government-EXPENSE rows below. Purely additive -- removes/reorders nothing.
-  {"keywords":["קצבת ילדים","קצבת זקנה","קצבת נכות","קצבת שאירים","קצבת אזרח ותיק","קצבת ניידות","קצבת הבטחת הכנסה","הבטחת הכנסה","השלמת הכנסה","דמי לידה","מענק לידה","דמי אבטלה","מענק עבודה","מענק שחרור","מענק קורונה","תגמולי מילואים","דמי מילואים","פיצויי פיטורין","פיצויי פרישה","פדיון ימי חופשה","פדיון ימי מחלה","גמלת סיעוד"],"category":"הכנסות","subcategory":"קצבאות וזכאויות","isIncome":true},
+  {"keywords":["קצבת ילדים","קצבת זקנה","קצבת נכות","קצבת שאירים","קצבת אזרח ותיק","קצבת ניידות","קצבת הבטחת הכנסה","הבטחת הכנסה","השלמת הכנסה","דמי לידה","מענק לידה","דמי אבטלה","מענק עבודה","מענק שחרור","מענק קורונה","תגמולי מילואים","דמי מילואים","פיצויי פיטורין","פיצויי פרישה","פדיון ימי חופשה","פדיון ימי מחלה","גמלת סיעוד","קצבת פנסיה","קצבת פרישה","גמלת פנסיה"],"category":"הכנסות","subcategory":"קצבאות וזכאויות","isIncome":true},
   // App/AI subscriptions in the PRIMARY map so they work without the big keyword
   // index file (Steven 2026-06-08: "klod" was only in KEYWORDS.gs). Apps bucket.
   {"keywords":["קלוד","קלוד פרו","קלוד מקס","קלוד טים","מנוי קלוד","claude pro","claude max","claude code","claude ai","gemini","midjourney","perplexity","copilot","cursor"],"category":"הוצאות קבועות","subcategory":"אפליקציות"},
   // Misc income (freelance / bonus / grants / convalescence) in the PRIMARY map so
   // a refund/bonus is flagged income even without the index. Placed early to win ties.
-  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","מלגה","מילגה","מלגת לימודים","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
+  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","מלגה","מילגה","מלגת לימודים","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment","דיבידנד","דיבידנדים","הכנסה מדיבידנד","ריבית מהבנק","ריבית מפיקדון","הכנסה מריבית","רווח הון"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // QA fleet round 3 category fixes (Steven 2026-06-08). Placed early + multi-word
   // so they win the longest-match over a generic keyword in another bucket.
   // Telecom brands -> tikshoret (Pelephone/Bezeq + "phone" matched electronics).
@@ -302,7 +302,7 @@ const CATEGORY_MAP = [
   {"keywords":["פנסיון כלבים","פנסיון לכלב","פנסיון כלב","פנסיון חתולים","פנסיון לחתול","פנסיון חתול","חול לחתול","חול חתולים","חול לחתולים","חיסון לכלב","חיסון לחתול","חיסון כלבת","וטרינר","וטרינרי","מזון לכלב","מזון לחתול","אוכל לכלב","אוכל לחתול","חנות חיות","פטשופ","תספורת לכלב","טיפוח לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
   // Kids: diapers + after-school classes (merchant / "weekly" were winning).
   {"keywords":["חיתולים האגיס","חיתולים האגיז","חיתולים פמפרס","חיתולים בסופר פארם","חיתולים האגיס סופר פארם","מגבונים האגיס"],"category":"חינוך וילדים","subcategory":"חיתולים ותינוקות"},
-  {"keywords":["חוג כדורסל","כדורסל חוג","חוג כדורגל","חוג שחייה","חוג שחיה","חוג ריקוד","חוג התעמלות","חוג ספורט","חוג אומנות","חוגים לילדים","חוג לילד","חוג לילדה","חוג מוזיקה"],"category":"חינוך וילדים","subcategory":"חינוך וטיפול"},
+  {"keywords":["חוג כדורסל","כדורסל חוג","חוג כדורגל","חוג שחייה","חוג שחיה","חוג ריקוד","חוג התעמלות","חוג ספורט","חוג אומנות","חוגים לילדים","חוג לילד","חוג לילדה","חוג מוזיקה","שיעור נהיגה","שיעורי נהיגה","מורה לנהיגה","בית ספר לנהיגה"],"category":"חינוך וילדים","subcategory":"חינוך וטיפול"},
   // Refund / store credit -> income (was booked as a merchant expense).
   {"keywords":["זיכוי כספי","החזר על קנייה","החזר על רכישה","החזר קנייה","החזר רכישה","החזר מהחנות","החזר כספי מהחנות","קרדיט בחנות","store credit","refund"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // ===== INCOME -- income-tax refund -> income (Fix C, per bot/BOT_IMPROVEMENTS.md).
@@ -419,7 +419,7 @@ const CATEGORY_MAP = [
   {"keywords":["נסיעה במונית","הזמנתי מונית","נסיעה בגט","נסיעה באובר"],"category":"תחבורה","subcategory":"מונית"},
   {"keywords":["דמי חניה","כרטיס חניה","תשלום חניון","חניון בתשלום"],"category":"תחבורה","subcategory":"חניה"},
   {"keywords":["כרטיס אוטובוס","נסיעה ברכבת","כרטיס רכבת","טעינת רב קו","נסיעה באוטובוס"],"category":"תחבורה","subcategory":"תחבורה ציבורית"},
-  {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית"],"category":"בריאות","subcategory":"בריאות"},
+  {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית","קלינאית תקשורת","אבחון דידקטי","אבחון פסיכודידקטי","ריפוי בדיבור"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["תרופה","תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["טיפול שיניים","רופא שיניים","ניקוי אבנית","סתימה אצל שיניים"],"category":"בריאות","subcategory":"שיניים"},
   {"keywords":["בית הספר","בית ספר","גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
@@ -5614,7 +5614,7 @@ function _spendingContextLine_(fromPhone) {
     var j = JSON.parse(resp.getContentText());
     if (!j || !j.ok || !j.thisMonth) { cache.put(cacheKey, '_none_', 600); return ''; }
     var tm = j.thisMonth, lm = j.lastMonth || {};
-    var line = 'נתוני אמת של המשתמש לחודש הנוכחי (השתמשי בהם כדי לענות אישית, אל תמציאי מספרים): ' +
+    var line = 'נתוני אמת של המשתמש לחודש הנוכחי (השתמש בהם כדי לענות אישית, אל תמציא מספרים): ' +
       'סך הוצאות כ-₪' + (tm.total || 0) + ' ב-' + (tm.count || 0) + ' תנועות';
     if (tm.topCategory) line += ', קטגוריה מובילה: ' + tm.topCategory + ' (₪' + (tm.topCategoryAmount || 0) + ')';
     if (typeof lm.total === 'number') line += '. חודש קודם: ₪' + lm.total;
@@ -5635,12 +5635,12 @@ function _botConcierge_(fromPhone, text) {
   var spend = '';
   try { spend = _spendingContextLine_(fromPhone) || ''; } catch (_spe) {}
   var sys =
-    'את כספ\'לה — עוזרת פיננסית חכמה וחמה בעברית בתוך וואטסאפ. ' +
-    'המשתמש כתב הודעה שאינה רישום הוצאה. הביני מה הוא רוצה ותגיבי בעברית, קצר וחם (מתאים לוואטסאפ), בלי להיות גנרית. ' +
-    (who ? ('המשתמש סימן שהוא עוקב אחרי כספים מסוג: ' + who + ' — התאימי את הטון.\n') : '') +
-    (spend ? (spend + ' אם המשתמש שואל כמה הוציא/על מה — עני מהנתונים האלה (action=chat), אל תמציאי.\n') : '') +
+    'את כספ\'לה — עוזר פיננסי חכם וחם בעברית בתוך וואטסאפ. ' +
+    'המשתמש כתב הודעה שאינה רישום הוצאה. הבן מה הוא רוצה והגב בעברית, קצר וחם (מתאים לוואטסאפ), בלי להיות גנרית. ' +
+    (who ? ('המשתמש סימן שהוא עוקב אחרי כספים מסוג: ' + who + ' — התאם את הטון.\n') : '') +
+    (spend ? (spend + ' אם המשתמש שואל כמה הוציא/על מה — ענה מהנתונים האלה (action=chat), אל תמציא.\n') : '') +
     'מה הבוט יודע לעשות: לרשום הוצאות (כמו "150 סופר"), לתת סיכום חודשי, עזרה, דוגמאות, וסיכום הזמנות לעסקים. ' +
-    'החזירי אך ורק JSON תקין, בלי טקסט נוסף: ' +
+    'החזר אך ורק JSON תקין, בלי טקסט נוסף: ' +
     '{"action":"summary|help|examples|orders|chat","reply":"<טקסט בעברית רק כש-action הוא chat, אחרת מחרוזת ריקה>"}. ' +
     'כללי החלטה: בקשת סיכום/יתרה/כמה הוצאתי/מצב → summary. בקשת עזרה/מה אפשר לעשות → help. בקשת דוגמאות → examples. ' +
     'סיכום הזמנות/לקוחות/מחזור → orders. כל שאלה/בקשה/שיחה אחרת (למשל "אפשר להוסיף קטגוריה?") → chat, ' +
@@ -13902,7 +13902,7 @@ function handleLinkCode_(code, fromPhone) {
         'כתוב "עזרה" לרשימת הפקודות המלאה.';
     }
     if (status === 404) {
-      return '😬 הקוד פג תוקף או לא תקין\n💡 חזרי ל-https://kesefle.com/account וצרי קוד חדש (תקף ל-10 דק׳)';
+      return '😬 הקוד פג תוקף או לא תקין\n💡 חזור ל-https://kesefle.com/account וצור קוד חדש (תקף ל-10 דק׳)';
     }
     if (status === 409) {
       return '⚠️ המספר הזה כבר מחובר לחשבון אחר.\n💡 אם זה החשבון שלך — התחבר לאותו חשבון Google שאיתו נרשמת.';
