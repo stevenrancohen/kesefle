@@ -162,6 +162,7 @@ async function handlerImpl(req, res) {
     category: colIndex(['קטגוריה', 'category', 'קטגורי'], 4),
     description: colIndex(['פירוט', 'תיאור', 'description', 'desc', 'raw', 'note'], 5),
     member: colIndex(['חבר', 'member', 'מי', 'paid by', 'logged'], 7),
+    status: colIndex(['סטטוס', 'status'], 7), // col H: true=expense, false=income
   };
 
   // If row 1 doesn't look like a header (its "date" cell parses as a real
@@ -180,12 +181,16 @@ async function handlerImpl(req, res) {
     const category = (raw[idx.category] || '').toString();
     const description = (raw[idx.description] || '').toString();
     const member = (raw[idx.member] || '').toString();
+    const statusCell = raw[idx.status];
     rows.push({
       date: date.toISOString().slice(0, 10),
       amount,
       category,
       description,
       member,
+      // explicit FALSE = income; TRUE / blank / unknown = expense (matches the
+      // dashboard SUMIFS + the snapshot guard: a blank col-H is NOT income).
+      is_income: (statusCell === false || String(statusCell == null ? '' : statusCell).toUpperCase() === 'FALSE'),
     });
     if (isInCurrentMonth(date) && amount > 0) {
       totalThisMonth += amount;
