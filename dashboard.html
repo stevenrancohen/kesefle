@@ -325,7 +325,7 @@
       </div>
       <div class="flex items-center gap-2">
         <button onclick="kflBulkDelete()" class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-xs font-bold text-white transition" id="kfl-bulk-delete">
-          🗑 מחק/י
+          🗑 מחק
         </button>
         <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-white dark:hover:bg-ink-100 dark:hover:text-ink-900">
           ביטול
@@ -446,7 +446,7 @@
       <div id="insights-empty" class="hidden rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
         <div class="text-3xl" aria-hidden="true">🪄</div>
         <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עוד אין תובנות לחודש הזה</div>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד/י כמה הוצאות החודש בוואטסאפ — והתובנות יופיעו כאן אוטומטית.</p>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד כמה הוצאות החודש בוואטסאפ — והתובנות יופיעו כאן אוטומטית.</p>
       </div>
 
       <!-- Insights grid -->
@@ -515,7 +515,7 @@
       <div id="forecast-empty" class="hidden rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
         <div class="text-3xl" aria-hidden="true">📅</div>
         <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עוד אין מספיק נתונים לתחזית</div>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד/י כמה הוצאות החודש — ונראה לך לאן אתה בקצב הזה.</p>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד כמה הוצאות החודש — ונראה לך לאן אתה בקצב הזה.</p>
       </div>
 
       <!-- Forecast grid -->
@@ -800,7 +800,7 @@
         <div id="subs-empty" class="hidden mt-4 rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
           <div class="text-3xl" aria-hidden="true">🧾</div>
           <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עדיין לא זוהו מנויים קבועים</div>
-          <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד/י הוצאות לאורך כמה חודשים בוואטסאפ — וכשנזהה חיוב שחוזר על עצמו (נטפליקס, חדר כושר, ביטוח…) נציג אותו כאן עם העלות השנתית.</p>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד הוצאות לאורך כמה חודשים בוואטסאפ — וכשנזהה חיוב שחוזר על עצמו (נטפליקס, חדר כושר, ביטוח…) נציג אותו כאן עם העלות השנתית.</p>
         </div>
 
         <!-- Populated view -->
@@ -909,7 +909,7 @@
       <div class="flex items-start gap-3">
         <div class="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-white text-2xl shadow-soft dark:bg-ink-800">🔔</div>
         <div>
-          <div class="font-bold text-ink-900 dark:text-white">הפעל/י התראות לדפדפן</div>
+          <div class="font-bold text-ink-900 dark:text-white">הפעל התראות לדפדפן</div>
           <div class="mt-1 text-xs text-ink-600 dark:text-ink-300">
             התראות מיידיות על חריגות תקציב, סיכומים שבועיים ועדכונים — ישירות למכשיר, גם בלי וואטסאפ.
           </div>
@@ -3725,7 +3725,7 @@ function generatePseudoSeries(target, n, intLike) {
     var names = cats ? Object.keys(cats) : [];
     if (!names.length) {
       _setInsightText('insight-budget-value', 'לא הוגדרו');
-      _setInsightText('insight-budget-detail', 'הגדר/י תקציב בוואטסאפ');
+      _setInsightText('insight-budget-detail', 'הגדר תקציב בוואטסאפ');
       return;
     }
     var overCount = 0, nearCount = 0, worstName = null, worstPct = -1;
@@ -3927,7 +3927,7 @@ function generatePseudoSeries(target, n, intLike) {
   // shekel formatter; the whole string is set with textContent by the caller.
   function _forecastTakeaway(f, trends){
     if (!f.projectionReady) {
-      return 'תעד/י עוד כמה ימים ונראה לאן אתה בקצב הזה (עד עכשיו: ' + moneyShekel(f.mtd) + ').';
+      return 'תעד עוד כמה ימים ונראה לאן אתה בקצב הזה (עד עכשיו: ' + moneyShekel(f.mtd) + ').';
     }
     var msg = 'בקצב הזה תסיים את החודש על כ-' + moneyShekel(f.projected) + '.';
     // Add a budget-aware clause when we know the total budget.
@@ -3945,7 +3945,7 @@ function generatePseudoSeries(target, n, intLike) {
         if (t.dir === 'up' && (!rising || t.pct > rising.pct)) rising = t;
       });
       if (rising && rising.pct >= 10) {
-        msg += ' שים/י לב: ' + rising.cat + ' עולה (+' + rising.pct + '%).';
+        msg += ' שים לב: ' + rising.cat + ' עולה (+' + rising.pct + '%).';
       }
     }
     return msg;
@@ -4529,7 +4529,7 @@ function generatePseudoSeries(target, n, intLike) {
         body: JSON.stringify(payload),
       });
       if (!r.ok) {
-        setStatus('שמירה נכשלה (' + r.status + '). נסה/י שוב מאוחר יותר.', true);
+        setStatus('שמירה נכשלה (' + r.status + '). נסה שוב מאוחר יותר.', true);
         btn.disabled = false; btn.textContent = 'הפעל התראות';
         return;
       }
@@ -4568,13 +4568,13 @@ function generatePseudoSeries(target, n, intLike) {
 <div id="kflNpsCard" style="display:none;position:fixed;bottom:20px;left:20px;right:20px;max-width:440px;margin-inline:auto;z-index:80;background:rgba(15,20,34,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:18px 18px 16px;box-shadow:0 18px 50px -10px rgba(0,0,0,0.55);backdrop-filter:blur(12px);font-family:'Heebo',sans-serif;direction:rtl">
   <button id="kflNpsClose" aria-label="סגור" style="position:absolute;top:8px;left:8px;width:30px;height:30px;border:0;background:transparent;color:rgba(255,255,255,0.5);font-size:20px;cursor:pointer;border-radius:6px">×</button>
   <div id="kflNpsStep1">
-    <div style="font-weight:700;font-size:15px;color:#e6f6ec;margin-bottom:4px">איך הסיכוי שתמליצ/י על כספ'לה?</div>
+    <div style="font-weight:700;font-size:15px;color:#e6f6ec;margin-bottom:4px">איך הסיכוי שתמליץ על כספ'לה?</div>
     <div style="color:rgba(230,246,236,0.62);font-size:12px;margin-bottom:12px">דירוג מ-0 (לא ימליץ) עד 10 (ימליץ בוודאות)</div>
     <div id="kflNpsScale" style="display:grid;grid-template-columns:repeat(11,1fr);gap:4px"></div>
     <div style="display:flex;justify-content:space-between;color:rgba(230,246,236,0.4);font-size:10px;margin-top:6px"><span>לא סביר</span><span>בוודאות</span></div>
   </div>
   <div id="kflNpsStep2" style="display:none">
-    <div style="font-weight:700;font-size:15px;color:#e6f6ec;margin-bottom:8px" id="kflNpsTitle2">תודה! ספר/י לנו עוד</div>
+    <div style="font-weight:700;font-size:15px;color:#e6f6ec;margin-bottom:8px" id="kflNpsTitle2">תודה! ספר לנו עוד</div>
     <textarea id="kflNpsComment" placeholder="מה הסיבה לציון? איך נוכל להשתפר?" rows="3" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;color:#e6f6ec;font-family:inherit;font-size:13px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button id="kflNpsSkip" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(230,246,236,0.65);font-family:inherit;font-size:13px;cursor:pointer">דלג</button>
@@ -4903,9 +4903,9 @@ function generatePseudoSeries(target, n, intLike) {
   var STEPS = [
     {
       id: 'first_expense',
-      title: 'שלח/י הוצאה ראשונה לבוט',
+      title: 'שלח הוצאה ראשונה לבוט',
       hint: 'לדוגמה: "45 קפה" או "1200 שכר דירה"',
-      cta_label: 'פתח/י וואטסאפ',
+      cta_label: 'פתח וואטסאפ',
       cta_url: 'https://wa.me/' + BOT_NUMBER + '?text=45%20%D7%A7%D7%A4%D7%94',
       autoDetect: function () {
         // Detect from #recent-list having at least 1 child
@@ -4915,9 +4915,9 @@ function generatePseudoSeries(target, n, intLike) {
     },
     {
       id: 'set_budget',
-      title: 'הגדר/י תקציב חודשי',
-      hint: 'שלח/י לבוט: "/תקציב מזון 1500"',
-      cta_label: 'הגדר/י תקציב',
+      title: 'הגדר תקציב חודשי',
+      hint: 'שלח לבוט: "/תקציב מזון 1500"',
+      cta_label: 'הגדר תקציב',
       cta_url: 'https://wa.me/' + BOT_NUMBER + '?text=%2F%D7%AA%D7%A7%D7%A6%D7%99%D7%91%20%D7%9E%D7%96%D7%95%D7%9F%201500',
       autoDetect: function () {
         // No reliable client-side signal; rely on user click
@@ -4926,15 +4926,15 @@ function generatePseudoSeries(target, n, intLike) {
     },
     {
       id: 'vat_deductible',
-      title: 'סמן/י הוצאה אחת לניכוי מע״מ',
-      hint: 'אחרי הוצאה עסקית — שלח/י "/מעמ" לבוט',
+      title: 'סמן הוצאה אחת לניכוי מע״מ',
+      hint: 'אחרי הוצאה עסקית — שלח "/מעמ" לבוט',
       cta_label: 'איך עושים?',
       cta_url: '/help#vat',
       autoDetect: function () { return false; },
     },
     {
       id: 'invite_family',
-      title: 'הזמן/י בן/בת משפחה',
+      title: 'הזמן בן/בת משפחה',
       hint: 'הקבוצה חולקת גיליון אחד עם איזון אוטומטי',
       cta_label: 'למידע נוסף',
       cta_url: '/family',
@@ -5144,7 +5144,7 @@ window.kflBulkDelete = async function () {
   } catch (e) {
     alert('שגיאת רשת: ' + (e.message || e));
   } finally {
-    btn.disabled = false; btn.textContent = '🗑 מחק/י';
+    btn.disabled = false; btn.textContent = '🗑 מחק';
     window.kflBulkClear();
   }
 };
@@ -5161,7 +5161,7 @@ window.addEventListener('load', function () {
       var host = document.querySelector('main') || document.body;
       if (!host) return;
       if ((host.innerText || '').replace(/\s+/g, '').length >= 5) return;
-      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#1d4ed8;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button></div></div>';
+      host.innerHTML = '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;"><div style="max-width:24rem;"><div style="font-size:44px;">🔄</div><h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2><p style="margin-top:8px;color:#475569;font-size:14px;">רענן את הדף ונסה שוב.</p><button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#1d4ed8;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן את הדף</button></div></div>';
     } catch (_e) {}
   }, 2500);
 });

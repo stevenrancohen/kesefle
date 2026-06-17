@@ -310,7 +310,7 @@
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 font-bold">
-                <span>חבר/י את מספר הוואטסאפ שלך</span>
+                <span>חבר את מספר הוואטסאפ שלך</span>
                 <span class="why-tip">
                   <button type="button" aria-label="למה צריך את המספר?">?</button>
                   <span class="why-body">למה צריך את המספר? כדי שכשתשלחי הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
@@ -453,9 +453,9 @@
         <div id="upgrade-status" class="mt-2 hidden text-xs" hidden></div>
         <div class="mt-3 flex flex-wrap gap-2">
           <button id="btn-upgrade" type="button" onclick="kflStartUpgrade('pro')" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-60">
-            <span>שדרג/י ל-Pro עם PayPal</span>
+            <span>שדרג ל-Pro עם PayPal</span>
           </button>
-          <a href="/pricing" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50">השווה/י מסלולים</a>
+          <a href="/pricing" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50">השווה מסלולים</a>
         </div>
       </div>
     </div>
@@ -473,7 +473,7 @@
         <div id="reprovision-status" class="mt-2 hidden text-xs"></div>
         <div class="mt-3 flex flex-wrap gap-2">
           <button id="btn-reprovision" type="button" onclick="kesefleReprovisionSheet()" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-brand-300 bg-white px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-50 disabled:opacity-60">
-            <span>🔄</span><span>צור/י גיליון חדש (מבנה מעודכן)</span>
+            <span>🔄</span><span>צור גיליון חדש (מבנה מעודכן)</span>
           </button>
           <button id="btn-fix-dashboard" type="button" onclick="kesefleFixCompanyDashboard()" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60" title="פתרון מהיר בלי ליצור גיליון חדש: מתקן רק את הנוסחאות של מאזן חברה.">
             <span>🛠️</span><span>תקן נוסחאות מאזן חברה</span>
@@ -495,7 +495,7 @@
       <div class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl sm:text-2xl shadow-sm ring-1 ring-brand-200/70">🔁</div>
       <div class="min-w-0 flex-1">
         <h2 class="text-base sm:text-xl font-black text-ink-900 leading-snug">הוצאות קבועות</h2>
-        <p class="mt-1 text-sm text-slate-700 break-words">שכר דירה, ארנונה, חשמל, מנויים — כל מה שחוזר כל חודש. מזינים פעם אחת, וזה נכנס לגיליון לבד בכל חודש ביום שתבחר/י.</p>
+        <p class="mt-1 text-sm text-slate-700 break-words">שכר דירה, ארנונה, חשמל, מנויים — כל מה שחוזר כל חודש. מזינים פעם אחת, וזה נכנס לגיליון לבד בכל חודש ביום שתבחר.</p>
 
         <!-- Add form -->
         <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
@@ -525,9 +525,9 @@
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <button type="button" id="fx-add-btn" onclick="kesefleFixedAdd()" class="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-60">
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              הוסף/י הוצאה קבועה
+              הוסף הוצאה קבועה
             </button>
-            <span class="text-[11px] text-slate-500">היום שתבחר/י = היום שבו הסכום ייכנס לגיליון בכל חודש.</span>
+            <span class="text-[11px] text-slate-500">היום שתבחר = היום שבו הסכום ייכנס לגיליון בכל חודש.</span>
           </div>
           <div id="fx-msg" class="mt-2 hidden text-xs"></div>
         </div>
@@ -540,7 +540,7 @@
           </div>
           <ul id="fx-list" class="space-y-2"></ul>
           <div id="fx-empty" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-            עוד לא הוספת הוצאות קבועות. הוסף/י את הראשונה למעלה ☝️
+            עוד לא הוספת הוצאות קבועות. הוסף את הראשונה למעלה ☝️
           </div>
         </div>
       </div>
@@ -572,7 +572,7 @@ function _kflSubscribeMsg(code) {
   // Map known stable error codes to friendly Hebrew. Anything else -> generic.
   switch (String(code || '')) {
     case 'paypal_plan_not_configured':
-      return 'התשלום עדיין לא פעיל אצלנו לרגע קט — אנחנו על זה. נסה/י שוב בקרוב, ובינתיים אפשר להמשיך להשתמש בחשבון רגיל.';
+      return 'התשלום עדיין לא פעיל אצלנו לרגע קט — אנחנו על זה. נסה שוב בקרוב, ובינתיים אפשר להמשיך להשתמש בחשבון רגיל.';
     case 'unauthorized':
       return 'צריך להתחבר קודם כדי לשדרג. מתחברים עם Google ואז ממשיכים לתשלום.';
     default:
@@ -1279,7 +1279,7 @@ function _kflLogMissedInApp(reason) {
 
 function kesefleCopyAccountLink(btn) {
   var url = window.location.href;
-  function ok() { if (btn) btn.textContent = '✓ הקישור הועתק — פתח/י דפדפן והדבק/י'; }
+  function ok() { if (btn) btn.textContent = '✓ הקישור הועתק — פתח דפדפן והדבק'; }
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(ok, function () { ok(); });
@@ -1317,7 +1317,7 @@ window.kesefleSubmitWaitlist = function (btn) {
   })
     .then(function (r) { return r.json(); })
     .then(function (j) {
-      btn.disabled = false; btn.textContent = 'הוסף/י אותי לרשימת המתנה';
+      btn.disabled = false; btn.textContent = 'הוסף אותי לרשימת המתנה';
       if (j && j.ok) {
         if (j.already_on_list) {
           statusEl.textContent = '✓ כבר ברשימה - נחזור אליך בקרוב';
@@ -1336,7 +1336,7 @@ window.kesefleSubmitWaitlist = function (btn) {
       }
     })
     .catch(function (e) {
-      btn.disabled = false; btn.textContent = 'הוסף/י אותי לרשימת המתנה';
+      btn.disabled = false; btn.textContent = 'הוסף אותי לרשימת המתנה';
       statusEl.textContent = '✗ שגיאת רשת';
       statusEl.style.color = '#dc2626';
     });
@@ -1376,49 +1376,49 @@ function kesefleShowInAppBrowserHelp() {
   if (isIos) {
     primaryButton =
       '<a href="' + iosSafariUrl + '" style="display:block;margin-top:20px;text-decoration:none;border-radius:14px;background:' + brand + ';padding:16px;font-size:16px;font-weight:800;color:#ffffff;text-align:center;">' +
-        '🚀 פתח/י ב-Safari עכשיו' +
+        '🚀 פתח ב-Safari עכשיו' +
       '</a>';
   } else if (isAndroid) {
     primaryButton =
       '<a href="' + androidChromeUrl + '" onclick="setTimeout(function(){location.href=\'' + androidGenericUrl + '\';},800);" style="display:block;margin-top:20px;text-decoration:none;border-radius:14px;background:' + brand + ';padding:16px;font-size:16px;font-weight:800;color:#ffffff;text-align:center;">' +
-        '🚀 פתח/י ב-Chrome עכשיו' +
+        '🚀 פתח ב-Chrome עכשיו' +
       '</a>';
   } else {
     primaryButton =
-      '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:20px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:14px;font-size:15px;font-weight:800;color:#ffffff;cursor:pointer;">העתק/י את הקישור</button>';
+      '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:20px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:14px;font-size:15px;font-weight:800;color:#ffffff;cursor:pointer;">העתק את הקישור</button>';
   }
 
   // Manual fallback steps are now in a collapsible "didn\'t work?" details.
   card.innerHTML =
     '<div style="border-radius:24px;border:1px solid ' + border + ';background:' + bg + ';padding:32px;box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);text-align:center;max-width:28rem;width:100%;">' +
       '<div style="font-size:44px;line-height:1;">🔒</div>' +
-      '<h2 style="font-size:22px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:14px 0 0;">לחצ/י כדי להמשיך</h2>' +
+      '<h2 style="font-size:22px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:14px 0 0;">לחץ כדי להמשיך</h2>' +
       '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">Google חוסמת התחברות מתוך הדפדפן של וואטסאפ (מטעמי אבטחה). העברנו אותך לדפדפן ' + (isIos ? 'Safari' : isAndroid ? 'Chrome' : 'אחר') + ' בלחיצה אחת.</p>' +
       primaryButton +
       (isIos || isAndroid
-        ? '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:10px;width:100%;border-radius:14px;background:transparent;border:1px solid ' + border + ';padding:12px;font-size:13px;font-weight:600;color:' + body + ';cursor:pointer;">או העתק/י את הקישור</button>'
+        ? '<button type="button" onclick="kesefleCopyAccountLink(this)" style="margin-top:10px;width:100%;border-radius:14px;background:transparent;border:1px solid ' + border + ';padding:12px;font-size:13px;font-weight:600;color:' + body + ';cursor:pointer;">או העתק את הקישור</button>'
         : '<p style="margin-top:10px;font-size:12px;color:' + muted + ';word-break:break-all;direction:ltr;">' + url + '</p>') +
       '<details style="margin-top:20px;text-align:right;">' +
-        '<summary style="cursor:pointer;font-size:13px;color:' + muted + ';">הכפתור לא עבד? לחצ/י כאן</summary>' +
+        '<summary style="cursor:pointer;font-size:13px;color:' + muted + ';">הכפתור לא עבד? לחץ כאן</summary>' +
         '<ol style="margin:12px 0 0;padding-inline-start:22px;font-size:13px;color:' + body + ';line-height:1.9;">' +
-          '<li>לחצ/י על <b>⋯</b> או על אייקון <b>השיתוף</b> בתחתית/למעלה</li>' +
-          '<li>בחר/י <b>"פתח ב-' + (isIos ? 'Safari' : 'Chrome') + '"</b></li>' +
-          '<li>בדפדפן שייפתח, לחצ/י שוב על <b>"התחבר עם Google"</b></li>' +
+          '<li>לחץ על <b>⋯</b> או על אייקון <b>השיתוף</b> בתחתית/למעלה</li>' +
+          '<li>בחר <b>"פתח ב-' + (isIos ? 'Safari' : 'Chrome') + '"</b></li>' +
+          '<li>בדפדפן שייפתח, לחץ שוב על <b>"התחבר עם Google"</b></li>' +
         '</ol>' +
       '</details>' +
       // Waitlist fallback: if user is genuinely stuck, capture their phone/
       // email so Steven can reach out. Form expands on click; submission
       // hits POST /api/waitlist with source=inapp_block.
       '<details style="margin-top:14px;text-align:right;border-top:1px solid ' + border + ';padding-top:14px;">' +
-        '<summary style="cursor:pointer;font-size:13px;color:' + brand + ';font-weight:700;">אף פתרון לא עזר? השאר/י פרטים ונחזור אליך 👋</summary>' +
+        '<summary style="cursor:pointer;font-size:13px;color:' + brand + ';font-weight:700;">אף פתרון לא עזר? השאר פרטים ונחזור אליך 👋</summary>' +
         '<div style="margin-top:10px;">' +
           '<input id="kfl-wait-phone" type="tel" inputmode="tel" placeholder="050-1234567" autocomplete="tel" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;margin-bottom:6px;" />' +
           '<input id="kfl-wait-email" type="email" inputmode="email" placeholder="email@example.com" autocomplete="email" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;" />' +
-          '<button type="button" onclick="kesefleSubmitWaitlist(this)" style="margin-top:8px;width:100%;border-radius:12px;background:' + brand + ';border:none;padding:12px;font-size:14px;font-weight:700;color:#ffffff;cursor:pointer;">הוסף/י אותי לרשימת המתנה</button>' +
+          '<button type="button" onclick="kesefleSubmitWaitlist(this)" style="margin-top:8px;width:100%;border-radius:12px;background:' + brand + ';border:none;padding:12px;font-size:14px;font-weight:700;color:#ffffff;cursor:pointer;">הוסף אותי לרשימת המתנה</button>' +
           '<p id="kfl-wait-status" style="margin-top:6px;font-size:11px;color:' + muted + ';min-height:14px;"></p>' +
         '</div>' +
       '</details>' +
-      '<button type="button" onclick="(function(){var u=new URL(location.href);u.searchParams.set(\'force_signin\',\'1\');location.href=u.toString();})()" style="margin-top:14px;background:transparent;border:none;color:' + muted + ';font-size:11px;text-decoration:underline;cursor:pointer;">אני בדפדפן רגיל — המשך/י בכל זאת</button>' +
+      '<button type="button" onclick="(function(){var u=new URL(location.href);u.searchParams.set(\'force_signin\',\'1\');location.href=u.toString();})()" style="margin-top:14px;background:transparent;border:none;color:' + muted + ';font-size:11px;text-decoration:underline;cursor:pointer;">אני בדפדפן רגיל — המשך בכל זאת</button>' +
     '</div>';
   while (main.firstChild) main.removeChild(main.firstChild);
   main.appendChild(card);
@@ -1437,7 +1437,7 @@ function kesefleAccountStartSignin() {
   kesefleStartRedirectSignin();
 }
 
-// If the user arrived with ?force_signin=1 (clicked "המשך/י בכל זאת" on the
+// If the user arrived with ?force_signin=1 (clicked "המשך בכל זאת" on the
 // in-app browser block, or a power user manually appended the param), auto-
 // trigger the signin so they don't have to click "התחבר עם Google" a second
 // time. The flag only bypasses our own detection -- Google may still block
@@ -1526,7 +1526,7 @@ async function kesefleHandleOAuthReturn(code, state) {
   // Strip the single-use code from the URL immediately (refresh-safe).
   try { window.history.replaceState({}, document.title, cleanUrl); } catch (e) {}
   if (!verifier || !savedState || savedState !== state) {
-    kesefleShowSigninError('פג תוקף בקשת ההתחברות. נסה/י שוב.');
+    kesefleShowSigninError('פג תוקף בקשת ההתחברות. נסה שוב.');
     return;
   }
   kesefleShowConnecting();
@@ -1624,7 +1624,7 @@ function kesefleShowConnecting() {
 function kesefleShowSigninError(msg) {
   var isDark = document.documentElement.classList.contains('dark');
   var title = isDark ? '#ffffff' : '#0f1422', body = isDark ? '#bcc4d6' : '#41506f', brand = '#1d4ed8';
-  _kflCardShell('<div style="font-size:40px;">😕</div><h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">ההתחברות לא הושלמה</h2><p style="margin-top:10px;font-size:13px;color:' + body + ';word-break:break-word;">' + String(msg || '').slice(0, 200) + '</p><button type="button" onclick="kesefleStartRedirectSignin()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה/י שוב</button>');
+  _kflCardShell('<div style="font-size:40px;">😕</div><h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">ההתחברות לא הושלמה</h2><p style="margin-top:10px;font-size:13px;color:' + body + ';word-break:break-word;">' + String(msg || '').slice(0, 200) + '</p><button type="button" onclick="kesefleStartRedirectSignin()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה שוב</button>');
 }
 
 // Show a recovery card after sign-in succeeded but sheet provisioning failed.
@@ -1640,7 +1640,7 @@ function kesefleShowProvisionError(msg) {
     '<h2 style="font-size:20px;font-weight:900;color:' + title + ';margin:12px 0 0;">לא הצלחנו ליצור את הגיליון</h2>' +
     '<p style="margin-top:10px;font-size:13px;color:' + body + ';">ההתחברות הצליחה, אבל יצירת הגיליון נכשלה. נסו שוב; אם זה ממשיך, פתחו צ\'אט תמיכה.</p>' +
     '<p style="margin-top:6px;font-size:11px;color:#8a95b3;word-break:break-word;font-family:ui-monospace,monospace;">' + safeMsg + '</p>' +
-    '<button type="button" onclick="kesefleRetryProvision()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה/י שוב ליצור גיליון</button>'
+    '<button type="button" onclick="kesefleRetryProvision()" style="margin-top:18px;width:100%;border-radius:14px;background:' + brand + ';border:none;padding:13px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;">נסה שוב ליצור גיליון</button>'
   );
 }
 
@@ -1666,14 +1666,14 @@ async function kesefleRetryProvision() {
 // Called from init() when the redirect returns ?error=<code>.
 function _kflOAuthErrorMessage(code) {
   switch (String(code || '')) {
-    case 'access_denied':   return 'ההרשאות בוטלו. לא נוכל ליצור עבורך גיליון בלי גישה ל-Drive שלך. נסה/י שוב ואשר/י את ההרשאות.';
-    case 'invalid_request': return 'שגיאה בבקשת ההתחברות. נסה/י שוב.';
+    case 'access_denied':   return 'ההרשאות בוטלו. לא נוכל ליצור עבורך גיליון בלי גישה ל-Drive שלך. נסה שוב ואשר את ההרשאות.';
+    case 'invalid_request': return 'שגיאה בבקשת ההתחברות. נסה שוב.';
     case 'unauthorized_client': return 'אפליקציית Kesefle לא מאושרת על ידי Google כרגע. צרו קשר עם התמיכה.';
-    case 'unsupported_response_type': return 'שגיאה טכנית בהתחברות. נסה/י שוב.';
-    case 'invalid_scope':   return 'ההרשאות שביקשנו אינן זמינות. נסה/י שוב או צרו קשר עם התמיכה.';
-    case 'server_error':    return 'Google מדווח על שגיאה זמנית. נסה/י שוב בעוד דקה.';
-    case 'temporarily_unavailable': return 'שירות ההתחברות אינו זמין כרגע. נסה/י שוב בעוד דקה.';
-    default: return 'ההתחברות לא הושלמה. נסה/י שוב.';
+    case 'unsupported_response_type': return 'שגיאה טכנית בהתחברות. נסה שוב.';
+    case 'invalid_scope':   return 'ההרשאות שביקשנו אינן זמינות. נסה שוב או צרו קשר עם התמיכה.';
+    case 'server_error':    return 'Google מדווח על שגיאה זמנית. נסה שוב בעוד דקה.';
+    case 'temporarily_unavailable': return 'שירות ההתחברות אינו זמין כרגע. נסה שוב בעוד דקה.';
+    default: return 'ההתחברות לא הושלמה. נסה שוב.';
   }
 }
 
@@ -1868,11 +1868,11 @@ async function kesefleReprovisionSheet() {
     openA.target = '_blank';
     openA.rel = 'noopener';
     openA.className = 'underline';
-    openA.textContent = 'פתח/י את הגיליון החדש';
+    openA.textContent = 'פתח את הגיליון החדש';
     statusEl.appendChild(openA);
   } catch (e) {
     statusEl.className = 'mt-2 text-xs text-red-600';
-    statusEl.textContent = '😬 נכשל: ' + (e && e.message || 'unknown') + '. נסה/י שוב, ואם זה ממשיך — צ\'אט תמיכה למטה.';
+    statusEl.textContent = '😬 נכשל: ' + (e && e.message || 'unknown') + '. נסה שוב, ואם זה ממשיך — צ\'אט תמיכה למטה.';
   } finally {
     btn.disabled = false;
   }
@@ -1900,7 +1900,7 @@ async function kesefleFixCompanyDashboard() {
       throw new Error((j && (j.error || j.detail)) || ('HTTP ' + resp.status));
     }
     statusEl.className = 'mt-2 text-xs text-emerald-700';
-    statusEl.textContent = '✅ תיקנתי ' + (j.repaired || 4) + ' שורות. רענן/י את הגיליון בכרטיסייה ותראה/י את הסכומים הנכונים.';
+    statusEl.textContent = '✅ תיקנתי ' + (j.repaired || 4) + ' שורות. רענן את הגיליון בכרטיסייה ותראה את הסכומים הנכונים.';
   } catch (e) {
     statusEl.className = 'mt-2 text-xs text-red-600';
     statusEl.textContent = '😬 נכשל: ' + (e && e.message || 'unknown') + '.';
@@ -2051,7 +2051,7 @@ function _kflFixedRender(list) {
     var del = document.createElement('button');
     del.type = 'button';
     del.className = 'flex-shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600';
-    del.setAttribute('aria-label', 'מחק/י ' + desc);
+    del.setAttribute('aria-label', 'מחק ' + desc);
     del.innerHTML = '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
     del.onclick = function () { kesefleFixedRemove(t.id, desc); };
     li.appendChild(left); li.appendChild(amt); li.appendChild(del);
@@ -2100,8 +2100,8 @@ async function kesefleFixedAdd() {
   var amount = Number(amtEl.value);
   var day = Math.max(1, Math.min(28, parseInt(dayEl.value, 10) || 1));
 
-  if (isOther && !description) { _kflFixedMsg('כתוב/י שם להוצאה (לדוגמה: חוג שחייה).', 'err'); return; }
-  if (!isFinite(amount) || amount <= 0) { _kflFixedMsg('הזן/י סכום תקין בשקלים.', 'err'); return; }
+  if (isOther && !description) { _kflFixedMsg('כתוב שם להוצאה (לדוגמה: חוג שחייה).', 'err'); return; }
+  if (!isFinite(amount) || amount <= 0) { _kflFixedMsg('הזן סכום תקין בשקלים.', 'err'); return; }
 
   var phone = _kflFixedPhone();
   var tpl = {
@@ -2123,9 +2123,9 @@ async function kesefleFixedAdd() {
   if (!phone) {
     var localOnly = _kflFixedLocalGet(); localOnly.push(tpl); _kflFixedLocalSet(localOnly);
     _kflFixedRender(localOnly);
-    _kflFixedMsg('נשמר. כדי שייכנס לגיליון אוטומטית — חבר/י קודם את הוואטסאפ (שלב 3 למעלה).', 'warn');
+    _kflFixedMsg('נשמר. כדי שייכנס לגיליון אוטומטית — חבר קודם את הוואטסאפ (שלב 3 למעלה).', 'warn');
     _kflFixedResetForm();
-    if (btn) { btn.disabled = false; btn.textContent = 'הוסף/י הוצאה קבועה'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'הוסף הוצאה קבועה'; }
     return;
   }
 
@@ -2169,7 +2169,7 @@ async function kesefleFixedAdd() {
     var auth = /unauthorized|bot_secret_not_configured|http_401|http_503/.test(errCode);
     if (auth) {
       _kflFixedMsg(
-        'נשמר ברשימה. כדי שייכנס לגיליון אוטומטית, שלח/י לבוט את ההודעה:<br>' +
+        'נשמר ברשימה. כדי שייכנס לגיליון אוטומטית, שלח לבוט את ההודעה:<br>' +
         '<button type="button" onclick="kesefleFixedCopyCmd(this)" data-cmd="' +
         botCmd.replace(/"/g, '&quot;') +
         '" class="mt-1 inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2 py-1 font-mono text-[11px] font-bold text-amber-800 hover:bg-amber-200">' +
@@ -2180,14 +2180,14 @@ async function kesefleFixedAdd() {
       _kflFixedMsg('נשמר ברשימה, אבל לא הצלחנו לסנכרן כרגע (' + String(errCode).replace(/</g, '&lt;') + '). ננסה שוב מאוחר יותר.', 'warn');
     }
   }
-  if (btn) { btn.disabled = false; btn.textContent = 'הוסף/י הוצאה קבועה'; }
+  if (btn) { btn.disabled = false; btn.textContent = 'הוסף הוצאה קבועה'; }
 }
 
 // Copy the bot-command fallback to the clipboard.
 function kesefleFixedCopyCmd(btn) {
   var cmd = (btn && btn.getAttribute('data-cmd')) || '';
   if (!cmd) return;
-  function done() { btn.textContent = '✓ הועתק — הדבק/י בוואטסאפ'; }
+  function done() { btn.textContent = '✓ הועתק — הדבק בוואטסאפ'; }
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(cmd).then(done, done);
@@ -2256,8 +2256,8 @@ window.addEventListener('load', function () {
         '<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;text-align:center;font-family:Heebo,system-ui,sans-serif;">' +
         '<div style="max-width:24rem;"><div style="font-size:44px;">🔄</div>' +
         '<h2 style="font-family:Rubik,system-ui,sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:12px 0 0;color:#0f1422;">רגע — משהו נתקע בטעינה</h2>' +
-        '<p style="margin-top:8px;color:#475569;font-size:14px;">רענן/י את הדף ונסה/י שוב. אם זה ממשיך, פתח/י את הקישור ב-Safari או Chrome.</p>' +
-        '<button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#1d4ed8;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן/י את הדף</button>' +
+        '<p style="margin-top:8px;color:#475569;font-size:14px;">רענן את הדף ונסה שוב. אם זה ממשיך, פתח את הקישור ב-Safari או Chrome.</p>' +
+        '<button onclick="location.reload()" style="margin-top:16px;border-radius:12px;background:#1d4ed8;border:none;padding:12px 22px;color:#fff;font-weight:800;cursor:pointer;">רענן את הדף</button>' +
         '<a href="/account" style="display:block;margin-top:10px;color:#1d4ed8;font-size:13px;text-decoration:none;">חזרה להתחברות</a></div></div>';
     } catch (_e) {}
   }, 2500);
@@ -2370,28 +2370,28 @@ async function kesefleProvisionSheet() {
           if (/drive\.googleapis\.com.*has not been used/i.test(detail) || /drive\s*api.*disabled/i.test(detail)) {
             what = 'לא הצלחנו ליצור את הגיליון שלך.';
             why = 'למה? Google Drive API לא מופעל בפרויקט שלך.';
-            fix = 'לחצי על הכפתור למטה, לחצי ENABLE, חכי 60 שניות וחזרי לכאן.';
+            fix = 'לחץ על הכפתור למטה, לחץ ENABLE, חכי 60 שניות וחזרי לכאן.';
             fixLabel = 'הפעילי Drive API ←';
             fixIsLink = true;
             fixHref = 'https://console.developers.google.com/apis/api/drive.googleapis.com/overview';
           } else if (/sheets\.googleapis\.com.*has not been used/i.test(detail)) {
             what = 'לא הצלחנו ליצור את הגיליון שלך.';
             why = 'למה? Google Sheets API לא מופעל בפרויקט שלך.';
-            fix = 'לחצי על הכפתור, לחצי ENABLE, חכי 60 שניות וחזרי.';
+            fix = 'לחץ על הכפתור, לחץ ENABLE, חכי 60 שניות וחזרי.';
             fixLabel = 'הפעילי Sheets API ←';
             fixIsLink = true;
             fixHref = 'https://console.developers.google.com/apis/api/sheets.googleapis.com/overview';
           } else if (/file not found/i.test(detail) || /notFound/i.test(detail)) {
             what = 'לא מצאנו את תבנית הגיליון.';
             why = 'למה? קובץ התבנית הופסק מקובץ ההגדרות שלנו.';
-            fix = 'זו תקלה שלנו — לחצי על הכפתור לשלוח אימייל ונסדר מיד.';
+            fix = 'זו תקלה שלנו — לחץ על הכפתור לשלוח אימייל ונסדר מיד.';
             fixLabel = 'שלח לתמיכה ←';
             fixIsLink = true;
             fixHref = 'mailto:info@kesefle.com?subject=Drive%20copy%20file%20not%20found';
           } else if (/insufficient.*permission/i.test(detail) || /permissionDenied/i.test(detail)) {
             what = 'חסרות הרשאות מהחשבון שלך.';
             why = 'למה? כשהתחברת לגוגל, לא אישרת את אחת ההרשאות שצריך (Drive או Sheets).';
-            fix = 'לחצי על הכפתור — נשאל שוב והפעם אשרי הכל.';
+            fix = 'לחץ על הכפתור — נשאל שוב והפעם אשרי הכל.';
           } else if (/quota/i.test(detail) || /rate limit/i.test(detail)) {
             what = 'חרגנו ממכסת השרת לרגע.';
             why = 'למה? יותר מדי בקשות בו-זמנית מצד גוגל.';
@@ -2407,7 +2407,7 @@ async function kesefleProvisionSheet() {
           } else if (/missing_drive_file_scope/i.test(detail) || /missing_drive_file_scope/i.test(j.error || '')) {
             what = 'נדרשת הרשאה ליצירת הגיליון.';
             why = 'למה? כדי ליצור עבורך גיליון חדש בדרייב שלך, צריך לאשר את ההרשאה.';
-            fix = 'לחצי שוב על "צור את הגיליון" ואשרי את ההרשאה.';
+            fix = 'לחץ שוב על "צור את הגיליון" ואשרי את ההרשאה.';
           } else {
             why = detail ? 'פרטים טכניים: ' + detail.slice(0, 120) : 'למה? לא בטוחים — זו תקלה לא צפויה.';
             fix = 'נסה שוב. אם זה ממשיך, שלח לנו אימייל.';
@@ -2461,15 +2461,15 @@ if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.c
      users would otherwise silently bounce on. -->
 <div id="kfl-report-host">
   <button type="button" id="kfl-report-fab" onclick="_kflReportOpen()" aria-label="דווח על בעיה" style="position:fixed;bottom:16px;inset-inline-end:16px;z-index:50;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:10px 14px;border-radius:9999px;background:#1E293B;color:#fff;border:1px solid #334155;font:600 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Heebo,system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);opacity:0.85">
-    💬 <span>דווח/י על בעיה</span>
+    💬 <span>דווח על בעיה</span>
   </button>
   <div id="kfl-report-modal" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(15,23,42,0.7);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)_kflReportClose()">
     <div style="background:#fff;color:#1E293B;border-radius:16px;max-width:28rem;width:100%;padding:20px;box-shadow:0 24px 50px rgba(0,0,0,0.3)" dir="rtl">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
-        <h3 style="margin:0;font-size:17px;font-weight:600">דווח/י על בעיה</h3>
+        <h3 style="margin:0;font-size:17px;font-weight:600">דווח על בעיה</h3>
         <button type="button" onclick="_kflReportClose()" aria-label="סגור" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94A3B8;padding:0;line-height:1">×</button>
       </div>
-      <p style="margin:0 0 12px;font-size:13px;color:#475569">תאר/י מה לא עובד. נצרף אוטומטית את ה-URL והדפדפן — נראה את הדיווח בלוח הניהול.</p>
+      <p style="margin:0 0 12px;font-size:13px;color:#475569">תאר מה לא עובד. נצרף אוטומטית את ה-URL והדפדפן — נראה את הדיווח בלוח הניהול.</p>
       <textarea id="kfl-report-msg" rows="4" maxlength="1000" placeholder="לדוגמה: לחצתי 'התחבר עם Google' ולא קרה כלום…" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #E2E8F0;border-radius:10px;font:inherit;font-size:14px;resize:vertical;min-height:90px"></textarea>
       <input type="email" id="kfl-report-email" placeholder="האימייל שלך (אופציונלי, כדי שנוכל לחזור אליך)" style="width:100%;box-sizing:border-box;margin-top:8px;padding:10px;border:1px solid #E2E8F0;border-radius:10px;font:inherit;font-size:13px" />
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
@@ -2548,7 +2548,7 @@ if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.c
         status.textContent = '✗ שגיאה בשליחה: HTTP ' + r.status;
       }
     } catch (e) {
-      status.textContent = '✗ שגיאת רשת. נסה/י שוב.';
+      status.textContent = '✗ שגיאת רשת. נסה שוב.';
     }
     btn.disabled = false;
   };
