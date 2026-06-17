@@ -39,13 +39,16 @@ Go to **business.facebook.com → WhatsApp Manager → Message templates → Cre
 - Submit. Approval is usually minutes, sometimes up to 24h.
 
 ### 2. Turn it on in Vercel
-Once the template shows **Approved**, in the Vercel project → **Settings → Environment Variables** add:
+In the Vercel project → **Settings → Environment Variables** (Production), add **two** vars:
 
-- **Key:** `KESEFLE_PROJECTION_TEMPLATE`
-- **Value:** `projection_nudge`
-- Environments: Production. Then **redeploy** (or it picks it up on the next deploy).
+- **`KESEFLE_PROJECTION_TEMPLATE`** = `projection_nudge`  (the approved template name)
+- **`CRON_SECRET`** = a long random string (e.g. run `openssl rand -hex 32` and paste the output)
 
-That's it — the cron will fire on the **24th** and nudge everyone with real spending this month.
+Then **redeploy**.
+
+> ⚠️ **Why CRON_SECRET matters — and a thing to check.** Production currently reports `cron_secret_not_configured`. Every scheduled job (this nudge **and** `budget-check`, `reminders`, `recurring`, the daily digests) authenticates with `CRON_SECRET`; with it unset, Vercel's scheduled calls are rejected — which strongly suggests **none of your crons have been running**. Setting `CRON_SECRET` once fixes the whole batch. Worth a look at Vercel → your project → **Cron Jobs** to see each job's last run/status and confirm.
+
+After both vars are set + a redeploy, the nudge fires on the **24th** and reaches everyone with real spending this month.
 
 ### 3. (Optional) Run the test on demand instead of waiting for the 24th
 Tell me "run the nudge" and I'll trigger it for you, or from a terminal:
