@@ -8919,6 +8919,9 @@ function processExpense(text, fromPhone) {
           '✅ ₪' + Number(__bbe.amount).toLocaleString('he-IL') + ' ל' + __bbeDesc + '. נשמר אצלך בגיליון' +
           '\n📂 ' + __bbeCat +
           (__bbeSub && __bbeSub !== __bbeCat ? '\n🏷️ ' + __bbeSub : '') +
+          // 2026-06-17: append a real-data month-to-date business snapshot so each
+          // confirmation shows where the business stands this month (Steven ask).
+          _bizMonthSnapshotLine_(__bbeDashSub, __bbeSub) +
           // change 1 (2026-06-03): dropdown is always attached (picker call above);
           // the text instruction line was removed. change 2: short link-free nudge.
           _sheetNudgeLine_(fromPhone)
@@ -16126,6 +16129,50 @@ function _categoryMonthToDateLine_(category, isIncome) {
     Logger.log('_categoryMonthToDateLine_ ' + category + ' sum=' + sum);
     return 'החודש הוצאת ₪' + sum.toLocaleString('he-IL') + ' על ' + category + '.';
   } catch (e) { return ''; }
+}
+
+// Compact "where the business stands this month" block appended to BUSINESS
+// expense confirmations (Steven 2026-06-17: "give me more info each reply —
+// what's happening during the month"). All numbers are REAL, computed from
+// תנועות for the current month (col D='עסק'); returns '' on any failure so the
+// reply degrades to the plain confirmation — never a fabricated number.
+// dashSub = the canonical col-E subcategory just written; subLabel = friendly
+// label to display. Runs AFTER the row was appended, so the new expense is
+// already included in the totals.
+var _HEB_MONTHS_ = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+function _bizMonthSnapshotLine_(dashSub, subLabel) {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(TRANSACTIONS_SHEET);
+    if (!sheet) return '';
+    var data = sheet.getDataRange().getValues();
+    if (data.length < 2) return '';
+    var now = new Date();
+    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    var catSum = 0, expense = 0, income = 0;
+    for (var i = 1; i < data.length; i++) {
+      var d = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
+      if (isNaN(d.getTime()) || d < monthStart) continue;
+      if (String(data[i][3] || '') !== 'עסק') continue; // business rows only
+      var amt = Number(data[i][2]) || 0;
+      var hCol = data[i][7];
+      var isExp = hCol === true || String(hCol).toUpperCase() === 'TRUE';
+      if (isExp) {
+        expense += amt;
+        if (dashSub && String(data[i][4] || '') === dashSub) catSum += amt;
+      } else {
+        income += amt;
+      }
+    }
+    if (expense <= 0 && income <= 0) return '';
+    var out = '\n\n📊 העסק החודש (' + _HEB_MONTHS_[now.getMonth()] + ' ' + now.getFullYear() + '):';
+    if (catSum > 0) out += '\n• ' + (subLabel || dashSub) + ': ₪' + catSum.toLocaleString('he-IL');
+    out += '\n• הוצאות עסק: ₪' + expense.toLocaleString('he-IL');
+    if (income > 0) {
+      out += '\n• הכנסות עסק: ₪' + income.toLocaleString('he-IL');
+      out += '\n• רווח נטו: ₪' + (income - expense).toLocaleString('he-IL');
+    }
+    return out;
+  } catch (e) { Logger.log('_bizMonthSnapshotLine_ err: ' + (e && e.message)); return ''; }
 }
 
 // ============================================================
