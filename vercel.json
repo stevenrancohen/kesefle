@@ -28,7 +28,6 @@
     { "source": "/rss", "destination": "/blog", "permanent": true },
     { "source": "/pwa", "destination": "/install", "permanent": false },
     { "source": "/download", "destination": "/install", "permanent": false },
-    { "source": "/app", "destination": "/install", "permanent": false },
     { "source": "/install-app", "destination": "/install", "permanent": false },
     { "source": "/compare", "destination": "/pricing", "permanent": true },
     { "source": "/account/cancel", "destination": "/cancel", "permanent": false },
