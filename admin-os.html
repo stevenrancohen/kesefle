@@ -50,7 +50,7 @@
   <!-- Shell -->
   <div class="flex min-h-screen">
     <!-- Sidebar (right in RTL) -->
-    <aside id="sidebar" class="fixed inset-y-0 right-0 z-40 w-64 -translate-x-0 border-l border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 hidden md:flex md:flex-col">
+    <aside id="sidebar" class="fixed inset-y-0 right-0 z-50 w-64 -translate-x-0 border-l border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 hidden md:flex md:flex-col">
       <div class="flex items-center gap-2 px-4 py-4 border-b border-ink-100 dark:border-ink-700">
         <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-teal-400 text-white font-black">כ</span>
         <div><div class="font-display text-lg leading-none">כספ'לה</div><div class="text-[11px] text-ink-400">מערכת ניהול</div></div>
@@ -290,7 +290,7 @@
     try {
       var d=await adminGet('/api/admin/conversations?limit=30');
       var th=(d&&d.threads)||[];
-      view.innerHTML+=th.length?th.map(function(t){ return card('<div class="text-xs text-ink-400 mb-2">'+esc(t.thread_id||'')+'</div>'+((t.items||[]).map(function(i){ return '<div class="flex items-center gap-2 py-1 text-sm">'+pill(i.kind,'neutral')+'<span class="text-ink-400 text-[11px]">לפני '+ago(i.ts)+'</span><span class="truncate">'+esc(i.text_if_available||'')+'</span></div>'; }).join('')),'mb-3'); }).join(''):emptyState('אין שיחות אחרונות');
+      view.innerHTML+=th.length?th.map(function(t){ return card('<div class="text-xs text-ink-400 mb-2">'+esc(t.email_masked||t.userSub||t.thread_id||'')+'</div>'+((t.messages||[]).map(function(i){ return '<div class="flex items-center gap-2 py-1 text-sm">'+pill(i.kind,'neutral')+'<span class="text-ink-400 text-[11px]">לפני '+ago(i.at)+'</span><span class="truncate">'+esc(i.text||'')+'</span></div>'; }).join('')),'mb-3'); }).join(''):emptyState('אין שיחות אחרונות');
     } catch(e){ view.innerHTML+=errState(e); }
   }
 
@@ -303,15 +303,15 @@
     var err=adminGet('/api/admin?action=errors-count').catch(function(){return null;});
     var V=await ver,D=await drift,S=await st,E=await err;
     var cells=[];
-    var match=V&&V.match;
-    cells.push(kpi('גרסת בוט (חי)', V?'<span class="text-base">'+esc(V.apps_script_deployed||'—')+'</span>':'—', V?(match?'תואם ל-repo ✓':'לא תואם! repo: '+esc(V.repo_latest||'')) : '', match===false?'crit':'ok'));
+    var botDrift=V&&V.drift===true;
+    cells.push(kpi('גרסת בוט (חי)', V?'<span class="text-base">'+esc(V.deployed_version||'—')+'</span>':'—', V?((V.deployed_version&&V.repo_version)?(botDrift?'לא תואם! repo: '+esc(V.repo_version):'תואם ל-repo ✓'):'—') : '', botDrift?'crit':'ok'));
     cells.push(kpi('שגיאות 24ש׳', E?num(E.errors_24h):'—', '', E&&E.errors_24h>20?'crit':E&&E.errors_24h>0?'warn':'ok'));
-    var drifts=D&&D.drifts?D.drifts.length:null;
-    cells.push(kpi('סחיפת קונפיג', drifts==null?'—':num(drifts), drifts?'משתני סביבה חסרים':'תקין', drifts?'crit':'ok'));
+    var cfgDrift=D&&D.drift===true;
+    cells.push(kpi('סחיפת קונפיג', D?(cfgDrift?num(D.mismatchCount||1):'0'):'—', cfgDrift?'ערכים שלא תואמים':'תקין', cfgDrift?'crit':'ok'));
     cells.push(kpi('Webhook', S&&S.bot?(S.bot.meta_access_token_configured?'מוגדר':'חסר'):'—', S&&S.bot?esc(S.bot.configured_bot_phone_e164||''):'', S&&S.bot&&!S.bot.meta_access_token_configured?'crit':'ok'));
     view.innerHTML+='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+cells.join('')+'</div>';
-    if(D&&D.drifts&&D.drifts.length) view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">סחיפות קונפיג</div>'+D.drifts.map(function(x){ return '<div class="text-xs text-amber-600 py-0.5">• '+esc(typeof x==='string'?x:JSON.stringify(x))+'</div>'; }).join(''))+'</div>';
-    if(V&&V.fix) view.innerHTML+='<div class="mt-3 text-xs text-ink-400">'+esc(V.fix)+'</div>';
+    if(D&&D.drift===true&&D.fix_instructions) view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">סחיפת קונפיג</div><div class="text-xs text-amber-600">'+esc(D.fix_instructions)+'</div>')+'</div>';
+    if(V&&V.note) view.innerHTML+='<div class="mt-3 text-xs text-ink-400">'+esc(V.note)+'</div>';
   }
 
   // ───────── SECTION: Data Integrity ─────────
@@ -332,7 +332,13 @@
   // ───────── SECTION: Quota ─────────
   async function renderQuota(view){
     view.innerHTML=sectionTitle('מכסות','שימוש ב-Google Sheets API ובמכסת ה-KV');
-    try { var d=await adminGet('/api/admin/sheets-quota'); var q=(d&&d.quota)||{}; view.innerHTML+='<div class="grid gap-3 sm:grid-cols-3">'+kpi('שימוש היום',num(q.used_today),'מתוך '+num(q.daily_limit))+kpi('נותר',num(q.remaining),'')+'</div>'+(d&&d.note?'<div class="mt-3 text-xs text-ink-400">'+esc(d.note)+'</div>':''); }
+    try {
+      var d=await adminGet('/api/admin/sheets-quota'); var snap=(d&&d.snapshot)||[];
+      view.innerHTML+='<div class="grid gap-3 sm:grid-cols-3">'+kpi('מגבלת קריאה',num(d&&d.read_limit),'לכל גיליון · חלון 100 שנ׳')+kpi('מגבלת כתיבה',num(d&&d.write_limit),'לכל גיליון · חלון 100 שנ׳')+kpi('גיליונות פעילים',num(snap.length),'בחלון הנוכחי')+'</div>';
+      if(snap.length) view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">צריכה לפי גיליון (חלון 100 שנ׳)</div>'+snap.slice(0,12).map(function(s){ var mx=Math.max(s.read_pct||0,s.write_pct||0); return '<div class="flex items-center justify-between py-1 text-sm gap-3"><span class="text-ink-500 text-[11px] truncate" style="max-width:55%">'+esc(s.spreadsheetId||'')+'</span><span class="whitespace-nowrap '+(mx>80?'text-red-500':mx>50?'text-amber-600':'text-ink-400')+'">קריאות '+num(s.reads)+' · כתיבות '+num(s.writes)+' ('+mx+'%)</span></div>'; }).join(''))+'</div>';
+      else view.innerHTML+=emptyState('אין צריכה ב-100 השניות האחרונות');
+      if(d&&d.note) view.innerHTML+='<div class="mt-3 text-xs text-ink-400">'+esc(d.note)+'</div>';
+    }
     catch(e){ view.innerHTML+=errState(e); }
   }
 
@@ -352,8 +358,8 @@
     view.innerHTML=sectionTitle('משפך הרשמה','7 שלבים מנחיתה ועד ההודעה הראשונה (היום)');
     try {
       var d=await adminGet('/api/admin/funnel-summary'); var f=(d&&d.funnel)||[];
-      view.innerHTML+=f.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+f.map(function(s){ var pct=s.conversion_from_prev!=null?s.conversion_from_prev+'%':''; return '<div class="flex items-center gap-3 p-3"><div class="flex-1"><div class="text-sm font-medium">'+esc(s.label||s.step)+'</div><div class="h-2 mt-1 rounded-full bg-ink-100 dark:bg-ink-700 overflow-hidden"><div class="h-full bg-brand-500" style="width:'+(Math.min(100,s.conversion_from_prev||100))+'%"></div></div></div><div class="text-right"><div class="font-display text-lg">'+num(s.count)+'</div><div class="text-[11px] '+(s.dropoff_pct>40?'text-red-500':'text-ink-400')+'">'+pct+'</div></div></div>'; }).join('')+'</div>':emptyState('אין נתוני משפך להיום');
-      if(d&&d.biggest_leak) view.innerHTML+='<div class="mt-3">'+card('<div class="text-sm">הדליפה הגדולה ביותר: <b>'+esc(d.biggest_leak.label||d.biggest_leak.step||'')+'</b> ('+esc(d.biggest_leak.dropoff_pct||'')+'% נשירה)</div>')+'</div>';
+      view.innerHTML+=f.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+f.map(function(s){ var conv=(s.conversion_from_prev!=null?s.conversion_from_prev*100:100); return '<div class="flex items-center gap-3 p-3"><div class="flex-1"><div class="text-sm font-medium">'+esc(s.label||s.step)+'</div><div class="h-2 mt-1 rounded-full bg-ink-100 dark:bg-ink-700 overflow-hidden"><div class="h-full bg-brand-500" style="width:'+Math.min(100,conv)+'%"></div></div></div><div class="text-right"><div class="font-display text-lg">'+num(s.count)+'</div><div class="text-[11px] '+(s.dropoff_pct>0.4?'text-red-500':'text-ink-400')+'">'+Math.round(conv)+'%</div></div></div>'; }).join('')+'</div>':emptyState('אין נתוני משפך להיום');
+      if(d&&d.biggest_leak) view.innerHTML+='<div class="mt-3">'+card('<div class="text-sm">הדליפה הגדולה ביותר: <b>'+esc(d.biggest_leak.label||d.biggest_leak.step||'')+'</b> ('+Math.round((d.biggest_leak.dropoff_pct||0)*100)+'% נשירה)</div>')+'</div>';
     } catch(e){ view.innerHTML+=errState(e); }
   }
 
@@ -371,7 +377,7 @@
   // ───────── SECTION: Referrals ─────────
   async function renderReferrals(view){
     view.innerHTML=sectionTitle('הפניות','לוח מובילים של תוכנית ההפניות');
-    try { var d=await adminGet('/api/admin/referral-leaderboard?limit=20'); var l=(d&&d.leaderboard)||[]; view.innerHTML+=l.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+l.map(function(r,i){ return '<div class="flex items-center justify-between p-3"><div class="flex items-center gap-3"><span class="font-display text-lg text-ink-300 w-6">'+(i+1)+'</span><span class="text-sm">'+esc(r.email_masked||r.userSub||'—')+'</span></div><span class="font-semibold">'+num(r.referral_count)+'</span></div>'; }).join('')+'</div>':emptyState('אין הפניות עדיין'); }
+    try { var d=await adminGet('/api/admin/referral-leaderboard?limit=20'); var l=(d&&d.leaderboard)||[]; view.innerHTML+=l.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+l.map(function(r,i){ return '<div class="flex items-center justify-between p-3"><div class="flex items-center gap-3"><span class="font-display text-lg text-ink-300 w-6">'+(i+1)+'</span><span class="text-sm">'+esc(r.name||r.email||r.sub||'—')+'</span></div><span class="font-semibold">'+num(r.count)+'</span></div>'; }).join('')+'</div>':emptyState('אין הפניות עדיין'); }
     catch(e){ view.innerHTML+=errState(e); }
   }
 
@@ -382,8 +388,9 @@
       var d=await adminGet('/api/admin?action=jobs'); var jobs=(d&&d.jobs)||[];
       view.innerHTML+= jobs.length ? '<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-ink-50 dark:bg-ink-800 text-ink-400"><tr><th class="p-3 text-right">סוג</th><th class="p-3 text-right">ניסיונות</th><th class="p-3 text-right">שגיאה</th></tr></thead><tbody>'+jobs.map(function(j){ return '<tr class="border-t border-ink-100 dark:border-ink-700"><td class="p-3">'+esc(j.type||j.id)+'</td><td class="p-3">'+num(j.attempts)+'</td><td class="p-3 text-xs text-red-500">'+esc(j.lastError||'')+'</td></tr>'; }).join('')+'</tbody></table></div>' : card('<div class="py-4 text-center text-sm text-green-600">אין משרות תקועות ✓</div>');
     } catch(e){ view.innerHTML+=errState(e); }
-    view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">שידור עדכון לכל המשתמשים</div><div class="text-xs text-ink-400 mb-3">שולח הודעת "מה חדש" לכל המשתמשים בוואטסאפ. פעולה רגישה — דורשת אישור.</div><button id="digestBtn" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white">הכן שידור</button> <span id="digestMsg" class="text-xs text-ink-400"></span>')+'</div>';
-    var db=$('#digestBtn'); if(db) db.onclick=async function(){ if(!confirm('להכין שידור לכל המשתמשים? (לא נשלח עד אישור סופי בצד השרת)')) return; try { await adminPost('/api/admin/customer-digest-set',{}); $('#digestMsg').textContent='נוסף לתור ✓'; } catch(e){ $('#digestMsg').textContent='שגיאה: '+(e.message||e); } };
+    view.innerHTML+='<div class="mt-4">'+card('<div class="text-sm font-semibold mb-2">טיוטת שידור "מה חדש"</div><div class="text-xs text-ink-400 mb-3">מנסח את ההודעה שתישלח לכל המשתמשים בוואטסאפ. השמירה כאן רק מכינה טיוטה — השליחה בפועל מתבצעת ע"י ה-cron עם אישור נפרד.</div><textarea id="digestText" rows="3" class="w-full rounded-xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-800 px-3 py-2 text-sm" placeholder="תוכן ההודעה (לפחות 20 תווים)..."></textarea><div class="mt-2 flex items-center gap-2"><button id="digestBtn" class="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white">שמור טיוטה</button> <span id="digestMsg" class="text-xs text-ink-400"></span></div>')+'</div>';
+    (function(){ var dt=$('#digestText'); adminPost('/api/admin/customer-digest-set',{action:'get'}).then(function(r){ if(dt&&r&&r.current&&r.current.body) dt.value=r.current.body; }).catch(function(){}); })();
+    var db=$('#digestBtn'); if(db) db.onclick=async function(){ var msg=($('#digestText').value||'').trim(); if(msg.length<20){ $('#digestMsg').textContent='ההודעה קצרה מדי (לפחות 20 תווים)'; return; } if(!confirm('לשמור טיוטת שידור לכל המשתמשים?')) return; try { var r=await adminPost('/api/admin/customer-digest-set',{action:'set',body:msg}); $('#digestMsg').textContent=(r&&r.ok)?'נשמרה טיוטה ✓ ('+num(r.length)+' תווים)':'נכשל'; } catch(e){ $('#digestMsg').textContent='שגיאה: '+(e.message||e); } };
   }
 
   // ───────── SECTION: Feature Flags ─────────
@@ -427,9 +434,9 @@
       var v=await adminGet('/api/admin/bot-version').catch(function(){return null;});
       var e=await adminGet('/api/admin?action=errors-count').catch(function(){return null;});
       var c=await adminGet('/api/admin/config-drift').catch(function(){return null;});
-      if(v&&v.match===false) f.push({sev:'warn',head:'גרסת הבוט אינה תואמת ל-repo',detail:'חי: '+(v.apps_script_deployed||'')+' · repo: '+(v.repo_latest||'')+' — צריך הדבקה מחדש',to:'#/bot-health'});
+      if(v&&v.drift===true) f.push({sev:'warn',head:'גרסת הבוט אינה תואמת ל-repo',detail:'חי: '+(v.deployed_version||'')+' · repo: '+(v.repo_version||'')+' — צריך הדבקה מחדש',to:'#/bot-health'});
       if(e&&e.errors_24h>20) f.push({sev:'crit',head:e.errors_24h+' שגיאות ב-24 שעות',detail:'בדוק את לוגי הבוט',to:'#/bot-health'});
-      if(c&&c.drifts&&c.drifts.length) f.push({sev:'crit',head:c.drifts.length+' משתני סביבה חסרים',detail:'סחיפת קונפיג — יכול לשבור פעולות',to:'#/bot-health'});
+      if(c&&c.drift===true) f.push({sev:'crit',head:'סחיפת קונפיג ('+num(c.mismatchCount||1)+')',detail:'ערכים קשיחים שלא תואמים לקונפיג — יכול לשבור פעולות',to:'#/bot-health'});
       return f;
     }},
     {id:'revenue',name:'הכנסות ונטישה',emoji:'₪',schedule:'יומי',run:async function(){
@@ -439,7 +446,7 @@
     }},
     {id:'funnel',name:'משפך הרשמה',emoji:'⧗',schedule:'יומי',run:async function(){
       var d=await adminGet('/api/admin/funnel-summary'); var f=[];
-      if(d.biggest_leak&&d.biggest_leak.dropoff_pct>40) f.push({sev:'warn',head:'דליפה במשפך: '+(d.biggest_leak.label||d.biggest_leak.step||''),detail:(d.biggest_leak.dropoff_pct)+'% נושרים בשלב הזה',to:'#/funnel'});
+      if(d.biggest_leak&&d.biggest_leak.dropoff_pct>0.4) f.push({sev:'warn',head:'דליפה במשפך: '+(d.biggest_leak.label||d.biggest_leak.step||''),detail:Math.round(d.biggest_leak.dropoff_pct*100)+'% נושרים בשלב הזה',to:'#/funnel'});
       return f;
     }},
     {id:'signals',name:'תיבת סיגנלים',emoji:'⚑',schedule:'כל שעה',run:async function(){
