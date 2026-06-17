@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const VERSION = 'v13-2026-06-09';
+const VERSION = 'v14-2026-06-17';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -26,6 +26,11 @@ const PRECACHE_URLS = [
   '/welcome.html',
   '/dashboard',
   '/dashboard.html',
+  // The installable user app is the main standalone surface (manifest start_url
+  // = /app). Precache its shell + manifest so an installed PWA opens offline.
+  '/app',
+  '/app.html',
+  '/app.webmanifest',
   '/status',
   '/status.html',
   '/offline.html',
