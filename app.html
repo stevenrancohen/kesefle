@@ -44,6 +44,10 @@
   .safe-bottom { padding-bottom:env(safe-area-inset-bottom); }
   *:focus-visible { outline:2px solid #2563eb; outline-offset:2px; border-radius:8px; }
   main::-webkit-scrollbar { display:none; }
+  .kfl-spin { animation:kfl-rot .8s linear infinite; }
+  @keyframes kfl-rot { to { transform:rotate(360deg); } }
+  #ptrInd > div { background:#2563eb; }
+  @media (prefers-reduced-motion: reduce) { .kfl-spin{animation:none;} .skel{animation:none;} }
 </style>
 </head>
 <body class="text-ink-900 dark:text-ink-50">
@@ -56,6 +60,7 @@
         <div class="font-display text-lg font-black leading-none">כספ'לה</div>
         <div id="whoami" class="text-[11px] text-ink-400">האפליקציה שלך</div>
       </div>
+      <span id="syncTime" class="self-center text-[10px] tabular-nums text-ink-400"></span>
       <button id="refreshBtn" aria-label="רענן" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-100 dark:border-ink-700 text-ink-500">⟳</button>
       <button id="themeBtn" aria-label="מצב כהה/בהיר" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-100 dark:border-ink-700 text-ink-500">◐</button>
     </div>
@@ -136,8 +141,11 @@ function currentId(){ return (location.hash||'').replace(/^#\/?/,''); }
 async function route(force){
   var id=currentId(); var sec=TABS.filter(function(t){return t.id===id;})[0]||TABS[0];
   setActiveTab(sec.id); var view=$('#view'); window.scrollTo(0,0);
+  var rb=$('#refreshBtn'); if(rb) rb.classList.add('kfl-spin');
   view.innerHTML=loadingHero();
   try { await sec.render(view); } catch(e){ view.innerHTML=errState(e); }
+  if(rb) rb.classList.remove('kfl-spin');
+  var st=$('#syncTime'); if(st){ var n=new Date(); st.textContent='עודכן '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
 }
 
 // ───────── HOME ─────────
@@ -348,6 +356,15 @@ window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); 
   if(!location.hash) location.hash='#/';
   route();
   if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('/sw.js'); } catch(e){} }
+  // Pull-to-refresh: only when scrolled to the very top; passive listeners so it
+  // never fights native scroll. Triggers a real re-fetch via route(true).
+  (function ptr(){
+    var startY=0, pulling=false, THRESH=70, ind=null;
+    function getInd(){ if(!ind){ ind=document.createElement('div'); ind.id='ptrInd'; ind.style.cssText='position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;padding-top:68px;pointer-events:none;z-index:40;opacity:0;transition:opacity .15s'; ind.innerHTML='<div style="color:#fff;border-radius:9999px;padding:6px 14px;font-size:12px;font-weight:700">↓ רענון</div>'; document.body.appendChild(ind); } return ind; }
+    window.addEventListener('touchstart',function(e){ pulling = (window.scrollY<=0 && e.touches && e.touches.length===1); if(pulling) startY=e.touches[0].clientY; }, {passive:true});
+    window.addEventListener('touchmove',function(e){ if(!pulling) return; var dy=e.touches[0].clientY-startY; if(dy>10 && window.scrollY<=0){ var i=getInd(); i.style.opacity=Math.min(1,dy/THRESH); i.firstChild.textContent= dy>=THRESH?'שחרר לרענון':'↓ רענון'; } else if(ind){ ind.style.opacity=0; } }, {passive:true});
+    window.addEventListener('touchend',function(e){ if(!pulling) return; var ey=(e.changedTouches&&e.changedTouches[0])?e.changedTouches[0].clientY:startY; var dy=ey-startY; if(ind) ind.style.opacity=0; if(dy>=THRESH && window.scrollY<=0){ route(true); } pulling=false; }, {passive:true});
+  })();
 })();
 </script>
 </body>
