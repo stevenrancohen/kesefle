@@ -330,6 +330,7 @@ async function renderAccount(view){
     rowLink('/account','⚙','הגדרות חשבון','תוכנית, קטגוריות, פרטיות')+
     rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
   '</div>';
+  var invite='<button id="inviteBtn" class="card mt-4 flex w-full items-center gap-3 p-4 text-right active:scale-[.99]"><span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-base">🎁</span><span class="min-w-0 flex-1"><span class="block text-sm font-medium">הזמן חברים לכספ\'לה</span><span id="inviteSub" class="block text-[11px] text-ink-400">שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף</span></span><span class="text-ink-300">‹</span></button>';
   // Install: native prompt on Android/Chrome; manual steps on iOS Safari (which
   // never fires beforeinstallprompt); nothing once already installed (standalone).
   var install;
@@ -337,8 +338,24 @@ async function renderAccount(view){
   else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-1 text-xs text-ink-400">הקש/י על כפתור השיתוף בתחתית הדפדפן (הריבוע עם החץ ↑), ואז על &rdquo;הוסף למסך הבית&ldquo; / Add to Home Screen.</div></div>'; }
   else { install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>'; }
   var logout='<button onclick="kflLogout()" class="mt-4 w-full rounded-2xl border border-ink-100 dark:border-ink-700 py-3 text-sm font-semibold text-ink-500">התנתקות</button>';
-  view.innerHTML=head+prof+links+install+logout;
+  view.innerHTML=head+prof+links+invite+install+logout;
   var ib=$('#installBtn'); if(ib&&window.__kflDeferredPrompt){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ window.__kflDeferredPrompt.prompt(); await window.__kflDeferredPrompt.userChoice; }catch(e){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; }
+  // Invite/share: lazily fetch (or generate) the user's referral link only on tap
+  // (keeps KV reads off the render path). Web Share API with clipboard fallback.
+  var inviteBtn=$('#inviteBtn');
+  if(inviteBtn){ inviteBtn.onclick=async function(){
+    var sub=$('#inviteSub'); if(sub) sub.textContent='מכין קישור…';
+    var url=null;
+    try{ var m=await apiGet('/api/referral?action=mine'); url=m&&m.url; }catch(e){}
+    if(!url){ try{ var g=await apiPost('/api/referral?action=generate',{}); url=g&&g.url; }catch(e){} }
+    if(!url) url='https://kesefle.com';
+    var text='אני מנהל/ת את הכסף עם כספ\'לה — בוט וואטסאפ שרושם הוצאות בשנייה. בוא/י תנסה/י:';
+    try{
+      if(navigator.share){ await navigator.share({title:'כספ\'לה', text:text, url:url}); if(sub) sub.textContent='תודה ששיתפת! 🙏'; }
+      else if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text+' '+url); if(sub) sub.textContent='הקישור הועתק ✓'; }
+      else { window.open(url,'_blank'); if(sub) sub.textContent='שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף'; }
+    }catch(e){ if(sub) sub.textContent='שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף'; }
+  }; }
 }
 async function kflLogout(){ try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }catch(e){} try{ localStorage.removeItem('kesefle_user'); }catch(e){} location.href='/account'; }
 
