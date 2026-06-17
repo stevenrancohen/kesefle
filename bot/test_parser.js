@@ -122,5 +122,16 @@ eq('"2 קפה כפול 13" → 1 item', ALL('2 קפה כפול 13').length, 1);
 var _kfl13 = P('2 קפה כפול 13').amount;
 eq('"2 קפה כפול 13" amount = 13 or 26 (single price)', _kfl13 === 13 || _kfl13 === 26, true);
 
+console.log('\n── multiplier + percentage (2026-06-17 audit) ──');
+eq('"50 כפול 2 חולצה" multiplies → 100', (P('50 כפול 2 חולצה') || {}).amount, 100);
+eq('"50 כפול 2 חולצה" is ONE row', (P('50 כפול 2 חולצה') || {}).count, 1);
+eq('"5 × 3 קפה" multiplies → 15', (P('5 × 3 קפה') || {}).amount, 15);
+eq('"קיבלתי הנחה 25 אחוז" is a rate → no amount', P('קיבלתי הנחה 25 אחוז'), null);
+eq('"הנחה 25 %" is a rate → no amount', P('הנחה 25 %'), null);
+eq('"הנחה 25 אחוז על 200" keeps the price → 200', (P('הנחה 25 אחוז על 200') || {}).amount, 200);
+eq('installments still keep the price → 1000', (P('ספה 1000 5 תשלומים') || {}).amount, 1000);
+eq('dimensions "3x4" are NOT multiplied → 500', (P('שטיח 3x4 500') || {}).amount, 500);
+eq('"אחוזה 500" (estate, not percent) → 500', (P('אחוזה 500') || {}).amount, 500);
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' PARSER CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);

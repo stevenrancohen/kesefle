@@ -10467,7 +10467,7 @@ function parseAmountAndDescription(text) {
     // "הנחה 25%") is a RATE, never a shekel amount, so skip it -- otherwise
     // "10% טיפ" was booked as a phantom 10 row. Only the immediately-following
     // char counts (no space), matching how users write percentages.
-    if (phoneStripped.charAt(match.index + match[0].length) === '%') continue;
+    if (/^\s*(?:%|אחוז(?![א-ת])|percent|pct)/i.test(phoneStripped.slice(match.index + match[0].length, match.index + match[0].length + 10))) continue;
     // THOUSAND MULTIPLIER (Steven 2026-06-14): "2.5k" / "2.5 אלף" / "5k" -> x1000.
     // Only a STANDALONE k/אלף (not glued to another letter), so "2.5kg" stays a
     // 2.5 quantity and "12gb" is untouched. The suffix length is folded into len
@@ -10494,14 +10494,27 @@ function parseAmountAndDescription(text) {
   var _surv = _found.filter(function (f) { return !_amtNoise(f); });
   if (!_surv.length) _surv = _found; // never lose the whole expense
   var nums;
+  // TRUE multiplier (Steven 2026-06-17): an unambiguous "A כפול B" / "A × B" /
+  // "A ✕ B" (and NOT the תשלומים installment case) means ONE item priced A*B --
+  // e.g. "50 כפול 2" = ₪100, not two phantom rows of 50+2 and not max(50,2).
+  // ASCII x/* are deliberately left to the installment/quantity logic below
+  // because they collide with dimensions ("3x4 מטר") and model numbers.
+  var _isInstall_ = /תשלומ|תשלום|פעמ|פעמים|tashlum|peamim|payments?|installments?/i.test(phoneStripped);
+  if (!_isInstall_) {
+    var _mp_ = phoneStripped.match(/(\d[\d.,]*)\s*(?:×|✕|כפול)\s*(\d[\d.,]*)/);
+    if (_mp_) {
+      var _ma_ = _parseIsraeliNumber_(_mp_[1]), _mb_ = _parseIsraeliNumber_(_mp_[2]);
+      if (!isNaN(_ma_) && !isNaN(_mb_) && _ma_ > 0 && _mb_ > 0) nums = [_ma_ * _mb_];
+    }
+  }
   // Installment / multiplier ("X tashlumim shel Y", "8 x 200"): one purchase
   // split into payments -> the price is the largest surviving number.
   var _INSTALL = /תשלומ|תשלום|פעמ|פעמים|\btashlum|\bpeamim|\d\s*[x×✕*]\s*\d|[x×✕]\s*\d|\bכפול\b|\bpayments?\b|\binstallments?\b|\btimes\b|\bof\b/i;
-  if (_INSTALL.test(phoneStripped) && _surv.length > 1) {
+  if (!nums && _INSTALL.test(phoneStripped) && _surv.length > 1) {
     var _mx = _surv[0];
     for (var _k = 1; _k < _surv.length; _k++) { if (_surv[_k].n > _mx.n) _mx = _surv[_k]; }
     nums = [_mx.n];
-  } else {
+  } else if (!nums) {
     // Currency anchor: a number marked with shekel/NIS (after) or glued to a
     // leading "be-" (before) is the price; if exactly one survivor is anchored
     // it wins (drops a leftover quantity noun: "3 hultzot 240 shekel" -> 240).
