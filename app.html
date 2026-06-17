@@ -178,17 +178,75 @@ async function renderTx(view){
 
 // ───────── INSIGHTS ─────────
 async function renderInsights(view){
-  var d;
-  try { d=await apiGet('/api/sheet/summary'); } catch(e){ view.innerHTML=errState(e); return; }
-  if(!d||!d.ok){ view.innerHTML=errState(new Error((d&&d.error)||'load_failed')); return; }
-  var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
-  var total=tc.reduce(function(s,c){return s+(Number(c.total)||0);},0);
   var head='<div class="mb-3 font-display text-xl font-black">תובנות · '+thisMonthLabel()+'</div>';
-  if(!tc.length){ view.innerHTML=head+emptyState('אין מספיק נתונים לתובנות','אחרי כמה הוצאות נתחיל להראות לך לאן הולך הכסף.'); return; }
-  var maxC=tc.reduce(function(m,c){return Math.max(m,Number(c.total)||0);},0);
-  var list='<div class="card p-4"><div class="mb-1 font-display text-base font-bold">הוצאות לפי קטגוריה</div>'+tc.map(function(c){ var p=total>0?Math.round((Number(c.total)||0)/total*100):0; return bar(c.name+' · '+p+'%', Number(c.total)||0, maxC); }).join('')+'</div>';
-  var totCard='<div class="card mt-4 p-4 text-center"><div class="text-xs text-ink-400">סך ההוצאות בקטגוריות המובילות</div><div class="mt-1 font-display text-2xl font-black">'+money(total)+'</div></div>';
-  view.innerHTML=head+totCard+list+'<div class="mt-3 text-center text-xs text-ink-400">תקציבים, השוואה חודשית ומגמות — בקרוב.</div>';
+  view.innerHTML=head+loadingHero();
+  var d, ex;
+  try {
+    var both=await Promise.all([ apiGet('/api/sheet/summary'), apiGet('/api/sheet/getExpenses').catch(function(){return null;}) ]);
+    d=both[0]; ex=both[1];
+  } catch(e){ view.innerHTML=head+errState(e); return; }
+  if(!d||!d.ok){ view.innerHTML=head+errState(new Error((d&&d.error)||'load_failed')); return; }
+
+  var spent=Number(d.month_expenses)||0;
+  var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
+  if(!spent && !tc.length){ view.innerHTML=head+emptyState('אין מספיק נתונים לתובנות','אחרי כמה הוצאות נתחיל להראות לך לאן הולך הכסף.'); return; }
+
+  // End-of-month projection: current pace (spent / days elapsed) x days in month.
+  var now=new Date();
+  var dayOfMonth=now.getDate();
+  var daysInMonth=new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  var projected = dayOfMonth>0 ? Math.round(spent/dayOfMonth*daysInMonth) : spent;
+  var leftDays=Math.max(0, daysInMonth-dayOfMonth);
+  var projCard='<div class="card p-4">'+
+    '<div class="text-xs text-ink-400">תחזית להוצאות עד סוף החודש</div>'+
+    '<div class="mt-1 font-display text-3xl font-black">'+money(projected)+'</div>'+
+    '<div class="mt-1 text-xs text-ink-400">לפי הקצב הנוכחי · הוצאת '+money(spent)+' ב-'+num(dayOfMonth)+' ימים · עוד '+num(leftDays)+' ימים בחודש</div>'+
+  '</div>';
+
+  // Month-over-month vs last month (delta from summary).
+  var delta=d.month_expenses_delta_pct;
+  var momCard='';
+  if(delta!=null){
+    var up=delta>0, flat=delta===0;
+    var col=flat?'text-ink-400':(up?'text-rose-500':'text-emerald-500');
+    var arrow=flat?'→':(up?'▲':'▼');
+    momCard='<div class="card mt-3 p-4 flex items-center justify-between">'+
+      '<div><div class="text-xs text-ink-400">לעומת החודש שעבר</div>'+
+      '<div class="mt-0.5 text-sm text-ink-500">'+(up?'הוצאת יותר':(flat?'אותו דבר':'הוצאת פחות'))+'</div></div>'+
+      '<div class="'+col+' font-display text-2xl font-black">'+arrow+' '+Math.abs(delta)+'%</div>'+
+    '</div>';
+  }
+
+  // 6-month expense trend from full history (expenses only).
+  var trendCard='';
+  if(ex && ex.rows && ex.rows.length){
+    var byMonth={};
+    ex.rows.forEach(function(r){ if(r.is_income) return; var m=String(r.date).slice(0,7); byMonth[m]=(byMonth[m]||0)+(Number(r.amount)||0); });
+    var months=[];
+    for(var i=5;i>=0;i--){ var dt=new Date(now.getFullYear(), now.getMonth()-i, 1); var key=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'); months.push({key:key, label:(HEB_MONTHS[dt.getMonth()]||'').slice(0,3), val:byMonth[key]||0}); }
+    var maxM=months.reduce(function(m,o){return Math.max(m,o.val);},0);
+    if(maxM>0){
+      trendCard='<div class="card mt-3 p-4"><div class="mb-3 font-display text-base font-bold">מגמת הוצאות · 6 חודשים</div>'+
+        '<div class="flex items-end justify-between gap-1.5" style="height:120px">'+months.map(function(o){
+          var h=maxM>0?Math.max(4,Math.round(o.val/maxM*100)):4; var cur=o.key===(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+          return '<div class="flex flex-1 flex-col items-center justify-end gap-1" style="height:100%">'+
+            '<div class="w-full rounded-t-lg '+(cur?'bg-brand-500':'bg-brand-500/30')+'" style="height:'+h+'%" title="'+money(o.val)+'"></div>'+
+            '<div class="text-[10px] '+(cur?'font-bold text-ink-600 dark:text-ink-300':'text-ink-400')+'">'+esc(o.label)+'</div></div>';
+        }).join('')+'</div></div>';
+    }
+  }
+
+  // Category breakdown.
+  var total=tc.reduce(function(s,c){return s+(Number(c.total)||0);},0);
+  var catCard='';
+  if(tc.length){
+    var maxC=tc.reduce(function(m,c){return Math.max(m,Number(c.total)||0);},0);
+    catCard='<div class="card mt-3 p-4"><div class="mb-1 font-display text-base font-bold">לאן הלך הכסף החודש</div>'+
+      tc.map(function(c){ var p=total>0?Math.round((Number(c.total)||0)/total*100):0; return bar(c.name+' · '+p+'%', Number(c.total)||0, maxC); }).join('')+'</div>';
+  }
+
+  view.innerHTML=head+projCard+momCard+trendCard+catCard+
+    '<div class="mt-3 text-center text-xs text-ink-400">המספרים מתעדכנים אוטומטית מהגיליון שלך.</div>';
 }
 
 // ───────── ACCOUNT ─────────
