@@ -185,7 +185,7 @@ function txRow(t){
 // ───────── TRANSACTIONS (full history from getExpenses + search + month groups) ─────────
 async function renderTx(view){
   view.innerHTML='<div class="mb-3 flex items-center justify-between"><div class="font-display text-xl font-black">תנועות</div><div id="txCount" class="text-xs text-ink-400"></div></div>'+
-    '<input id="txSearch" type="search" inputmode="search" placeholder="חיפוש לפי תיאור או קטגוריה…" class="mb-1 w-full rounded-2xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500/40" />'+
+    '<input id="txSearch" type="search" inputmode="search" aria-label="חיפוש תנועות" placeholder="חיפוש לפי תיאור או קטגוריה…" class="mb-1 w-full rounded-2xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500/40" />'+
     '<div id="txList" class="mt-2">'+loadingHero()+'</div>';
   var d;
   try { d=await apiGet('/api/sheet/getExpenses'); } catch(e){ $('#txList').innerHTML=errState(e); return; }
