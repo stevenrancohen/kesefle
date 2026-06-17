@@ -246,18 +246,23 @@ async function handlerImpl(req, res) {
   if (await kvGet(seenKey)) {
     return res.status(200).json({ ok: true, ignored: 'duplicate' });
   }
-  // Mark seen
-  try {
-    const kvUrl = process.env.KV_REST_API_URL;
-    const kvToken = process.env.KV_REST_API_TOKEN;
-    if (kvUrl && kvToken) {
-      await fetch(`${kvUrl}/set/${encodeURIComponent(seenKey)}?EX=86400`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ts: Date.now() }),
-      });
-    }
-  } catch (e) { /* non-fatal */ }
+  // Mark-seen is DEFERRED to after a confirmed sheet write (2026-06-17 audit P0):
+  // marking it here meant a failed write + Meta retry silently dropped the
+  // expense. _markSeen() runs only on success; on failure we return non-200 so
+  // Meta re-delivers and the row is never lost.
+  async function _markSeen() {
+    try {
+      const kvUrl = process.env.KV_REST_API_URL;
+      const kvToken = process.env.KV_REST_API_TOKEN;
+      if (kvUrl && kvToken) {
+        await fetch(`${kvUrl}/set/${encodeURIComponent(seenKey)}?EX=86400`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ts: Date.now() }),
+        });
+      }
+    } catch (e) { /* non-fatal */ }
+  }
 
   // 5. Look up the user by phone number
   const userRecord = await kvGet(`phone:${fromPhone}`);
@@ -340,15 +345,16 @@ async function handlerImpl(req, res) {
   //    + the encrypted token from user:{userSub}.
   const writeResult = await writeToUserSheet(userRecord, parsed, text, messageId);
 
-  // 8. Reply
+  // 8. Mark seen + reply ONLY on a confirmed write. On failure: do NOT mark seen
+  //    and return non-200 so Meta retries — the expense is never silently dropped.
   if (writeResult.ok) {
+    await _markSeen();
     await sendReply(fromPhone, `✅ נרשם: ₪${parsed.amount} · ${parsed.category}`);
-  } else {
-    await sendReply(fromPhone, '⚠️ הוצאתי את ההודעה אבל לא הצלחתי לכתוב לגיליון. בודק…');
-    log.error('wa.sheet_write.failed', { reqId: req.reqId, phone: fromPhone, error: writeResult.error, detail: writeResult.detail });
+    return res.status(200).json({ ok: true });
   }
-
-  return res.status(200).json({ ok: true });
+  await sendReply(fromPhone, '⚠️ קיבלתי את ההודעה אבל הכתיבה לגיליון נכשלה — מנסה שוב מיד.');
+  log.error('wa.sheet_write.failed', { reqId: req.reqId, phone: fromPhone, error: writeResult.error, detail: writeResult.detail });
+  return res.status(503).json({ ok: false, error: 'sheet_write_failed_retry' });
 }
 
 // Stub parser — real one ports from the Apps Script bot in Phase 2.
