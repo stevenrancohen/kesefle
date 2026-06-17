@@ -16211,10 +16211,6 @@ function _bizMonthSnapshotLine_(dashSub, subLabel) {
       out += catLine;
     }
     out += '\n• הוצאות עסק: ' + nis(expense);
-    if (income > 0) {
-      out += '\n• הכנסות עסק: ' + nis(income);
-      out += '\n• רווח נטו: ' + nis(income - expense);
-    }
     // End-of-month projection of business expenses, by current daily pace.
     var dayOfMonth = now.getDate();
     var daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -16222,6 +16218,10 @@ function _bizMonthSnapshotLine_(dashSub, subLabel) {
       var projected = expense / dayOfMonth * daysInMonth;
       out += '\n📈 בקצב הזה צפי ~' + nis(projected) + ' הוצאות עד סוף החודש';
     }
+    // Income + net profit moved OUT of the per-expense confirmation (Steven
+    // 2026-06-17): offered on demand via the existing "סיכום" command so each
+    // confirmation stays compact. `income` is still scanned for the guard above.
+    out += '\n\n💬 רוצה סיכום חודשי מלא (כולל הכנסות ורווח)? שלח: סיכום';
     return out;
   } catch (e) { Logger.log('_bizMonthSnapshotLine_ err: ' + (e && e.message)); return ''; }
 }
