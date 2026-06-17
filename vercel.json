@@ -124,7 +124,8 @@
     { "path": "/api/cron/customer-weekly-digest", "schedule": "0 7 * * 0" },
     { "path": "/api/cron/morning-nudge", "schedule": "0 4 * * *" },
     { "path": "/api/cron/weekly-question", "schedule": "30 7 * * 3" },
-    { "path": "/api/cron/objective-reminders", "schedule": "0 17 * * 0,2,4" }
+    { "path": "/api/cron/objective-reminders", "schedule": "0 17 * * 0,2,4" },
+    { "path": "/api/cron/projection-nudge", "schedule": "0 7 24 * *" }
   ],
   "cleanUrls": true,
   "trailingSlash": false

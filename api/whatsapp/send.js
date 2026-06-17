@@ -14,7 +14,12 @@
 //     Stops an out-of-control cron or buggy caller from spamming any single
 //     user — Meta will throttle us aggressively if we do that anyway.
 //
-// Body: { phone: 'E164', text: 'string', botSecret?: 'string' }
+// Body (freeform text — only delivers inside the 24h customer-service window):
+//   { phone: 'E164', text: 'string', botSecret?: 'string' }
+// Body (approved template — REQUIRED to reach a user who has been quiet >24h,
+// e.g. a re-engagement / projection nudge):
+//   { phone: 'E164', template: { name, language?: 'he', params?: ['..','..'] }, botSecret? }
+//   params map to the template body variables {{1}},{{2}},... in order.
 // Returns: { ok, status, id?, error? }
 //
 // Env:
@@ -64,10 +69,16 @@ async function handlerImpl(req, res) {
   const phone = normalizeE164(body.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
 
-  let text = String(body.text == null ? '' : body.text);
-  text = text.trim();
-  if (!text) return res.status(400).json({ ok: false, error: 'missing_text' });
-  if (text.length > MAX_TEXT_LEN) text = text.slice(0, MAX_TEXT_LEN);
+  // Two modes: an approved template (reaches lapsed users, business-initiated)
+  // or freeform text (only delivers within the 24h customer-service window).
+  const tmpl = body.template && typeof body.template === 'object' && body.template.name
+    ? body.template : null;
+  let text = '';
+  if (!tmpl) {
+    text = String(body.text == null ? '' : body.text).trim();
+    if (!text) return res.status(400).json({ ok: false, error: 'missing_text_or_template' });
+    if (text.length > MAX_TEXT_LEN) text = text.slice(0, MAX_TEXT_LEN);
+  }
 
   // Per-recipient rate limit (defense-in-depth). 100/hour is well above any
   // legitimate sequence (cron sends one daily alert per category, max ~16
@@ -94,17 +105,31 @@ async function handlerImpl(req, res) {
   // Pinned to v21.0 (same as link.js's welcome path) so a Meta API bump
   // doesn't change behaviour out from under us.
   const url = `https://graph.facebook.com/v21.0/${phoneId}/messages`;
+
+  // Build the Meta payload for whichever mode we're in.
+  let payload;
+  if (tmpl) {
+    const langCode = String(tmpl.language || 'he');
+    const params = Array.isArray(tmpl.params) ? tmpl.params : [];
+    const components = params.length
+      ? [{ type: 'body', parameters: params.map((p) => ({ type: 'text', text: String(p == null ? '' : p) })) }]
+      : [];
+    payload = {
+      messaging_product: 'whatsapp',
+      to: phone,
+      type: 'template',
+      template: { name: String(tmpl.name), language: { code: langCode }, components },
+    };
+  } else {
+    payload = { messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: text } };
+  }
+
   let resp;
   try {
     resp = await fetch(url, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'text',
-        text: { body: text },
-      }),
+      body: JSON.stringify(payload),
     });
   } catch (e) {
     log.error('wa.send.fetch_failed', { reqId: req.reqId, phone, error: e.message });
