@@ -181,6 +181,7 @@
   .tx-row { cursor: pointer; }
   .tx-row:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
   /* Dashboard tour CSS removed 2026-05-24 per Steven's request. */
+  *:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 8px; }
 </style>
 <script src="/lib/analytics.js" defer></script>
   <script src="/js/analytics-loader.js" defer></script>
@@ -1231,7 +1232,7 @@
         </p>
         <div class="flex gap-2">
           <input id="kfl-cats-input" type="text" maxlength="60" placeholder="לדוגמה: עסק יוסי / לימודים פרטיים"
-            class="flex-1 rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-950 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
+            class="flex-1 rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-950 px-3 py-2 text-sm focus:border-brand-500 outline-none focus:ring-2 focus:ring-brand-500/40" />
           <button onclick="kflCatAdd()" class="rounded-xl bg-brand-600 hover:bg-brand-700 px-4 py-2 text-sm font-bold text-white">הוסף</button>
         </div>
         <ul id="kfl-cats-list" class="space-y-1.5"></ul>
@@ -1260,7 +1261,7 @@
       <!-- Search box (client-side filter of the visible recent list) -->
       <div class="mt-3 relative">
         <input id="kfl-recent-search" type="search" placeholder="🔍 חפש הוצאה (לפי תיאור / קטגוריה)..."
-          class="w-full rounded-xl border border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-950 px-3 py-2 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-white outline-none" />
+          class="w-full rounded-xl border border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-950 px-3 py-2 text-sm focus:border-brand-500 focus:bg-white dark:focus:bg-white outline-none focus:ring-2 focus:ring-brand-500/40" />
       </div>
       <div id="recent-list" class="mt-3 space-y-2">
         <div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">

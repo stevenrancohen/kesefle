@@ -237,6 +237,7 @@
     .kfl-link-underline::after { transition: none; }
     .kfl-flow { animation: none; }
   }
+  *:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 8px; }
 </style>
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <link rel="stylesheet" href="/css/brand.css" />
@@ -1056,7 +1057,7 @@
             id="kfl-pg-input"
             type="text"
             dir="rtl"
-            class="flex-1 bg-transparent px-3 py-3 text-lg font-medium text-ink-900 placeholder:text-ink-400 focus:outline-none"
+            class="flex-1 bg-transparent px-3 py-3 text-lg font-medium text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             placeholder="כתוב הוצאה כמו &quot;120 וולט&quot; או &quot;3500 שכר דירה&quot;..."
             autocomplete="off"
             maxlength="120"
