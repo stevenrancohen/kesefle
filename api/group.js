@@ -421,7 +421,8 @@ async function handlerImpl(req, res) {
       group.expenses = group.expenses || [];
       group.expenses.push(expense);
       if (group.expenses.length > 1000) group.expenses = group.expenses.slice(-1000);
-      await kvSet('group:' + code, group);
+      const _grpSaved = await kvSet('group:' + code, group);
+      if (!_grpSaved) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       // Mirror to the creator's Google Sheet for data-ownership. KV
       // remains authoritative for fast reads; the sheet is the audit
       // log members can verify against. Best-effort — never blocks the
