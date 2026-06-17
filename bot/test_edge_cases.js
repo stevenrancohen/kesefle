@@ -54,7 +54,7 @@ globalThis.DEFAULT_CATEGORY = eval('(' + balanced('const DEFAULT_CATEGORY =', '{
 const DEF = globalThis.DEFAULT_CATEGORY;
 (0, eval)(fn('_kflIsWordChar_')); (0, eval)(fn('_kflKwHit_'));
 (0, eval)(fn('_matchCategory_orig')); (0, eval)(fn('_matchCategory_long'));
-(0, eval)(fn('_coerceCategoryBySubcategory')); (0, eval)(fn('matchCategory'));
+(0, eval)(fn('_coerceCategoryBySubcategory')); (0, eval)(fn('_kflBizOpHit_')); (0, eval)(fn('matchCategory'));
 
 let pass = 0, fail = 0;
 // expected: 'DEFAULT' | 'sub:X' (subcategory contains X) | category prefix

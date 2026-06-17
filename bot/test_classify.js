@@ -21,7 +21,8 @@ globalThis.DEFAULT_CATEGORY = eval('(' + balanced('const DEFAULT_CATEGORY =', '{
 const DEF = globalThis.DEFAULT_CATEGORY;
 (0, eval)(fn('_kflIsWordChar_')); (0, eval)(fn('_kflKwHit_'));
 (0, eval)(fn('_matchCategory_orig')); (0, eval)(fn('_matchCategory_long'));
-(0, eval)(fn('_coerceCategoryBySubcategory')); (0, eval)(fn('matchCategory'));
+globalThis.KFL_BIZ_OP_SET = eval('(' + balanced('var KFL_BIZ_OP_SET = {', '{', '}') + ')');
+(0, eval)(fn('_coerceCategoryBySubcategory')); (0, eval)(fn('_kflBizOpHit_')); (0, eval)(fn('matchCategory'));
 
 let pass = 0, fail = 0;
 // expected: 'DEFAULT' (should ask) | 'sub:X' (subcategory contains X) | category prefix
@@ -183,6 +184,23 @@ check('חופשה משפחתית 5000',      'sub:חופשות');
 check('חופשת חורף 3000',         'sub:חופשות');
 check('vacation 2000',            'sub:חופשות');
 check('נופש 2000',                'sub:חופשות');
+
+console.log('\n── operational recognizer (KFL_BIZ_OP_SET, business-gated) ──');
+(function () {
+  var keys = Object.keys(globalThis.KFL_BIZ_OP_SET || {});
+  var sample = keys.filter(function (k) { return k.indexOf(' ') < 0 && k.length >= 5; }).slice(0, 6);
+  sample.forEach(function (k) {
+    var r = matchCategory('עסק ' + k + ' 200');
+    var ok = r && r.category === 'עסק' && r.subcategory === 'הוצאות תפעוליות' && r.recognized === true;
+    console.log((ok ? '  ✅ ' : '  ❌ ') + ('עסק ' + k).padEnd(26) + ' → ' + (r ? r.category + '/' + r.subcategory + (r.recognized ? ' [recognized]' : '') : 'null'));
+    ok ? pass++ : fail++;
+  });
+  // a real bucket keyword must STILL win over the operational recognizer
+  var m = matchCategory('עסק פייסבוק 200');
+  var mok = m && m.subcategory === 'עלות שיווק';
+  console.log((mok ? '  ✅ ' : '  ❌ ') + 'עסק פייסבוק (marketing wins)'.padEnd(26) + ' → ' + (m ? m.subcategory : 'null'));
+  mok ? pass++ : fail++;
+})();
 
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' CLASSIFICATION CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
