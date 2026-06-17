@@ -112,6 +112,24 @@
   function pill(text,tone){ var t={ok:'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300',warn:'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',crit:'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300',info:'bg-brand-50 text-brand-700 dark:bg-ink-700 dark:text-brand-200',neutral:'bg-ink-100 text-ink-600 dark:bg-ink-700 dark:text-ink-300'}[tone||'neutral']; return '<span class="inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold '+t+'">'+esc(text)+'</span>'; }
   function card(inner,cls){ return '<div class="card p-4 '+(cls||'')+'">'+inner+'</div>'; }
   function kpi(label,value,sub,tone){ return '<div class="card p-4"><div class="text-xs font-semibold text-ink-400">'+esc(label)+'</div><div class="mt-1 font-display text-3xl">'+value+'</div><div class="mt-1 text-xs '+(tone==='crit'?'text-red-500':tone==='warn'?'text-amber-600':'text-ink-400')+'">'+(sub||'')+'</div></div>'; }
+  // Inline SVG sparkline from a numeric series (oldest→newest, left→right). Pure render — no fabrication.
+  function sparkline(values,opts){
+    opts=opts||{}; var vals=(values||[]).map(function(n){return Number(n)||0;}); if(!vals.length) return '';
+    var w=opts.w||240,h=opts.h||40,pad=2; var max=Math.max.apply(null,vals),min=Math.min.apply(null,vals); var span=(max-min)||1;
+    var stepX=vals.length>1?(w-pad*2)/(vals.length-1):0;
+    var pts=vals.map(function(v,i){ var x=pad+i*stepX; var y=h-pad-((v-min)/span)*(h-pad*2); return x.toFixed(1)+','+y.toFixed(1); });
+    var color=opts.color||'#3b82f6'; var lastX=(pad+(vals.length-1)*stepX).toFixed(1);
+    var areaD='M'+pts.join(' L')+' L'+lastX+','+(h-pad)+' L'+pad+','+(h-pad)+' Z';
+    return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" class="w-full" style="height:'+h+'px" aria-hidden="true">'+
+      '<path d="'+areaD+'" fill="'+color+'" fill-opacity="0.08"/>'+
+      '<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  }
+  function trendCard(label,values){
+    var vals=(values||[]).map(function(n){return Number(n)||0;}); var has=vals.some(function(v){return v>0;});
+    var total=vals.reduce(function(s,v){return s+v;},0);
+    return '<div class="card p-4"><div class="flex items-baseline justify-between gap-2"><div class="text-xs font-semibold text-ink-400">'+esc(label)+'</div><div class="font-display text-xl">'+num(total)+'</div></div>'+
+      (has?'<div class="mt-2">'+sparkline(vals)+'</div>':'<div class="mt-3 text-[11px] text-ink-400">אין נתונים בחלון זה</div>')+'</div>';
+  }
   function loading(){ return '<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+Array(4).fill('<div class="card p-4"><div class="skel h-3 w-20"></div><div class="skel mt-3 h-8 w-24"></div></div>').join('')+'</div>'; }
   function emptyState(t){ return card('<div class="py-8 text-center text-ink-400"><div class="text-2xl">∅</div><div class="mt-2 text-sm">'+esc(t||'אין נתונים עדיין')+'</div></div>'); }
   function errState(e){ if(e&&e.isAuth) return card('<div class="py-8 text-center"><div class="text-sm font-semibold">צריך להתחבר כמנהל</div><div class="mt-1 text-xs text-ink-400">התחבר/י עם חשבון אדמין מאושר ב-<a class="text-brand-600 underline" href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'">/account</a> (באותו דפדפן), ואז רענן/י.</div></div>'); return card('<div class="py-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'</div>'); }
@@ -156,11 +174,19 @@
   function currentId(){ var h=(location.hash||'').replace(/^#\/?/,''); return h; }
   async function route(force){
     var id=currentId();
+    var view=$('#view');
+    // Deep-link, refresh-safe detail pages (e.g. #/user/<sub>) — like the SRC admin's detail routes.
+    if(id.indexOf('user/')===0){
+      var sub=decodeURIComponent(id.slice(5));
+      $('#pageTitle').textContent='פרטי משתמש'; setActiveNav('users'); closeDrawer();
+      view.innerHTML=sectionTitle('פרטי משתמש')+loading();
+      try { await renderUserDetail(view,sub); } catch(e){ view.innerHTML=sectionTitle('פרטי משתמש')+errState(e); }
+      return;
+    }
     var sec=SECTIONS.filter(function(s){return s.id===id;})[0]||SECTIONS[0];
     $('#pageTitle').textContent=sec.title;
     setActiveNav(sec.id);
     closeDrawer();
-    var view=$('#view');
     view.innerHTML=sectionTitle(sec.title)+loading();
     try { await sec.render(view); }
     catch(e){ view.innerHTML=sectionTitle(sec.title)+errState(e); }
@@ -169,13 +195,15 @@
   // ───────── SECTION: Overview (KPIs + decision feed) ─────────
   async function renderOverview(view){
     view.innerHTML=sectionTitle('סקירה','מבט מהיר על מצב המערכת — מה דורש את תשומת הלב שלך עכשיו')+'<div id="ov-kpi">'+loading()+'</div>'+
+      '<div id="ov-trends" class="mt-6"></div>'+
       '<div class="mt-6 grid gap-4 lg:grid-cols-3"><div class="lg:col-span-2"><h3 class="font-display text-lg mb-3">דורש תשומת לב</h3><div id="ov-decisions"></div></div><div><h3 class="font-display text-lg mb-3">נרשמו לאחרונה</h3><div id="ov-signups"></div></div></div>';
     // KPIs (revenue + activation + registration-health + errors) in parallel — each fails soft
     var rev=adminGet('/api/admin/revenue').catch(function(){return null;});
     var act=adminGet('/api/admin/activation-summary?days=30').catch(function(){return null;});
     var reg=adminGet('/api/admin?action=registration-health').catch(function(){return null;});
     var err=adminGet('/api/admin?action=errors-count').catch(function(){return null;});
-    var R=await rev, A=await act, G=await reg, E=await err;
+    var anl=adminGet('/api/admin?action=analytics&days=14').catch(function(){return null;});
+    var R=await rev, A=await act, G=await reg, E=await err, AN=await anl;
     var cells=[];
     cells.push(kpi('משתמשים', R?num(R.counts&&R.counts.total):'—', R&&R.counts?num(R.counts.paid)+' משלמים · '+num(R.counts.trial)+' ניסיון':'—'));
     cells.push(kpi('MRR', R&&R.mrr?money(R.mrr.ils):'—', R&&R.arr?'ARR '+money(R.arr.ils):''));
@@ -184,6 +212,13 @@
     var orph=G?(G.orphanCount||0):null;
     cells.push(kpi('יתומים (ללא גיליון)', orph==null?'—':num(orph), orph?'דורש תיקון':'תקין', orph?'crit':'ok'));
     $('#ov-kpi').innerHTML='<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+cells.join('')+'</div>';
+    // 14-day trend strip — real durable analytics counters (90-day retention); empty/auth states stay honest
+    if(AN&&AN.days&&AN.days.length){
+      var ser=function(ev){ return AN.days.map(function(d){ return (d.events&&d.events[ev])||0; }); };
+      var sSignup=ser('signup_complete'),sFirst=ser('first_message_received'),sViews=ser('page_view');
+      var anyTrend=[sSignup,sFirst,sViews].some(function(a){ return a.some(function(v){return v>0;}); });
+      $('#ov-trends').innerHTML='<h3 class="font-display text-lg mb-3">מגמות 14 ימים</h3>'+(anyTrend?'<div class="grid gap-3 sm:grid-cols-3">'+trendCard('הרשמות שהושלמו',sSignup)+trendCard('הוצאה ראשונה לבוט',sFirst)+trendCard('צפיות בדף הנחיתה',sViews)+'</div>':emptyState('עדיין אין נתוני מגמה (נאספים מרגע שמשתמשים מתחילים להגיע)'));
+    }
     // Decision feed — synthesize ranked "attention" items from the same data
     var items=[];
     if(G&&G.orphanCount>0) items.push({sev:'crit',head:num(G.orphanCount)+' משתמשים ללא גיליון',sub:'נרשמו אך הגיליון לא נוצר — לא יכולים לרשום הוצאה',to:'#/data-integrity'});
@@ -215,24 +250,28 @@
         var us=(d&&d.users)||[];
         if(!us.length){ $('#ulist').innerHTML=emptyState('לא נמצאו משתמשים'); return; }
         $('#ulist').innerHTML='<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-ink-50 dark:bg-ink-800 text-ink-400"><tr><th class="p-3 text-right">אימייל</th><th class="p-3 text-right">תוכנית</th><th class="p-3 text-right">גיליון</th><th class="p-3 text-right">פעיל</th><th class="p-3"></th></tr></thead><tbody>'+us.map(function(u){ return '<tr class="border-t border-ink-100 dark:border-ink-700"><td class="p-3"><div class="font-medium">'+esc(u.email||'—')+'</div><div class="text-[11px] text-ink-400">'+esc(u.name||u.sub||'')+'</div></td><td class="p-3">'+pill(u.plan||'free',u.plan&&u.plan!=='free'?'ok':'neutral')+'</td><td class="p-3">'+(u.hasSheet?pill('יש','ok'):pill('אין','crit'))+'</td><td class="p-3 text-ink-400 text-xs">'+ago(u.lastActive)+'</td><td class="p-3 text-left"><button class="udet rounded-lg border border-ink-100 dark:border-ink-700 px-2 py-1 text-xs" data-sub="'+esc(u.sub)+'">פרטים</button></td></tr>'; }).join('')+'</tbody></table></div>';
-        document.querySelectorAll('.udet').forEach(function(b){ b.onclick=function(){ openUser(b.getAttribute('data-sub')); }; });
+        document.querySelectorAll('.udet').forEach(function(b){ b.onclick=function(){ location.hash='#/user/'+encodeURIComponent(b.getAttribute('data-sub')); }; });
       } catch(e){ $('#ulist').innerHTML=errState(e); }
     }
     $('#ub').onclick=function(){ load($('#uq').value.trim()); };
     $('#uq').addEventListener('keydown',function(e){ if(e.key==='Enter') load($('#uq').value.trim()); });
     load('');
   }
-  async function openUser(sub){
-    if(!sub) return;
-    var d; try { d=await adminGet('/api/admin?action=user&sub='+encodeURIComponent(sub)); } catch(e){ alert('שגיאה: '+(e.message||e)); return; }
+  // Refresh-safe, shareable user detail page (reached via #/user/<sub>).
+  async function renderUserDetail(view,sub){
+    if(!sub){ view.innerHTML=sectionTitle('פרטי משתמש')+errState(new Error('חסר מזהה משתמש')); return; }
+    view.innerHTML=sectionTitle('פרטי משתמש')+'<a href="#/users" class="text-brand-600 text-sm">‹ חזרה לרשימת המשתמשים</a><div id="udet" class="mt-3">'+loading()+'</div>';
+    var d; try { d=await adminGet('/api/admin?action=user&sub='+encodeURIComponent(sub)); } catch(e){ $('#udet').innerHTML=errState(e); return; }
     var u=(d&&d.user)||{};
     var acts=[['resend_welcome','שלח שוב ברוכים הבאים'],['force_resync','סנכרון מחדש'],['reset_plan_to_free','אפס לתוכנית חינם'],['pause_account','השהה חשבון'],['unpause_account','בטל השהיה']];
-    var html='<div class="space-y-2 text-sm"><div><b>'+esc(u.email||sub)+'</b></div>'+
-      '<div class="text-ink-400 text-xs">תוכנית: '+esc(u.plan||'—')+' · סטטוס: '+esc(u.subscriptionStatus||'—')+'</div>'+
-      '<div class="text-ink-400 text-xs">גיליון: '+(u.spreadsheetId?'<a class="text-brand-600 underline" target="_blank" href="https://docs.google.com/spreadsheets/d/'+esc(u.spreadsheetId)+'">פתח</a>':'אין')+'</div>'+
-      '<div class="pt-2 flex flex-wrap gap-2">'+acts.map(function(a){ return '<button class="uact rounded-lg border border-ink-100 dark:border-ink-700 px-2 py-1 text-xs" data-a="'+a[0]+'">'+a[1]+'</button>'; }).join('')+'</div></div>';
-    showModal('פרטי משתמש',html);
-    document.querySelectorAll('.uact').forEach(function(b){ b.onclick=async function(){ if(!confirm('להריץ "'+b.textContent+'"?')) return; try { await adminPost('/api/admin?action=user-action',{action:b.getAttribute('data-a'),targetUserSub:sub}); b.textContent='בוצע ✓'; } catch(e){ alert('שגיאה: '+(e.message||e)); } }; });
+    $('#udet').innerHTML=card(
+      '<div class="text-lg font-semibold">'+esc(u.email||sub)+'</div>'+
+      '<div class="mt-1 text-sm text-ink-400">תוכנית: '+esc(u.plan||'—')+' · סטטוס: '+esc(u.subscriptionStatus||'—')+'</div>'+
+      '<div class="mt-1 text-sm text-ink-400">גיליון: '+(u.spreadsheetId?'<a class="text-brand-600 underline" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/'+esc(u.spreadsheetId)+'">פתח בגוגל שיטס</a>':'אין')+'</div>'+
+      (u.linkedPhone?'<div class="mt-1 text-sm text-ink-400">טלפון מקושר: '+esc(u.linkedPhone)+'</div>':'')+
+      '<div class="pt-4 flex flex-wrap gap-2">'+acts.map(function(a){ return '<button class="uact rounded-lg border border-ink-100 dark:border-ink-700 px-3 py-1.5 text-xs hover:bg-ink-50 dark:hover:bg-ink-800" data-a="'+a[0]+'">'+a[1]+'</button>'; }).join('')+'</div>'+
+      '<div id="uactMsg" class="mt-2 text-xs text-ink-400"></div>');
+    document.querySelectorAll('.uact').forEach(function(b){ b.onclick=async function(){ if(!confirm('להריץ "'+b.textContent+'"?')) return; try { await adminPost('/api/admin?action=user-action',{action:b.getAttribute('data-a'),targetUserSub:sub}); b.textContent='בוצע ✓'; b.disabled=true; } catch(e){ $('#uactMsg').textContent='שגיאה: '+(e.message||e); } }; });
   }
 
   // ───────── SECTION: Needs Review (inbox + reports) ─────────
@@ -441,14 +480,6 @@
     }
     if(!agentState.ranAt) await runAgents();
     paint();
-  }
-
-  // ───────── modal ─────────
-  function showModal(title,html){
-    var m=document.createElement('div'); m.className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4';
-    m.innerHTML='<div class="card w-full max-w-md p-5"><div class="flex items-center justify-between mb-3"><h3 class="font-display text-xl">'+esc(title)+'</h3><button class="x text-ink-400 text-xl">×</button></div>'+html+'</div>';
-    m.addEventListener('click',function(e){ if(e.target===m||e.target.classList.contains('x')) m.remove(); });
-    document.body.appendChild(m);
   }
 
   // ───────── command bar ─────────
