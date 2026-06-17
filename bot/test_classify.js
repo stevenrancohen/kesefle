@@ -202,5 +202,76 @@ console.log('\n── operational recognizer (KFL_BIZ_OP_SET, business-gated) �
   mok ? pass++ : fail++;
 })();
 
+// ─── 2026-06-17 misroute fixes (9 buckets) ───────────────────────────────────
+// Each case was verified as DEFAULT or wrong-category before the fix.
+// Regression assertions lock them as correct routes going forward.
+
+// FIX 1: pharmacy hyphenated form
+console.log('\n── misroute fixes: pharmacy hyphen ──');
+check('בית-מרקחת 80', 'בריאות');
+check('בית מרקחת 120', 'בריאות');
+
+// FIX 2: etsy -> online shopping (was DEFAULT)
+console.log('\n── misroute fixes: etsy online shopping ──');
+check('etsy 150', 'קניות');
+check('etsy shop 200', 'קניות');
+
+// FIX 3: bare income tokens -> income (were DEFAULT)
+console.log('\n── misroute fixes: income tokens גמלה/קצבה/מענק ──');
+(function() {
+  function checkInc(msg) {
+    var r = matchCategory(msg);
+    var ok = r && r.category === 'הכנסות' && r.isIncome === true;
+    var got = r ? (r.category + '/' + r.subcategory + (r.isIncome ? '[income]' : '')) : 'null';
+    console.log((ok ? '  ✅ ' : '  ❌ ') + msg.padEnd(26) + ' → ' + got);
+    ok ? pass++ : fail++;
+  }
+  checkInc('גמלה 500');
+  checkInc('קצבה 600');
+  checkInc('מענק 1000');
+  // Longer forms still route correctly
+  checkInc('מענק לידה 1500');
+  checkInc('קצבת ילדים 600');
+})();
+
+// FIX 4: ועד (bare) -> housing fixed expenses (was DEFAULT)
+console.log('\n── misroute fixes: ועד -> הוצאות קבועות/בית ──');
+check('ועד 150', 'הוצאות קבועות');
+check('ועד חודשי 200', 'הוצאות קבועות');
+check('הועד הפועל 300', 'DEFAULT');  // must NOT steal unrelated usage
+
+// FIX 5: שיפוץ -> home maintenance (was DEFAULT)
+console.log('\n── misroute fixes: שיפוץ -> תחזוקת בית ──');
+check('שיפוץ 3000', 'הוצאות קבועות');
+check('שיפוץ בית 4000', 'הוצאות קבועות');
+check('שיפוצניק 500', 'הוצאות קבועות');
+check('צבע לקיר 200', 'הוצאות קבועות');
+
+// FIX 6: גז לרכב -> transport fuel (was DEFAULT)
+console.log('\n── misroute fixes: גז לרכב -> תחבורה/דלק ──');
+check('גז לרכב 200', 'תחבורה');
+check('גז לאוטו 150', 'תחבורה');
+// regression: household gas NOT stolen
+check('גז ביתי 150', 'הוצאות קבועות');
+
+// FIX 7: קורס אונליין -> education (was בידור/משחקים)
+console.log('\n── misroute fixes: קורס אונליין -> לימודים ──');
+check('קורס אונליין 350', 'הוצאות קבועות');
+check('online course 200', 'הוצאות קבועות');
+check('קורס מקוון 400', 'הוצאות קבועות');
+check('קורס 500', 'הוצאות קבועות');       // bare קורס still education
+check('אונליין 200', 'בידור');             // bare אונליין still gaming
+
+// FIX 8: google drive / google one -> apps (were DEFAULT)
+console.log('\n── misroute fixes: google drive/one -> אפליקציות ──');
+check('google drive 50', 'הוצאות קבועות');
+check('google one 100', 'הוצאות קבועות');
+
+// FIX 9: פנסיה -> insurance/savings (was DEFAULT)
+console.log('\n── misroute fixes: פנסיה -> הוצאות קבועות/ביטוח ──');
+check('פנסיה 900', 'הוצאות קבועות');
+check('פנסיה חודשית 900', 'הוצאות קבועות');
+
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' CLASSIFICATION CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);
