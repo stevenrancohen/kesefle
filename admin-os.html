@@ -230,12 +230,12 @@
     if(R&&R.churn&&R.churn.cancellations_last_30d>0) items.push({sev:'warn',head:num(R.churn.cancellations_last_30d)+' ביטולים ב-30 ימ׳',sub:'נטישה '+(R.churn.monthly_churn_rate_pct||0)+'%',to:'#/revenue'});
     var order={crit:0,warn:1,info:2}; items.sort(function(a,b){return order[a.sev]-order[b.sev];});
     var anyData=R||A||G||E; // distinguish "genuinely all-clear" from "couldn't load (not authed)"
-    $('#ov-decisions').innerHTML = items.length ? items.map(function(it){ return '<a href="'+it.to+'" class="card card-hover mb-3 flex items-start gap-3 p-4 hover:shadow-md">'+pill(it.sev==='crit'?'דחוף':it.sev==='warn'?'לטיפול':'מידע',it.sev)+'<div class="flex-1"><div class="font-semibold">'+esc(it.head)+'</div><div class="text-xs text-ink-400">'+esc(it.sub)+'</div></div><span class="text-ink-300">‹</span></a>'; }).join('') : (anyData ? card('<div class="py-6 text-center text-sm text-green-600">הכל נראה תקין ✓ אין פריטים דחופים</div>') : errState(AuthError()));
+    $('#ov-decisions').innerHTML = items.length ? items.map(function(it){ return '<a href="'+it.to+'" class="card mb-3 flex items-start gap-3 p-4 hover:shadow-md">'+pill(it.sev==='crit'?'דחוף':it.sev==='warn'?'לטיפול':'מידע',it.sev)+'<div class="flex-1"><div class="font-semibold">'+esc(it.head)+'</div><div class="text-xs text-ink-400">'+esc(it.sub)+'</div></div><span class="text-ink-300">‹</span></a>'; }).join('') : (anyData ? card('<div class="py-6 text-center text-sm text-green-600">הכל נראה תקין ✓ אין פריטים דחופים</div>') : errState(AuthError()));
     // Recent signups
     try {
       var rs=await adminGet('/api/admin/recent-signups?limit=8&hours=72');
       var us=(rs&&rs.users)||[];
-      $('#ov-signups').innerHTML = us.length ? '<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+us.map(function(u){ var step=u.step||u.minutes_ago!=null?u.step:''; return '<div class="flex items-center justify-between p-3"><div class="min-w-0"><div class="truncate text-sm font-medium">'+esc(u.email||u.userSub||'—')+'</div><div class="text-[11px] text-ink-400">'+(u.linkedPhone?'מקושר':'ממתין')+' · לפני '+ago(u.lastLoginAt)+'</div></div>'+pill(u.linkedPhone?'מקושר':(u.sheetUrl?'יש גיליון':'OAuth בלבד'),u.linkedPhone?'ok':'warn')+'</div>'; }).join('')+'</div>' : emptyState('אין הרשמות חדשות ב-72 שעות');
+      $('#ov-signups').innerHTML = us.length ? '<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+us.map(function(u){ return '<div class="flex items-center justify-between p-3"><div class="min-w-0"><div class="truncate text-sm font-medium">'+esc(u.email||u.userSub||'—')+'</div><div class="text-[11px] text-ink-400">'+(u.linkedPhone?'מקושר':'ממתין')+' · לפני '+ago(u.lastLoginAt)+'</div></div>'+pill(u.linkedPhone?'מקושר':(u.sheetUrl?'יש גיליון':'OAuth בלבד'),u.linkedPhone?'ok':'warn')+'</div>'; }).join('')+'</div>' : emptyState('אין הרשמות חדשות ב-72 שעות');
     } catch(e){ $('#ov-signups').innerHTML=errState(e); }
   }
 
@@ -271,7 +271,7 @@
       (u.linkedPhone?'<div class="mt-1 text-sm text-ink-400">טלפון מקושר: '+esc(u.linkedPhone)+'</div>':'')+
       '<div class="pt-4 flex flex-wrap gap-2">'+acts.map(function(a){ return '<button class="uact rounded-lg border border-ink-100 dark:border-ink-700 px-3 py-1.5 text-xs hover:bg-ink-50 dark:hover:bg-ink-800" data-a="'+a[0]+'">'+a[1]+'</button>'; }).join('')+'</div>'+
       '<div id="uactMsg" class="mt-2 text-xs text-ink-400"></div>');
-    document.querySelectorAll('.uact').forEach(function(b){ b.onclick=async function(){ if(!confirm('להריץ "'+b.textContent+'"?')) return; try { await adminPost('/api/admin?action=user-action',{action:b.getAttribute('data-a'),targetUserSub:sub}); b.textContent='בוצע ✓'; b.disabled=true; } catch(e){ $('#uactMsg').textContent='שגיאה: '+(e.message||e); } }; });
+    document.querySelectorAll('.uact').forEach(function(b){ b.onclick=async function(){ if(!confirm('להריץ "'+b.textContent+'"?')) return; try { var r=await adminPost('/api/admin?action=user-action',{action:b.getAttribute('data-a'),targetUserSub:sub}); b.textContent=(r&&r.queued)?'נוסף לתור ✓':'בוצע ✓'; b.disabled=true; } catch(e){ $('#uactMsg').textContent='שגיאה: '+(e.message||e); } }; });
   }
 
   // ───────── SECTION: Needs Review (inbox + reports) ─────────
@@ -305,7 +305,7 @@
     var cells=[];
     var botDrift=V&&V.drift===true;
     cells.push(kpi('גרסת בוט (חי)', V?'<span class="text-base">'+esc(V.deployed_version||'—')+'</span>':'—', V?((V.deployed_version&&V.repo_version)?(botDrift?'לא תואם! repo: '+esc(V.repo_version):'תואם ל-repo ✓'):'—') : '', botDrift?'crit':'ok'));
-    cells.push(kpi('שגיאות 24ש׳', E?num(E.errors_24h):'—', '', E&&E.errors_24h>20?'crit':E&&E.errors_24h>0?'warn':'ok'));
+    cells.push(kpi('שגיאות 24ש׳', (E&&E.errors_24h!=null)?num(E.errors_24h):'—', (E&&E.errors_24h==null)?'נתוני שגיאות לא זמינים':'', E&&E.errors_24h>20?'crit':E&&E.errors_24h>0?'warn':'ok'));
     var cfgDrift=D&&D.drift===true;
     cells.push(kpi('סחיפת קונפיג', D?(cfgDrift?num(D.mismatchCount||1):'0'):'—', cfgDrift?'ערכים שלא תואמים':'תקין', cfgDrift?'crit':'ok'));
     cells.push(kpi('Webhook', S&&S.bot?(S.bot.meta_access_token_configured?'מוגדר':'חסר'):'—', S&&S.bot?esc(S.bot.configured_bot_phone_e164||''):'', S&&S.bot&&!S.bot.meta_access_token_configured?'crit':'ok'));
@@ -407,7 +407,7 @@
   // ───────── SECTION: Audit log ─────────
   async function renderAudit(view){
     view.innerHTML=sectionTitle('יומן ביקורת','כל פעולות הניהול נרשמות');
-    try { var d=await adminGet('/api/admin?action=audit&limit=50'); var ev=(d&&d.events)||[]; view.innerHTML+=ev.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+ev.map(function(e){ return '<div class="flex items-center gap-3 p-3 text-sm"><span class="text-ink-400 text-[11px] w-20">לפני '+ago(e.ts||e.at)+'</span><span>'+esc(e.action||e.type||'')+'</span><span class="text-ink-400 text-xs flex-1 truncate">'+esc(e.actor||e.target||'')+'</span></div>'; }).join('')+'</div>':emptyState('אין רשומות ביקורת'); }
+    try { var d=await adminGet('/api/admin?action=audit&limit=50'); var ev=(d&&d.events)||[]; view.innerHTML+=ev.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+ev.map(function(e){ return '<div class="flex items-center gap-3 p-3 text-sm"><span class="text-ink-400 text-[11px] w-20">לפני '+ago(e.ts||e.at)+'</span><span>'+esc(e.action||e.type||'')+'</span><span class="text-ink-400 text-xs flex-1 truncate">'+esc(e.actor||e.target||e.subHash||'')+'</span></div>'; }).join('')+'</div>':emptyState('אין רשומות ביקורת'); }
     catch(e){ view.innerHTML+=errState(e); }
   }
 
