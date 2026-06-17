@@ -106,6 +106,22 @@ function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class
 function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-400">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
 function errState(e){ if(e&&e.isAuth) return signInState(); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
 function bar(label,val,max,tone){ var pct=max>0?Math.round(val/max*100):0; var c=tone||'bg-brand-500'; return '<div class="py-2"><div class="flex items-center justify-between text-sm"><span class="truncate">'+esc(label)+'</span><span class="font-semibold tabular-nums">'+money(val)+'</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full '+c+'" style="width:'+Math.max(3,pct)+'%"></div></div></div>'; }
+var WA_LINK='https://wa.me/972547766361';
+function onbStep(n,t){ return '<div class="flex items-center gap-3"><span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white">'+n+'</span><span class="text-sm">'+t+'</span></div>'; }
+// First-run / empty-month nudge: drives the first WhatsApp expense (the activation moment).
+function onboardingCard(){
+  return '<div class="card p-6 text-center">'+
+    '<div class="text-3xl">👋</div>'+
+    '<div class="mt-2 font-display text-xl font-black">מתחילים לעקוב אחרי הכסף</div>'+
+    '<div class="mt-1 text-sm text-ink-400">שלח/י הוצאה אחת בוואטסאפ — והיא תופיע כאן מיד.</div>'+
+    '<div class="mt-5 space-y-3 text-right">'+
+      onbStep('1','פתח/י את הבוט בוואטסאפ')+
+      onbStep('2','כתוב/י הוצאה — לדוגמה: <span class="font-bold text-ink-700 dark:text-ink-200">קפה 15</span>')+
+      onbStep('3','חזור/י לכאן — היא תופיע אוטומטית')+
+    '</div>'+
+    '<a href="'+WA_LINK+'" target="_blank" rel="noopener" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">פתיחת הבוט בוואטסאפ ←</a>'+
+  '</div>';
+}
 
 // ───────── tabs / routes ─────────
 var TABS=[
@@ -143,8 +159,10 @@ async function renderHome(view){
   var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
   var maxC=tc.reduce(function(m,c){return Math.max(m,Number(c.total)||0);},0);
   var cats= tc.length ? '<div class="card mt-4 p-4"><div class="mb-1 flex items-center justify-between"><div class="font-display text-base font-bold">לאן הלך הכסף</div><a href="#/insights" class="text-xs text-brand-600">הכל ›</a></div>'+tc.slice(0,5).map(function(c){ return bar(c.name, Number(c.total)||0, maxC); }).join('')+'</div>' : '';
-  // recent
+  // recent — or the first-run onboarding when there is genuinely nothing this month
   var rec=(d.recent||[]);
+  var nothingThisMonth = !rec.length && !tc.length && Number(d.month_count||0)===0;
+  if(nothingThisMonth){ view.innerHTML=hero+onboardingCard(); return; }
   var recent= rec.length ? '<div class="card mt-4 p-2"><div class="px-2 py-2 flex items-center justify-between"><div class="font-display text-base font-bold">תנועות אחרונות</div><a href="#/tx" class="text-xs text-brand-600">הכל ›</a></div><div class="divide-y divide-ink-100 dark:divide-ink-800">'+rec.slice(0,7).map(txRow).join('')+'</div></div>' : emptyState('עוד אין תנועות החודש','שלח/י הוצאה ראשונה בוואטסאפ ותראה/י אותה כאן.');
   view.innerHTML=hero+cats+recent;
 }
@@ -168,7 +186,7 @@ async function renderTx(view){
   function paint(q){
     q=(q||'').trim().toLowerCase();
     var f= q ? rows.filter(function(r){ return ((r.description||'')+' '+(r.category||'')).toLowerCase().indexOf(q)>=0; }) : rows;
-    if(!f.length){ $('#txList').innerHTML=emptyState(q?'לא נמצאו תנועות':'אין תנועות עדיין', q?'נסה/י מילה אחרת':'כתוב/י הוצאה בוואטסאפ והיא תופיע כאן.'); return; }
+    if(!f.length){ $('#txList').innerHTML = q ? emptyState('לא נמצאו תנועות','נסה/י מילה אחרת') : onboardingCard(); return; }
     var groups={}, order=[];
     f.forEach(function(r){ var m=String(r.date).slice(0,7); if(!groups[m]){ groups[m]=[]; order.push(m); } groups[m].push(r); });
     $('#txList').innerHTML=order.map(function(m){
@@ -200,7 +218,7 @@ async function renderInsights(view){
 
   var spent=Number(d.month_expenses)||0;
   var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
-  if(!spent && !tc.length){ view.innerHTML=head+emptyState('אין מספיק נתונים לתובנות','אחרי כמה הוצאות נתחיל להראות לך לאן הולך הכסף.'); return; }
+  if(!spent && !tc.length){ view.innerHTML=head+onboardingCard(); return; }
 
   // End-of-month projection: current pace (spent / days elapsed) x days in month.
   var now=new Date();
@@ -285,6 +303,8 @@ async function renderInsights(view){
 }
 
 // ───────── ACCOUNT ─────────
+function isStandalone(){ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true; }
+function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent||'') && !window.MSStream; }
 async function renderAccount(view){
   var d;
   try { d=await apiGet('/api/me'); } catch(e){ view.innerHTML=errState(e); return; }
@@ -302,7 +322,12 @@ async function renderAccount(view){
     rowLink('/account','⚙','הגדרות חשבון','תוכנית, קטגוריות, פרטיות')+
     rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
   '</div>';
-  var install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>';
+  // Install: native prompt on Android/Chrome; manual steps on iOS Safari (which
+  // never fires beforeinstallprompt); nothing once already installed (standalone).
+  var install;
+  if(isStandalone()){ install=''; }
+  else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-1 text-xs text-ink-400">הקש/י על כפתור השיתוף בתחתית הדפדפן (הריבוע עם החץ ↑), ואז על &rdquo;הוסף למסך הבית&ldquo; / Add to Home Screen.</div></div>'; }
+  else { install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>'; }
   var logout='<button onclick="kflLogout()" class="mt-4 w-full rounded-2xl border border-ink-100 dark:border-ink-700 py-3 text-sm font-semibold text-ink-500">התנתקות</button>';
   view.innerHTML=head+prof+links+install+logout;
   var ib=$('#installBtn'); if(ib&&window.__kflDeferredPrompt){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ window.__kflDeferredPrompt.prompt(); await window.__kflDeferredPrompt.userChoice; }catch(e){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; }
