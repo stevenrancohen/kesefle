@@ -136,7 +136,10 @@ async function generateAction(req, res) {
   }
 
   await kvSet('referral:code:' + userSub, code);
-  await kvSet('referral:reverse:' + code, userSub);
+  // JSON-quote the sub so kvGet round-trips it: a bare 21-digit Google sub
+  // parses back to a LOSSY Number, breaking the self-referral guard + referrer
+  // credit (2026-06-17 audit). Quoting stores "<sub>" -> JSON.parse -> string.
+  await kvSet('referral:reverse:' + code, JSON.stringify(userSub));
 
   log.info('referral.generate', { reqId: req.reqId, userSub, regenerated: !!existing });
 
@@ -219,7 +222,7 @@ async function redeemAction(req, res) {
   }
 
   // Self-referral guard.
-  if (referrerSub === userSub) {
+  if (String(referrerSub) === String(userSub)) {
     return res.status(400).json({ ok: false, error: 'cannot_redeem_own_code' });
   }
 
