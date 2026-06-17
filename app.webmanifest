@@ -1,0 +1,27 @@
+{
+  "name": "כספ'לה — האפליקציה",
+  "short_name": "כספ'לה",
+  "description": "האפליקציה שלך לניהול הכסף — מאזן חודשי, הוצאות והכנסות מהגיליון שלך, ורישום מהיר דרך וואטסאפ.",
+  "start_url": "/app",
+  "scope": "/",
+  "id": "/app",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#070b16",
+  "theme_color": "#2563eb",
+  "lang": "he",
+  "dir": "rtl",
+  "orientation": "portrait",
+  "categories": ["finance", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "תנועות אחרונות", "short_name": "תנועות", "url": "/app#/tx", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "תובנות", "short_name": "תובנות", "url": "/app#/insights", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "רישום הוצאה בוואטסאפ", "short_name": "הוצאה", "url": "https://wa.me/972547766361", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

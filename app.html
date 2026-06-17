@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>כספ'לה — האפליקציה</title>
+<meta name="theme-color" content="#2563eb" />
+<link rel="manifest" href="/app.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="כספ'לה" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Rubik:wght@600;700;800;900&display=swap" />
+<link rel="stylesheet" href="/css/brand.css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {
+      fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], display: ['Rubik', 'Heebo', 'sans-serif'] },
+      colors: {
+        ink:    { 50:'#f7f8fb',100:'#eef0f6',200:'#dde1ec',300:'#bcc4d6',400:'#8a95b3',500:'#5d6b8f',600:'#41506f',700:'#2f3b54',800:'#1e2638',900:'#0f1422',950:'#070b16' },
+        brand:  { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' },
+        accent: { 500:'#0ea5e9',600:'#0284c7' },
+      },
+    } },
+  };
+</script>
+<style>
+  body { font-family:'Heebo',system-ui,sans-serif; background:#f7f8fb; -webkit-tap-highlight-color:transparent; }
+  html.dark body { background:#070b16; }
+  .font-display { font-family:'Rubik','Heebo',sans-serif; letter-spacing:-0.02em; }
+  .card { background:#fff; border:1px solid #eef0f6; border-radius:1rem; }
+  html.dark .card { background:#0f1422; border-color:#1e2638; }
+  .tab { color:#8a95b3; }
+  .tab.active { color:#2563eb; }
+  html.dark .tab.active { color:#60a5fa; }
+  .skel { background:linear-gradient(90deg,#eef0f6 25%,#dde1ec 37%,#eef0f6 63%); background-size:400% 100%; animation:sk 1.3s ease infinite; border-radius:.5rem; }
+  html.dark .skel { background:linear-gradient(90deg,#1e2638 25%,#2f3b54 37%,#1e2638 63%); background-size:400% 100%; }
+  @keyframes sk { 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+  .safe-top { padding-top:env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom:env(safe-area-inset-bottom); }
+  *:focus-visible { outline:2px solid #2563eb; outline-offset:2px; border-radius:8px; }
+  main::-webkit-scrollbar { display:none; }
+</style>
+</head>
+<body class="text-ink-900 dark:text-ink-50">
+
+  <!-- Top app bar -->
+  <header class="safe-top fixed inset-x-0 top-0 z-30 border-b border-ink-100 dark:border-ink-800 bg-white/90 dark:bg-ink-950/90 backdrop-blur">
+    <div class="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
+      <div class="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 font-display text-lg font-black text-white">כ</div>
+      <div class="flex-1">
+        <div class="font-display text-lg font-black leading-none">כספ'לה</div>
+        <div id="whoami" class="text-[11px] text-ink-400">האפליקציה שלך</div>
+      </div>
+      <button id="refreshBtn" aria-label="רענן" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-100 dark:border-ink-700 text-ink-500">⟳</button>
+      <button id="themeBtn" aria-label="מצב כהה/בהיר" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-100 dark:border-ink-700 text-ink-500">◐</button>
+    </div>
+  </header>
+
+  <main id="view" class="mx-auto max-w-lg px-4 pb-28 pt-20"></main>
+
+  <!-- Floating "log via WhatsApp" -->
+  <a id="waFab" href="https://wa.me/972547766361" target="_blank" rel="noopener"
+     class="fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/30 active:scale-95">
+    <span>＋</span> רשום הוצאה בוואטסאפ
+  </a>
+
+  <!-- Bottom tab nav -->
+  <nav class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 dark:border-ink-800 bg-white/95 dark:bg-ink-950/95 backdrop-blur">
+    <div id="tabs" class="mx-auto grid max-w-lg grid-cols-4"></div>
+  </nav>
+
+<script>
+'use strict';
+// ───────── auth + fetch (same pattern as admin-os/dashboard) ─────────
+function token(){ try { return (JSON.parse(localStorage.getItem('kesefle_user')||'{}')).idToken || ''; } catch(e){ return ''; } }
+function AuthError(){ var e=new Error('auth'); e.isAuth=true; return e; }
+async function apiGet(path){
+  var t=token(); var h=t?{Authorization:'Bearer '+t}:{};
+  var r=await fetch(path,{credentials:'include',headers:h});
+  if(r.status===401||r.status===403) throw AuthError();
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+// ───────── helpers ─────────
+var $=function(s,r){return (r||document).querySelector(s);};
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function money(n){ if(n==null||isNaN(n)) return '—'; return '₪'+Math.round(Number(n)).toLocaleString('he-IL'); }
+function num(n){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('he-IL'); }
+function agoDays(d){ if(!d) return ''; var x=new Date(d); if(isNaN(x.getTime())) return ''; var diff=Math.round((Date.now()-x.getTime())/86400000); if(diff<=0) return 'היום'; if(diff===1) return 'אתמול'; if(diff<7) return 'לפני '+diff+' ימים'; return x.toLocaleDateString('he-IL',{day:'numeric',month:'short'}); }
+var HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+function thisMonthLabel(){ var d=new Date(); return HEB_MONTHS[d.getMonth()]+' '+d.getFullYear(); }
+function loadingHero(){ return '<div class="card p-5"><div class="skel h-3 w-24"></div><div class="skel mt-3 h-9 w-40"></div><div class="mt-5 grid grid-cols-2 gap-3"><div class="skel h-14"></div><div class="skel h-14"></div></div></div><div class="skel mt-4 h-40 w-full rounded-2xl"></div>'; }
+function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class="text-3xl">∅</div><div class="mt-2 text-sm font-semibold">'+esc(t||'אין נתונים עדיין')+'</div>'+(sub?'<div class="mt-1 text-xs text-ink-400">'+esc(sub)+'</div>':'')+'</div>'; }
+function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-400">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
+function errState(e){ if(e&&e.isAuth) return signInState(); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
+function bar(label,val,max,tone){ var pct=max>0?Math.round(val/max*100):0; var c=tone||'bg-brand-500'; return '<div class="py-2"><div class="flex items-center justify-between text-sm"><span class="truncate">'+esc(label)+'</span><span class="font-semibold tabular-nums">'+money(val)+'</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full '+c+'" style="width:'+Math.max(3,pct)+'%"></div></div></div>'; }
+
+// ───────── tabs / routes ─────────
+var TABS=[
+  {id:'',label:'בית',icon:'⌂',render:renderHome},
+  {id:'tx',label:'תנועות',icon:'≣',render:renderTx},
+  {id:'insights',label:'תובנות',icon:'◑',render:renderInsights},
+  {id:'account',label:'חשבון',icon:'☺',render:renderAccount},
+];
+function buildTabs(){ $('#tabs').innerHTML=TABS.map(function(t){ return '<a class="tab flex flex-col items-center gap-0.5 py-2.5" data-id="'+t.id+'" href="#/'+t.id+'"><span class="text-xl leading-none">'+t.icon+'</span><span class="text-[10px] font-semibold">'+esc(t.label)+'</span></a>'; }).join(''); }
+function setActiveTab(id){ document.querySelectorAll('#tabs .tab').forEach(function(a){ a.classList.toggle('active', a.getAttribute('data-id')===id); }); }
+function currentId(){ return (location.hash||'').replace(/^#\/?/,''); }
+async function route(force){
+  var id=currentId(); var sec=TABS.filter(function(t){return t.id===id;})[0]||TABS[0];
+  setActiveTab(sec.id); var view=$('#view'); window.scrollTo(0,0);
+  view.innerHTML=loadingHero();
+  try { await sec.render(view); } catch(e){ view.innerHTML=errState(e); }
+}
+
+// ───────── HOME ─────────
+async function renderHome(view){
+  var d;
+  try { d=await apiGet('/api/sheet/summary'); } catch(e){ view.innerHTML=errState(e); return; }
+  if(!d||!d.ok){ view.innerHTML=errState(new Error((d&&d.error)||'load_failed')); return; }
+  var exp=Number(d.month_expenses)||0, inc=Number(d.month_income)||0, net=inc-exp;
+  var delta=d.month_expenses_delta_pct;
+  var hero='<div class="card overflow-hidden p-5">'+
+    '<div class="text-xs font-semibold text-ink-400">'+thisMonthLabel()+'</div>'+
+    '<div class="mt-1 font-display text-4xl font-black '+(net>=0?'':'text-red-500')+'">'+money(net)+'</div>'+
+    '<div class="mt-0.5 text-xs text-ink-400">המאזן שלך החודש (הכנסות פחות הוצאות)</div>'+
+    '<div class="mt-4 grid grid-cols-2 gap-3">'+
+      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-400">הוצאות</div><div class="mt-0.5 text-lg font-bold text-red-500">'+money(exp)+'</div>'+(delta!=null?'<div class="text-[11px] '+(delta>0?'text-red-500':'text-green-600')+'">'+(delta>0?'▲':'▼')+' '+Math.abs(delta)+'% מהחודש שעבר</div>':'')+'</div>'+
+      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-400">הכנסות</div><div class="mt-0.5 text-lg font-bold text-green-600">'+money(inc)+'</div><div class="text-[11px] text-ink-400">'+num(d.month_count)+' תנועות</div></div>'+
+    '</div></div>';
+  // top categories
+  var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
+  var maxC=tc.reduce(function(m,c){return Math.max(m,Number(c.total)||0);},0);
+  var cats= tc.length ? '<div class="card mt-4 p-4"><div class="mb-1 flex items-center justify-between"><div class="font-display text-base font-bold">לאן הלך הכסף</div><a href="#/insights" class="text-xs text-brand-600">הכל ›</a></div>'+tc.slice(0,5).map(function(c){ return bar(c.name, Number(c.total)||0, maxC); }).join('')+'</div>' : '';
+  // recent
+  var rec=(d.recent||[]);
+  var recent= rec.length ? '<div class="card mt-4 p-2"><div class="px-2 py-2 flex items-center justify-between"><div class="font-display text-base font-bold">תנועות אחרונות</div><a href="#/tx" class="text-xs text-brand-600">הכל ›</a></div><div class="divide-y divide-ink-100 dark:divide-ink-800">'+rec.slice(0,7).map(txRow).join('')+'</div></div>' : emptyState('עוד אין תנועות החודש','שלח/י הוצאה ראשונה בוואטסאפ ותראה/י אותה כאן.');
+  view.innerHTML=hero+cats+recent;
+}
+function txRow(t){
+  var income=!!t.is_income; var amt=Number(t.amount)||0;
+  return '<div class="flex items-center gap-3 px-2 py-2.5">'+
+    '<div class="grid h-9 w-9 shrink-0 place-items-center rounded-full '+(income?'bg-green-50 text-green-600 dark:bg-green-900/30':'bg-red-50 text-red-500 dark:bg-red-900/30')+' text-sm font-bold">'+(income?'＋':'－')+'</div>'+
+    '<div class="min-w-0 flex-1"><div class="truncate text-sm font-medium">'+esc(t.description||t.subcategory||t.category||'תנועה')+'</div><div class="text-[11px] text-ink-400">'+esc(t.category||'')+' · '+agoDays(t.date)+'</div></div>'+
+    '<div class="shrink-0 text-sm font-bold tabular-nums '+(income?'text-green-600':'')+'">'+(income?'+':'')+money(amt)+'</div></div>';
+}
+
+// ───────── TRANSACTIONS (recent from summary; full history in slice 2) ─────────
+async function renderTx(view){
+  var d;
+  try { d=await apiGet('/api/sheet/summary'); } catch(e){ view.innerHTML=errState(e); return; }
+  if(!d||!d.ok){ view.innerHTML=errState(new Error((d&&d.error)||'load_failed')); return; }
+  var rec=(d.recent||[]);
+  var head='<div class="mb-3 flex items-center justify-between"><div class="font-display text-xl font-black">תנועות</div><div class="text-xs text-ink-400">'+thisMonthLabel()+'</div></div>';
+  if(!rec.length){ view.innerHTML=head+emptyState('אין תנועות החודש','כתוב/י הוצאה בוואטסאפ — היא תופיע כאן מיד.'); return; }
+  view.innerHTML=head+'<div class="card p-2"><div class="divide-y divide-ink-100 dark:divide-ink-800">'+rec.map(txRow).join('')+'</div></div>'+
+    '<div class="mt-3 text-center text-xs text-ink-400">מציג את התנועות האחרונות. היסטוריה מלאה וחיפוש — בקרוב.</div>';
+}
+
+// ───────── INSIGHTS ─────────
+async function renderInsights(view){
+  var d;
+  try { d=await apiGet('/api/sheet/summary'); } catch(e){ view.innerHTML=errState(e); return; }
+  if(!d||!d.ok){ view.innerHTML=errState(new Error((d&&d.error)||'load_failed')); return; }
+  var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
+  var total=tc.reduce(function(s,c){return s+(Number(c.total)||0);},0);
+  var head='<div class="mb-3 font-display text-xl font-black">תובנות · '+thisMonthLabel()+'</div>';
+  if(!tc.length){ view.innerHTML=head+emptyState('אין מספיק נתונים לתובנות','אחרי כמה הוצאות נתחיל להראות לך לאן הולך הכסף.'); return; }
+  var maxC=tc.reduce(function(m,c){return Math.max(m,Number(c.total)||0);},0);
+  var list='<div class="card p-4"><div class="mb-1 font-display text-base font-bold">הוצאות לפי קטגוריה</div>'+tc.map(function(c){ var p=total>0?Math.round((Number(c.total)||0)/total*100):0; return bar(c.name+' · '+p+'%', Number(c.total)||0, maxC); }).join('')+'</div>';
+  var totCard='<div class="card mt-4 p-4 text-center"><div class="text-xs text-ink-400">סך ההוצאות בקטגוריות המובילות</div><div class="mt-1 font-display text-2xl font-black">'+money(total)+'</div></div>';
+  view.innerHTML=head+totCard+list+'<div class="mt-3 text-center text-xs text-ink-400">תקציבים, השוואה חודשית ומגמות — בקרוב.</div>';
+}
+
+// ───────── ACCOUNT ─────────
+async function renderAccount(view){
+  var d;
+  try { d=await apiGet('/api/me'); } catch(e){ view.innerHTML=errState(e); return; }
+  if(!d||!d.ok||!d.user){ view.innerHTML=errState(AuthError()); return; }
+  var u=d.user||{}, sheet=d.sheet||null;
+  var initials=(u.name||u.email||'?').trim().charAt(0).toUpperCase();
+  var head='<div class="mb-3 font-display text-xl font-black">החשבון שלי</div>';
+  var prof='<div class="card flex items-center gap-3 p-4">'+
+    (u.picture?'<img src="'+esc(u.picture)+'" alt="" class="h-12 w-12 rounded-full" referrerpolicy="no-referrer">':'<div class="grid h-12 w-12 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">'+esc(initials)+'</div>')+
+    '<div class="min-w-0"><div class="truncate font-semibold">'+esc(u.name||'משתמש/ת כספ\'לה')+'</div><div class="truncate text-xs text-ink-400">'+esc(u.email||'')+'</div></div></div>';
+  function rowLink(href,icon,label,sub,ext){ return '<a href="'+esc(href)+'"'+(ext?' target="_blank" rel="noopener"':'')+' class="flex items-center gap-3 px-4 py-3.5"><span class="grid h-9 w-9 place-items-center rounded-xl bg-ink-50 dark:bg-ink-800 text-base">'+icon+'</span><span class="flex-1"><span class="block text-sm font-medium">'+esc(label)+'</span>'+(sub?'<span class="block text-[11px] text-ink-400">'+esc(sub)+'</span>':'')+'</span><span class="text-ink-300">‹</span></a>'; }
+  var links='<div class="card mt-4 divide-y divide-ink-100 dark:divide-ink-800">'+
+    (sheet&&sheet.spreadsheetUrl?rowLink(sheet.spreadsheetUrl,'📊','הגיליון שלי','פתח/י את הגיליון ב-Google Sheets',true):rowLink('/account','📊','הגדרת גיליון','חבר/י את הגיליון שלך'))+
+    rowLink('https://wa.me/972547766361','💬','הבוט בוואטסאפ','רשום/י הוצאה או בקש/י סיכום',true)+
+    rowLink('/account','⚙','הגדרות חשבון','תוכנית, קטגוריות, פרטיות')+
+    rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
+  '</div>';
+  var install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>';
+  var logout='<button onclick="kflLogout()" class="mt-4 w-full rounded-2xl border border-ink-100 dark:border-ink-700 py-3 text-sm font-semibold text-ink-500">התנתקות</button>';
+  view.innerHTML=head+prof+links+install+logout;
+  var ib=$('#installBtn'); if(ib&&window.__kflDeferredPrompt){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ window.__kflDeferredPrompt.prompt(); await window.__kflDeferredPrompt.userChoice; }catch(e){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; }
+}
+async function kflLogout(){ try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }catch(e){} try{ localStorage.removeItem('kesefle_user'); }catch(e){} location.href='/account'; }
+
+// ───────── theme + PWA + boot ─────────
+function applyTheme(t){ document.documentElement.classList.toggle('dark', t==='dark'); var m=document.querySelector('meta[name=theme-color]'); if(m) m.content=(t==='dark'?'#070b16':'#2563eb'); }
+function toggleTheme(){ var t=document.documentElement.classList.contains('dark')?'light':'dark'; localStorage.setItem('kfl_app_theme',t); applyTheme(t); }
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__kflDeferredPrompt=e; var ib=$('#installBtn'); if(ib){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ e.prompt(); await e.userChoice; }catch(_){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; } });
+(function(){
+  applyTheme(localStorage.getItem('kfl_app_theme') || ((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+  try { var u=JSON.parse(localStorage.getItem('kesefle_user')||'{}'); if(u&&(u.name||u.email)) $('#whoami').textContent=u.name||u.email; } catch(e){}
+  buildTabs();
+  $('#themeBtn').onclick=toggleTheme;
+  $('#refreshBtn').onclick=function(){ route(true); };
+  window.addEventListener('hashchange', function(){ route(); });
+  if(!location.hash) location.hash='#/';
+  route();
+  if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('/sw.js'); } catch(e){} }
+})();
+</script>
+</body>
+</html>
