@@ -16147,29 +16147,48 @@ function _bizMonthSnapshotLine_(dashSub, subLabel) {
     var data = sheet.getDataRange().getValues();
     if (data.length < 2) return '';
     var now = new Date();
-    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    var catSum = 0, expense = 0, income = 0;
+    var year = now.getFullYear(), month = now.getMonth();
+    var monthStart = new Date(year, month, 1);
+    var prevStart = new Date(year, month - 1, 1);
+    var prevEnd = new Date(year, month, 0, 23, 59, 59); // last day of prev month
+    var catSum = 0, expense = 0, income = 0, lastCatSum = 0;
     for (var i = 1; i < data.length; i++) {
       var d = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
-      if (isNaN(d.getTime()) || d < monthStart) continue;
+      if (isNaN(d.getTime())) continue;
       if (String(data[i][3] || '') !== 'עסק') continue; // business rows only
       var amt = Number(data[i][2]) || 0;
       var hCol = data[i][7];
       var isExp = hCol === true || String(hCol).toUpperCase() === 'TRUE';
-      if (isExp) {
-        expense += amt;
-        if (dashSub && String(data[i][4] || '') === dashSub) catSum += amt;
-      } else {
-        income += amt;
+      var sameSub = dashSub && String(data[i][4] || '') === dashSub;
+      if (d >= monthStart) {
+        if (isExp) { expense += amt; if (sameSub) catSum += amt; }
+        else { income += amt; }
+      } else if (isExp && sameSub && d >= prevStart && d <= prevEnd) {
+        lastCatSum += amt; // same category, last month, for the comparison line
       }
     }
     if (expense <= 0 && income <= 0) return '';
-    var out = '\n\n📊 העסק החודש (' + _HEB_MONTHS_[now.getMonth()] + ' ' + now.getFullYear() + '):';
-    if (catSum > 0) out += '\n• ' + (subLabel || dashSub) + ': ₪' + catSum.toLocaleString('he-IL');
-    out += '\n• הוצאות עסק: ₪' + expense.toLocaleString('he-IL');
+    var nis = function (n) { return '₪' + Math.round(n).toLocaleString('he-IL'); };
+    var out = '\n\n📊 העסק החודש (' + _HEB_MONTHS_[month] + ' ' + year + '):';
+    if (catSum > 0) {
+      var catLine = '\n• ' + (subLabel || dashSub) + ': ' + nis(catSum);
+      if (lastCatSum > 0) {
+        var pct = Math.round((catSum - lastCatSum) / lastCatSum * 100);
+        catLine += ' (לעומת ' + nis(lastCatSum) + ' בחודש שעבר, ' + (pct >= 0 ? '+' : '') + pct + '%)';
+      }
+      out += catLine;
+    }
+    out += '\n• הוצאות עסק: ' + nis(expense);
     if (income > 0) {
-      out += '\n• הכנסות עסק: ₪' + income.toLocaleString('he-IL');
-      out += '\n• רווח נטו: ₪' + (income - expense).toLocaleString('he-IL');
+      out += '\n• הכנסות עסק: ' + nis(income);
+      out += '\n• רווח נטו: ' + nis(income - expense);
+    }
+    // End-of-month projection of business expenses, by current daily pace.
+    var dayOfMonth = now.getDate();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    if (dayOfMonth >= 3 && dayOfMonth < daysInMonth && expense > 0) {
+      var projected = expense / dayOfMonth * daysInMonth;
+      out += '\n📈 בקצב הזה צפי ~' + nis(projected) + ' הוצאות עד סוף החודש';
     }
     return out;
   } catch (e) { Logger.log('_bizMonthSnapshotLine_ err: ' + (e && e.message)); return ''; }
