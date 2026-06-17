@@ -2845,7 +2845,7 @@ function handleInteractiveReply_(fromPhone, interactive) {
         isIncome: false,
       });
       if (__ar.ok) {
-        return { replyText: '✅ נרשם בגיליון שלך!\n💰 ₪' + amount + '\n📁 ' + decoded.category + (decoded.subcategory ? ' / ' + decoded.subcategory : '') + '\n📝 ' + description + _celebrateIfFirstExpense_(fromPhone) };
+        return { replyText: '✅ נרשם בגיליון שלך!\n💸 ₪' + amount + '\n📁 ' + decoded.category + (decoded.subcategory ? ' / ' + decoded.subcategory : '') + '\n📝 ' + description + _celebrateIfFirstExpense_(fromPhone) };
       }
       Logger.log('handleInteractiveReply_ tenant append failed: ' + __ar.code + ' ' + String(__ar.body).slice(0, 200));
       return { replyText: '😬 לא הצלחתי לשמור עכשיו. שלח שוב את ההוצאה בעוד רגע.' };
@@ -12355,7 +12355,7 @@ function _handleReceiptImage_(fromPhone, image) {
         isIncome: __rcptIsIncome,
       });
       if (__rr.ok) {
-        return { replyText: '✅ נרשם בגיליון שלך מהקבלה!\n💰 ₪' + amount + '\n📁 ' + matched.category + (matched.subcategory ? ' / ' + matched.subcategory : '') + '\n📝 ' + (vendor || description) + _celebrateIfFirstExpense_(fromPhone) };
+        return { replyText: '✅ נרשם בגיליון שלך מהקבלה!\n' + (__rcptIsIncome ? '💰' : '💸') + ' ₪' + amount + '\n📁 ' + matched.category + (matched.subcategory ? ' / ' + matched.subcategory : '') + '\n📝 ' + (vendor || description) + _celebrateIfFirstExpense_(fromPhone) };
       }
       Logger.log('_handleReceiptImage_ tenant append failed: ' + __rr.code + ' ' + String(__rr.body).slice(0, 200));
       return { replyText: '😬 לא הצלחתי לשמור את הקבלה כרגע. נסה שוב בעוד רגע.' };
