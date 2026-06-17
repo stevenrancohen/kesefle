@@ -67,6 +67,12 @@ const DEFAULT_TOP = 'אישי';                        // אישי (col D defaul
   ok('H is a real boolean (not a truthy string)', typeof r[H] === 'boolean');
   eq('I VAT flag defaults to false', r[I], false);
   ok('I is a real boolean', typeof r[I] === 'boolean');
+  // col-H sign contract (2026-06-17 audit): expense -> H=true, income -> H=false.
+  // This is the single invariant every dashboard SUMIFS relies on; a reorder or a
+  // dropped `!isIncome` here silently flips every row's sign. Lock BOTH signs.
+  const rIncome = buildExpenseRow({ amount: 1500, isIncome: true, category: 'הכנסות', subcategory: 'משכורת', rawText: '1500 משכורת', date: '2026-05-23T10:00:00Z' });
+  eq('H status=FALSE for income (SUMIFS income filter)', rIncome[H], false);
+  ok('H income is a real boolean', typeof rIncome[H] === 'boolean');
 
   console.log('\n══ 2. Amount coercion (col C) ══');
   // buildExpenseRow only trusts a real number; anything else -> 0 (never NaN,
