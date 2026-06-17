@@ -316,7 +316,7 @@
                   <span class="why-body">למה צריך את המספר? כדי שכשתשלחי הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
                 </span>
               </div>
-              <div class="text-sm text-slate-600 mb-3">הזיני את מספר הוואטסאפ שלך, ושלחי קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אלייך.</div>
+              <div class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלחי קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אלייך.</div>
 
               <!-- Sub-state A: not yet linked — show phone input + Generate Code button -->
               <div id="link-state-input">
@@ -338,7 +338,7 @@
                     class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
-                    צרי קוד חיבור
+                    צור קוד חיבור
                   </button>
                 </div>
                 <div id="link-error" class="mt-2 hidden text-xs text-red-600"></div>
@@ -368,11 +368,11 @@
                       <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
                       <span class="listen-dot inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
                     </span>
-                    <span id="link-waiting-status">ממתינה לקוד מהוואטסאפ…</span>
+                    <span id="link-waiting-status">ממתין לקוד מהוואטסאפ…</span>
                   </div>
                 </div>
                 <div class="mt-2 text-[11px] text-ink-500 dark:text-ink-400">
-                  אם הקוד לא עובר, <button type="button" onclick="kesefleLinkResetState()" class="underline hover:text-ink-800 dark:hover:text-ink-700">נסי קוד חדש</button>
+                  אם הקוד לא עובר, <button type="button" onclick="kesefleLinkResetState()" class="underline hover:text-ink-800 dark:hover:text-ink-700">נסה קוד חדש</button>
                 </div>
               </div>
 
@@ -382,11 +382,11 @@
                   <div class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-white">✓</div>
                   <div class="min-w-0 flex-1">
                     <div class="font-bold text-emerald-900 dark:text-emerald-200">החיבור הושלם!</div>
-                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. הצעד האחרון — שלחי הוצאה ראשונה לבוט.</div>
+                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.</div>
                     <div class="mt-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                       <a href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="kesefleLogFirstExpense()" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
-                        שלחי הוצאה ראשונה →
+                        שלח הוצאה ראשונה →
                       </a>
                       <a href="/welcome" class="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">מדריך הפקודות ←</a>
                     </div>
@@ -784,9 +784,9 @@ function _kflShowLinkError(msg) {
   el.innerHTML = '<div class="rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-700">' +
                  '<div class="font-bold">' + safe + '</div>' +
                  '<div class="mt-1 flex flex-wrap gap-2 items-center">' +
-                 '<button type="button" onclick="kesefleLinkRequestCode()" class="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700">נסי שוב</button>' +
+                 '<button type="button" onclick="kesefleLinkRequestCode()" class="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700">נסה שוב</button>' +
                  '<details class="text-[11px] text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary>' +
-                 '<div class="mt-1">לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודאי שהמספר בפורמט 054-123-4567 ונסי שוב.</div>' +
+                 '<div class="mt-1">לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודאי שהמספר בפורמט 054-123-4567 ונסה שוב.</div>' +
                  '</details></div></div>';
   el.classList.remove('hidden');
   setTimeout(function() { el.classList.add('hidden'); }, 12000);
@@ -808,7 +808,7 @@ async function kesefleLinkRequestCode() {
   if (!input) return;
   var phone = _kflNormalizeIsraelPhone(input.value);
   if (!phone) {
-    _kflShowLinkError('המספר לא תקין. נסי בפורמט 054-123-4567');
+    _kflShowLinkError('המספר לא תקין. נסה בפורמט 054-123-4567');
     return;
   }
   if (btn) { btn.disabled = true; btn.textContent = '...יוצרת קוד'; }
@@ -820,7 +820,7 @@ async function kesefleLinkRequestCode() {
   try {
     accessToken = await _kflGetFreshAccessToken();
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'צרי קוד חיבור'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     _kflShowLinkError('שגיאת אימות: ' + (e.message || e));
     return;
   }
@@ -833,7 +833,7 @@ async function kesefleLinkRequestCode() {
       body: JSON.stringify({ accessToken: accessToken, phone: phone }),
     });
     var j = await r.json();
-    if (btn) { btn.disabled = false; btn.textContent = 'צרי קוד חיבור'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     if (!j.ok) {
       // Auth expired (the link step no longer relies on the ~1h access token,
       // but an old session can still lapse) → re-sign-in to mint a fresh session.
@@ -843,7 +843,7 @@ async function kesefleLinkRequestCode() {
         return;
       }
       if (/rate_limit_exceeded/i.test(j.error || '')) {
-        _kflShowLinkError('יותר מדי ניסיונות ברצף. המתיני דקה ונסי שוב.');
+        _kflShowLinkError('יותר מדי ניסיונות ברצף. המתיני דקה ונסה שוב.');
         return;
       }
       if (/phone_already_linked_to_another_account/i.test(j.error || '')) {
@@ -864,7 +864,7 @@ async function kesefleLinkRequestCode() {
     _kflDisplayCode(j.code, j.expiresIn || 600);
     _kflStartPolling(phone);
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'צרי קוד חיבור'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     _kflShowLinkError('שגיאת רשת: ' + (e.message || e));
   }
 }
@@ -881,7 +881,7 @@ async function _kflGetFreshAccessToken() {
     var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
     if (!cid || cid.indexOf('__') === 0) return reject(new Error('Google Client ID לא מוגדר'));
     if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      return reject(new Error('Google SDK טרם נטען. רענני את הדף.'));
+      return reject(new Error('Google SDK טרם נטען. רענן את הדף.'));
     }
     var client = window.google.accounts.oauth2.initTokenClient({
       client_id: cid,
@@ -921,7 +921,7 @@ function _kflDisplayCode(code, ttlSec) {
   function tickTtl() {
     if (remaining <= 0) {
       if (ttlEl) ttlEl.textContent = '00:00';
-      _kflShowLinkError('הקוד פג תוקף — צרי קוד חדש');
+      _kflShowLinkError('הקוד פג תוקף — צור קוד חדש');
       _kflSetLinkState('input');
       _kflStopPolling();
       return;
@@ -972,7 +972,7 @@ function _kflStartPolling(phone) {
 
   function tick() {
     var elapsed = Date.now() - startedAt;
-    if (elapsed > POLL_MAX_MS) { _kflStopPolling(); var _ws = document.getElementById('link-waiting-status'); if (_ws) _ws.textContent = 'אם שלחת ולא קרה כלום — רענני את הדף או צרי קוד חדש.'; return; }
+    if (elapsed > POLL_MAX_MS) { _kflStopPolling(); var _ws = document.getElementById('link-waiting-status'); if (_ws) _ws.textContent = 'אם שלחת ולא קרה כלום — רענן את הדף או צור קוד חדש.'; return; }
     var nextDelay = elapsed < 30000 ? POLL_FAST_MS : POLL_SLOW_MS;
     fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone), { credentials: 'include' })
       .then(function (r) { return r.json(); })
@@ -2292,11 +2292,11 @@ async function kesefleProvisionSheet() {
     status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
     status.innerHTML = '<div class="font-bold">לא הצלחנו להתחיל את ההתחברות לגוגל.</div>' +
                        '<div class="text-xs mt-1 text-red-600">למה? קוד ההתחברות של גוגל לא נטען (לרוב חוסם פרסומות או חיבור איטי).</div>' +
-                       '<div class="mt-2 flex flex-wrap gap-2"><button onclick="location.reload()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">רענני את הדף ונסי שוב</button>' +
+                       '<div class="mt-2 flex flex-wrap gap-2"><button onclick="location.reload()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">רענן את הדף ונסה שוב</button>' +
                        '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary><div class="mt-1">הספריה של Google Sign-In לא הספיקה לטעון. רענון בדרך כלל פותר את זה.</div></details></div>';
     status.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'נסי שוב';
+    btn.textContent = 'נסה שוב';
     return;
   }
 
@@ -2312,7 +2312,7 @@ async function kesefleProvisionSheet() {
         status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
         status.innerHTML = '<div class="font-bold">לא קיבלנו אישור מגוגל.</div>' +
                            '<div class="text-xs mt-1 text-red-600">למה? צריך לאשר ל-כספ\'לה גישה כדי שנוכל ליצור גיליון בדרייב שלך.</div>' +
-                           '<div class="mt-2 flex flex-wrap gap-2"><button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">נסי שוב — אשרי הכל</button>' +
+                           '<div class="mt-2 flex flex-wrap gap-2"><button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">נסה שוב — אשרי הכל</button>' +
                            '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary><div class="mt-1">בחלון של גוגל לוחצים על Allow / "אישור" עבור כל ההרשאות (Drive + Sheets). בלי זה לא נוכל להעתיק את התבנית.</div></details></div>';
         status.classList.remove('hidden');
         btn.disabled = false;
@@ -2364,7 +2364,7 @@ async function kesefleProvisionSheet() {
           var what = j.error || 'לא הצלחנו ליצור את הגיליון.';
           var why = '';
           var fix = '';
-          var fixLabel = 'נסי שוב';
+          var fixLabel = 'נסה שוב';
           var fixIsLink = false;
           var fixHref = '';
           if (/drive\.googleapis\.com.*has not been used/i.test(detail) || /drive\s*api.*disabled/i.test(detail)) {
@@ -2385,7 +2385,7 @@ async function kesefleProvisionSheet() {
             what = 'לא מצאנו את תבנית הגיליון.';
             why = 'למה? קובץ התבנית הופסק מקובץ ההגדרות שלנו.';
             fix = 'זו תקלה שלנו — לחצי על הכפתור לשלוח אימייל ונסדר מיד.';
-            fixLabel = 'שלחי לתמיכה ←';
+            fixLabel = 'שלח לתמיכה ←';
             fixIsLink = true;
             fixHref = 'mailto:info@kesefle.com?subject=Drive%20copy%20file%20not%20found';
           } else if (/insufficient.*permission/i.test(detail) || /permissionDenied/i.test(detail)) {
@@ -2395,8 +2395,8 @@ async function kesefleProvisionSheet() {
           } else if (/quota/i.test(detail) || /rate limit/i.test(detail)) {
             what = 'חרגנו ממכסת השרת לרגע.';
             why = 'למה? יותר מדי בקשות בו-זמנית מצד גוגל.';
-            fix = 'חכי 30 שניות ונסי שוב.';
-            fixLabel = 'נסי שוב בעוד 30 שניות';
+            fix = 'חכי 30 שניות ונסה שוב.';
+            fixLabel = 'נסה שוב בעוד 30 שניות';
           } else if (/invalid_access_token/i.test(j.error || '')) {
             what = 'ההתחברות פגה.';
             why = 'למה? עברו יותר מ-60 דקות מאז ההתחברות שלך.';
@@ -2410,7 +2410,7 @@ async function kesefleProvisionSheet() {
             fix = 'לחצי שוב על "צור את הגיליון" ואשרי את ההרשאה.';
           } else {
             why = detail ? 'פרטים טכניים: ' + detail.slice(0, 120) : 'למה? לא בטוחים — זו תקלה לא צפויה.';
-            fix = 'נסי שוב. אם זה ממשיך, שלחי לנו אימייל.';
+            fix = 'נסה שוב. אם זה ממשיך, שלח לנו אימייל.';
           }
           var fixBtnHtml = fixIsLink
             ? '<a target="_blank" rel="noopener" href="' + fixHref + '" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">' + fixLabel + '</a>'
@@ -2424,7 +2424,7 @@ async function kesefleProvisionSheet() {
           status.classList.remove('hidden');
           try { console.error('provision failed', j); } catch(_e){}
           btn.disabled = false;
-          btn.textContent = 'נסי שוב';
+          btn.textContent = 'נסה שוב';
         }
       } catch (e) {
         if (prog) prog.classList.add('hidden');
@@ -2432,14 +2432,14 @@ async function kesefleProvisionSheet() {
         var em = (e && e.message) || '';
         status.innerHTML = '<div class="font-bold">שגיאת רשת — לא הצלחנו להגיע לשרת.</div>' +
                            '<div class="text-xs mt-1 text-red-600">למה? נראה שהחיבור לאינטרנט שלך התנתק או שהשרת שלנו לא זמין כרגע.</div>' +
-                           '<div class="text-xs mt-1 text-red-700">בדקי חיבור ל-WiFi/סלולר ונסי שוב.</div>' +
+                           '<div class="text-xs mt-1 text-red-700">בדקי חיבור ל-WiFi/סלולר ונסה שוב.</div>' +
                            '<div class="mt-2 flex flex-wrap gap-2 items-center">' +
-                           '<button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">נסי שוב</button>' +
+                           '<button onclick="kesefleProvisionSheet()" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700">נסה שוב</button>' +
                            '<details class="text-xs text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary><div class="mt-1">' + (em ? em : 'הבקשה לשרת לא הגיעה. רוב הזמן זה בעיית רשת לרגע.') + '</div></details></div>';
         status.classList.remove('hidden');
         try { console.error('provision network error', e); } catch(_e){}
         btn.disabled = false;
-        btn.textContent = 'נסי שוב';
+        btn.textContent = 'נסה שוב';
       }
     }
   });
