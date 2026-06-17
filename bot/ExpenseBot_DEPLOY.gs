@@ -377,7 +377,7 @@ const CATEGORY_MAP = [
   {"keywords":["פנסיון כלבים","פנסיון לכלב","פנסיון כלב","פנסיון חתולים","פנסיון לחתול","פנסיון חתול","חול לחתול","חול חתולים","חול לחתולים","חיסון לכלב","חיסון לחתול","חיסון כלבת","וטרינר","וטרינרי","מזון לכלב","מזון לחתול","אוכל לכלב","אוכל לחתול","חנות חיות","פטשופ","תספורת לכלב","טיפוח לכלב"],"category":"חיות מחמד","subcategory":"חיות מחמד"},
   // Kids: diapers + after-school classes (merchant / "weekly" were winning).
   {"keywords":["חיתולים האגיס","חיתולים האגיז","חיתולים פמפרס","חיתולים בסופר פארם","חיתולים האגיס סופר פארם","מגבונים האגיס"],"category":"חינוך וילדים","subcategory":"חיתולים ותינוקות"},
-  {"keywords":["חוג כדורסל","כדורסל חוג","חוג כדורגל","חוג שחייה","חוג שחיה","חוג ריקוד","חוג התעמלות","חוג ספורט","חוג אומנות","חוגים לילדים","חוג לילד","חוג לילדה","חוג מוזיקה","שיעור נהיגה","שיעורי נהיגה","מורה לנהיגה","בית ספר לנהיגה"],"category":"חינוך וילדים","subcategory":"חינוך וטיפול"},
+  {"keywords":["חוג כדורסל","כדורסל חוג","חוג כדורגל","חוג שחייה","חוג שחיה","חוג ריקוד","חוג התעמלות","חוג ספורט","חוג אומנות","חוגים לילדים","חוג לילד","חוג לילדה","חוג מוזיקה","שיעור נהיגה","שיעורי נהיגה","מורה לנהיגה","בית ספר לנהיגה","קייטנת קיץ","קייטנה","סמינר","סדנה","וובינר","webinar"],"category":"חינוך וילדים","subcategory":"חינוך וטיפול"},
   // Refund / store credit -> income (was booked as a merchant expense).
   {"keywords":["זיכוי כספי","החזר על קנייה","החזר על רכישה","החזר קנייה","החזר רכישה","החזר מהחנות","החזר כספי מהחנות","קרדיט בחנות","store credit","refund"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // ===== INCOME -- income-tax refund -> income (Fix C, per bot/BOT_IMPROVEMENTS.md).
@@ -494,7 +494,7 @@ const CATEGORY_MAP = [
   {"keywords":["נסיעה במונית","הזמנתי מונית","נסיעה בגט","נסיעה באובר"],"category":"תחבורה","subcategory":"מונית"},
   {"keywords":["דמי חניה","כרטיס חניה","תשלום חניון","חניון בתשלום"],"category":"תחבורה","subcategory":"חניה"},
   {"keywords":["כרטיס אוטובוס","נסיעה ברכבת","כרטיס רכבת","טעינת רב קו","נסיעה באוטובוס"],"category":"תחבורה","subcategory":"תחבורה ציבורית"},
-  {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית","קלינאית תקשורת","אבחון דידקטי","אבחון פסיכודידקטי","ריפוי בדיבור"],"category":"בריאות","subcategory":"בריאות"},
+  {"keywords":["ביקור אצל רופא","תור לרופא","רופא פרטי","ביקור במרפאה","בדיקת דם פרטית","קלינאית תקשורת","אבחון דידקטי","אבחון פסיכודידקטי","ריפוי בדיבור","קלאלית","קלאליות"],"category":"בריאות","subcategory":"בריאות"},
   {"keywords":["תרופה","תרופות במרשם","קניתי תרופות","בית מרקחת"],"category":"בריאות","subcategory":"תרופות"},
   {"keywords":["טיפול שיניים","רופא שיניים","ניקוי אבנית","סתימה אצל שיניים"],"category":"בריאות","subcategory":"שיניים"},
   {"keywords":["בית הספר","בית ספר","גן ילדים","שכר לימוד","חוג לילדים","שיעור פרטי","צהרון","מעון","מעון יום","קייטנה"],"category":"חינוך","subcategory":"חינוך"},
@@ -504,8 +504,8 @@ const CATEGORY_MAP = [
   {"keywords":["income 2","הכנסה 2","הכנסה עסקית","תשלום מלקוח"],"category":"הכנסות","subcategory":"הכנסה 2 — עסק","isIncome":true},
   {"keywords":["הכנסה - טלפוניה","טלפונים","מכירת טלפון","income 3","הכנסה 3","הכנסה נוספת","הכנסה משכירות","הכנסות משכירות","הכנסה מהשכרה"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   {"keywords":["בונוס","תקבול"],"category":"הכנסות","subcategory":"שונות (הכנסות)","isIncome":true},
-  {"keywords":["am pm","ampm","groceries","grocery","shufersal","supersol","supermarket","אוכל בבית","אוכל לבית","אושר עד","אם המושבות","אם פי אם","בשר","גבינות","דגים","ויקטורי","חצי חינם","טיב טעם","יוחננוף","יינות ביתן","ירקות","מאפיה","מגה","מחסני השוק","מעיין 2000","סופר","פירות","קינג סטור","קרפור","רמי לוי","שופרסל","שופרסל אקספרס"],"category":"אוכל","subcategory":"אוכל לבית"},
-  {"keywords":["aroma","bbb","cibus","cofix","kfc","mcdonald","nespresso","starbucks","ten bis","wolt","אוכל בחוץ","אוכל חוץ","אספרסו","ארומה","בורגר","בורגר קינג","בית קפה","גרג","גרג קפה","דומינוס","המבורגר","וולט","לחם ארז","מוזס","מסעדה","מסעדות","מקדונלדס","משלוח","משלוח אוכל","נספרסו","סושי","סיבוס","פיצה","פיצה האט","קופיקס","קפה","רולדין","שווארמה","שטראוס","תן ביס"],"category":"אוכל","subcategory":"אוכל בחוץ"},
+  {"keywords":["am pm","ampm","groceries","grocery","shufersal","supersol","supermarket","אוכל בבית","אוכל לבית","אושר עד","אם המושבות","אם פי אם","בשר","גבינות","דגים","ויקטורי","חצי חינם","טיב טעם","יוחננוף","יינות ביתן","ירקות","מאפיה","מגה","מחסני השוק","מעיין 2000","סופר","פירות","קינג סטור","קרפור","רמי לוי","שופרסל","שופרסל אקספרס","יש חסד","יש בשכונה","יש בעיר"],"category":"אוכל","subcategory":"אוכל לבית"},
+  {"keywords":["aroma","bbb","cibus","cofix","kfc","mcdonald","nespresso","starbucks","ten bis","wolt","אוכל בחוץ","אוכל חוץ","אספרסו","ארומה","בורגר","בורגר קינג","בית קפה","גרג","גרג קפה","דומינוס","המבורגר","וולט","לחם ארז","מוזס","מסעדה","מסעדות","מקדונלדס","משלוח","משלוח אוכל","נספרסו","סושי","סיבוס","פיצה","פיצה האט","קופיקס","קפה","רולדין","שווארמה","שטראוס","תן ביס","ארקפה","ארקפה קפה","קופי טו גו","coffee to go"],"category":"אוכל","subcategory":"אוכל בחוץ"},
   {"keywords":["95 octane","98 octane","ad blue","adblue","almanhig","alonit","alonit fuel","delek","delek eilat","delek israel","delek menta","delek motors","diesel","diesel israel","diesel plus","dor alon","fill up","fuel card","fuel pass","fuel pass israel","fuel pump","fuel station israel","fuel up","gas pump","gas station","manofim supergas","mileage","mishavat delek","pangaia","pangaia fuel","paz","paz diesel plus","paz fuel","paz self gas","paz selfgas","paz yam","paz yellow","paz zriza","premium 95","refuel","refueling","refueling station","regular gasoline","sdom fuel","self fueling","self refuel","self service paz","smart card delek","smart card דלק","sodom fuel","solar fuel","sonol","sonol eilat","sonol go","sonol israel","sonol self service","sonol selfservice","ten","ten 95","ten 98","ten eilat","ten exclusive","ten fuel","ten go","ten premium","ten premium 95","ten אילת","ten בלעדי","yellow card","yellow card paz","אד בלו","אדבלו","אלונית","אלמנהיג","אלמנהיג דלק","בנזין","בנזין 95","בנזין 98","בנזין רגיל","דור אלון","דיזל","דיזל פלוס","דלק","דלק אילת","דלק חברה","דלק חברת דלק","דלק מנטה","טן בלעדי","טן גו","טן פרימיום","כרטיס דלק","מילאז\\\\","מילוי דלק","מנופים סופרגז","משאבת דלק","סדום דלק","סולר","סונול","סונול 24","סונול 98","סונול אילת","סונול גו","סונול גוו","סונול סלף","סונול שטינמץ","סונול שירות עצמי","סונול תחנת דלק","פז 24","פז 98","פז דיזל פלוס","פז דלק","פז זריזה","פז יילו","פז ים","פז כנען","פז סלף גז","פז סלפ","פז שירות מהיר","פז שירות עצמי","פנגאיה","פנגאיה דלק","תדלוק","תדלוק עצמי","תחנה גז","תחנת דלק","תחנת תדלוק"],"category":"תחבורה","subcategory":"דלק"},
   {"keywords":["bird","lime","wind","בירד","יומנגו","ליים"],"category":"תחבורה","subcategory":"ליים"},
   {"keywords":["גיפ רוביקון","רוביקון"],"category":"תחבורה","subcategory":"רוביקון"},
@@ -1399,7 +1399,7 @@ function _handleAccountDeletion_(phone, confirmed) {
   }
   if (!delOk) {
     return '😬 לא הצלחתי למחוק את החשבון עכשיו. הקישור והאסימונים עדיין על השרת.\n' +
-      'נסה/י שוב בעוד דקה. אם החיוב הזה חוזר — כתוב לתמיכה ב-support@kesefle.com.\n\n' +
+      'נסה שוב בעוד דקה. אם החיוב הזה חוזר — כתוב לתמיכה ב-support@kesefle.com.\n\n' +
       '(שגיאה: ' + delDetail.slice(0, 60) + ')';
   }
   return '✅ החשבון נמחק. הקישור והאסימונים הוסרו.\n' +
@@ -3855,17 +3855,17 @@ function _groupCreate_(fromPhone, name) {
   var sheetLine = sheetCreated
     ? '📊 גיליון משותף נוצר ב-Drive שלך:\n' + (r.group.sheetUrl || ('https://docs.google.com/spreadsheets/d/' + r.group.sheetId)) + '\n\n'
     : '⚠️  *הקבוצה רשומה אבל בלי גיליון משותף עדיין.* כדי שאני אוכל ליצור את הגיליון:\n' +
-      '1. כנס/י ל-kesefle.com/account עם המספר הזה\n' +
+      '1. היכנס ל-kesefle.com/account עם המספר הזה\n' +
       '2. התחבר עם Google\n' +
       '3. שלח שוב "כספלה צור משפחה ' + groupName + '"\n\n';
   return { handled: true, replyText:
     '✅ נוצרה קבוצה: *' + groupName + '*\n' +
     '🔑 קוד הזמנה: *' + r.code + '*\n\n' +
     sheetLine +
-    'שתף/י את הקוד עם חברי הקבוצה כדי שיצטרפו:\n' +
+    'שתף את הקוד עם חברי הקבוצה כדי שיצטרפו:\n' +
     '"כספלה הצטרף ' + r.code + '"\n\n' +
-    'או הזמן/י אותם ב-https://kesefle.com/family-invite\n\n' +
-    (sheetCreated ? 'עכשיו אפשר לרשום הוצאה: "כספלה 245 סופר"' : '(לאחר שתשלים/י את החיבור, הוצאות יזוהו אוטומטית)') };
+    'או הזמן אותם ב-https://kesefle.com/family-invite\n\n' +
+    (sheetCreated ? 'עכשיו אפשר לרשום הוצאה: "כספלה 245 סופר"' : '(לאחר שתשלים את החיבור, הוצאות יזוהו אוטומטית)') };
 }
 
 function _groupJoin_(fromPhone, code) {
@@ -4019,9 +4019,9 @@ function _groupExport_(fromPhone) {
     if (!isOwner || !addr) {
       return { handled: true, replyText:
         '📥 ייצוא CSV של הקבוצה:\n' +
-        '1. כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/dashboard\n' +
+        '1. היכנס ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/dashboard\n' +
         '2. התחבר עם Google\n' +
-        '3. לחצ/י על "ייצוא" → CSV\n\n' +
+        '3. לחץ על "ייצוא" → CSV\n\n' +
         'הקובץ ירד ישירות אליך באופן מאובטח (' + (group.expenses || []).length + ' הוצאות בקבוצה).' };
     }
     MailApp.sendEmail({
@@ -4923,9 +4923,9 @@ function _addCategoryRows_(fromPhone, rawNames) {
         if (j.duplicate) duplicates.push(name); else ok.push(name);
         if (j.sheetUrl) sheetUrl = j.sheetUrl;
       } else if (code === 404 && j && j.error === 'no_user') {
-        return '😬 המספר הזה לא מקושר לחשבון. כנס/י ל-kesefle.com/account, התחבר עם Google ואז שלח שוב.';
+        return '😬 המספר הזה לא מקושר לחשבון. היכנס ל-kesefle.com/account, התחבר עם Google ואז שלח שוב.';
       } else if (code === 404 && j && j.error === 'no_sheet') {
-        return '😬 עדיין אין לך גיליון. כנס/י ל-kesefle.com/account להשלים את ההגדרה.';
+        return '😬 עדיין אין לך גיליון. היכנס ל-kesefle.com/account להשלים את ההגדרה.';
       } else if (code === 409 && j && j.error === 'reauth_required') {
         return '🔑 צריך להתחבר מחדש: kesefle.com/account';
       } else {
@@ -7438,7 +7438,7 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       cache.put('awaitingCustomCategory:' + clean, '1', 600);
     } catch (_ce) {}
     return { replyText:
-      '✍️ כתוב/י את שם הקטגוריה החדשה (לדוגמה: "ציוד צילום" או "תשלום למורה לפסנתר"). אכניס לרשימה ואלמד אותה לטובה.'
+      '✍️ כתוב את שם הקטגוריה החדשה (לדוגמה: "ציוד צילום" או "תשלום למורה לפסנתר"). אכניס לרשימה ואלמד אותה לטובה.'
     };
   }
   if (newCategory === '__full_list__') {
@@ -7446,7 +7446,7 @@ function _handleRelabelTap_(fromPhone, newCategory) {
     // tell the user to type the category name freely. Bot's classifier will
     // match against the full lib/categories.js taxonomy.
     return { replyText:
-      '📋 הרשימה המלאה ארוכה מדי לתפריט. פשוט כתוב/י את שם הקטגוריה (לדוגמה: "ביטוח רפואי נוסף", "תיקון מקרר", "שיעור פרטי") - אזהה ואעדכן.'
+      '📋 הרשימה המלאה ארוכה מדי לתפריט. פשוט כתוב את שם הקטגוריה (לדוגמה: "ביטוח רפואי נוסף", "תיקון מקרר", "שיעור פרטי") - אזהה ואעדכן.'
     };
   }
 
@@ -7521,7 +7521,7 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       return { replyText: '✅ עברה ל-' + (relSubcategory || relCategory) + ' (ולמדתי — בפעם הבאה אזהה לבד). השורה בגיליון מעודכנת.' };
     }
     Logger.log('_handleRelabelTap_ HTTP ' + code + ' ' + resp.getContentText().slice(0, 200));
-    return { replyText: '😬 לא הצלחתי לעדכן את השורה (' + code + '). נסה/י דרך הגיליון ישירות.' };
+    return { replyText: '😬 לא הצלחתי לעדכן את השורה (' + code + '). נסה דרך הגיליון ישירות.' };
   } catch (e) {
     Logger.log('_handleRelabelTap_ threw: ' + (e && e.message));
     return { replyText: '😬 בעיה בחיבור לשרת.' };
@@ -7633,7 +7633,7 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
     if (code < 200 || code >= 300) {
       Logger.log('_setupInstallmentsRecurring_ http=' + code + ' ' + resp.getContentText().slice(0, 200));
       return { reply:
-        '😬 לא הצלחתי לרשום את תשלומי הקבע. נסה/י שוב או הקלד את ההוצאה בלי "תשלומים".'
+        '😬 לא הצלחתי לרשום את תשלומי הקבע. נסה שוב או הקלד את ההוצאה בלי "תשלומים".'
       };
     }
     // Local cache so "תשלומים" command can show without hitting KV.
@@ -7671,7 +7671,7 @@ function _setupInstallmentsRecurring_(fromPhone, botSecret, inst, category, subc
     };
   } catch (e) {
     Logger.log('_setupInstallmentsRecurring_ threw: ' + (e && e.message));
-    return { reply: '😬 בעיה זמנית בחיבור. נסה/י שוב בעוד דקה.' };
+    return { reply: '😬 בעיה זמנית בחיבור. נסה שוב בעוד דקה.' };
   }
 }
 
@@ -7891,7 +7891,7 @@ function _buildFullCategoriesTextBlock_(amount) {
   lines.push('כתוב: *צור קטגוריה <שם>*');
   lines.push('לדוגמה: "צור קטגוריה אופטיקה"');
   lines.push('');
-  lines.push('או פשוט השב/י עם מספר (1-' + _CATEGORY_PICKER_GROUPS_.length + ') או עם שם הקטגוריה.');
+  lines.push('או פשוט השב עם מספר (1-' + _CATEGORY_PICKER_GROUPS_.length + ') או עם שם הקטגוריה.');
   lines.push('סכום ההוצאה: ₪' + Number(amount).toLocaleString('he-IL'));
   return lines.join('\n');
 }
@@ -8038,7 +8038,7 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
         '💡 בפעם הבאה אזהה לבד.' + _sheetNudgeLine_(fromPhone)
       };
     }
-    return { replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה/י שוב.' };
+    return { replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה שוב.' };
   } catch (e) {
     return { replyText: '😬 בעיה בחיבור: ' + (e && e.message) };
   }
@@ -8127,7 +8127,7 @@ function _handlePendingCategoryText_(fromPhone, text) {
           _mtdTail_(fromPhone, category) + _sheetNudgeLine_(fromPhone)
         };
       }
-      return { handled: true, replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה/י שוב.' };
+      return { handled: true, replyText: '😬 לא הצלחתי לרשום (' + code + '). נסה שוב.' };
     } catch (e) {
       return { handled: true, replyText: '😬 בעיה בחיבור: ' + (e && e.message) };
     }
@@ -8137,7 +8137,7 @@ function _handlePendingCategoryText_(fromPhone, text) {
   var mCreate = t.match(/^\s*(?:צור|הוסף|create|add)\s+קטגור(?:יה|יות)\s+(.+)$/i);
   if (mCreate || pendingCreate) {
     var name = mCreate ? mCreate[1].trim() : t;
-    if (name.length > 40) return { handled: true, replyText: '😬 שם הקטגוריה ארוך מדי. נסה/י קצר יותר (עד 40 תווים).' };
+    if (name.length > 40) return { handled: true, replyText: '😬 שם הקטגוריה ארוך מדי. נסה קצר יותר (עד 40 תווים).' };
     var addReply = '';
     try {
       if (typeof _addCategoryRows_ === 'function') {
@@ -8377,13 +8377,13 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
         'החשבון שלך באתר מוכן ✓ — אבל המספר הזה עדיין לא מחובר אליו.\n\n' +
         '*כדי לחבר אותו (30 שניות):*\n' +
         '1. פתח בטלפון: ' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/welcome\n' +
-        '2. לחץ/י על "חבר/י את המספר הזה"\n' +
+        '2. לחץ על "חבר את המספר הזה"\n' +
         '3. תקבל קוד בן 6 ספרות — שלח לי אותו (לדוגמה: "קוד 123456")\n\n' +
         'אחרי זה — כל הוצאה תיכנס אוטומטית לגיליון שלך 📊'
       };
     }
     if (errCode === 'no_sheet_provisioned' || errCode === 'incomplete_user_record' || errCode === 'reauth_required') {
-      return { reply: '😬 נראה שעוד לא סיימת את ההרשמה — אין עדיין גיליון מחובר למספר הזה.\n👉 כנס/י ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/account כדי לסיים את החיבור, ואז שלח שוב את ההוצאה.' };
+      return { reply: '😬 נראה שעוד לא סיימת את ההרשמה — אין עדיין גיליון מחובר למספר הזה.\n👉 היכנס ל-' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/account כדי לסיים את החיבור, ואז שלח שוב את ההוצאה.' };
     }
     if (errCode === 'sheet_ownership_mismatch') {
       try { _adminAlertOnce_('🚨 sheet_ownership_mismatch לטלפון ' + String(fromPhone).replace(/[^0-9]/g, ''), fromPhone); } catch (_ae) {}
@@ -8465,7 +8465,7 @@ function _markLastExpenseAsVatDeductible_(fromPhone) {
       var ts = sh.getRange(last, 1).getValue();
       var when = (ts instanceof Date) ? ts.getTime() : new Date(ts).getTime();
       if (!isNaN(when) && (Date.now() - when) > 24 * 60 * 60 * 1000) {
-        return '⚠️ ההוצאה האחרונה בת יותר מ-24 שעות. סמן/י ידנית בעמודה ניכוי מע״מ בגיליון.';
+        return '⚠️ ההוצאה האחרונה בת יותר מ-24 שעות. סמן ידנית בעמודה ניכוי מע״מ בגיליון.';
       }
       // Make sure the sheet has at least 9 columns (legacy sheets may have 8).
       var maxCols = sh.getMaxColumns();
@@ -8479,7 +8479,7 @@ function _markLastExpenseAsVatDeductible_(fromPhone) {
       return '✅ סומן לניכוי מע״מ. לסיכום בסוף השנה: /מעמ-סיכום';
     } catch (e) {
       Logger.log('_markLastExpenseAsVatDeductible_ owner err: ' + (e && e.message));
-      return '😬 שגיאה בסימון. נסה/י שוב בעוד רגע.';
+      return '😬 שגיאה בסימון. נסה שוב בעוד רגע.';
     }
   }
 
@@ -8509,11 +8509,11 @@ function _markLastExpenseAsVatDeductible_(fromPhone) {
     }
     Logger.log('_markLastExpenseAsVatDeductible_ HTTP ' + code + ' ' + body.slice(0, 200));
     if (code === 404) return '🤔 אין הוצאה אחרונה לסמן. תרשום/תרשמי קודם הוצאה ואז שלח "מעמ".';
-    if (code === 409) return '⚠️ ההוצאה האחרונה בת יותר מ-24 שעות. סמן/י ידנית בעמודה ניכוי מע״מ בגיליון.';
-    return '😬 שגיאה בסימון. נסה/י שוב בעוד רגע.';
+    if (code === 409) return '⚠️ ההוצאה האחרונה בת יותר מ-24 שעות. סמן ידנית בעמודה ניכוי מע״מ בגיליון.';
+    return '😬 שגיאה בסימון. נסה שוב בעוד רגע.';
   } catch (e) {
     Logger.log('_markLastExpenseAsVatDeductible_ tenant err: ' + (e && e.message));
-    return '😬 שגיאת רשת בסימון. נסה/י שוב בעוד רגע.';
+    return '😬 שגיאת רשת בסימון. נסה שוב בעוד רגע.';
   }
 }
 
@@ -8637,7 +8637,7 @@ function _budgetSet_(fromPhone, category, amount) {
       return '😕 קטגוריה לא מוכרת: "' + category + '"\n\n' +
         'הקטגוריות הזמינות:\n' +
         r.allowed.map(function(c) { return '• ' + c; }).join('\n') +
-        '\n\nנסה/י שוב — הקלד את שם הקטגוריה במדויק.';
+        '\n\nנסה שוב — הקלד את שם הקטגוריה במדויק.';
     }
     if (r && r.error === 'too_many_categories') {
       return '😕 הגעת למקסימום של ' + r.max + ' תקציבים. מחק אחד לפני שמוסיפים חדש.';
@@ -9260,7 +9260,7 @@ function processExpense(text, fromPhone) {
       var __annReply = _fetchAnnouncements_(fromPhone);
       if (__annReply) return { reply: __annReply };
     } catch (_aErr) { Logger.log('announcement fetch err: ' + (_aErr && _aErr.message)); }
-    return { reply: 'אין עדכונים חדשים כרגע. עקוב/י אחרינו ב-kesefle.com/changelog' };
+    return { reply: 'אין עדכונים חדשים כרגע. עקוב אחרינו ב-kesefle.com/changelog' };
   }
   // Greetings: catch "שלום"/"היי"/"hi"/"hello"/"hey" as standalone short
   // message. Respond with a real intro + capabilities, not "didn't understand".
@@ -10749,7 +10749,7 @@ function _parseIsraeliNumber_(raw) {
 var BUSINESS_CATEGORY_MAP = {
   "עסק": {
     "עלות שיווק": ["פייסבוק", "facebook", "fb", "אינסטגרם", "instagram", "ig", "טיקטוק", "tiktok", "גוגל אדס", "google ads", "פרסום", "שיווק", "קמפיין", "facebook ads", "fb ads", "fbads", "meta ads", "meta business", "meta marketing", "meta pixel", "instagram ads", "ig ads", "igads", "tiktok ads", "google adwords", "adwords", "youtube ads", "linkedin ads", "twitter ads", "x ads", "snapchat ads", "pinterest ads", "reddit ads", "מטא", "מטא אדס", "מטא ads", "אינסטה אדס", "אינסטה ads", "אינסטה ממומן", "אינסטה'גרם", "פייסביוק", "פייסבוק'ק", "פייסבוק אדס", "פייסבוק ads", "פייסבוק קמפיין", "פייסבוק ממומן", "פייסבוק פרסום", "גוגל'ל", "גוגל ממומן", "גוגל מודעות", "יוטיוב פרסום", "יוטיוב אדס", "יוטיוב ממומן", "טיקטוק אדס", "טיקטוק ממומן", "טיקטוק פרסום", "לינקדאין אדס", "לינקדאין פרסום", "אקס פרסום", "סנאפצ'אט פרסום", "פינטרסט פרסום", "שיווק דיגיטלי", "פרסום ממומן", "קמפיין שיווק", "קמפיין ממומן", "פרומו", "ads", "advert", "advertising", "advertise", "advertisement", "sponsored", "ממומן", "מקדם מכירות", "יח\"צ", "יחצן", "יחסי ציבור", "משרד פרסום", "אינפלואנסר", "influencer", "משפיענים", "אפיליאט", "affiliate", "דיוור", "דיוור שיווקי", "mailchimp", "klaviyo", "hubspot", "seo", "sem", "ppc", "סמראש", "semrush", "ahrefs", "boost post", "boosted post", "promote post", "מודעות פייסבוק", "מנהל מודעות"],
-    "הוצאות תפעוליות": ["פוטושופ", "photoshop", "תוכנת עריכה", "תוכנה", "תוכנות", "שכירות משרד", "אינטרנט", "חשמל עסק", "טלפון עסק", "ציוד משרדי", "תפעול", "אדובי", "adobe", "canva", "figma", "creative cloud", "adobe cc", "illustrator", "after effects", "premiere", "lightroom", "indesign", "sketch", "invision", "webflow", "wordpress", "squarespace", "wix", "shopify", "bigcommerce", "wp engine", "cloudflare", "siteground", "aws", "google cloud", "gcp", "azure", "digital ocean", "linode", "vultr", "netlify", "vercel", "heroku", "firebase", "supabase", "github", "github copilot", "gitlab", "bitbucket", "jira", "confluence", "trello", "asana", "monday", "clickup", "notion business", "slack pro", "slack business", "zoom pro", "loom", "calendly", "typeform", "airtable", "zapier", "make.com", "n8n", "stripe", "paypal business", "square", "tranzila", "pelecard", "icount", "green invoice", "rivhit", "priority", "quickbooks", "xero", "wave", "freshbooks", "google workspace", "gsuite", "microsoft 365", "office 365 business", "mac mini", "macbook pro", "macbook air", "imac", "monitor 4k", "logitech mx", "wacom", "cintiq", "ipad pro", "apple pencil", "מצלמה מקצועית", "מחשב לעבודה", "מחשב משרדי", "מחשב עסקי", "מסך עבודה", "מסך עסקי", "תוכנת עיצוב", "תוכנה עסקית", "שירות ענן", "אחסון אתר", "דומיין", "דומיין עסקי", "cms", "crm", "erp", "סליקה", "מייל עסקי", "הנה\"ח", "תוכנת הנהלת חשבונות", "חשבונית ירוקה", "תרנזילה", "פלאקארד", "איקאונט"],
+    "הוצאות תפעוליות": ["פוטושופ", "photoshop", "תוכנת עריכה", "תוכנה", "תוכנות", "שכירות משרד", "אינטרנט", "חשמל עסק", "טלפון עסק", "ציוד משרדי", "תפעול", "אדובי", "adobe", "canva", "figma", "creative cloud", "adobe cc", "illustrator", "after effects", "premiere", "lightroom", "indesign", "sketch", "invision", "webflow", "wordpress", "squarespace", "wix", "shopify", "bigcommerce", "wp engine", "cloudflare", "siteground", "aws", "google cloud", "gcp", "azure", "digital ocean", "linode", "vultr", "netlify", "vercel", "heroku", "firebase", "supabase", "github", "github copilot", "gitlab", "bitbucket", "jira", "confluence", "trello", "asana", "monday", "clickup", "notion business", "slack pro", "slack business", "zoom pro", "loom", "calendly", "typeform", "airtable", "zapier", "make.com", "n8n", "stripe", "paypal business", "square", "tranzila", "pelecard", "icount", "green invoice", "rivhit", "priority", "quickbooks", "xero", "wave", "freshbooks", "google workspace", "gsuite", "microsoft 365", "office 365 business", "mac mini", "macbook pro", "macbook air", "imac", "monitor 4k", "logitech mx", "wacom", "cintiq", "ipad pro", "apple pencil", "מצלמה מקצועית", "מחשב לעבודה", "מחשב משרדי", "מחשב עסקי", "מסך עבודה", "מסך עסקי", "תוכנת עיצוב", "תוכנה עסקית", "שירות ענן", "אחסון אתר", "דומיין", "דומיין עסקי", "cms", "crm", "erp", "סליקה", "מייל עסקי", "הנה\"ח", "תוכנת הנהלת חשבונות", "חשבונית ירוקה", "תרנזילה", "פלאקארד", "איקאונט","פייבוקס","paybox","פלאקרד"],
     "משלוחים והתקנות": ["משלוח", "משלוחים", "התקנה", "התקנות", "שילוח", "shipping", "delivery", "fedex", "dhl", "ups", "usps", "tnt", "aramex", "shipping label", "fulfillment", "shipstation", "shipbob", "pirate ship", "pirateship", "doar 24", "דואר 24", "דואר ישראל", "דואר שליחים", "שליחים", "שליחויות", "דצ'ה", "דאצ'ה", "אריזה", "אריזות", "קרטון", "קרטונים", "מדבקות משלוח", "נייר אריזה", "בועות אריזה", "bubble wrap", "tape", "אריזת מתנה", "התקנת מוצר", "התקנת לקוח", "מובילים עסקיים", "הובלה עסקית"],
     "עלות חומרי גלם": ["זכוכית", "קנבס", "חומרי גלם", "ספק", "ספקים", "פלסטיק", "אלומיניום", "עץ", "מסגרת", "מדפסת", "דיו", "נייר", "צבע", "מברשת", "פריימר", "raw material", "raw materials", "wholesale", "wholesaler", "supplier", "alibaba", "1688", "taobao", "made in china", "ספק חומרי גלם", "ספק עסקי", "ספקים עסקיים", "מחסן ספקים", "נחושת", "פלדה", "מתכת", "גומי", "בד", "בדים", "חוטים", "יריעות", "דבק תעשייתי", "מוטות", "ברגים תעשייה", "אנקרים", "פינות מסגרת", "פרזול", "חומרי דפוס", "חומרי הדפסה", "דיו הדפסה", "יריעות הדפסה", "נייר אומנותי", "canvas roll", "גליל קנבס", "spray adhesive", "דבק תרסיס", "חומרים", "חומר גלם"],
     "מחזור": ["הכנסה", "מכירה", "מכירות", "תשלום מלקוח", "מקדמה", "הזמנה", "invoice paid", "payment received", "customer payment", "client payment", "תקבול לקוח", "תקבול עסקי", "הוראת קבע מלקוח", "קבלה ללקוח", "תשלום מלקוח עסקי", "מקדמה לקוח", "מקדמה עסקית", "order online", "order placed", "הזמנה אונליין", "הזמנת לקוח", "הזמנה אתר", "מכירה אונליין", "מכירה אתר", "מכירת מוצר", "מכירת שירות", "sale", "vat refund", "tax refund", "rebate", "מע\"מ החזר", "החזר מע\"מ", "החזר מס"],
@@ -11337,12 +11337,12 @@ function _KFL_FULL_PICK_OPTIONS_() {
 // can reach ALL ~46 options (WhatsApp caps the tappable list at 10 rows).
 function _buildAmbiguityTextList_(amount) {
   var opts = _KFL_FULL_PICK_OPTIONS_();
-  var lines = ['📋 כל הקטגוריות — השב/י עם מספר (1-' + opts.length + '):'];
+  var lines = ['📋 כל הקטגוריות — השב עם מספר (1-' + opts.length + '):'];
   for (var i = 0; i < opts.length; i++) {
     lines.push((i + 1) + '. ' + opts[i].c + ' / ' + opts[i].s);
   }
   lines.push('');
-  lines.push('או כתוב/י "צור קטגוריה <שם>" כדי להוסיף קטגוריה משלך.');
+  lines.push('או כתוב "צור קטגוריה <שם>" כדי להוסיף קטגוריה משלך.');
   return lines.join('\n');
 }
 
@@ -13184,7 +13184,7 @@ function _handleObjectivePendingReply_(fromPhone, text) {
 // Helper — same shape as lib/objectives.js formatObjective(). Duplicated
 // here because Apps Script can't import ES modules.
 function _formatObjectiveReply_(o) {
-  var horizonHe = { month: 'לחודש', six_months: 'לחצי שנה', year: 'לשנה הקרובה' };
+  var horizonHe = { month: 'לחודש', six_months: 'לחץ שנה', year: 'לשנה הקרובה' };
   var MS = 24 * 60 * 60 * 1000;
   var daysLeft = Math.max(0, Math.round((o.horizonEndsAt - Date.now()) / MS));
   var status = o.achieved ? '✅ הושג!' : (o.muted ? '🔕 מושתק' : '🔥 פעיל');
@@ -13234,8 +13234,8 @@ function _handleGoalCommand_(fromPhone, text) {
         method: 'get', headers: commonHeaders, muteHttpExceptions: true,
       });
       var code = resp.getResponseCode();
-      if (code === 404) return { handled: true, replyText: '🤔 לא מצאתי את החשבון שלך. ודא/י שמספר הטלפון מקושר.' };
-      if (code < 200 || code >= 300) return { handled: true, replyText: '😬 שגיאת רשת (יעדים). נסה/י שוב בעוד דקה.' };
+      if (code === 404) return { handled: true, replyText: '🤔 לא מצאתי את החשבון שלך. ודא שמספר הטלפון מקושר.' };
+      if (code < 200 || code >= 300) return { handled: true, replyText: '😬 שגיאת רשת (יעדים). נסה שוב בעוד דקה.' };
       var j = JSON.parse(resp.getContentText() || '{}');
       var goals = (j && j.goals) || [];
       if (!goals.length) {
@@ -13255,7 +13255,7 @@ function _handleGoalCommand_(fromPhone, text) {
       return { handled: true, replyText: lines.join('\n') };
     } catch (e) {
       Logger.log('_handleGoalCommand_ list err: ' + (e && e.message));
-      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה/י שוב.' };
+      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה שוב.' };
     }
   }
 
@@ -13285,7 +13285,7 @@ function _handleGoalCommand_(fromPhone, text) {
       return { handled: true, replyText: '🤔 לא מצאתי יעד פעיל בקטגוריה "' + delCat + '".\nשלח "יעדים" לראות מה פעיל.' };
     } catch (e) {
       Logger.log('_handleGoalCommand_ delete err: ' + (e && e.message));
-      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה/י שוב.' };
+      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה שוב.' };
     }
   }
 
@@ -13342,7 +13342,7 @@ function _handleGoalCommand_(fromPhone, text) {
       return { handled: true, replyText: reply };
     } catch (e) {
       Logger.log('_handleGoalCommand_ set err: ' + (e && e.message));
-      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה/י שוב.' };
+      return { handled: true, replyText: '😬 שגיאה זמנית (יעדים). נסה שוב.' };
     }
   }
 
@@ -13970,7 +13970,7 @@ function handleLinkCode_(code, fromPhone) {
       return '✅ *הקישור הושלם!*\n' +
         '━━━━━━━━━━━━━━━━━━\n\n' +
         'מהרגע הזה, כל הוצאה שתשלח תיכתב אוטומטית לגיליון שלך.\n\n' +
-        '💡 *לדוגמה — נסה/י:*\n' +
+        '💡 *לדוגמה — נסה:*\n' +
         '  • "245 סופר"\n' +
         '  • "42 קפה"\n' +
         '  • "8500 משכורת"\n\n' +
@@ -15109,7 +15109,7 @@ function _startNewBusinessFlow_(fromPhone) {
   if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return { reply: '' };
   var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
   try { CacheService.getScriptCache().put('awaitingNewBizName:' + clean, '1', 600); } catch (_e) {}
-  return { reply: '🏢 מה השם של העסק החדש?\nכתוב/י שם קצר (לדוגמה: כספלה) ואכין לו לשונית משלו עם אותו תבנית עסקית.\n(לביטול: "ביטול")' };
+  return { reply: '🏢 מה השם של העסק החדש?\nכתוב שם קצר (לדוגמה: כספלה) ואכין לו לשונית משלו עם אותו תבנית עסקית.\n(לביטול: "ביטול")' };
 }
 
 // Next free business number (>=2; N=1 is always the main transactions tab).
@@ -15199,7 +15199,7 @@ function _backfillBusinessDashboards_(ownerPhone) {
   var out = [];
   if (created.length) out.push('✅ נוצר דשבורד עסקי מסודר ל: ' + created.join(', '));
   if (already.length) out.push('ℹ️ כבר היה דשבורד ל: ' + already.join(', '));
-  out.push('📊 רענן/י את הגיליון כדי לראות.');
+  out.push('📊 רענן את הגיליון כדי לראות.');
   return out.join('\n');
 }
 
@@ -18493,7 +18493,7 @@ function _familyLeaveReply_(fromPhone) {
     var r = _groupLeave_(fromPhone);
     if (r && r.replyText) return r.replyText;
   } catch (_e) {}
-  return '👋 לעזיבת קבוצה פעילה השתמש/י ב:\n*כספלה אישי* (חזרה למצב אישי)\nאו:\n*כספלה עזוב* (יציאה מהקבוצה הפעילה)';
+  return '👋 לעזיבת קבוצה פעילה השתמש ב:\n*כספלה אישי* (חזרה למצב אישי)\nאו:\n*כספלה עזוב* (יציאה מהקבוצה הפעילה)';
 }
 
 // ------------------------------------------------------------------
@@ -18917,7 +18917,7 @@ function _familyCreate_(fromPhone) {
     Logger.log('_familyCreate_: KV write failed (w1=' + w1 + ' w2=' + w2 + ')');
     return { handled: true, replyText:
       '😬 הקבוצה לא נשמרה במאגר (תקלת רשת זמנית). הגיליון נוצר אבל לא ניתן להזמין עדיין.\n' +
-      'נסה/י שוב בעוד דקה.' };
+      'נסה שוב בעוד דקה.' };
   }
 
   var msg =
@@ -18932,7 +18932,7 @@ function _familyCreate_(fromPhone) {
 function _familyJoinRequest_(fromPhone, familyId) {
   var rec = kvGet('family:' + familyId);
   if (!rec) {
-    return { handled: true, replyText: '😬 קוד משפחה לא נמצא\n💡 ודא/י עם המנהל שהקוד נכון' };
+    return { handled: true, replyText: '😬 קוד משפחה לא נמצא\n💡 ודא עם המנהל שהקוד נכון' };
   }
   if (rec.members && rec.members.indexOf(String(fromPhone)) >= 0) {
     return { handled: true, replyText: '✅ אתם כבר חברים במשפחה הזו.' };
@@ -18940,7 +18940,7 @@ function _familyJoinRequest_(fromPhone, familyId) {
 
   if (!kvSet('family:pending:' + familyId + ':' + fromPhone, '1', 600)) {
     Logger.log('_familyJoinRequest_: KV write failed for pending');
-    return { handled: true, replyText: '😬 תקלת רשת זמנית, הבקשה לא נשמרה. נסה/י שוב בעוד רגע.' };
+    return { handled: true, replyText: '😬 תקלת רשת זמנית, הבקשה לא נשמרה. נסה שוב בעוד רגע.' };
   }
 
   try {
@@ -18988,7 +18988,7 @@ function _familyApprove_(adminPhone, requesterPhone) {
   }
   var pending = kvGet('family:pending:' + familyId + ':' + requesterPhone);
   if (!pending) {
-    return { handled: true, replyText: '😬 אין בקשה ממתינה ממספר זה (או פג תוקף)\n💡 שלח את בקשת ההצטרפות מחדש' };
+    return { handled: true, replyText: '😬 אין בקשה ממתין ממספר זה (או פג תוקף)\n💡 שלח את בקשת ההצטרפות מחדש' };
   }
   if (!rec.members) rec.members = [];
   if (rec.members.indexOf(String(requesterPhone)) < 0) rec.members.push(String(requesterPhone));
@@ -19714,9 +19714,9 @@ function cronSynonymExpansion() {
 
 function _llmHebrewSynonyms_(text, apiKey) {
   try {
-    var prompt = 'תן/י לי 5 מילים נרדפות, וריאציות איות או שגיאות הקלדה נפוצות בעברית של הביטוי: "' + text + '".\n' +
-      'החזר/י JSON בלבד ללא הסבר: {"synonyms":["...","..."]}\n' +
-      'הימנע/י ממילים גנריות מדי. ללא ניקוד. ללא הסברים.';
+    var prompt = 'תן לי 5 מילים נרדפות, וריאציות איות או שגיאות הקלדה נפוצות בעברית של הביטוי: "' + text + '".\n' +
+      'החזר JSON בלבד ללא הסבר: {"synonyms":["...","..."]}\n' +
+      'הימנע ממילים גנריות מדי. ללא ניקוד. ללא הסברים.';
     var response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
       method: 'post',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
