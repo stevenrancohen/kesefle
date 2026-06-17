@@ -133,5 +133,15 @@ eq('installments still keep the price → 1000', (P('ספה 1000 5 תשלומי�
 eq('dimensions "3x4" are NOT multiplied → 500', (P('שטיח 3x4 500') || {}).amount, 500);
 eq('"אחוזה 500" (estate, not percent) → 500', (P('אחוזה 500') || {}).amount, 500);
 
+console.log('\n── date / filler / quantity (2026-06-17 audit) ──');
+eq('"6/15 250" strips US-order date → 250', (P('6/15 250 קניות') || {}).amount, 250);
+eq('"250 6/15" strips trailing date → 250', (P('250 6/15') || {}).amount, 250);
+eq('"15/6 קפה 200" valid date still stripped → 200', (P('15/6 קפה 200') || {}).amount, 200);
+eq('"cup of coffee 18 tip 5" keeps both (of no longer collapses)', (P('cup of coffee 18 tip 5') || {}).count, 2);
+eq('"8 payments of 200" still installment → 200', (P('8 payments of 200') || {}).amount, 200);
+eq('"240 על 3 בקבוקים" drops the count → 240', (P('240 על 3 בקבוקים') || {}).amount, 240);
+eq('"240 על 3 בקבוקים" is ONE row', (P('240 על 3 בקבוקים') || {}).count, 1);
+eq('"חולצה 80 מכנס 120" keeps both real expenses', (P('חולצה 80 מכנס 120') || {}).count, 2);
+
 console.log('\n' + (fail === 0 ? '✅ ALL ' + pass + ' PARSER CHECKS PASSED' : '❌ ' + fail + ' FAILED, ' + pass + ' passed'));
 process.exit(fail === 0 ? 0 : 1);

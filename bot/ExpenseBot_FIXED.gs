@@ -10436,9 +10436,12 @@ function parseAmountAndDescription(text) {
   // day/month as phantom 15 + 6 rows. SLASH form only (nobody writes a shekel
   // amount with "/"); the dot form stays a possible decimal and the leading-date
   // case is handled upstream by _extractLeadingDate_. Day 1-31 + month 1-12 only.
-  phoneStripped = phoneStripped.replace(/(^|[^\d\/])(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?(?=$|[^\d\/])/g, function (m, pre, d, mo) {
-    var dd = parseInt(d, 10), mm = parseInt(mo, 10);
-    return (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12) ? (pre + ' ') : m;
+  // A slash-joined digit pair (15/6, 6/15, 1/2) is NEVER a shekel amount -- strip
+  // it regardless of day/month order so an invalid/US-order date (6/15, month>12)
+  // can't leak its parts as phantom rows (2026-06-17 audit). Leading dates are
+  // handled upstream by _extractLeadingDate_.
+  phoneStripped = phoneStripped.replace(/(^|[^\d\/])(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?(?=$|[^\d\/])/g, function (m, pre) {
+    return pre + ' ';
   });
   // RANGE COLLAPSE (Steven 2026-06-16): "50-70 קפה" is a price RANGE, not two
   // separate expenses. Collapse digit-hyphen/en-dash-digit (both <= 5 digits,
@@ -10509,7 +10512,7 @@ function parseAmountAndDescription(text) {
   }
   // Installment / multiplier ("X tashlumim shel Y", "8 x 200"): one purchase
   // split into payments -> the price is the largest surviving number.
-  var _INSTALL = /תשלומ|תשלום|פעמ|פעמים|\btashlum|\bpeamim|\d\s*[x×✕*]\s*\d|[x×✕]\s*\d|\bכפול\b|\bpayments?\b|\binstallments?\b|\btimes\b|\bof\b/i;
+  var _INSTALL = /תשלומ|תשלום|פעמ|פעמים|\btashlum|\bpeamim|\d\s*[x×✕*]\s*\d|[x×✕]\s*\d|\bכפול\b|\bpayments?\b|\binstallments?\b/i;
   if (!nums && _INSTALL.test(phoneStripped) && _surv.length > 1) {
     var _mx = _surv[0];
     for (var _k = 1; _k < _surv.length; _k++) { if (_surv[_k].n > _mx.n) _mx = _surv[_k]; }
@@ -10537,7 +10540,20 @@ function parseAmountAndDescription(text) {
       if (_f1.n <= 30 && _f2.n > _f1.n && _tail === '' && /[א-תa-zA-Z]/.test(_mid)) {
         nums = [_f2.n];
       } else {
-        nums = _surv.map(function (f) { return f.n; });
+        // Price-FIRST then a small counted quantity ("240 על 3 בקבוקים" -> 240):
+        // drop the small number when it is much smaller AND directly followed by
+        // a SPECIFIC counted noun, regardless of position (2026-06-17 audit). The
+        // specific-noun guard keeps genuine two-expense lines ("קפה 5 עוגה 50")
+        // intact.
+        var _small = _f1.n <= _f2.n ? _f1 : _f2;
+        var _large = _f1.n <= _f2.n ? _f2 : _f1;
+        var _afterSmall = phoneStripped.slice(_small.i + _small.len, _small.i + _small.len + 18);
+        var _COUNT_NOUN = /^\s*(?:בקבוקים|בקבוק|יחידות|יחידה|חתיכות|חתיכה|פריטים|פריט|כוסות|כוס|מנות|מנה|אריזות|אריזה|חבילות|חבילה|זוגות|זוג|קופסאות|קופסה|שקיות|שקית|כרטיסים|כרטיס|פעמים)(?![א-ת])/i;
+        if (_small.n <= 30 && _large.n >= _small.n * 3 && _COUNT_NOUN.test(_afterSmall)) {
+          nums = [_large.n];
+        } else {
+          nums = _surv.map(function (f) { return f.n; });
+        }
       }
     } else {
       nums = _surv.map(function (f) { return f.n; });
