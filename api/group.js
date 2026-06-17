@@ -283,7 +283,8 @@ async function handlerImpl(req, res) {
           log.warn('group.sheet_create_failed', { reqId: req.reqId, code, error: e.message });
         }
       }
-      await kvSet('group:' + code, group);
+      const _created = await kvSet('group:' + code, group);
+      if (!_created) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       await kvSet('memberGroup:' + creatorPhone, { code, since: new Date().toISOString() });
       await addToPhoneGroups(creatorPhone, code);
       return res.status(200).json({ ok: true, code, group });
@@ -300,7 +301,8 @@ async function handlerImpl(req, res) {
       const exists = group.members.find(m => m.phone === phone);
       if (!exists) {
         group.members.push({ phone, name, joinedAt: new Date().toISOString() });
-        await kvSet('group:' + code, group);
+        const _joined = await kvSet('group:' + code, group);
+        if (!_joined) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       }
       await kvSet('memberGroup:' + phone, { code, since: new Date().toISOString() });
       await addToPhoneGroups(phone, code);
@@ -324,7 +326,8 @@ async function handlerImpl(req, res) {
       if (!group.members.find(m => m.phone === phone)) {
         return res.status(403).json({ ok: false, error: 'not_a_member' });
       }
-      await kvSet('memberGroup:' + phone, { code, since: new Date().toISOString() });
+      const _setActive = await kvSet('memberGroup:' + phone, { code, since: new Date().toISOString() });
+      if (!_setActive) return res.status(502).json({ ok: false, error: 'active_persist_failed' });
       return res.status(200).json({ ok: true, code });
     }
 
@@ -498,7 +501,8 @@ async function handlerImpl(req, res) {
         return res.status(403).json({ ok: false, error: 'only_payer_or_creator_can_undo' });
       }
       group.expenses = exps.slice(0, -1);
-      await kvSet('group:' + code, group);
+      const _undone = await kvSet('group:' + code, group);
+      if (!_undone) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       return res.status(200).json({ ok: true, removed: last });
     }
 
@@ -520,7 +524,8 @@ async function handlerImpl(req, res) {
           name: String(body.name || phone).slice(0, 60),
           joinedAt: new Date().toISOString(),
         });
-        await kvSet('group:' + code, group);
+        const _added = await kvSet('group:' + code, group);
+        if (!_added) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       }
       return res.status(200).json({ ok: true, members: group.members.length });
     }
@@ -537,7 +542,8 @@ async function handlerImpl(req, res) {
         return res.status(403).json({ ok: false, error: 'only_creator_or_self' });
       }
       group.members = group.members.filter(m => m.phone !== phone);
-      await kvSet('group:' + code, group);
+      const _removed = await kvSet('group:' + code, group);
+      if (!_removed) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       await kvDel('memberGroup:' + phone);
       return res.status(200).json({ ok: true, members: group.members.length });
     }
@@ -571,7 +577,8 @@ async function handlerImpl(req, res) {
           const w = await writeGroupExpenseToSheet(group, exp, '');
           if (w && w.ok) mirrored++;
         }
-        await kvSet('group:' + code, group);
+        const _sheetSaved = await kvSet('group:' + code, group);
+        if (!_sheetSaved) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
         return res.status(200).json({ ok: true, sheetUrl: group.sheetUrl, mirrored });
       } catch (e) {
         log.error('group.resync_failed', { reqId: req.reqId, code, error: e.message });
@@ -636,7 +643,8 @@ async function handlerImpl(req, res) {
         lastFiredAt: null,
         active: true,
       });
-      await kvSet('group:' + code, group);
+      const _recSaved = await kvSet('group:' + code, group);
+      if (!_recSaved) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       return res.status(200).json({ ok: true, recurring: group.recurring });
     }
 
@@ -676,7 +684,8 @@ async function handlerImpl(req, res) {
       const rec = group.recurring.find(r => r.id === recurringId);
       if (!rec) return res.status(404).json({ ok: false, error: 'recurring_not_found' });
       rec.lastFiredAt = new Date().toISOString();
-      await kvSet('group:' + code, group);
+      const _firedSaved = await kvSet('group:' + code, group);
+      if (!_firedSaved) return res.status(502).json({ ok: false, error: 'group_persist_failed' });
       return res.status(200).json({ ok: true, lastFiredAt: rec.lastFiredAt });
     }
 
