@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-17-bizvocab';
+const KFL_BUILD_VERSION = '2026-06-19-newbiz';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2442,6 +2442,26 @@ function _doPostRouter_(e) {
               }
             } catch (_mbErr) { Logger.log('doPost: my-biz cmd err: ' + (_mbErr && _mbErr.message)); }
           }
+          // EXPLICIT "create a new business named X" command (natural language).
+          // OWNER-ONLY. Runs before the business-EXPENSE routing so "צור עסק שירים"
+          // / "תיצור גיליון חדש שנקרא עסק שירים" creates the business+dashboard
+          // instead of falling through to "didn't understand". Requires an inline
+          // name, so bare "עסק חדש" / confirmation replies are NOT preempted.
+          if (typeof _handleCreateBusinessCommand_ === "function" && _isOwnerPhone_(__from_)) {
+            try {
+              var __cbRes = _handleCreateBusinessCommand_(__from_, __text_);
+              if (__cbRes && __cbRes.handled) {
+                if (__cbRes.replyText && typeof sendWhatsAppMessage === "function") {
+                  sendWhatsAppMessage(__from_, __cbRes.replyText);
+                }
+                Logger.log('doPost: create-business command handled');
+                return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
+              }
+            } catch (_cbErr) {
+              Logger.log('doPost: create-business error: ' + (_cbErr && _cbErr.stack || _cbErr));
+            }
+          }
+
           // "עסק N <amount> <description>" -> per-business sheet/tab.
           // OWNER-ONLY: this code path writes to SHEET_ID, which only the
           // owner can edit. If a tenant types "עסק 2 X" we fall through to
@@ -15060,6 +15080,54 @@ function _businessListReply_(fromPhone) {
 
 // Arm the "new business" name capture (owner-only) and ask for the name. Used
 // by both the "+ esek hadash" button and the "esek hadash" command. 2026-06-07.
+// Strip wrapping quotes/geresh/gershayim from a business name and cap length.
+function _cleanBizName_(s) {
+  var x = String(s == null ? '' : s).trim();
+  x = x.replace(/^["'׳״“”‘’«「]+/, '')
+       .replace(/["'׳״“”‘’»」]+$/, '')
+       .trim();
+  return x.slice(0, 40);
+}
+
+// Parse a natural-language "create a new business named X" command and return
+// { match, name }. REQUIRES an inline name on purpose -- bare triggers like
+// "עסק חדש" or confirmation replies like "פתח עסק חדש" carry no name, so they
+// fall through to the existing handlers untouched (no preemption / regression).
+// Examples that SHOULD match: "צור עסק שירים", "תיצור גיליון חדש שנקרא עסק שירים",
+// "פתח עסק חדש בשם כספלה", "עסק חדש שירים".
+function _parseCreateBusinessName_(text) {
+  var t = String(text == null ? '' : text).trim();
+  if (!t) return { match: false, name: '' };
+  var verb = '(?:תיצור|צור|תפתח|פתח|הוסף|תוסיף|תכין|הכן|בנה|תבנה|הקם|תקים)';
+  var noun = '(?:עסק|גיליון|גליון|טאב|לשונית)';
+  var conn = '(?:ש?נקרא\\s+|בשם\\s+|שקוראים\\s+לו\\s+)?';
+  // A bare "חדש" ("new") is never a real name -- it leaks in when the optional
+  // "חדש" token is the last word (e.g. "צור עסק חדש"), which must NOT create.
+  function _validName_(s) { var n = _cleanBizName_(s); return (n && n !== 'חדש' && n !== 'חדשה') ? n : ''; }
+  // Form A: verb-led, with an inline name (the name is mandatory via \s+...(.+)).
+  var reA = new RegExp('^\\s*' + verb + '\\s+(?:לי\\s+)?' + noun + '(?:\\s+חדש)?\\s+' + conn + '(.+)$');
+  var m = t.match(reA);
+  if (m) { var nA = _validName_(m[1]); if (nA) return { match: true, name: nA }; }
+  // Form B: no verb, but explicit "<noun> חדש <name>" (incl. שנקרא/בשם connector).
+  var reB = new RegExp('^\\s*' + noun + '\\s+חדש\\s+' + conn + '(.+)$');
+  m = t.match(reB);
+  if (m) { var nB = _validName_(m[1]); if (nB) return { match: true, name: nB }; }
+  return { match: false, name: '' };
+}
+
+// Owner-only doPost hook: handle an explicit "create a new business named X"
+// message by creating the business (tab + per-business dashboard) via the same
+// tested path as the button flow. Returns { handled, replyText }.
+function _handleCreateBusinessCommand_(fromPhone, text) {
+  if (typeof _isOwnerPhone_ !== 'function' || !_isOwnerPhone_(fromPhone)) return { handled: false };
+  var parsed = _parseCreateBusinessName_(text);
+  if (!parsed || !parsed.match || !parsed.name) return { handled: false };
+  var reply = (typeof _createBusinessFromTemplate_ === 'function')
+    ? _createBusinessFromTemplate_(fromPhone, parsed.name) : '';
+  if (!reply) return { handled: false };
+  return { handled: true, replyText: reply };
+}
+
 function _startNewBusinessFlow_(fromPhone) {
   if (typeof _isOwnerPhone_ === 'function' && !_isOwnerPhone_(fromPhone)) return { reply: '' };
   var clean = String(fromPhone || '').replace(/[^0-9]/g, '');
