@@ -138,14 +138,25 @@ var TABS=[
 function buildTabs(){ $('#tabs').innerHTML=TABS.map(function(t){ return '<a class="tab flex flex-col items-center gap-0.5 py-2.5" data-id="'+t.id+'" href="#/'+t.id+'"><span class="text-xl leading-none">'+t.icon+'</span><span class="text-[10px] font-semibold">'+esc(t.label)+'</span></a>'; }).join(''); }
 function setActiveTab(id){ document.querySelectorAll('#tabs .tab').forEach(function(a){ a.classList.toggle('active', a.getAttribute('data-id')===id); }); }
 function currentId(){ return (location.hash||'').replace(/^#\/?/,''); }
+var __routing=false, __routeAgain=false;
 async function route(force){
-  var id=currentId(); var sec=TABS.filter(function(t){return t.id===id;})[0]||TABS[0];
-  setActiveTab(sec.id); var view=$('#view'); window.scrollTo(0,0);
-  var rb=$('#refreshBtn'); if(rb) rb.classList.add('kfl-spin');
-  view.innerHTML=loadingHero();
-  try { await sec.render(view); } catch(e){ view.innerHTML=errState(e); }
-  if(rb) rb.classList.remove('kfl-spin');
-  var st=$('#syncTime'); if(st){ var n=new Date(); st.textContent='עודכן '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
+  // Re-entrancy guard: rapid pull-to-refresh / refresh taps / hashchanges must
+  // not run concurrent renders racing on view.innerHTML. Serialize them and let
+  // the latest request win (re-run once if another came in mid-render).
+  if(__routing){ __routeAgain=true; return; }
+  __routing=true;
+  try {
+    do {
+      __routeAgain=false;
+      var id=currentId(); var sec=TABS.filter(function(t){return t.id===id;})[0]||TABS[0];
+      setActiveTab(sec.id); var view=$('#view'); window.scrollTo(0,0);
+      var rb=$('#refreshBtn'); if(rb) rb.classList.add('kfl-spin');
+      view.innerHTML=loadingHero();
+      try { await sec.render(view); } catch(e){ view.innerHTML=errState(e); }
+      if(rb) rb.classList.remove('kfl-spin');
+      var st=$('#syncTime'); if(st){ var n=new Date(); st.textContent='עודכן '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
+    } while(__routeAgain);
+  } finally { __routing=false; }
 }
 
 // ───────── HOME ─────────
@@ -160,7 +171,7 @@ async function renderHome(view){
     '<div class="mt-1 font-display text-4xl font-black '+(net>=0?'':'text-red-500')+'">'+money(net)+'</div>'+
     '<div class="mt-0.5 text-xs text-ink-400">המאזן שלך החודש (הכנסות פחות הוצאות)</div>'+
     '<div class="mt-4 grid grid-cols-2 gap-3">'+
-      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-400">הוצאות</div><div class="mt-0.5 text-lg font-bold text-red-500">'+money(exp)+'</div>'+(delta!=null?'<div class="text-[11px] '+(delta>0?'text-red-500':'text-green-600')+'">'+(delta>0?'▲':'▼')+' '+Math.abs(delta)+'% מהחודש שעבר</div>':'')+'</div>'+
+      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-400">הוצאות</div><div class="mt-0.5 text-lg font-bold text-red-500">'+money(exp)+'</div>'+(delta!=null?'<div class="text-[11px] '+(delta>0?'text-red-500':delta<0?'text-green-600':'text-ink-400')+'">'+(delta>0?'▲':delta<0?'▼':'→')+' '+Math.abs(delta)+'% מהחודש שעבר</div>':'')+'</div>'+
       '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-400">הכנסות</div><div class="mt-0.5 text-lg font-bold text-green-600">'+money(inc)+'</div><div class="text-[11px] text-ink-400">'+num(d.month_count)+' תנועות</div></div>'+
     '</div></div>';
   // top categories
@@ -357,7 +368,14 @@ async function renderAccount(view){
     }catch(e){ if(sub) sub.textContent='שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף'; }
   }; }
 }
-async function kflLogout(){ try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }catch(e){} try{ localStorage.removeItem('kesefle_user'); }catch(e){} location.href='/account'; }
+async function kflLogout(){
+  try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); }catch(e){}
+  try{ localStorage.removeItem('kesefle_user'); }catch(e){}
+  // Purge cached per-user API responses so a different account on the same device
+  // can't read the previous user's financial data from the SW cache (audit 2026-06-19).
+  try{ if(window.caches&&caches.keys){ var ks=await caches.keys(); await Promise.all(ks.filter(function(k){return /kesefle-api/.test(k);}).map(function(k){return caches.delete(k);})); } }catch(e){}
+  location.href='/account';
+}
 
 // ───────── theme + PWA + boot ─────────
 function applyTheme(t){ document.documentElement.classList.toggle('dark', t==='dark'); var m=document.querySelector('meta[name=theme-color]'); if(m) m.content=(t==='dark'?'#070b16':'#2563eb'); }
