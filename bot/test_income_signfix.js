@@ -16,6 +16,8 @@ const CASES = [
   ['מלגה 1200',           true,  'הכנסות'],
   ['שילם לי 200',         true,  null],
   ['שילמתי משכורת 6000',  false, 'עסק'],
+  ['משכורת של העובד 6000', false, 'עסק'],      // audit 2026-06-19: possessive payroll = expense
+  ['משכורת של עובד 6000',  false, 'עסק'],      // (no ה) also expense
   ['משכורת 9000',         true,  'הכנסות'],   // control: own salary stays income
   ['שכר דירה 3200',       false, null],        // control: rent stays expense
   ['החזר הלוואה 500',     false, null],        // control: loan repayment stays expense

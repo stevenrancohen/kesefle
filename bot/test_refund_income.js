@@ -40,6 +40,12 @@ const CASES = [
   ['זיכוי כספי מהחנות 90', 'קניות', 'ביגוד', true],
   // control: a refund GIVEN TO someone (ל-prefix) stays an EXPENSE
   ['החזר כספי לחבר 200', 'שונות ואחרים', 'שונות', false],
+  // audit 2026-06-19: מ-initial EXPENSE nouns must NOT be flipped by the
+  // "refund FROM <place>" (מ[א-ת]) rule -- mortgage/advance/loan are money OUT.
+  ['החזר משכנתא 4000', 'הוצאות קבועות', 'בית', false],
+  ['החזר מקדמה 1000', 'שונות ואחרים', 'שונות', false],
+  // ...but a genuine tax/VAT/merchant refund (NOT in the blocklist) stays income
+  ['קיבלתי החזר ממס הכנסה 1500', 'הכנסות', 'החזרים', true],
   // audit 2026-06-15: a WhatsApp-pasted RLM (U+200F) before the '+' income
   // convention must not defeat it (.trim() does not strip directional marks)
   ['\u200F+3000 העברה', 'שונות ואחרים', 'שונות', true],

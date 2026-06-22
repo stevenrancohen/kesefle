@@ -26,7 +26,8 @@ const d = j.decisions || {}, mc = d.matchCategory || {}, am = d.amountMatch || {
 let cat = mc.category || null, sub = mc.subcategory || null;
 let income = mc.isIncome === true || am.isIncome === true || /^\s*\+/.test(msg.replace(/^[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]+/, ''));
 // Mirror _resolveIsIncome_ rawText rules so this tool reports PROD sign behavior
-if (/(?:משכורת|שכר)\s+ל(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+משכורת/.test(msg)) income = false;
+if (/(?:משכורת|שכר)\s+(?:ל|של\s+ה?)?(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+(?:\S+\s+)?משכורת/.test(msg)) income = false;
+else if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?(?:משכנת|מקדמ|מילוו)/.test(msg)) { /* m-initial expense noun: keep category-derived sign */ }
 else if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי|שיל(?:ם|מה|מו)\s+לי(?=\s|$)|העביר(?:ה|ו)?\s+לי(?=\s|$)|החזיר(?:ה|ו)?\s+לי(?=\s|$)|הכנס(?:ה|ות)\s+מ[א-ת]|^הכנס(?:ה|ות)\b/.test(msg)) income = true;
 if (!cat || cat.indexOf('שונות') >= 0) {
   const fb = fallback(msg.replace(/[+\-]?\d[\d.,]*/g, ' '));

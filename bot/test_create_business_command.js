@@ -55,6 +55,8 @@ expectNoMatch('צור עסק חדש');        // no inline name
 expectNoMatch('עסקים');              // list command
 expectNoMatch('עסק שירים 50 קפה');   // named-business EXPENSE routing
 expectNoMatch('עסק 2 320 שיווק');    // numbered-business EXPENSE
+expectNoMatch('פתח עסק 250 שיווק');  // audit 2026-06-19: amount-shaped -> not a junk business
+expectNoMatch('צור עסק תספורת 50');  // trailing bare amount -> expense, not a business
 expectNoMatch('50 קפה');             // plain expense
 expectNoMatch('סיכום');              // summary command
 expectNoMatch('');                   // empty

@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-19-newbiz';
+const KFL_BUILD_VERSION = '2026-06-19-audit';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -335,7 +335,7 @@ const CATEGORY_MAP = [
   {"keywords":["software","saas","subscription tool","tool","app","application","license","software license","cloud service","אופיס","תוכנה","תוכנת חשבוניות","סאאס","רישיון","כלי עבודה"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["business equipment","office equipment","equipment","printer","scanner","laptop","monitor","desk","office chair","ציוד עסקי","ציוד למשרד","מדפסת","סורק","ציוד משרד"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["business tax","corporate tax","vat","vat payment","income tax","tax payment","sales tax","מע\"מ","מעמ","תשלום מעמ","מס הכנסה עסקי","מסי עסק","ביטוח לאומי עצמאי"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
-  {"keywords":["משכורת לעובד","משכורת לעובדת","משכורת לעובדים","משכורות לעובדים","שכר לעובד","שכר לעובדים","תשלום משכורת לעובד","שילמתי משכורת"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
+  {"keywords":["משכורת לעובד","משכורת לעובדת","משכורת לעובדים","משכורות לעובדים","משכורת של העובד","משכורת של עובד","שכר של העובד","שכר של עובד","שכר לעובד","שכר לעובדים","תשלום משכורת לעובד","שילמתי משכורת"],"category":"עסק","subcategory":"הוצאות תפעוליות"},
   {"keywords":["revenue","sale","sales","income payment","customer payment","invoice paid","order received","קבלת תשלום","תשלום לקוח","לקוח שילם","לקוח שילם לי","תשלום מהלקוח","קיבלתי מלקוח","הזמנה","מחזור","מכירה","מכירות","ssayhe","החזר מעמ","החזר מע\"מ"],"category":"עסק","subcategory":"מחזור","isIncome":true},
 
   // ===== FAMILY + KIDS + BABY (expanded 2026-05-24 per Steven's request) =====
@@ -803,7 +803,7 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // PAYROLL OVERRIDE (before any income match): paying a salary TO an employee
   // is a business EXPENSE even though bare maskoret maps to income. QA 2026-06-11:
   // 'maskoret le-oved 6000' was booked as +6000 income (a 12K dashboard swing).
-  if (/(?:משכורת|שכר)\s+ל(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+משכורת/.test(s)) return false;
+  if (/(?:משכורת|שכר)\s+(?:ל|של\s+ה?)?(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+(?:\S+\s+)?משכורת/.test(s)) return false;
   if (matched && matched.isIncome) return true;
   if (s.charAt(0) === '+') return true;
   // Money-RECEIVED phrasings -> income: shilem/shilmu li, heevir(u) li,
@@ -813,6 +813,10 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // back). Specific patterns only ("zikui me-X", "hechzer al kniya",
   // "kibalti hechzer") so a loan repayment ("hechzer halvaa") or a bare,
   // ambiguous "zikui" is NOT flipped. Steven 2026-06-08 (QA fleet r3).
+  // Expense nouns that begin with מ must NOT be flipped by the "refund FROM
+  // <place>" (מ[א-ת]) rule below: "החזר משכנתא" is a mortgage payment, "החזר
+  // מקדמה"/"החזר מילווה" repay an advance/loan -- all EXPENSES, not refunds.
+  if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?(?:משכנת|מקדמ|מילוו)/.test(s)) return _isIncomeCategory_(category, subcategory);
   if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי/.test(s)) return true;
   return _isIncomeCategory_(category, subcategory);
 }
@@ -827,7 +831,11 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
 function sanitizeForSheet(value) {
   if (typeof value !== 'string') return value;
   if (value.length === 0) return value;
-  var first = value.charAt(0);
+  // Probe the first MEANINGFUL char after any leading whitespace / bidi marks so
+  // " =HYPERLINK(...)" or a bidi-prefixed payload can't slip past the guard (the
+  // server sanitizeCell does the same; keep them in lockstep).
+  var probe = value.replace(/^[\s\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]+/, '');
+  var first = probe.charAt(0);
   if (first === '=' || first === '+' || first === '-' || first === '@' || first === '\t') {
     return "'" + value;
   }
@@ -7965,8 +7973,8 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
       method: 'post', contentType: 'application/json',
       headers: { 'x-kesefle-bot-secret': botSecret },
       payload: JSON.stringify({
-        phone: clean, amount: pending.amount, currency: 'ILS', isIncome: false,
-        category: pickedCategory, subcategory: '', rawText: pending.rawText, botSecret: botSecret,
+        phone: clean, amount: pending.amount, currency: 'ILS', isIncome: _isIncomeCategory_(pickedCategory, ''),
+        category: pickedCategory, subcategory: pickedCategory, rawText: pending.rawText, botSecret: botSecret,
       }),
       muteHttpExceptions: true,
     });
@@ -8056,8 +8064,8 @@ function _handlePendingCategoryText_(fromPhone, text) {
         method: 'post', contentType: 'application/json',
         headers: { 'x-kesefle-bot-secret': botSecret },
         payload: JSON.stringify({
-          phone: clean, amount: pending.amount, currency: 'ILS', isIncome: false,
-          category: category, subcategory: '', rawText: pending.rawText, botSecret: botSecret,
+          phone: clean, amount: pending.amount, currency: 'ILS', isIncome: _isIncomeCategory_(category, ''),
+          category: category, subcategory: category, rawText: pending.rawText, botSecret: botSecret,
         }),
         muteHttpExceptions: true,
       });
@@ -15103,7 +15111,16 @@ function _parseCreateBusinessName_(text) {
   var conn = '(?:ש?נקרא\\s+|בשם\\s+|שקוראים\\s+לו\\s+)?';
   // A bare "חדש" ("new") is never a real name -- it leaks in when the optional
   // "חדש" token is the last word (e.g. "צור עסק חדש"), which must NOT create.
-  function _validName_(s) { var n = _cleanBizName_(s); return (n && n !== 'חדש' && n !== 'חדשה') ? n : ''; }
+  // A real business name is not "new", not a number, and does not end in a bare
+  // amount -- so "פתח עסק 250 שיווק" / "צור עסק תספורת 50" are treated as expenses,
+  // not a junk business named "250 שיווק" / "תספורת 50".
+  function _validName_(s) {
+    var n = _cleanBizName_(s);
+    if (!n || n === 'חדש' || n === 'חדשה') return '';
+    if (/^\d/.test(n)) return '';
+    if (/(?:^|\s)\d+(?:[.,]\d+)?$/.test(n)) return '';
+    return n;
+  }
   // Form A: verb-led, with an inline name (the name is mandatory via \s+...(.+)).
   var reA = new RegExp('^\\s*' + verb + '\\s+(?:לי\\s+)?' + noun + '(?:\\s+חדש)?\\s+' + conn + '(.+)$');
   var m = t.match(reA);
@@ -15122,6 +15139,13 @@ function _handleCreateBusinessCommand_(fromPhone, text) {
   if (typeof _isOwnerPhone_ !== 'function' || !_isOwnerPhone_(fromPhone)) return { handled: false };
   var parsed = _parseCreateBusinessName_(text);
   if (!parsed || !parsed.match || !parsed.name) return { handled: false };
+  // This NL path short-circuits doPost before processExpense can consume an armed
+  // "awaitingNewBizName" capture flag. Clear it here so the owner's NEXT message
+  // isn't hijacked as a stale business name (TTL 600s).
+  try {
+    var _cl = String(fromPhone || '').replace(/[^0-9]/g, '');
+    if (_cl && typeof CacheService !== 'undefined') CacheService.getScriptCache().remove('awaitingNewBizName:' + _cl);
+  } catch (_e) {}
   var reply = (typeof _createBusinessFromTemplate_ === 'function')
     ? _createBusinessFromTemplate_(fromPhone, parsed.name) : '';
   if (!reply) return { handled: false };
