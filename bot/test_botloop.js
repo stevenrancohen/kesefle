@@ -89,6 +89,8 @@ console.log('\n-- Primary write-confirmation echoes (must trigger) --');
 expectTrue('✅ ₪320 לשיווק. נשמר אצלך בגיליון', 'primary single-item write confirmation');
 expectTrue('✅ נרשמו 3 פעולות (סה"כ ₪450)', 'multi-item write confirmation');
 expectTrue('✅ נרשם בגיליון שלך!', 'receipt write confirmation');
+expectTrue('✅ נרשם: ₪320 · שיווק / פייסבוק', 'picker write confirmation (audit 2026-06-19)');
+expectTrue('✅ נרשם.', 'short business write confirmation');
 expectFalse('נרשמתי לחוג 200', 'user "I registered for a class" is a real expense');
 expectFalse('שמרתי כסף החודש', 'user talking about saving is not a sheet confirmation');
 

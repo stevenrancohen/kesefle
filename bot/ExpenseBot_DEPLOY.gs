@@ -1810,6 +1810,10 @@ var _BOT_ECHO_REGEXES_ = [
   /נשמר\s+אצלך\s+בגיליון/,                    // single-item confirmation (most common reply)
   /^\s*✅\s*נרשמו\s+\d+\s+פעולות/,             // multi-item confirmation header
   /^\s*✅\s*נרשם\s+בגיליון\s+שלך/,             // receipt confirmation
+  // 2026-06-19 (audit): the interactive category-picker + per-business write
+  // confirmations use "✅ נרשם: ₪... · cat / sub" / "✅ נרשם." which the specific
+  // patterns above miss. This catches every "✅ נרשם..." reply (bot-only text).
+  /^\s*✅\s*נרשם[\s:.·]/,
 ];
 
 function _looksLikeBotEcho_(text, interactive) {
@@ -10784,10 +10788,19 @@ function _parseIsraeliNumber_(raw) {
   if (raw == null) return NaN;
   var s = String(raw).trim();
   if (!s) return NaN;
-  // If there's a period, treat that as the decimal point and strip commas
-  // (which can only be thousands separators in that case).
+  // If there's a period it's USUALLY the decimal point -- but dots are also a
+  // thousands separator in Israeli/European writing ("1.000.000"). Mirror the
+  // comma logic: when every group after the first is exactly 3 digits, the dots
+  // are thousands separators -> strip to an integer ("1.000.000" -> 1000000,
+  // "1.000" -> 1000). A non-3-digit tail stays decimal ("1.5", "5.99"). Commas
+  // in this branch can only be thousands separators, so drop them first.
   if (s.indexOf('.') >= 0) {
-    return parseFloat(s.replace(/,/g, ''));
+    var _noC = s.replace(/,/g, '');
+    var _dg = _noC.split('.');
+    if (_dg.length > 1 && _dg.slice(1).every(function(g){ return /^\d{3}$/.test(g); })) {
+      return parseFloat(_dg.join(''));
+    }
+    return parseFloat(_noC);
   }
   // No period — the comma might be either separator. We look at every comma
   // and check the run of digits to its right: exactly 3 digits and no more

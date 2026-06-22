@@ -39,6 +39,10 @@ eq('"1,800" (thousands)', globalThis._parseIsraeliNumber_('1,800'), 1800);
 eq('"1,234,567"', globalThis._parseIsraeliNumber_('1,234,567'), 1234567);
 eq('"42.5" (period decimal)', globalThis._parseIsraeliNumber_('42.5'), 42.5);
 eq('"12,5" (comma decimal)', globalThis._parseIsraeliNumber_('12,5'), 12.5);
+// audit 2026-06-19: dots as thousands separators must not collapse to 1
+eq('"1.000.000" (dot thousands)', globalThis._parseIsraeliNumber_('1.000.000'), 1000000);
+eq('"2.500" (dot thousands)', globalThis._parseIsraeliNumber_('2.500'), 2500);
+eq('"5.99" (dot decimal stays)', globalThis._parseIsraeliNumber_('5.99'), 5.99);
 
 console.log('\n── parseAmountAndDescription: common Hebrew expenses ──');
 eq('"245 סופר" amount', P('245 סופר').amount, 245);
