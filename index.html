@@ -375,10 +375,14 @@
   /* holographic gradient sweep */
   @keyframes holo-sweep { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
   .holo-text {
+    color: #2563eb; /* solid fallback if background-clip:text is unsupported -> never invisible */
     background-image: linear-gradient(110deg, #2563eb 0%, #a855f7 25%, #3b82f6 50%, #a855f7 75%, #2563eb 100%);
     background-size: 200% 100%;
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    -webkit-background-clip: text; background-clip: text;
     animation: holo-sweep 5s linear infinite;
+  }
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .holo-text { color: transparent; }
   }
   /* animated matrix-like grid background */
   @keyframes grid-shift {
@@ -596,7 +600,7 @@
 
   <!-- Mobile menu (native accordion). Slightly more opaque so it reads
        as a panel even over the transparent header. -->
-  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-white/[0.06] bg-white/95 px-5 py-3 backdrop-blur-lg dark:bg-ink-950/95 md:hidden">
+  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-100 dark:border-white/[0.06] bg-white/95 px-5 py-3 backdrop-blur-lg dark:bg-ink-950/95 md:hidden">
     <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">המוצר<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הדגמה חיה</a></div></details>
 <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מחירים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/pricing#tiers" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מסלולים</a><a href="/pricing#compare" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואת תכונות</a></div></details>
     <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מדריכים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/blog" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">בלוג</a><a href="/start" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">התחלה מהירה</a></div></details>
