@@ -17,7 +17,8 @@ _Owner away. Continuous independent audit + fix sprint. Each iteration: read thi
 - Meta template `projection_nudge` not created yet.
 
 ## Iteration log
-- **Iter 0 (2026-06-19):** Set up tracking files. Launched parallel audit workflow (8 dimensions → adversarial verify). Baseline gauntlet green. Next: integrate confirmed findings into TASKS.md, fix highest-value safe items.
+- **Iter 0 (2026-06-19):** Set up tracking files. Launched parallel audit workflow (8 dims -> adversarial verify) -> 40 confirmed findings.
+- **Iter 1 (2026-06-19):** Fixed 21 of 40 findings across 7 gauntlet-green commits (2bbc427 348b70e d251426 611cd8e 4c74243 0d8dc69 12861d2). ALL critical/high/financial-integrity + privacy + the autofixable mediums/lows. Bot fixes (10) bundle into the pending paste (build 2026-06-19-audit); api/web fixes (11) auto-deployed.
 
 ## Next action
-Integrate audit-workflow confirmed findings into TASKS.md; implement top safe fixes; commit gauntlet-green.
+Iteration 2 backlog (lower priority, see TASKS.md): #17 RSS stale, #24 stats per-phone limit, #25 optionalAuth cookie, #38 changelog.rss, #39 hreflang, docs accuracy (#18/#19/#34-37). Then the NOT-autofixable design items (#13 group/mine reverse-index, #14 getExpenses pagination, #29 count-phrase, #30/#31 perf, #32 delete-last) -- each needs a small design decision, document in TASKS.md before implementing.

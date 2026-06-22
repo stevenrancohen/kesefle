@@ -19,12 +19,12 @@ _(none confirmed)_
 - ☑ #20 stale biz flag · ☑ #21 0% arrow · ☑ #22 logout cache leak · ☑ #23 render race · ☑ #26/#27/#28 contrast/holo-text (commits 611cd8e, 4c74243)
 
 ## Still TODO (lower priority, next iterations)
-- ☐ #11 echo-loop gap (picker confirmation) — bot, bundles into paste
-- ☐ #12 dot-grouped thousands (1.000.000→1) — bot, bundles into paste
-- ☐ #16 manifest WhatsApp shortcuts missing number
+- ☑ #11 echo-loop gap (picker confirmation) — FIXED 0d8dc69
+- ☑ #12 dot-grouped thousands — FIXED 0d8dc69
+- ☑ #16 manifest WhatsApp shortcuts — FIXED 12861d2
 - ☐ #17 RSS feed stale (24 posts missing)
 - ☐ #24 stats.js missing per-phone rate limit
-- ☐ #33 /מעמ marks income row VAT-deductible
+- ☑ #33 VAT-on-income guard — FIXED 12861d2
 - ☐ #38 changelog.rss unreachable · ☐ #39 hreflang he vs he-IL
 - ☐ #25 optionalAuth cookie gap (latent/low)
 - ☐ docs accuracy #18/#19/#34/#35/#36/#37 (README/docs.html stale)
