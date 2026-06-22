@@ -177,6 +177,22 @@ async function handlerImpl(req, res) {
     return res.status(409).json({ ok: false, error: 'too_old' });
   }
 
+  // Don't mark an INCOME row VAT-deductible: only expenses are deductible, and
+  // flagging an income row would inflate the year-end VAT/tax-report total
+  // (audit 2026-06-19). Read col H (status) of the target row; FALSE = income.
+  try {
+    const statusUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${TX_TAB}'!H${lastDataRowIndex}`)}`;
+    const statusResp = await fetch(statusUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+    if (statusResp.ok) {
+      const sj = await statusResp.json().catch(() => ({}));
+      const cell = sj.values && sj.values[0] && sj.values[0][0];
+      const isIncome = cell === false || String(cell == null ? '' : cell).trim().toUpperCase() === 'FALSE';
+      if (isIncome) {
+        return res.status(409).json({ ok: false, error: 'income_not_deductible' });
+      }
+    }
+  } catch (_e) { /* non-fatal: if the status read fails, fall through -- the explicit user ask + 24h guard still apply */ }
+
   // Write TRUE to col I of that row. Use PUT (values.update) so we don't
   // append a new row. valueInputOption=RAW preserves the boolean type.
   const updateRange = encodeURIComponent(`'${TX_TAB}'!I${lastDataRowIndex}`);
