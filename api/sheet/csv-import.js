@@ -29,7 +29,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { constantTimeEqual, decryptRefreshToken } from '../../lib/crypto.js';
-import { exchangeRefreshForAccess, TX_TAB, sanitizeCell } from '../../lib/sheet-writer.js';
+import { exchangeRefreshForAccess, TX_TAB, sanitizeCell, normalizeSubcategoryForDashboard } from '../../lib/sheet-writer.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -351,12 +351,20 @@ async function handlerImpl(req, res) {
   for (const rec of records) {
     const tuple = rec.date + '|' + rec.amount + '|' + String(rec.description || '').trim().toLowerCase();
     if (existingTuples.has(tuple)) { skipped.push(rec); continue; }
+    // col E MUST be a real dashboard row label or the personal-dashboard SUMIFS
+    // never sums the row (audit 2026-06-19: blank E for expenses, and the income
+    // label 'הכנסות שונות' did not match the real row 'שונות (הכנסות)'). Income ->
+    // the catch-all income row; expense -> the canonicalised category, falling
+    // back to the 'שונות' variable-expense row.
+    const dashRow = rec.isIncome
+      ? 'שונות (הכנסות)'
+      : (normalizeSubcategoryForDashboard(rec.category || '', rec.category || '') || 'שונות');
     toWrite.push([
       sanitizeCell(rec.date),                                    // A date
       sanitizeCell(rec.monthKey),                                // B YYYY-MM
       rec.amount,                                                // C amount
       sanitizeCell(rec.category),                                // D category
-      sanitizeCell(rec.isIncome ? 'הכנסות שונות' : ''),          // E subcategory
+      sanitizeCell(dashRow),                                     // E subcategory (canonical dashboard row)
       sanitizeCell(rec.description),                             // F description
       'ייבוא CSV',                                               // G source
       !rec.isIncome,                                             // H הוצאה? (TRUE=expense, FALSE=income)

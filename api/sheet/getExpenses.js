@@ -190,7 +190,9 @@ async function handlerImpl(req, res) {
       member,
       // explicit FALSE = income; TRUE / blank / unknown = expense (matches the
       // dashboard SUMIFS + the snapshot guard: a blank col-H is NOT income).
-      is_income: (statusCell === false || String(statusCell == null ? '' : statusCell).toUpperCase() === 'FALSE'),
+      // Also treat the Hebrew income category as income for legacy/imported rows
+      // with a blank col-H -- identical to summary.js so Home + Insights agree.
+      is_income: (statusCell === false || String(statusCell == null ? '' : statusCell).toUpperCase() === 'FALSE' || category === 'הכנסות' || category === 'הכנסה'),
     });
     if (isInCurrentMonth(date) && amount > 0) {
       totalThisMonth += amount;

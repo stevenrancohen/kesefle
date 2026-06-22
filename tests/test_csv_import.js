@@ -183,7 +183,12 @@ console.log('\n=== COMMIT WRITES col G (source) + col H (expense flag) so rows a
   check('expense row col G = source label', expenseRow && expenseRow[6] === 'ייבוא CSV');
   check('expense row col H = TRUE (expense, dashboard sums it)', expenseRow && expenseRow[7] === true);
   check('income row col H = FALSE (income, dashboard sums it)', incomeRow && incomeRow[7] === false);
-  check('income row col E = הכנסות שונות (visible income bucket)', incomeRow && incomeRow[4] === 'הכנסות שונות');
+  // audit 2026-06-19: col E must be a REAL dashboard row label or the row is
+  // invisible to the personal-dashboard SUMIFS. Income -> the real catch-all
+  // income row 'שונות (הכנסות)' (was the non-matching 'הכנסות שונות'); expense ->
+  // a non-empty canonical label (was blank).
+  check('income row col E = שונות (הכנסות) (real income dashboard row)', incomeRow && incomeRow[4] === 'שונות (הכנסות)');
+  check('expense row col E non-empty (visible to dashboard SUMIFS)', expenseRow && typeof expenseRow[4] === 'string' && expenseRow[4].length > 0);
   check('income row col D = הכנסות (category)', incomeRow && incomeRow[3] === 'הכנסות');
 }
 

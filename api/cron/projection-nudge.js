@@ -112,8 +112,13 @@ function monthKey(dt) {
 }
 async function readMtdExpense(spreadsheetId, accessToken) {
   const year = new Date().getFullYear();
-  let result = await fetchSheetRange(spreadsheetId, `'${year}'!A1:N`, accessToken);
-  if (!result.ok) result = await fetchSheetRange(spreadsheetId, `'${TX_TAB}'!A1:N`, accessToken);
+  // Read 'תנועות' FIRST to match summary.js (which the app's Insights projection
+  // uses), so the nudge number equals what the user sees. The owner sheet's
+  // year-named tabs are month x metric DASHBOARDS, not transactions -- reading
+  // them first produced a meaningless MTD. Year tab is only a fallback for the
+  // per-user template, where the transactions tab is named after the year.
+  let result = await fetchSheetRange(spreadsheetId, `'${TX_TAB}'!A1:N`, accessToken);
+  if (!result.ok) result = await fetchSheetRange(spreadsheetId, `'${year}'!A1:N`, accessToken);
   if (!result.ok) result = await fetchSheetRange(spreadsheetId, 'A1:N', accessToken);
   if (!result.ok) return null;
 
