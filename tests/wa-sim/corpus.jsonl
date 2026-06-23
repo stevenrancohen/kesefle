@@ -1,0 +1,1186 @@
+{"msg":"קניתי בסופר ב450 שקל","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":450}}
+{"msg":"דלק 300","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":300}}
+{"msg":"שילמתי ארנונה 680","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":680}}
+{"msg":"חוג של הילד 220 בחודש","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":220}}
+{"msg":"קניתי לילד נעליים 199.90","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":199.9}}
+{"msg":"גן ילדים 1,850","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":1850}}
+{"msg":"חשמל 540 וגז 120","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":660}}
+{"msg":"בזק אינטרנט 99","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":99}}
+{"msg":"קיבלתי החזר מהביטוח 350","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":true,"amount":350}}
+{"msg":"משכורת נכנסה 12500","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":true,"amount":12500}}
+{"msg":"קניתי בקניון 1.2k בגדים לילדים","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":1200}}
+{"msg":"תרופות בבית מרקחת 87","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":87}}
+{"msg":"שילמתי לבייביסיטר 250","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":250}}
+{"msg":"החזר מס הכנסה 1200","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":true,"amount":1200}}
+{"msg":"מנוי נטפליקס 55","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":55}}
+{"msg":"קניתי ספר לבית הספר 65 ומחברות 40","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":105}}
+{"msg":"דלק לאוטו 320 וכביש 6 בסך 45","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":365}}
+{"msg":"קיבלתי 500 מתנה מסבתא לילד","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":true,"amount":500}}
+{"msg":"שילמתי שכר דירה 4500","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":4500}}
+{"msg":"ביטוח רכב 2200 לשנה","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":2200}}
+{"msg":"מכרתי עגלה ישנה ב300","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":true,"amount":300}}
+{"msg":"מים 180 ועוד ועד בית 150","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":330}}
+{"msg":"קניתי אוכל לכלב 130","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":130}}
+{"msg":"שילמתי 50 דולר לקורס אונליין","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":145.5}}
+{"msg":"קפה ומאפה 38.50","persona":"Household parent logging groceries/utilities/kids expenses, occasional family income and refunds","expect":{"isIncome":false,"amount":38.5}}
+{"msg":"קיבלתי משכורת 12500","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":12500}}
+{"msg":"משכורת נטו 12,500 ש\"ח נכנסה","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":12500}}
+{"msg":"קיבלתי בונוס 3000 מהעבודה","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":3000}}
+{"msg":"החזר מס הכנסה 1850","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":1850}}
+{"msg":"קיבלתי 1000 מתנה","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":1000}}
+{"msg":"קיבלתי מתנה כספית 1000","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":1000}}
+{"msg":"קיבלתי החזר 120 על החזרת מוצר","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":120}}
+{"msg":"קיבלתי החזר נסיעות מהעבודה 240","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":240}}
+{"msg":"נכנס לי החזר 240 מהעבודה","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":240}}
+{"msg":"קיבלתי זיכוי 120 מאמזון","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":120}}
+{"msg":"זיכוי 350 מחברת הביטוח","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":350}}
+{"msg":"זוכיתי 120 על ביטול הזמנה","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":true,"amount":120}}
+{"msg":"קניתי קפה ב15 שקל","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":15}}
+{"msg":"חניה 8.50","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":8.5}}
+{"msg":"סופר 247.90","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":247.9}}
+{"msg":"ארוחת צהריים עם הצוות 89","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":89}}
+{"msg":"ביטוח רכב 4200 ל12 תשלומים","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":4200}}
+{"msg":"שילמתי 1.250 על מקרר חדש","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":1250}}
+{"msg":"קניתי אוזניות ב299 וכבל ב45","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":344}}
+{"msg":"מתנה לאמא 200 ופרחים 80","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":280}}
+{"msg":"קנית נעליים 2k","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":2000}}
+{"msg":"שילמתי שכר דירה 5500","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":5500}}
+{"msg":"ארנונה 680","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":680}}
+{"msg":"חשמל 420 ומים 150","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":570}}
+{"msg":"נטפליקס 55","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":55}}
+{"msg":"ביטוח לאומי 600","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":600}}
+{"msg":"שילמתי לבייביסיטר 150","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":150}}
+{"msg":"קניתי בגדים לילדים 450","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":450}}
+{"msg":"מסעדה עם המשפחה 380","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":380}}
+{"msg":"תרומה לעמותה 100","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":100}}
+{"msg":"מנוי לחדר כושר 199","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":199}}
+{"msg":"קניתי בדיוטי פרי 50 דולר","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":145.5}}
+{"msg":"שילמתי 30 יורו על מלון","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":101.7}}
+{"msg":"תספורת 70","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":70}}
+{"msg":"קניתי תרופות בסופר פארם 130","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":130}}
+{"msg":"שילמתי לרואה חשבון 800","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":800}}
+{"msg":"בזק אינטרנט 99.90","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":99.9}}
+{"msg":"קנס חניה 250","persona":"Salaried employee with monthly salary income plus daily household/family expenses (rent, groceries, fuel, kids, subscriptions), occasional bonus/tax-refund income, and refund/credit receipts from purchases and work reimbursements.","expect":{"isIncome":false,"amount":250}}
+{"msg":"לקוח שילם לי 3500 על עיצוב לוגו","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"חידשתי מנוי אדובי קריאייטיב קלאוד 320 שקל","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":320}}
+{"msg":"קניתי לוחצ גרפי חדש לוואקום 1,200","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"הכנסה מפרילנס 2.5k על פרויקט בראנדינג","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"שילמתי לפרילנסר מאייר 800 שקל על איורים","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":800}}
+{"msg":"קיבלתי מקדמה 4500 מלקוח על קמפיין","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"קניתי פונטים בfonts.com ב45 דולר","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":130.95}}
+{"msg":"חשבונית מלקוח 6,800 על אתר תדמית","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":6800}}
+{"msg":"קפה עם לקוח 38 שקל","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":38}}
+{"msg":"דלק 280","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":280}}
+{"msg":"הכנסה 2.5k מלקוח","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"קיבלתי 4500 מלקוח","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"מקדמה מלקוח 4500","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"שכרתי סטודיו לצילום 600 שח","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":600}}
+{"msg":"קניתי מחשב מק חדש 8.5 אלף","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":8500}}
+{"msg":"החזר מספק על מסך פגום 900","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":900}}
+{"msg":"לקוח העביר לי ביט 1200","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"שילמתי שכירות משרד 2800","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":2800}}
+{"msg":"הוצאה על פרסום בפייסבוק 350 שקל","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":350}}
+{"msg":"קניתי תוכנת figma שנתי 144 דולר","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":419.04}}
+{"msg":"שילמתי 250 לאדובי","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":250}}
+{"msg":"קניתי לוח גרפי לוואקום 1.200","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קיבלתי תשלום על פרויקט 7,500","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":7500}}
+{"msg":"החזר מלקוח שביטל 1500","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קניתי כרטיס זיכרון 120 וכבל 45 וכיסוי 60","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":225}}
+{"msg":"שכר טרחה ללקוח 5000 הכנסה","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"מנוי lightroom 50 שח לחודש","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":50}}
+{"msg":"שילמתי לעובד שלי משכורת 6000","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":6000}}
+{"msg":"קיבלתי 200 יורו מלקוח בחול","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":678}}
+{"msg":"דומיין ואחסון לאתר 350 שקל","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":350}}
+{"msg":"החזר מע״מ 1200","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"לקוח לא שילם החזרתי לו 500","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":500}}
+{"msg":"קיבלתי החזר על מנוי שביטלתי באדובי 320","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":320}}
+{"msg":"שילמתי 1.5k על קורס עיצוב","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"שילמתי משכורת לעובד 6000","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":6000}}
+{"msg":"העברתי לעובד שלי 6000 משכורת","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":false,"amount":6000}}
+{"msg":"קיבלתי תשלום 7500","persona":"freelance graphic designer (Adobe, clients paying, gear)","expect":{"isIncome":true,"amount":7500}}
+{"msg":"שילמתי לספק קפה 3200","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"קניתי חלב ומאפים מהספק 1450","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":1450}}
+{"msg":"משכורת לדנה המלצרית 4800","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":4800}}
+{"msg":"שילמתי משכורת לטבח 6200","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":6200}}
+{"msg":"שכר דירה לקפה 9500","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":9500}}
+{"msg":"חשבון חשמל לבית קפה 2300","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"ארנונה עסק 1850","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":1850}}
+{"msg":"קניתי כוסות חד פעמי וקשיות 380","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":380}}
+{"msg":"דלק לרכב המשלוחים 250","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":250}}
+{"msg":"עמלת סליקה אשראי 540","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":540}}
+{"msg":"קניתי מכונת קפה חדשה 12000","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":12000}}
+{"msg":"תיקון מקרר תעשייתי 1200","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"הכנסות מהקופה היום 4350","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":true,"amount":4350}}
+{"msg":"מכירות סוף שבוע 11200","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":true,"amount":11200}}
+{"msg":"קיבלתי טיפים 600","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":true,"amount":600}}
+{"msg":"החזר מספק על סחורה פגומה 320","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":true,"amount":320}}
+{"msg":"שילמתי לספק ירקות 2.5k","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"קניתי סוכר וקפה 1,250","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"מקדמה לעובד חדש 1500","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"פרסום באינסטגרם לקפה 800","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":800}}
+{"msg":"שילמתי 3500 שח לספק בשר","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"קניתי 200 כוסות 90","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":90}}
+{"msg":"גז למטבח 430","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":430}}
+{"msg":"שילמתי לרואה חשבון 1100","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":1100}}
+{"msg":"בוקר טוב קפה וכריך 42","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":false,"amount":42}}
+{"msg":"פדיון יומי 4350","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":true,"amount":4350}}
+{"msg":"מחזור היום בקופה 4350","persona":"cafe owner (suppliers, staff salaries, POS, rent)","expect":{"isIncome":true,"amount":4350}}
+{"msg":"שילמתי לספק הירקות 1,200 שח","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קניתי בשר מהקצב 2400","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":2400}}
+{"msg":"שילמתי משכורת לטבח 8500","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":8500}}
+{"msg":"קיבלתי טיפים היום 450","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":true,"amount":450}}
+{"msg":"מחזור המכירות היום 6,800 שח","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":true,"amount":6800}}
+{"msg":"שילמתי לוולט עמלה 320","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":320}}
+{"msg":"קניתי גז למטבח 180","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":180}}
+{"msg":"חשבון חשמל למסעדה 1.250 שח","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"שילמתי שכירות 12000","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":12000}}
+{"msg":"קניתי כלים חד פעמיים 220","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":220}}
+{"msg":"שילמתי לעובד המשמרת 350","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":350}}
+{"msg":"הכנסה ממשלוחים 1800","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"קיבלתי החזר מהספק על סחורה פגומה 600","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":true,"amount":600}}
+{"msg":"קניתי 2 ארגזי עגבניות ב300 וחסה ב120","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":420}}
+{"msg":"שילמתי לספק היין 3.5k","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"הזמנתי ציוד מטבח מחול ב 500 דולר","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":1455}}
+{"msg":"שילמתי ביטוח לאומי לעובדים 1900","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":1900}}
+{"msg":"קניתי קמח ושמן ב 480","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":480}}
+{"msg":"טיפ למלצרית 200","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":200}}
+{"msg":"שילמתי לרואה חשבון 1500","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"מכירות אשראי היום 8200 שח","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":true,"amount":8200}}
+{"msg":"קניתי שתיה וקולה לבר 950","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":950}}
+{"msg":"החזרתי כסף ללקוח שביטל הזמנה 180","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":180}}
+{"msg":"שילמתי אלף שקל לספק הלחם","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":1000}}
+{"msg":"מקדמה מלקוח על אירוע 2,500","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"שילמתי לספק הדגים 1750","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":1750}}
+{"msg":"קניתי מפיות וניילון נצמד 90","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":90}}
+{"msg":"עמלת סליקה אשראי 430","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":430}}
+{"msg":"שילמתי 600 שח טיפים לצוות מהקופה","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":600}}
+{"msg":"תשלום לחברת הניקיון 800","persona":"restaurant owner (food suppliers, deliveries, tips)","expect":{"isIncome":false,"amount":800}}
+{"msg":"קניתי צבע וטיח בהום סנטר 480 שקל","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":480}}
+{"msg":"שילמתי לפועל 600 על יום עבודה","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":600}}
+{"msg":"קיבלתי מהלקוח 3500 על שיפוץ אמבטיה","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"דלק לטנדר 320","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":320}}
+{"msg":"קנית מקדחה חדשה 1.2k","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"לקוח העביר לי 5,200 על התקנת מטבח","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":5200}}
+{"msg":"קניתי 10 שקי מלט ועוד צינורות 750","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":750}}
+{"msg":"שילמתי לספק ברזל 2.300","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"קיבלתי מקדמה 1500 מהלקוחה ברמת גן","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"החזר על ברגים שלא השתמשתי 80 שקל","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":80}}
+{"msg":"שכרתי פיגום ל3 ימים 900","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":900}}
+{"msg":"מסור חשמלי 1450 ועוד להב 90","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":1540}}
+{"msg":"שילמתי משכורת לעובד 7000","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":7000}}
+{"msg":"ארוחת צהריים עם הלקוח 120","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":120}}
+{"msg":"קיבלתי 800 דולר על עבודה לאמריקאי","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":2328}}
+{"msg":"חניה ליד האתר 35","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":35}}
+{"msg":"קנית דבק אריחים 3 דליים 360","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":360}}
+{"msg":"לקוח שילם לי במזומן אלפיים על צביעת דירה","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"כפפות עבודה ומסכות 65","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":65}}
+{"msg":"שילמתי לקבלן משנה 4000 על אינסטלציה","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":4000}}
+{"msg":"קיבלתי טיפ מהלקוח 200","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":200}}
+{"msg":"החזר ויט מהספק 1200","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"ביטוח כלי עבודה חודשי 180","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":180}}
+{"msg":"מקדמה לפרויקט גדול 12000 נכנס היום","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"קנסה על חניה 250","persona":"handyman/contractor (materials, tools, client payments)","expect":{"isIncome":false,"amount":250}}
+{"msg":"מכירה באתר היום 3 הזמנות סהכ 540 שקל","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":540}}
+{"msg":"שילמתי לדואר ישראל 38 על משלוח","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":38}}
+{"msg":"החזר ללקוח על הזמנה שבוטלה 120","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":120}}
+{"msg":"קניתי קרטונים ואריזות 250","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":250}}
+{"msg":"תשלום לפייסבוק על פרסום 1,200","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"שילמתי לעובד משכורת 4500","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"קיבלתי תשלום מלקוח 890 בביט","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":890}}
+{"msg":"עמלת פייפאל 35","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":35}}
+{"msg":"קניתי מהספק בסין מלאי 2.5k","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"פרסום בגוגל אדס 800 שקל","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":800}}
+{"msg":"דלק לרכב 300","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":300}}
+{"msg":"קניתי מדבקות משלוח 4 אלף","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":4000}}
+{"msg":"החזר כספי מספק על מוצר פגום 430","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":430}}
+{"msg":"מנוי שופיפיי חודשי 29 דולר","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":84.39}}
+{"msg":"מכרתי 5 חולצות באיביי 1.250 שקל","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":1250}}
+{"msg":"קיבלתי 1,500 מהאתר מכירות היום","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"תשלום ספק סיני 3,200 על מלאי חדש","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"החזרתי ללקוח 250 על מוצר שחזר","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":250}}
+{"msg":"שילמתי למעצב גרפי על באנר 600","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":600}}
+{"msg":"הכנסה ממכירות אתסי 320 דולר","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":931.2}}
+{"msg":"פרסום בטיקטוק 450","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":450}}
+{"msg":"קיבלתי החזר מסים 1200","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"מכירה 2 פריטים 99 כל אחד","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":198}}
+{"msg":"תשלום עמלה לאתר המכירות 75","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":75}}
+{"msg":"קניתי טלפון חדש לעסק 3500","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"הכנסות היום מהחנות 2.300","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":2300}}
+{"msg":"בונוס לעובד 500","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":false,"amount":500}}
+{"msg":"קיבלתי מהאתר 1.5k","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"מכירה גדולה היום 12,000","persona":"e-commerce seller (shipping, ads, refunds from customers)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"דלק 250","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":250}}
+{"msg":"תדלוק 312.50","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":312.5}}
+{"msg":"דלק בפז 280 ש״ח","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":280}}
+{"msg":"החלפת שמן ופילטר 450","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":450}}
+{"msg":"טיפול לאוטו במוסך 1,200","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"צמיגים חדשים 2400","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":2400}}
+{"msg":"רחיצת רכב 40","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":40}}
+{"msg":"חניון בתל אביב 35","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":35}}
+{"msg":"כביש 6 47.80","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":47.8}}
+{"msg":"ביטוח חובה לרכב 1850","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":1850}}
+{"msg":"הכנסה מנסיעות גט היום 540","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":540}}
+{"msg":"קיבלתי מאובר 1.2k","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"בונוס מגט 150","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":150}}
+{"msg":"נסיעות אתמול 437.60","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":437.6}}
+{"msg":"הרווחתי 620 נסיעות","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":620}}
+{"msg":"קפה ומאפה בהפסקה 28","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":28}}
+{"msg":"ארוחת צהריים 55","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":55}}
+{"msg":"מנוי לאפליקציית ניווט 19.90","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":19.9}}
+{"msg":"החזר על תדלוק כפול 120","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":120}}
+{"msg":"שילמתי לרוחצי הרכב שלי 300","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":300}}
+{"msg":"עמלת אובר 85","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":85}}
+{"msg":"קניתי מטען לרכב ברשת 89.90","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":89.9}}
+{"msg":"בלאי בלמים 780","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":false,"amount":780}}
+{"msg":"נסיעה לנתבג מלקוח 180 מזומן","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":180}}
+{"msg":"קיבלתי 540 על נסיעות גט","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":540}}
+{"msg":"הכנסה 620 מנסיעות","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":620}}
+{"msg":"קיבלתי החזר 120 על דלק","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":120}}
+{"msg":"שולם לי מאובר 800","persona":"ride-share driver (fuel, car maintenance, ride income)","expect":{"isIncome":true,"amount":800}}
+{"msg":"קניתי צבעים לשיער 450 שקל","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":450}}
+{"msg":"קבלתי 180 על תספורת","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":180}}
+{"msg":"חמצן ופחות 220","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":220}}
+{"msg":"שילמתי לעובדת משכורת 4500","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"שכר כסא 1500 לחודש","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"לקוחה שילמה 350 על צבע ופן","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":350}}
+{"msg":"קניתי מספריים חדשות 320","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":320}}
+{"msg":"דלק לרכב 250","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":250}}
+{"msg":"שמפו מקצועי 1.2k","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קיבלתי היום מלקוחות 2300 במזומן","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":2300}}
+{"msg":"החזר על צבע שהתקלקל 90","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":90}}
+{"msg":"בלי ופן ל3 לקוחות 540","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":540}}
+{"msg":"קניתי מייבש שיער חדש 890","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":890}}
+{"msg":"חשבון חשמל למספרה 380","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":380}}
+{"msg":"שילמתי לספק מוצרים 2.350","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":2350}}
+{"msg":"טיפ לשמפיניסטית 50","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":50}}
+{"msg":"קבלתי טיפ 100","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":100}}
+{"msg":"פדיון יומי 1800","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"מברשות ופוילים 130","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":130}}
+{"msg":"שילמתי שכירות מספרה 6000","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":6000}}
+{"msg":"קניתי קרם החלקה 75 דולר","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":218.25}}
+{"msg":"לקוחה ביטלה החזרתי לה 200","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":200}}
+{"msg":"בונבוניירה ללקוחות 65","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":65}}
+{"msg":"קיבלתי מביט 420 על החלקה","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":420}}
+{"msg":"הכנסה מתספורות היום 900","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":900}}
+{"msg":"קיבלתי 500 מלקוחה","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":500}}
+{"msg":"מכרתי מוצרי שיער ב300","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":300}}
+{"msg":"שילמתי לעובדת 4500","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"החזר מס 1200","persona":"hairdresser/salon (products, chair rent, client payments)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"קיבלתי 250 שקל על שיעור מתמטיקה","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":250}}
+{"msg":"תשלום על שיעור אנגלית 300","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":300}}
+{"msg":"הורה שילם לי 1,200 על חבילת 4 שיעורים","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"קיבלתי 1.2k על קורס הכנה לבגרות","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"מכרתי חוברת תרגול 80 שקל","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":80}}
+{"msg":"קניתי ספרי לימוד ב450","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":450}}
+{"msg":"שילמתי לעוזרת הוראה 800 שקל","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":800}}
+{"msg":"קניתי טושים ולוח מחיק 120","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":120}}
+{"msg":"דלק 200","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":200}}
+{"msg":"קיבלתי העברה 500 משקל מתלמיד חדש","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":500}}
+{"msg":"Zoom מנוי חודשי 60 שקל","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":60}}
+{"msg":"שילמתי 49.90 על קנבה לשקופיות","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":49.9}}
+{"msg":"תלמיד שילם לי 180 בביט","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":180}}
+{"msg":"החזרתי 150 לתלמידה שביטלה שיעור","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":150}}
+{"msg":"קניתי קפה ב15","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":15}}
+{"msg":"סופר 240 שקל","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":240}}
+{"msg":"קיבלתי 75 דולר משיעור אונליין לתלמיד מחול","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":218.25}}
+{"msg":"מנוי לאתר תרגול מתמטיקה 39 לחודש","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":39}}
+{"msg":"הכנסה מהוראה החודש 3500","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קיבלתי מההורים 2 אלף על קורס קיץ","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"חניה ליד התלמיד 12 שקל","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":12}}
+{"msg":"הדפסות בחנות צילום 95","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":95}}
+{"msg":"אינטרנט בבית 110","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":110}}
+{"msg":"מתנה לתלמידה שסיימה בגרות 60","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":60}}
+{"msg":"תלמיד העביר לי 1.500 על מנוי חודשי","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"ארוחת צהריים בין שיעורים 45","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":45}}
+{"msg":"קיבלתי תשלום 220 על שיעור פיזיקה","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":true,"amount":220}}
+{"msg":"שכר דירה לחדר ההוראה 1800","persona":"private tutor/teacher (income from lessons, materials)","expect":{"isIncome":false,"amount":1800}}
+{"msg":"שכר טרחה מלקוח 8000","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"קיבלתי ריטיינר חודשי 5500 מהחברה","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"אגרת בית משפט 1100","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":1100}}
+{"msg":"שילמתי אגרה לבית משפט מחוזי 2,340","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":2340}}
+{"msg":"דלק לרכב 320","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":320}}
+{"msg":"חניה בבית המשפט 45","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":45}}
+{"msg":"קניתי טונר למדפסת במשרד 480","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":480}}
+{"msg":"שכירות משרד 6500","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":6500}}
+{"msg":"שילמתי לפקידה משכורת 7200","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":7200}}
+{"msg":"קיבלתי שכר טרחה 12k","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"החזר אגרה מבית המשפט 850","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":850}}
+{"msg":"מנוי לנבו 390","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":390}}
+{"msg":"ארוחת צהריים עם לקוח 240","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":240}}
+{"msg":"שילמתי למתמחה שכר 4500","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"קיבלתי תשלום על ייעוץ משפטי 3,000","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":3000}}
+{"msg":"בולים ודואר רשום 120","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":120}}
+{"msg":"ביטוח אחריות מקצועית 1.2k","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קפה עם עורך דין 32","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":32}}
+{"msg":"שכר טרחה 9500 התקבל בהעברה","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":9500}}
+{"msg":"אגרת רישום חברה 2645","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":2645}}
+{"msg":"קניתי מחשב נייד למשרד 5400","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":5400}}
+{"msg":"החזרתי ללקוח מקדמה 1500","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קיבלתי 8000 שכר טרחה מלקוח","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"הכנסה משכר טרחה 8000","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"קיבלתי העברה מלקוח 4000","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":4000}}
+{"msg":"קיבלתי 5000 מלקוח","persona":"lawyer (office, retainers received, court fees)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"שילמתי על מנוי חשבשבת 290 לחודש","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":290}}
+{"msg":"קיבלתי 3500 שכר טרחה מלקוח","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"חשבונית ללקוח על 5,000 שח","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"מנוי לקסניה 99","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":99}}
+{"msg":"שילמתי לעובדת משכורת 6200","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":6200}}
+{"msg":"קניתי נייר למדפסת ודיו 145","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":145}}
+{"msg":"אקסל 365 מנוי שנתי 599","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":599}}
+{"msg":"קיבלתי העברה מלקוח 12,000","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"ארנונה למשרד 1850","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":1850}}
+{"msg":"גוגל וורקספייס 24 דולר","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":69.84}}
+{"msg":"החזר מע\"מ 1200 נכנס לחשבון","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"שילמתי לרואה חשבון שלי 800","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":800}}
+{"msg":"קפה עם לקוח 42","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":42}}
+{"msg":"קניתי מחשב נייד חדש 4.5k","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"מנוי זום 70 ש״ח","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":70}}
+{"msg":"שכר דירה משרד 3,200","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"קיבלתי מקדמה מלקוח 2000 שקל","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"חניה בעיר 28","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":28}}
+{"msg":"קורס הנהלת חשבונות 1500 בתשלומים","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קיבלתי תשלום על ביקורת 4500","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"ביטוח אחריות מקצועית 2400 לשנה","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":2400}}
+{"msg":"מונית ללקוח 65","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":65}}
+{"msg":"חידוש רישיון רואה חשבון 980","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":980}}
+{"msg":"קיבלתי 1.5k מלקוח חדש","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"בונוס מהמשרד 3000 נכנס","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":3000}}
+{"msg":"שילמתי לספק תוכנה 1,250","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"אוכל וקפה במשרד 230","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":false,"amount":230}}
+{"msg":"חזר לי כסף מהביטוח 540","persona":"accountant/bookkeeper (software subs, client fees)","expect":{"isIncome":true,"amount":540}}
+{"msg":"שילמתי 320 על ארוחת צהריים עם הצוות","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":320}}
+{"msg":"ביטוח אחריות מקצועית 4500","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"קיבלתי מהמטופלת אורנה 600 על טיפול","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":600}}
+{"msg":"קניתי כפפות ומסכות לקליניקה 280","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":280}}
+{"msg":"שילמתי לרופאת השיניים שמחליפה אותי 1500","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"הזמנתי ספק חומרים דנטליים 3,200","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"ביטוח רכב 1.250","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"קיבלתי העברה 2500 ממטופל פרטי","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"שילמתי משכורת לסייעת 7800","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":7800}}
+{"msg":"הכנסה מטיפול שורש 1800","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"מטופל שילם לי 450 במזומן","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":450}}
+{"msg":"החזר מהספק על חומרים שלא הגיעו 300","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":300}}
+{"msg":"קניתי כיסא טיפולים חדש לקליניקה 6500","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":6500}}
+{"msg":"שילמתי 90 חניה ליד המרפאה","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":90}}
+{"msg":"רכשתי מכשיר אולטרסאונד יד שניה 12k","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":12000}}
+{"msg":"תיקנתי את כיסא השיניים 1,800","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":1800}}
+{"msg":"קיבלתי מקופת חולים החזר 3200 על טיפולים","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":3200}}
+{"msg":"חשמל למרפאה 740","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":740}}
+{"msg":"שילמתי שכירות הקליניקה 5500","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":5500}}
+{"msg":"שילמתי לרואה חשבון 1200 וגם עורך דין 800","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"הכנסות החודש מהקליניקה 45 אלף","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":45000}}
+{"msg":"קורס השתלמות רפואית 2.500","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"קניתי תרופות למלאי המרפאה 1500 וחומרי חיטוי 600","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":2100}}
+{"msg":"שילמתי לסוכן ביטוח הקליניקה 950","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":950}}
+{"msg":"קיבלתי 1200 מביטוח לאומי","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"החזרתי הלוואה לבנק 3000","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":3000}}
+{"msg":"פרסום ממומן בפייסבוק לקליניקה 700","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":700}}
+{"msg":"הזמנתי כסאות המתנה למרפאה 400 דולר","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":false,"amount":1164}}
+{"msg":"הכנסה מהקליניקה 8000","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"קיבלתי תשלום 750 ממטופל","persona":"#13 private clinic/doctor (equipment, supplier, patient income)","expect":{"isIncome":true,"amount":750}}
+{"msg":"קיבלתי עמלה על מכירת דירה 18000","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":18000}}
+{"msg":"עמלת תיווך נכנסה 25000","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":25000}}
+{"msg":"קיבלתי 12500 עמלה על השכרת דירה","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":12500}}
+{"msg":"דלק 320","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":320}}
+{"msg":"תדלקתי 280 ש״ח","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":280}}
+{"msg":"פרסום בפייסבוק לנכס 450","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":450}}
+{"msg":"קמפיין ממומן יד2 1200","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"שילמתי לצלם נכסים 600","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":600}}
+{"msg":"שלט תיווך על הבניין 350","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":350}}
+{"msg":"ארוחת צהריים עם לקוח 140","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":140}}
+{"msg":"קפה עם קונה פוטנציאלי 38","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":38}}
+{"msg":"חניה בעיר 25","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":25}}
+{"msg":"כביש 6 47.50","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":47.5}}
+{"msg":"מנוי לוח נדל\"ן 199 לחודש","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":199}}
+{"msg":"שילמתי למתמחה משכורת 4500","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"בונוס לעובד 1500","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קיבלתי מקדמה מלקוח 5000","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"עמלה 8.5k על מכירת מגרש","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":8500}}
+{"msg":"קיבלתי עמלה 22,500 על וילה","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":22500}}
+{"msg":"דמי תיווך 1.250 על דירה להשכרה","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":1250}}
+{"msg":"החזר על ביטול פרסום 200","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":200}}
+{"msg":"שילמתי שכירות משרד 3200 וחשמל 480","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":3680}}
+{"msg":"כרטיסי ביקור חדשים 250 ועט ממותג 90","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":340}}
+{"msg":"שילמתי 150 דולר על ליד מחול","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":false,"amount":436.5}}
+{"msg":"קיבלתי טיפ מלקוח מרוצה 300","persona":"real-estate agent (commissions received, ads, fuel)","expect":{"isIncome":true,"amount":300}}
+{"msg":"קיבלתי 250 על אימון אישי","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":250}}
+{"msg":"מנוי חדש לחדר כושר 3200","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"חלבון 180","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":180}}
+{"msg":"שילמתי 600 לחשמלאי שתיקן את המזגן בסטודיו","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":600}}
+{"msg":"קיבלתי 1.500 על חבילת 10 אימונים","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"קניתי 2 משקולות 400 ומזרן יוגה 120","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":520}}
+{"msg":"מנוי חודשי נכנס 280","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":280}}
+{"msg":"שילמתי משכורת למתאמן שלי 4500","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"גומיות התנגדות 90","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":90}}
+{"msg":"קיבלתי 5k על ליווי תזונה חודשי","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"החזר על משקולת פגומה 150","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":150}}
+{"msg":"ביטוח אחריות מקצועית 1200","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קפה אחרי אימון 18","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":18}}
+{"msg":"3 לקוחות שילמו לי 750","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":750}}
+{"msg":"הכנסה מאימון קבוצתי 900","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":900}}
+{"msg":"קיבלתי 200$ מלקוח מחול","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":582}}
+{"msg":"שילמתי לספק תוספי תזונה 2300","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"חניה ליד הסטודיו 25","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":25}}
+{"msg":"רכשתי TRX 350","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":350}}
+{"msg":"פרסום בפייסבוק לסטודיו 450","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":450}}
+{"msg":"לקוח העביר לי ביט 300 על אימון","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":300}}
+{"msg":"קיבלתי 1,200 על סדנת תזונה","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"ארוחת צהריים 62","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":62}}
+{"msg":"קיבלתי תשלום 450 על אימון אישי","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":450}}
+{"msg":"הכנסה ממכירת תוכנית אימונים 320","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":320}}
+{"msg":"שילמתי 1200 לסטודיו שכירות","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"מתאמן ביטל וקיבל החזר 200","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":false,"amount":200}}
+{"msg":"קיבלתי 3.200 ממנוי שנתי","persona":"gym trainer (equipment, membership income)","expect":{"isIncome":true,"amount":3200}}
+{"msg":"קניתי עדשה חדשה 85mm ב 4200 שקל","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":4200}}
+{"msg":"מקדמה מלקוח על צילום חתונה 2500","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"הדפסת אלבום ללקוח 680 שקל","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":680}}
+{"msg":"שילמתי לעוזר צילום 800","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":800}}
+{"msg":"כרטיס זיכרון 256GB ב 320","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":320}}
+{"msg":"קיבלתי תשלום על צילום אירוע 3500 שקל","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"תשלום מלקוחה על סשן פורטרטים 1200","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"חצובה מנפרוטו 1.250 שקל","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"סופטבוקס ותאורה 2,400","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":2400}}
+{"msg":"מנוי לרום אדובי 55 בחודש","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":55}}
+{"msg":"מצלמה חדשה סוני A7IV 9.5k","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":9500}}
+{"msg":"דלק לנסיעה לצילום בצפון 250","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":250}}
+{"msg":"החזר ללקוח על ביטול צילום 500","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":500}}
+{"msg":"קניתי פילטרים ותיק צילום 750","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":750}}
+{"msg":"שכירות סטודיו 3200 לחודש","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"שילמתי משכורת לעוזרת 4500","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"תשלום ספק הדפסות 1800","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":1800}}
+{"msg":"קיבלתי 5000 על צילום בר מצווה","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"מקדמה 1500 מזוג לחתונה ביוני","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"ביטוח ציוד צילום 180 בחודש","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":180}}
+{"msg":"נכנס תשלום 2200 על צילום מוצרים","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":2200}}
+{"msg":"לקוח העביר 3000 בביט על האירוע","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":3000}}
+{"msg":"קניתי רחפן DJI ב 1.5k דולר","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":4365}}
+{"msg":"ארוחת צהריים בצילומים 65","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":65}}
+{"msg":"תיקון מצלמה במעבדה 450 שקל","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":450}}
+{"msg":"קניתי עדשה ב 1200 דולר","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":3492}}
+{"msg":"שילמתי 450 יורו על תוכנה","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":1525.5}}
+{"msg":"מקדמה לחתונה אלף וחצי שח","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"צילום אירוע 4 אלף שח","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":4000}}
+{"msg":"מצלמה 9.5k שח","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":9500}}
+{"msg":"עדשה 2k שקל","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"החזר מספק על ציוד פגום 600","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":600}}
+{"msg":"קניתי 3 בטריות ב 90 כל אחת","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":270}}
+{"msg":"נייר הדפסה פוטו 220 וגם דיו 340","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":560}}
+{"msg":"קיבלתי החזר על עדשה שהחזרתי 1200","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"סשן צילום משפחתי הכנסה 900","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":900}}
+{"msg":"פרילנס עריכת וידאו ללקוח 1600","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":true,"amount":1600}}
+{"msg":"חניה בצילומים בתל אביב 40","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":40}}
+{"msg":"אחסון ענן לתמונות 29 בחודש","persona":"professional photographer (gear, prints, client deposits)","expect":{"isIncome":false,"amount":29}}
+{"msg":"קניתי מיתרים לגיטרה 80 שקל","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":80}}
+{"msg":"שילמתי 1,200 על מיקרופון חדש","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"הופעה בבר אתמול קיבלתי 1500 שח","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"תמלוגים מאקום 3,450","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":3450}}
+{"msg":"שילמתי לנגן הבס 600 שקל על ההופעה","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":600}}
+{"msg":"קניתי כבל ג'ק 45₪","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":45}}
+{"msg":"החזר על אוזניות שהחזרתי 350","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":350}}
+{"msg":"דלק לדרך להופעה 220","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":220}}
+{"msg":"שכרתי אולפן הקלטות 4 שעות 800 שקל","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":800}}
+{"msg":"מכרתי גיטרה ישנה ב2.5k","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"שילמתי למפיק 5000 על האלבום","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":5000}}
+{"msg":"קיבלתי 90$ מספוטיפיי על סטרימים","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":261.9}}
+{"msg":"קניתי תוכנת לוגיק פרו 900","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":900}}
+{"msg":"שיעור גיטרה שנתתי לתלמיד 150 קיבלתי","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":150}}
+{"msg":"מיתרים 80 פלוס פלקטרומים 30","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":110}}
+{"msg":"שילמתי שיווק לפוסט מודם בפייסבוק 250","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":250}}
+{"msg":"קניתי דרבוקה 1.2k","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"החזר מע״מ מרואה חשבון 1800","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"קנית סטנד למיקרופון 120 שקל","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":120}}
+{"msg":"הופעה בחתונה 4500 קיבלתי מזומן","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"שילמתי לסאונדמן 700","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":700}}
+{"msg":"תיקון גיטרה אצל הלותייר 380","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":380}}
+{"msg":"מנוי לדיסטרוקיד 200 לשנה","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":200}}
+{"msg":"קיבלתי מקדמה מחברת תקליטים 10000","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":true,"amount":10000}}
+{"msg":"קניתי 2 מיקרופונים ב450 כל אחד","persona":"musician (instruments, gig income, royalties)","expect":{"isIncome":false,"amount":900}}
+{"msg":"קיבלתי פנסיה 6200","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":6200}}
+{"msg":"פנסיה 6200","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":6200}}
+{"msg":"נכנסה לי פנסיה 6200","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":6200}}
+{"msg":"קצבת זקנה מביטוח לאומי 2400","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":2400}}
+{"msg":"קצבת זקנה 2400","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":2400}}
+{"msg":"פנסיה תקציבית 8,500","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":8500}}
+{"msg":"קניתי תרופות בסופר פארם 187","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":187}}
+{"msg":"השלמת הכנסה 1100","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":1100}}
+{"msg":"קופת חולים תשלום רבעוני 240","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":240}}
+{"msg":"קניות בשופרסל 420","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":420}}
+{"msg":"ביטוח משלים כללית 95","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":95}}
+{"msg":"שילמתי לרופא שיניים 600","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":600}}
+{"msg":"חשמל 380","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":380}}
+{"msg":"ארנונה 540","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":540}}
+{"msg":"מים 130","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":130}}
+{"msg":"קיבלתי מענק מהביטוח לאומי 3500","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קניתי משקפי קריאה 450","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":450}}
+{"msg":"בית מרקחת 64.90","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":64.9}}
+{"msg":"ירקות בשוק 85","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":85}}
+{"msg":"שילמתי לעוזרת בית 300","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":300}}
+{"msg":"החזר מקופת חולים 120","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":120}}
+{"msg":"דמי כניסה לבריכה טיפולית 55","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":55}}
+{"msg":"קניתי במכולת חלב לחם וביצים 38","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":38}}
+{"msg":"פנסיה מקרן הפנסיה 5.2 אלף","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":5200}}
+{"msg":"תיקנתי שיניים תותבות 2,300","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"קיבלתי מתנה 100 דולר","persona":"retiree (pension income, health, groceries)","expect":{"isIncome":true,"amount":291}}
+{"msg":"שכר דירה 2800","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":2800}}
+{"msg":"שכר לימוד 12000","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":12000}}
+{"msg":"קיבלתי מלגה 5000","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"מלגת הצטיינות 3500","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קניות בסופר 240","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":240}}
+{"msg":"אוכל במסעדה 68","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":68}}
+{"msg":"קפה 14","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":14}}
+{"msg":"ספרי לימוד 430","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":430}}
+{"msg":"חוברת קורס 90","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":90}}
+{"msg":"נסיעות אוטובוס 65","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":65}}
+{"msg":"רב קו טעינה 150","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":150}}
+{"msg":"שילמתי שכירות 2.800","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":2800}}
+{"msg":"מלגה 4,500","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"עבדתי משמרת במלצרות וקיבלתי 380","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":380}}
+{"msg":"טיפ מהמשמרת 120","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":120}}
+{"msg":"קיבלתי החזר על אגרה 200","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":200}}
+{"msg":"החזר מהמכללה 350","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":350}}
+{"msg":"כרטיס סטודנט 50","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":50}}
+{"msg":"מנוי חדר כושר 99","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":99}}
+{"msg":"בירה עם חברים 45","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":45}}
+{"msg":"פיצה 1 ספרים 2 סהכ 130","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":130}}
+{"msg":"קניתי לפטופ ב3.5k","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"שילמתי לחבר על שכירות 1500","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קיבלתי מהורים 1000","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":1000}}
+{"msg":"דמי כיס מאבא 500","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":500}}
+{"msg":"מלגת קיום 2700","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":2700}}
+{"msg":"שילמתי שכר לימוד 12 אלף","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":12000}}
+{"msg":"אוזניות 250 ומחברת 18","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":268}}
+{"msg":"קנסים על איחור בספרייה 30","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":30}}
+{"msg":"החזר מס הכנסה 800","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":800}}
+{"msg":"קיבלתי החזר מביטוח לאומי 1200","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"מכרתי ספרים יד שניה וקיבלתי 200","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":200}}
+{"msg":"שילמתי שכד 2800","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":2800}}
+{"msg":"מלגה 250 דולר","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":727.5}}
+{"msg":"ארוחת צהריים בקפיטריה 32","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":32}}
+{"msg":"מנוי נטפליקס 45","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":45}}
+{"msg":"קיבלתי מענק קורונה 1500","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"דלק לאוטו 200","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":200}}
+{"msg":"קניתי מצרכים 87.50","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":false,"amount":87.5}}
+{"msg":"מכרתי אופניים 800","persona":"student (tuition, scholarship income, rent, food)","expect":{"isIncome":true,"amount":800}}
+{"msg":"קניתי חלב לחם וביצים 87","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":87}}
+{"msg":"גן ילדים 2100","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":2100}}
+{"msg":"קיבלתי מזונות 3500","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"צהרון 950","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":950}}
+{"msg":"שילמתי לבייביסיטר 200","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":200}}
+{"msg":"חוג ציור לילד 180","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":180}}
+{"msg":"קניתי בסופר 432.50","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":432.5}}
+{"msg":"מזונות מהאבא 3,500","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"ביגוד לילדים זארה 540","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":540}}
+{"msg":"ארנונה 720","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":720}}
+{"msg":"קבלתי החזר מס 1200","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"תרופות לילד 65","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":65}}
+{"msg":"נעליים לבית ספר 299","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":299}}
+{"msg":"קניות חודשיות 1.2k","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"ביטוח בריאות משלים 145","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":145}}
+{"msg":"דמי מזונות 3500 נכנסו לחשבון","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קייטנת קיץ 1800","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":1800}}
+{"msg":"החזר מהביטוח על משקפיים 420","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":true,"amount":420}}
+{"msg":"אינטרנט וטלוויזיה 199","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":199}}
+{"msg":"מתנה ליום הולדת של חבר 120","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":120}}
+{"msg":"משכורת 8500","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":true,"amount":8500}}
+{"msg":"קניתי 3 מארזי חיתולים 240","persona":"#20 single parent (childcare, alimony received, groceries)","expect":{"isIncome":false,"amount":240}}
+{"msg":"קניתי בקנייה גדולה ברמי לוי 1,250 שח","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"שילמתי שכר לימוד לבית ספר 3200","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"תדלוק לרכב 350","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":350}}
+{"msg":"קניתי חלב לחם ביצים 45 שקל","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":45}}
+{"msg":"שילמתי ביטוח רכב 4800 לשנה","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":4800}}
+{"msg":"מכרתי את האופניים הישנים של הילד ב300 שקל","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":300}}
+{"msg":"החזר מהקופת חולים 220 שח","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":220}}
+{"msg":"שילמתי לחוג כדורגל של דני 280","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":280}}
+{"msg":"קניתי בקנייה שבועית בשופרסל 980 שח חלב מצרכים וירקות","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":980}}
+{"msg":"שילמתי משכורת לעוזרת בית 2500","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"קיבלתי קצבת ילדים מביטוח לאומי 1100","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":1100}}
+{"msg":"שילמתי טיפול 10000 לרכב במוסך 2.5k","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":10000}}
+{"msg":"קניתי 3 זוגות נעליים לילדים 600","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":600}}
+{"msg":"דלק 250 וגם חניה 30","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":280}}
+{"msg":"שילמתי ארנונה 890","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":890}}
+{"msg":"קיבלתי מענק לידה 2700 שקל","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":2700}}
+{"msg":"קניתי בגדים לילדים בזארה 1.250 שח","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"שילמתי 1500 ש״ח שכר דירה","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קניתי מקרר חדש ב3.5 אלף","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"שילמתי שכר לימוד גן 2,100 לחודש","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":2100}}
+{"msg":"קיבלתי 500 דולר מההורים מחול מתנה","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":1455}}
+{"msg":"דלק ברכב 300 קניות בסופר 850 וגם תרופות 120","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":1270}}
+{"msg":"מילגה לבן שלי מהאוניברסיטה 4000","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":4000}}
+{"msg":"קצבת ילדים 1100","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":1100}}
+{"msg":"קיבלתי החזר מס הכנסה 3200","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":3200}}
+{"msg":"קניית ענק במחסני השוק 2,340.50","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":2340.5}}
+{"msg":"שילמתי 80 כביש 6","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":80}}
+{"msg":"קניתי ספרי לימוד לילדים 450 שח","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":450}}
+{"msg":"החזר ביטוח רכב 600 שקל שקיבלתי","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":600}}
+{"msg":"טסט שנתי לאוטו 130","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":false,"amount":130}}
+{"msg":"קיבלתי מתנה 500 דולר מההורים","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":1455}}
+{"msg":"מכרתי מיטת תינוק יד שניה 400 שח","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":400}}
+{"msg":"קיבלתי משכורת 12000","persona":"Large family (bulk groceries, tuition, car payments, child allowances)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"קיבלתי שכר דירה 5500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"שכר דירה 5500 מהדייר","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"נכנס שכר דירה דירה ברמת גן 4800","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":4800}}
+{"msg":"הדייר העביר 6200 שכירות","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":6200}}
+{"msg":"שכירות חודש יוני 5,500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"דמי שכירות 7.500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":7500}}
+{"msg":"קיבלתי 12000 שכר דירה משתי דירות","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"קיבלתי 5500 שח שכר דירה","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"שכר דירה נכנס לחשבון 5.5k","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"הדייר שילם לי 6000 על השכירות","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":6000}}
+{"msg":"קיבלתי 1500 שח שכירות","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"שכר דירה 5500 הכנסה","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"הכנסה משכירות 5500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"קיבלתי 1500 דולר שכירות מהדירה בחול","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":4365}}
+{"msg":"קיבלתי דמי שכירות שנתיים מראש 66000","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":66000}}
+{"msg":"שכר דירה אלף וחצי","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"קיבלתי פיקדון מהשוכר החדש 11000","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":11000}}
+{"msg":"ארנונה 1350","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":1350}}
+{"msg":"שילמתי ארנונה לדירה 980","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":980}}
+{"msg":"ועד בית 250","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":250}}
+{"msg":"תיקון אינסטלציה בדירה 1200","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"שילמתי לאינסטלטור 800 על תיקון נזילה","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":800}}
+{"msg":"החלפתי דוד שמש בדירה להשכרה 3500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"צבע וטיח לדירה לפני שוכר חדש 2200","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":2200}}
+{"msg":"מקדמה לקבלן שיפוץ 5000","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":5000}}
+{"msg":"דמי תיווך לדירה החדשה 5850","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":5850}}
+{"msg":"ביטוח מבנה לדירה 1100","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":1100}}
+{"msg":"מס שבח 18000","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":18000}}
+{"msg":"היטל השבחה 9500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":9500}}
+{"msg":"החזר פיקדון לשוכר שעזב 5500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":5500}}
+{"msg":"שילמתי מים וחשמל בדירה הריקה 430","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":430}}
+{"msg":"קניתי מקרר לדירה להשכרה 3200","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"דמי ניהול לחברת הנכסים 700","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":700}}
+{"msg":"שילמתי לשמאי 1800","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":1800}}
+{"msg":"עורך דין על חוזה שכירות 2500","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"שילמתי לפועל ששיפץ את הדירה 2000","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"גבייה משוכר שאיחר 5500 פלוס 300 ריבית","persona":"landlord (rent received, repairs, property tax)","expect":{"isIncome":true,"amount":5800}}
+{"msg":"שילמתי לספק בעלי אקספרס 1200 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"תשלום לספק מסין 3.500 על סחורה","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"קניתי מלאי מהמחסן 850","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":850}}
+{"msg":"הוצאתי על פרסום בפייסבוק 450 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":450}}
+{"msg":"קמפיין טיקטוק 1,250","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"מכירה מהחנות שופיפיי 320 שח","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":true,"amount":320}}
+{"msg":"קיבלתי 540 שקל מלקוח","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":true,"amount":540}}
+{"msg":"פרסום גוגל אדס 2k","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"החזר כספי מספק 200 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":true,"amount":200}}
+{"msg":"דיוור מייל קלאביו 99 דולר","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":288.09}}
+{"msg":"עמלת פייפאל 35 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":35}}
+{"msg":"קניתי דומיין ואחסון 180","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":180}}
+{"msg":"שילמתי שופיפיי מנוי חודשי 29 דולר","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":84.39}}
+{"msg":"הכנסה ממכירות היום 1850 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":true,"amount":1850}}
+{"msg":"משכתי רווחים מהעסק 3000","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":3000}}
+{"msg":"שילמתי 250 על אריזות ומשלוחים","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":250}}
+{"msg":"החזר ללקוח 120 שח על הזמנה שבוטלה","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":120}}
+{"msg":"קניתי מוצר לבדיקה 65 שקל מאליאקספרס","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":65}}
+{"msg":"פרסום אינסטגרם 1.2k וגם פרסום פייסבוק 800","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"שילמתי לסוכנות שיווק 5,500 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":5500}}
+{"msg":"קיבלתי תשלום מלקוחה 89.90","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":true,"amount":89.9}}
+{"msg":"מנוי לאפליקציית מחקר מוצרים 47 דולר לחודש","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":136.77}}
+{"msg":"ארוחת צהריים 52 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":52}}
+{"msg":"קיבלתי החזר מספק 200 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":true,"amount":200}}
+{"msg":"מכירות שופיפיי 320 שח","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":true,"amount":320}}
+{"msg":"תשלום משכורת לעובד 4500 שקל","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"החזרתי ללקוח 120","persona":"dropshipper (supplier payments, ad spend, sales)","expect":{"isIncome":false,"amount":120}}
+{"msg":"קניתי חוטים וצמר ל85 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":85}}
+{"msg":"מכרתי שרשרת בetsy ב220 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":220}}
+{"msg":"שילמתי עמלות etsy 45 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":45}}
+{"msg":"קניתי חרוזים 130₪","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":130}}
+{"msg":"קיבלתי 350 שקל ממכירה באטסי","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":350}}
+{"msg":"מכרתי 3 עגילים ב180","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":180}}
+{"msg":"הזמנתי אריזות ומדבקות 95 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":95}}
+{"msg":"דמי משלוח ללקוחה 32 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":32}}
+{"msg":"קניתי בד וכפתורים 220 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":220}}
+{"msg":"מכירה באטסי 1.250 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":1250}}
+{"msg":"שילמתי לפיסיקאית 500 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":500}}
+{"msg":"קיבלתי החזר מספק חוטים 60 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":60}}
+{"msg":"קניתי דיו למדפסת 140","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":140}}
+{"msg":"מנוי canva 50 שקל לחודש","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":50}}
+{"msg":"מכרתי באטסי 2 פריטים 540 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":540}}
+{"msg":"קניתי חומרי גלם ב2.5k","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"עמלת paypal 18 דולר","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":52.38}}
+{"msg":"החזר ללקוחה שביטלה הזמנה 150 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":150}}
+{"msg":"פרסום בפייסבוק לחנות 200 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":200}}
+{"msg":"קיבלתי תשלום מלקוחה 480 שח","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":480}}
+{"msg":"קניתי קופסאות אריזה 1,200 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"שילמתי לעובדת שעוזרת לי באריזה 800 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":800}}
+{"msg":"דלק לסטודיו 250","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":250}}
+{"msg":"קניתי צבעי אקריליק וצבעים 175 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":175}}
+{"msg":"מכרתי תכשיט בתערוכה 320 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":320}}
+{"msg":"קניתי כלי עבודה לתכשיטנות 450 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":450}}
+{"msg":"עמלת etsy listing 0.20 דולר","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":0.58}}
+{"msg":"הכנסה מהחנות החודש 3,400 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":3400}}
+{"msg":"שילמתי שכירות לסטודיו 1500","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"מכרתי טבעת זהב 600 שקל ללקוחה","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":600}}
+{"msg":"קיבלתי 220 שח על שרשרת שמכרתי","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":true,"amount":220}}
+{"msg":"קניתי אריזות מתנה 70 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":70}}
+{"msg":"תשלום לעובדת השכר החודשי 2000 שקל","persona":"#24 — Etsy / handmade seller (raw materials, Etsy fees, sales)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"מכרתי היום בדוכן ב1850 מזומן","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":1850}}
+{"msg":"קניתי סחורה מהסיטונאי ב3200","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"שילמתי אגרת דוכן לעירייה 450","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":450}}
+{"msg":"היום עשיתי קופה 2300 שח","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":2300}}
+{"msg":"קניתי שקיות וכלים חד פעמיים ב85","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":85}}
+{"msg":"מכירות של היום 1.7k","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":1700}}
+{"msg":"שילמתי לפועל שעוזר לי בדוכן 300 שח","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":300}}
+{"msg":"דלק לטנדר 250","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":250}}
+{"msg":"קניתי מלאי חדש 5 אלף שקל","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":5000}}
+{"msg":"החזרתי ללקוח 60 שקל על פריט פגום","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":60}}
+{"msg":"קניתי קופסאות אריזה 120 ושקיות 40","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":160}}
+{"msg":"הכנסה מהשוק היום 4200","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":4200}}
+{"msg":"שילמתי על חידוש רישיון רוכלות 680","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":680}}
+{"msg":"קניתי ירקות לדוכן 90 דולר מספק","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":261.9}}
+{"msg":"ארוחת צהריים בשוק 35","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":35}}
+{"msg":"מכרתי סחורה ב2,450 היום","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":2450}}
+{"msg":"קניתי שולחן מתקפל לדוכן 400","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":400}}
+{"msg":"שילמתי שכירות אחסנה למחסן 1500","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"טיפ מלקוח 20 שקל","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":20}}
+{"msg":"קניתי מאזניים דיגיטליים 350","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":350}}
+{"msg":"היה לי יום חלש מכרתי רק ב780","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":780}}
+{"msg":"שילמתי לספק הפירות 2100","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":2100}}
+{"msg":"קנס חניה ליד הדוכן 100","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":false,"amount":100}}
+{"msg":"גבייה במזומן מהדוכן 3.5k","persona":"market stall vendor (cash sales, stock, permits)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קניתי חומרי ניקוי ב850 שקל","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":850}}
+{"msg":"שילמתי לעובדת הניקיון 4500","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"קיבלתי מלקוח על ניקיון דירה 600","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":600}}
+{"msg":"מסיב 1.2 אלף לעובד","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"לקוח שילם לי 1,200 על ניקיון משרד","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"קניתי שואב אבק 1.5k","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"שילמתי משכורת לעובד 5000","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":5000}}
+{"msg":"שכר לעובדת 4800","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":4800}}
+{"msg":"קיבלתי 2000 מזומן מלקוחה","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"החזר ללקוח 150 על ניקיון שלא בוצע","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":150}}
+{"msg":"קניתי סבון רצפות וכפפות 220","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":220}}
+{"msg":"שילמתי לספק חומרים 1.350","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":1350}}
+{"msg":"תדלוק רכב העבודה 280","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":280}}
+{"msg":"לקוחה העבירה 2000 על ניקיון","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"גביתי 2000 מלקוחה ניקיון","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"שילמתי לעובדת 4500 על יום ניקיון","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"בונוס לעובדת ניקיון 500","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":500}}
+{"msg":"קניתי מטליות ומגבים 90","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":90}}
+{"msg":"לקוח קבוע שילם 3,500 לחודש ניקיון","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קניתי חומרי ניקוי 250$","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":727.5}}
+{"msg":"50 יורו על מסיר כתמים מיוחד","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":169.5}}
+{"msg":"קיבלתי תשלום 1800 על ניקיון אחרי שיפוץ","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"שילמתי לפועל ניקיון 600 ביד","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":600}}
+{"msg":"החזרתי ללקוחה 200","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":200}}
+{"msg":"קניתי 3 דליי שטיפה ומגב 145","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":145}}
+{"msg":"דמי נסיעות לעובדים 320","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":320}}
+{"msg":"ביטוח עסק 450","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":450}}
+{"msg":"לקוחה ביטלה והחזרתי לה 300 בביט","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":300}}
+{"msg":"הכנסה מניקיון חלונות 750","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":750}}
+{"msg":"קניתי אקונומיקה וסבון כלים 65","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":65}}
+{"msg":"שילמתי לעובדת הניקיון את המשכורת 4200","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":4200}}
+{"msg":"קיבלתי 950 על ניקיון פסח","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":true,"amount":950}}
+{"msg":"שילמתי משכורת לעובד הניקיון 5200","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":5200}}
+{"msg":"חניה בזמן עבודה 25","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":25}}
+{"msg":"קניתי מטהר אוויר ושקיות אשפה 80","persona":"#26 cleaning service (supplies, staff pay, client income)","expect":{"isIncome":false,"amount":80}}
+{"msg":"קניתי צינורות ואביזרים בחנות אינסטלציה 480","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":480}}
+{"msg":"גמרתי עבודה אצל לקוח קיבלתי 1500 מזומן","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"קיבלתי 2,500 על תיקון דוד שמש","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"שילמתי לפועל שלי 400","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":400}}
+{"msg":"מצברים וברזים 1.250","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"חומרים 3,200 לפרויקט בקריית אונו","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"הכנסה מהתקנת מערכת מים 4500","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"דלק 280 וכריך 22","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":302}}
+{"msg":"קניתי מברגה חדשה 650","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":650}}
+{"msg":"לקוח שילם לי 800 בביט על פתיחת סתימה","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":800}}
+{"msg":"החזר על צינור פגום מהספק 150","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":150}}
+{"msg":"ביטוח רכב עבודה 4,800","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":4800}}
+{"msg":"שילמתי 1.5k לספק של דודי שמש","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קיבלתי מקדמה 5000 על שיפוץ אמבטיה","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"חניה 15 בתל אביב אצל לקוח","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":15}}
+{"msg":"ארוחת צהריים עם הצוות 180","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":180}}
+{"msg":"מע״מ ששילמתי לרשויות 3700","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":3700}}
+{"msg":"קניתי טפלון ופ׳קים 95","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":95}}
+{"msg":"גביתי 1200 על החלפת ברז מטבח","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"תיקון לטנדר במוסך 2,300","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"שילמתי משכורת לעובד 6500","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":6500}}
+{"msg":"החזר ללקוח על עבודה שלא בוצעה 600","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":600}}
+{"msg":"קיבלתי 350$ מלקוח תייר על תיקון דחוף","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":true,"amount":1018.5}}
+{"msg":"כפפות ומסכות וחומרי ניקוי 130","persona":"plumber (parts, van fuel, job income)","expect":{"isIncome":false,"amount":130}}
+{"msg":"קניתי כבלים וחוטים בחשמל אלקטריק 740","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":740}}
+{"msg":"מפסקים ושקעים 320 שח","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":320}}
+{"msg":"לוח חשמל דירתי 1250","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"קונה מקדחה חדשה בוש 890","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":890}}
+{"msg":"דלק לרכב העבודה 300","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":300}}
+{"msg":"קיבלתי תשלום על התקנת לוח חשמל 3500","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"לקוח שילם לי 1,800 על נקודות חשמל בדירה","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"שילמתי לפועל שלי 4500 משכורת","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"חומרים בורוד 2.5k","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"קיבלתי 5,200 על שיפוץ חשמל בבית פרטי","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":5200}}
+{"msg":"החזר מהספק על כבל פגום 150","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":150}}
+{"msg":"שילמתי לחשמלאי משנה 2200","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":2200}}
+{"msg":"ביטוח אחריות מקצועית 480","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":480}}
+{"msg":"ארגז כלים חדש 1.2 אלף","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"תאורת לד 12 גופים 960","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":960}}
+{"msg":"חניה ליד אתר עבודה 25","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":25}}
+{"msg":"קיבלתי מקדמה מלקוח 2000 על פרויקט חדש","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"נורות וקופסאות הסתעפות 215.50","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":215.5}}
+{"msg":"תשלום לפועל יומי 350","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":350}}
+{"msg":"הזמנתי כלי מדידה מאמזון 120 דולר","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":349.2}}
+{"msg":"כבלים 400 ומפסקים 250 ומפ-זרם 180","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":830}}
+{"msg":"שילמתי חשבונית לספק החשמל 6.300","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":6300}}
+{"msg":"קיבלתי בהעברה בנקאית 4800 על עבודת חשמל במשרד","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":4800}}
+{"msg":"טסט שנתי לרכב 1100","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":1100}}
+{"msg":"סולר לגנרטור באתר 220","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":220}}
+{"msg":"החזר מלקוח שביטל 600","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":600}}
+{"msg":"מנוי תוכנה לתכנון חשמלי 49 יורו לחודש","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":166.11}}
+{"msg":"שילמתי לעובד בונוס 1500 שקל","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"כבלים 400 ומפסקים 250","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":false,"amount":650}}
+{"msg":"קיבלתי 3500 על התקנת לוח חשמל","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"גמרתי עבודה והכניסו לי 2700","persona":"electrician (materials, tools, invoices paid)","expect":{"isIncome":true,"amount":2700}}
+{"msg":"קניתי שתילים בנטעים 250","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":250}}
+{"msg":"דשן ופרחים למשתלה 480 שקל","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":480}}
+{"msg":"מילאתי דלק לטרקטור 300","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":300}}
+{"msg":"קיבלתי 3500 מהלקוח על גינון בקיסריה","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"שילמתי לפועל 400 שקל על יום עבודה","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":400}}
+{"msg":"הלקוח שילם לי 3500 על תחזוקת גינה","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קיבלתי תשלום 1800 על גיזום עצים","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"שילמתי לעובד שכר 5000","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":5000}}
+{"msg":"מקדמה מלקוח 2k על פרויקט גינון","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"קניתי מערכת השקיה 1,250","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"תיקנתי את המזמרה 180","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":180}}
+{"msg":"קניתי כפפות עבודה ומספריים 95","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":95}}
+{"msg":"ארוחת צהריים עם הצוות 140","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":140}}
+{"msg":"חזרזיר וזרעים 60 שח","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":60}}
+{"msg":"שילמתי 1.200 על משאית חול","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קיבלתי מקדמה 2500 שקל מהלקוחה ברעננה","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"קיבלתי החזר 120 מהמשתלה","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":120}}
+{"msg":"קניתי מפוח עלים חדש 90 דולר","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":261.9}}
+{"msg":"הכנסה מגינון 4 אלף החודש","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":4000}}
+{"msg":"שילמתי לגנן המשנה 1500","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קיבלתי 900 על שתילה מהשכן","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":900}}
+{"msg":"שילמתי ביטוח לרכב העבודה 350","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":350}}
+{"msg":"קניתי שק אדמה 3 שקים 75","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":75}}
+{"msg":"תשלום מהלקוח 5,500 על עיצוב גינה","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"החזר ביטוח לאומי 430","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":430}}
+{"msg":"קניתי בנזין למפוח 45","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":45}}
+{"msg":"שילמתי למשתלה ספקים 2300","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"קיבלתי העברה 1200 על תחזוקה חודשית","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"הרווחתי 800 מהיום עבודה אצל משפחת לוי","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":800}}
+{"msg":"שתלתי דשא ללקוח קיבלתי 2,000","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"אדמה וקומפוסט 320 שח מהמשתלה","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":320}}
+{"msg":"מכרתי עציצים בשוק 650","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":650}}
+{"msg":"קיבלתי 300 יורו מלקוח באירופה על ייעוץ גינון","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":true,"amount":1017}}
+{"msg":"שילמתי שכירות למחסן הגינון 1800","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":1800}}
+{"msg":"פרעתי הלוואה על הטרקטור 2200","persona":"gardener/landscaper (plants, equipment, client pay)","expect":{"isIncome":false,"amount":2200}}
+{"msg":"קיבלתי 120 על טיול עם הכלב של דנה","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":120}}
+{"msg":"גמרתי טיול בוקר עם רקס, נכנס 80","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":80}}
+{"msg":"דוג ווקינג שבועי למשפחת לוי 600","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":600}}
+{"msg":"פנסיון לכלב של מירי לשבוע, קיבלתי 1,400","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":1400}}
+{"msg":"קניתי שקיות צואה לכלבים 35","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":35}}
+{"msg":"רצועה חדשה וקולר 89","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":89}}
+{"msg":"שק אוכל לכלבים 25 קילו 240","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":240}}
+{"msg":"חטיפי אילוף לכלבים 45","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":45}}
+{"msg":"דלק לרכב לסבב הטיולים 200","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":200}}
+{"msg":"חניתי בעיר אבל קיבלתי 250 מזומן על פט סיטינג","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":250}}
+{"msg":"לקוח שילם לי ביט 180 על שמירה על החתול","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":180}}
+{"msg":"קיבלתי טיפ 50 ש״ח מלקוח מרוצה","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":50}}
+{"msg":"שילמתי לעוזרת שמחליפה אותי בטיולים 300","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":300}}
+{"msg":"מודעה מקודמת בפייסבוק לעסק הדוג ווקינג 120","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":120}}
+{"msg":"כרטיסי ביקור הזמנתי 90","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":90}}
+{"msg":"החזר ללקוח שביטל פנסיון 200","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":200}}
+{"msg":"3 טיולים היום, 80 כל אחד","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":240}}
+{"msg":"ביטוח אחריות מקצועית לעסק 150 לחודש","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":150}}
+{"msg":"קיבלתי 2k על חבילת טיולים חודשית","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":2000}}
+{"msg":"אוכל לכלבים ועוד צעצוע 130 ו45","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":175}}
+{"msg":"וטרינר לבדיקת כלב של לקוח ששילם לי בחזרה 320","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":320}}
+{"msg":"קיבלתי תשלום paypal של 60 דולר מלקוח מחול","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":174.6}}
+{"msg":"קניתי קליקר ומסרק 38.50","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":38.5}}
+{"msg":"רחיצת הרכב אחרי יום בוצי עם הכלבים 60","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":false,"amount":60}}
+{"msg":"קיבלתי 60 דולר מלקוח","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":174.6}}
+{"msg":"הכנסה מטיול כלבים 300","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":300}}
+{"msg":"קיבלתי תשלום 60 דולר מלקוח","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":174.6}}
+{"msg":"נכנס לי 80 על טיול בוקר","persona":"dog walker/pet sitter (income, supplies)","expect":{"isIncome":true,"amount":80}}
+{"msg":"קיבלתי 8000 על קמפיין ספונסר מבלאנדר","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"רינג לייט חדש 450","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":450}}
+{"msg":"מיקרופון רוד 1,250","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"PR package מחברת בגדים שווי 600 בארטר","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":600}}
+{"msg":"קיבלתי 12k חסות מחברת קוסמטיקה","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"מנוי קנבה פרו 49.90","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":49.9}}
+{"msg":"עריכת וידאו לפרילנסר שילמתי 800","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":800}}
+{"msg":"כרטיס זיכרון 128GB 89.90","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":89.9}}
+{"msg":"תשלום מיוטיוב 3,450 ש״ח אדסנס","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":3450}}
+{"msg":"שילמתי לעורך וידאו שכר 2500","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"פרסמתי סטורי בתשלום וקיבלתי 1500","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"קניתי גימבל DJI ב 999","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":999}}
+{"msg":"אינסטגרם ריל ספונסר נכנס 5000","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"ארוחת צהריים עם מנהלת קמפיינים 180","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":180}}
+{"msg":"מנוי אדובי 220 לחודש","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":220}}
+{"msg":"החזר מאמזון על מיקרופון פגום 350","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":350}}
+{"msg":"תשלום על שת״פ מותג אופנה 4.500","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"קניתי תאורת סופטבוקס 320 ורקע נייר 120","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":440}}
+{"msg":"מנוי קפצ׳ר פרו 15 דולר","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":43.65}}
+{"msg":"נסיעה לצילומים מונית 65","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":65}}
+{"msg":"קיבלתי תשלום מטאבולה 900 ש״ח","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":900}}
+{"msg":"קורס עריכה במונטז 1490","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":1490}}
+{"msg":"אחסון ענן גוגל 9.90","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":9.9}}
+{"msg":"שילמתי לצלם 1200 על יום צילומים","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"הכנסה 5000 מקמפיין","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"נכנס תשלום 5000 מקמפיין אינסטגרם","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"TikTok creator fund 250 דולר","persona":"social-media influencer (gear, sponsorship income, ads)","expect":{"isIncome":true,"amount":727.5}}
+{"msg":"קיבלתי ריטיינר מלקוח 12000","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"טיסה ללקוח בתל אביב 450","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":450}}
+{"msg":"מנוי לינקדאין פרימיום 240","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":240}}
+{"msg":"שילמתי לעובד שכר 8500","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":8500}}
+{"msg":"חשבונית ללקוח על ייעוץ 15000 שקל","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":true,"amount":15000}}
+{"msg":"דלק לרכב בדרך לפגישה 320","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":320}}
+{"msg":"מנוי זום שנתי 1.2k","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"ארוחת צהריים עם לקוח 180","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":180}}
+{"msg":"קיבלתי העברה מלקוח על פרויקט 9,500","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":true,"amount":9500}}
+{"msg":"חניה ליד משרד הלקוח 45","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":45}}
+{"msg":"מנוי נוטשן 8 דולר","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":23.28}}
+{"msg":"רכבת לחיפה לפגישת ייעוץ 64","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":64}}
+{"msg":"הוצאה על פרסום בפייסבוק 600","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":600}}
+{"msg":"קפה עם שותף עסקי 32","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":32}}
+{"msg":"מלון בירושלים ללילה אחד 780","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":780}}
+{"msg":"קיבלתי 3500 על סדנה","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"מנוי סלאק לצוות 150 דולר","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":436.5}}
+{"msg":"אובר לשדה התעופה 95","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":95}}
+{"msg":"החזר מלקוח על נסיעות 220","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":true,"amount":220}}
+{"msg":"שכרתי רכב ליומיים 540","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":540}}
+{"msg":"תוכנת ניהול פרויקטים מאנדיי 49 דולר לחודש","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":142.59}}
+{"msg":"ייעוץ אסטרטגי ללקוח חדש 22000","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":22000}}
+{"msg":"מתנה ללקוח על סיום פרויקט 250","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":false,"amount":250}}
+{"msg":"קיבלתי תשלום מקדמה 5.5k","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":true,"amount":5500}}
+{"msg":"הכנסה מלקוח 5000","persona":"business consultant (travel, retainers, software)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"שילמתי משכורת לעובד 12000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":12000}}
+{"msg":"השקעה מהמשקיע נכנסה 250000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":250000}}
+{"msg":"מנוי AWS 1,200 בחודש","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"חשבונית מלקוח 8500","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":8500}}
+{"msg":"שילמתי לפרילנסר על עיצוב 3500","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"Slack 290 לחודש","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":290}}
+{"msg":"קיבלתי החזר ממס הכנסה 4200","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":4200}}
+{"msg":"קפה עם משקיע 62","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":62}}
+{"msg":"מנוי Figma 75$","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":218.25}}
+{"msg":"שכר דירה למשרד 6500","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":6500}}
+{"msg":"שילמתי בונוס לצוות 15000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":15000}}
+{"msg":"גוגל אדס 2.5k קמפיין","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"לקוח שילם רטיינר 12,000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"ארוחת צהריים צוות 480","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":480}}
+{"msg":"מנוי לינקדאין פרימיום 230","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":230}}
+{"msg":"החזר מספק על שרת שלא עבד 900","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":900}}
+{"msg":"שילמתי לרואה חשבון 2800","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":2800}}
+{"msg":"מענק מהמדען הראשי 180000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":180000}}
+{"msg":"קניתי מקבוק לעובד חדש 9500","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":9500}}
+{"msg":"חשבונית יוצאת ללקוח בארהב 5000 דולר","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":14550}}
+{"msg":"דומיין וסרבר 340","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":340}}
+{"msg":"שילמתי שכר למתכנת 18000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":18000}}
+{"msg":"החזר מע\"מ 7300","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":7300}}
+{"msg":"אובר למשרד 38","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":38}}
+{"msg":"חשבונית ללקוח 8500","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":8500}}
+{"msg":"קיבלתי מלקוח 8500","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":8500}}
+{"msg":"השקעה נכנסה 250000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":250000}}
+{"msg":"גייסנו השקעה 250000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":true,"amount":250000}}
+{"msg":"שילמתי משכורות 18000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":18000}}
+{"msg":"שכר עובד 18000","persona":"startup founder (SaaS subs, salaries, investment received)","expect":{"isIncome":false,"amount":18000}}
+{"msg":"תרומה התקבלה 500","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":500}}
+{"msg":"קיבלנו תרומה של 2500 שקל מתורם","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"התקבלה תרומה 1,200 מהקרן","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"תרומה 10k מתורם גדול","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":10000}}
+{"msg":"קיבלנו מענק 50 אלף מהעירייה","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":50000}}
+{"msg":"כיבוד לאירוע התרמה 340","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":340}}
+{"msg":"קניתי ציוד משרדי 180","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":180}}
+{"msg":"תרומות מהמתרימים השבוע 3.500","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"שילמתי משכורת למתנדבת רכזת 4500","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"שילמתי לעובדת 3000","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":3000}}
+{"msg":"דמי שכירות למשרד העמותה 2200","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":2200}}
+{"msg":"קניתי שי למתנדבים 25 חבילות 600","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":600}}
+{"msg":"החזר על ביטול אירוע 150","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":150}}
+{"msg":"תשלום לספק כיבוד 800","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":800}}
+{"msg":"אגרת רשם העמותות 1120","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":1120}}
+{"msg":"קיבלנו 1500 דולר תרומה מתורם בחול","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":4365}}
+{"msg":"דמי חבר התקבלו 4 חברים 200","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":200}}
+{"msg":"תרומה אנונימית נכנסה 750","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":750}}
+{"msg":"הכנסה מאירוע התרמה 6800","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":6800}}
+{"msg":"קניתי מצרכים למטבח קהילתי 430","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":430}}
+{"msg":"דלק להסעות מתנדבים 250","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":250}}
+{"msg":"תרומה בעין שווי 1000 ספרים","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":1000}}
+{"msg":"החזרתי תרומה כפולה לתורם 300","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":300}}
+{"msg":"הדפסת חוברות ופלאיירים לקמפיין 920","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":920}}
+{"msg":"תרומה חודשית קבועה מתורם נכנסה 1000","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":1000}}
+{"msg":"שילמתי 1200 לרואה חשבון של העמותה","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קניתי 50 כסאות מתקפלים לאירועים 3,750","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":3750}}
+{"msg":"עמלת סליקה על תרומות אונליין 85","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":false,"amount":85}}
+{"msg":"התקבל גרנט יורו 2000 מקרן אירופאית","persona":"nonprofit coordinator (donations received, supplies)","expect":{"isIncome":true,"amount":6780}}
+{"msg":"קניתי שקי זרעים ל2 דונם 850 שקל","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":850}}
+{"msg":"דשן וקומפוסט 1,200","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"תיקנתי את הטרקטור במוסך 2.5k","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"מכרתי ירקות בשוק האיכרים 3400","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":3400}}
+{"msg":"קיבלתי 5,800 על משלוח עגבניות לסיטונאי","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":5800}}
+{"msg":"שילמתי לפועל 400 ש״ח על יום עבודה בשדה","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":400}}
+{"msg":"סולר לטרקטור 350","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":350}}
+{"msg":"מערכת השקיה בטפטוף 4200","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":4200}}
+{"msg":"ביטוח חקלאי 980","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":980}}
+{"msg":"ארגזים ואריזות לתוצרת 600","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":600}}
+{"msg":"מכרתי ביצים אורגניות 720","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":720}}
+{"msg":"הכנסה ממכירת תוצרת 2.300","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":2300}}
+{"msg":"קניתי שתילי עגבניות שרי 480","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":480}}
+{"msg":"חומרי הדברה אורגניים 350","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":350}}
+{"msg":"שילמתי ארנונה על המשק 1500","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"חשמל לחממה 890","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":890}}
+{"msg":"מים להשקיה 1,340","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":1340}}
+{"msg":"קניתי תרנגולות מטילות 25 יח 1250","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"מספוא לתרנגולות 400","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":400}}
+{"msg":"קיבלתי מענק חקלאי ממשרד החקלאות 12000","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"תשלום למוביל שהוביל את היבול 650","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":650}}
+{"msg":"שילמתי משכורת לעובד בחווה 5000","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":5000}}
+{"msg":"קניתי זרעים 300 ודשן 250","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":550}}
+{"msg":"ייעוץ אגרונום 800","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":800}}
+{"msg":"מכרתי דבש מהכוורות 1.5k","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"קניתי משאבת מים חדשה 60 דולר","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":174.6}}
+{"msg":"ארוחת צהריים בדרך לשוק 65","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":65}}
+{"msg":"תיקון גדר בשדה 450","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":450}}
+{"msg":"אגרת רשם החקלאות 220","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":220}}
+{"msg":"קיבלתי תשלום מהמסעדה על אספקת ירקות שבועית 2800","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":2800}}
+{"msg":"דלק לרכב המשק 400 וביטוח 1200","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":1600}}
+{"msg":"שכרתי טרקטור ליום 700","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":700}}
+{"msg":"מכרתי 50 ק״ג תפוחי אדמה 250","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":250}}
+{"msg":"קניתי יריעות פלסטיק לחממה אלפיים","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"קיבלתי משכורת 8000","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"החזר מס 1500","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"מתנה מההורים 1000","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":1000}}
+{"msg":"קניתי דשן 2000 שקל","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"זרעים 300 ודשן 250 והובלה 150","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":700}}
+{"msg":"קיבלתי החזר על זרעים 200","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":200}}
+{"msg":"תקבול ממכירת חציר 1800","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"מכירת תוצרת חקלאית 4500","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":4500}}
+{"msg":"קניתי שתילים 480 וזרעים 300","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":false,"amount":780}}
+{"msg":"החזר על דשן שהחזרתי לחנות 200","persona":"small farmer (seeds, equipment, produce sales)","expect":{"isIncome":true,"amount":200}}
+{"msg":"קניתי ירקות לפודטראק 320 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":320}}
+{"msg":"מילאתי דלק לגנרטור 180","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":180}}
+{"msg":"קניתי 5 קילו בשר טחון ב450 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":450}}
+{"msg":"מכירות היום 2,400 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":2400}}
+{"msg":"הכנסות מהדוכן אתמול 1.8k","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"שילמתי לעובד שכר 4500","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"קניתי גז לפודטראק 220 שח","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":220}}
+{"msg":"לחמניות מהמאפייה 280","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":280}}
+{"msg":"תשלום לספק ירקות 1,250","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"החזר על סחורה פגומה 90 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":90}}
+{"msg":"מכרתי היום בדוכן 3.5 אלף שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"קניתי שמן לטיגון 5 בקבוקים 120 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":120}}
+{"msg":"שילמתי ארנונה לדוכן 650","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":650}}
+{"msg":"קניתי כוסות וצלחות חד פעמי 340","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":340}}
+{"msg":"תיקנתי את הגריל 800 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":800}}
+{"msg":"קניתי קולה ומשקאות לדוכן 600","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":600}}
+{"msg":"שילמתי לרשות העתיקות אגרת דוכן 200","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":200}}
+{"msg":"הכנסה ממכירת המבורגרים 1500","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"החזרתי ללקוח על הזמנה שבוטלה 65","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":65}}
+{"msg":"קניתי בגז סולר לטנדר 250 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":250}}
+{"msg":"שילמתי משכורת לטבח 6000 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":6000}}
+{"msg":"קניתי תבלינים וקטשופ 2 בקבוקים 3 שקיות 75","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":75}}
+{"msg":"איביי הזמנתי מכונת סודה 89 דולר","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":258.99}}
+{"msg":"שילמתי שכירות חניה לפודטראק 1.2k","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"מכירות סופש 8,750","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":8750}}
+{"msg":"קיבלתי טיפ 200","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":200}}
+{"msg":"קניתי קרח 12 שקיות 96 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":96}}
+{"msg":"החזר מע״מ 1340","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":1340}}
+{"msg":"שילמתי לפייסבוק פרסום ממומן 350","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":350}}
+{"msg":"תשלום לדוכן בפסטיבל 1500 שקל","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"הכנסות אשראי מהיום 2.1k","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":2100}}
+{"msg":"קיבלתי 2100 הכנסות מהיום","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":2100}}
+{"msg":"קיבלתי החזר מהספק על סחורה פגומה 90","persona":"food-truck owner (ingredients, fuel, daily sales)","expect":{"isIncome":true,"amount":90}}
+{"msg":"קניתי קמח וסוכר 120 שקל","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":120}}
+{"msg":"חמאה וביצים 85","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":85}}
+{"msg":"קניתי שקיות נייר לאריזה 60 שקל","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":60}}
+{"msg":"הזמנתי קופסאות עוגות מהספק 340","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":340}}
+{"msg":"שילמתי על שמרים ושוקולד 95","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":95}}
+{"msg":"קיבלתי 250 על הזמנת עוגיות","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":true,"amount":250}}
+{"msg":"מכרתי עוגת יום הולדת ב450","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":true,"amount":450}}
+{"msg":"הזמנה של 3 מגשי בראוניז 600 שקל","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":true,"amount":600}}
+{"msg":"קיבלתי תשלום על קאפקייקס 180","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":true,"amount":180}}
+{"msg":"שילמתי לעובדת שעוזרת לי באריזה 400","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":400}}
+{"msg":"קניתי תבניות אפייה חדשות 250 שקל","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":250}}
+{"msg":"חבילת ניילון נצמד 35","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":35}}
+{"msg":"קניתי שמנת מתוקה 6 קרטונים 90","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":90}}
+{"msg":"הזמנת ספק קמח 1.200 שקל","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"מכרתי 2 עוגות שוקולד ב320","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":true,"amount":320}}
+{"msg":"בוטיק עוגיות הזמינו ממני ב1,500","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":true,"amount":1500}}
+{"msg":"קניתי וניל אמיתי מאיביי 25 דולר","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":72.75}}
+{"msg":"ביטול הזמנה החזרתי ללקוחה 200 שקל","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":200}}
+{"msg":"שילמתי על פרסום בפייסבוק לעסק 150","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":150}}
+{"msg":"קניתי 2 קילו חמאה ב80 ועוד אבקת אפייה ב20","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":100}}
+{"msg":"תשלום על משלוח עוגות ללקוחה 45","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":45}}
+{"msg":"קיבלתי מקדמה על הזמנת אירוע 1k","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":true,"amount":1000}}
+{"msg":"קניתי צבעי מאכל וקישוטים 70 שקל","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":70}}
+{"msg":"חשבון חשמל לתנור 320","persona":"#37 home bakery (ingredients, packaging, order income)","expect":{"isIncome":false,"amount":320}}
+{"msg":"קניתי חלקי חילוף לטויוטה 850 שקל","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":850}}
+{"msg":"קיבלתי 1200 על תיקון בלמים","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":true,"amount":1200}}
+{"msg":"שילמתי לפועל 400 שח על היום","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":400}}
+{"msg":"דלק לרכב הגרירה 320","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":320}}
+{"msg":"קניתי שמן מנוע ופילטרים 540","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":540}}
+{"msg":"לקוח שילם לי 2.500 על מנוע","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":true,"amount":2500}}
+{"msg":"החזר על חלק פגום 180 שח","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":180}}
+{"msg":"קניתי מפתח רגעי וסט בוקסות 1,250","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"תיקנתי גיר קיבלתי 3500","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":true,"amount":3500}}
+{"msg":"ארוחת צהריים שווארמה 55","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":55}}
+{"msg":"שילמתי משכורת למכונאי שלי 7000","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":7000}}
+{"msg":"חשבונית מספק חלפים 4,200 שח","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":4200}}
+{"msg":"קניתי קומפרסור 2.3k","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"החלפת שמן ללקוח 250","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":true,"amount":250}}
+{"msg":"קניתי צמיגים 4 יחידות 1600","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":1600}}
+{"msg":"קפה ומאפה בבוקר 28","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":28}}
+{"msg":"ביטוח רכב עסקי 380 לחודש","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":380}}
+{"msg":"לקוח העביר ביט 600 על בדיקה לפני קניה","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":true,"amount":600}}
+{"msg":"קניתי מצבר חדש 450","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":450}}
+{"msg":"שילמתי לחשמלאי שבא לסדר את הרמפה 900","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":900}}
+{"msg":"ארנונה למוסך 1.100","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":1100}}
+{"msg":"קיבלתי אלף שקל על פנצ'ר וטיפול","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":true,"amount":1000}}
+{"msg":"קניתי כלי עבודה מהאנגר 3,750 שקל","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":3750}}
+{"msg":"גרירה החזרתי ללקוח 200 ששילם יותר מדי","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":200}}
+{"msg":"דיל עם ספק חלקים מחו״ל 500 דולר","persona":"car mechanic (parts, tools, repair income)","expect":{"isIncome":false,"amount":1455}}
+{"msg":"קניתי לק ג'ל 3 צבעים 240 שקל","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":240}}
+{"msg":"שילמתי שכר דירה לסלון 4500","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"לקוחה שילמה 150 על מניקור","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":150}}
+{"msg":"קיבלתי 320 על לק ג'ל ובניית ציפורניים","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":320}}
+{"msg":"חומרים מהספק 1,250","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":1250}}
+{"msg":"קניתי אצטון וכותנה 90","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":90}}
+{"msg":"שילמתי לעובדת 3500","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"דלק לרכב 200","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":200}}
+{"msg":"מברשות וכלים 180","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":180}}
+{"msg":"קיבלתי היום מלקוחות 1800","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":1800}}
+{"msg":"שילמתי לספק ציפורניים 2.300","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":2300}}
+{"msg":"בנייה ג'ל לקוחה 280","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":280}}
+{"msg":"קניתי מנורת UV חדשה 350","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":350}}
+{"msg":"חשבון חשמל לסלון 410","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":410}}
+{"msg":"החזר על מנורה שלא עבדה 350","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":350}}
+{"msg":"קניתי לק 5 בקבוקים כל אחד 45","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":225}}
+{"msg":"טיפ מלקוחה 50","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":50}}
+{"msg":"ארנונה לסלון 620","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":620}}
+{"msg":"שילמתי 1.5k על קמפיין אינסטגרם","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קניתי ג'ל בנייה מאמזון 60 דולר","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":174.6}}
+{"msg":"מניקור פדיקור ללקוחה 220","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":220}}
+{"msg":"קניתי חומרי חיטוי וכפפות 75","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":75}}
+{"msg":"משכורת לעצמי מהעסק 5000","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"לק ג'ל בנדיקט 12 צבעים 480","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":480}}
+{"msg":"החזרתי ללקוחה על טיפול שבוטל 150","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":false,"amount":150}}
+{"msg":"קיבלתי מלקוחה 150","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":150}}
+{"msg":"לקוחה העבירה לי 200","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":200}}
+{"msg":"החזר כספי 350","persona":"nail salon (products, rent, client payments)","expect":{"isIncome":true,"amount":350}}
+{"msg":"שילמתי לדיג'יי 2500 שח על האירוע של שבת","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"מקדמה מלקוח לחתונה 5000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"שילמתי לאולם 12,000 על מקדמה","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":12000}}
+{"msg":"קניתי פרחים לקישוט שולחנות 1800","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":1800}}
+{"msg":"דלק לרכב בדרך לאירוע 250","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":250}}
+{"msg":"שילמתי לצלם 3.5k","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":3500}}
+{"msg":"קיבלתי מקדמה מהזוג כהן 8000 שח","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"מקדמה לקייטרינג 7,500","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":7500}}
+{"msg":"שילמתי משכורת לרכזת אירועים 6000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":6000}}
+{"msg":"החזר ללקוח שביטל אירוע 2000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"קניתי בלונים וקישוטים 430 שח","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":430}}
+{"msg":"שילמתי לדיג'יי וגם לצלם 2500 1800","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":2500}}
+{"msg":"תשלום סופי מלקוחה לבת מצווה 12 אלף","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"ארוחת צהריים עם ספק 95","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":95}}
+{"msg":"שכירות משרד 4500","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":4500}}
+{"msg":"שילמתי ל2 מלצרים 800 כל אחד","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":800}}
+{"msg":"קניתי שמלת ערב לאירוע 1.200","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":1200}}
+{"msg":"קיבלתי 450 דולר מלקוח מחול","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":1309.5}}
+{"msg":"הוצאות פרסום בפייסבוק 600","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":600}}
+{"msg":"מקדמה לתקליטן 1k","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":1000}}
+{"msg":"שילמתי לחברת הסעות 3200 שח","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":3200}}
+{"msg":"ביטול עסקה החזר כספי 1500","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קניתי נרות ומפות 275","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":275}}
+{"msg":"קבלתי תשלום על הפקת כנס 22,000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":22000}}
+{"msg":"שילמתי לעובד 5500 שקל בונוס","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":5500}}
+{"msg":"קיבלתי תשלום 22000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":22000}}
+{"msg":"מקדמה מלקוח 5000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"תשלום סופי מלקוחה 12000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":12000}}
+{"msg":"שילמתי לשני מלצרים 800 כל אחד","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":800}}
