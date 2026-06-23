@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-19-audit';
+const KFL_BUILD_VERSION = '2026-06-24-income';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -293,7 +293,7 @@ const CATEGORY_MAP = [
   {"keywords":["קלוד","קלוד פרו","קלוד מקס","קלוד טים","מנוי קלוד","claude pro","claude max","claude code","claude ai","gemini","midjourney","perplexity","copilot","cursor","google drive","google one"],"category":"הוצאות קבועות","subcategory":"אפליקציות"},
   // Misc income (freelance / bonus / grants / convalescence) in the PRIMARY map so
   // a refund/bonus is flagged income even without the index. Placed early to win ties.
-  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","מלגה","מילגה","מלגת לימודים","דמי הבראה","תשר","תשר מהעבודה","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment","דיבידנד","דיבידנדים","הכנסה מדיבידנד","ריבית מהבנק","ריבית מפיקדון","הכנסה מריבית","רווח הון"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
+  {"keywords":["מענק שנתי","מענק התמדה","מענק כספי","בונוס","מלגה","מילגה","מלגת","מלגת לימודים","מלגת קיום","מלגת הצטיינות","דמי הבראה","תשר","תשר מהעבודה","טיפ","טיפים","תמלוגים","royalties","freelance payment","freelance income","client payment","client paid","payday","severance","severance pay","year end bonus","holiday bonus","annual bonus","mascoret","maskoret","invoice paid","upwork payment","fiverr payment","דיבידנד","דיבידנדים","הכנסה מדיבידנד","ריבית מהבנק","ריבית מפיקדון","הכנסה מריבית","רווח הון"],"category":"הכנסות","subcategory":"הכנסה 3 — נוסף","isIncome":true},
   // QA fleet round 3 category fixes (Steven 2026-06-08). Placed early + multi-word
   // so they win the longest-match over a generic keyword in another bucket.
   // Telecom brands -> tikshoret (Pelephone/Bezeq + "phone" matched electronics).
@@ -804,6 +804,41 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // is a business EXPENSE even though bare maskoret maps to income. QA 2026-06-11:
   // 'maskoret le-oved 6000' was booked as +6000 income (a 12K dashboard swing).
   if (/(?:משכורת|שכר)\s+(?:ל|של\s+ה?)?(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+(?:\S+\s+)?משכורת/.test(s)) return false;
+  // --- NL RECEIVE-VERB RULES (2026-06-24) ---
+  // Rule A: sold something (machar conjugations) -> income.
+  // No \b around Hebrew (no u-flag; \b misfires on Hebrew letters).
+  if (/(?:^|\s)מכר(?:תי|נו|ת|ה|ו)(?:\s|$)/.test(s)) return true;
+  // Rule B: niknas/niknesa/niknsu li (money entered my account) -> income.
+  if (/(?:^|\s)נכנס(?:ה|ו)?\s+לי(?:\s|$)/.test(s)) return true;
+  // Rule C: kibalti/kabalti + specific income noun (noun-gated, not bare kibalti).
+  // 0-2 words between verb and noun covers "kibalti 500 matana", "kibalti matana 500".
+  // Fine nouns (knas/doah) are NOT in this list so "kibalti knas" never fires.
+  if (/(?:^|\s)(?:קיבלתי|קבלתי)\s+(?:[\S]+\s+){0,2}(?:מתנה|מתנות|תשלום|מקדמה|פנסיה|מלגה|תמלוגים|טיפ(?:ים)?|תשר|מענק|קצבה|עמלה|עמלת|מזונות|ריטיינר|שכר|שכירות|חסות|פיקדון)(?:\s|$)/.test(s)) return true;
+  // Rule D: kibalti/kabalti [0-2 words] mi-<source> -> income (received from someone).
+  // Guards (keep as EXPENSE): a fine received (knas/doah); a BILL/QUOTE received
+  // ("kibalti cheshbonit mi-sapak" = an invoice FROM a supplier, "hatsaat mechir"
+  // = a price quote) -- money the user OWES, not money received; and an explicit
+  // SUPPLIER source (mi-sapak/mi-musach/mi-kablan). "kibalti mi-horim 1000" and
+  // "...mi-lako'ah" still flip to income.
+  if (/(?:^|\s)(?:קיבלתי|קבלתי)\s+(?:[\S]+\s+){0,2}מ[א-ת]/.test(s) &&
+      !/(?:^|\s)(?:קנס|דוח|קנסה)(?:\s|$)/.test(s) &&
+      !/(?:חשבונית|קבלה|דריש(?:ה|ת)|הצע(?:ה|ת)\s*מחיר)/.test(s) &&
+      !/מ(?:ה?ספק|ה?מוסך|ה?קבלן)/.test(s)) return true;
+  // Rule E: kibalti/kabalti [0-3 words] al <service> -> income (received FOR a
+  // service rendered: "kibalti 180 al tisporet", "kibalti 3500 al hatkana").
+  // SAME guards as Rule D: a fine, and a bill/quote received ("kibalti hatsaat
+  // mechir al shiputz" = a price QUOTE = money owed) stay EXPENSE.
+  if (/(?:^|\s)(?:קיבלתי|קבלתי)\s+(?:[\S]+\s+){0,3}על\s/.test(s) &&
+      !/(?:^|\s)(?:קנס|דוח|קנסה|אגרה)(?:\s|$)/.test(s) &&
+      !/(?:חשבונית|קבלה|דריש(?:ה|ת)|הצע(?:ה|ת)\s*מחיר)/.test(s)) return true;
+  // Rule F: gaviiti/gavinu (I collected money from someone) -> income.
+  if (/(?:^|\s)גבי(?:תי|נו|ת|ה|ו)(?:\s|$)/.test(s)) return true;
+  // Rule G: bare income noun followed directly by mi-<source> -> income.
+  // Handles "makdama mi-lako'ah", "almat tivuk niknesa", "shkhar dira mi-hadaiar",
+  //         "tamlugim me-akum", "tip me-hamismeret", "mezuunot me-ha-aba".
+  // Noun-gated so "shkiirut le-X" (paying rent) does NOT fire (le not me).
+  if (/(?:^|\s)(?:מקדמה|עמלה|עמלת|שכר\s+דירה|שכירות|דמי\s+שכירות|תמלוגים|מלגת|מזונות|דמי\s+מזונות|טיפ|טיפים|תשר)\s+(?:[\S]+\s+){0,2}מ[א-ת]/.test(s)) return true;
+  // --- END NL RECEIVE-VERB RULES ---
   if (matched && matched.isIncome) return true;
   if (s.charAt(0) === '+') return true;
   // Money-RECEIVED phrasings -> income: shilem/shilmu li, heevir(u) li,

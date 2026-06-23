@@ -24,7 +24,8 @@ let j = {};
 try { j = JSON.parse(execFileSync('node', [REPLAY, '--json', msg], { encoding: 'utf8' })); } catch (e) { console.log('REPLAY_ERROR | ' + (e && e.message)); process.exit(1); }
 const d = j.decisions || {}, mc = d.matchCategory || {}, am = d.amountMatch || {}, fx = d.fx || {};
 let cat = mc.category || null, sub = mc.subcategory || null;
-let income = mc.isIncome === true || am.isIncome === true || /^\s*\+/.test(msg.replace(/^[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]+/, ''));
+var pt = j.predicted_target || {};
+let income = pt.isIncome === true || mc.isIncome === true || am.isIncome === true || /^\s*\+/.test(msg.replace(/^[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]+/, ''));
 // Mirror _resolveIsIncome_ rawText rules so this tool reports PROD sign behavior
 if (/(?:משכורת|שכר)\s+(?:ל|של\s+ה?)?(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+(?:\S+\s+)?משכורת/.test(msg)) income = false;
 else if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?(?:משכנת|מקדמ|מילוו)/.test(msg)) { /* m-initial expense noun: keep category-derived sign */ }
