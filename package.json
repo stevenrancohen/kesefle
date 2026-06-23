@@ -8,7 +8,8 @@
     "test:bot": "node bot/test_isolation.js && node bot/test_isolation_edge_cases.js && node bot/test_classify.js && node bot/test_destructive_delete_confirm.js && node bot/test_tool_destructive_gating.js",
     "test:all": "npm test && npm run test:bot",
     "gauntlet": "bash scripts/gauntlet.sh",
-    "qa": "node bot/qa-battery.js"
+    "qa": "node bot/qa-battery.js",
+    "wa-sim": "node scripts/wa-sim.js"
   },
   "engines": {
     "node": ">=20"
