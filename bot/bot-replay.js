@@ -104,6 +104,12 @@ const code = [
   extractFn('_parseBusinessNumberPrefix_') || '',
   extractFn('matchCategory') || '',
   extractFn('_classifyBareBusinessExpense_') || '',
+  // Sign resolver (2026-06-24 harness-fidelity fix): the real write path resolves
+  // col-H via _resolveIsIncome_(matched, rawText, cat, sub), NOT just
+  // matched.isIncome. Load it + its helper so the replay's sign column mirrors
+  // production for NL "money received" phrasings ("שילמו לי", "קיבלתי X מ<Y>").
+  extractFn('_isIncomeCategory_') || '',
+  extractFn('_resolveIsIncome_') || '',
   // FX conversion chain (2026-06-04) so the replay exercises the SAME foreign-
   // currency path processExpense uses: parseForeignCurrencyHint -> convert ->
   // classify on the cleaned (currency-stripped) description. _kfl_fxRateLive_ is
@@ -127,7 +133,7 @@ const code = [
   extractFn('_parseIsraeliNumber_') || '',
   extractFn('parseAmountAndDescription') || '',
   // Export the things we want to use
-  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, parseForeignCurrencyHint, parseAmountAndDescription, CATEGORY_MAP };',
+  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, parseForeignCurrencyHint, parseAmountAndDescription, _resolveIsIncome_, _isIncomeCategory_, CATEGORY_MAP };',
 ].join('\n\n');
 
 vm.createContext(sandbox);
@@ -317,8 +323,16 @@ function replay(input) {
   // reported category matches what the bot will actually write.
   if (typeof bot.matchCategory === 'function') {
     try {
-      if (classifyText !== text) out.decisions.classifyText = classifyText;
-      const matched = bot.matchCategory(classifyText);
+      // HARNESS FIDELITY (2026-06-24): the real write loop classifies on the
+      // AMOUNT-STRIPPED per-item description (matchCategorySmart(item.description)),
+      // NOT the raw text. With the amount inline, substring keywords like
+      // "קיבלתי מלקוח" break and the matcher falls to DEFAULT -> false-positive
+      // sign/category misroutes. Classify on items[0].description; fall back to
+      // the FX-cleaned/raw text only when no amount was parsed.
+      const _amItems = (out.decisions.amountMatch && Array.isArray(out.decisions.amountMatch.items)) ? out.decisions.amountMatch.items : [];
+      const classifyInput = _amItems.length ? (_amItems[0].description || classifyText) : classifyText;
+      if (classifyInput !== text) out.decisions.classifyText = classifyInput;
+      const matched = bot.matchCategory(classifyInput);
       out.decisions.matchCategory = matched || null;
       if (matched) {
         out.predicted_target = out.predicted_target || {
@@ -327,8 +341,16 @@ function replay(input) {
         };
         out.predicted_target.category = matched.category;
         out.predicted_target.subcategory = matched.subcategory;
-        out.predicted_target.isIncome = !!matched.isIncome;
-        out.predicted_target.col_H_expected = matched.isIncome ? 'FALSE (income)' : 'TRUE (expense)';
+        // Resolve the SIGN exactly like the real write path: _resolveIsIncome_
+        // applies NL "money received" overrides ("שילמו לי", "קיבלתי X מ<Y>",
+        // refunds) even when the category matcher landed on a non-income bucket.
+        // rawText = the original message (single-item production path). Additive:
+        // the resolver itself is unchanged.
+        const _sign = (typeof bot._resolveIsIncome_ === 'function')
+          ? bot._resolveIsIncome_(matched, text, matched.category, matched.subcategory)
+          : !!matched.isIncome;
+        out.predicted_target.isIncome = !!_sign;
+        out.predicted_target.col_H_expected = _sign ? 'FALSE (income)' : 'TRUE (expense)';
         out.predicted_target.dashboard_row = matched.category + ' / ' + matched.subcategory;
       }
     } catch (e) {
