@@ -10488,7 +10488,10 @@ function parseAmountAndDescription(text) {
   // groups are distinguished from a decimal-comma by length: any comma that
   // is followed by exactly three digits AND another digit/comma group is a
   // thousand separator; anything else is the decimal point.
-  var numberRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
+  // Dot-grouped thousands ("1.000.000", "2.500") get their own alternative
+  // BEFORE the generic decimal form, or the generic one grabs only "1.000"
+  // and a million-shekel expense is booked as ₪1000 (wa-sim 2026-06-19).
+  var numberRe = /\d{1,3}(?:[,]\d{3})+(?:[.,]\d+)?|\d{1,3}(?:[.]\d{3})+|\d+(?:[.,]\d+)?/g;
   // Find numbers WITH position so we can separate the PRICE from quantity/unit/
   // count noise (Steven 2026-06-08 QA fleet: "5 tashlumim shel 99" recorded 5
   // AND 99 as two rows; "dlek 95 oktan 250" recorded 95; "tipul 10000 km 850"

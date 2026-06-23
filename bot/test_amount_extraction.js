@@ -32,6 +32,9 @@ const CASES = [
   ["פנסיון לחתול 7 ימים 420", 420], ["קרם SPF 50 בסופר פארם 89", 89],
   // unchanged: single number + genuine multi-expense (first item)
   ['85 קפה', 85], ['8500 משכורת', 8500], ['50 קפה + 30 חניה', 50],
+  // wa-sim 2026-06-19: dot-grouped thousands must be tokenized whole, not split
+  // to the first group ("1.000.000" was being read as 1000).
+  ['1.000.000 השקעה', 1000000], ['2.500 ריהוט', 2500], ['1.5 קפה', 1.5],
 ];
 let pass = 0, fail = 0;
 for (const [msg, exp] of CASES) {
