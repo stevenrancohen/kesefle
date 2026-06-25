@@ -3,7 +3,7 @@
 Status: ☐ todo · ◐ in-progress · ☑ done · ⛔ blocked (needs Steven)
 
 ## ⛔ Blocked (need Steven — work around, don't wait)
-- ⛔ Bot paste — Apps Script manual paste of `bot/ExpenseBot_DEPLOY.gs` (build 2026-06-19-newbiz). Carries: bizvocab, 14 misroute fixes, NL create-business command.
+- ☑ Bot paste DONE 2026-06-25 — build 2026-06-25-signfix LIVE (carried ~10 days of fixes: רוביקון, income recognition, 24 over-flips, create-business, dot-thousands, audit batch)
 - ⛔ Set Vercel `CRON_SECRET` (crons appear inert) + `KESEFLE_PROJECTION_TEMPLATE` + create Meta `projection_nudge` template (retention nudge).
 
 ## Critical

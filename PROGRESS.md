@@ -12,7 +12,7 @@ _Owner away. Continuous independent audit + fix sprint. Each iteration: read thi
 `npm run gauntlet` must stay green. For app.html / *.html inline-script changes, also run the inline-script parse one-liner. Bot edits → reassemble DEPLOY.gs + bot test suites.
 
 ## Blockers (need Steven — keep working around these)
-- Bot paste pending (build 2026-06-19-newbiz) — Apps Script manual paste is Steven's action.
+- ✅ Bot paste DONE 2026-06-25 (build 2026-06-25-signfix live).
 - `CRON_SECRET` + `KESEFLE_PROJECTION_TEMPLATE` unset in Vercel (retention nudge + likely all crons inert).
 - Meta template `projection_nudge` not created yet.
 
