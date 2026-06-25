@@ -108,6 +108,20 @@ const NL_EXPENSE = [
   ['קיבלתי חשבונית מספק 500',             null,           null],
   ['קיבלתי הצעת מחיר על שיפוץ 5000',      null,           null],
   ['קיבלתי הצעת מחיר מהקבלן 5000',        null,           null],
+  // MONEY OUT: paid/given by the user = EXPENSE, even with an income noun
+  // (wa-sim 2026-06-25, 24 over-flips). bonus/tip/rent PAID, refund GIVEN.
+  ['שילמתי שכירות משרד 2800',             null,           null],
+  ['שכירות משרד 6500',                    null,           null],
+  ['שכר דירה משרד 3200',                  null,           null],
+  ['שילמתי שכירות מספרה 6000',            null,           null],
+  ['בונוס לעובד 500',                     null,           null],
+  ['תשלום עמלה לאתר המכירות 75',          null,           null],
+  ['שילמתי 600 טיפים לצוות',              null,           null],
+  ['משכורת לדנה המלצרית 4800',            null,           null],
+  ['שילמתי לפועל שלי 4500 משכורת',        null,           null],
+  ['החזר ללקוח 120 על הזמנה שבוטלה',      null,           null],
+  ['החזר מלקוח שביטל 1500',               null,           null],
+  ['החזרתי ללקוחה 200 ביטול הזמנה',       null,           null],
   // normal expenses
   ['50 קפה',                               'אוכל',         'אוכל בחוץ'],
   ['245 סופר',                             'אוכל',         'אוכל לבית'],

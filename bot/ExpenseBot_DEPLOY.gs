@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-24-income';
+const KFL_BUILD_VERSION = '2026-06-25-signfix';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -879,6 +879,20 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // is a business EXPENSE even though bare maskoret maps to income. QA 2026-06-11:
   // 'maskoret le-oved 6000' was booked as +6000 income (a 12K dashboard swing).
   if (/(?:משכורת|שכר)\s+(?:ל|של\s+ה?)?(?:עובד|עובדת|עובדים|עובדות)|שילמתי\s+(?:\S+\s+)?משכורת/.test(s)) return false;
+  // --- MONEY-OUT GUARDS (wa-sim 2026-06-25): paid/given BY the user -> EXPENSE,
+  // overriding any income keyword (a bonus/tip/salary PAID to staff, rent PAID, a
+  // refund GIVEN to a customer). These run BEFORE the income rules + the category
+  // isIncome check, so an ambiguous income noun (bonus/tip) used in a PAID context
+  // is not booked as income (which would inflate income AND hide the expense). ---
+  // (1) first-person money-out verbs.
+  if (/(?:^|\s)(?:שילמתי|העברתי|החזרתי|הענקתי|מימנתי)(?=\s|$)/.test(s)) return false;
+  // (2) wage/bonus/tip/commission PAID TO a recipient (le-<X>). "שכר דירה" is
+  // "schar dira" (rent, no le-) so it is NOT matched.
+  if (/(?:משכורת|שכר|בונוס|טיפ|תשר|עמלה|מענק|פרמיה|פיצוי)\s+ל\S/.test(s)) return false;
+  // (3) a refund/credit GIVEN to someone (le-<X>, but NOT "li" = to ME), or a
+  // cancellation refund -> the business pays it back = expense.
+  if (/(?:החזר|זיכוי)\s+ל(?!י(?:\s|$))\S/.test(s)) return false;
+  if (/(?:החזר|זיכוי|החזרתי)/.test(s) && /(?:ביטל|בוטל|שביט|שבוט)/.test(s)) return false;
   // --- NL RECEIVE-VERB RULES (2026-06-24) ---
   // Rule A: sold something (machar conjugations) -> income.
   // No \b around Hebrew (no u-flag; \b misfires on Hebrew letters).
@@ -912,7 +926,11 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // Handles "makdama mi-lako'ah", "almat tivuk niknesa", "shkhar dira mi-hadaiar",
   //         "tamlugim me-akum", "tip me-hamismeret", "mezuunot me-ha-aba".
   // Noun-gated so "shkiirut le-X" (paying rent) does NOT fire (le not me).
-  if (/(?:^|\s)(?:מקדמה|עמלה|עמלת|שכר\s+דירה|שכירות|דמי\s+שכירות|תמלוגים|מלגת|מזונות|דמי\s+מזונות|טיפ|טיפים|תשר)\s+(?:[\S]+\s+){0,2}מ[א-ת]/.test(s)) return true;
+  // Income noun + a real "FROM-source": either "מה<X>" (mi-ha = "from THE <X>", a
+  // strong source signal) or a known source word. NOT a bare "מ[א-ת]" -- that
+  // wrongly matched "שכירות משרד" (office rent: "משרד" starts with מ), same class
+  // as the refund-FROM bug. Keeps "שכירות מהדייר"/"טיפ מהמשמרת"/"תמלוגים מאקום".
+  if (/(?:^|\s)(?:מקדמה|עמלה|עמלת|שכר\s+דירה|שכירות|דמי\s+שכירות|תמלוגים|מלגת|מזונות|דמי\s+מזונות|טיפ|טיפים|תשר|פדיון)\s+(?:[\S]+\s+){0,2}מ(?:ה\S|ה?לקוח|ה?דייר|ה?שוכר|ה?שותף|ה?הורים|ה?אבא|ה?אמא|ה?עבוד|ה?מעסיק|אקום|פייפאל)/.test(s)) return true;
   // --- END NL RECEIVE-VERB RULES ---
   if (matched && matched.isIncome) return true;
   if (s.charAt(0) === '+') return true;
