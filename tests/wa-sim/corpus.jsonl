@@ -1184,3 +1184,7 @@
 {"msg":"מקדמה מלקוח 5000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":5000}}
 {"msg":"תשלום סופי מלקוחה 12000","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":true,"amount":12000}}
 {"msg":"שילמתי לשני מלצרים 800 כל אחד","persona":"event planner (vendor payments, client deposits, venue)","expect":{"isIncome":false,"amount":800}}
+{"msg":"10000 רכב רוביקון","persona":"owner-vehicles","expect":{"isIncome":false,"amount":10000}}
+{"msg":"10000 רוביקון","persona":"owner-vehicles","expect":{"isIncome":false,"amount":10000}}
+{"msg":"רוביקון 500","persona":"owner-vehicles","expect":{"isIncome":false,"amount":500}}
+{"msg":"ליים 12","persona":"owner-vehicles","expect":{"isIncome":false,"amount":12}}
