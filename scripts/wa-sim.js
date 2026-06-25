@@ -35,10 +35,16 @@ function predict(msg) {
   const r = replay(String(msg == null ? '' : msg));
   const pt = r.predicted_target || {};
   const am = (r.decisions && r.decisions.amountMatch) || {};
+  const _items = Array.isArray(am.items) ? am.items : [];
+  // The bot writes ONE row per detected item; a multi-item message ("חשמל 540
+  // וגז 120") becomes 2 rows that sum to the user's intended total. So the
+  // headline amount the user expects = the SUM of items, not just items[0].
+  const _total = _items.length ? _items.reduce((s, it) => s + (Number(it.amount) || 0), 0) : (typeof am.amount === 'number' ? am.amount : null);
   return {
     msg,
     amount: typeof am.amount === 'number' ? am.amount : null,
-    items: Array.isArray(am.items) ? am.items : [],
+    total: _total,
+    items: _items,
     category: pt.category || null,
     subcategory: pt.subcategory || null,
     isIncome: pt.isIncome === true,
@@ -90,7 +96,9 @@ function runCorpus(corpusPath) {
       const fails = [];
       if (exp.category != null && exp.category !== p.category) fails.push({ field: 'category', expected: exp.category, got: p.category });
       if (exp.isIncome != null && !!exp.isIncome !== !!p.isIncome) fails.push({ field: 'isIncome', expected: exp.isIncome, got: p.isIncome });
-      if (exp.amount != null && Number(exp.amount) !== Number(p.amount)) fails.push({ field: 'amount', expected: exp.amount, got: p.amount });
+      // Accept either the first-item amount OR the multi-item SUM (the bot splits
+      // "A 540 ו-B 120" into rows that total 660 — both are "correct").
+      if (exp.amount != null && Number(exp.amount) !== Number(p.amount) && Number(exp.amount) !== Number(p.total)) fails.push({ field: 'amount', expected: exp.amount, got: (p.items && p.items.length > 1) ? (p.total + ' (sum of ' + p.items.length + ')') : p.amount });
       if (exp.subcategory != null && exp.subcategory !== p.subcategory) fails.push({ field: 'subcategory', expected: exp.subcategory, got: p.subcategory });
       if (exp.dashRow != null && exp.dashRow !== p.dashRow) fails.push({ field: 'dashRow', expected: exp.dashRow, got: p.dashRow });
       asserted++;
