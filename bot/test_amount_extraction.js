@@ -35,6 +35,11 @@ const CASES = [
   // wa-sim 2026-06-19: dot-grouped thousands must be tokenized whole, not split
   // to the first group ("1.000.000" was being read as 1000).
   ['1.000.000 השקעה', 1000000], ['2.500 ריהוט', 2500], ['1.5 קפה', 1.5],
+  // wa-sim 2026-06-26: BARE Hebrew thousand-words returned null (lost expense)
+  ['שילמתי אלף שקל', 1000], ['אלף וחצי שכר דירה', 1500], ['קניתי יריעות אלפיים', 2000],
+  ['אלפיים וחצי ריהוט', 2500],
+  // control: the "<n> אלף" x1000 multiplier must STILL work (not double-converted)
+  ['2.5 אלף ריהוט', 2500], ['3 אלף ספק', 3000],
 ];
 let pass = 0, fail = 0;
 for (const [msg, exp] of CASES) {

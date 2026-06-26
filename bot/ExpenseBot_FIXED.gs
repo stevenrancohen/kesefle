@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-26-income2';
+const KFL_BUILD_VERSION = '2026-06-26-hebnum';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -10472,6 +10472,15 @@ function parseAmountAndDescription(text) {
   // leak into the saved description / cell note or break number+keyword matching
   // on copy-pasted RTL lines (audit 2026-06-15).
   t = t.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u200B]/g, '').replace(/\s+/g, ' ').trim();
+  // BARE Hebrew thousand-words -> digits (wa-sim 2026-06-26: "alef"/"alpayim"/
+  // "alef va-chetzi" with NO leading digit returned null = the expense was LOST).
+  // Skip when a digit precedes ("2 alef") -- the x1000 multiplier handles that.
+  t = t.replace(/(?:\u05D0\u05DC\u05E3\s+\u05D5\u05D7\u05E6\u05D9|\u05D0\u05DC\u05E4\u05D9\u05D9\u05DD\s+\u05D5\u05D7\u05E6\u05D9|\u05D0\u05DC\u05E4\u05D9\u05D9\u05DD|\u05D0\u05DC\u05E3)(?=\s|$)/g, function (word, offset, str) {
+    var before = String(str).slice(0, offset).replace(/\s+$/, '');
+    if (/\d$/.test(before)) return word; // leave "<n> \u05D0\u05DC\u05E3" for the x1000 multiplier
+    var hasHalf = word.indexOf('\u05D5\u05D7\u05E6\u05D9') >= 0, isTwo = word.indexOf('\u05D0\u05DC\u05E4\u05D9\u05D9\u05DD') >= 0;
+    return String((isTwo ? 2000 : 1000) + (hasHalf ? 500 : 0));
+  });
   if (!t) return null;
   // ── MULTI-ITEM (Steven 2026-06-14): a comma / newline / semicolon separates
   // DISTINCT expenses, each with its OWN description, so item N's category is
