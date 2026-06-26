@@ -1205,3 +1205,7 @@
 {"msg":"קניתי יריעות אלפיים","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":false,"amount":2000}}
 {"msg":"100 גוד פארמה","persona":"regression-2026-06-26 (session-locked)","expect":{"category":"בריאות / בריאות"}}
 {"msg":"100 איביי","persona":"regression-2026-06-26 (session-locked)","expect":{"category":"קניות"}}
+{"msg":"גבייה משוכר שאיחר 5500","persona":"regression-2026-06-26b (session-locked)","expect":{"isIncome":true}}
+{"msg":"גמרתי עבודה והכניסו לי 2700","persona":"regression-2026-06-26b (session-locked)","expect":{"isIncome":true,"amount":2700}}
+{"msg":"השקעה מהמשקיע נכנסה 250000","persona":"regression-2026-06-26b (session-locked)","expect":{"isIncome":true,"amount":250000}}
+{"msg":"תרומה נכנסה 750","persona":"regression-2026-06-26b (session-locked)","expect":{"isIncome":true,"amount":750}}

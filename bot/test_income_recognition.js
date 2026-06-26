@@ -36,6 +36,11 @@ function classifyOne(msg) {
 
 // Rule A: machar conjugations (sold something -> money in)
 const NL_INCOME = [
+  // wa-sim 2026-06-26 round 2: collection / deposited-to-me / fem. came-in
+  ['גבייה משוכר שאיחר 5500',             null, null],
+  ['גמרתי עבודה והכניסו לי 2700',        null, null],
+  ['השקעה מהמשקיע נכנסה 250000',         null, null],
+  ['תרומה נכנסה 750',                    null, null],
   // wa-sim 2026-06-26: customer-paid / invoice-to-customer / money-came-in / earned / revenue
   ['לקוחה שילמה 350 על צבע',             null, null],
   ['לקוח העביר 3000 בביט',               null, null],

@@ -74,7 +74,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-26-cov';
+const KFL_BUILD_VERSION = '2026-06-26-income3';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -824,6 +824,8 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   if (/(?:^|\s)מכר(?:תי|נו|ת|ה|ו)(?:\s|$)/.test(s)) return true;
   // Rule B: niknas/niknesa/niknsu li (money entered my account) -> income.
   if (/(?:^|\s)נכנס(?:ה|ו)?\s+לי(?:\s|$)/.test(s)) return true;
+  // Rule B2 (2026-06-26): hichnisu/hichnis/hichnisa li (deposited TO ME) -> income.
+  if (/(?:^|\s)ו?הכניס(?:ו|ה)?\s+לי(?=\s|$)/.test(s)) return true;
   // Rule C: kibalti/kabalti + specific income noun (noun-gated, not bare kibalti).
   // 0-2 words between verb and noun covers "kibalti 500 matana", "kibalti matana 500".
   // Fine nouns (knas/doah) are NOT in this list so "kibalti knas" never fires.
@@ -862,12 +864,12 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   if (/(?:חשבונית|שכר\s+טרחה)\s+(?:\S+\s+){0,2}(?:מ|ל)ה?לקוח/.test(s)) return true;
   // Rule J: money CAME IN / received into the account -> income (nichnesu/hitkabel
   // unambiguous; bare nichnas/nichnesa need a money-context word).
-  if (/(?:^|\s)(?:נכנסו|התקבל|התקבלה|התקבלו)(?=\s|$)/.test(s)) return true;
+  if (/(?:^|\s)(?:נכנסו|נכנסה|התקבל|התקבלה|התקבלו)(?=\s|$)/.test(s)) return true;
   if (/(?:^|\s)(?:נכנס|נכנסה)\s+(?:\S+\s+){0,3}(?:לחשבון|לבנק|תשלום|שכר|פנסיה|מזונות|העברה|כסף|מקדמה|הכנסה)/.test(s)) return true;
   // Rule K: I/we EARNED -> income (hirvachti/hirvachnu).
   if (/(?:^|\s)הרווח(?:תי|נו|ת|ה|ו)(?=\s|$)/.test(s)) return true;
   // Rule L: a leading revenue noun -> income (pidyon/hachnasa/hachnasot/takbul).
-  if (/^(?:פדיון|הכנסות|הכנסה|תקבול(?:ים)?)(?=\s|$)/.test(s)) return true;
+  if (/^(?:פדיון|הכנסות|הכנסה|תקבול(?:ים)?|גבייה|גביית|גביה)(?=\s|$)/.test(s)) return true;
   // Rule M: a donation RECEIVED (nonprofit) -> income; bare truma stays expense (given).
   if (/(?:^|\s)תרומ(?:ה|ות)\s+(?:\S+\s+){0,2}(?:התקבל|נכנס|מתורם)/.test(s)) return true;
   // --- END NL RECEIVE-VERB RULES ---
