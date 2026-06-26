@@ -431,7 +431,7 @@
         <li>All requests and responses are JSON unless noted (WhatsApp and payment webhooks read raw bytes).</li>
         <li>Successful responses include <code>"ok": true</code>. Failures use <code>"ok": false</code> with an <code>error</code> code.</li>
         <li>Authenticated endpoints expect <code>Authorization: Bearer &lt;Google ID token&gt;</code>.</li>
-        <li>Many endpoints are routed by a <code>?action=</code> query parameter to keep us under Vercel Hobby's 12-function limit.</li>
+        <li>Many endpoints are routed by a <code>?action=</code> query parameter to keep the deployed serverless-function count low.</li>
         <li>Webhooks (WhatsApp, Coinbase) validate HMAC signatures over the raw request body; PayPal webhooks are verified via PayPal's signature-verification API.</li>
       </ul>
     </section>
