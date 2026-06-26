@@ -1188,3 +1188,20 @@
 {"msg":"10000 רוביקון","persona":"owner-vehicles","expect":{"isIncome":false,"amount":10000}}
 {"msg":"רוביקון 500","persona":"owner-vehicles","expect":{"isIncome":false,"amount":500}}
 {"msg":"ליים 12","persona":"owner-vehicles","expect":{"isIncome":false,"amount":12}}
+{"msg":"לקוחה שילמה 350 על צבע","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":350}}
+{"msg":"לקוח העביר 3000 בביט","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":3000}}
+{"msg":"חשבונית מלקוח 6800","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":6800}}
+{"msg":"שכר טרחה מלקוח 8000","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":8000}}
+{"msg":"נכנס תשלום 2200 על צילום","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":2200}}
+{"msg":"הרווחתי 620 נסיעות","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":620}}
+{"msg":"פדיון יומי 4350","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":4350}}
+{"msg":"הכנסות היום מהחנות 2300","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":2300}}
+{"msg":"קיבלנו 5000 מלקוח","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":true,"amount":5000}}
+{"msg":"שילמתי שכירות משרד 2800","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":false,"amount":2800}}
+{"msg":"בונוס לעובד 500","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":false,"amount":500}}
+{"msg":"נכנסתי לחנות וקניתי 80","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":false,"amount":80}}
+{"msg":"שילמתי אלף שקל","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":false,"amount":1000}}
+{"msg":"אלף וחצי שכר דירה","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":false,"amount":1500}}
+{"msg":"קניתי יריעות אלפיים","persona":"regression-2026-06-26 (session-locked)","expect":{"isIncome":false,"amount":2000}}
+{"msg":"100 גוד פארמה","persona":"regression-2026-06-26 (session-locked)","expect":{"category":"בריאות / בריאות"}}
+{"msg":"100 איביי","persona":"regression-2026-06-26 (session-locked)","expect":{"category":"קניות"}}
