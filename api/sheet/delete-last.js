@@ -21,7 +21,7 @@
 //   { ok: false, error: "no_user_for_phone" | "empty_sheet" | ... }
 
 import { withRequestId, log } from '../../lib/log.js';
-import { withRateLimit } from '../../lib/ratelimit.js';
+import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { exchangeRefreshForAccess, sanitizeCell } from '../../lib/sheet-writer.js';
 import { TX_TAB } from '../../lib/sheet-tabs.js';
 import { constantTimeEqual, decryptRefreshToken } from '../../lib/crypto.js';
@@ -60,6 +60,11 @@ async function handlerImpl(req, res) {
 
   const phone = normalizeE164(body?.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
+
+  // Per-phone rate limit (#24): parity with append/stats — this is a destructive
+  // write (deletes the last row), so cap each phone, not just the shared IP.
+  const phoneLim = await rateLimitId(phone, { key: 'delete_last_phone', limit: 30, windowSec: 60 });
+  if (!phoneLim.ok) return res.status(429).json({ ok: false, error: 'rate_limited' });
 
   // Resolve phone -> user:{sub} -> userRecord (mirrors api/sheet/append.js).
   const phoneRec = await kvGet('phone:' + phone);
