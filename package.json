@@ -9,7 +9,8 @@
     "test:all": "npm test && npm run test:bot",
     "gauntlet": "bash scripts/gauntlet.sh",
     "qa": "node bot/qa-battery.js",
-    "wa-sim": "node scripts/wa-sim.js"
+    "wa-sim": "node scripts/wa-sim.js",
+    "wa-sweep": "node scripts/wa-sim-sweep.js"
   },
   "engines": {
     "node": ">=20"
