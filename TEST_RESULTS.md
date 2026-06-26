@@ -31,3 +31,13 @@ _(none yet — audit workflow running)_
 | 7 | projection-nudge year-tab-first | owner sheet read dashboard, not תנועות | reads תנועות first ✓ |
 
 Tests added: test_refund_income +3, test_income_signfix +2, test_create_business +2, test_csv_import labels. Gauntlet GREEN throughout. Bot build → 2026-06-19-audit (bundles into pending paste).
+
+## Bot-improvement sprint (2026-06-26) — autonomous tasks BOT-A..C
+| Task | Result |
+|---|---|
+| BOT-A income detection round 3 | corpus 88.9% → 92.2% (Rules H-M: customer-paid, invoice-to-customer, money-came-in, earned, revenue nouns; קיבלנו; \b-bug; שביטלתי guard) — commit 7158731 |
+| BOT-B keyword-collision audit | bot routing CLEAN — 22k-keyword sweep, only 3 borderline (all defensible), no genuine wrong routes after אומגה/קונסולה (125df89) |
+| BOT-C amount edges | bare Hebrew thousands (אלף/אלפיים/אלף וחצי) were null=LOST → now parsed; corpus → 92.5% — commit 9a4f074 |
+| Final | corpus **92.5%** (1101/1190), 0 disappeared-money, 8 bot suites green (437 checks), build 2026-06-26-hebnum |
+
+OPEN next-tasks: BOT-D (fleet coverage round for unrecognized terms), multi-item NOISE-number over-extraction (model/version/qty numbers counted as amounts: "אקסל 365"→964, "קמפיין יד2 1200"→1202, "קניתי 200 כוסות 90"→290), FX+k ("1.5k דולר" lost the k).
