@@ -74,3 +74,65 @@ The entire plan — its safety, its cost, whether the config already half-exists
 ### ▶ Step 3 — surface it
 - Provision: pass the onboarding-picked profileType (already stored) into provision.
 - Switch: a bot hook calling parseProfileTypeFromText -> one idempotent /api/sheet/reprofile endpoint (regenerates dashboard tab only; ledger untouched) + the web Account screen.
+
+---
+
+## Step 2 — Read-only RANGE AUDIT (2026-06-26, task B-G)
+
+Goal: before wiring `selectRows()` into the dashboard builder, enumerate every
+row-count-dependent hardcode in `lib/sheet-writer.js` so the wiring can recompute
+them instead of shifting silently. **No code changed in this audit.**
+
+### Blast radius is ONE function (good news)
+`grep` confirms NOTHING outside `lib/sheet-writer.js` reads the personal dashboard
+by hardcoded row (B9/B10/B28/...). The bot writes to `תנועות`; the dashboard
+SUMIFS pull from there keyed by each row's own **label** (`"*"&$A{row}&"*"`), not
+its position. `_PERSONAL_DASH_ROWS` routes a category to a dashboard row by NAME,
+not row number. So hiding a row corrupts only the dashboard TAB layout — never the
+ledger, never label-routing.
+
+### The hardcodes that WILL break if a row is hidden (`_buildPersonalDashboardTab`)
+Current layout assumes income=4, fixed=12, variable=4, food=2, transport=8, misc=5.
+
+| What | Current hardcode | Depends on |
+|---|---|---|
+| Income category rows | `5 + i` (R5–R8) | income count = 4 |
+| Income total | `_personalSectionTotal(.,5,8)` -> R9 `SUM(B5:B8)` | income count |
+| Grand total expenses | R10 `=B28+B35+B40+B51+B59` (+ C..N) | ALL 5 expense total-row numbers |
+| Net / savings | R11 `=B9-B10`, R12 `=B11/B9` | income-total + grand-total row #s |
+| Fixed rows + total | R16–R27, R28 `SUM(B16:B27)` | fixed count = 12 |
+| Variable rows + total | R31–R34, R35 `SUM(B31:B34)` | shifts if fixed count changes |
+| Food rows + total | R38–R39, R40 `SUM(B38:B39)` | shifts if any prior count changes |
+| Transport rows + total | R43–R50, R51 `SUM(B43:B50)` | cascades |
+| Misc rows + total | R54–R58, R59 `SUM(B54:B58)` | cascades |
+| Sub-headers / blanks | R13,R14,R15,R29,R30,R36,R37,R41,R42,R52,R53 | all cascade |
+
+Cascade rule: every section after a hidden row shifts up by the number hidden, so
+a single `hideRows:['תינוק']` (fixed 12->11) breaks R28 and EVERY total below it,
+plus the R10 grand-total references and the R11/R12 net references.
+
+### Already parameterized (no change needed)
+`buildPieChartRequests` takes `incomeSectionTotalRows` / `expenseSectionTotalRows`
+from `extendedMeta` — NOT hardcoded. If the builder computes those dynamically and
+passes them through, the pie charts follow automatically.
+
+### Required Step-2 refactor (bounded, gated)
+Rewrite `_buildPersonalDashboardTab` to carry a running `rowNum` cursor:
+1. For each section: emit sub-header, emit `selectRows(type, GROUP)` category rows
+   while tracking `firstDataRow..lastDataRow`, then emit total `=SUM(B{first}:B{last})`
+   at the next row and RECORD that total-row number.
+2. Build R10 grand-total + R11/R12 net from the RECORDED total-row numbers.
+3. Put the recorded income/expense total rows into `extendedMeta` (pie charts already
+   consume them).
+
+### Safety gate (already half-built)
+`tests/test_profile_configs.js` proves the PARITY invariant: for `basic_personal`
+and `family` (hide nothing) `selectRows` is identity. Extend it so that, for those
+types, the COMPUTED layout is byte-identical to today's hardcoded rows
+(R9/R28/R35/R40/R51/R59 + the R10 grand-total string). Plus a golden-reconcile of a
+single-hide case (e.g. `single`: fixed total must become `SUM(B16:B26)` at R27 and
+every downstream total must shift up exactly 1). Only ship behind that gate.
+
+**Verdict:** feasible, single-function blast radius, the riskiest consumer (charts)
+is already parameterized. Still a money-formula generator change -> keep it gated
+behind the parity + golden-reconcile tests, NOT shipped opportunistically.
