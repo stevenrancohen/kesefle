@@ -11,7 +11,7 @@
 //            lastMonth:{ total }, currency:'ILS' }
 
 import { withRequestId, log } from '../../lib/log.js';
-import { withRateLimit } from '../../lib/ratelimit.js';
+import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
 import { TX_TAB } from '../../lib/sheet-tabs.js';
@@ -76,6 +76,11 @@ async function handlerImpl(req, res) {
 
   const phone = normalizeE164(body?.phone);
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
+
+  // Per-phone rate limit (#24): parity with append.js — the IP limit alone lets
+  // one shared egress IP exhaust the budget for everyone; bound each phone too.
+  const phoneLim = await rateLimitId(phone, { key: 'stats_phone', limit: 60, windowSec: 60 });
+  if (!phoneLim.ok) return res.status(429).json({ ok: false, error: 'rate_limited' });
 
   const phoneRec = await kvGet(`phone:${phone}`);
   if (!phoneRec || !phoneRec.userSub) return res.status(404).json({ ok: false, error: 'no_user_for_phone' });
