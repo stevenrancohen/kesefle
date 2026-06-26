@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-26-kwfix';
+const KFL_BUILD_VERSION = '2026-06-26-income2';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -892,7 +892,7 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // (3) a refund/credit GIVEN to someone (le-<X>, but NOT "li" = to ME), or a
   // cancellation refund -> the business pays it back = expense.
   if (/(?:החזר|זיכוי)\s+ל(?!י(?:\s|$))\S/.test(s)) return false;
-  if (/(?:החזר|זיכוי|החזרתי)/.test(s) && /(?:ביטל|בוטל|שביט|שבוט)/.test(s)) return false;
+  if (/(?:החזר|זיכוי|החזרתי)/.test(s) && /(?:^|\s)(?:ש?ביטל|ש?בוטל)(?:ה|ו)?(?=\s|$)/.test(s)) return false;
   // --- NL RECEIVE-VERB RULES (2026-06-24) ---
   // Rule A: sold something (machar conjugations) -> income.
   // No \b around Hebrew (no u-flag; \b misfires on Hebrew letters).
@@ -902,14 +902,14 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // Rule C: kibalti/kabalti + specific income noun (noun-gated, not bare kibalti).
   // 0-2 words between verb and noun covers "kibalti 500 matana", "kibalti matana 500".
   // Fine nouns (knas/doah) are NOT in this list so "kibalti knas" never fires.
-  if (/(?:^|\s)(?:קיבלתי|קבלתי)\s+(?:[\S]+\s+){0,2}(?:מתנה|מתנות|תשלום|מקדמה|פנסיה|מלגה|תמלוגים|טיפ(?:ים)?|תשר|מענק|קצבה|עמלה|עמלת|מזונות|ריטיינר|שכר|שכירות|חסות|פיקדון)(?:\s|$)/.test(s)) return true;
+  if (/(?:^|\s)(?:קיבלתי|קבלתי|קיבלנו|קבלנו)\s+(?:[\S]+\s+){0,2}(?:מתנה|מתנות|תשלום|מקדמה|פנסיה|מלגה|תמלוגים|טיפ(?:ים)?|תשר|מענק|קצבה|עמלה|עמלת|מזונות|ריטיינר|שכר|שכירות|חסות|פיקדון)(?:\s|$)/.test(s)) return true;
   // Rule D: kibalti/kabalti [0-2 words] mi-<source> -> income (received from someone).
   // Guards (keep as EXPENSE): a fine received (knas/doah); a BILL/QUOTE received
   // ("kibalti cheshbonit mi-sapak" = an invoice FROM a supplier, "hatsaat mechir"
   // = a price quote) -- money the user OWES, not money received; and an explicit
   // SUPPLIER source (mi-sapak/mi-musach/mi-kablan). "kibalti mi-horim 1000" and
   // "...mi-lako'ah" still flip to income.
-  if (/(?:^|\s)(?:קיבלתי|קבלתי)\s+(?:[\S]+\s+){0,2}מ[א-ת]/.test(s) &&
+  if (/(?:^|\s)(?:קיבלתי|קבלתי|קיבלנו|קבלנו)\s+(?:[\S]+\s+){0,2}מ[א-ת]/.test(s) &&
       !/(?:^|\s)(?:קנס|דוח|קנסה)(?:\s|$)/.test(s) &&
       !/(?:חשבונית|קבלה|דריש(?:ה|ת)|הצע(?:ה|ת)\s*מחיר)/.test(s) &&
       !/מ(?:ה?ספק|ה?מוסך|ה?קבלן)/.test(s)) return true;
@@ -917,7 +917,7 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // service rendered: "kibalti 180 al tisporet", "kibalti 3500 al hatkana").
   // SAME guards as Rule D: a fine, and a bill/quote received ("kibalti hatsaat
   // mechir al shiputz" = a price QUOTE = money owed) stay EXPENSE.
-  if (/(?:^|\s)(?:קיבלתי|קבלתי)\s+(?:[\S]+\s+){0,3}על\s/.test(s) &&
+  if (/(?:^|\s)(?:קיבלתי|קבלתי|קיבלנו|קבלנו)\s+(?:[\S]+\s+){0,3}על\s/.test(s) &&
       !/(?:^|\s)(?:קנס|דוח|קנסה|אגרה)(?:\s|$)/.test(s) &&
       !/(?:חשבונית|קבלה|דריש(?:ה|ת)|הצע(?:ה|ת)\s*מחיר)/.test(s)) return true;
   // Rule F: gaviiti/gavinu (I collected money from someone) -> income.
@@ -931,12 +931,26 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // wrongly matched "שכירות משרד" (office rent: "משרד" starts with מ), same class
   // as the refund-FROM bug. Keeps "שכירות מהדייר"/"טיפ מהמשמרת"/"תמלוגים מאקום".
   if (/(?:^|\s)(?:מקדמה|עמלה|עמלת|שכר\s+דירה|שכירות|דמי\s+שכירות|תמלוגים|מלגת|מזונות|דמי\s+מזונות|טיפ|טיפים|תשר|פדיון)\s+(?:[\S]+\s+){0,2}מ(?:ה\S|ה?לקוח|ה?דייר|ה?שוכר|ה?שותף|ה?הורים|ה?אבא|ה?אמא|ה?עבוד|ה?מעסיק|אקום|פייפאל)/.test(s)) return true;
+  // Rule H (wa-sim 2026-06-26): a CUSTOMER paid/transferred -> income.
+  if (/(?:^|\s)ה?לקוח(?:ה|ות)?\s+(?:\S+\s+){0,2}(?:שיל(?:ם|מה|מו)|העביר(?:ה|ו)?|רכש(?:ה|ו)?|הזמ(?:ין|ינה|ינו))(?=\s|$)/.test(s)) return true;
+  // Rule I: an invoice / professional fee TO or FROM a CUSTOMER (not a supplier) -> income.
+  if (/(?:חשבונית|שכר\s+טרחה)\s+(?:\S+\s+){0,2}(?:מ|ל)ה?לקוח/.test(s)) return true;
+  // Rule J: money CAME IN / received into the account -> income (nichnesu/hitkabel
+  // unambiguous; bare nichnas/nichnesa need a money-context word).
+  if (/(?:^|\s)(?:נכנסו|התקבל|התקבלה|התקבלו)(?=\s|$)/.test(s)) return true;
+  if (/(?:^|\s)(?:נכנס|נכנסה)\s+(?:\S+\s+){0,3}(?:לחשבון|לבנק|תשלום|שכר|פנסיה|מזונות|העברה|כסף|מקדמה|הכנסה)/.test(s)) return true;
+  // Rule K: I/we EARNED -> income (hirvachti/hirvachnu).
+  if (/(?:^|\s)הרווח(?:תי|נו|ת|ה|ו)(?=\s|$)/.test(s)) return true;
+  // Rule L: a leading revenue noun -> income (pidyon/hachnasa/hachnasot/takbul).
+  if (/^(?:פדיון|הכנסות|הכנסה|תקבול(?:ים)?)(?=\s|$)/.test(s)) return true;
+  // Rule M: a donation RECEIVED (nonprofit) -> income; bare truma stays expense (given).
+  if (/(?:^|\s)תרומ(?:ה|ות)\s+(?:\S+\s+){0,2}(?:התקבל|נכנס|מתורם)/.test(s)) return true;
   // --- END NL RECEIVE-VERB RULES ---
   if (matched && matched.isIncome) return true;
   if (s.charAt(0) === '+') return true;
   // Money-RECEIVED phrasings -> income: shilem/shilmu li, heevir(u) li,
   // hechzir(u) li, hachnasa me-X, leading hachnasa. QA 2026-06-11.
-  if (/שיל(?:ם|מה|מו)\s+לי(?=\s|$)|העביר(?:ה|ו)?\s+לי(?=\s|$)|החזיר(?:ה|ו)?\s+לי(?=\s|$)|הכנס(?:ה|ות)\s+מ[א-ת]|^הכנס(?:ה|ות)\b/.test(s)) return true;
+  if (/שיל(?:ם|מה|מו)\s+לי(?=\s|$)|העביר(?:ה|ו)?\s+לי(?=\s|$)|החזיר(?:ה|ו)?\s+לי(?=\s|$)|הכנס(?:ה|ות)\s+מ[א-ת]|^הכנס(?:ה|ות)(?=\s|$)/.test(s)) return true;
   // Refund / store credit FROM a place -> income (a return is money coming
   // back). Specific patterns only ("zikui me-X", "hechzer al kniya",
   // "kibalti hechzer") so a loan repayment ("hechzer halvaa") or a bare,
@@ -945,7 +959,7 @@ function _resolveIsIncome_(matched, rawText, category, subcategory) {
   // <place>" (מ[א-ת]) rule below: "החזר משכנתא" is a mortgage payment, "החזר
   // מקדמה"/"החזר מילווה" repay an advance/loan -- all EXPENSES, not refunds.
   if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?(?:משכנת|מקדמ|מילוו)/.test(s)) return _isIncomeCategory_(category, subcategory);
-  if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי)\s+(?:זיכוי|החזר)|זוכיתי/.test(s)) return true;
+  if (/(?:זיכוי|החזר)\s+(?:כספי\s+)?מ[א-ת]|החזר\s+על\s+(?:קנייה|רכישה|המוצר|הזמנה|כרטיס)|(?:קיבלתי|קבלתי|קיבלנו|קבלנו)\s+(?:זיכוי|החזר)|זוכיתי/.test(s)) return true;
   return _isIncomeCategory_(category, subcategory);
 }
 

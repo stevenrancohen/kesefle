@@ -36,6 +36,19 @@ function classifyOne(msg) {
 
 // Rule A: machar conjugations (sold something -> money in)
 const NL_INCOME = [
+  // wa-sim 2026-06-26: customer-paid / invoice-to-customer / money-came-in / earned / revenue
+  ['לקוחה שילמה 350 על צבע',             null, null],
+  ['לקוח העביר 3000 בביט',               null, null],
+  ['חשבונית מלקוח 6800',                 null, null],
+  ['שכר טרחה מלקוח 8000',                null, null],
+  ['נכנס תשלום 2200 על צילום',           null, null],
+  ['דמי מזונות 3500 נכנסו לחשבון',       null, null],
+  ['הרווחתי 620 נסיעות',                 null, null],
+  ['פדיון יומי 4350',                    null, null],
+  ['הכנסות היום מהחנות 2300',            null, null],
+  ['קיבלנו 5000 מלקוח',                  null, null],
+  ['תרומה התקבלה 500',                   null, null],
+  ['קיבלתי החזר על מנוי שביטלתי 320',    null, null],
   ['מכרתי עגלה ישנה ב300',               'חינוך וילדים', 'עגלות תינוק'],
   ['מכרנו סחורה 1000',                    'שונות ואחרים', 'שונות'],
   ['מכרת גיטרה ישנה ב2.5k',              'שונות ואחרים', 'שונות'],
@@ -97,6 +110,9 @@ const CATMAP_INCOME = [
 
 // ── SECTION 3: MUST-STAY-EXPENSE via _resolveIsIncome_ directly ──────────────
 const NL_EXPENSE = [
+  // wa-sim 2026-06-26: "entered a store" is NOT money-came-in; bare donation = given
+  ['נכנסתי לחנות וקניתי 80',                null,           null],
+  ['תרומה 100 לעמותה',                    null,           null],
   // gift GIVEN (not received)
   ['מתנה לאמא 80',                         'שונות ואחרים', 'מתנות'],
   ['קניתי מתנה 500 לסבתא',                'שונות ואחרים', 'שונות'],
