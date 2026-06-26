@@ -6,10 +6,10 @@
     <description>מדריכים פרקטיים בעברית על ניהול כסף, מעקב הוצאות, תקציב משפחתי, ותזרים מזומנים לעצמאים ועסקים קטנים בישראל.</description>
     <language>he</language>
     <copyright>© 2026 כספ'לה. כל הזכויות שמורות.</copyright>
-    <lastBuildDate>Sun, 18 May 2026 12:00:00 +0300</lastBuildDate>
-    <pubDate>Sun, 18 May 2026 12:00:00 +0300</pubDate>
+    <lastBuildDate>Wed, 03 Jun 2026 09:00:00 +0300</lastBuildDate>
+    <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
     <ttl>1440</ttl>
-    <generator>Kesefle</generator>
+    <generator>Kesefle (scripts/gen-blog-feed.js)</generator>
     <image>
       <url>https://kesefle.com/icon-512.png</url>
       <title>כספ'לה — בלוג</title>
@@ -18,139 +18,277 @@
     <atom:link href="https://kesefle.com/blog/feed.xml" rel="self" type="application/rss+xml" />
 
     <item>
-      <title>כספ'לה מול האפליקציות הקיימות — מה ההבדל?</title>
-      <link>https://kesefle.com/blog/whatsapp-budget-tools-comparison</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/whatsapp-budget-tools-comparison</guid>
-      <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
-      <description>השוואה כנה ל-Toshen, Riseup, YNAB ועוד. גישה אחרת: וואטסאפ-נייטיב, והנתונים נשארים אצלך.</description>
-      <category>השוואה</category>
+      <title>איך לחסוך כסף כל חודש — מדריך פרקטי</title>
+      <link>https://kesefle.com/blog/eich-lachsoch-kesef-kol-chodesh</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/eich-lachsoch-kesef-kol-chodesh</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>איך לחסוך כסף כל חודש בלי להרגיש בקיצוצים: 7 צעדים פרקטיים שמתחילים במעקב הוצאות, הופכים חיסכון להרגל אוטומטי, וחושפים מאות שקלים שדולפים בלי ששמת לב.</description>
     </item>
-
     <item>
-      <title>עצמאים: יש דרך טובה יותר לעקוב אחרי הוצאות עסקיות</title>
-      <link>https://kesefle.com/blog/atzmaim-yesh-derekh-tova-yoter</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/atzmaim-yesh-derekh-tova-yoter</guid>
-      <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
-      <description>הפרדה אישי/עסקי, תיוג קבלות, וייצוא לרואה החשבון — בלי מערכת חשבונאית.</description>
-      <category>לעצמאים</category>
+      <title>ביטוח חיים ובריאות — כמה זה עולה</title>
+      <link>https://kesefle.com/blog/bituach-chaim-briut-alut</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/bituach-chaim-briut-alut</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>כמה עולה ביטוח חיים וביטוח בריאות, מה ההבדל ביניהם, על מה באמת חשוב לשלם ואיך לא לשלם כפול — מדריך פשוט בעברית עם דוגמה בשקלים לתכנון התקציב.</description>
     </item>
-
     <item>
-      <title>למה גיליון Google משלך עדיף על אפליקציה סגורה</title>
-      <link>https://kesefle.com/blog/hashvaaa-vs-google-sheets</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/hashvaaa-vs-google-sheets</guid>
-      <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
-      <description>ניידות, audit trail, ומה קורה כשסטארטאפ נסגר. הטענה לבעלות מלאה על הנתונים שלך.</description>
-      <category>פילוסופיה</category>
+      <title>הוצאות קבועות והוראות קבע — לשלוט</title>
+      <link>https://kesefle.com/blog/hotzaot-kvuot-horaot-keva</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/hotzaot-kvuot-horaot-keva</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>הוצאות קבועות והוראות קבע גוזלות מאות שקלים בחודש בשקט. מדריך לאיתור כל ההוראות, ביטול מנויים מיותרים, והשגחה חודשית — כדי לשלוט בהוצאות הקבועות ולחסוך.</description>
     </item>
-
     <item>
-      <title>למה כדאי לך לנהל תקציב משפחתי בוואטסאפ</title>
-      <link>https://kesefle.com/blog/tipul-mishpacha-bawatsap</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/tipul-mishpacha-bawatsap</guid>
-      <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
-      <description>זוגות ומשפחות מתווכחים על הוצאות קטנות שאף אחד לא תיעד. הנה איך וואטסאפ פותר את זה.</description>
-      <category>למשפחות</category>
+      <title>החזר מס לשכירים — מי זכאי ואיך מקבלים</title>
+      <link>https://kesefle.com/blog/hachzer-mas-sachir</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/hachzer-mas-sachir</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>החזר מס לשכירים: מי זכאי, על כמה שנים אחורה אפשר לבקש, המקרים הנפוצים שמזכים בהחזר, ואיך מסמכים מסודרים והרגל מעקב הוצאות חוסכים לך כסף שמגיע לך כבר היום.</description>
     </item>
-
+    <item>
+      <title>הנהלת חשבונות לעצמאי — לבד או רו&amp;quot;ח?</title>
+      <link>https://kesefle.com/blog/hanhalat-cheshbonot-atzmai</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/hanhalat-cheshbonot-atzmai</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>הנהלת חשבונות לעצמאי: ההבדל בין רואה חשבון למנהל חשבונות, כמה זה עולה, מה אפשר לעשות לבד, ואיך מעקב הוצאות מסודר חוסך לכם שעות וכסף בסוף השנה.</description>
+    </item>
+    <item>
+      <title>השקעות למתחילים — איך מתחילים להשקיע נכון</title>
+      <link>https://kesefle.com/blog/hashkaot-lematchilim</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/hashkaot-lematchilim</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>מדריך השקעות למתחילים בעברית: מה זה מדד ותעודת סל, כמה כסף צריך כדי להתחיל, מהי ריבית דריבית, ולמה חיסכון קבוע מנצח ניסיון לתזמן את השוק.</description>
+    </item>
+    <item>
+      <title>חינוך פיננסי לילדים וחיסכון לילד — מדריך</title>
+      <link>https://kesefle.com/blog/chinuch-pinansi-yeladim</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/chinuch-pinansi-yeladim</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>חינוך פיננסי לילדים: איך ללמד ערך של כסף לפי גיל, איך עובדים דמי כיס, ואיך בונים חיסכון לילד לטווח ארוך — מדריך מעשי בעברית להורים.</description>
+    </item>
+    <item>
+      <title>חיסכון לפנסיה — מדריך תכנון פנסיוני פשוט</title>
+      <link>https://kesefle.com/blog/chisachon-pensiya</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/chisachon-pensiya</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>כמה צריך לחסוך לפנסיה, ההבדל בין קרן פנסיה לגמל ולקרן השתלמות, ואיך מתחילים בהדרגה — מדריך תכנון פנסיוני פרקטי בעברית עם דוגמה בשקלים.</description>
+    </item>
+    <item>
+      <title>יציאה מחובות — תוכנית להחזר הלוואות</title>
+      <link>https://kesefle.com/blog/yetsia-mechovot</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/yetsia-mechovot</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>יציאה מחובות בשלבים: איך ממפים את כל ההלוואות, בוחרים בין שיטת כדור השלג לשיטת המפולת, מפנים כסף להחזר מואץ, ומשתמשים במעקב הוצאות כדי לא ליפול חזרה לחוב.</description>
+    </item>
+    <item>
+      <title>כלל 50/30/20 לתקציב — מדריך פשוט</title>
+      <link>https://kesefle.com/blog/klal-50-30-20</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/klal-50-30-20</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>כלל 50/30/20: מחלקים את ההכנסה ל-50% צרכים, 30% רצונות, 20% חיסכון. מדריך מלא עם דוגמה מספרית בשקלים, איך מתאימים אותו לישראל, ואיך עוקבים שזה באמת קורה.</description>
+    </item>
+    <item>
+      <title>מחזור משכנתא — מתי משתלם וכמה חוסכים</title>
+      <link>https://kesefle.com/blog/michzur-mashkanta</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/michzur-mashkanta</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>מה זה מחזור משכנתא, מתי זה משתלם, אילו עמלות יש, איך בודקים אם תרוויחו ומתי עדיף להישאר — מדריך פשוט בעברית עם דוגמה בשקלים לחישוב החיסכון.</description>
+    </item>
+    <item>
+      <title>מעקב הוצאות לזוגות — בלי ריבים על כסף</title>
+      <link>https://kesefle.com/blog/maakav-hotzaot-zugot</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/maakav-hotzaot-zugot</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>מעקב הוצאות לזוגות: איך שני בני זוג רואים את אותה תמונה כספית, מחלקים הוצאות בהוגנות, ומפסיקים לריב על כסף — בלי אפליקציה ובלי טבלה שאף אחד לא מעדכן.</description>
+    </item>
+    <item>
+      <title>עלות אחזקת רכב — כמה באמת עולה לכם הרכב</title>
+      <link>https://kesefle.com/blog/alut-achzakat-rechev</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/alut-achzakat-rechev</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>עלות אחזקת רכב בישראל: הרכיבים הסמויים מעבר לדלק — ביטוח, טסט, טיפולים ופחת, איך מחשבים עלות חודשית אמיתית, ואיך לחסוך — מדריך בעברית.</description>
+    </item>
+    <item>
+      <title>עצמאי מול שכיר — מה עדיף מבחינת מס</title>
+      <link>https://kesefle.com/blog/atzmai-mul-sachir-mas</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/atzmai-mul-sachir-mas</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>ההבדל בין עצמאי לשכיר מבחינת מס, ביטוח לאומי, הוצאות מוכרות ופנסיה — מתי כדאי לעבוד כעצמאי ומתי כשכיר, מדריך פשוט בעברית עם דוגמה בשקלים.</description>
+    </item>
+    <item>
+      <title>קופת גמל להשקעה — מה זה ואיך עובד</title>
+      <link>https://kesefle.com/blog/kupat-gemel-lehashkaa</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/kupat-gemel-lehashkaa</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>מה זה קופת גמל להשקעה, במה היא שונה מקרן השתלמות ומפנסיה, יתרון הנזילות, תקרת ההפקדה השנתית והטבת המס במשיכה כקצבה — מדריך פשוט בעברית עם דוגמה בשקלים.</description>
+    </item>
+    <item>
+      <title>קרן השתלמות — המדריך המלא להטבת המס</title>
+      <link>https://kesefle.com/blog/keren-hishtalmut</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/keren-hishtalmut</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>מה זה קרן השתלמות, איך עובד הפטור ממס על הרווחים, כמה כדאי להפקיד ומתי אפשר למשוך — מדריך פשוט בעברית עם דוגמה בשקלים לשכירים ולעצמאים.</description>
+    </item>
+    <item>
+      <title>קרן חירום — כמה צריך ואיך בונים</title>
+      <link>https://kesefle.com/blog/keren-cherum</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/keren-cherum</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>קרן חירום: כמה כסף צריך לשמור, איפה להחזיק אותו, ואיך בונים אותו בלי להרגיש. מדריך מעשי עם דוגמה בשקלים ואיך מעקב הוצאות מגלה כמה אתה באמת צריך לחודש.</description>
+    </item>
+    <item>
+      <title>שיטת המעטפות לתקציב — איך זה עובד</title>
+      <link>https://kesefle.com/blog/shitat-hamaatafot</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/shitat-hamaatafot</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>שיטת המעטפות לניהול תקציב: מקצים לכל קטגוריה סכום מראש ולא חורגים. מדריך מלא — איך זה עובד, מעטפות פיזיות מול דיגיטליות, ואיך מיישמים את השיטה בוואטסאפ.</description>
+    </item>
+    <item>
+      <title>תזרים מזומנים לעסק קטן — מדריך מעשי</title>
+      <link>https://kesefle.com/blog/tazrim-mezumanim-esek-katan</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/tazrim-mezumanim-esek-katan</guid>
+      <pubDate>Wed, 03 Jun 2026 09:00:00 +0300</pubDate>
+      <description>תזרים מזומנים לעסק קטן: למה עסק רווחי יכול להיתקע בלי מזומן, איך בונים תחזית תזרים, ואיך מקצרים ימי גבייה — מדריך בעברית עם דוגמה בשקלים.</description>
+    </item>
+    <item>
+      <title>אפליקציה להוצאות חינם — האם זה באמת חינם?</title>
+      <link>https://kesefle.com/blog/app-hochaot-chinam</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/app-hochaot-chinam</guid>
+      <pubDate>Sun, 24 May 2026 09:00:00 +0300</pubDate>
+      <description>אפליקציה להוצאות חינם — איפה הקאץ&apos;? סקירה כנה של 5 אפליקציות מעקב הוצאות חינמיות, מה כן חינם, מה לא, ואיך הן באמת מרוויחות מהמשתמשים שלהן ב-2026.</description>
+    </item>
+    <item>
+      <title>החזר מע״מ לעצמאים — מעקב הוצאות עסקיות בוואטסאפ</title>
+      <link>https://kesefle.com/blog/maam-leasamaim-derech-watsap</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/maam-leasamaim-derech-watsap</guid>
+      <pubDate>Sun, 24 May 2026 09:00:00 +0300</pubDate>
+      <description>החזר מע״מ לעצמאים — מדריך פרקטי לעוסק מורשה: איך לתעד הוצאות עסקיות בוואטסאפ עם פקודת /מעמ, להפיק דוח שנתי, ולהיערך לאינטגרציה עם חשבונית ירוקה.</description>
+    </item>
+    <item>
+      <title>מעקב הוצאות בעברית — למה זה משנה?</title>
+      <link>https://kesefle.com/blog/maakav-hochaot-be-ivrit</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/maakav-hochaot-be-ivrit</guid>
+      <pubDate>Sun, 24 May 2026 09:00:00 +0300</pubDate>
+      <description>מעקב הוצאות בעברית — לא רק תרגום ממשק. RTL, ש״ח, קטגוריות ישראליות כמו ארנונה וקופת חולים, ולמה Google ו-YNAB מפספסים את הקהל הישראלי ב-2026.</description>
+    </item>
+    <item>
+      <title>ניהול הוצאות לעצמאים: 7 כלים שעובדים ב-2026</title>
+      <link>https://kesefle.com/blog/nihul-hochaot-le-atzmaim</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/nihul-hochaot-le-atzmaim</guid>
+      <pubDate>Sun, 24 May 2026 09:00:00 +0300</pubDate>
+      <description>ניהול הוצאות לעצמאים בישראל ב-2026: השוואה כנה בין 7 כלים — אקסל, גוגל שיטס, RiseUp, MyFinanda, Family Biz וכספ&apos;לה. יתרונות, חסרונות, ולמי כל אחד מתאים.</description>
+    </item>
+    <item>
+      <title>תקציב משפחתי בוואטסאפ — מדריך מלא ל-2026</title>
+      <link>https://kesefle.com/blog/taktziv-mishpachti-bwatsap</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/taktziv-mishpachti-bwatsap</guid>
+      <pubDate>Sun, 24 May 2026 09:00:00 +0300</pubDate>
+      <description>תקציב משפחתי בוואטסאפ — מדריך שלב אחר שלב ל-2026. איך להקים, לשתף בני זוג וילדים, ולתפעל את התקציב המשפחתי מהאפליקציה שכולכם כבר משתמשים בה.</description>
+    </item>
+    <item>
+      <title>מעקב הוצאות אוטומטי — למה אקסל כבר לא מספיק</title>
+      <link>https://kesefle.com/blog/maakav-otomati-vs-excel</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/maakav-otomati-vs-excel</guid>
+      <pubDate>Wed, 20 May 2026 09:00:00 +0300</pubDate>
+      <description>אקסל היה מצוין ל-2015. אבל אם אתה עוד עובד עם גיליון ידני ב-2026, אתה משלם בזמן. למה אוטומציה דרך וואטסאפ עדיפה — וגם איך לשמר את הגיליון שאתה אוהב.</description>
+    </item>
+    <item>
+      <title>ניהול תקציב לעצמאים — המדריך המלא 2026</title>
+      <link>https://kesefle.com/blog/nihul-taktziv-atzmaim</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/nihul-taktziv-atzmaim</guid>
+      <pubDate>Wed, 20 May 2026 09:00:00 +0300</pubDate>
+      <description>עצמאי בישראל? המדריך המלא לניהול תקציב, תזרים מזומנים, הפרדת חשבונות, מע״מ, ומיסים — בלי לשגע את עצמך. דוגמאות פרקטיות + טמפלייטים.</description>
+    </item>
+    <item>
+      <title>איך זוגות מתנהלים עם חשבונות משותפים - 4 דגמים לבחירה</title>
+      <link>https://kesefle.com/blog/zugot-cheshbonot-mishutafim</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/zugot-cheshbonot-mishutafim</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>זוגות, ארוסים ונשואים טריים: 4 דרכים לחלוקת הוצאות זוגיות — 100% משותף, 50/50, יחסי להכנסה ודמי כיס. היתרונות והחסרונות של כל דגם.</description>
+    </item>
+    <item>
+      <title>התחלת עסק עצמאי? המדריך להתנהלות פיננסית נכונה מהיום הראשון</title>
+      <link>https://kesefle.com/blog/lebanim-le-meofim-aharei-bituach-leumi</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/lebanim-le-meofim-aharei-bituach-leumi</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>פתחתם עוסק חדש בישראל? המדריך המלא לחודש הראשון: ביטוח לאומי, מע&apos;&apos;מ, מס הכנסה, הפרדת חשבונות ורישום קבלות שיחסוך כסף בסוף השנה.</description>
+    </item>
     <item>
       <title>כך תחסכו אלפי שקלים בשנה בעזרת מעקב הוצאות אוטומטי</title>
       <link>https://kesefle.com/blog/chisachon-alafim-bawatsap</link>
       <guid isPermaLink="true">https://kesefle.com/blog/chisachon-alafim-bawatsap</guid>
-      <pubDate>Sun, 18 May 2026 09:00:00 +0300</pubDate>
-      <description>חמישה דפוסים שגוזלים אלפי שקלים בשנה — ואיך מעקב אוטומטי בוואטסאפ חושף אותם.</description>
-      <category>חיסכון</category>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>המעקב האוטומטי של כספ&apos;לה חושף איפה הכסף שלך באמת הולך. המאמר מסביר את 5 הדפוסים שגורמים לבזבוז ואיך להפסיק.</description>
     </item>
-
     <item>
-      <title>איך עצמאי בישראל יכול לעקוב אחרי הוצאות בלי לשגע את עצמו (מדריך 2026)</title>
-      <link>https://kesefle.com/blog/expense-tracking-freelancer</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/expense-tracking-freelancer</guid>
-      <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
-      <description>תכנון תזרים, אקסל מסובך, אפליקציות שדורשות גישה לחשבון בנק — אחרי שנתיים זה הופך לסיוט. הנה גישה אחרת, פרקטית, שלוקחת 10 שניות ביום.</description>
-      <category>לפרילנסרים</category>
+      <title>כספ&apos;לה מול האפליקציות הקיימות — מה ההבדל?</title>
+      <link>https://kesefle.com/blog/whatsapp-budget-tools-comparison</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/whatsapp-budget-tools-comparison</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>השוואה כנה בין כספ&apos;לה לאפליקציות תקציב פופולריות כמו Toshen, Riseup, Spendee, Bree ו-YNAB. גישה אחרת: וואטסאפ-נייטיב, והנתונים שלך נשארים אצלך.</description>
     </item>
-
     <item>
-      <title>תקציב לעומת תזרים מזומנים — מה ההבדל באמת, ולמה זה משנה לעצמאי?</title>
-      <link>https://kesefle.com/blog/budget-vs-cashflow</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/budget-vs-cashflow</guid>
-      <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
-      <description>שני מושגים שכולם מערבבים. עצמאי שמבין את ההבדל ישן בלילה.</description>
-      <category>עומק טכני</category>
+      <title>למה גיליון Google משלך עדיף על אפליקציה סגורה</title>
+      <link>https://kesefle.com/blog/hashvaaa-vs-google-sheets</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/hashvaaa-vs-google-sheets</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>הנתונים שלך לא צריכים להיות כלואים באפליקציה זרה. למה גיליון גוגל פרטי הוא בסיס בריא יותר לניהול כסף — נייד, ניתן לעריכה, ושלך לתמיד.</description>
     </item>
-
+    <item>
+      <title>למה כדאי לך לנהל תקציב משפחתי בוואטסאפ</title>
+      <link>https://kesefle.com/blog/tipul-mishpacha-bawatsap</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/tipul-mishpacha-bawatsap</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>ניהול תקציב משפחתי בוואטסאפ: למה זוגות ומשפחות עוברים לכספ&apos;לה, ואיך זה חוסך שעות בשבוע.</description>
+    </item>
+    <item>
+      <title>מארח Airbnb? איך לעקוב אחרי כל ההכנסות וההוצאות</title>
+      <link>https://kesefle.com/blog/airbnb-balebait-niyul-hochaot</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/airbnb-balebait-niyul-hochaot</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>מדריך למארחי Airbnb בישראל: איך מפרידים הכנסות מהוצאות, מה ניתן להוצאה מוכרת, ומה לייצא לרואה החשבון בסוף השנה.</description>
+    </item>
+    <item>
+      <title>מתנות, צעצועים, חוגים, ביגוד: כמה באמת עולה לגדל ילד בישראל ב-2026</title>
+      <link>https://kesefle.com/blog/hoffaot-yeladim-cheshbon-mishutaf</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/hoffaot-yeladim-cheshbon-mishutaf</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>מתנות, צעצועים, חוגים, ביגוד: כמה באמת עולה לגדל ילד בישראל ב-2026 לפי גיל. ההוצאות הסמויות שאף אחד לא חישב, ואיך זוגות שומרים על שקט.</description>
+    </item>
+    <item>
+      <title>עובדים מהבית? כך תפרידו הוצאות עבודה מאישיות לצורך החזר מע&apos;&apos;מ</title>
+      <link>https://kesefle.com/blog/avoda-mehabait-mas-erech-mosaf</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/avoda-mehabait-mas-erech-mosaf</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>עוסק פטור או מורשה שעובד מהבית? המדריך להפרדת הוצאות אישיות מעסקיות — חשמל, אינטרנט, ריהוט — לצורך החזר מע&apos;&apos;מ וניכוי מס.</description>
+    </item>
+    <item>
+      <title>עצמאים: יש דרך טובה יותר לעקוב אחרי הוצאות עסקיות</title>
+      <link>https://kesefle.com/blog/atzmaim-yesh-derekh-tova-yoter</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/atzmaim-yesh-derekh-tova-yoter</guid>
+      <pubDate>Mon, 18 May 2026 09:00:00 +0300</pubDate>
+      <description>מדריך לעוסק פטור ועצמאי בישראל — איך להפריד הוצאות אישיות מעסקיות באותו גיליון, לתייג קבלות, ולייצא לרואה החשבון בלחיצה.</description>
+    </item>
     <item>
       <title>5 כלים שמשנים את הדרך שבה עסקים ישראליים משתמשים בוואטסאפ ב-2026</title>
       <link>https://kesefle.com/blog/whatsapp-business-tools</link>
       <guid isPermaLink="true">https://kesefle.com/blog/whatsapp-business-tools</guid>
       <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
-      <description>מעבר ל"היי, אפשר לתאם?" — מה באמת קורה ב-2026 בעסקים קטנים שמשתמשים בוואטסאפ.</description>
-      <category>לעסקים קטנים</category>
+      <description>סקירה של 5 כלי וואטסאפ שמשנים את הדרך שבה עסקים קטנים בישראל עובדים — ניהול הזמנות, מעקב הוצאות, חשבוניות, ושירות לקוחות אוטומטי.</description>
     </item>
-
     <item>
-      <title>מארח Airbnb? איך לעקוב אחרי הכנסות והוצאות</title>
-      <link>https://kesefle.com/blog/airbnb-balebait-niyul-hochaot</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/airbnb-balebait-niyul-hochaot</guid>
-      <pubDate>Fri, 15 May 2026 09:00:00 +0300</pubDate>
-      <description>מדריך למארחי Airbnb בישראל: איך מפרידים הכנסות מהוצאות, מה ניתן להוצאה מוכרת, ומה לייצא לרואה החשבון בסוף השנה.</description>
-      <category>למארחי Airbnb</category>
+      <title>איך עצמאי בישראל יכול לעקוב אחרי הוצאות בלי לשגע את עצמו</title>
+      <link>https://kesefle.com/blog/expense-tracking-freelancer</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/expense-tracking-freelancer</guid>
+      <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
+      <description>מדריך פרקטי לעצמאים בישראל: איך לעקוב אחרי הוצאות ב-10 שניות ביום, לבנות תזרים מזומנים, ולהיות מוכן למס הכנסה — בלי אקסל מסובך.</description>
     </item>
-
     <item>
-      <title>עובד מהבית? הפרדת הוצאות לצורך מע"מ</title>
-      <link>https://kesefle.com/blog/avoda-mehabait-mas-erech-mosaf</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/avoda-mehabait-mas-erech-mosaf</guid>
-      <pubDate>Fri, 15 May 2026 09:00:00 +0300</pubDate>
-      <description>עוסק פטור או מורשה שעובד מהבית? המדריך להפרדת הוצאות אישיות מעסקיות — חשמל, אינטרנט, ריהוט — לצורך החזר מע"מ וניכוי מס.</description>
-      <category>עבודה מהבית</category>
+      <title>תקציב לעומת תזרים מזומנים — מה ההבדל באמת</title>
+      <link>https://kesefle.com/blog/budget-vs-cashflow</link>
+      <guid isPermaLink="true">https://kesefle.com/blog/budget-vs-cashflow</guid>
+      <pubDate>Sat, 16 May 2026 09:00:00 +0300</pubDate>
+      <description>ניהול תקציב משפחתי, תזרים מזומנים לפרילנסר — שני מושגים שונים שכולם מערבבים. מדריך פשוט בעברית עם דוגמאות מהחיים האמיתיים.</description>
     </item>
-
-    <item>
-      <title>כמה באמת עולה לגדל ילד בישראל ב-2026</title>
-      <link>https://kesefle.com/blog/hoffaot-yeladim-cheshbon-mishutaf</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/hoffaot-yeladim-cheshbon-mishutaf</guid>
-      <pubDate>Thu, 14 May 2026 09:00:00 +0300</pubDate>
-      <description>מתנות, צעצועים, חוגים, ביגוד: כמה באמת עולה לגדל ילד בישראל ב-2026 לפי גיל. ההוצאות הסמויות שאף אחד לא חישב, ואיך זוגות שומרים על שקט.</description>
-      <category>למשפחות</category>
-    </item>
-
-    <item>
-      <title>פתחתי עוסק חדש: מדריך להתנהלות פיננסית</title>
-      <link>https://kesefle.com/blog/lebanim-le-meofim-aharei-bituach-leumi</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/lebanim-le-meofim-aharei-bituach-leumi</guid>
-      <pubDate>Thu, 14 May 2026 09:00:00 +0300</pubDate>
-      <description>פתחתם עוסק חדש בישראל? המדריך המלא לחודש הראשון: ביטוח לאומי, מע"מ, מס הכנסה, הפרדת חשבונות ורישום קבלות שיחסוך כסף בסוף השנה.</description>
-      <category>עוסק חדש</category>
-    </item>
-
-    <item>
-      <title>חשבון בנק משותף לזוגות: 4 דגמים</title>
-      <link>https://kesefle.com/blog/zugot-cheshbonot-mishutafim</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/zugot-cheshbonot-mishutafim</guid>
-      <pubDate>Wed, 13 May 2026 09:00:00 +0300</pubDate>
-      <description>זוגות, ארוסים ונשואים טריים: 4 דרכים לחלוקת הוצאות זוגיות — 100% משותף, 50/50, יחסי להכנסה ודמי כיס. היתרונות והחסרונות של כל דגם.</description>
-      <category>לזוגות</category>
-    </item>
-
-    <item>
-      <title>ניהול תקציב לעצמאים — המדריך המלא לשנת 2026</title>
-      <link>https://kesefle.com/blog/nihul-taktziv-atzmaim</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/nihul-taktziv-atzmaim</guid>
-      <pubDate>Tue, 20 May 2026 09:00:00 +0300</pubDate>
-      <description>המערכת הפיננסית של עצמאי שעובד באמת. הפרדת חשבונות, מע"מ, מקדמות מס, הוצאות מוכרות ותזרים מזומנים — בלי תיאוריה.</description>
-      <category>לעצמאים</category>
-    </item>
-
-    <item>
-      <title>מעקב הוצאות אוטומטי — למה אקסל כבר לא מספיק</title>
-      <link>https://kesefle.com/blog/maakav-otomati-vs-excel</link>
-      <guid isPermaLink="true">https://kesefle.com/blog/maakav-otomati-vs-excel</guid>
-      <pubDate>Tue, 20 May 2026 09:00:00 +0300</pubDate>
-      <description>אקסל היה נהדר ב-2015. ב-2026 אתה משלם בזמן. למה אוטומציה דרך וואטסאפ עדיפה — וגם איך לשמר את הגיליון שאתה אוהב.</description>
-      <category>השוואה</category>
-    </item>
-
   </channel>
 </rss>
