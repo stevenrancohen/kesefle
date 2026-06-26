@@ -57,3 +57,20 @@ Resolve the config-count clash empirically: **build the spine for N, ship for 1,
 3. Does the existing **`User_Category_Profile` / `קטגוריות`** join already supply the per-type row config, so the generator consumes it instead of duplicating it?
 
 The entire plan — its safety, its cost, whether the config already half-exists — hinges on those answers. Everyone debated the architecture; **nobody read the code.** Read it first. Then build the generator with one config and a golden parity test, and let real user requests, not the enum's nine values, decide how many configs ever ship.
+
+---
+
+## Build progress
+
+### ✅ Step 1 (DONE 2026-06-26, commit pending) — config layer + parity gate (additive, NOT wired)
+- `lib/profile-configs.js`: PROFILE_CONFIGS (per-type hideRows, EXCLUSIONS only — never invents a row), `selectRows(type, fullRows)` (default/unknown -> identity), `parseProfileTypeFromText` ("אקסל לזוג"->couple, "תבנית משפחה"->family, ...).
+- `tests/test_profile_configs.js` (28 checks, gauntlet-gated): PARITY (basic_personal/family reproduce the EXACT current rows -> zero change for existing sheets), SUBSET-ONLY (every hideRows label exists in PERSONAL_*_ROWS), free-text router.
+
+### ▶ Step 2 (NEXT — the gated surgery) — wire selectRows into buildTenantSheetSpec
+- In `lib/sheet-writer.js`, `buildTenantSheetSpec(name, opts)` builds the dashboard from PERSONAL_*_ROWS. Thread an `opts.profileType`; replace each `PERSONAL_X_ROWS.forEach` with `selectRows(profileType, PERSONAL_X_ROWS).forEach`.
+- CRITICAL: the section-total SUM ranges (line 53-55: "Counts are load-bearing... income=4, fixed=12...") MUST be recomputed from the SELECTED row counts, not hardcoded. Audit every hardcoded range/offset in buildTenantSheetSpec first.
+- GATE before any live use: a golden reconcile test — provision a sheet with profileType=basic_personal and assert the generated spec == the pre-refactor spec byte-for-byte (parity), then assert a `single` sheet has exactly one fewer fixed row and correct section totals. Shadow-tab compare on a real provisioned sheet before any in-place change. Route the switch endpoint through kesefle-financial-data-integrity-guard.
+
+### ▶ Step 3 — surface it
+- Provision: pass the onboarding-picked profileType (already stored) into provision.
+- Switch: a bot hook calling parseProfileTypeFromText -> one idempotent /api/sheet/reprofile endpoint (regenerates dashboard tab only; ledger untouched) + the web Account screen.
