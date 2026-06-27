@@ -43,7 +43,11 @@ async function handlerImpl(req, res) {
 
   const userRec = await kvGet('user:' + userSub);
   if (!userRec) return res.status(404).json({ ok: false, error: 'user not found' });
-  if (!userRec.spreadsheetId) return res.status(404).json({ ok: false, error: 'no sheet provisioned' });
+  // Canonical-first (match tax-report.js): read the canonical sheet:{sub}, fall
+  // back to the user-record mirror only if canonical is unset.
+  const sheetRec = await kvGet('sheet:' + userSub);
+  const sheetId = sheetRec?.spreadsheetId || userRec.spreadsheetId || null;
+  if (!sheetId) return res.status(404).json({ ok: false, error: 'no sheet provisioned' });
 
   // SECURITY: refresh token is encrypted at rest (AES-256-GCM, AAD-bound to userSub).
   // Legacy plaintext fallback for users provisioned before the encryption rollout.
@@ -69,7 +73,7 @@ async function handlerImpl(req, res) {
 
   // Read the תנועות tab columns A-I, all rows (cap at 5000 for safety).
   const range = encodeURIComponent(`'${TX_TAB}'!A2:I5001`);
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${userRec.spreadsheetId}/values/${range}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
   let resp;
   try {
     resp = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}` } });

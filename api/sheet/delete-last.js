@@ -72,8 +72,8 @@ async function handlerImpl(req, res) {
     return res.status(404).json({ ok: false, error: 'no_user_for_phone' });
   }
   const userRecord = await kvGet('user:' + phoneRec.userSub);
-  if (!userRecord || !userRecord.spreadsheetId) {
-    return res.status(404).json({ ok: false, error: 'no_sheet_for_user' });
+  if (!userRecord) {
+    return res.status(404).json({ ok: false, error: 'no_user_record' });
   }
 
   // PR-S2 (2026-05-27 security audit H1): tenant-isolation guard.
@@ -106,7 +106,10 @@ async function handlerImpl(req, res) {
   try { accessToken = await exchangeRefreshForAccess(refreshToken); }
   catch (e) { return res.status(502).json({ ok: false, error: 'token_refresh_failed', detail: e.message }); }
 
-  const spreadsheetId = userRecord.spreadsheetId;
+  // Canonical-first target (matches api/sheet/append.js:134): a DELETE must hit
+  // the canonical sheet:{userSub}, never an unverified user-record/phone mirror.
+  const spreadsheetId = canonicalSheetId || phoneSheetId || userRecord.spreadsheetId || null;
+  if (!spreadsheetId) return res.status(409).json({ ok: false, error: 'no_sheet_provisioned' });
   const authH = { Authorization: `Bearer ${accessToken}` };
 
   // Step 1: read the תנועות tab to find the last data row + its values.
