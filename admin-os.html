@@ -105,7 +105,9 @@
   }
   // ───────── tiny DOM helpers ─────────
   var $=function(s,r){return (r||document).querySelector(s);};
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  // URL-scheme allowlist (defense-in-depth): permit only http/https and relative paths; reject javascript:/data:/etc. Returns '#' for unsafe input.
+  function safeUrl(u){ var s=String(u==null?'':u).trim(); if(!s) return '#'; if(/^(https?:)?\/\//i.test(s)) return s; if(/^[\/#?]/.test(s)) return s; if(/^[a-z][a-z0-9+.-]*:/i.test(s)) return '#'; return s; }
   function num(n){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('he-IL'); }
   function money(n,cur){ if(n==null||isNaN(n)) return '—'; return (cur==='usd'?'$':'₪')+Number(n).toLocaleString('he-IL'); }
   function ago(ts){ if(!ts) return '—'; var d=Date.now()-(typeof ts==='number'?ts:Date.parse(ts)); if(isNaN(d)) return '—'; var m=Math.round(d/60000); if(m<60) return m+' דק׳'; var h=Math.round(m/60); if(h<24) return h+' שע׳'; return Math.round(h/24)+' ימ׳'; }
@@ -280,7 +282,7 @@
     try {
       var d=await adminGet('/api/admin/inbox?limit=50');
       var items=(d&&d.items)||[];
-      view.innerHTML+=items.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+items.map(function(it){ return '<div class="flex items-start gap-3 p-3"><span class="mt-0.5">'+pill(it.kind||'signal','info')+'</span><div class="flex-1 min-w-0"><div class="text-sm">'+esc(it.summary||it.text||'—')+'</div><div class="text-[11px] text-ink-400">'+esc(it.userSub||'')+' · לפני '+ago(it.at)+'</div></div>'+(it.action_url?'<a class="text-brand-600 text-xs" href="'+esc(it.action_url)+'">פתח</a>':'')+'</div>'; }).join('')+'</div>':emptyState('אין פריטים שדורשים מענה');
+      view.innerHTML+=items.length?'<div class="card divide-y divide-ink-100 dark:divide-ink-700">'+items.map(function(it){ return '<div class="flex items-start gap-3 p-3"><span class="mt-0.5">'+pill(it.kind||'signal','info')+'</span><div class="flex-1 min-w-0"><div class="text-sm">'+esc(it.summary||it.text||'—')+'</div><div class="text-[11px] text-ink-400">'+esc(it.userSub||'')+' · לפני '+ago(it.at)+'</div></div>'+(it.action_url?'<a class="text-brand-600 text-xs" href="'+esc(safeUrl(it.action_url))+'">פתח</a>':'')+'</div>'; }).join('')+'</div>':emptyState('אין פריטים שדורשים מענה');
     } catch(e){ view.innerHTML+=errState(e); }
   }
 

@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-26-income3';
+const KFL_BUILD_VERSION = '2026-06-27-incomerow';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -3054,7 +3054,7 @@ function handleInteractiveReply_(fromPhone, interactive) {
     // Canonicalize col E to a dashboard row label (idempotent for the picker's
     // already-canonical labels; safety net if a granular option slips through).
     var __interSub = (typeof _normalizeSubForDashboard_ === 'function')
-      ? _normalizeSubForDashboard_(subcategory, category) : subcategory;
+      ? _normalizeSubForDashboard_(subcategory, category, __interIsInc) : subcategory;
     sheet.appendRow([now, monthKey, amount, sanitizeForSheet(category), sanitizeForSheet(__interSub), sanitizeForSheet(description), 'WhatsApp (interactive)', !__interIsInc]);
     // Original-text cell note — capture the raw user message that triggered
     // this categorization (preserves provenance even after corrections).
@@ -10057,7 +10057,7 @@ function processExpense(text, fromPhone) {
       // ROOT-CAUSE FIX (disappearing money): canonicalize the granular sub to a
       // dashboard ROW LABEL before writing col E, else the SUMIFS misses it.
       var __dashSub = (typeof _normalizeSubForDashboard_ === 'function')
-        ? _normalizeSubForDashboard_(matched.subcategory, matched.category)
+        ? _normalizeSubForDashboard_(matched.subcategory, matched.category, __isInc)
         : matched.subcategory;
       Logger.log('processExpense: appendRow amount=' + finalAmount + ' sub=' + matched.subcategory + ' dashSub=' + __dashSub + ' isIncome=' + __isInc);
       sheet.appendRow([now, monthKey, finalAmount, sanitizeForSheet(matched.category), sanitizeForSheet(__dashSub), sanitizeForSheet(item.description), 'WhatsApp', !__isInc]);
@@ -12610,7 +12610,7 @@ function _handleReceiptImage_(fromPhone, image) {
   var rowDescription = vendor ? (vendor + ' — ' + description) : description;
   // Canonicalize col E to a dashboard row label so the receipt amount is visible.
   var __rcptDashSub = (typeof _normalizeSubForDashboard_ === 'function')
-    ? _normalizeSubForDashboard_(matched.subcategory, matched.category) : matched.subcategory;
+    ? _normalizeSubForDashboard_(matched.subcategory, matched.category, __rcptIsIncome) : matched.subcategory;
   sheet.appendRow([
     rowDate,
     monthKey,
@@ -14791,6 +14791,7 @@ function _normalizeBizSub_(subcategory) {
 //   4. if the value already CONTAINS a personal row label, leave it unchanged.
 //   5. ultimate catch-all "שונות".
 var _KFL_PERSONAL_DASH_ROWS = ['הכנסה 1 — משכורת', 'הכנסה 2 — עסק', 'הכנסה 3 — נוסף', 'שונות (הכנסות)', 'בית', 'מכון כושר', 'אפליקציות', 'תקשורת', 'לימודים', 'ביטוח אישי', 'בנקאות', 'מנויים דיגיטליים', 'חשמל', 'מים', 'תחזוקת בית', 'תינוק', 'מתנות', 'חיות מחמד', 'תרופות', 'חופשות', 'אוכל לבית', 'אוכל בחוץ', 'דלק', 'חניה', 'מונית', 'ליים', 'אחזקת רכב', 'תחבורה ציבורית', 'ביטוח רכב', 'מוסך', 'ביגוד', 'טיפוח', 'בריאות', 'בילויים', 'שונות'];
+var _KFL_PERSONAL_INCOME_ROWS = _KFL_PERSONAL_DASH_ROWS.slice(0, 4); // income rows: salary/business/other/misc-income (mirror PERSONAL_INCOME_ROWS)
 
 var _KFL_SUB_TO_DASHBOARD_ROW = {
   'אוכל בחוץ — אפליקציות משלוח': 'אוכל בחוץ',
@@ -14948,13 +14949,27 @@ var _KFL_SUB_TO_DASHBOARD_ROW = {
   'Pharmacies extended': 'תרופות',
 };
 
-function _normalizeSubForDashboard_(subcategory, category) {
+function _normalizeSubForDashboard_(subcategory, category, isIncome) {
   var raw = String(subcategory == null ? '' : subcategory)
     .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '')
     .trim();
   if (!raw) return raw;
   var cat = String(category == null ? '' : category).trim();
 
+  // 0. PERSONAL INCOME GUARD (disappearing-income fix 2026-06-27): income must
+  // land on a personal income row, else col H = income + an expense col-E label
+  // makes the SUMIFS skip it in BOTH totals and the money vanishes. Business
+  // income (cat is business) is on the company dashboard separately. Mirrors lib/sheet-writer.
+  if (isIncome && cat !== 'עסק') {
+    if (Object.prototype.hasOwnProperty.call(_KFL_SUB_TO_DASHBOARD_ROW, raw) &&
+        _KFL_PERSONAL_INCOME_ROWS.indexOf(_KFL_SUB_TO_DASHBOARD_ROW[raw]) >= 0) {
+      return _KFL_SUB_TO_DASHBOARD_ROW[raw];
+    }
+    for (var _ii = 0; _ii < _KFL_PERSONAL_INCOME_ROWS.length; _ii++) {
+      if (raw.indexOf(_KFL_PERSONAL_INCOME_ROWS[_ii]) >= 0) return _KFL_PERSONAL_INCOME_ROWS[_ii];
+    }
+    return 'שונות (הכנסות)';
+  }
   // 1. business -> canonical company bucket (ops catch-all if unmapped).
   if (cat === 'עסק') {
     return _BIZ_DASH_SUBS[raw] || 'הוצאות תפעוליות';
