@@ -195,7 +195,7 @@ async function handleTrack(req, res, body) {
   if (!session) return res.status(400).json({ ok: false, error: 'invalid_session' });
 
   const lim = await rateLimit(req, { key: 'analytics', limit: 200, windowSec: 60 });
-  if (!lim.ok) return res.status(429).end();
+  if (!lim.ok) return res.status(429).json({ ok: false, error: 'rate_limited', retryAfter: lim.retryAfter || 60 });
 
   const date = todayUTC();
   const counterKey = `analytics:${date}:${event}`;

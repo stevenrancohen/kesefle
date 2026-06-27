@@ -17,8 +17,14 @@ async function handlerImpl(req, res) {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
   const days = Math.min(365, Math.max(1, parseInt(req.query.days, 10) || 30));
-  const data = await computeActivationCohort(days, { fresh: req.query.fresh === '1' });
-  if (!data.ok) return res.status(503).json(data);
+  let data;
+  try {
+    data = await computeActivationCohort(days, { fresh: req.query.fresh === '1' });
+  } catch (e) {
+    // Never leak a raw stack to the admin client; surface the cause cleanly.
+    return res.status(503).json({ ok: false, error: 'activation_compute_failed', detail: e && e.message });
+  }
+  if (!data || !data.ok) return res.status(503).json(data || { ok: false, error: 'activation_unavailable' });
   return res.status(200).json({ at: new Date().toISOString(), ...data });
 }
 

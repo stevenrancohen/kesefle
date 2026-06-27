@@ -458,16 +458,14 @@ async function userAction(req, res) {
 const PUBLIC_DIAG_ACTIONS = new Set(['bot-status', 'errors-count', 'test-webhook']);
 
 function publicBotStatus(req, res) {
-  // Returns env-presence flags + the configured Meta phone ID (which is itself
-  // public info — Meta exposes it in the webhook URL).
+  // Returns ONLY genuinely-public identifiers (the Meta phone id + bot number are
+  // public; the webhook URL is fixed). Secret-PRESENCE flags (meta_*_configured /
+  // anthropic_*) were REMOVED from this UNAUTHENTICATED response — they leaked
+  // config posture to anyone. Read them via the authenticated config-drift action.
   return res.status(200).json({
     ok: true,
     bot: {
       meta_phone_number_id: process.env.META_PHONE_NUMBER_ID || null, // public-safe identifier
-      meta_access_token_configured: !!process.env.META_ACCESS_TOKEN,
-      meta_verify_token_configured: !!process.env.META_VERIFY_TOKEN,
-      meta_app_secret_configured: !!process.env.META_APP_SECRET,
-      anthropic_api_key_configured: !!process.env.ANTHROPIC_API_KEY,
       configured_bot_phone_e164: process.env.BOT_PHONE_E164 || null,
       webhook_url: `${(req.headers['x-forwarded-proto'] || 'https')}://${req.headers.host || 'kesefle.vercel.app'}/api/whatsapp/webhook`,
     },

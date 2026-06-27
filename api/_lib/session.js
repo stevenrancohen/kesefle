@@ -114,7 +114,7 @@ export function clearSessionCookie(res) {
 export function requireUser(req, res) {
   const userId = getUserId(req);
   if (!userId) {
-    res.status(401).json({ error: 'unauthorized' });
+    res.status(401).json({ ok: false, error: 'unauthorized' });
     return null;
   }
   return userId;

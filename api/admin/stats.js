@@ -65,7 +65,7 @@ async function kvGetRaw(key) {
 // Core handler — runs only after one of the auth modes has accepted.
 async function handlerCore(req, res) {
   if (!KV_URL || !KV_TOKEN) {
-    res.status(500).json({ error: 'kv_not_configured' });
+    res.status(500).json({ ok: false, error: 'kv_not_configured' });
     return;
   }
 
@@ -98,7 +98,7 @@ async function handlerCore(req, res) {
       },
     });
   } catch (e) {
-    res.status(500).json({ error: 'stats_failed', detail: e.message });
+    res.status(500).json({ ok: false, error: 'stats_failed', detail: e.message });
   }
 }
 
@@ -128,14 +128,14 @@ async function dispatch(req, res) {
       // Same 503 semantics as pre-migration — fail closed so a fresh
       // Vercel deploy with no ADMIN_TOKEN env var doesn't accept any short
       // Bearer value as admin.
-      res.status(503).json({ error: 'admin_token_not_configured' });
+      res.status(503).json({ ok: false, error: 'admin_token_not_configured' });
       return;
     }
     if (constantTimeEqual(bearer, ADMIN_TOKEN)) {
       log.info('admin_stats.legacy_auth_ok', { reqId: req.reqId });
       return legacyRateLimited(req, res);
     }
-    res.status(401).json({ error: 'unauthorized' });
+    res.status(401).json({ ok: false, error: 'unauthorized' });
     return;
   }
   // No legacy token — fall through to the modern admin auth pipeline.

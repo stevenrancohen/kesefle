@@ -160,7 +160,7 @@ export async function rateLimit(req, res, opts = {}) {
 
     if (count > limit) {
       res.setHeader('Retry-After', String(windowSec));
-      res.status(429).json({ error: 'too_many_requests' });
+      res.status(429).json({ ok: false, error: 'rate_limited', retryAfter: windowSec });
       return true;
     }
     return false;
