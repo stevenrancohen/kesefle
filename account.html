@@ -11,6 +11,9 @@
 <meta property="og:image" content="https://kesefle.com/og-image.png" />
 <meta property="og:url" content="https://kesefle.com/account" />
 <meta property="og:type" content="website" />
+<link rel="canonical" href="https://kesefle.com/account" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.com/account" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.com/account" />
 <meta name="theme-color" content="#6366F1" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -313,10 +316,10 @@
                 <span>חבר את מספר הוואטסאפ שלך</span>
                 <span class="why-tip">
                   <button type="button" aria-label="למה צריך את המספר?">?</button>
-                  <span class="why-body">למה צריך את המספר? כדי שכשתשלחי הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
+                  <span class="why-body">למה צריך את המספר? כדי שכשתשלח הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
                 </span>
               </div>
-              <div class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלחי קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אלייך.</div>
+              <div class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
 
               <!-- Sub-state A: not yet linked — show phone input + Generate Code button -->
               <div id="link-state-input">
@@ -360,7 +363,7 @@
                     class="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white hover:opacity-90"
                   >
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
-                    פתחי וואטסאפ ושלחי "קוד <span id="link-code-inline">000000</span>"
+                    פתח וואטסאפ ושלח "קוד <span id="link-code-inline">000000</span>"
                   </a>
                   <div class="inline-flex items-center gap-2 rounded-xl border border-brand-400/40 bg-brand-50/50 px-3 py-2 text-xs font-semibold text-brand-800 dark:bg-brand-500/10 dark:text-brand-300">
                     <span class="flex gap-1">
@@ -786,7 +789,7 @@ function _kflShowLinkError(msg) {
                  '<div class="mt-1 flex flex-wrap gap-2 items-center">' +
                  '<button type="button" onclick="kesefleLinkRequestCode()" class="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700">נסה שוב</button>' +
                  '<details class="text-[11px] text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary>' +
-                 '<div class="mt-1">לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודאי שהמספר בפורמט 054-123-4567 ונסה שוב.</div>' +
+                 '<div class="mt-1">לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודא שהמספר בפורמט 054-123-4567 ונסה שוב.</div>' +
                  '</details></div></div>';
   el.classList.remove('hidden');
   setTimeout(function() { el.classList.add('hidden'); }, 12000);
@@ -1412,8 +1415,8 @@ function kesefleShowInAppBrowserHelp() {
       '<details style="margin-top:14px;text-align:right;border-top:1px solid ' + border + ';padding-top:14px;">' +
         '<summary style="cursor:pointer;font-size:13px;color:' + brand + ';font-weight:700;">אף פתרון לא עזר? השאר פרטים ונחזור אליך 👋</summary>' +
         '<div style="margin-top:10px;">' +
-          '<input id="kfl-wait-phone" type="tel" inputmode="tel" placeholder="050-1234567" autocomplete="tel" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;margin-bottom:6px;" />' +
-          '<input id="kfl-wait-email" type="email" inputmode="email" placeholder="email@example.com" autocomplete="email" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;" />' +
+          '<input id="kfl-wait-phone" type="tel" inputmode="tel" placeholder="050-1234567" aria-label="מספר טלפון" autocomplete="tel" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;margin-bottom:6px;" />' +
+          '<input id="kfl-wait-email" type="email" inputmode="email" placeholder="email@example.com" aria-label="כתובת אימייל" autocomplete="email" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + border + ';border-radius:10px;background:' + bg + ';color:' + title + ';font:inherit;direction:ltr;text-align:left;" />' +
           '<button type="button" onclick="kesefleSubmitWaitlist(this)" style="margin-top:8px;width:100%;border-radius:12px;background:' + brand + ';border:none;padding:12px;font-size:14px;font-weight:700;color:#ffffff;cursor:pointer;">הוסף אותי לרשימת המתנה</button>' +
           '<p id="kfl-wait-status" style="margin-top:6px;font-size:11px;color:' + muted + ';min-height:14px;"></p>' +
         '</div>' +
@@ -2471,7 +2474,7 @@ if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.c
       </div>
       <p style="margin:0 0 12px;font-size:13px;color:#475569">תאר מה לא עובד. נצרף אוטומטית את ה-URL והדפדפן — נראה את הדיווח בלוח הניהול.</p>
       <textarea id="kfl-report-msg" rows="4" maxlength="1000" placeholder="לדוגמה: לחצתי 'התחבר עם Google' ולא קרה כלום…" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #E2E8F0;border-radius:10px;font:inherit;font-size:14px;resize:vertical;min-height:90px"></textarea>
-      <input type="email" id="kfl-report-email" placeholder="האימייל שלך (אופציונלי, כדי שנוכל לחזור אליך)" style="width:100%;box-sizing:border-box;margin-top:8px;padding:10px;border:1px solid #E2E8F0;border-radius:10px;font:inherit;font-size:13px" />
+      <input type="email" id="kfl-report-email" placeholder="האימייל שלך (אופציונלי, כדי שנוכל לחזור אליך)" aria-label="האימייל שלך (אופציונלי)" style="width:100%;box-sizing:border-box;margin-top:8px;padding:10px;border:1px solid #E2E8F0;border-radius:10px;font:inherit;font-size:13px" />
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
         <button type="button" onclick="_kflReportClose()" style="padding:10px 14px;border:1px solid #E2E8F0;background:#fff;border-radius:10px;font:600 13px inherit;cursor:pointer">ביטול</button>
         <button type="button" onclick="_kflReportSubmit()" id="kfl-report-send" style="padding:10px 14px;border:none;background:#3B82F6;color:#fff;border-radius:10px;font:600 13px inherit;cursor:pointer;min-height:44px">שליחה</button>
@@ -2510,6 +2513,14 @@ if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.c
     document.getElementById('kfl-report-modal').style.display = 'none';
     document.getElementById('kfl-report-status').textContent = '';
   };
+  // Close the modal with the Escape key for keyboard accessibility.
+  if (window.addEventListener) {
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape' && ev.keyCode !== 27) return;
+      var m = document.getElementById('kfl-report-modal');
+      if (m && m.style.display !== 'none') _kflReportClose();
+    });
+  }
   window._kflReportSubmit = async function () {
     var btn = document.getElementById('kfl-report-send');
     var status = document.getElementById('kfl-report-status');
@@ -2541,7 +2552,7 @@ if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.c
         })
       });
       if (r.ok) {
-        status.textContent = '✓ תודה! קיבלנו את הדיווח. נחזור אלייך אם נשאיר את האימייל.';
+        status.textContent = '✓ תודה! קיבלנו את הדיווח. נחזור אליך אם נשאיר את האימייל.';
         document.getElementById('kfl-report-msg').value = '';
         setTimeout(_kflReportClose, 2200);
       } else {

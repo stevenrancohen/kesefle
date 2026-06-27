@@ -58,9 +58,9 @@
       <div class="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 font-display text-lg font-black text-white">כ</div>
       <div class="flex-1">
         <div class="font-display text-lg font-black leading-none">כספ'לה</div>
-        <div id="whoami" class="text-[11px] text-ink-400">האפליקציה שלך</div>
+        <div id="whoami" class="text-[11px] text-ink-500">האפליקציה שלך</div>
       </div>
-      <span id="syncTime" class="self-center text-[10px] tabular-nums text-ink-400"></span>
+      <span id="syncTime" class="self-center text-[10px] tabular-nums text-ink-500"></span>
       <button id="refreshBtn" aria-label="רענן" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-100 dark:border-ink-700 text-ink-500">⟳</button>
       <button id="themeBtn" aria-label="מצב כהה/בהיר" class="grid h-9 w-9 place-items-center rounded-xl border border-ink-100 dark:border-ink-700 text-ink-500">◐</button>
     </div>
@@ -75,7 +75,7 @@
   </a>
 
   <!-- Bottom tab nav -->
-  <nav class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 dark:border-ink-800 bg-white/95 dark:bg-ink-950/95 backdrop-blur">
+  <nav aria-label="ניווט ראשי" class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 dark:border-ink-800 bg-white/95 dark:bg-ink-950/95 backdrop-blur">
     <div id="tabs" class="mx-auto grid max-w-lg grid-cols-4"></div>
   </nav>
 
@@ -103,12 +103,12 @@ var $=function(s,r){return (r||document).querySelector(s);};
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function money(n){ if(n==null||isNaN(n)) return '—'; return '₪'+Math.round(Number(n)).toLocaleString('he-IL'); }
 function num(n){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('he-IL'); }
-function agoDays(d){ if(!d) return ''; var x=new Date(d); if(isNaN(x.getTime())) return ''; var diff=Math.round((Date.now()-x.getTime())/86400000); if(diff<=0) return 'היום'; if(diff===1) return 'אתמול'; if(diff<7) return 'לפני '+diff+' ימים'; return x.toLocaleDateString('he-IL',{day:'numeric',month:'short'}); }
+function agoDays(d){ if(!d) return ''; var x=new Date(d); if(isNaN(x.getTime())) return ''; var diff=Math.round((Date.now()-x.getTime())/86400000); if(diff<0) return x.toLocaleDateString('he-IL',{day:'numeric',month:'short'}); if(diff===0) return 'היום'; if(diff===1) return 'אתמול'; if(diff<7) return 'לפני '+diff+' ימים'; return x.toLocaleDateString('he-IL',{day:'numeric',month:'short'}); }
 var HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 function thisMonthLabel(){ var d=new Date(); return HEB_MONTHS[d.getMonth()]+' '+d.getFullYear(); }
 function loadingHero(){ return '<div class="card p-5"><div class="skel h-3 w-24"></div><div class="skel mt-3 h-9 w-40"></div><div class="mt-5 grid grid-cols-2 gap-3"><div class="skel h-14"></div><div class="skel h-14"></div></div></div><div class="skel mt-4 h-40 w-full rounded-2xl"></div>'; }
-function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class="text-3xl">∅</div><div class="mt-2 text-sm font-semibold">'+esc(t||'אין נתונים עדיין')+'</div>'+(sub?'<div class="mt-1 text-xs text-ink-400">'+esc(sub)+'</div>':'')+'</div>'; }
-function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-400">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
+function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class="text-3xl">∅</div><div class="mt-2 text-sm font-semibold">'+esc(t||'אין נתונים עדיין')+'</div>'+(sub?'<div class="mt-1 text-xs text-ink-500">'+esc(sub)+'</div>':'')+'</div>'; }
+function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-500">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
 function errState(e){ if(e&&e.isAuth) return signInState(); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
 function bar(label,val,max,tone){ var pct=max>0?Math.round(val/max*100):0; var c=tone||'bg-brand-500'; return '<div class="py-2"><div class="flex items-center justify-between text-sm"><span class="truncate">'+esc(label)+'</span><span class="font-semibold tabular-nums">'+money(val)+'</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full '+c+'" style="width:'+Math.max(3,pct)+'%"></div></div></div>'; }
 var WA_LINK='https://wa.me/972547766361';
@@ -118,7 +118,7 @@ function onboardingCard(){
   return '<div class="card p-6 text-center">'+
     '<div class="text-3xl">👋</div>'+
     '<div class="mt-2 font-display text-xl font-black">מתחילים לעקוב אחרי הכסף</div>'+
-    '<div class="mt-1 text-sm text-ink-400">שלח/י הוצאה אחת בוואטסאפ — והיא תופיע כאן מיד.</div>'+
+    '<div class="mt-1 text-sm text-ink-500">שלח/י הוצאה אחת בוואטסאפ — והיא תופיע כאן מיד.</div>'+
     '<div class="mt-5 space-y-3 text-right">'+
       onbStep('1','פתח/י את הבוט בוואטסאפ')+
       onbStep('2','כתוב/י הוצאה — לדוגמה: <span class="font-bold text-ink-700 dark:text-ink-200">קפה 15</span>')+
@@ -136,7 +136,7 @@ var TABS=[
   {id:'account',label:'חשבון',icon:'☺',render:renderAccount},
 ];
 function buildTabs(){ $('#tabs').innerHTML=TABS.map(function(t){ return '<a class="tab flex flex-col items-center gap-0.5 py-2.5" data-id="'+t.id+'" href="#/'+t.id+'"><span class="text-xl leading-none">'+t.icon+'</span><span class="text-[10px] font-semibold">'+esc(t.label)+'</span></a>'; }).join(''); }
-function setActiveTab(id){ document.querySelectorAll('#tabs .tab').forEach(function(a){ a.classList.toggle('active', a.getAttribute('data-id')===id); }); }
+function setActiveTab(id){ document.querySelectorAll('#tabs .tab').forEach(function(a){ var on=a.getAttribute('data-id')===id; a.classList.toggle('active', on); if(on){ a.setAttribute('aria-current','page'); } else { a.removeAttribute('aria-current'); } }); }
 function currentId(){ return (location.hash||'').replace(/^#\/?/,''); }
 var __routing=false, __routeAgain=false;
 async function route(force){
@@ -167,12 +167,12 @@ async function renderHome(view){
   var exp=Number(d.month_expenses)||0, inc=Number(d.month_income)||0, net=inc-exp;
   var delta=d.month_expenses_delta_pct;
   var hero='<div class="card overflow-hidden p-5">'+
-    '<div class="text-xs font-semibold text-ink-400">'+thisMonthLabel()+'</div>'+
+    '<div class="text-xs font-semibold text-ink-500">'+thisMonthLabel()+'</div>'+
     '<div class="mt-1 font-display text-4xl font-black '+(net>=0?'':'text-red-500')+'">'+money(net)+'</div>'+
-    '<div class="mt-0.5 text-xs text-ink-400">המאזן שלך החודש (הכנסות פחות הוצאות)</div>'+
+    '<div class="mt-0.5 text-xs text-ink-500">המאזן שלך החודש (הכנסות פחות הוצאות)</div>'+
     '<div class="mt-4 grid grid-cols-2 gap-3">'+
-      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-400">הוצאות</div><div class="mt-0.5 text-lg font-bold text-red-500">'+money(exp)+'</div>'+(delta!=null?'<div class="text-[11px] '+(delta>0?'text-red-500':delta<0?'text-green-600':'text-ink-400')+'">'+(delta>0?'▲':delta<0?'▼':'→')+' '+Math.abs(delta)+'% מהחודש שעבר</div>':'')+'</div>'+
-      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-400">הכנסות</div><div class="mt-0.5 text-lg font-bold text-green-600">'+money(inc)+'</div><div class="text-[11px] text-ink-400">'+num(d.month_count)+' תנועות</div></div>'+
+      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-500">הוצאות</div><div class="mt-0.5 text-lg font-bold text-red-500">'+money(exp)+'</div>'+(delta!=null?'<div class="text-[11px] '+(delta>0?'text-red-500':delta<0?'text-green-600':'text-ink-500')+'">'+(delta>0?'▲':delta<0?'▼':'→')+' '+Math.abs(delta)+'% מהחודש שעבר</div>':'')+'</div>'+
+      '<div class="rounded-xl bg-ink-50 dark:bg-ink-800/60 p-3"><div class="text-[11px] text-ink-500">הכנסות</div><div class="mt-0.5 text-lg font-bold text-green-600">'+money(inc)+'</div><div class="text-[11px] text-ink-500">'+num(d.month_count)+' תנועות</div></div>'+
     '</div></div>';
   // top categories
   var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
@@ -189,13 +189,13 @@ function txRow(t){
   var income=!!t.is_income; var amt=Number(t.amount)||0;
   return '<div class="flex items-center gap-3 px-2 py-2.5">'+
     '<div class="grid h-9 w-9 shrink-0 place-items-center rounded-full '+(income?'bg-green-50 text-green-600 dark:bg-green-900/30':'bg-red-50 text-red-500 dark:bg-red-900/30')+' text-sm font-bold">'+(income?'＋':'－')+'</div>'+
-    '<div class="min-w-0 flex-1"><div class="truncate text-sm font-medium">'+esc(t.description||t.subcategory||t.category||'תנועה')+'</div><div class="text-[11px] text-ink-400">'+esc(t.category||'')+' · '+agoDays(t.date)+'</div></div>'+
+    '<div class="min-w-0 flex-1"><div class="truncate text-sm font-medium">'+esc(t.description||t.subcategory||t.category||'תנועה')+'</div><div class="text-[11px] text-ink-500">'+esc(t.category||'')+' · '+agoDays(t.date)+'</div></div>'+
     '<div class="shrink-0 text-sm font-bold tabular-nums '+(income?'text-green-600':'')+'">'+(income?'+':'')+money(amt)+'</div></div>';
 }
 
 // ───────── TRANSACTIONS (full history from getExpenses + search + month groups) ─────────
 async function renderTx(view){
-  view.innerHTML='<div class="mb-3 flex items-center justify-between"><div class="font-display text-xl font-black">תנועות</div><div id="txCount" class="text-xs text-ink-400"></div></div>'+
+  view.innerHTML='<div class="mb-3 flex items-center justify-between"><div class="font-display text-xl font-black">תנועות</div><div id="txCount" class="text-xs text-ink-500"></div></div>'+
     '<input id="txSearch" type="search" inputmode="search" aria-label="חיפוש תנועות" placeholder="חיפוש לפי תיאור או קטגוריה…" class="mb-1 w-full rounded-2xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500/40" />'+
     '<div id="txList" class="mt-2">'+loadingHero()+'</div>';
   var d;
@@ -205,6 +205,7 @@ async function renderTx(view){
   function paint(q){
     q=(q||'').trim().toLowerCase();
     var f= q ? rows.filter(function(r){ return ((r.description||'')+' '+(r.category||'')).toLowerCase().indexOf(q)>=0; }) : rows;
+    if(cnt) cnt.textContent= q ? (num(f.length)+' מתוך '+num(rows.length)) : (num(rows.length)+' תנועות');
     if(!f.length){ $('#txList').innerHTML = q ? emptyState('לא נמצאו תנועות','נסה/י מילה אחרת') : onboardingCard(); return; }
     var groups={}, order=[];
     f.forEach(function(r){ var m=String(r.date).slice(0,7); if(!groups[m]){ groups[m]=[]; order.push(m); } groups[m].push(r); });
@@ -212,12 +213,12 @@ async function renderTx(view){
       var items=groups[m];
       var exp=items.reduce(function(s,r){ return s+(r.is_income?0:(Number(r.amount)||0)); },0);
       var label=(HEB_MONTHS[Number(m.slice(5,7))-1]||'')+' '+m.slice(0,4);
-      return '<div class="mb-2 mt-4 flex items-center justify-between px-1"><div class="text-sm font-bold text-ink-500">'+esc(label)+'</div><div class="text-xs text-ink-400">הוצאות '+money(exp)+'</div></div>'+
+      return '<div class="mb-2 mt-4 flex items-center justify-between px-1"><div class="text-sm font-bold text-ink-500">'+esc(label)+'</div><div class="text-xs text-ink-500">הוצאות '+money(exp)+'</div></div>'+
         '<div class="card p-2"><div class="divide-y divide-ink-100 dark:divide-ink-800">'+items.map(txRow).join('')+'</div></div>';
     }).join('');
   }
   paint('');
-  var sb=$('#txSearch'); if(sb) sb.addEventListener('input', function(e){ paint(e.target.value); });
+  var sb=$('#txSearch'); if(sb){ var __t=null; sb.addEventListener('input', function(e){ var v=e.target.value; if(__t) clearTimeout(__t); __t=setTimeout(function(){ paint(v); }, 150); }); }
 }
 
 // ───────── INSIGHTS ─────────
@@ -246,9 +247,9 @@ async function renderInsights(view){
   var projected = dayOfMonth>0 ? Math.round(spent/dayOfMonth*daysInMonth) : spent;
   var leftDays=Math.max(0, daysInMonth-dayOfMonth);
   var projCard='<div class="card p-4">'+
-    '<div class="text-xs text-ink-400">תחזית להוצאות עד סוף החודש</div>'+
+    '<div class="text-xs text-ink-500">תחזית להוצאות עד סוף החודש</div>'+
     '<div class="mt-1 font-display text-3xl font-black">'+money(projected)+'</div>'+
-    '<div class="mt-1 text-xs text-ink-400">לפי הקצב הנוכחי · הוצאת '+money(spent)+' ב-'+num(dayOfMonth)+' ימים · עוד '+num(leftDays)+' ימים בחודש</div>'+
+    '<div class="mt-1 text-xs text-ink-500">לפי הקצב הנוכחי · הוצאת '+money(spent)+' ב-'+num(dayOfMonth)+' ימים · עוד '+num(leftDays)+' ימים בחודש</div>'+
   '</div>';
 
   // Month-over-month vs last month (delta from summary).
@@ -256,10 +257,10 @@ async function renderInsights(view){
   var momCard='';
   if(delta!=null){
     var up=delta>0, flat=delta===0;
-    var col=flat?'text-ink-400':(up?'text-rose-500':'text-emerald-500');
+    var col=flat?'text-ink-500':(up?'text-rose-500':'text-emerald-500');
     var arrow=flat?'→':(up?'▲':'▼');
     momCard='<div class="card mt-3 p-4 flex items-center justify-between">'+
-      '<div><div class="text-xs text-ink-400">לעומת החודש שעבר</div>'+
+      '<div><div class="text-xs text-ink-500">לעומת החודש שעבר</div>'+
       '<div class="mt-0.5 text-sm text-ink-500">'+(up?'הוצאת יותר':(flat?'אותו דבר':'הוצאת פחות'))+'</div></div>'+
       '<div class="'+col+' font-display text-2xl font-black">'+arrow+' '+Math.abs(delta)+'%</div>'+
     '</div>';
@@ -278,7 +279,7 @@ async function renderInsights(view){
       var sp=Number(spendByCat[name])||0; var pct=cap>0?Math.round(sp/cap*100):0;
       var over=cap>0&&sp>cap, warn=!over&&cap>0&&pct>=th;
       var barCol=over?'bg-rose-500':(warn?'bg-amber-500':'bg-emerald-500');
-      var txtCol=over?'text-rose-500':(warn?'text-amber-500':'text-ink-400');
+      var txtCol=over?'text-rose-500':(warn?'text-amber-500':'text-ink-500');
       return '<div class="mb-3">'+
         '<div class="mb-1 flex items-center justify-between text-sm"><span class="font-medium">'+esc(name)+'</span>'+
         '<span class="'+txtCol+'">'+money(sp)+' / '+money(cap)+'</span></div>'+
@@ -303,7 +304,7 @@ async function renderInsights(view){
           var h=maxM>0?Math.max(4,Math.round(o.val/maxM*100)):4; var cur=o.key===(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
           return '<div class="flex flex-1 flex-col items-center justify-end gap-1" style="height:100%">'+
             '<div class="w-full rounded-t-lg '+(cur?'bg-brand-500':'bg-brand-500/30')+'" style="height:'+h+'%" title="'+money(o.val)+'"></div>'+
-            '<div class="text-[10px] '+(cur?'font-bold text-ink-600 dark:text-ink-300':'text-ink-400')+'">'+esc(o.label)+'</div></div>';
+            '<div class="text-[10px] '+(cur?'font-bold text-ink-600 dark:text-ink-300':'text-ink-500')+'">'+esc(o.label)+'</div></div>';
         }).join('')+'</div></div>';
     }
   }
@@ -318,7 +319,7 @@ async function renderInsights(view){
   }
 
   view.innerHTML=head+projCard+momCard+budgetCard+trendCard+catCard+
-    '<div class="mt-3 text-center text-xs text-ink-400">המספרים מתעדכנים אוטומטית מהגיליון שלך.</div>';
+    '<div class="mt-3 text-center text-xs text-ink-500">המספרים מתעדכנים אוטומטית מהגיליון שלך.</div>';
 }
 
 // ───────── ACCOUNT ─────────
@@ -333,20 +334,20 @@ async function renderAccount(view){
   var head='<div class="mb-3 font-display text-xl font-black">החשבון שלי</div>';
   var prof='<div class="card flex items-center gap-3 p-4">'+
     (u.picture?'<img src="'+esc(u.picture)+'" alt="" class="h-12 w-12 rounded-full" referrerpolicy="no-referrer">':'<div class="grid h-12 w-12 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">'+esc(initials)+'</div>')+
-    '<div class="min-w-0"><div class="truncate font-semibold">'+esc(u.name||'משתמש/ת כספ\'לה')+'</div><div class="truncate text-xs text-ink-400">'+esc(u.email||'')+'</div></div></div>';
-  function rowLink(href,icon,label,sub,ext){ return '<a href="'+esc(href)+'"'+(ext?' target="_blank" rel="noopener"':'')+' class="flex items-center gap-3 px-4 py-3.5"><span class="grid h-9 w-9 place-items-center rounded-xl bg-ink-50 dark:bg-ink-800 text-base">'+icon+'</span><span class="flex-1"><span class="block text-sm font-medium">'+esc(label)+'</span>'+(sub?'<span class="block text-[11px] text-ink-400">'+esc(sub)+'</span>':'')+'</span><span class="text-ink-300">‹</span></a>'; }
+    '<div class="min-w-0"><div class="truncate font-semibold">'+esc(u.name||'משתמש/ת כספ\'לה')+'</div><div class="truncate text-xs text-ink-500">'+esc(u.email||'')+'</div></div></div>';
+  function rowLink(href,icon,label,sub,ext){ return '<a href="'+esc(href)+'"'+(ext?' target="_blank" rel="noopener"':'')+' class="flex items-center gap-3 px-4 py-3.5"><span class="grid h-9 w-9 place-items-center rounded-xl bg-ink-50 dark:bg-ink-800 text-base">'+icon+'</span><span class="flex-1"><span class="block text-sm font-medium">'+esc(label)+'</span>'+(sub?'<span class="block text-[11px] text-ink-500">'+esc(sub)+'</span>':'')+'</span><span class="text-ink-300">‹</span></a>'; }
   var links='<div class="card mt-4 divide-y divide-ink-100 dark:divide-ink-800">'+
     (sheet&&sheet.spreadsheetUrl?rowLink(sheet.spreadsheetUrl,'📊','הגיליון שלי','פתח/י את הגיליון ב-Google Sheets',true):rowLink('/account','📊','הגדרת גיליון','חבר/י את הגיליון שלך'))+
     rowLink('https://wa.me/972547766361','💬','הבוט בוואטסאפ','רשום/י הוצאה או בקש/י סיכום',true)+
     rowLink('/account','⚙','הגדרות חשבון','תוכנית, קטגוריות, פרטיות')+
     rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
   '</div>';
-  var invite='<button id="inviteBtn" class="card mt-4 flex w-full items-center gap-3 p-4 text-right active:scale-[.99]"><span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-base">🎁</span><span class="min-w-0 flex-1"><span class="block text-sm font-medium">הזמן חברים לכספ\'לה</span><span id="inviteSub" class="block text-[11px] text-ink-400">שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף</span></span><span class="text-ink-300">‹</span></button>';
+  var invite='<button id="inviteBtn" class="card mt-4 flex w-full items-center gap-3 p-4 text-right active:scale-[.99]"><span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-base">🎁</span><span class="min-w-0 flex-1"><span class="block text-sm font-medium">הזמן חברים לכספ\'לה</span><span id="inviteSub" class="block text-[11px] text-ink-500">שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף</span></span><span class="text-ink-300">‹</span></button>';
   // Install: native prompt on Android/Chrome; manual steps on iOS Safari (which
   // never fires beforeinstallprompt); nothing once already installed (standalone).
   var install;
   if(isStandalone()){ install=''; }
-  else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-1 text-xs text-ink-400">הקש/י על כפתור השיתוף בתחתית הדפדפן (הריבוע עם החץ ↑), ואז על &rdquo;הוסף למסך הבית&ldquo; / Add to Home Screen.</div></div>'; }
+  else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-1 text-xs text-ink-500">הקש/י על כפתור השיתוף בתחתית הדפדפן (הריבוע עם החץ ↑), ואז על &rdquo;הוסף למסך הבית&ldquo; / Add to Home Screen.</div></div>'; }
   else { install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>'; }
   var logout='<button onclick="kflLogout()" class="mt-4 w-full rounded-2xl border border-ink-100 dark:border-ink-700 py-3 text-sm font-semibold text-ink-500">התנתקות</button>';
   view.innerHTML=head+prof+links+invite+install+logout;
