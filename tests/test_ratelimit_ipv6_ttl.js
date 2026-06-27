@@ -201,7 +201,7 @@ console.log('\n=== atomic INCR + EXPIRE NX every hit (lockout-race fix) ===\n');
   const stop = await rateLimit(reqFrom('192.0.2.42'), r6, { limit: 5, windowSec: 60 });
   check('over-limit hit blocks (returns true, 429, Retry-After set)',
     stop === true && r6._r.code === 429 && r6._r.headers['Retry-After'] === '60' &&
-    r6._r.body && r6._r.body.error === 'too_many_requests', JSON.stringify(r6._r));
+    r6._r.body && r6._r.body.ok === false && r6._r.body.error === 'rate_limited', JSON.stringify(r6._r));
 
   // Degraded server: EXPIRE ... NX rejected → fall back to a plain /expire on
   // the SAME hit so the TTL is still set (still no lockout).
