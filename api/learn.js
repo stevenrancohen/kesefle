@@ -55,7 +55,7 @@ async function handlerImpl(req, res) {
 
   // ── GET: look up a learned category by hash ──────────────────────────────
   if (req.method === 'GET') {
-    const got = req.headers['x-kesefle-bot-secret'] || req.query.botSecret;
+    const got = req.headers['x-kesefle-bot-secret'];
     if (!constantTimeEqual(got, expected)) return res.status(401).json({ ok: false, error: 'unauthorized' });
     const h = String(req.query.h || '').trim().toLowerCase();
     if (!HASH_RE.test(h)) return res.status(400).json({ ok: false, error: 'invalid_hash' });
