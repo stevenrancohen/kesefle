@@ -13,6 +13,8 @@
 <meta property="og:image" content="https://kesefle.com/og-image.png" />
 <meta property="og:url" content="https://kesefle.com/demo" />
 <link rel="canonical" href="https://kesefle.com/demo" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.com/demo" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.com/demo" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://cdn.tailwindcss.com" />
@@ -146,6 +148,7 @@
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased dark:bg-ink-950 dark:text-white">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-[10000] focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:shadow-soft">דלג לתוכן</a>
 
 <!-- skip to signup -->
 <a href="/account" class="fixed top-3 left-3 z-50 hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-soft transition hover:bg-brand-700 md:inline-block">
@@ -237,7 +240,7 @@
 </header>
 
 <!-- ============== MAIN ============== -->
-<main class="mx-auto max-w-5xl px-5 pt-24 pb-10 md:pt-28 md:pb-14">
+<main id="main" class="mx-auto max-w-5xl px-5 pt-24 pb-10 md:pt-28 md:pb-14">
   <div class="mx-auto max-w-2xl text-center">
     <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">דמו אינטראקטיבי</p>
     <h1 class="mt-3 text-balance text-3xl font-black tracking-tight text-ink-900 dark:text-white md:text-5xl">

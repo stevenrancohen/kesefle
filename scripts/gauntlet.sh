@@ -100,7 +100,7 @@ printf '%s\n' "${B}==========================================================${Z
 # ============================================================================
 # GROUP 1 -- Consolidated offline QA gate (tests/full_qa.js)
 # ============================================================================
-printf '\n%s\n' "${B}[1/6] QA gate -- node tests/full_qa.js${Z}"
+printf '\n%s\n' "${B}[1/7] QA gate -- node tests/full_qa.js${Z}"
 hr
 if node "$ROOT/tests/full_qa.js"; then
   record_group "1. QA gate (full_qa.js)" 1 0
@@ -114,7 +114,7 @@ fi
 #   suite can never be silently orphaned. Each suite is `node <file>`; non-zero
 #   exit = fail. Suites are pure-compute (no secrets / network) by convention.
 # ============================================================================
-printf '\n%s\n' "${B}[2/6] Test suites -- every tests/* + bot/test_* (auto-discovered)${Z}"
+printf '\n%s\n' "${B}[2/7] Test suites -- every tests/* + bot/test_* (auto-discovered)${Z}"
 hr
 g2_pass=0; g2_fail=0
 # Stable, de-duplicated discovery. tests/full_qa.js is covered by group 1, so
@@ -140,7 +140,7 @@ record_group "2. Test suites ($((g2_pass + g2_fail)) total)" "$g2_pass" "$g2_fai
 # ============================================================================
 # GROUP 3 -- JS syntax (`node --check`) across every committed .js + the bot .gs
 # ============================================================================
-printf '\n%s\n' "${B}[3/6] JS syntax -- node --check on all *.js + bot *.gs${Z}"
+printf '\n%s\n' "${B}[3/7] JS syntax -- node --check on all *.js + bot *.gs${Z}"
 hr
 if run_counted_helper node "$HELP/check-js-syntax.js" "$ROOT"; then
   record_group "3. JS syntax ($((RG_PASS + RG_FAIL)) files)" "$RG_PASS" "$RG_FAIL"
@@ -151,7 +151,7 @@ fi
 # ============================================================================
 # GROUP 4 -- HTML inline scripts (JS parse) + structured data (JSON-LD parse)
 # ============================================================================
-printf '\n%s\n' "${B}[4/6] HTML -- inline <script> parse + JSON-LD validate${Z}"
+printf '\n%s\n' "${B}[4/7] HTML -- inline <script> parse + JSON-LD validate${Z}"
 hr
 if run_counted_helper node "$HELP/check-html-scripts.js" "$ROOT"; then
   # RG_EXTRA = "<jsBlocks> <ldBlocks>"
@@ -164,7 +164,7 @@ fi
 # ============================================================================
 # GROUP 5 -- sitemap.xml well-formedness + loc-origin sanity
 # ============================================================================
-printf '\n%s\n' "${B}[5/6] Sitemap -- sitemap.xml structure + <loc> origins${Z}"
+printf '\n%s\n' "${B}[5/7] Sitemap -- sitemap.xml structure + <loc> origins${Z}"
 hr
 if run_counted_helper node "$HELP/check-sitemap.js" "$ROOT"; then
   record_group "5. Sitemap" "$RG_PASS" "$RG_FAIL"
@@ -177,7 +177,7 @@ fi
 #   Mirrors + extends the CI grep. NOT a substitute for real secret-scanning,
 #   but fails loudly on the obvious provider-token shapes.
 # ============================================================================
-printf '\n%s\n' "${B}[6/6] Secret scan -- committed html/js/gs/md${Z}"
+printf '\n%s\n' "${B}[6/7] Secret scan -- committed html/js/gs/md${Z}"
 hr
 # Patterns: Meta long-lived (EAA...), OpenAI (sk-... / sk-proj-...), Anthropic
 # (sk-ant-...), Google API key (AIza...), and PEM private-key headers.
@@ -192,6 +192,19 @@ if [ -n "$SECRET_HITS" ]; then
   record_group "6. Secret scan" 0 1
 else
   record_group "6. Secret scan" 1 0
+fi
+
+# ============================================================================
+# GROUP 7 -- wa-sim corpus ratchet (income-sign + amount + disappearing-money)
+#   The 1200+ labeled-message simulator corpus run through the REAL bot logic.
+#   Hard-fails on any "disappeared money"; ratchet-fails if accuracy regresses.
+# ============================================================================
+printf '\n%s\n' "${B}[7/7] wa-sim corpus -- income-sign + amount regression ratchet${Z}"
+hr
+if node "$ROOT/scripts/gauntlet/check-wa-sim.js"; then
+  record_group "7. wa-sim corpus ratchet" 1 0
+else
+  record_group "7. wa-sim corpus ratchet" 0 1
 fi
 
 # ============================================================================
