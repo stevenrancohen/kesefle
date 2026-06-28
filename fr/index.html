@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>כספ'לה — הכסף שלך, על אוטומט</title>
-<meta name="description" content="שלח הודעה בוואטסאפ, וההוצאה כבר רשומה בגוגל שיטס שלך. בוט מעקב הוצאות בעברית — בלי אפליקציות, בלי טפסים, בלי לזכור." />
-<meta name="keywords" content="מעקב הוצאות, בוט וואטסאפ הוצאות, אפליקציה למעקב הוצאות, ניהול תקציב משפחתי, גוגל שיטס הוצאות, אקסל הוצאות חודשי, מעקב הוצאות עברית, ניהול הוצאות חינם, אלטרנטיבה לרייזאפ, בוט וואטסאפ תקציב, תזרים מזומנים פרילנסר" />
+<title>כספ'לה — votre argent, en pilote automatique</title>
+<meta name="description" content="Envoyez un message sur WhatsApp, et la dépense est déjà inscrite dans votre Google Sheets. Un bot de suivi des dépenses pour Israël — sans appli, sans formulaire, sans rien à retenir." />
+<meta name="keywords" content="suivi des dépenses, bot WhatsApp dépenses, appli de suivi des dépenses, gestion du budget familial, Google Sheets dépenses, Excel dépenses mensuelles, suivi des dépenses Israël, gestion des dépenses gratuite, alternative à Riseup, bot WhatsApp budget, trésorerie freelance" />
 <meta name="theme-color" content="#6366F1" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -14,23 +14,23 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="icon" type="image/png" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<meta property="og:title" content="כספ'לה — הכסף שלך, על אוטומט" />
-<meta property="og:description" content="שלח הודעה בוואטסאפ — '245 סופר' — וזה כבר רשום, מקוטלג, מסוכם." />
+<meta property="og:title" content="כספ'לה — votre argent, en pilote automatique" />
+<meta property="og:description" content="Envoyez un message sur WhatsApp — « 245 supermarché » — et c'est déjà inscrit, classé et résumé." />
 <meta property="og:type" content="website" />
-<meta property="og:locale" content="he_IL" />
+<meta property="og:locale" content="fr_FR" />
 <meta property="og:image" content="https://kesefle.com/og-image.png?v=2026-05-24" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta property="og:url" content="https://kesefle.com/" />
+<meta property="og:url" content="https://kesefle.com/fr" />
 <meta property="og:site_name" content="כספ'לה" />
-<link rel="canonical" href="https://kesefle.com/" />
 <link rel="alternate" hreflang="he-IL" href="https://kesefle.com/" />
 <link rel="alternate" hreflang="ar" href="https://kesefle.com/ar" />
 <link rel="alternate" hreflang="ru" href="https://kesefle.com/ru" />
 <link rel="alternate" hreflang="fr" href="https://kesefle.com/fr" />
 <link rel="alternate" hreflang="it" href="https://kesefle.com/it" />
 <link rel="alternate" hreflang="x-default" href="https://kesefle.com/" />
+<link rel="canonical" href="https://kesefle.com/fr" />
 <link rel="search" type="application/opensearchdescription+xml" title="Kesefle Help" href="/opensearch.xml" />
 <script type="application/ld+json">
 {
@@ -39,14 +39,14 @@
   "name": "כספ'לה",
   "alternateName": ["כספלה", "כספ'לה", "Kesefle", "kesefle"],
   "applicationCategory": "FinanceApplication",
-  "description": "מעקב הוצאות חכם בוואטסאפ, עם גיליון נתונים אוטומטי. לכל משפחה ועסק.",
+  "description": "Suivi intelligent des dépenses sur WhatsApp, avec une feuille de calcul automatique. Pour chaque famille et chaque entreprise.",
   "operatingSystem": "WhatsApp, Android, iOS, Web",
   "url": "https://kesefle.com",
-  "inLanguage": ["he", "en"],
+  "inLanguage": ["fr", "he", "en"],
   "offers": [
-    { "@type": "Offer", "name": "חינם", "price": "0", "priceCurrency": "ILS", "url": "https://kesefle.com/account?plan=free" },
+    { "@type": "Offer", "name": "Gratuit", "price": "0", "priceCurrency": "ILS", "url": "https://kesefle.com/account?plan=free" },
     { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "ILS", "url": "https://kesefle.com/account?plan=pro" },
-    { "@type": "Offer", "name": "משפחה", "price": "39", "priceCurrency": "ILS", "url": "https://kesefle.com/account?plan=family" }
+    { "@type": "Offer", "name": "Famille", "price": "39", "priceCurrency": "ILS", "url": "https://kesefle.com/account?plan=family" }
   ],
   "publisher": {
     "@type": "Organization",
@@ -70,7 +70,7 @@
     "alternateName": "סטיבן רן כהן",
     "url": "https://kesefle.com/about"
   },
-  "description": "כספ'לה — מערכת מעקב הוצאות מבוססת וואטסאפ עבור משפחות ועצמאים בישראל.",
+  "description": "כספ'לה — un système de suivi des dépenses basé sur WhatsApp pour les familles et les indépendants en Israël.",
   "areaServed": { "@type": "Country", "name": "Israel" },
   "sameAs": [
     "https://kesefle.com/about",
@@ -91,8 +91,8 @@
   "name": "כספ'לה",
   "alternateName": ["כספלה", "כספ'לה", "Kesefle", "kesefle"],
   "url": "https://kesefle.com/",
-  "inLanguage": "he",
-  "description": "כספ'לה — בוט וואטסאפ למעקב הוצאות והכנסות עם גיליון Google אישי, למשפחות, שותפים ועצמאים בישראל."
+  "inLanguage": "fr",
+  "description": "כספ'לה — un bot WhatsApp de suivi des dépenses et des revenus avec une feuille Google personnelle, pour les familles, les colocataires et les indépendants en Israël."
 }
 </script>
 
@@ -100,31 +100,31 @@
 {
   "@context": "https://schema.org",
   "@type": "HowTo",
-  "name": "איך להתחיל לעקוב אחרי הוצאות עם כספ'לה",
-  "description": "מדריך התחלה: הרשמה עם Google, חיבור לוואטסאפ, ושליחת ההוצאה הראשונה.",
+  "name": "Comment commencer à suivre ses dépenses avec כספ'לה",
+  "description": "Guide de démarrage : inscription avec Google, connexion à WhatsApp et envoi de la première dépense.",
   "totalTime": "PT1M",
-  "inLanguage": "he-IL",
+  "inLanguage": "fr-FR",
   "step": [
     {
       "@type": "HowToStep",
       "position": 1,
-      "name": "התחבר עם Google",
-      "text": "לחיצה אחת על 'התחבר עם Google'. אנחנו יוצרים לך גיליון פרטי חדש בגוגל דרייב שלך — לא אצלנו, אצלך.",
-      "url": "https://kesefle.com/#how"
+      "name": "Connectez-vous avec Google",
+      "text": "Un seul clic sur « Se connecter avec Google ». Nous créons pour vous une nouvelle feuille privée dans votre Google Drive — pas chez nous, chez vous.",
+      "url": "https://kesefle.com/fr#how"
     },
     {
       "@type": "HowToStep",
       "position": 2,
-      "name": "סרוק QR לוואטסאפ",
-      "text": "פותח שיחה עם הבוט בוואטסאפ. שלח 'שלום' — קיבלת אישור. זהו. אתה מחובר.",
-      "url": "https://kesefle.com/#how"
+      "name": "Scannez le QR vers WhatsApp",
+      "text": "Cela ouvre une conversation avec le bot sur WhatsApp. Envoyez « Bonjour » — vous recevez une confirmation. Voilà. Vous êtes connecté.",
+      "url": "https://kesefle.com/fr#how"
     },
     {
       "@type": "HowToStep",
       "position": 3,
-      "name": "כתוב הוצאה בוואטסאפ",
-      "text": "שלח '42 קפה' או '1800 ארנונה'. הבוט מקטלג אוטומטית ורושם בגיליון. בלי תפריטים, בלי טפסים.",
-      "url": "https://kesefle.com/#how"
+      "name": "Écrivez une dépense sur WhatsApp",
+      "text": "Envoyez « 42 café » ou « 1800 taxe foncière ». Le bot classe automatiquement et inscrit dans la feuille. Sans menus, sans formulaires.",
+      "url": "https://kesefle.com/fr#how"
     }
   ]
 }
@@ -486,7 +486,7 @@
 </head>
 <body class="bg-ink-50 text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-950 dark:text-white kfl-continuous-body">
 
-<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-[10000] focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:shadow-soft">דלג לתוכן</a>
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-[10000] focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:shadow-soft">Aller au contenu</a>
 
 <!-- Cinematic page-load curtain — lifts after first paint -->
 <div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
@@ -533,60 +533,60 @@
      Light-mode classes kept for fallback; site is forced dark by default. -->
 <header id="kfl-site-header" class="kfl-header fixed inset-x-0 top-0 z-50">
   <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
-    <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+    <a href="/fr" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
       <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
       <span class="kfl-logo-text">כספ'לה</span>
     </a>
 
     <!-- Desktop dropdown menu (6 categories) -->
     <div class="hidden items-center gap-0.5 md:flex">
-      <!-- 1. המוצר -->
+      <!-- 1. Le produit -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">המוצר<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Le produit<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
-            <a href="/demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">הדגמה חיה</a>
-            <a href="/#about-kesefle" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">מה זה כספ'לה?</a>
+            <a href="/demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Démo en direct</a>
+            <a href="/fr#about-kesefle" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Qu'est-ce que כספ'לה ?</a>
           </div>
         </div>
       </div>
-      <!-- 2. מחירים -->
+      <!-- 2. Tarifs -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">מחירים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Tarifs<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
-            <a href="/pricing#tiers" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">מסלולים</a>
-            <a href="/pricing#compare" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">השוואת תכונות</a>
+            <a href="/fr/pricing#tiers" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Formules</a>
+            <a href="/fr/pricing#compare" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Comparatif des fonctionnalités</a>
             </div>
         </div>
       </div>
-      <!-- 3. מדריכים -->
+      <!-- 3. Guides -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">מדריכים<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Guides<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
-            <a href="/blog" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">בלוג</a>
-            <a href="/start" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">התחלה מהירה</a>
+            <a href="/blog" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Blog</a>
+            <a href="/start" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Démarrage rapide</a>
           </div>
         </div>
       </div>
-      <!-- 4. החברה -->
+      <!-- 4. L'entreprise -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">החברה<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">L'entreprise<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
-            <a href="/about" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">אודות</a>
-            <a href="/about#timeline" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">הסיפור שלנו</a>
-            <a href="/roadmap" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">מפת דרכים</a>
+            <a href="/fr/about" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">À propos</a>
+            <a href="/fr/about#timeline" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Notre histoire</a>
+            <a href="/roadmap" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Feuille de route</a>
           </div>
         </div>
       </div>
-      <!-- 5. צור קשר -->
+      <!-- 5. Contact -->
       <div class="group relative">
-        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">צור קשר<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Contact<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
           <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
-            <a href="/contact" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">דברו איתנו</a>
+            <a href="/fr/contact" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Parlez-nous</a>
           </div>
         </div>
       </div>
@@ -595,10 +595,20 @@
     <!-- CTAs + mobile hamburger. Two separate buttons per Steven's request:
          primary "הרשמה" (filled brand) + secondary "התחברות" (outline). -->
     <div class="flex items-center gap-2">
-      <div class="lang-switch relative" data-current-lang="he"><button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">עברית</span></button><ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden><li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li><li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li><li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li><li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li><li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li><li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li></ul></div>
-      <a href="/account?mode=login" class="hidden rounded-xl border border-ink-200/40 px-3.5 py-2 text-sm font-semibold text-ink-700 transition hover:border-ink-100 hover:bg-white/5 md:inline-block dark:border-white/20 dark:text-white dark:hover:bg-white/10">התחברות</a>
-      <a href="/account?mode=signup" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">הרשמה</a>
-      <button type="button" aria-label="תפריט" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
+      <div class="lang-switch relative" data-current-lang="fr">
+  <button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">Français</span></button>
+  <ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden>
+    <li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li>
+    <li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li>
+    <li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li>
+    <li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li>
+    <li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li>
+    <li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li>
+  </ul>
+</div>
+      <a href="/account?mode=login" class="hidden rounded-xl border border-ink-200/40 px-3.5 py-2 text-sm font-semibold text-ink-700 transition hover:border-ink-100 hover:bg-white/5 md:inline-block dark:border-white/20 dark:text-white dark:hover:bg-white/10">Connexion</a>
+      <a href="/account?mode=signup" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">Inscription</a>
+      <button type="button" aria-label="Menu" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
@@ -607,14 +617,14 @@
   <!-- Mobile menu (native accordion). Slightly more opaque so it reads
        as a panel even over the transparent header. -->
   <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-100 dark:border-white/[0.06] bg-white/95 px-5 py-3 backdrop-blur-lg dark:bg-ink-950/95 md:hidden">
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">המוצר<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הדגמה חיה</a></div></details>
-<details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מחירים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/pricing#tiers" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מסלולים</a><a href="/pricing#compare" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">השוואת תכונות</a></div></details>
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">מדריכים<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/blog" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">בלוג</a><a href="/start" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">התחלה מהירה</a></div></details>
-    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">החברה<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/about" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">אודות</a><a href="/about#timeline" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">הסיפור שלנו</a><a href="/roadmap" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">מפת דרכים</a></div></details>
-    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">צור קשר<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/contact" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">דברו איתנו</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Le produit<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Démo en direct</a></div></details>
+<details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Tarifs<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/fr/pricing#tiers" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Formules</a><a href="/fr/pricing#compare" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Comparatif des fonctionnalités</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Guides<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/blog" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Blog</a><a href="/start" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Démarrage rapide</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">L'entreprise<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/fr/about" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">À propos</a><a href="/fr/about#timeline" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Notre histoire</a><a href="/roadmap" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Feuille de route</a></div></details>
+    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Contact<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/fr/contact" class="flex min-h-[44px] items-center py-2.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Parlez-nous</a></div></details>
     <div class="mt-3 grid grid-cols-2 gap-2">
-      <a href="/account?mode=login" class="flex min-h-[44px] items-center justify-center rounded-xl border border-ink-300 px-4 py-2.5 text-center text-sm font-bold text-ink-700 dark:border-ink-600 dark:text-ink-100">התחברות</a>
-      <a href="/account?mode=signup" class="flex min-h-[44px] items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-center text-sm font-bold text-white">הרשמה</a>
+      <a href="/account?mode=login" class="flex min-h-[44px] items-center justify-center rounded-xl border border-ink-300 px-4 py-2.5 text-center text-sm font-bold text-ink-700 dark:border-ink-600 dark:text-ink-100">Connexion</a>
+      <a href="/account?mode=signup" class="flex min-h-[44px] items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-center text-sm font-bold text-white">Inscription</a>
     </div>
   </div>
 </header>
@@ -647,33 +657,33 @@
           <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400/60 opacity-75"></span>
           <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
         </span>
-        <span>הדרך הפשוטה לנהל את הכסף שלך</span>
+        <span>La façon simple de gérer votre argent</span>
       </div>
       <h1 class="text-balance text-3xl font-black leading-tight tracking-tight sm:text-5xl sm:leading-[1.05] md:text-7xl md:leading-[1.02] dark:text-white">
-        כל ההוצאות שלך,
-        <span class="block holo-text">בלי מאמץ. בלי טפסים.</span>
+        Toutes vos dépenses,
+        <span class="block holo-text">sans effort. Sans formulaires.</span>
       </h1>
       <p class="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-ink-600 dark:text-ink-200">
-        כותבים <span class="font-semibold text-ink-900 dark:text-white">״<span class="num">245</span> סופר״</span> בוואטסאפ — ותוך שנייה זה כבר רשום, מקוטלג ומסוכם בגיליון פרטי בדרייב שלכם.
-        <br><span class="text-ink-500 dark:text-ink-300 text-sm">בלי אפליקציות. בלי הגדרות. בלי גישה לבנק. בלי לזכור לפתוח שום דבר.</span>
+        Vous écrivez <span class="font-semibold text-ink-900 dark:text-white">« <span class="num">245</span> supermarché »</span> sur WhatsApp — et en une seconde c'est déjà inscrit, classé et résumé dans une feuille privée sur votre Drive.
+        <br><span class="text-ink-500 dark:text-ink-300 text-sm">Sans applis. Sans réglages. Sans accès à la banque. Sans avoir à penser à ouvrir quoi que ce soit.</span>
       </p>
       <!-- Hero CTAs (simplified 2026-05-25): one primary + one secondary, monday-style.
            Green WhatsApp button removed -- the signup flow opens WhatsApp at the end. -->
       <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
         <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'hero' });" class="magnetic-cta group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-l from-brand-600 via-brand-600 to-brand-700 px-8 py-4 text-base font-bold text-white shadow-glow transition-all hover:shadow-2xl hover:-translate-y-0.5">
           <span class="shimmer-overlay"></span>
-          <span class="relative">בוא נתחיל</span>
+          <span class="relative">C'est parti</span>
           <svg class="relative h-4 w-4 transition group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
         </a>
         <button type="button" onclick="kesefleOpenDemo()" class="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-ink-200 bg-white px-7 py-4 text-base font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-soft">
           <svg class="h-4 w-4 text-brand-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          דמו של 60 שניות
+          Démo de 60 secondes
         </button>
       </div>
 
       <!-- Quick OAuth row — visible above fold for fast signup -->
       <div class="mt-6 flex flex-wrap items-center gap-2">
-        <span class="text-xs font-semibold text-ink-500 dark:text-ink-400">או התחבר ב-1 קליק:</span>
+        <span class="text-xs font-semibold text-ink-500 dark:text-ink-400">Ou connectez-vous en 1 clic :</span>
         <button type="button" onclick="document.getElementById('signup').scrollIntoView({behavior:'smooth'}); setTimeout(kesefleStartGoogle, 600);" class="group inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-ink-200 bg-white px-3 py-2 text-xs font-semibold text-ink-700 shadow-sm transition hover:shadow-md hover:-translate-y-0.5 dark:border-ink-600 dark:bg-ink-800 dark:text-ink-100" aria-label="Google">
           <svg class="h-4 w-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
           Google
@@ -690,30 +700,30 @@
       <div class="mt-7 flex items-center gap-5 text-sm text-ink-500 dark:text-ink-300">
         <div class="flex items-center gap-2">
           <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
-          <span><span class="num">14</span> ימי ניסיון חינם</span>
+          <span><span class="num">14</span> jours d'essai gratuit</span>
         </div>
         <div class="flex items-center gap-2">
           <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
-          <span>ביטול בלחיצה</span>
+          <span>Annulation en un clic</span>
         </div>
         <div class="flex items-center gap-2">
           <svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
-          <span>הנתונים נשארים שלך</span>
+          <span>Vos données restent les vôtres</span>
         </div>
       </div>
     </div>
 
     <!-- right: LIVE auto-playing WhatsApp demo (moved here 2026-05-26 per Steven —
          the bot in action, no controls, no script panel, just the chat running). -->
-    <div class="relative kfl-hero-stage" data-stage="2" dir="rtl">
+    <div class="relative kfl-hero-stage" data-stage="2" dir="ltr">
       <div class="absolute -top-10 -right-10 -z-10 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl"></div>
       <div class="absolute -bottom-10 -left-10 -z-10 h-72 w-72 rounded-full bg-accent-500/20 blur-3xl"></div>
       <!-- floating chips around the phone — pinned to viewport on mobile, offset on sm+ -->
       <div class="pointer-events-none absolute right-0 sm:-right-3 top-5 z-20 rotate-[-5deg] rounded-2xl border border-white/40 bg-white/90 px-3 py-2 text-xs font-bold text-ink-900 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-ink-800/90 dark:text-white">
-        <span class="flex items-center gap-1.5"><span class="text-base">⚡</span> <span class="num">2</span>s לרישום</span>
+        <span class="flex items-center gap-1.5"><span class="text-base">⚡</span> <span class="num">2</span>s pour enregistrer</span>
       </div>
       <div class="pointer-events-none absolute left-0 sm:-left-3 bottom-14 z-20 rotate-[4deg] rounded-2xl border border-white/40 bg-white/90 px-3 py-2 text-xs font-bold text-ink-900 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-ink-800/90 dark:text-white">
-        <span class="flex items-center gap-1.5"><span class="text-base">🔒</span> נשאר אצלך</span>
+        <span class="flex items-center gap-1.5"><span class="text-base">🔒</span> Ça reste chez vous</span>
       </div>
       <div class="tilt-3d mx-auto w-full max-w-md lg:max-w-lg rounded-[2rem] border border-ink-200 bg-white p-4 shadow-2xl ring-1 ring-black/5 dark:border-ink-700 dark:bg-ink-800 dark:ring-white/5">
         <!-- phone bezel -->
@@ -723,7 +733,7 @@
             <div class="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-base font-black">₪</div>
             <div class="flex-1 min-w-0">
               <div class="text-sm font-bold">כספ'לה</div>
-              <div class="text-[11px] opacity-80">פעיל עכשיו</div>
+              <div class="text-[11px] opacity-80">En ligne</div>
             </div>
             <div class="flex items-center gap-1.5 text-[10px] font-semibold opacity-80">
               <span class="grid h-1.5 w-1.5 animate-pulse rounded-full bg-brand-300"></span>
@@ -732,23 +742,23 @@
           </div>
 
           <!-- Auto-playing chat. min-h keeps the box stable while filling. -->
-          <div id="kfl-demo-chat" class="space-y-2.5 px-3 py-4 min-h-[420px] max-h-[440px] overflow-y-auto" dir="rtl">
-            <div class="text-center text-[10px] font-semibold text-ink-500/80">היום</div>
-            <div class="mx-auto max-w-[78%] rounded-lg bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-700 dark:text-amber-200">🔒 ההודעות מוצפנות ב-TLS בדרך לבוט</div>
+          <div id="kfl-demo-chat" class="space-y-2.5 px-3 py-4 min-h-[420px] max-h-[440px] overflow-y-auto" dir="ltr">
+            <div class="text-center text-[10px] font-semibold text-ink-500/80">Aujourd'hui</div>
+            <div class="mx-auto max-w-[78%] rounded-lg bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-700 dark:text-amber-200">🔒 Les messages sont chiffrés en TLS jusqu'au bot</div>
           </div>
 
           <!-- "View sheet" CTA — hidden until all messages have played -->
           <div id="kfl-demo-cta" class="hidden border-t border-white/5 bg-ink-50 dark:bg-ink-950 px-4 py-4">
             <a href="#signup" class="flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700">
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>
-              <span>זה הזמן שלך — הרשמה בחינם →</span>
+              <span>C'est à votre tour — inscription gratuite →</span>
             </a>
           </div>
         </div>
       </div>
       <!-- floating tag -->
       <div class="absolute -bottom-6 -right-6 hidden rotate-3 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-ink-900 shadow-2xl md:block">
-        ⚡ נשמר לגיליון שלך תוך <span class="num">2</span> שניות
+        ⚡ Enregistré dans votre feuille en <span class="num">2</span> secondes
       </div>
     </div>
   </div>
@@ -757,11 +767,11 @@
   <script>
   (function () {
     var DEMO_MESSAGES = [
-      { user: '45 קפה',           bot: ["✅ נרשם: 45₪", "☕ מזון ופארמה / אוכל מוכן"] },
-      { user: '1800 ארנונה',       bot: ["✅ נרשם: 1,800₪", "🏠 דיור / ארנונה"] },
-      { user: '230 סופר רמי לוי',  bot: ["✅ נרשם: 230₪", "🛒 מזון ופארמה / מזון"] },
-      { user: '8500 משכורת',       bot: ["✅ נרשמה כהכנסה: 8,500₪", "💼 שכר / שכר עבודה 1"] },
-      { user: '60 אובר',           bot: ["✅ נרשם: 60₪", "🚗 תחבורה / תחבורה שיתופית"] }
+      { user: '45 café',              bot: ["✅ Enregistré : 45₪", "☕ Alimentation et pharmacie / Plats préparés"] },
+      { user: '1800 taxe foncière',   bot: ["✅ Enregistré : 1 800₪", "🏠 Logement / Taxe foncière"] },
+      { user: '230 supermarché',      bot: ["✅ Enregistré : 230₪", "🛒 Alimentation et pharmacie / Courses"] },
+      { user: '8500 salaire',         bot: ["✅ Enregistré comme revenu : 8 500₪", "💼 Salaire / Salaire 1"] },
+      { user: '60 Uber',              bot: ["✅ Enregistré : 60₪", "🚗 Transport / VTC"] }
     ];
 
     var chatEl = document.getElementById('kfl-demo-chat');
@@ -858,31 +868,31 @@
      created (drive.file scope), nothing else. This is the structural difference
      vs Lyra / Salt / RiseUp, who all hold your transactions on their servers.
 ============================================================================ -->
-<section id="privacy-first" class="relative py-20 md:py-28" dir="rtl">
+<section id="privacy-first" class="relative py-20 md:py-28" dir="ltr">
   <!-- subtle cyan radial behind the headline, brand-on-brand -->
   <div class="pointer-events-none absolute inset-0 -z-10 opacity-60" aria-hidden="true">
     <div class="absolute left-1/2 top-1/2 -z-10 h-[36rem] w-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-100/40 blur-3xl dark:bg-brand-500/10"></div>
   </div>
 
-  <div class="mx-auto max-w-5xl px-5 text-right">
+  <div class="mx-auto max-w-5xl px-5 text-left">
     <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
       </svg>
-      פרטיות שאי-אפשר לשבור — לא רק להבטיח
+      Une confidentialité impossible à briser — pas juste promise
     </span>
 
     <h2 class="mt-5 text-4xl font-black leading-[1.05] tracking-tight md:text-6xl dark:text-white">
-      הנתונים שלך<br>
-      <span class="bg-gradient-to-l from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200">לא יושבים אצלנו.</span>
+      Vos données<br>
+      <span class="bg-gradient-to-l from-brand-600 to-brand-400 bg-clip-text text-transparent dark:from-brand-400 dark:to-brand-200">ne sont pas chez nous.</span>
     </h2>
 
     <p class="mt-6 max-w-2xl text-lg leading-relaxed text-ink-700 dark:text-ink-200 md:text-xl">
-      כל המתחרים שלנו &mdash; Riseup, Salt, Lyra &mdash; שומרים את ההוצאות שלך
-      <span class="font-bold">בשרת שלהם</span>.
-      אצלנו הגיליון יושב אצלך בגוגל דרייב, ואנחנו עובדים בהרשאה
-      שגוגל קוראת לה <code class="rounded bg-ink-100 px-1.5 py-0.5 text-sm font-mono text-ink-800 dark:bg-ink-800 dark:text-ink-200">drive.file</code>
-      — הרשאה שמאפשרת לנו רק לכתוב לקבצים שאנחנו יצרנו, ולעולם לא לקרוא קבצים אחרים שלך.
+      Tous nos concurrents &mdash; Riseup, Salt, Lyra &mdash; conservent vos dépenses
+      <span class="font-bold">sur leur serveur</span>.
+      Chez nous, la feuille reste chez vous dans Google Drive, et nous travaillons avec une autorisation
+      que Google appelle <code class="rounded bg-ink-100 px-1.5 py-0.5 text-sm font-mono text-ink-800 dark:bg-ink-800 dark:text-ink-200">drive.file</code>
+      — une autorisation qui ne nous permet d'écrire que dans les fichiers que nous avons créés, et jamais de lire vos autres fichiers.
     </p>
 
     <!-- 3 proof points -->
@@ -894,9 +904,9 @@
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
           </svg>
         </div>
-        <h3 class="text-base font-bold text-ink-900 dark:text-white">הגיליון אצלך, לא אצלנו</h3>
+        <h3 class="text-base font-bold text-ink-900 dark:text-white">La feuille est chez vous, pas chez nous</h3>
         <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">
-          הוא נוצר בחשבון הגוגל שלך. גם אם נסגור מחר את החברה, הקובץ נשאר שלך, פתוח, ניתן לייצוא, שלך לחלוטין.
+          Elle est créée dans votre compte Google. Même si nous fermions l'entreprise demain, le fichier reste le vôtre, ouvert, exportable, entièrement à vous.
         </p>
       </article>
 
@@ -907,9 +917,9 @@
             <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
         </div>
-        <h3 class="text-base font-bold text-ink-900 dark:text-white">הרשאת drive.file — מינימום ההכרחי</h3>
+        <h3 class="text-base font-bold text-ink-900 dark:text-white">L'autorisation drive.file — le strict minimum</h3>
         <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">
-          גוגל מבדילה בין "כל הדרייב" לבין "רק קבצים שיצרת". אנחנו ביקשנו רק את השני. שום קובץ אחר שלך לא נגיש לנו — אפילו לא ברגע של חירום.
+          Google distingue « tout le Drive » et « uniquement les fichiers que vous avez créés ». Nous n'avons demandé que le second. Aucun de vos autres fichiers ne nous est accessible — même pas en cas d'urgence.
         </p>
       </article>
 
@@ -920,9 +930,9 @@
             <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>
           </svg>
         </div>
-        <h3 class="text-base font-bold text-ink-900 dark:text-white">אין דאטהבייס מרכזי של הוצאות</h3>
+        <h3 class="text-base font-bold text-ink-900 dark:text-white">Aucune base de données centrale de dépenses</h3>
         <p class="mt-2 text-sm leading-relaxed text-ink-600 dark:text-ink-300">
-          השרת שלנו לא שומר עותק של ההוצאות שלך. הוא רק מתרגם הודעות וואטסאפ ושולח אותן לגיליון שלך. דליפת נתונים מצדנו פשוט אין מה לדלוף.
+          Notre serveur ne conserve aucune copie de vos dépenses. Il se contente de traduire les messages WhatsApp et de les envoyer vers votre feuille. Une fuite de données de notre côté : il n'y a tout simplement rien à fuiter.
         </p>
       </article>
     </div>
@@ -934,23 +944,23 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          <span class="font-bold">כספ'לה:</span>
-          <span>הגיליון בדרייב שלך · אנחנו רק כותבים · drive.file בלבד</span>
+          <span class="font-bold">כספ'לה :</span>
+          <span>La feuille dans votre Drive · nous ne faisons qu'écrire · drive.file uniquement</span>
         </div>
         <div class="flex items-center gap-3 text-ink-500 dark:text-ink-400">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
-          <span class="font-bold">המתחרים:</span>
-          <span>הוצאות בשרת שלהם · גישה מלאה לכל היסטוריית התנועות שלך</span>
+          <span class="font-bold">Les concurrents :</span>
+          <span>Vos dépenses sur leur serveur · accès total à tout l'historique de vos opérations</span>
         </div>
       </div>
     </div>
 
     <p class="mt-8 text-sm text-ink-500 dark:text-ink-400">
-      אם אתה חושב שמעקב הוצאות צריך לבוא במחיר של פרטיות &mdash;
-      <a href="/privacy" class="text-brand-700 underline hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">קרא את מדיניות הפרטיות שלנו</a>.
-      היא קצרה, ויש בה רק את האמת.
+      Si vous pensez que le suivi des dépenses doit se payer au prix de votre vie privée &mdash;
+      <a href="/privacy" class="text-brand-700 underline hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">lisez notre politique de confidentialité</a>.
+      Elle est courte, et il n'y a que la vérité dedans.
     </p>
   </div>
 </section>
@@ -958,28 +968,28 @@
 <!-- ============== ABOUT KESEFLE / SEO LONG-FORM (moved to position #2 per Steven 2026-05-23) ============== -->
 <!-- Backgrounds + hard borders removed 2026-05-24 for continuous-flow page. -->
 <section id="about-kesefle" class="relative py-20 md:py-24">
-  <div class="mx-auto max-w-3xl px-5 text-right" dir="rtl">
-    <h2 class="text-3xl font-black tracking-tight md:text-4xl dark:text-white">מה זה כספ'לה?</h2>
+  <div class="mx-auto max-w-3xl px-5 text-left" dir="ltr">
+    <h2 class="text-3xl font-black tracking-tight md:text-4xl dark:text-white">Qu'est-ce que כספ'לה ?</h2>
     <p class="mt-4 leading-relaxed text-ink-700 dark:text-ink-200">
-      כספ'לה היא מערכת ישראלית למעקב הוצאות והכנסות שמבוססת על הכלי שכבר נמצא בכיס שלך — וואטסאפ. במקום להוריד עוד אפליקציה, לזכור עוד סיסמה ולתחזק עוד גיליון אקסל, אתם פשוט שולחים הודעה לבוט בעברית: <span class="num">42</span> קפה, <span class="num">1,800</span> ארנונה, <span class="num">245</span> סופר. הבוט מזהה את הקטגוריה, רושם את ההוצאה בגוגל שיטס פרטי שיש לך שליטה מלאה עליו, ומחזיר אישור תוך שתי שניות.
+      כספ'לה est un système israélien de suivi des dépenses et des revenus, fondé sur l'outil que vous avez déjà dans votre poche — WhatsApp. Au lieu de télécharger une appli de plus, de retenir un mot de passe de plus et d'entretenir un fichier Excel de plus, vous envoyez simplement un message au bot : <span class="num">42</span> café, <span class="num">1 800</span> taxe foncière, <span class="num">245</span> supermarché. Le bot reconnaît la catégorie, inscrit la dépense dans un Google Sheets privé sur lequel vous avez un contrôle total, et renvoie une confirmation en deux secondes.
     </p>
-    <h3 class="mt-8 text-xl font-bold dark:text-white">למה בוט וואטסאפ ולא אפליקציה למעקב הוצאות?</h3>
+    <h3 class="mt-8 text-xl font-bold dark:text-white">Pourquoi un bot WhatsApp et non une appli de suivi des dépenses ?</h3>
     <p class="mt-3 leading-relaxed text-ink-700 dark:text-ink-200">
-      בישראל, כל אחד פותח וואטסאפ עשרות פעמים ביום. אפליקציה ייעודית למעקב הוצאות — אפילו הכי טובה — נוטה להישכח אחרי שבועיים. הסטטיסטיקה אכזרית: <span class="num">85%</span> מהאנשים מפסיקים לתעד הוצאות בתוך חודש מההורדה. כספ'לה מנצלת את העובדה שכבר יש לך הרגל לכתוב הודעות, והופכת אותו לכלי ניהול תקציב משפחתי בלי שינוי התנהגותי. אין מסכים נוספים ללמוד, אין UI לבזבז עליו זמן.
+      En Israël, tout le monde ouvre WhatsApp des dizaines de fois par jour. Une appli dédiée au suivi des dépenses — même la meilleure — finit par être oubliée au bout de deux semaines. La statistique est implacable : <span class="num">85 %</span> des gens cessent de noter leurs dépenses dans le mois qui suit le téléchargement. כספ'לה tire parti du fait que vous avez déjà l'habitude d'écrire des messages, et en fait un outil de gestion du budget familial sans aucun changement de comportement. Aucun nouvel écran à apprendre, aucune interface où perdre votre temps.
     </p>
-    <h3 class="mt-8 text-xl font-bold dark:text-white">למי זה מתאים?</h3>
+    <h3 class="mt-8 text-xl font-bold dark:text-white">À qui cela s'adresse-t-il ?</h3>
     <p class="mt-3 leading-relaxed text-ink-700 dark:text-ink-200">
-      משפחות שרוצות לדעת לאן הולך הכסף בלי לפתוח עוד אקסל הוצאות חודשי, פרילנסרים ועצמאים שצריכים תזרים מזומנים אמיתי לרואה החשבון, וכל מי שניסה Riseup או Salt וגילה שחיבור אוטומטי לבנק לא תופס מזומן, ביט, גמ"ח, או הוצאות עסקיות. כספ'לה רושמת כל מה שאתה אומר לה — כסף שיוצא וכסף שנכנס — ומחזירה לך שליטה מלאה.
+      Aux familles qui veulent savoir où va l'argent sans ouvrir un énième fichier Excel mensuel, aux freelances et indépendants qui ont besoin d'une vraie trésorerie pour leur comptable, et à tous ceux qui ont essayé Riseup ou Salt et découvert que la connexion automatique à la banque ne capte ni l'argent liquide, ni Bit, ni les prêts entre proches, ni les dépenses professionnelles. כספ'לה inscrit tout ce que vous lui dites — l'argent qui sort et l'argent qui rentre — et vous redonne un contrôle total.
     </p>
-    <h3 class="mt-8 text-xl font-bold dark:text-white">איך זה שונה מאקסל או מגוגל שיטס רגיל?</h3>
+    <h3 class="mt-8 text-xl font-bold dark:text-white">En quoi est-ce différent d'Excel ou d'un Google Sheets ordinaire ?</h3>
     <p class="mt-3 leading-relaxed text-ink-700 dark:text-ink-200">
-      הקובץ שבו הנתונים שלך נשמרים <em>הוא</em> גוגל שיטס — אבל המילוי שלו אוטומטי. אין יותר ישיבות סוף-חודש שבהן אתה מנסה לזכור מה הוצאת ב-<span class="num">12</span> לחודש שעבר. הבוט שומר כל הוצאה ברגע שהיא קורית, מקטלג לפי <span class="num">200</span>+ מילים ושמות חנויות ישראליים, ומייצר אוטומטית סיכומים שבועיים וחודשיים. הנתונים תמיד שלך, תמיד נגישים, וגם אם תחליט לעזוב — הגיליון נשאר אצלך בגוגל דרייב.
+      Le fichier où vos données sont conservées <em>est</em> un Google Sheets — mais son remplissage est automatique. Fini les réunions de fin de mois où vous essayez de vous souvenir de ce que vous avez dépensé le <span class="num">12</span> du mois dernier. Le bot enregistre chaque dépense au moment où elle se produit, la classe selon <span class="num">200</span>+ mots-clés et noms d'enseignes israéliens, et génère automatiquement des récapitulatifs hebdomadaires et mensuels. Les données sont toujours les vôtres, toujours accessibles, et même si vous décidez de partir — la feuille reste chez vous dans Google Drive.
     </p>
-    <h3 class="mt-8 text-xl font-bold dark:text-white">קישורים שימושיים</h3>
+    <h3 class="mt-8 text-xl font-bold dark:text-white">Liens utiles</h3>
     <ul class="mt-3 space-y-2 text-ink-700 dark:text-ink-200">
-      <li>• <a href="/pricing" class="text-brand-700 hover:underline dark:text-brand-300">מחירים והשוואת תוכניות</a> — חינם, Pro ב-19₪/חודש, משפחה ב-39₪/חודש</li>
-      <li>• <a href="/blog" class="text-brand-700 hover:underline dark:text-brand-300">בלוג</a> — מדריכי תקציב משפחתי וניהול תזרים</li>
-      <li>• <a href="/about" class="text-brand-700 hover:underline dark:text-brand-300">אודות</a> — הסיפור מאחורי כספ'לה</li>
+      <li>• <a href="/fr/pricing" class="text-brand-700 hover:underline dark:text-brand-300">Tarifs et comparatif des formules</a> — gratuit, Pro à 19₪/mois, Famille à 39₪/mois</li>
+      <li>• <a href="/blog" class="text-brand-700 hover:underline dark:text-brand-300">Blog</a> — guides de budget familial et de gestion de trésorerie</li>
+      <li>• <a href="/fr/about" class="text-brand-700 hover:underline dark:text-brand-300">À propos</a> — l'histoire derrière כספ'לה</li>
     </ul>
   </div>
 </section>
@@ -990,19 +1000,19 @@
   <div class="mx-auto grid max-w-5xl grid-cols-2 gap-6 px-5 md:grid-cols-4">
     <div class="kfl-reveal text-center">
       <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="18725">0</span></div>
-      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">מילים שהבוט מכיר</div>
+      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">mots reconnus par le bot</div>
     </div>
     <div class="kfl-reveal text-center" data-delay="1">
       <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="389">0</span></div>
-      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">קטגוריות חכמות</div>
+      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">catégories intelligentes</div>
     </div>
     <div class="kfl-reveal text-center" data-delay="2">
       <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="3">0</span></div>
-      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">שניות לרישום</div>
+      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">secondes pour enregistrer</div>
     </div>
     <div class="kfl-reveal text-center" data-delay="3">
       <div class="text-3xl font-black text-brand-600 md:text-4xl dark:text-brand-300"><span class="kfl-count num" data-to="99">0</span>%</div>
-      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">דיוק קטלוג</div>
+      <div class="mt-1 text-xs font-semibold text-ink-500 dark:text-ink-400">précision du classement</div>
     </div>
   </div>
 </section>
@@ -1010,12 +1020,12 @@
 (function(){
   function animateCount(el){
     var to = parseInt(el.getAttribute('data-to'),10) || 0, dur = 1300, start = null;
-    function step(ts){ if(!start) start = ts; var p = Math.min((ts-start)/dur,1); var e = 1 - Math.pow(1-p,3); el.textContent = Math.round(to*e).toLocaleString('he-IL'); if(p<1) requestAnimationFrame(step); else el.textContent = to.toLocaleString('he-IL'); }
+    function step(ts){ if(!start) start = ts; var p = Math.min((ts-start)/dur,1); var e = 1 - Math.pow(1-p,3); el.textContent = Math.round(to*e).toLocaleString('fr-FR'); if(p<1) requestAnimationFrame(step); else el.textContent = to.toLocaleString('fr-FR'); }
     requestAnimationFrame(step);
   }
   var counts = document.querySelectorAll('.kfl-count');
   if(!counts.length) return;
-  if(!('IntersectionObserver' in window)){ counts.forEach(function(el){ el.textContent = (parseInt(el.getAttribute('data-to'),10)||0).toLocaleString('he-IL'); }); return; }
+  if(!('IntersectionObserver' in window)){ counts.forEach(function(el){ el.textContent = (parseInt(el.getAttribute('data-to'),10)||0).toLocaleString('fr-FR'); }); return; }
   var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ animateCount(e.target); io.unobserve(e.target); } }); }, { threshold: 0.4 });
   counts.forEach(function(el){ io.observe(el); });
 })();
@@ -1039,13 +1049,13 @@
 
   <div class="mx-auto max-w-5xl px-5">
     <div class="text-center">
-      <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-brand-600">⚡ ניסיון חי</p>
+      <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-brand-600">⚡ Essai en direct</p>
       <h2 class="mt-3 text-5xl font-black tracking-tighter md:text-7xl text-ink-900">
-        תכתוב הוצאה.
-        <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-700 bg-clip-text text-transparent">תראה את הקסם.</span>
+        Écrivez une dépense.
+        <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-700 bg-clip-text text-transparent">Voyez la magie.</span>
       </h2>
       <p class="mt-5 text-lg text-ink-600 max-w-2xl mx-auto">
-        בלי הרשמה. בלי התקנה. נסה את האינטליגנציה של כספ'לה ישר כאן בדף.
+        Sans inscription. Sans installation. Essayez l'intelligence de כספ'לה directement ici, sur la page.
       </p>
     </div>
 
@@ -1053,12 +1063,12 @@
     <div class="mt-12 mx-auto max-w-3xl">
       <!-- Quick-pick chips -->
       <div class="mb-5 flex flex-wrap justify-center gap-2">
-        <span class="text-xs font-semibold text-ink-500 self-center ml-2">או נסה:</span>
-        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="245 סופר רמי לוי">245 סופר רמי לוי</button>
-        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="42 קפה ארומה">42 קפה ארומה</button>
-        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="180 דלק פז">180 דלק פז</button>
-        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="1200 ארנונה">1200 ארנונה</button>
-        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="8500 משכורת">8500 משכורת</button>
+        <span class="text-xs font-semibold text-ink-500 self-center ml-2">Ou essayez :</span>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="245 supermarché Rami Levy">245 supermarché Rami Levy</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="42 café Aroma">42 café Aroma</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="180 essence Paz">180 essence Paz</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="1200 taxe foncière">1200 taxe foncière</button>
+        <button type="button" class="kfl-pg-chip rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 hover:shadow-sm" data-pg="8500 salaire">8500 salaire</button>
       </div>
 
       <!-- The "WhatsApp" input bar -->
@@ -1068,13 +1078,13 @@
           <input
             id="kfl-pg-input"
             type="text"
-            dir="rtl"
+            dir="ltr"
             class="flex-1 bg-transparent px-3 py-3 text-lg font-medium text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-            placeholder="כתוב הוצאה כמו &quot;120 וולט&quot; או &quot;3500 שכר דירה&quot;..."
+            placeholder="Écrivez une dépense comme &quot;120 Wolt&quot; ou &quot;3500 loyer&quot;..."
             autocomplete="off"
             maxlength="120"
           />
-          <button id="kfl-pg-send" type="button" class="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-l from-brand-600 to-brand-700 text-white shadow-md transition hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed" disabled aria-label="שלח">
+          <button id="kfl-pg-send" type="button" class="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-l from-brand-600 to-brand-700 text-white shadow-md transition hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed" disabled aria-label="Envoyer">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>
@@ -1084,8 +1094,8 @@
       <div id="kfl-pg-result" class="mt-6 min-h-[140px] transition-opacity">
         <div id="kfl-pg-empty" class="rounded-2xl border-2 border-dashed border-ink-200 bg-white/60 p-8 text-center text-sm text-ink-500 backdrop-blur">
           <div class="text-4xl mb-3">👆</div>
-          <div>כתוב הוצאה למעלה או לחץ על דוגמה</div>
-          <div class="mt-1 text-xs text-ink-500">התוצאה תופיע כאן — ביחד עם השורה שתיכתב לגיליון שלך</div>
+          <div>Écrivez une dépense ci-dessus ou cliquez sur un exemple</div>
+          <div class="mt-1 text-xs text-ink-500">Le résultat apparaîtra ici — avec la ligne qui sera inscrite dans votre feuille</div>
         </div>
       </div>
 
@@ -1096,10 +1106,10 @@
             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
             <span class="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
           </span>
-          <span>זיהוי בזמן אמת — בלי שרת, בלי המתנה</span>
+          <span>Reconnaissance en temps réel — sans serveur, sans attente</span>
         </div>
         <div>•</div>
-        <div>ההוצאות נשמרות בגיליון Google שלך</div>
+        <div>Les dépenses sont enregistrées dans votre feuille Google</div>
       </div>
     </div>
   </div>
@@ -1127,44 +1137,44 @@
   // FIRST: explicit income markers, so they outrank everything below.
   var RULES = [
     // === INCOME (TOP PRIORITY) — phrases that explicitly mean money came IN ===
-    { rx: hb('הכנסה|מלקוח|לקוח שילם|שילם לי|תשלום מלקוח|received from'), cat: 'הכנסה', sub: 'הכנסה מלקוח', emoji: '💰', income: true },
-    { rx: hb('משכורת|שכר|salary|payroll'),                 cat: 'הכנסה', sub: 'משכורת',         emoji: '💼', income: true },
-    { rx: hb('החזר מס|מענק|bonus|refund|מילגה'),           cat: 'הכנסה', sub: 'מענק / החזר',     emoji: '💵', income: true },
-    { rx: hb('פייבוקס|paybox|העברה נכנסת'),                 cat: 'הכנסה', sub: 'העברה נכנסת',    emoji: '💸', income: true },
+    { rx: hb('הכנסה|מלקוח|לקוח שילם|שילם לי|תשלום מלקוח|received from|revenu|client a pay|pay.? par le client|encaissement'), cat: 'Revenu', sub: 'Revenu client', emoji: '💰', income: true },
+    { rx: hb('משכורת|שכר|salary|payroll|salaire|paie|paye'),                 cat: 'Revenu', sub: 'Salaire',         emoji: '💼', income: true },
+    { rx: hb('החזר מס|מענק|bonus|refund|מילגה|prime|remboursement|bourse'),  cat: 'Revenu', sub: 'Prime / Remboursement',     emoji: '💵', income: true },
+    { rx: hb('פייבוקס|paybox|העברה נכנסת|virement re.?u|bit'),               cat: 'Revenu', sub: 'Virement entrant',    emoji: '💸', income: true },
     // === BUSINESS — "עסק" prefix or business-specific subs ===
-    { rx: hb('שיווק|פייסבוק|אינסטה|אינסטגרם|google\\s*ads|פרסום|tiktok|טיקטוק'), cat: 'עסק', sub: 'שיווק',       emoji: '📢' },
-    { rx: hb('חומרי\\s*גלם|raw\\s*materials|חבית|בד|קנבס|חומר\\s*גלם'),         cat: 'עסק', sub: 'חומרי גלם',   emoji: '🧵' },
-    { rx: hb('משלוח|אריזה|דואר ישראל|ups|fedex'),                              cat: 'עסק', sub: 'משלוחים',     emoji: '📦' },
-    { rx: hb('יועצים|רואה חשבון|עורך דין|עוסק מורשה'),                          cat: 'עסק', sub: 'יועצים',      emoji: '👔' },
+    { rx: hb('שיווק|פייסבוק|אינסטה|אינסטגרם|google\\s*ads|פרסום|tiktok|טיקטוק|marketing|publicit|facebook|instagram'), cat: 'Entreprise', sub: 'Marketing',       emoji: '📢' },
+    { rx: hb('חומרי\\s*גלם|raw\\s*materials|חבית|בד|קנבס|חומר\\s*גלם|mati.?re.? premi.?re|toile'),         cat: 'Entreprise', sub: 'Matières premières',   emoji: '🧵' },
+    { rx: hb('משלוח|אריזה|דואר ישראל|ups|fedex|livraison|colis|emballage'),  cat: 'Entreprise', sub: 'Livraisons',     emoji: '📦' },
+    { rx: hb('יועצים|רואה חשבון|עורך דין|עוסק מורשה|comptable|avocat|consultant'),                          cat: 'Entreprise', sub: 'Conseils',      emoji: '👔' },
     // === FOOD ===
-    { rx: hb('סופר|רמי\\s*לוי|שופרסל|מגה|טיב\\s*טעם|יוחננוף|אושר\\s*עד|victory|am.?pm|tiv\\s*taam'), cat: 'אוכל', sub: 'סופר',        emoji: '🛒' },
-    { rx: hb('קפה|ארומה|רולדין|cofix|לחמים|nespresso|נספרסו'),                cat: 'אוכל', sub: 'בית קפה',     emoji: '☕' },
-    { rx: hb('wolt|וולט|10\\s*bis|תן\\s*ביס|tenbis|misto|מקדונלד|burger\\s*king|דומינו|פיצה'), cat: 'אוכל', sub: 'אוכל בחוץ', emoji: '🍔' },
-    { rx: hb('מסעדה|ארוחה'),                                                   cat: 'אוכל', sub: 'אוכל בחוץ',  emoji: '🍽️' },
+    { rx: hb('סופר|רמי\\s*לוי|שופרסל|מגה|טיב\\s*טעם|יוחננוף|אושר\\s*עד|victory|am.?pm|tiv\\s*taam|supermarch|rami\\s*levy|shufersal|courses|.?picerie'), cat: 'Alimentation', sub: 'Supermarché',        emoji: '🛒' },
+    { rx: hb('קפה|ארומה|רולדין|cofix|לחמים|nespresso|נספרסו|caf|aroma|boulangerie'),                cat: 'Alimentation', sub: 'Café',     emoji: '☕' },
+    { rx: hb('wolt|וולט|10\\s*bis|תן\\s*ביס|tenbis|misto|מקדונלד|burger\\s*king|דומינו|פיצה|pizza|mcdo'), cat: 'Alimentation', sub: 'Au restaurant', emoji: '🍔' },
+    { rx: hb('מסעדה|ארוחה|restaurant|resto|repas'),                          cat: 'Alimentation', sub: 'Au restaurant',  emoji: '🍽️' },
     // === TRANSPORT ===
-    { rx: hb('דלק|סונול|דור\\s*אלון|delek|פז\\s*גז'),                          cat: 'תחבורה', sub: 'דלק',      emoji: '⛽' },
-    { rx: hb('מונית|gett|uber|אובר|טאקסי|taxi'),                              cat: 'תחבורה', sub: 'מונית',    emoji: '🚕' },
-    { rx: hb('רב\\s*קו|אוטובוס|רכבת|metropoline|מטרופולין|אגד'),               cat: 'תחבורה', sub: 'תחבורה ציבורית', emoji: '🚌' },
-    { rx: hb('חניה|חניון'),                                                   cat: 'תחבורה', sub: 'חניה',      emoji: '🅿️' },
-    { rx: hb('טיסה|el\\s*al|אל\\s*על|ארקיע|easyjet'),                          cat: 'תחבורה', sub: 'טיסות',    emoji: '✈️' },
+    { rx: hb('דלק|סונול|דור\\s*אלון|delek|פז\\s*גז|essence|carburant|paz|sonol'),                  cat: 'Transport', sub: 'Essence',      emoji: '⛽' },
+    { rx: hb('מונית|gett|uber|אובר|טאקסי|taxi|vtc'),                         cat: 'Transport', sub: 'Taxi / VTC',    emoji: '🚕' },
+    { rx: hb('רב\\s*קו|אוטובוס|רכבת|metropoline|מטרופולין|אגד|bus|train|rav\\s*kav|transports'),    cat: 'Transport', sub: 'Transports en commun', emoji: '🚌' },
+    { rx: hb('חניה|חניון|parking|stationnement'),                            cat: 'Transport', sub: 'Parking',      emoji: '🅿️' },
+    { rx: hb('טיסה|el\\s*al|אל\\s*על|ארקיע|easyjet|vol|avion'),               cat: 'Transport', sub: 'Vols',    emoji: '✈️' },
     // === HOME ===
-    { rx: hb('ארנונה'),                                                       cat: 'בית', sub: 'ארנונה',      emoji: '🏛️' },
-    { rx: hb('שכר\\s*דירה|שכירות|rent'),                                       cat: 'בית', sub: 'שכר דירה',   emoji: '🏠' },
-    { rx: hb('חשמל|חברת\\s*חשמל|iec'),                                         cat: 'בית', sub: 'חשמל',       emoji: '💡' },
-    { rx: hb('מים|תאגיד\\s*מים|מקורות'),                                       cat: 'בית', sub: 'מים',        emoji: '💧' },
-    { rx: hb('גז|amisragas'),                                                 cat: 'בית', sub: 'גז',         emoji: '🔥' },
-    { rx: hb('ועד\\s*בית|ועד'),                                                cat: 'בית', sub: 'ועד בית',    emoji: '🏢' },
-    { rx: hb('אינטרנט|בזק|hot|סלקום|פרטנר|partner|cellcom|yes|כבלים|תקשורת'),  cat: 'בית', sub: 'תקשורת',     emoji: '📡' },
+    { rx: hb('ארנונה|taxe\\s*fonci.?re|taxe\\s*habitation'),                  cat: 'Logement', sub: 'Taxe foncière',      emoji: '🏛️' },
+    { rx: hb('שכר\\s*דירה|שכירות|rent|loyer'),                                cat: 'Logement', sub: 'Loyer',   emoji: '🏠' },
+    { rx: hb('חשמל|חברת\\s*חשמל|iec|.?lectricit'),                            cat: 'Logement', sub: 'Électricité',       emoji: '💡' },
+    { rx: hb('מים|תאגיד\\s*מים|מקורות|\\beau\\b'),                            cat: 'Logement', sub: 'Eau',        emoji: '💧' },
+    { rx: hb('גז|amisragas|\\bgaz\\b'),                                       cat: 'Logement', sub: 'Gaz',         emoji: '🔥' },
+    { rx: hb('ועד\\s*בית|ועד|charges\\s*de\\s*copropri|syndic'),              cat: 'Logement', sub: 'Charges de copropriété',    emoji: '🏢' },
+    { rx: hb('אינטרנט|בזק|hot|סלקום|פרטנר|partner|cellcom|yes|כבלים|תקשורת|internet|t.?l.?phone|forfait'),  cat: 'Logement', sub: 'Télécoms',     emoji: '📡' },
     // === HEALTH & FAMILY ===
-    { rx: hb('בית\\s*מרקחת|סופר\\s*פארם|super\\s*pharm|נובו|תרופה|תרופות|רופא'), cat: 'בריאות', sub: 'תרופות / רופא', emoji: '💊' },
-    { rx: hb('ילד|ילדים|פעוטון|גן|בייביסיטר|babysit|חוג'),                     cat: 'משפחה', sub: 'ילדים',    emoji: '👶' },
-    { rx: hb('מתנה|gift'),                                                    cat: 'משפחה', sub: 'מתנה',     emoji: '🎁' },
+    { rx: hb('בית\\s*מרקחת|סופר\\s*פארם|super\\s*pharm|נובו|תרופה|תרופות|רופא|pharmacie|m.?decin|m.?dicament'), cat: 'Santé', sub: 'Médicaments / Médecin', emoji: '💊' },
+    { rx: hb('ילד|ילדים|פעוטון|גן|בייביסיטר|babysit|חוג|enfant|cr.?che|garde'),                     cat: 'Famille', sub: 'Enfants',    emoji: '👶' },
+    { rx: hb('מתנה|gift|cadeau'),                                            cat: 'Famille', sub: 'Cadeau',     emoji: '🎁' },
     // === LEISURE ===
-    { rx: hb('netflix|נטפליקס|spotify|ספוטיפיי|disney|hbo|amazon\\s*prime|youtube\\s*premium'), cat: 'בילויים', sub: 'מנויים', emoji: '🎬' },
-    { rx: hb('בית\\s*קולנוע|סינמה\\s*סיטי|yes\\s*planet|cinema|תיאטרון'),       cat: 'בילויים', sub: 'יציאה',   emoji: '🎭' },
-    { rx: hb('מכון\\s*כושר|חדר\\s*כושר|gym|holmes\\s*place|הולמס'),             cat: 'בילויים', sub: 'ספורט',   emoji: '🏋️' },
+    { rx: hb('netflix|נטפליקס|spotify|ספוטיפיי|disney|hbo|amazon\\s*prime|youtube\\s*premium|abonnement'), cat: 'Loisirs', sub: 'Abonnements', emoji: '🎬' },
+    { rx: hb('בית\\s*קולנוע|סינמה\\s*סיטי|yes\\s*planet|cinema|תיאטרון|cin.?ma|th.?.?tre|spectacle'),       cat: 'Loisirs', sub: 'Sortie',   emoji: '🎭' },
+    { rx: hb('מכון\\s*כושר|חדר\\s*כושר|gym|holmes\\s*place|הולמס|salle\\s*de\\s*sport|fitness'),             cat: 'Loisirs', sub: 'Sport',   emoji: '🏋️' },
   ];
-  var DEFAULT = { cat: 'שונות', sub: 'שונות', emoji: '🗂️' };
+  var DEFAULT = { cat: 'Divers', sub: 'Divers', emoji: '🗂️' };
 
   function classify(text) {
     var t = String(text || '').trim();
@@ -1191,7 +1201,7 @@
     var r = classify(text);
     var sign = r.income ? '+' : '−';
     var signColor = r.income ? 'text-emerald-600' : 'text-ink-900';
-    var amountFmt = r.amount ? r.amount.toLocaleString('he-IL') : '?';
+    var amountFmt = r.amount ? r.amount.toLocaleString('fr-FR') : '?';
     var today = new Date();
     var dateFmt = today.getDate() + '/' + (today.getMonth()+1).toString().padStart(2,'0');
 
@@ -1201,7 +1211,7 @@
         '<div class="kfl-pg-card relative rounded-2xl border border-brand-200 bg-gradient-to-br from-white to-brand-50/40 p-5 shadow-lg">' +
           '<div class="absolute -top-3 right-5 inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white shadow-md">' +
             '<svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg>' +
-            'נשמר אצלך' +
+            'Enregistré chez vous' +
           '</div>' +
           '<div class="flex items-center gap-3">' +
             '<span class="text-4xl">' + r.emoji + '</span>' +
@@ -1212,24 +1222,24 @@
           '</div>' +
           '<div class="mt-4 text-xs text-ink-500">' +
             (r.income
-              ? '✓ סווג כהכנסה ונכנס לטור ההכנסות' +
-              '<br>' + '✓ הצביעי על אחוז החיסכון בלוח האישי שלך'
-              : '✓ סווג ל"' + escapeHtml(r.cat) + '" — קטגוריה ' + escapeHtml(r.sub) +
-              '<br>' + '✓ נספר לתקציב החודשי, התראה אם חרגת') +
+              ? '✓ Classé comme revenu et ajouté à la colonne des revenus' +
+              '<br>' + '✓ Mis en avant dans votre taux d\'épargne sur le tableau de bord personnel'
+              : '✓ Classé dans « ' + escapeHtml(r.cat) + ' » — catégorie ' + escapeHtml(r.sub) +
+              '<br>' + '✓ Comptabilisé dans le budget mensuel, avec alerte en cas de dépassement') +
           '</div>' +
         '</div>' +
         // Mock sheet row (right side, slides in)
         '<div class="kfl-pg-card rounded-2xl border border-ink-200 bg-white p-5 shadow-lg" style="animation-delay:0.15s">' +
           '<div class="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-500">' +
             '<svg class="h-4 w-4 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM8 17H5v-3h3v3zm0-5H5V9h3v3zm0-5H5V5h3v2zm5 10h-3v-3h3v3zm0-5h-3V9h3v3zm0-5h-3V5h3v2zm6 10h-4v-3h4v3zm0-5h-4V9h4v3zm0-5h-4V5h4v2z"/></svg>' +
-            'הגיליון שלך' +
+            'Votre feuille' +
           '</div>' +
           // Header row
           '<div class="grid grid-cols-4 gap-2 border-b border-ink-200 pb-2 text-[10px] font-bold uppercase tracking-wider text-ink-500">' +
-            '<div>תאריך</div>' +
-            '<div>סכום</div>' +
-            '<div>קטגוריה</div>' +
-            '<div>תיאור</div>' +
+            '<div>Date</div>' +
+            '<div>Montant</div>' +
+            '<div>Catégorie</div>' +
+            '<div>Description</div>' +
           '</div>' +
           // New row (highlighted)
           '<div class="kfl-pg-newrow mt-2 grid grid-cols-4 gap-2 rounded-lg bg-brand-50/60 p-2 text-sm">' +
@@ -1242,20 +1252,20 @@
           '<div class="mt-1 grid grid-cols-4 gap-2 p-2 text-sm opacity-30">' +
             '<div class="font-mono text-ink-700">' + (today.getDate()-1) + '/' + (today.getMonth()+1).toString().padStart(2,'0') + '</div>' +
             '<div class="num">−₪64</div>' +
-            '<div>🛒 אוכל</div>' +
-            '<div class="truncate">64 שופרסל</div>' +
+            '<div>🛒 Alimentation</div>' +
+            '<div class="truncate">64 Shufersal</div>' +
           '</div>' +
           '<div class="grid grid-cols-4 gap-2 p-2 text-sm opacity-20">' +
             '<div class="font-mono text-ink-700">' + (today.getDate()-2) + '/' + (today.getMonth()+1).toString().padStart(2,'0') + '</div>' +
             '<div class="num">−₪22</div>' +
-            '<div>🚌 תחבורה</div>' +
-            '<div class="truncate">22 רב קו</div>' +
+            '<div>🚌 Transport</div>' +
+            '<div class="truncate">22 Rav Kav</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
       '<div class="mt-5 text-center">' +
         '<a href="#signup" class="inline-flex items-center gap-2 rounded-full bg-gradient-to-l from-brand-600 to-brand-700 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl hover:-translate-y-0.5">' +
-          'התרשמת? התחל עכשיו' +
+          'Convaincu ? Commencez maintenant' +
           '<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>' +
         '</a>' +
       '</div>';
@@ -1320,28 +1330,28 @@
      with admin approve/hide). This section renders the live approved list from
      GET /api/testimonials when available; otherwise it falls back to the static
      seed quotes below (same copy already shown on /referral). RTL + light-mode. -->
-<section id="testimonials" class="bg-ink-50 py-20 dark:bg-ink-900 md:py-28" dir="rtl">
+<section id="testimonials" class="bg-ink-50 py-20 dark:bg-ink-900 md:py-28" dir="ltr">
   <div class="mx-auto max-w-6xl px-5">
     <div class="mx-auto max-w-2xl text-center">
-      <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">למה כספ'לה</p>
-      <h2 id="kfl-trust-heading" class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">פשוט, פרטי, בשליטתך</h2>
-      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">בלי אפליקציה לפתוח. כותבים הוצאה — וזה נרשם, מקוטלג ומסוכם.</p>
+      <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">Pourquoi כספ'לה</p>
+      <h2 id="kfl-trust-heading" class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">Simple, privé, sous votre contrôle</h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200">Aucune appli à ouvrir. Vous écrivez une dépense — et c'est inscrit, classé et résumé.</p>
     </div>
     <div id="kfl-testimonials-grid" class="mt-12 grid gap-6 md:grid-cols-3">
       <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft kfl-lift dark:border-ink-700 dark:bg-ink-800">
         <div class="text-3xl" aria-hidden="true">🔒</div>
-        <h3 class="mt-3 text-lg font-bold dark:text-white">הגיליון שלך, לא שלנו</h3>
-        <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">כל הוצאה נשמרת ב-Google Drive הפרטי שלך. אם תעזוב — הנתונים נשארים אצלך, תמיד.</p>
+        <h3 class="mt-3 text-lg font-bold dark:text-white">Votre feuille, pas la nôtre</h3>
+        <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">Chaque dépense est enregistrée dans votre Google Drive privé. Si vous partez — les données restent chez vous, toujours.</p>
       </div>
       <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft kfl-lift dark:border-ink-700 dark:bg-ink-800">
         <div class="text-3xl" aria-hidden="true">⚡</div>
-        <h3 class="mt-3 text-lg font-bold dark:text-white">רישום ב-2 שניות</h3>
-        <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">כותבים הוצאה בוואטסאפ והיא נרשמת, מקוטלגת ומסוכמת. בלי אפליקציה להוריד, בלי אקסל.</p>
+        <h3 class="mt-3 text-lg font-bold dark:text-white">Enregistrement en 2 secondes</h3>
+        <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">Vous écrivez une dépense sur WhatsApp et elle est inscrite, classée et résumée. Sans appli à télécharger, sans Excel.</p>
       </div>
       <div class="rounded-3xl border border-ink-200 bg-white p-6 shadow-soft kfl-lift dark:border-ink-700 dark:bg-ink-800">
         <div class="text-3xl" aria-hidden="true">🇮🇱</div>
-        <h3 class="mt-3 text-lg font-bold dark:text-white">מנוע בעברית</h3>
-        <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">מזהה מאות מילות מפתח בעברית ומקטלג אוטומטית — כולל קבלות בתמונה והודעות קוליות.</p>
+        <h3 class="mt-3 text-lg font-bold dark:text-white">Un moteur pensé pour Israël</h3>
+        <p class="mt-2 leading-relaxed text-ink-600 dark:text-ink-200">Il reconnaît des centaines de mots-clés en hébreu et classe automatiquement — y compris les reçus en photo et les messages vocaux.</p>
       </div>
     </div>
   </div>
@@ -1351,83 +1361,83 @@
 <section id="pricing" class="relative py-24 md:py-32">
   <div class="mx-auto max-w-6xl px-5">
     <div class="mx-auto max-w-2xl text-center">
-      <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">מחיר</p>
-      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">פחות מקפה. בחודש.</h2>
-      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200"><span class="num">14</span> ימי ניסיון על חשבוננו. ביטול בלחיצה. בלי הרפתקאות.</p>
+      <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">Tarif</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">Moins qu'un café. Par mois.</h2>
+      <p class="mt-4 text-lg text-ink-600 dark:text-ink-200"><span class="num">14</span> jours d'essai à notre charge. Annulation en un clic. Sans mauvaises surprises.</p>
     </div>
     <div class="mt-10 flex justify-center">
       <div class="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300">
         <span>✨</span>
-        <span><span class="num">14</span> ימי ניסיון חינם · ביטול בלחיצה · בלי כרטיס אשראי</span>
+        <span><span class="num">14</span> jours d'essai gratuit · annulation en un clic · sans carte bancaire</span>
       </div>
     </div>
     <div class="mt-8 grid gap-6 md:grid-cols-3">
       <!-- free plan -->
       <div class="rounded-3xl border border-ink-200 bg-white p-8 kfl-lift dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
-          <h3 class="text-2xl font-black dark:text-white">חינם</h3>
-          <span class="rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold text-ink-600 dark:bg-ink-700 dark:text-ink-200">להתחיל</span>
+          <h3 class="text-2xl font-black dark:text-white">Gratuit</h3>
+          <span class="rounded-full bg-ink-100 px-3 py-1 text-xs font-semibold text-ink-600 dark:bg-ink-700 dark:text-ink-200">Pour commencer</span>
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num">0</span></span>
           <span class="text-2xl font-bold text-ink-500">₪</span>
-          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+          <span class="text-ink-500 dark:text-ink-300">/mois</span>
         </div>
-        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">עד <span class="num">30</span> הוצאות בחודש</p>
+        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">Jusqu'à <span class="num">30</span> dépenses par mois</p>
         <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> בוט וואטסאפ</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> גיליון Google משלך</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> קטלוג אוטומטי בסיסי</li>
-          <li class="flex items-center gap-2 text-ink-500"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M6 18L18 6"/></svg> ללא סיכום חודשי</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Bot WhatsApp</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Votre propre feuille Google</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Classement automatique de base</li>
+          <li class="flex items-center gap-2 text-ink-500"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M6 18L18 6"/></svg> Sans récapitulatif mensuel</li>
         </ul>
-        <a href="#signup" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">הרשמה או התחברות</a>
+        <a href="#signup" onclick="kesefleSelectPlan('free')" class="mt-8 block rounded-2xl border border-ink-300 bg-white py-3.5 text-center font-bold transition hover:border-ink-900 hover:bg-ink-900 hover:text-white dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-ink-900">Inscription ou connexion</a>
       </div>
       <!-- pro plan (recommended) -->
       <div class="relative rounded-3xl border-2 border-brand-500 bg-gradient-to-br from-brand-500/10 via-white to-accent-50 p-8 shadow-glow dark:from-brand-500/20 dark:via-ink-800 dark:to-accent-500/10">
-        <div class="absolute -top-3.5 right-6 rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white">מומלץ לאדם בודד</div>
+        <div class="absolute -top-3.5 right-6 rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-white">Recommandé pour une personne</div>
         <div class="flex items-center justify-between">
           <h3 class="text-2xl font-black dark:text-white">Pro</h3>
-          <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"><span class="num">14</span> ימי ניסיון</span>
+          <span class="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"><span class="num">14</span> jours d'essai</span>
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num">19</span></span>
           <span class="text-2xl font-bold text-ink-500">₪</span>
-          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+          <span class="text-ink-500 dark:text-ink-300">/mois</span>
         </div>
-        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">או <span class="num">190</span>₪ לשנה (חוסכים <span class="num">17</span>%)</p>
+        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">ou <span class="num">190</span>₪ par an (économisez <span class="num">17</span> %)</p>
         <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>הוצאות ללא הגבלה</strong></li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> סיכום חודשי + ניתוחים</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> קטגוריות מותאמות אישית</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> מטבעות מרובים</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> תמיכה תוך <span class="num">24</span> שעות</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>Dépenses illimitées</strong></li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Récapitulatif mensuel + analyses</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Catégories personnalisées</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Devises multiples</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Assistance sous <span class="num">24</span> heures</li>
         </ul>
-        <a href="#signup" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-gradient-to-l from-brand-600 via-brand-600 to-brand-700 py-3.5 text-center font-bold text-white shadow-glow transition hover:shadow-2xl hover:-translate-y-0.5">התחל ניסיון <span class="num">14</span> ימים</a>
+        <a href="#signup" onclick="kesefleSelectPlan('pro')" class="mt-8 block rounded-2xl bg-gradient-to-l from-brand-600 via-brand-600 to-brand-700 py-3.5 text-center font-bold text-white shadow-glow transition hover:shadow-2xl hover:-translate-y-0.5">Démarrer l'essai de <span class="num">14</span> jours</a>
       </div>
       <!-- family plan -->
       <div class="rounded-3xl border border-ink-200 bg-white p-8 kfl-lift dark:border-ink-700 dark:bg-ink-800">
         <div class="flex items-center justify-between">
-          <h3 class="text-2xl font-black dark:text-white">משפחה</h3>
-          <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">לזוגות ולמשפחות</span>
+          <h3 class="text-2xl font-black dark:text-white">Famille</h3>
+          <span class="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-500">Pour les couples et les familles</span>
         </div>
         <div class="mt-5 flex items-baseline gap-1">
           <span class="text-5xl font-black dark:text-white"><span class="num">39</span></span>
           <span class="text-2xl font-bold text-ink-500">₪</span>
-          <span class="text-ink-500 dark:text-ink-300">/לחודש</span>
+          <span class="text-ink-500 dark:text-ink-300">/mois</span>
         </div>
-        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">או <span class="num">390</span>₪ לשנה (חוסכים <span class="num">17</span>%)</p>
+        <p class="mt-2 text-sm text-ink-500 dark:text-ink-300">ou <span class="num">390</span>₪ par an (économisez <span class="num">17</span> %)</p>
         <ul class="mt-6 space-y-3 text-sm dark:text-ink-100">
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>הכל מ-Pro</strong></li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> עד <span class="num">4</span> משתמשים</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> גיליון משותף</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> קטגוריות לכל בן משפחה</li>
-          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> דשבורד הורים</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> <strong>Tout le plan Pro</strong></li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Jusqu'à <span class="num">4</span> utilisateurs</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Feuille partagée</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Catégories pour chaque membre de la famille</li>
+          <li class="flex items-center gap-2"><svg class="h-5 w-5 text-accent-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg> Tableau de bord parents</li>
         </ul>
-        <a href="#signup" onclick="kesefleSelectPlan('family')" class="mt-8 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-700">התחל ניסיון <span class="num">14</span> ימים</a>
+        <a href="#signup" onclick="kesefleSelectPlan('family')" class="mt-8 block rounded-2xl bg-accent-600 py-3.5 text-center font-bold text-white shadow-soft transition hover:bg-accent-700">Démarrer l'essai de <span class="num">14</span> jours</a>
       </div>
     </div>
-    <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">14</span> יום החזר כספי מלא. בלי שאלות. תכתוב "ביטול" בוואטסאפ — וזהו.</p>
-    <p class="mt-3 text-center text-sm text-ink-500 dark:text-ink-300">תשלום ב-PayPal, ביט, קריפטו או העברה בנקאית. חשבונית מס נשלחת אוטומטית.</p>
+    <p class="mt-8 text-center text-base font-semibold text-ink-700 dark:text-ink-100"><span class="num">14</span> jours, remboursement intégral. Sans questions. Écrivez « annuler » sur WhatsApp — et c'est tout.</p>
+    <p class="mt-3 text-center text-sm text-ink-500 dark:text-ink-300">Paiement par PayPal, Bit, crypto ou virement bancaire. Une facture est envoyée automatiquement.</p>
   </div>
 </section>
 
@@ -1442,13 +1452,13 @@
   <div class="mx-auto max-w-3xl px-5 text-center text-ink-900">
     <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
       <span class="h-1 w-1 rounded-full bg-brand-500"></span>
-      <span><span class="num">14</span> ימי ניסיון חינם • ביטול בקליק • ההצטרפות תוך 60 שניות</span>
+      <span><span class="num">14</span> jours d'essai gratuit • annulation en un clic • inscription en 60 secondes</span>
     </div>
     <h2 class="text-4xl font-black tracking-tighter text-ink-900 md:text-6xl">
-      מוכן לעבור
-      <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-700 bg-clip-text text-transparent">על אוטומט?</span>
+      Prêt à passer
+      <span class="block bg-gradient-to-l from-brand-600 via-accent-500 to-brand-700 bg-clip-text text-transparent">en pilote automatique ?</span>
     </h2>
-    <p class="mt-5 text-lg text-ink-700">חבר את החשבון תוך דקה. תכתוב הוצאה ראשונה תוך שתיים.</p>
+    <p class="mt-5 text-lg text-ink-700">Connectez votre compte en une minute. Écrivez votre première dépense en deux.</p>
 
     <input type="hidden" id="selected-plan" value="free" />
 
@@ -1457,8 +1467,8 @@
       <div class="flex items-center gap-3">
         <div class="grid h-12 w-12 place-items-center rounded-full bg-brand-600 text-2xl text-white">✓</div>
         <div class="text-right">
-          <div class="text-lg font-bold text-ink-900" id="auth-success-name">ברוך הבא!</div>
-          <div class="text-sm text-ink-700" id="auth-success-detail">אנחנו מכינים את הגיליון שלך…</div>
+          <div class="text-lg font-bold text-ink-900" id="auth-success-name">Bienvenue !</div>
+          <div class="text-sm text-ink-700" id="auth-success-detail">Nous préparons votre feuille…</div>
         </div>
       </div>
       <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-ink-200">
@@ -1474,7 +1484,7 @@
         class="group flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 text-base font-bold text-ink-900 shadow-soft transition hover:bg-ink-50"
       >
         <svg class="h-5 w-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        <span>התחבר עם Google</span>
+        <span>Se connecter avec Google</span>
       </button>
 
       <button
@@ -1483,9 +1493,9 @@
         class="group flex items-center justify-center gap-3 rounded-2xl bg-[#1877F2] px-6 py-4 text-base font-bold text-white shadow-soft transition hover:bg-[#1668d3]"
       >
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        <span>התחבר עם Facebook</span>
+        <span>Se connecter avec Facebook</span>
       </button>
-      <p class="-mt-1 text-center text-xs text-ink-500">כולל גישה לחשבון Instagram Business המקושר</p>
+      <p class="-mt-1 text-center text-xs text-ink-500">Inclut l'accès au compte Instagram Business associé</p>
 
       <button
         type="button"
@@ -1493,14 +1503,14 @@
         class="group flex items-center justify-center gap-3 rounded-2xl bg-black px-6 py-4 text-base font-bold text-white shadow-soft transition hover:bg-ink-800"
       >
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-        <span>התחבר עם Apple</span>
+        <span>Se connecter avec Apple</span>
       </button>
 
       <div id="auth-msg" class="hidden text-center text-sm"></div>
 
       <div class="my-4 flex items-center gap-3 text-xs text-ink-500">
         <div class="h-px flex-1 bg-ink-200"></div>
-        <span>או</span>
+        <span>ou</span>
         <div class="h-px flex-1 bg-ink-200"></div>
       </div>
 
@@ -1509,21 +1519,21 @@
           type="email"
           required
           name="email"
-          aria-label="כתובת אימייל לעדכונים"
-          placeholder="או רק תשאיר אימייל לעדכונים"
+          aria-label="Adresse e-mail pour les actualités"
+          placeholder="Ou laissez simplement votre e-mail pour les actualités"
           class="w-full rounded-2xl border border-ink-300 bg-white px-5 py-4 text-center text-base text-ink-900 placeholder-ink-400 shadow-soft focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-ink-600 dark:bg-ink-800 dark:text-white dark:placeholder-ink-400"
         />
         <button
           type="submit"
           class="rounded-2xl bg-brand-600 px-6 py-3.5 text-sm font-bold text-white shadow-soft transition hover:bg-brand-700 hover:shadow-glow"
         >
-          הצטרף לרשימת המתנה
+          Rejoindre la liste d'attente
         </button>
         <div id="signup-msg" class="hidden text-center text-sm"></div>
       </form>
     </div>
 
-    <p class="mt-5 text-xs text-ink-500">בלחיצה אתה מאשר את <a href="/terms" class="underline">תנאי השימוש</a> ו<a href="/privacy" class="underline">מדיניות הפרטיות</a>.</p>
+    <p class="mt-5 text-xs text-ink-500">En cliquant, vous acceptez nos <a href="/terms" class="underline">conditions d'utilisation</a> et notre <a href="/privacy" class="underline">politique de confidentialité</a>.</p>
   </div>
 </section>
 
@@ -1531,44 +1541,44 @@
 <section id="faq" class="relative py-24 md:py-32">
   <div class="mx-auto max-w-3xl px-5">
     <div class="mx-auto max-w-2xl text-center">
-      <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">שאלות נפוצות</p>
-      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">משהו לא ברור?</h2>
+      <p class="text-sm font-extrabold bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-300">Questions fréquentes</p>
+      <h2 class="mt-3 text-4xl font-black tracking-tight md:text-5xl dark:text-white">Quelque chose n'est pas clair ?</h2>
     </div>
     <div class="mt-12 divide-y divide-ink-200 rounded-3xl border border-ink-200 bg-white dark:divide-ink-700 dark:border-ink-700 dark:bg-ink-800">
       <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
-          <span>הבוט יודע עברית?</span>
+          <span>Le bot comprend-il l'hébreu ?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </summary>
-        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">כן, הוא נבנה בעברית קודם כל. הוא מבין "<span class="num">42</span> קפה", "<span class="num">1800</span> ארנונה", "<span class="num">8500</span> משכורת", וגם עוקב אחרי <span class="num">200</span>+ מילים, מותגים ושמות חנויות ישראליים.</p>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">Oui, il a été conçu en hébreu avant tout. Il comprend « <span class="num">42</span> café », « <span class="num">1800</span> taxe foncière », « <span class="num">8500</span> salaire », et reconnaît en plus <span class="num">200</span>+ mots, marques et noms d'enseignes israéliens.</p>
       </details>
       <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
-          <span>אם אני מבטל — מה קורה לנתונים שלי?</span>
+          <span>Si j'annule — qu'advient-il de mes données ?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </summary>
-        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">הגיליון שלך נשאר אצלך בגוגל דרייב. אתה ממשיך לראות, לערוך, לייצא. אנחנו פשוט מפסיקים לרשום חדש.</p>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">Votre feuille reste chez vous dans Google Drive. Vous continuez à la consulter, à la modifier, à l'exporter. Nous arrêtons simplement d'y inscrire de nouvelles lignes.</p>
       </details>
       <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
-          <span>מה ההבדל ביניכם לבין Riseup או Salt?</span>
+          <span>Quelle est la différence avec Riseup ou Salt ?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </summary>
-        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">הם מתחברים לבנק שלך וקוראים תנועות. אנחנו לא. אתה כותב, אנחנו רושמים. זה תופס גם מזומן, ביט, גמ"ח, ומה שלא נכנס לבנק. וזה לוקח <span class="num">2</span> שניות, לא <span class="num">2</span> שעות.</p>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">Eux se connectent à votre banque et lisent vos opérations. Pas nous. Vous écrivez, nous inscrivons. Cela capte aussi l'argent liquide, Bit, les prêts entre proches, et tout ce qui ne passe pas par la banque. Et cela prend <span class="num">2</span> secondes, pas <span class="num">2</span> heures.</p>
       </details>
       <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
-          <span>מה אם אני שולח הודעה לא ברורה?</span>
+          <span>Et si j'envoie un message peu clair ?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </summary>
-        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">הבוט שולח לך רשימת קטגוריות בוואטסאפ — בוחר אחת מתוך הרשימה וההוצאה נשמרת. ובפעם הבאה שתכתוב משהו דומה — הוא כבר יזכור איך סיווגת.</p>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">Le bot vous envoie une liste de catégories sur WhatsApp — vous en choisissez une et la dépense est enregistrée. Et la prochaine fois que vous écrivez quelque chose de similaire — il se souviendra déjà de la façon dont vous l'avez classé.</p>
       </details>
       <details class="group p-6 transition open:bg-ink-50 dark:open:bg-ink-700/40">
         <summary class="flex cursor-pointer items-center justify-between text-lg font-bold dark:text-white">
-          <span>אני מקבל קבלה על התשלום?</span>
+          <span>Est-ce que je reçois un reçu pour le paiement ?</span>
           <svg class="h-5 w-5 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </summary>
-        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">כן — קבלה/חשבונית מס נשלחת אוטומטית למייל אחרי כל חיוב.</p>
+        <p class="mt-3 leading-relaxed text-ink-600 dark:text-ink-200">Oui — un reçu / une facture est envoyé automatiquement par e-mail après chaque prélèvement.</p>
       </details>
     </div>
 
@@ -1578,9 +1588,9 @@
         <div class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white">
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zM6.597 20.13l.362.215a9.86 9.86 0 005.04 1.382h.004c5.448 0 9.886-4.434 9.889-9.885a9.823 9.823 0 00-2.891-6.994 9.825 9.825 0 00-6.994-2.899c-5.452 0-9.887 4.434-9.889 9.885a9.86 9.86 0 001.512 5.26l.235.374-1 3.65 3.732-.988z"/></svg>
         </div>
-        <div class="text-right">
-          <div class="font-bold text-ink-900 dark:text-white">עדיין שאלה? כתוב לנו בוואטסאפ ←</div>
-          <div class="text-sm text-ink-500 dark:text-ink-300">תגובה תוך כמה דקות, בני אדם אמיתיים.</div>
+        <div class="text-left">
+          <div class="font-bold text-ink-900 dark:text-white">Encore une question ? Écrivez-nous sur WhatsApp →</div>
+          <div class="text-sm text-ink-500 dark:text-ink-300">Une réponse en quelques minutes, par de vraies personnes.</div>
         </div>
       </div>
       <svg class="h-6 w-6 text-brand-600 dark:text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
@@ -1596,66 +1606,78 @@
 <footer class="relative border-t border-ink-200/50 bg-white py-14 dark:border-white/[0.06] dark:bg-ink-950/70">
   <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
     <div>
-      <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+      <a href="/fr" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
         <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
         <span class="kfl-logo-text">כספ'לה</span>
       </a>
-      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">הכסף שלך, על אוטומט.</p>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">Votre argent, en pilote automatique.</p>
     </div>
     <div>
-      <p class="font-bold dark:text-white">מוצר</p>
+      <p class="font-bold dark:text-white">Produit</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
-        <li><a href="/pricing" class="hover:text-ink-900 dark:hover:text-white">מחיר</a></li>
-        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">דמו אינטראקטיבי</a></li>
-        <li><a href="/maakav-hotzaot-whatsapp" class="hover:text-ink-900 dark:hover:text-white">מעקב הוצאות בוואטסאפ</a></li>
-        <li><a href="/nihul-taktziv-mishpachti" class="hover:text-ink-900 dark:hover:text-white">ניהול תקציב משפחתי</a></li>
-        <li><a href="/nihul-hotzaot-esek-katan" class="hover:text-ink-900 dark:hover:text-white">ניהול הוצאות לעסק קטן</a></li>
-        <li><a href="/referral" class="hover:text-ink-900 dark:hover:text-white">חבר מביא חבר</a></li>
+        <li><a href="/fr/pricing" class="hover:text-ink-900 dark:hover:text-white">Tarif</a></li>
+        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">Démo interactive</a></li>
+        <li><a href="/maakav-hotzaot-whatsapp" class="hover:text-ink-900 dark:hover:text-white">Suivi des dépenses sur WhatsApp</a></li>
+        <li><a href="/nihul-taktziv-mishpachti" class="hover:text-ink-900 dark:hover:text-white">Gestion du budget familial</a></li>
+        <li><a href="/nihul-hotzaot-esek-katan" class="hover:text-ink-900 dark:hover:text-white">Gestion des dépenses pour petite entreprise</a></li>
+        <li><a href="/referral" class="hover:text-ink-900 dark:hover:text-white">Parrainage</a></li>
       </ul>
     </div>
     <div>
-      <p class="font-bold dark:text-white">חברה</p>
+      <p class="font-bold dark:text-white">Entreprise</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
-        <li><a href="/about" class="hover:text-ink-900 dark:hover:text-white">אודות</a></li>
-        <li><a href="/team" class="hover:text-ink-900 dark:hover:text-white">הצוות</a></li>
-        <li><a href="/press" class="hover:text-ink-900 dark:hover:text-white">ערכת עיתונאים</a></li>
-        <li><a href="/contact" class="hover:text-ink-900 dark:hover:text-white">צור קשר</a></li>
-        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">תנאי שימוש</a></li>
-        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">מדיניות פרטיות</a></li>
+        <li><a href="/fr/about" class="hover:text-ink-900 dark:hover:text-white">À propos</a></li>
+        <li><a href="/team" class="hover:text-ink-900 dark:hover:text-white">L'équipe</a></li>
+        <li><a href="/press" class="hover:text-ink-900 dark:hover:text-white">Kit presse</a></li>
+        <li><a href="/fr/contact" class="hover:text-ink-900 dark:hover:text-white">Contact</a></li>
+        <li><a href="/terms" class="hover:text-ink-900 dark:hover:text-white">Conditions d'utilisation</a></li>
+        <li><a href="/privacy" class="hover:text-ink-900 dark:hover:text-white">Politique de confidentialité</a></li>
       </ul>
     </div>
     <div>
-      <p class="font-bold dark:text-white">צור קשר</p>
+      <p class="font-bold dark:text-white">Contact</p>
       <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
         <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
-        <li><a href="mailto:info@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">אימייל</a></li>
-        <li><a href="/en" hreflang="en" class="hover:text-ink-900 dark:hover:text-white">🇬🇧 English version</a></li>
+        <li><a href="mailto:info@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">E-mail</a></li>
+        <li>
+          <div class="lang-switch relative" data-current-lang="fr">
+            <button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">Français</span></button>
+            <ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden>
+              <li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li>
+              <li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li>
+              <li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li>
+              <li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li>
+              <li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li>
+              <li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li>
+            </ul>
+          </div>
+        </li>
       </ul>
     </div>
   </div>
   <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
-    © <span class="num">2026</span> כספ'לה. כל הזכויות שמורות. 🇮🇱
+    © <span class="num">2026</span> כספ'לה. Tous droits réservés. 🇮🇱
   </div>
 </footer>
 
 <!-- Demo modal -->
 <div id="demo-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 p-4 backdrop-blur" onclick="kesefleCloseDemo(event)">
   <div class="relative w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl">
-    <button type="button" onclick="kesefleCloseDemo()" aria-label="סגור דמו" class="absolute left-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-ink-100 text-ink-700 hover:bg-ink-200">
+    <button type="button" onclick="kesefleCloseDemo()" aria-label="Fermer la démo" class="absolute left-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-ink-100 text-ink-700 hover:bg-ink-200">
       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" focusable="false"><path d="M6 6l12 12M6 18L18 6"/></svg>
     </button>
-    <h3 class="text-2xl font-black text-ink-900">איך זה עובד ב-30 שניות</h3>
-    <p class="mt-2 text-sm text-ink-600">לחץ "שלח" בכל הודעה כדי לראות את הבוט בפעולה</p>
+    <h3 class="text-2xl font-black text-ink-900">Comment ça marche en 30 secondes</h3>
+    <p class="mt-2 text-sm text-ink-600">Cliquez sur « Envoyer » à chaque message pour voir le bot en action</p>
     <div class="mt-6 space-y-3" id="demo-chat">
-      <div class="flex justify-end"><div class="rounded-2xl bg-[#dcf8c6] px-4 py-2.5 text-ink-900">245 סופר</div></div>
-      <div class="flex justify-start"><div class="rounded-2xl bg-white px-4 py-2.5 text-ink-900 shadow-sm">✅ נרשם: ₪245 · אוכל לבית</div></div>
-      <div class="flex justify-end"><div class="rounded-2xl bg-[#dcf8c6] px-4 py-2.5 text-ink-900">60 אובר</div></div>
-      <div class="flex justify-start"><div class="rounded-2xl bg-white px-4 py-2.5 text-ink-900 shadow-sm">✅ נרשם: ₪60 · תחבורה</div></div>
-      <div class="flex justify-end"><div class="rounded-2xl bg-[#dcf8c6] px-4 py-2.5 text-ink-900">8500 משכורת</div></div>
-      <div class="flex justify-start"><div class="rounded-2xl bg-white px-4 py-2.5 text-ink-900 shadow-sm">✅ נרשם: ₪8,500 · הכנסה</div></div>
+      <div class="flex justify-end"><div class="rounded-2xl bg-[#dcf8c6] px-4 py-2.5 text-ink-900">245 supermarché</div></div>
+      <div class="flex justify-start"><div class="rounded-2xl bg-white px-4 py-2.5 text-ink-900 shadow-sm">✅ Enregistré : ₪245 · Courses</div></div>
+      <div class="flex justify-end"><div class="rounded-2xl bg-[#dcf8c6] px-4 py-2.5 text-ink-900">60 Uber</div></div>
+      <div class="flex justify-start"><div class="rounded-2xl bg-white px-4 py-2.5 text-ink-900 shadow-sm">✅ Enregistré : ₪60 · Transport</div></div>
+      <div class="flex justify-end"><div class="rounded-2xl bg-[#dcf8c6] px-4 py-2.5 text-ink-900">8500 salaire</div></div>
+      <div class="flex justify-start"><div class="rounded-2xl bg-white px-4 py-2.5 text-ink-900 shadow-sm">✅ Enregistré : ₪8 500 · Revenu</div></div>
     </div>
     <div class="mt-6 flex justify-center">
-      <a href="#signup" onclick="kesefleCloseDemo()" class="rounded-2xl bg-brand-600 px-6 py-3 font-bold text-white hover:bg-brand-700">תתחיל עכשיו →</a>
+      <a href="#signup" onclick="kesefleCloseDemo()" class="rounded-2xl bg-brand-600 px-6 py-3 font-bold text-white hover:bg-brand-700">Commencez maintenant →</a>
     </div>
   </div>
 </div>
@@ -1668,19 +1690,19 @@
 (function kfHeroChat() {
   var CATEGORIES = [
     // [keyword list, category, subcategory, emoji]
-    [['קפה','בית קפה','starbucks','cofix','אספרסו'], 'אוכל', 'בית קפה', '☕'],
-    [['סופר','שופרסל','רמי לוי','יוחננוף','ויקטורי','אושר עד','קרפור','אוכל לבית'], 'אוכל', 'אוכל לבית', '🛒'],
-    [['מסעדה','wolt','וולט','ten bis','משלוח אוכל','אוכל בחוץ','פיצה','בורגר','המבורגר','סושי'], 'אוכל', 'אוכל בחוץ', '🍔'],
-    [['דלק','תדלוק','סונול','דור אלון','פז'], 'תחבורה', 'דלק', '⛽'],
-    [['חניה','חנייה','חניון','pango','פנגו','cellopark'], 'תחבורה', 'חניה', '🅿️'],
-    [['אובר','uber','gett','מונית','אוטובוס','רכבת'], 'תחבורה', 'מונית/אובר', '🚕'],
-    [['ארנונה','חשמל','מים','בזק','סלקום','פרטנר','פלאפון','אינטרנט'], 'הוצאות קבועות', 'בית', '🏠'],
-    [['ביטוח','איתורן'], 'הוצאות קבועות', 'ביטוח', '🛡️'],
-    [['משכורת','שכר','שכר עבודה'], 'הכנסות', 'משכורת', '💵'],
-    [['בונוס','החזר','תקבול','הכנסה'], 'הכנסות', 'הכנסה', '💰'],
-    [['נטפליקס','netflix','spotify','ספוטיפיי','youtube','icloud','אפליקציה'], 'הוצאות קבועות', 'אפליקציות', '📱'],
-    [['בגדים','ביגוד','zara','h&m','fox'], 'קניות', 'ביגוד', '👕'],
-    [['בית מרקחת','סופר פארם','super pharm','תרופה','רופא'], 'בריאות', 'בריאות', '⚕️'],
+    [['קפה','בית קפה','starbucks','cofix','אספרסו','café','espresso'], 'Alimentation', 'Café', '☕'],
+    [['סופר','שופרסל','רמי לוי','יוחננוף','ויקטורי','אושר עד','קרפור','אוכל לבית','supermarché','courses','épicerie'], 'Alimentation', 'Courses', '🛒'],
+    [['מסעדה','wolt','וולט','ten bis','משלוח אוכל','אוכל בחוץ','פיצה','בורגר','המבורגר','סושי','restaurant','resto','pizza','sushi'], 'Alimentation', 'Au restaurant', '🍔'],
+    [['דלק','תדלוק','סונול','דור אלון','פז','essence','carburant'], 'Transport', 'Essence', '⛽'],
+    [['חניה','חנייה','חניון','pango','פנגו','cellopark','parking','stationnement'], 'Transport', 'Parking', '🅿️'],
+    [['אובר','uber','gett','מונית','אוטובוס','רכבת','taxi','bus','train','vtc'], 'Transport', 'Taxi / VTC', '🚕'],
+    [['ארנונה','חשמל','מים','בזק','סלקום','פרטנר','פלאפון','אינטרנט','taxe foncière','électricité','eau','internet'], 'Charges fixes', 'Logement', '🏠'],
+    [['ביטוח','איתורן','assurance'], 'Charges fixes', 'Assurance', '🛡️'],
+    [['משכורת','שכר','שכר עבודה','salaire','paie'], 'Revenus', 'Salaire', '💵'],
+    [['בונוס','החזר','תקבול','הכנסה','bonus','prime','remboursement','revenu'], 'Revenus', 'Revenu', '💰'],
+    [['נטפליקס','netflix','spotify','ספוטיפיי','youtube','icloud','אפליקציה','abonnement'], 'Charges fixes', 'Abonnements', '📱'],
+    [['בגדים','ביגוד','zara','h&m','fox','vêtements','habits'], 'Achats', 'Vêtements', '👕'],
+    [['בית מרקחת','סופר פארם','super pharm','תרופה','רופא','pharmacie','médecin','médicament'], 'Santé', 'Santé', '⚕️'],
   ];
 
   function categorize(text) {
@@ -1693,14 +1715,14 @@
         }
       }
     }
-    return { cat: 'שונות', sub: 'שונות', emoji: '📝' };
+    return { cat: 'Divers', sub: 'Divers', emoji: '📝' };
   }
 
   function parse(text) {
     var m = String(text || '').match(/^\s*(\d+(?:\.\d+)?)\s*(.*)$/);
     if (!m) return null;
     var amt = parseFloat(m[1]);
-    var rest = (m[2] || '').trim() || 'ללא פירוט';
+    var rest = (m[2] || '').trim() || 'Sans détail';
     return { amount: amt, desc: rest };
   }
 
@@ -1718,15 +1740,15 @@
   }
 
   function botBubble(emoji, amount, sub, time) {
-    var isIncome = String(sub).indexOf('משכורת') >= 0 || String(sub).indexOf('הכנסה') >= 0;
+    var isIncome = String(sub).indexOf('Salaire') >= 0 || String(sub).indexOf('Revenu') >= 0;
     var sign = isIncome ? '+' : '';
     var color = isIncome ? 'text-brand-600' : 'text-ink-900';
     return '<div class="bubble flex justify-start">' +
       '<div class="max-w-[85%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">' +
-      '✅ נרשם: <span class="num font-bold ' + color + '">' + sign + '₪' + amount + '</span><br>' +
+      '✅ Enregistré : <span class="num font-bold ' + color + '">' + sign + '₪' + amount + '</span><br>' +
       '<span class="text-ink-500 text-[12px]">' + emoji + ' ' + escapeText(sub) + '</span>' +
-      '<div class="mt-1 flex items-center gap-1 text-[10px] text-brand-600 font-semibold"><svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>נשמר ב-Google Sheets</div>' +
-      '<div class="mt-0.5 text-left text-[10px] text-ink-500">' + time + ' · AI סיווג ב-200ms</div>' +
+      '<div class="mt-1 flex items-center gap-1 text-[10px] text-brand-600 font-semibold"><svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>Enregistré dans Google Sheets</div>' +
+      '<div class="mt-0.5 text-left text-[10px] text-ink-500">' + time + ' · classement IA en 200 ms</div>' +
       '</div></div>';
   }
 
@@ -1759,12 +1781,12 @@
   function quickFixBubble(amount, time) {
     return '<div class="bubble flex justify-start">' +
       '<div class="max-w-[85%] rounded-2xl rounded-tr-md bg-brand-50 px-3.5 py-2 text-[13px] text-ink-900 shadow-sm border border-brand-200">' +
-      '<div class="font-semibold">🤔 לא זיהיתי בדיוק — לחץ קטגוריה:</div>' +
+      '<div class="font-semibold">🤔 Je n\'ai pas bien reconnu — choisissez une catégorie :</div>' +
       '<div class="mt-1.5 flex flex-wrap gap-1">' +
-      '<button onclick="kfQuickFix(this,&quot;ביגוד&quot;,&quot;' + amount + '&quot;,&quot;👕&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">👕 ביגוד</button>' +
-      '<button onclick="kfQuickFix(this,&quot;קניות&quot;,&quot;' + amount + '&quot;,&quot;🛍️&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">🛍️ קניות</button>' +
-      '<button onclick="kfQuickFix(this,&quot;מסעדה&quot;,&quot;' + amount + '&quot;,&quot;🍔&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">🍔 מסעדה</button>' +
-      '<button onclick="kfQuickFix(this,&quot;שונות&quot;,&quot;' + amount + '&quot;,&quot;📝&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">📝 אחר</button>' +
+      '<button onclick="kfQuickFix(this,&quot;Vêtements&quot;,&quot;' + amount + '&quot;,&quot;👕&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">👕 Vêtements</button>' +
+      '<button onclick="kfQuickFix(this,&quot;Achats&quot;,&quot;' + amount + '&quot;,&quot;🛍️&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">🛍️ Achats</button>' +
+      '<button onclick="kfQuickFix(this,&quot;Restaurant&quot;,&quot;' + amount + '&quot;,&quot;🍔&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">🍔 Restaurant</button>' +
+      '<button onclick="kfQuickFix(this,&quot;Divers&quot;,&quot;' + amount + '&quot;,&quot;📝&quot;)" class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-ink-700 shadow-sm hover:bg-brand-50 hover:text-brand-700">📝 Autre</button>' +
       '</div>' +
       '<div class="mt-1 text-left text-[10px] text-ink-500">' + time + '</div>' +
       '</div></div>';
@@ -1802,11 +1824,11 @@
       var t = document.getElementById('kf-typing'); if (t) t.remove();
       if (!parsed) {
         chat.insertAdjacentHTML('beforeend',
-          '<div class="bubble flex justify-start"><div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">לא זיהיתי סכום 🤔 נסי: <b>245 סופר</b><div class="mt-1 text-left text-[10px] text-ink-500">' + time + '</div></div></div>');
+          '<div class="bubble flex justify-start"><div class="max-w-[80%] rounded-2xl rounded-tr-md bg-white px-3.5 py-2 text-[14px] text-ink-900 shadow-sm">Je n\'ai pas reconnu de montant 🤔 essayez : <b>245 supermarché</b><div class="mt-1 text-left text-[10px] text-ink-500">' + time + '</div></div></div>');
       } else {
         var cat = categorize(parsed.desc);
-        // If categorizer fell through to "שונות", offer quick-fix buttons (autonomy demo)
-        if (cat.cat === 'שונות' && parsed.desc !== 'ללא פירוט') {
+        // If categorizer fell through to "Divers", offer quick-fix buttons (autonomy demo)
+        if (cat.cat === 'Divers' && parsed.desc !== 'Sans détail') {
           chat.insertAdjacentHTML('beforeend', quickFixBubble(parsed.amount, time));
         } else {
           chat.insertAdjacentHTML('beforeend', botBubble(cat.emoji, parsed.amount, cat.sub, time));
@@ -1820,13 +1842,13 @@
 
   // Rotating placeholder examples (only until user starts typing)
   var EXAMPLES = [
-    '42 קפה',
-    '245 סופר',
-    '1800 ארנונה',
-    '60 אובר',
-    '8500 משכורת',
-    '120 נטפליקס',
-    '350 דלק',
+    '42 café',
+    '245 supermarché',
+    '1800 taxe foncière',
+    '60 Uber',
+    '8500 salaire',
+    '120 Netflix',
+    '350 essence',
   ];
   var input = document.getElementById('hero-input');
   if (input) {
@@ -1834,7 +1856,7 @@
     var rot = setInterval(function(){
       if (document.activeElement === input || input.value) { clearInterval(rot); return; }
       idx = (idx + 1) % EXAMPLES.length;
-      input.setAttribute('placeholder', 'נסי: ' + EXAMPLES[idx]);
+      input.setAttribute('placeholder', 'Essayez : ' + EXAMPLES[idx]);
     }, 2400);
     // Stop rotation once they interact
     input.addEventListener('focus', function(){ clearInterval(rot); }, { once: true });
@@ -1875,8 +1897,8 @@ function kesefleShowSuccess(user) {
   try { localStorage.setItem('kesefle_user', JSON.stringify(user)); } catch (e) {}
   document.getElementById('auth-buttons').classList.add('hidden');
   document.getElementById('auth-success').classList.remove('hidden');
-  document.getElementById('auth-success-name').textContent = 'ברוך הבא, ' + (user.name || user.email || '') + '!';
-  document.getElementById('auth-success-detail').textContent = 'מעביר אותך לחשבון שלך…';
+  document.getElementById('auth-success-name').textContent = 'Bienvenue, ' + (user.name || user.email || '') + ' !';
+  document.getElementById('auth-success-detail').textContent = 'Redirection vers votre compte…';
   setTimeout(function() { location.href = '/account'; }, 1400);
 }
 
@@ -1919,7 +1941,7 @@ async function kesefleStartFacebook() {
   }
   var aid = window.KESEFLE_CONFIG.FACEBOOK_APP_ID;
   if (!aid || aid.indexOf('__') === 0) {
-    return kesefleShowAuthMsg('Facebook App ID לא מוגדר. ראה SETUP.md.', 'err');
+    return kesefleShowAuthMsg('Facebook App ID non configuré. Voir SETUP.md.', 'err');
   }
   if (window.kfl) window.kfl.track('signup_start', { source: 'facebook', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' });
   if (!window.FB) {
@@ -1937,9 +1959,9 @@ async function kesefleStartFacebook() {
   function _doFbLogin() {
     FB.login(async function(response) {
       if (!response.authResponse) {
-        return kesefleShowAuthMsg('התחברות בוטלה.', 'info');
+        return kesefleShowAuthMsg('Connexion annulée.', 'info');
       }
-      kesefleShowAuthMsg('מתחבר…', 'info');
+      kesefleShowAuthMsg('Connexion en cours…', 'info');
       try {
         var r = await fetch('/api/auth/facebook', {
           method: 'POST',
@@ -1952,9 +1974,9 @@ async function kesefleStartFacebook() {
         });
         var j = await r.json();
         if (j.ok) kesefleShowSuccess(j.user);
-        else kesefleShowAuthMsg('שגיאה: ' + (j.error || 'אימות נכשל'), 'err');
+        else kesefleShowAuthMsg('Erreur : ' + (j.error || 'Échec de l\'authentification'), 'err');
       } catch (e) {
-        kesefleShowAuthMsg('שגיאת רשת. נסה שוב.', 'err');
+        kesefleShowAuthMsg('Erreur réseau. Réessayez.', 'err');
       }
     }, { scope: 'email,public_profile', return_scopes: true });
   }
@@ -1968,10 +1990,10 @@ async function kesefleStartApple() {
   var cid = window.KESEFLE_CONFIG.APPLE_CLIENT_ID;
   var redirect = window.KESEFLE_CONFIG.APPLE_REDIRECT_URI;
   if (!cid || cid.indexOf('__') === 0) {
-    return kesefleShowAuthMsg('Apple Client ID לא מוגדר. ראה SETUP.md.', 'err');
+    return kesefleShowAuthMsg('Apple Client ID non configuré. Voir SETUP.md.', 'err');
   }
   if (!window.AppleID) {
-    return kesefleShowAuthMsg('Apple SDK טרם נטען. נסה שוב בעוד רגע.', 'err');
+    return kesefleShowAuthMsg('Le SDK Apple n\'est pas encore chargé. Réessayez dans un instant.', 'err');
   }
   if (window.kfl) window.kfl.track('signup_start', { source: 'apple', plan: (window.KESEFLE_STATE && window.KESEFLE_STATE.plan) || 'free' });
   try {
@@ -1982,7 +2004,7 @@ async function kesefleStartApple() {
       usePopup: true,
     });
     var data = await window.AppleID.auth.signIn();
-    kesefleShowAuthMsg('מתחבר…', 'info');
+    kesefleShowAuthMsg('Connexion en cours…', 'info');
     var r = await fetch('/api/auth/apple', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1994,9 +2016,9 @@ async function kesefleStartApple() {
     });
     var j = await r.json();
     if (j.ok) kesefleShowSuccess(j.user);
-    else kesefleShowAuthMsg('שגיאה: ' + (j.error || 'אימות נכשל'), 'err');
+    else kesefleShowAuthMsg('Erreur : ' + (j.error || 'Échec de l\'authentification'), 'err');
   } catch (e) {
-    kesefleShowAuthMsg('שגיאת רשת או חלון הזדהות נסגר.', 'err');
+    kesefleShowAuthMsg('Erreur réseau ou fenêtre d\'authentification fermée.', 'err');
   }
 }
 
@@ -2007,14 +2029,14 @@ async function submitSignup(e) {
   var msg = document.getElementById('signup-msg');
   var email = f.email.value.trim();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    msg.textContent = 'אנא הכנס אימייל תקין';
+    msg.textContent = 'Veuillez saisir une adresse e-mail valide';
     msg.className = 'text-center text-sm text-red-300';
     msg.classList.remove('hidden');
     return false;
   }
   btn.disabled = true;
   var origLabel = btn.textContent;
-  btn.textContent = 'שולח…';
+  btn.textContent = 'Envoi…';
   try {
     var r = await fetch('/api/events?action=waitlist', {
       method: 'POST',
@@ -2022,18 +2044,18 @@ async function submitSignup(e) {
       body: JSON.stringify({ email: email, source: 'landing-waitlist', plan: window.KESEFLE_STATE.plan })
     });
     if (r.ok) {
-      msg.textContent = '✓ נרשמת. תקבל פרטים תוך דקה.';
+      msg.textContent = '✓ Inscription enregistrée. Vous recevrez les détails dans une minute.';
       msg.className = 'text-center text-sm text-brand-300';
       f.email.value = '';
     } else {
-      msg.textContent = 'משהו השתבש. נסה שוב בעוד רגע.';
+      msg.textContent = 'Une erreur est survenue. Réessayez dans un instant.';
       msg.className = 'text-center text-sm text-red-300';
     }
   } catch (err) {
     var stored = JSON.parse(localStorage.getItem('kesefle_waitlist') || '[]');
     stored.push({ email: email, ts: new Date().toISOString(), plan: window.KESEFLE_STATE.plan });
     localStorage.setItem('kesefle_waitlist', JSON.stringify(stored));
-    msg.textContent = '✓ נרשמת. תקבל פרטים כשהמערכת תפעל.';
+    msg.textContent = '✓ Inscription enregistrée. Vous recevrez les détails au lancement du service.';
     msg.className = 'text-center text-sm text-brand-300';
     f.email.value = '';
   }
@@ -2147,10 +2169,10 @@ function kesefleToggleDark() { /* no-op: dark only */ }
   }
   #kfl-install-chip .kfl-x:hover { background: rgba(255,255,255,0.30); }
 </style>
-<button id="kfl-install-chip" type="button" aria-label="התקן את כספ'לה">
+<button id="kfl-install-chip" type="button" aria-label="Installer כספ'לה">
   <span aria-hidden="true">⬇</span>
-  <span>התקן את כספ'לה</span>
-  <span class="kfl-x" id="kfl-install-dismiss" role="button" aria-label="סגור">×</span>
+  <span>Installer כספ'לה</span>
+  <span class="kfl-x" id="kfl-install-dismiss" role="button" aria-label="Fermer">×</span>
 </button>
 <script>
 (function() {
@@ -2264,10 +2286,10 @@ function kesefleToggleDark() { /* no-op: dark only */ }
       <span style="position:absolute;inset:0;background:#4ade80;border-radius:9999px;opacity:0.7;animation:kflPing 1.5s cubic-bezier(0,0,0.2,1) infinite"></span>
       <span style="position:relative;width:8px;height:8px;background:#2563eb;border-radius:9999px"></span>
     </span>
-    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">הבוט פעיל • זמן תגובה ~<span class="num">2</span>s</span>
+    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bot actif • temps de réponse ~<span class="num">2</span>s</span>
   </div>
   <a href="#signup" onclick="window.kfl && window.kfl.track('cta_click', { source: 'mobile_sticky' });" style="display:inline-flex;align-items:center;gap:6px;background:#2563eb;color:white;padding:9px 14px;border-radius:12px;font-weight:800;font-size:13.5px;text-decoration:none;flex-shrink:0">
-    התחל
+    Commencer
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
   </a>
 </div>
@@ -2519,7 +2541,7 @@ function kesefleToggleDark() { /* no-op: dark only */ }
       var meta = document.createElement('div');
       var nm = document.createElement('div');
       nm.className = 'text-sm font-bold dark:text-white';
-      nm.textContent = String(t.name || 'משתמש/ת').trim();
+      nm.textContent = String(t.name || 'Utilisateur·rice').trim();
       meta.appendChild(nm);
       cap.appendChild(av);
       cap.appendChild(meta);
@@ -2540,7 +2562,7 @@ function kesefleToggleDark() { /* no-op: dark only */ }
         list.slice(0, 6).forEach(function(t, i){ frag.appendChild(buildCard(t, i)); });
         grid.innerHTML = '';
         grid.appendChild(frag);
-        var h = document.getElementById('kfl-trust-heading'); if (h) h.textContent = 'מה אומרים המשתמשים';
+        var h = document.getElementById('kfl-trust-heading'); if (h) h.textContent = 'Ce que disent les utilisateurs';
       })
       .catch(function(){ /* keep static seed on any failure */ });
   })();

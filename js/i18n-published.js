@@ -5,8 +5,8 @@
  * Update this in the SAME commit that ships a localized page. */
 window.KESEFLE_PUBLISHED = {
   en: [''],                 // legacy English homepage (en.html)
-  ar: [],                   // Arabic — populated as the funnel ships
-  ru: [],                   // Russian
-  fr: [],                   // French
-  it: [],                   // Italian
+  ar: ['', 'pricing'],
+  ru: ['', 'pricing'],
+  fr: ['', 'pricing'],
+  it: ['', 'pricing'],
 };
