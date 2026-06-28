@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-27-incomerow';
+const KFL_BUILD_VERSION = '2026-06-27-activation';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -6300,6 +6300,20 @@ function _surveyHandleText_(fromPhone, text) {
       try { sendWhatsAppMessage(fromPhone, 'מעולה ' + _addr_(fromPhone) + '! 👊'); } catch (_e) {}
       _surveySendQ1_(fromPhone);
       return { handled: true };
+    }
+    // ACTIVATION FIX (audit P0 2026-06-27): never SWALLOW a real first expense on
+    // the gender gate. If the message parses as an expense and isn't a gender
+    // statement, clear the survey and fall through so the expense gets logged --
+    // gender is optional personalization and must never block logging.
+    var __q0HasGenderWord = /(?:^|\s)(?:בן|בת|זכר|נקבה|גבר|אישה|אשה|בחור|בחורה)(?:\s|$)/.test(t);
+    if (!__q0HasGenderWord && typeof parseAmountAndDescription === 'function') {
+      var __q0Parsed = null;
+      try { __q0Parsed = parseAmountAndDescription(t); } catch (_q0e) { __q0Parsed = null; }
+      if (__q0Parsed && __q0Parsed.items && __q0Parsed.items.length &&
+          __q0Parsed.items[0] && typeof __q0Parsed.items[0].amount === 'number') {
+        _surveyClearState_(fromPhone);
+        return { handled: false };
+      }
     }
     return { handled: true, replyText: 'רק שאדע איך לפנות אליך — כתוב *בן* או *בת* 🙂' };
   }
