@@ -10,6 +10,10 @@
 <meta name="robots" content="index,follow" />
 <link rel="canonical" href="https://kesefle.com/help" />
 <link rel="alternate" hreflang="he-IL" href="https://kesefle.com/help" />
+<link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/help" />
+<link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/help" />
+<link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/help" />
+<link rel="alternate" hreflang="it" href="https://kesefle.com/it/help" />
 <link rel="alternate" hreflang="x-default" href="https://kesefle.com/help" />
 <meta property="og:title" content="מרכז העזרה — כספ'לה" />
 <meta property="og:description" content="כל מה שצריך לדעת על כספ'לה: חיבור וואטסאפ, רישום הוצאות, שינוי קטגוריה, דשבורד, ייצוא, תקציב, פיצול עם בן/בת זוג ופרטיות. בעברית, עם חיפוש." />
@@ -151,6 +155,7 @@
 
     <!-- CTA + mobile hamburger -->
     <div class="flex items-center gap-2">
+      <div class="lang-switch relative" data-current-lang="he"><button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">עברית</span></button><ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden><li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li><li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li><li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li><li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li><li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li><li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li></ul></div>
       <a href="/account" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">התחל חינם</a>
       <button type="button" aria-label="תפריט" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -649,5 +654,7 @@
 })();
 </script>
 
+<script src="/js/i18n-published.js"></script>
+<script src="/js/lang-switch.js" defer></script>
 </body>
 </html>

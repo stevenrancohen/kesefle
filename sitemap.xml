@@ -466,4 +466,136 @@
     <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/pricing"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/pricing"/>
   </url>
+  <url>
+    <loc>https://kesefle.com/ar/about</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/about"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/about"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/about"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/about"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/ar/install</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/install"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/install"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/install"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/install"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/install"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/install"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/ar/contact</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/contact"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/contact"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/contact"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/ar/help</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/help"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/help"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/help"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/help"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/help"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/help"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/ru/about</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/about"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/about"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/about"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/about"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/ru/install</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/install"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/install"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/install"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/install"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/install"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/install"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/ru/contact</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/contact"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/contact"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/contact"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/ru/help</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/help"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/help"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/help"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/help"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/help"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/help"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/fr/about</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/about"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/about"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/about"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/about"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/about"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/about"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/fr/install</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/install"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/install"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/install"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/install"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/install"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/install"/>
+  </url>
+  <url>
+    <loc>https://kesefle.com/fr/contact</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="he-IL" href="https://kesefle.com/contact"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/contact"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kesefle.com/it/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kesefle.com/contact"/>
+  </url>
 </urlset>
