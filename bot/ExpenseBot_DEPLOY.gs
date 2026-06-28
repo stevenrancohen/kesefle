@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-27-activation';
+const KFL_BUILD_VERSION = '2026-06-27-activation2';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -1730,9 +1730,22 @@ function _maybeSendWelcome_(fromPhone) {
   _onboardMark_('welcomed', clean);
 
   var sheetUrl = _userSheetUrl_(fromPhone);
+  // ACTIVATION FIX (audit P0 2026-06-27): a phone with no linked sheet CANNOT
+  // auto-save, so don't promise it. Branch the opening line + show the 6-digit
+  // link steps (mirrors the unlinked-expense copy at ~line 8417) instead of the
+  // sheet URL.
+  var __savedLine = sheetUrl
+    ? 'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. כל הוצאה נשמרת אוטומטית בגיליון Google הפרטי שלך.'
+    : 'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. צריך רק לחבר את המספר הזה פעם אחת, ואז כל הוצאה תיכנס אוטומטית לגיליון Google הפרטי שלך.';
+  var __linkBlock = sheetUrl
+    ? ('📊 הגיליון שלך:\n' + sheetUrl + '\n\n')
+    : ('🔗 *כדי לחבר את המספר הזה (30 שניות):*\n' +
+       '1. פתח בטלפון: ' + KESEFLE_API_BASE.replace(/^https?:\/\//, '') + '/welcome\n' +
+       '2. לחץ על "חבר את המספר הזה"\n' +
+       '3. תקבל קוד בן 6 ספרות — שלח לי אותו (לדוגמה: "קוד 123456")\n\n');
   var msg =
     '👋 *ברוכים הבאים לכספ\'לה!*\n' +
-    'אני עוקב אחרי ההוצאות שלך ישר בוואטסאפ — בלי אפליקציה ובלי אקסל. כל הוצאה נשמרת אוטומטית בגיליון Google הפרטי שלך.\n\n' +
+    __savedLine + '\n\n' +
     'פשוט תכתוב לי כמו שאתה מדבר 😎\n' +
     '━━━━━━━━━━━━━━━━━━\n\n' +
     '• *150 סופר* ← יסווג כ"אוכל"\n' +
@@ -1750,7 +1763,7 @@ function _maybeSendWelcome_(fromPhone) {
     '• *סיכום* — סיכום החודש\n' +
     '• *עזרה* — כל הפקודות\n\n' +
     '📌 *טיפ:* לחיצה ארוכה על ההודעה הזו ← "הצמד" (Pin), כדי שתהיה תמיד בהישג יד.\n\n' +
-    (sheetUrl ? ('📊 הגיליון שלך:\n' + sheetUrl + '\n\n') : '') +
+    __linkBlock +
     '🎁 *הביאו חבר → חודש Pro חינם לשניכם:*\nhttps://kesefle.com/referral';
   try {
     if (typeof sendWhatsAppMessage === 'function') sendWhatsAppMessage(fromPhone, msg);
