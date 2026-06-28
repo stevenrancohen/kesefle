@@ -230,7 +230,33 @@
 
   <script>
   (function () {
-    var BOT_NUMBER = '972547760643'; // see /api/config for runtime override
+    var BOT_NUMBER = '972547760643'; // default; overridden at runtime from /api/config
+    // Pull the LIVE bot number from /api/config so a number change (regional
+    // deploy, WABA swap) can't break the activation deeplinks. Rewrites every
+    // wa.me link + copy-number button once the DOM is ready. Falls back to the
+    // hardcoded default if the config fetch fails.
+    function kflApplyBotNumber(n) {
+      n = String(n || '').replace(/\D+/g, '');
+      if (!n) return;
+      BOT_NUMBER = n;
+      document.querySelectorAll('a[href*="wa.me/"]').forEach(function (a) {
+        a.href = a.href.replace(/wa\.me\/\d+/, 'wa.me/' + n);
+      });
+      document.querySelectorAll('[onclick]').forEach(function (b) {
+        var oc = b.getAttribute('onclick');
+        if (oc && oc.indexOf('972547760643') >= 0) b.setAttribute('onclick', oc.replace(/\+?972547760643/g, '+' + n));
+      });
+    }
+    (function () {
+      function go() {
+        try {
+          fetch('/api/config').then(function (r) { return r.json(); }).then(function (c) {
+            if (c && c.ok && c.BOT_NUMBER && c.BOT_NUMBER !== BOT_NUMBER) kflApplyBotNumber(c.BOT_NUMBER);
+          }).catch(function () {});
+        } catch (_e) {}
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+    })();
     var pollTimer = null;
     var countdownTimer = null;
     var linkedAlreadyChecked = false;
