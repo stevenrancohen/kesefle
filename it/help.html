@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="it" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Centro assistenza — כספ'לה | Domande frequenti e guide</title>
+<meta name="description" content="Centro assistenza di כספ'לה — brevi guide in italiano: collegamento di WhatsApp, registrazione delle spese, categorie, dashboard, esportazione dei dati e budget familiare." />
+<meta name="keywords" content="כספלה assistenza, centro assistenza, domande frequenti, come collegare WhatsApp, come registrare una spesa, cambiare categoria, esportazione dati, budget, divisione spese, privacy" />
+<meta name="theme-color" content="#6366F1" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://kesefle.com/it/help" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.com/help" />
+<link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/help" />
+<link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/help" />
+<link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/help" />
+<link rel="alternate" hreflang="it" href="https://kesefle.com/it/help" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.com/help" />
+<link rel="canonical" href="https://kesefle.com/it/help" />
+<meta property="og:title" content="Centro assistenza — כספ'לה" />
+<meta property="og:description" content="Tutto quello che c'è da sapere su כספ'לה: collegamento di WhatsApp, registrazione delle spese, cambio di categoria, dashboard, esportazione, budget, divisione con il partner e privacy. In italiano, con ricerca." />
+<meta property="og:image" content="https://kesefle.com/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://kesefle.com/it/help" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="it_IT" />
+<meta property="og:site_name" content="כספ'לה" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Centro assistenza — כספ'לה" />
+<meta name="twitter:description" content="Collegamento di WhatsApp, registrazione delle spese, cambio di categoria, dashboard, esportazione, budget, divisione con il partner e privacy — in italiano, con ricerca." />
+<meta name="twitter:image" content="https://kesefle.com/og-image.png" />
+<link rel="icon" type="image/png" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/brand.css" />
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], mono: ['Inter', 'ui-monospace', 'SFMono-Regular', 'monospace'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 50:'#eff6ff', 100:'#dbeafe', 300:'#93c5fd', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8' }
+        },
+        boxShadow: { glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)', soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)' },
+      },
+    },
+  };
+</script>
+<style>
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; font-feature-settings: "kern" 1, "liga" 1; }
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  h1, h2 { letter-spacing: -0.025em; }
+  .num, .mono { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; font-family: 'Inter', ui-monospace, monospace; }
+  *:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 8px; }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -26px) scale(1.05); }
+    66%      { transform: translate(-16px, 18px) scale(0.96); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+  /* The bot uses WhatsApp-style commands. Show them in an LTR-isolated mono chip
+     so Hebrew + Latin + digits don't reorder under RTL. */
+  .kfl-cmd { direction: rtl; unicode-bidi: isolate; font-family: 'Inter', 'Heebo', ui-monospace, monospace; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-blob { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Centro assistenza — כספ'לה","description":"Centro assistenza di כספ'לה: collegamento di WhatsApp, registrazione delle spese, cambio di categoria, dashboard, esportazione dei dati, budget, divisione con il partner e privacy.","url":"https://kesefle.com/it/help","inLanguage":"it","isPartOf":{"@type":"WebSite","name":"כספ'לה","url":"https://kesefle.com/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://kesefle.com/"},{"@type":"ListItem","position":2,"name":"Centro assistenza","item":"https://kesefle.com/it/help"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Come si collega WhatsApp a כספ'לה?","acceptedAnswer":{"@type":"Answer","text":"Vai su kesefle.com/account e accedi con il tuo account Google. Nella pagina successiva inserisci il tuo numero WhatsApp, ricevi un codice di 6 cifre e lo invii al bot su WhatsApp. Appena il codice viene ricevuto, il numero è collegato e ogni messaggio che invierai verrà inserito nel tuo foglio."}},{"@type":"Question","name":"Come si registra una spesa?","acceptedAnswer":{"@type":"Answer","text":"Invia al bot un normale messaggio su WhatsApp, ad esempio '245 supermercato' o '45 caffè'. Il bot riconosce l'importo e la categoria e li registra nel foglio. Per un'entrata scrivi ad esempio '8500 stipendio'. Puoi anche indicare un'altra data ('ieri 60 alimentari'), una valuta estera ('50$ Amazon') e una rateizzazione ('5000 in 10 rate computer')."}},{"@type":"Question","name":"Come si cambia la categoria di una spesa?","acceptedAnswer":{"@type":"Answer","text":"Quando il bot non è sicuro della categoria invia un elenco cliccabile (pulsanti): basta scegliere la categoria corretta e imparerà per la volta successiva. Per correggere una spesa già registrata, scrivi 'correzione a: pasti fuori' e la categoria dell'ultima spesa verrà aggiornata."}},{"@type":"Question","name":"Dove si vede la dashboard?","acceptedAnswer":{"@type":"Answer","text":"Vai su kesefle.com/dashboard per una visualizzazione grafica di spese, entrate e saldo. Puoi anche chiedere al bot su WhatsApp 'oggi?', 'questa settimana?', 'questo mese?' oppure 'riepilogo' e ricevere un riepilogo immediato. I dati completi sono sempre nel tuo foglio Google."}},{"@type":"Question","name":"Come si esportano i miei dati?","acceptedAnswer":{"@type":"Answer","text":"Sulla pagina kesefle.com/dashboard, nell'area delle impostazioni, c'è un pulsante di esportazione dati che scarica i movimenti come file CSV o JSON. Inoltre, poiché tutti i dati si trovano nel tuo foglio Google, puoi sempre aprirlo ed esportare tramite Google Sheets (File → Scarica)."}},{"@type":"Question","name":"Come si imposta un budget mensile?","acceptedAnswer":{"@type":"Answer","text":"Invia al bot 'budget alimentari 1500' per fissare un tetto mensile per una categoria. Scrivi 'budget' da solo per vedere tutti i budget e l'avanzamento mensile. Il bot invia un avviso automatico quando ti avvicini al tetto, senza che tu debba controllare manualmente."}},{"@type":"Question","name":"È possibile gestire spese condivise con il partner?","acceptedAnswer":{"@type":"Answer","text":"Sì, tramite le spese di gruppo. Uno di voi apre un gruppo ('כספלה crea famiglia Cohen') e l'altro si unisce con il codice ('כספלה unisciti ABC123'). Da quel momento, una spesa inviata con il prefisso 'כספלה' viene divisa automaticamente tra i membri, e 'כספלה saldi' mostra chi deve cosa a chi."}},{"@type":"Question","name":"Quanto costa כספ'לה?","acceptedAnswer":{"@type":"Answer","text":"C'è un piano gratuito (₪0), un piano Pro a ₪19 al mese e un piano Famiglia a ₪39 al mese. Pro e Famiglia includono 14 giorni di prova gratuita senza carta di credito e si possono annullare in qualsiasi momento. C'è anche il rimborso completo entro 14 giorni. Metodi di pagamento: PayPal, cripto, Bit e bonifico bancario."}},{"@type":"Question","name":"Dove vengono conservati i miei dati?","acceptedAnswer":{"@type":"Answer","text":"Le spese e le entrate vengono salvate in un foglio Google Sheets nel tuo account Google personale, non sui nostri server. Usiamo l'autorizzazione ristretta drive.file, che consente l'accesso esclusivamente al foglio creato da כספ'לה e non agli altri file su Drive. I dati dell'account (nome, email, ID del foglio) vengono conservati in forma crittografata, e i log dei messaggi al bot vengono eliminati entro 90 giorni."}},{"@type":"Question","name":"Il bot non mi risponde — cosa faccio?","acceptedAnswer":{"@type":"Answer","text":"Prima di tutto verifica di scrivere al numero corretto del bot (+972 54-776-0643) e che il tuo numero sia collegato su kesefle.com/account. Prova a inviare di nuovo un messaggio semplice come '45 caffè'. Se dopo qualche minuto ancora non c'è risposta, scrivici su WhatsApp o all'email info@kesefle.com e ti aiuteremo subito."}}]}</script>
+</head>
+<body class="bg-white text-ink-900 antialiased dark:bg-ink-950 dark:text-white">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-[10000] focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:shadow-soft">Vai al contenuto</a>
+
+<!-- ambient blobs -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div class="animate-blob absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-brand-500/15 blur-3xl"></div>
+  <div class="animate-blob absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-accent-500/12 blur-3xl" style="animation-delay:-5s"></div>
+</div>
+
+<!-- ============== HEADER ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-950/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/it" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
+      <span class="kfl-logo-text">כספ'לה</span>
+    </a>
+
+    <!-- Desktop dropdown menu -->
+    <div class="hidden items-center gap-0.5 md:flex">
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Prodotto<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Demo dal vivo</a>
+            </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Prezzi<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/it/pricing#tiers" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Piani</a>
+            <a href="/it/pricing#compare" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Confronto funzionalità</a>
+            </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Guide<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/it/help" class="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10">Centro assistenza</a>
+            <a href="/blog" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Blog</a>
+            <a href="/start" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Avvio rapido</a>
+          </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Azienda<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/it/about" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Chi siamo</a>
+            <a href="/roadmap" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Roadmap</a>
+          </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Contatti<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/it/contact" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Parla con noi</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA + mobile hamburger -->
+    <div class="flex items-center gap-2">
+      <div class="lang-switch relative" data-current-lang="it"><button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">Italiano</span></button><ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden><li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li><li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li><li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li><li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li><li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li><li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li></ul></div>
+      <a href="/account" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">Inizia gratis</a>
+      <button type="button" aria-label="Menu" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu (native accordion) -->
+  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-200/60 bg-white/95 px-5 py-3 backdrop-blur dark:border-ink-700/60 dark:bg-ink-950/95 md:hidden">
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Prodotto<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Demo dal vivo</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Prezzi<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/it/pricing#tiers" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Piani</a><a href="/it/pricing#compare" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Confronto funzionalità</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Guide<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/it/help" class="block py-1.5 pr-3 text-sm font-semibold text-brand-700 dark:text-brand-300">Centro assistenza</a><a href="/blog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Blog</a><a href="/start" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Avvio rapido</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Azienda<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/it/about" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Chi siamo</a><a href="/roadmap" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Roadmap</a></div></details>
+    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Contatti<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/it/contact" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Parla con noi</a></div></details>
+    <a href="/account" class="mt-3 block rounded-xl bg-brand-600 px-4 py-2.5 text-center text-sm font-bold text-white">Inizia gratis</a>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ============== HERO + SEARCH ============== -->
+  <section class="relative overflow-hidden px-5 pt-28 pb-10 md:pt-32 md:pb-14">
+    <div class="mx-auto max-w-3xl text-center">
+      <span class="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white/70 px-3 py-1 text-xs font-semibold text-ink-600 backdrop-blur dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-300">
+        <span>💬</span> Centro assistenza
+      </span>
+      <h1 class="mt-5 text-4xl font-black md:text-5xl">Come possiamo aiutarti?</h1>
+      <p class="mx-auto mt-4 max-w-xl text-base text-ink-600 dark:text-ink-300 md:text-lg">
+        Cerchi una risposta? Scrivi una sola parola — la troviamo per te. Oppure scorri in basso per le guide complete.
+      </p>
+
+      <!-- Search box -->
+      <div class="mx-auto mt-7 max-w-xl">
+        <label for="kfl-help-search" class="sr-only">Cerca nel centro assistenza</label>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-ink-400">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          </span>
+          <input id="kfl-help-search" type="search" inputmode="search" autocomplete="off" enterkeyhint="search"
+                 placeholder="Cerca: WhatsApp, categoria, budget, esportazione..."
+                 class="w-full rounded-2xl border border-ink-200 bg-white py-3.5 pr-12 pl-4 text-base text-ink-900 shadow-soft outline-none transition placeholder:text-ink-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-ink-700 dark:bg-ink-800 dark:text-white" />
+        </div>
+        <p id="kfl-search-status" class="mt-2 min-h-[1.25rem] text-sm text-ink-500 dark:text-ink-400" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- Quick topic chips -->
+      <div class="mx-auto mt-4 flex max-w-2xl flex-wrap justify-center gap-2 text-sm">
+        <a href="#a-connect" class="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-ink-700 backdrop-blur transition hover:border-brand-500 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:border-brand-400 dark:hover:text-brand-300">Collegare WhatsApp</a>
+        <a href="#a-log" class="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-ink-700 backdrop-blur transition hover:border-brand-500 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:border-brand-400 dark:hover:text-brand-300">Registrare una spesa</a>
+        <a href="#a-category" class="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-ink-700 backdrop-blur transition hover:border-brand-500 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:border-brand-400 dark:hover:text-brand-300">Cambiare categoria</a>
+        <a href="#a-budget" class="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-ink-700 backdrop-blur transition hover:border-brand-500 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:border-brand-400 dark:hover:text-brand-300">Budget</a>
+        <a href="#a-export" class="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-ink-700 backdrop-blur transition hover:border-brand-500 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:border-brand-400 dark:hover:text-brand-300">Esportazione dati</a>
+        <a href="#a-privacy" class="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-ink-700 backdrop-blur transition hover:border-brand-500 hover:text-brand-700 dark:border-ink-700 dark:bg-ink-800/70 dark:text-ink-200 dark:hover:border-brand-400 dark:hover:text-brand-300">Privacy</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== ARTICLES ============== -->
+  <section class="px-5 pb-16">
+    <div id="kfl-help-articles" class="mx-auto max-w-3xl space-y-4">
+
+      <!-- No-results notice (search) -->
+      <div id="kfl-no-results" class="hidden rounded-2xl border border-dashed border-ink-300 bg-white/60 p-6 text-center text-ink-600 dark:border-ink-700 dark:bg-ink-800/60 dark:text-ink-300">
+        Nessuna risposta trovata per la tua ricerca. Prova un'altra parola, oppure
+        <a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline">scrivici su WhatsApp</a>
+        e ti aiuteremo.
+      </div>
+
+      <!-- ===== Group: Getting started ===== -->
+      <h2 class="kfl-group-head pt-2 text-sm font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">Per iniziare</h2>
+
+      <article id="a-connect" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="collegare WhatsApp codice 6 cifre numero di telefono accedere collegamento account Google registrazione benvenuto">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Come si collega WhatsApp a כספ'לה?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Il collegamento richiede meno di un minuto, senza scaricare alcuna app:</p>
+            <ol class="mt-3 list-decimal space-y-1.5 pr-5">
+              <li>Vai su <a href="/account" class="font-semibold text-brand-600 hover:underline">kesefle.com/account</a> e accedi con il tuo account Google.</li>
+              <li>Inserisci il tuo numero WhatsApp — ti verrà inviato un codice di <span class="num">6</span> cifre.</li>
+              <li>Invia il codice al bot su WhatsApp (basta un clic — il pulsante apre WhatsApp con il codice già pronto).</li>
+              <li>Appena il codice viene ricevuto, il numero è collegato ✓. Ogni messaggio che invierai da ora in poi verrà inserito nel tuo foglio.</li>
+            </ol>
+            <p class="mt-3">Numero del bot: <span class="num font-semibold">+972 54-776-0643</span>. Il codice è valido per <span class="num">10</span> minuti — se scade, basta richiederne uno nuovo dalla stessa pagina.</p>
+          </div>
+        </details>
+      </article>
+
+      <article id="a-log" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="registrare spesa entrata scrivere importo categoria stipendio data ieri valuta estera dollaro rate rateizzazione">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Come si registra una spesa (o un'entrata)?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Basta scrivere al bot su WhatsApp come parli normalmente. Il bot riconosce l'importo e la categoria e li registra nel foglio:</p>
+            <ul class="mt-3 space-y-1.5 pr-1">
+              <li>Spesa: <span class="kfl-cmd font-semibold">״245 סופר״</span> · <span class="kfl-cmd font-semibold">״45 קפה״</span> · <span class="kfl-cmd font-semibold">״1200 ארנונה״</span></li>
+              <li>Entrata: <span class="kfl-cmd font-semibold">״8500 משכורת״</span> · <span class="kfl-cmd font-semibold">״3000 הכנסה עסקית״</span></li>
+              <li>Altra data: <span class="kfl-cmd font-semibold">״אתמול 60 מכולת״</span> · <span class="kfl-cmd font-semibold">״12/4 80 דלק״</span></li>
+              <li>Valuta estera: <span class="kfl-cmd font-semibold">״50$ אמזון״</span> — convertita automaticamente in shekel</li>
+              <li>Rateizzazione: <span class="kfl-cmd font-semibold">״5000 ב-10 תשלומים מחשב״</span></li>
+            </ul>
+            <p class="mt-3">Hai sbagliato? Scrivi <span class="kfl-cmd font-semibold">״מחק אחרון״</span> per annullare l'ultima spesa. Puoi anche inviare una <strong>foto della ricevuta</strong> o un <strong>messaggio vocale</strong> (nel piano Pro) e il bot li leggerà e li registrerà.</p>
+          </div>
+        </details>
+      </article>
+
+      <article id="a-category" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="cambiare categoria correggere categoria elenco cliccabile pulsanti scelta categoria correzione a picker menu a tendina sottocategoria">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Come si cambia la categoria di una spesa?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Ci sono due modi, entrambi all'interno di WhatsApp:</p>
+            <ul class="mt-3 space-y-1.5 pr-1">
+              <li><strong>Durante la registrazione —</strong> quando il bot non è sicuro a quale categoria appartenga la spesa, invia un <strong>elenco cliccabile</strong> (pulsanti). Basta toccare la categoria corretta e il bot impara la tua scelta per la volta successiva.</li>
+              <li><strong>Correggere a posteriori —</strong> scrivi <span class="kfl-cmd font-semibold">״תיקון ל: אוכל בחוץ״</span> e la categoria dell'ultima spesa verrà aggiornata subito.</li>
+            </ul>
+            <p class="mt-3">Più correggi, più il bot diventa preciso — dopo <span class="num">30–50</span> spese riconosce quasi tutto da solo.</p>
+          </div>
+        </details>
+      </article>
+
+      <!-- ===== Group: Daily use ===== -->
+      <h2 class="kfl-group-head pt-4 text-sm font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">Nell'uso quotidiano</h2>
+
+      <article id="a-dashboard" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="dashboard riepilogo oggi settimana mese saldo grafico vedere spese foglio Google Sheets apri foglio">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Dove si vedono la dashboard e i riepiloghi?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Tre modi per vedere cosa succede con i soldi:</p>
+            <ul class="mt-3 space-y-1.5 pr-1">
+              <li><strong>Dashboard sul sito —</strong> <a href="/dashboard" class="font-semibold text-brand-600 hover:underline">kesefle.com/dashboard</a> mostra grafici di spese, entrate e saldo.</li>
+              <li><strong>Domanda rapida al bot —</strong> <span class="kfl-cmd font-semibold">״היום?״</span>, <span class="kfl-cmd font-semibold">״השבוע?״</span>, <span class="kfl-cmd font-semibold">״החודש?״</span> oppure <span class="kfl-cmd font-semibold">״סיכום״</span> — e il bot restituisce i numeri all'istante.</li>
+              <li><strong>Il foglio completo —</strong> dalla dashboard puoi cliccare ״apri foglio״ e vedere ogni singolo movimento in Google Sheets.</li>
+            </ul>
+            <p class="mt-3">Inoltre, ogni domenica mattina arriva un <strong>riepilogo settimanale automatico</strong> su WhatsApp.</p>
+          </div>
+        </details>
+      </article>
+
+      <article id="a-budget" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="budget mensile tetto categoria avviso 80 percento impostare budget alimentari trasporti casa">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Come si imposta un budget mensile?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Imposti un tetto mensile per una categoria direttamente dal bot:</p>
+            <ul class="mt-3 space-y-1.5 pr-1">
+              <li>Impostare un budget: <span class="kfl-cmd font-semibold">״תקציב מזון 1500״</span> · <span class="kfl-cmd font-semibold">״תקציב תחבורה 800״</span></li>
+              <li>Vedere tutti i budget e l'avanzamento mensile: <span class="kfl-cmd font-semibold">״תקציב״</span></li>
+            </ul>
+            <p class="mt-3">Il bot invierà un <strong>avviso automatico</strong> quando ti avvicini al tetto (intorno all'<span class="num">80%</span>), così resti sotto controllo senza dover monitorare manualmente.</p>
+          </div>
+        </details>
+      </article>
+
+      <article id="a-recurring" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="spesa fissa ricorrente mensile affitto Netflix imposta comunale addebito permanente abbonamento elenco fisse elimina fisso sospendi">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Come si imposta una spesa fissa (ricorrente)?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Le spese fisse vengono registrate automaticamente ogni mese — senza riscriverle:</p>
+            <ul class="mt-3 space-y-1.5 pr-1">
+              <li>Aggiungere: <span class="kfl-cmd font-semibold">״קבוע 2500 שכירות כל 1 לחודש״</span> · <span class="kfl-cmd font-semibold">״קבוע 99 נטפליקס כל 5 לחודש״</span></li>
+              <li>Vederle tutte: <span class="kfl-cmd font-semibold">״רשימת קבועות״</span></li>
+              <li>Sospendere o eliminare: <span class="kfl-cmd font-semibold">״השהה קבוע נטפליקס״</span> · <span class="kfl-cmd font-semibold">״מחק קבוע שכירות״</span></li>
+            </ul>
+          </div>
+        </details>
+      </article>
+
+      <article id="a-export" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="esportazione dati download csv json excel foglio Google Sheets esportare scaricare backup export">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Come si esportano i miei dati?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>I tuoi dati sono tuoi — puoi portarli via in qualsiasi momento:</p>
+            <ul class="mt-3 space-y-1.5 pr-1">
+              <li><strong>Dalla dashboard —</strong> su <a href="/dashboard" class="font-semibold text-brand-600 hover:underline">kesefle.com/dashboard</a>, nell'area delle impostazioni, c'è un pulsante di esportazione che scarica i movimenti come file <span class="num">CSV</span> o <span class="num">JSON</span>.</li>
+              <li><strong>Direttamente da Google Sheets —</strong> poiché tutte le informazioni si trovano nel tuo foglio, puoi aprirlo ed esportare dal menu: File ← Scarica ← Excel / CSV / PDF.</li>
+            </ul>
+            <p class="mt-3">Nessun vincolo (lock-in): anche se smetti di usare כספ'לה, il foglio resta tuo nel tuo account Google.</p>
+          </div>
+        </details>
+      </article>
+
+      <!-- ===== Group: Sharing ===== -->
+      <h2 class="kfl-group-head pt-4 text-sm font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">Condivisione con il partner e la famiglia</h2>
+
+      <article id="a-sharing" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="partner condivisione condiviso gruppo famiglia divisione metà chi deve cosa saldi כספלה crea unisciti codice spese di gruppo soci">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">È possibile gestire spese condivise con il partner?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Sì — tramite le <strong>spese di gruppo</strong>, che dividono una spesa in parti uguali tra i membri. Tutti i comandi iniziano con la parola ״כספלה״:</p>
+            <ol class="mt-3 list-decimal space-y-1.5 pr-5">
+              <li>Uno di voi apre un gruppo: <span class="kfl-cmd font-semibold">״כספלה צור משפחה כהן״</span> — e riceve un codice di adesione.</li>
+              <li>L'altro si unisce con il codice: <span class="kfl-cmd font-semibold">״כספלה הצטרף ABC123״</span>.</li>
+              <li>Da ora registri una spesa condivisa con il prefisso: <span class="kfl-cmd font-semibold">״כספלה 245 סופר״</span> — e viene divisa automaticamente.</li>
+              <li>In qualsiasi momento: <span class="kfl-cmd font-semibold">״כספלה יתרות״</span> mostra chi deve cosa a chi, e <span class="kfl-cmd font-semibold">״כספלה סידור״</span> propone come pareggiare.</li>
+            </ol>
+            <p class="mt-3">Per l'elenco completo dei comandi del gruppo invia al bot <span class="kfl-cmd font-semibold">״כספלה עזרה״</span>.</p>
+          </div>
+        </details>
+      </article>
+
+      <!-- ===== Group: Account, billing, privacy ===== -->
+      <h2 class="kfl-group-head pt-4 text-sm font-bold uppercase tracking-wide text-ink-500 dark:text-ink-400">Account, fatturazione e privacy</h2>
+
+      <article id="a-pricing" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="prezzo costo gratis pro famiglia piano abbonamento 19 39 prova 14 giorni annullamento rimborso pagamento paypal cripto bit bonifico bancario annuale">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Quanto costa כספ'לה e come avviene la fatturazione?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <ul class="mt-1 space-y-1.5 pr-1">
+              <li><strong>Gratis —</strong> <span class="num">₪0</span>. Registrazione delle spese, classificazione tramite dizionario, riepiloghi e dashboard.</li>
+              <li><strong>Pro —</strong> <span class="num">₪19</span> al mese. Aggiunge la classificazione AI per nomi insoliti, l'OCR delle ricevute e la trascrizione vocale.</li>
+              <li><strong>Famiglia —</strong> <span class="num">₪39</span> al mese.</li>
+            </ul>
+            <p class="mt-3">Pro e Famiglia includono <strong><span class="num">14</span> giorni di prova gratuita</strong> — senza carta di credito e senza addebito anticipato; puoi annullare in qualsiasi momento prima del <span class="num">15</span>° giorno. C'è anche il <strong>rimborso completo entro <span class="num">14</span> giorni</strong>. Con la fatturazione annuale risparmi circa il <span class="num">17%</span>.</p>
+            <p class="mt-3">Metodi di pagamento: <strong>PayPal, cripto, Bit e bonifico bancario</strong>. Tutti i dettagli nella pagina dei <a href="/it/pricing" class="font-semibold text-brand-600 hover:underline">prezzi</a>.</p>
+          </div>
+        </details>
+      </article>
+
+      <article id="a-privacy" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="privacy dati dove vengono conservati foglio Google Drive mio proprietà drive.file autorizzazione sicurezza archiviato server eliminazione crittografato">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Dove vengono conservati i miei dati? (privacy)</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>Le tue spese e le tue entrate vengono salvate <strong>in un foglio Google Sheets nel tuo account Google personale</strong> — non sui nostri server. Il file è di tua proprietà ed è sempre accessibile a te.</p>
+            <ul class="mt-3 space-y-1.5 pr-1">
+              <li>Usiamo solo un'autorizzazione ristretta (<span class="num">drive.file</span>) — accesso <strong>esclusivamente</strong> al foglio creato da כספ'לה, e non agli altri file del tuo Drive.</li>
+              <li>I dati dell'account (nome, email, ID del foglio) vengono conservati in forma crittografata, e non abbiamo alcuna copia del contenuto delle spese.</li>
+              <li>I log dei messaggi al bot vengono conservati fino a <span class="num">90</span> giorni (per supporto e per migliorare la classificazione) e poi eliminati automaticamente.</li>
+            </ul>
+            <p class="mt-3">Per l'eliminazione completa dell'account (GDPR) invia al bot <span class="kfl-cmd font-semibold">״מחק חשבון״</span>, oppure leggi l'<a href="/privacy" class="font-semibold text-brand-600 hover:underline">informativa sulla privacy</a> completa.</p>
+          </div>
+        </details>
+      </article>
+
+      <article id="a-troubleshoot" class="kfl-help-card scroll-mt-28 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft dark:border-ink-700 dark:bg-ink-800"
+               data-keywords="il bot non risponde non reagisce guasto problema non funziona non registra messaggio non entra numero non collegato supporto aiuto nessuna risposta">
+        <details>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 text-base font-bold text-ink-900 marker:content-none hover:bg-ink-50 dark:text-white dark:hover:bg-ink-700/40">
+            <span class="kfl-help-q">Il bot non mi risponde — cosa faccio?</span>
+            <span class="kfl-help-plus shrink-0 text-ink-500 dark:text-ink-400">+</span>
+          </summary>
+          <div class="border-t border-ink-100 px-5 py-4 text-sm leading-relaxed text-ink-600 dark:border-ink-700 dark:text-ink-300">
+            <p>La maggior parte dei casi si risolve in un attimo. Segui i passaggi nell'ordine:</p>
+            <ol class="mt-3 list-decimal space-y-1.5 pr-5">
+              <li>Verifica di scrivere al numero corretto del bot: <span class="num font-semibold">+972 54-776-0643</span>.</li>
+              <li>Controlla che il tuo numero sia collegato — accedi a <a href="/account" class="font-semibold text-brand-600 hover:underline">kesefle.com/account</a>. Se non è collegato, completa il collegamento (codice di <span class="num">6</span> cifre).</li>
+              <li>Prova a inviare un messaggio semplice come <span class="kfl-cmd font-semibold">״45 קפה״</span> oppure <span class="kfl-cmd font-semibold">״עזרה״</span>.</li>
+              <li>Attendi un minuto — a volte c'è un carico momentaneo e la risposta arriva con un lieve ritardo.</li>
+            </ol>
+            <p class="mt-3">Ancora bloccato? <a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:underline">Scrivici su WhatsApp</a> o all'email <a href="mailto:info@kesefle.com" class="font-semibold text-brand-600 hover:underline">info@kesefle.com</a> — ti aiuteremo subito.</p>
+          </div>
+        </details>
+      </article>
+
+    </div>
+
+    <!-- Still need help CTA -->
+    <div class="mx-auto mt-10 max-w-3xl rounded-3xl border border-ink-200 bg-gradient-to-br from-brand-50 to-white p-7 text-center dark:border-ink-700 dark:from-ink-800 dark:to-ink-900">
+      <h2 class="text-2xl font-black">Non hai trovato una risposta?</h2>
+      <p class="mx-auto mt-2 max-w-md text-sm text-ink-600 dark:text-ink-300">Siamo qui. Scrivici e il team ti risponderà — in modo semplice e diretto.</p>
+      <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
+        <a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-soft transition hover:bg-brand-500">
+          💬 Scrivici su WhatsApp
+        </a>
+        <a href="/it/contact" class="inline-flex items-center gap-2 rounded-2xl border border-ink-200 bg-white px-5 py-3 text-sm font-bold text-ink-900 transition hover:bg-ink-100 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:hover:bg-ink-700">
+          ✉️ Contattaci
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-950">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/it" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
+        <span class="kfl-logo-text">כספ'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">Il tuo denaro, in automatico.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Prodotto</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/it/pricing" class="hover:text-ink-900 dark:hover:text-white">Prezzo</a></li>
+        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">Demo interattiva</a></li>
+        <li><a href="/start" class="hover:text-ink-900 dark:hover:text-white">Avvio rapido</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Guide</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/it/help" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">Centro assistenza →</a></li>
+        <li><a href="/maakav-hotzaot-whatsapp" class="hover:text-ink-900 dark:hover:text-white">Monitoraggio spese su WhatsApp</a></li>
+        <li><a href="/nihul-taktziv-mishpachti" class="hover:text-ink-900 dark:hover:text-white">Gestione del budget familiare</a></li>
+        <li><a href="/blog" class="hover:text-ink-900 dark:hover:text-white">Blog</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Contatti</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:info@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">Email</a></li>
+        <li><a href="/it/about" class="hover:text-ink-900 dark:hover:text-white">Chi siamo</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    &copy; <span class="num">2026</span> כספ'לה. Tutti i diritti riservati. 🇮🇱
+  </div>
+</footer>
+
+<!-- lunr.js for client-side search (pinned). Loaded async; search degrades to a
+     simple substring filter if the CDN is unreachable so the page never breaks. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.9/lunr.min.js" crossorigin="anonymous"></script>
+<script>
+(function () {
+  'use strict';
+
+  var input  = document.getElementById('kfl-help-search');
+  var status = document.getElementById('kfl-search-status');
+  var noRes  = document.getElementById('kfl-no-results');
+  var heads  = Array.prototype.slice.call(document.querySelectorAll('.kfl-group-head'));
+  var cards  = Array.prototype.slice.call(document.querySelectorAll('.kfl-help-card'));
+  if (!input || !cards.length) return;
+
+  // Build the corpus straight from the rendered DOM, so the index is ALWAYS in
+  // sync with the visible articles — adding/editing an <article> needs no
+  // separate static index file to regenerate.
+  var docs = cards.map(function (card) {
+    var q = card.querySelector('.kfl-help-q');
+    var body = card.querySelector('details > div');
+    return {
+      id: card.id,
+      title: q ? q.textContent.trim() : '',
+      keywords: card.getAttribute('data-keywords') || '',
+      body: body ? body.textContent.replace(/\s+/g, ' ').trim() : ''
+    };
+  });
+
+  var idx = null;
+  function buildIndex() {
+    if (typeof window.lunr !== 'function') return false;
+    try {
+      idx = window.lunr(function () {
+        // No language stemmer is bundled for Hebrew; rely on the rich
+        // data-keywords + free-text body for matching.
+        this.ref('id');
+        this.field('title', { boost: 10 });
+        this.field('keywords', { boost: 6 });
+        this.field('body');
+        var self = this;
+        docs.forEach(function (d) { self.add(d); });
+      });
+      return true;
+    } catch (e) { idx = null; return false; }
+  }
+  buildIndex();
+
+  function setStatus(msg) { if (status) status.textContent = msg || ''; }
+
+  function showAll() {
+    cards.forEach(function (c) { c.style.display = ''; });
+    heads.forEach(function (h) { h.style.display = ''; });
+    if (noRes) noRes.classList.add('hidden');
+    setStatus('');
+  }
+
+  // Fallback matcher (and supplement for partial Hebrew tokens lunr may miss):
+  // simple case-insensitive substring over title + keywords + body.
+  function substringMatches(term) {
+    var t = term.toLowerCase();
+    var hits = {};
+    docs.forEach(function (d) {
+      var hay = (d.title + ' ' + d.keywords + ' ' + d.body).toLowerCase();
+      if (hay.indexOf(t) !== -1) hits[d.id] = true;
+    });
+    return hits;
+  }
+
+  function runSearch(raw) {
+    var term = (raw || '').trim();
+    if (term.length < 2) { showAll(); return; }
+
+    var matched = {};
+
+    // 1) lunr (wildcard so partial words match), guarded against query errors.
+    if (idx) {
+      try {
+        var tokens = term.split(/\s+/).filter(Boolean).map(function (w) {
+          return w.replace(/[~^:*+\-]/g, '');
+        }).filter(Boolean);
+        if (tokens.length) {
+          var q = tokens.map(function (w) { return w + '* ' + w; }).join(' ');
+          idx.search(q).forEach(function (r) { matched[r.ref] = true; });
+        }
+      } catch (e) { /* fall through to substring */ }
+    }
+
+    // 2) Always union with substring matches (covers Hebrew morphology + the
+    //    no-lunr fallback path).
+    var sub = substringMatches(term);
+    Object.keys(sub).forEach(function (id) { matched[id] = true; });
+
+    var count = 0;
+    cards.forEach(function (c) {
+      var on = !!matched[c.id];
+      c.style.display = on ? '' : 'none';
+      if (on) count++;
+    });
+    // Hide group headers during an active search (results are a flat list).
+    heads.forEach(function (h) { h.style.display = 'none'; });
+
+    if (count === 0) {
+      if (noRes) noRes.classList.remove('hidden');
+      setStatus('Nessun risultato per ״' + term + '״');
+    } else {
+      if (noRes) noRes.classList.add('hidden');
+      setStatus(count + (count === 1 ? ' risultato' : ' risultati'));
+    }
+  }
+
+  var t = null;
+  input.addEventListener('input', function () {
+    clearTimeout(t);
+    var v = input.value;
+    t = setTimeout(function () { runSearch(v); }, 120);
+  });
+  input.addEventListener('search', function () { runSearch(input.value); });
+
+  // Deep-link: /help?q=תקציב pre-fills + runs the search.
+  try {
+    var qp = new URLSearchParams(window.location.search).get('q');
+    if (qp) { input.value = qp; runSearch(qp); }
+  } catch (e) {}
+
+  // If lunr arrives late (async CDN), build the index once it's ready and
+  // re-run any in-flight query.
+  if (!idx) {
+    var tries = 0;
+    var iv = setInterval(function () {
+      tries++;
+      if (buildIndex() || tries > 40) {
+        clearInterval(iv);
+        if (idx && input.value.trim().length >= 2) runSearch(input.value);
+      }
+    }, 100);
+  }
+})();
+</script>
+
+<!-- Toggle the +/- affordance on each card as it opens/closes. -->
+<script>
+(function () {
+  document.querySelectorAll('.kfl-help-card details').forEach(function (d) {
+    var plus = d.querySelector('.kfl-help-plus');
+    if (!plus) return;
+    d.addEventListener('toggle', function () { plus.textContent = d.open ? '−' : '+'; });
+  });
+})();
+</script>
+
+<script src="/js/i18n-published.js"></script>
+<script src="/js/lang-switch.js" defer></script>
+</body>
+</html>

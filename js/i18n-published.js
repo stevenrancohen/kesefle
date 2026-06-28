@@ -7,6 +7,6 @@ window.KESEFLE_PUBLISHED = {
   en: [''],                 // legacy English homepage (en.html)
   ar: ['', 'pricing', 'about', 'install', 'contact', 'help'],
   ru: ['', 'pricing', 'about', 'install', 'contact', 'help'],
-  fr: ['', 'pricing', 'about', 'install', 'contact'],
-  it: ['', 'pricing'],
+  fr: ['', 'pricing', 'about', 'install', 'contact', 'help'],
+  it: ['', 'pricing', 'about', 'install', 'contact', 'help'],
 };

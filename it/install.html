@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="it" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Installazione — come aggiungere כספ'לה alla schermata Home · Kesefle</title>
+<meta name="description" content="Installa כספ'לה come app sul telefono o sul computer — Android, iPhone, iPad, macOS, Windows. Senza app store." />
+<meta name="theme-color" content="#6366F1" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" type="image/png" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<meta property="og:title" content="Installa כספ'לה — un'app vera senza store" />
+<meta property="og:description" content="3 clic e il bot è sulla schermata Home del tuo telefono." />
+<meta property="og:image" content="https://kesefle.com/og-image.png" />
+<meta property="og:url" content="https://kesefle.com/it/install" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="it_IT" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.com/install" />
+<link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/install" />
+<link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/install" />
+<link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/install" />
+<link rel="alternate" hreflang="it" href="https://kesefle.com/it/install" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.com/install" />
+<link rel="canonical" href="https://kesefle.com/it/install" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "Installare כספ'לה come PWA",
+  "description": "Come installare כספ'לה come app su qualsiasi dispositivo",
+  "step": [
+    { "@type": "HowToStep", "name": "Apri con il browser", "text": "Chrome, Safari o Edge" },
+    { "@type": "HowToStep", "name": "Aggiungi alla schermata Home", "text": "Menu del browser → 'Aggiungi alla schermata Home' o 'Installa app'" },
+    { "@type": "HowToStep", "name": "Conferma", "text": "L'app appare sulla schermata Home — toccala per aprirla" }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.tailwindcss.com" />
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
+<style>
+  /* === Critical first-paint fallback (perf pass 2026-06-03) ===
+     Tailwind loads from a render-blocking CDN tag below; if that CDN is
+     slow or blocked the page would flash unstyled. These INLINE base rules
+     paint instantly with the same values the body's Tailwind utilities
+     produce, so once Tailwind arrives nothing shifts. Light-mode default. */
+  html { background-color: #f7f8fb; }
+  html.dark { background-color: #070b16; }
+  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #f7f8fb; color: #0f1422; }
+  html.dark body { background-color: #070b16; color: #ffffff; }
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/brand.css" />
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {
+    fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
+    colors: {
+      ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+      brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+    }
+  }}
+};
+</script>
+<style>
+  body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#2563eb,#1e40af); color:white; font-weight:900; font-size:18px; }
+  .device-tab { transition: all 0.2s; }
+  .device-tab.active { background: #2563eb; color: white; }
+  .device-content { display: none; }
+  .device-content.active { display: block; }
+</style>
+<script src="/lib/analytics.js" defer></script>
+</head>
+<body class="bg-ink-50 dark:bg-ink-950 text-ink-900 dark:text-white min-h-screen">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-[10000] focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:shadow-soft">Vai al contenuto</a>
+
+<!-- Header -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-950/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/it" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
+      <span class="kfl-logo-text">כספ'לה</span>
+    </a>
+
+    <!-- Desktop dropdown menu (6 categories) -->
+    <div class="hidden items-center gap-0.5 md:flex">
+      <!-- 1. Il prodotto -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Il prodotto<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Demo dal vivo</a>
+            </div>
+        </div>
+      </div>
+      <!-- 3. Prezzi -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Prezzi<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/it/pricing#tiers" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Piani</a>
+            <a href="/it/pricing#compare" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Confronto funzionalità</a>
+            </div>
+        </div>
+      </div>
+      <!-- 4. Guide -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Guide<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+
+            <a href="/blog" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Blog</a>
+            <a href="/start" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Avvio rapido</a>
+          </div>
+        </div>
+      </div>
+      <!-- 5. L'azienda -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">L'azienda<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/it/about" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Chi siamo</a>
+            <a href="/it/about#timeline" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">La nostra storia</a>
+            <a href="/roadmap" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Roadmap</a>
+
+
+          </div>
+        </div>
+      </div>
+      <!-- 6. Contatti -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Contatti<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/it/contact" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Scrivici</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA + mobile hamburger -->
+    <div class="flex items-center gap-2">
+      <div class="lang-switch relative" data-current-lang="it">
+  <button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">Italiano</span></button>
+  <ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden>
+    <li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li>
+    <li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li>
+    <li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li>
+    <li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li>
+    <li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li>
+    <li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li>
+  </ul>
+</div>
+      <a href="/account" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">Inizia gratis</a>
+      <button type="button" aria-label="Menu" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu (native accordion) -->
+  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-200/60 bg-white/95 px-5 py-3 backdrop-blur dark:border-ink-700/60 dark:bg-ink-950/95 md:hidden">
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Il prodotto<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Demo dal vivo</a></div></details>
+<details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Prezzi<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/it/pricing#tiers" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Piani</a><a href="/it/pricing#compare" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Confronto funzionalità</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Guide<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/blog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Blog</a><a href="/start" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Avvio rapido</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">L'azienda<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/it/about" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Chi siamo</a><a href="/it/about#timeline" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">La nostra storia</a><a href="/roadmap" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Roadmap</a></div></details>
+    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Contatti<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/it/contact" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Scrivici</a></div></details>
+    <a href="/account" class="mt-3 block rounded-xl bg-brand-600 px-4 py-2.5 text-center text-sm font-bold text-white">Inizia gratis</a>
+  </div>
+</header>
+
+<main id="main" class="mx-auto max-w-4xl px-5 pt-24 pb-10 md:pt-28">
+
+  <!-- Hero -->
+  <section class="text-center mb-12">
+    <div class="inline-flex items-center gap-2 rounded-full bg-brand-100 dark:bg-brand-900/30 px-4 py-1.5 text-xs font-bold text-brand-700 dark:text-brand-300 mb-5">
+      <span class="num">⚡</span> Nessun app store · senza download
+    </div>
+    <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Aggiungi כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">alla schermata Home del telefono</span></h1>
+    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — un'app vera, che funziona offline, ma senza bisogno dell'approvazione di Apple/Google e senza aspettare 24 ore per il download.</p>
+  </section>
+
+  <!-- Device tabs -->
+  <section class="mb-10">
+    <div class="flex flex-wrap gap-2 justify-center mb-6" id="device-tabs">
+      <button class="device-tab active rounded-xl border border-ink-300 dark:border-ink-600 px-5 py-2 font-bold text-sm" data-device="ios">📱 iPhone / iPad</button>
+      <button class="device-tab rounded-xl border border-ink-300 dark:border-ink-600 px-5 py-2 font-bold text-sm" data-device="android">🤖 Android</button>
+      <button class="device-tab rounded-xl border border-ink-300 dark:border-ink-600 px-5 py-2 font-bold text-sm" data-device="mac">💻 Mac / Safari</button>
+      <button class="device-tab rounded-xl border border-ink-300 dark:border-ink-600 px-5 py-2 font-bold text-sm" data-device="windows">🪟 Windows / Chrome</button>
+    </div>
+
+    <!-- iOS -->
+    <div id="device-ios" class="device-content active rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-8">
+      <h2 class="text-2xl font-black mb-6">iPhone / iPad — tramite Safari</h2>
+      <ol class="space-y-6">
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">1</span>
+          <div>
+            <p class="font-bold text-lg">Apri Safari</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Importante: <b>dev'essere Safari</b>, non Chrome su iPhone. iOS non consente l'installazione tramite altri browser.</p>
+            <p class="text-sm mt-2">Vai all'indirizzo: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.vercel.app</code></p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">2</span>
+          <div>
+            <p class="font-bold text-lg">Tocca il pulsante Condividi</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">In fondo allo schermo — l'icona di un quadrato con una freccia verso l'alto <span class="num">↑</span></p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">3</span>
+          <div>
+            <p class="font-bold text-lg">Scorri e seleziona <b>"Aggiungi alla schermata Home"</b></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">(Add to Home Screen) — nel menu che si apre, scorri un po' e troverai questa opzione.</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">4</span>
+          <div>
+            <p class="font-bold text-lg">Tocca <b>"Aggiungi"</b></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Se vuoi — cambia il nome in "כספ'לה" (è quello predefinito). Tocca Aggiungi.</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">5</span>
+          <div>
+            <p class="font-bold text-lg">✓ Fatto!</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">L'icona di כספ'לה appare sulla schermata Home. Toccala → l'app si apre a tutto schermo, senza la barra degli indirizzi del browser.</p>
+          </div>
+        </li>
+      </ol>
+      <div class="mt-6 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-4 text-sm text-amber-900 dark:text-amber-200">
+        <b>⚠ Nota:</b> se installi tramite Chrome su iPhone, l'icona aggiunge un collegamento al browser e non una vera PWA. Safari = vera PWA.
+      </div>
+    </div>
+
+    <!-- Android -->
+    <div id="device-android" class="device-content rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-8">
+      <h2 class="text-2xl font-black mb-6">Android — tramite Chrome</h2>
+      <ol class="space-y-6">
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">1</span>
+          <div>
+            <p class="font-bold text-lg">Apri Chrome</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Vai all'indirizzo: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.vercel.app</code></p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">2</span>
+          <div>
+            <p class="font-bold text-lg">Attendi il banner di installazione</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Di solito Chrome mostra un <b>banner in basso</b>: "Install Kesefle / Installa". Toccalo e passa direttamente al passaggio 4.</p>
+            <p class="text-sm mt-2">Se il banner non è apparso, continua con il passaggio 3.</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">3</span>
+          <div>
+            <p class="font-bold text-lg">Menu (3 puntini verticali) → "Aggiungi alla schermata Home" / "Installa app"</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Nell'angolo in alto a destra di Chrome.</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">4</span>
+          <div>
+            <p class="font-bold text-lg">Tocca <b>"Installa"</b></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Android installa l'app — appare nell'elenco delle app e anche sulla schermata Home.</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">5</span>
+          <div>
+            <p class="font-bold text-lg">✓ Fatto!</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה funziona come un'app vera. Funziona anche offline (mostra la dashboard dalla cache).</p>
+          </div>
+        </li>
+      </ol>
+      <div class="mt-6 rounded-2xl bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-700 p-4 text-sm text-brand-800 dark:text-brand-200">
+        <b>💡 Suggerimento:</b> anche Samsung Internet e Firefox Android supportano le PWA. La migliore esperienza è su Chrome.
+      </div>
+    </div>
+
+    <!-- Mac -->
+    <div id="device-mac" class="device-content rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-8">
+      <h2 class="text-2xl font-black mb-6">Mac — tramite Safari o Chrome</h2>
+      <ol class="space-y-6">
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">1</span>
+          <div>
+            <p class="font-bold text-lg">Apri כספ'לה su Safari o Chrome</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1"><code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded">kesefle.vercel.app</code></p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">2A</span>
+          <div>
+            <p class="font-bold text-lg">Safari: File → Add to Dock</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">macOS Sonoma e versioni successive. L'icona appare nel Dock — un clic la apre come finestra di app.</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">2B</span>
+          <div>
+            <p class="font-bold text-lg">Chrome: nella barra degli indirizzi ← icona di installazione</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Sul lato destro della barra degli indirizzi. Ha l'aspetto di <span class="num">⊕</span>. Clicca → "Install".</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">3</span>
+          <div>
+            <p class="font-bold text-lg">✓ App nel Dock</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה si apre come finestra separata, con un proprio menu. Puoi spostarla tra gli Spaces, aggiungerla a Stage Manager ecc.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <!-- Windows -->
+    <div id="device-windows" class="device-content rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-8">
+      <h2 class="text-2xl font-black mb-6">Windows — tramite Chrome o Edge</h2>
+      <ol class="space-y-6">
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">1</span>
+          <div>
+            <p class="font-bold text-lg">Apri כספ'לה su Chrome o Edge</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1"><code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded">kesefle.vercel.app</code></p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">2</span>
+          <div>
+            <p class="font-bold text-lg">Clicca sull'icona di installazione nella barra degli indirizzi</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">A sinistra della ☆ (stella). Ha l'aspetto di <span class="num">⊕</span>. Non la vedi? Menu (3 puntini) → "Installa Kesefle".</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">3</span>
+          <div>
+            <p class="font-bold text-lg">Clicca "Installa"</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Windows aggiunge כספ'לה al menu Start e anche alla barra delle applicazioni (se vuoi — puoi aggiungerla).</p>
+          </div>
+        </li>
+        <li class="flex gap-4 items-start">
+          <span class="step-num shrink-0">4</span>
+          <div>
+            <p class="font-bold text-lg">✓ Un'app vera</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Appare in Alt+Tab, nel Task Manager e in Impostazioni → App. Puoi disinstallarla come qualsiasi app di Windows.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Why PWA -->
+  <section class="mb-10 rounded-3xl bg-gradient-to-br from-brand-500/10 to-brand-700/5 dark:from-brand-900/30 dark:to-brand-700/10 border border-brand-200 dark:border-brand-700/50 p-8">
+    <h2 class="text-2xl font-black mb-4">Perché una PWA e non un'app dello store?</h2>
+    <ul class="space-y-3">
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Nessuna approvazione di Apple/Google</b> — non dobbiamo aspettare settimane per l'approvazione di un aggiornamento.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Aggiornamenti automatici</b> — non serve scaricare una nuova versione. Usi la PWA → ricevi la versione più recente.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Meno spazio di archiviazione</b> — l'app occupa ~1MB invece di 50-100MB.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Funziona offline</b> — la dashboard viene salvata nella cache locale, si apre anche senza connessione.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Niente commissioni</b> — Apple prende il 30%. Con la PWA, il 100% del pagamento di Pro/Family va a noi e non ad Apple.</div></li>
+    </ul>
+  </section>
+
+  <!-- Troubleshoot -->
+  <section class="mb-10">
+    <h2 class="text-2xl font-black mb-4">Risoluzione dei problemi</h2>
+    <div class="space-y-3">
+      <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
+        <summary class="font-bold cursor-pointer">Non vedo l'opzione "Aggiungi alla schermata Home" / "Installa app"</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Controlla:
+          <br/>• Stai usando il browser giusto (Safari su iPhone, Chrome/Edge su computer, Chrome su Android)
+          <br/>• Stai navigando tramite HTTPS (kesefle.vercel.app, non http://)
+          <br/>• Il browser è aggiornato all'ultima versione
+          <br/>• Hai visitato qualche pagina del sito (alcuni browser lo richiedono prima di proporre l'installazione)
+        </p>
+      </details>
+      <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
+        <summary class="font-bold cursor-pointer">L'app mostra una versione vecchia anche dopo l'aggiornamento</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Chiudi completamente l'app (non solo riducila a icona) e riaprila. Se non funziona — elimina l'app e reinstallala tramite il browser. Il Service Worker aggiornerà la cache alla nuova versione.</p>
+      </details>
+      <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
+        <summary class="font-bold cursor-pointer">Non vedo la dashboard quando sono offline</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Verifica di aver usato l'app almeno una volta mentre eri online — solo allora il Service Worker salva le pagine. Se apri l'app per la prima volta offline, non potrà mostrare nulla (non c'è niente da caricare).</p>
+      </details>
+      <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
+        <summary class="font-bold cursor-pointer">Voglio rimuovere l'app</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">iPhone: tieni premuta l'icona → "Elimina app". Android: tieni premuta → "Rimuovi" oppure tramite Impostazioni → App. Mac: trascina dal Dock → Cestino. Windows: Impostazioni → App → Kesefle → Disinstalla.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="text-center py-12 border-t border-ink-200 dark:border-ink-700">
+    <h2 class="text-2xl md:text-3xl font-black mb-3">Non hai ancora creato un account?</h2>
+    <p class="text-ink-600 dark:text-ink-300 mb-6">Registrati con Google → un foglio privato su Drive → inizia a tenere traccia.</p>
+    <a href="/account" class="inline-flex items-center gap-2 bg-gradient-to-l from-brand-500 to-brand-700 text-white font-bold px-7 py-3 rounded-xl text-base shadow-lg shadow-brand-500/30 hover:shadow-xl transition">
+      Inizia gratis
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    </a>
+  </section>
+</main>
+
+<footer class="border-t border-ink-200 dark:border-ink-700 py-8 mt-10 text-center text-sm text-ink-500 dark:text-ink-400">
+  <p>© <span class="num">2026</span> כספ'לה · <a href="/it" class="hover:underline">Home</a> · Sicurezza · Aiuto</p>
+  <div class="mt-3 flex justify-center">
+    <div class="lang-switch relative" data-current-lang="it">
+      <button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">Italiano</span></button>
+      <ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden>
+        <li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li>
+        <li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li>
+        <li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li>
+        <li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li>
+        <li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li>
+        <li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+  if (localStorage.getItem('kesefle_theme') === 'dark') document.documentElement.classList.add('dark');
+  // Device tab switching
+  document.querySelectorAll('.device-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.device-tab').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.device-content').forEach(function(c){ c.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('device-' + btn.dataset.device).classList.add('active');
+    });
+  });
+  // Auto-select device by user agent
+  (function autoSelect() {
+    var ua = navigator.userAgent;
+    var target = 'ios';
+    if (/Android/i.test(ua)) target = 'android';
+    else if (/iPhone|iPad|iPod/i.test(ua)) target = 'ios';
+    else if (/Macintosh|Mac OS X/i.test(ua)) target = 'mac';
+    else if (/Win/i.test(ua)) target = 'windows';
+    var btn = document.querySelector('.device-tab[data-device="' + target + '"]');
+    if (btn) btn.click();
+  })();
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(function(){}); });
+  }
+</script>
+<script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+<script src="/js/i18n-published.js"></script>
+<script src="/js/lang-switch.js" defer></script>
+</body>
+</html>
