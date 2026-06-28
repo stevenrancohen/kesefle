@@ -10,7 +10,7 @@
 #   npm run gauntlet          (preferred)
 #   bash scripts/gauntlet.sh
 #
-# What it runs (6 groups, all offline -- Node + bash only, no secrets/network):
+# What it runs (8 groups, all offline -- Node + bash only, no secrets/network):
 #   1. QA gate          node tests/full_qa.js  (the consolidated offline gate)
 #   2. Test suites      every tests/test_*.js + tests/golden_set.js +
 #                       tests/recurring_detect.js + every bot/test_*.js

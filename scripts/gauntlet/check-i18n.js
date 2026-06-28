@@ -48,12 +48,16 @@ for (const [lang, dir] of Object.entries(LANG_DIR)) {
 
     check(rel, !BIDI.test(html), 'contains invisible bidi control characters');
 
-    let blk = 0, bad = 0;
-    for (const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
-      const body = m[1];
-      if (/application\/(ld\+json|json)/i.test(m[0])) { try { JSON.parse(body); } catch (_e) { bad++; } continue; }
-      blk++;
-      try { new Function(body); } catch (_e) { bad++; }
+    let bad = 0;
+    for (const m of html.matchAll(/<script(?![^>]*\bsrc=)([^>]*)>([\s\S]*?)<\/script>/gi)) {
+      const attrs = m[1], body = m[2];
+      // classify by the type ATTRIBUTE (not the body — a JS fetch can contain the
+      // string "application/json" and must not be parsed as JSON).
+      if (/type\s*=\s*["']application\/(ld\+json|json)["']/i.test(attrs)) {
+        try { JSON.parse(body); } catch (_e) { bad++; }
+      } else {
+        try { new Function(body); } catch (_e) { bad++; }
+      }
     }
     check(rel, bad === 0, `${bad} inline script/JSON block(s) failed to parse`);
   }
