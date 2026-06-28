@@ -5,8 +5,8 @@
  * Update this in the SAME commit that ships a localized page. */
 window.KESEFLE_PUBLISHED = {
   en: [''],                 // legacy English homepage (en.html)
-  ar: ['', 'pricing', 'about', 'install', 'contact', 'help'],
-  ru: ['', 'pricing', 'about', 'install', 'contact', 'help'],
-  fr: ['', 'pricing', 'about', 'install', 'contact', 'help'],
-  it: ['', 'pricing', 'about', 'install', 'contact', 'help'],
+  ar: ['', 'pricing', 'about', 'install', 'contact', 'help', 'maakav-hotzaot-whatsapp', 'nihul-taktziv-mishpachti', 'nihul-hotzaot-esek-katan'],
+  ru: ['', 'pricing', 'about', 'install', 'contact', 'help', 'maakav-hotzaot-whatsapp', 'nihul-taktziv-mishpachti', 'nihul-hotzaot-esek-katan'],
+  fr: ['', 'pricing', 'about', 'install', 'contact', 'help', 'maakav-hotzaot-whatsapp', 'nihul-taktziv-mishpachti', 'nihul-hotzaot-esek-katan'],
+  it: ['', 'pricing', 'about', 'install', 'contact', 'help', 'maakav-hotzaot-whatsapp', 'nihul-taktziv-mishpachti', 'nihul-hotzaot-esek-katan'],
 };

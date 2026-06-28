@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Suivi des dépenses sur WhatsApp — sans application | כספ'לה</title>
+<meta name="description" content="Suivi des dépenses sur WhatsApp : envoyez un seul message et le bot enregistre, classe et résume tout dans une feuille Google personnelle. Sans télécharger d'application, en français, et gratuit pour débuter." />
+<meta name="keywords" content="suivi des dépenses WhatsApp, gérer ses dépenses sur WhatsApp, bot de dépenses, gestion des dépenses WhatsApp, suivi budget WhatsApp, enregistrement automatique des dépenses, suivi dépenses en français" />
+<meta name="theme-color" content="#6366F1" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://kesefle.com/fr/maakav-hotzaot-whatsapp" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.com/maakav-hotzaot-whatsapp" />
+<link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/maakav-hotzaot-whatsapp" />
+<link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/maakav-hotzaot-whatsapp" />
+<link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/maakav-hotzaot-whatsapp" />
+<link rel="alternate" hreflang="it" href="https://kesefle.com/it/maakav-hotzaot-whatsapp" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.com/maakav-hotzaot-whatsapp" />
+<meta property="og:title" content="Suivi des dépenses sur WhatsApp — sans application | כספ'לה" />
+<meta property="og:description" content="Envoyez un seul message sur WhatsApp et le bot enregistre, classe et résume tout dans une feuille Google personnelle. En français, sans application." />
+<meta property="og:image" content="https://kesefle.com/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://kesefle.com/fr/maakav-hotzaot-whatsapp" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="fr_FR" />
+<meta property="og:site_name" content="כספ'לה" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Suivi des dépenses sur WhatsApp — sans application | כספ'לה" />
+<meta name="twitter:description" content="Envoyez un seul message sur WhatsApp et le bot enregistre, classe et résume tout dans une feuille Google personnelle." />
+<meta name="twitter:image" content="https://kesefle.com/og-image.png" />
+<link rel="icon" type="image/png" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.tailwindcss.com" />
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
+<style>
+  /* === Critical first-paint fallback (perf pass 2026-06-03) ===
+     Tailwind loads from a render-blocking CDN tag below; if that CDN is
+     slow or blocked the page would flash unstyled. These INLINE base rules
+     paint instantly with the same values the body's Tailwind utilities
+     produce, so once Tailwind arrives nothing shifts. Light-mode default. */
+  html { background-color: #ffffff; }
+  html.dark { background-color: #070b16; }
+  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #ffffff; color: #0f1422; }
+  html.dark body { background-color: #070b16; color: #ffffff; }
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/brand.css" />
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], mono: ['Inter', 'ui-monospace', 'SFMono-Regular', 'monospace'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 50:'#eff6ff', 100:'#dbeafe', 300:'#93c5fd', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8' }
+        },
+        boxShadow: { glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)', soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)' },
+      },
+    },
+  };
+</script>
+<style>
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; font-feature-settings: "kern" 1, "liga" 1; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  h1, h2 { letter-spacing: -0.025em; }
+  .num, .mono { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; font-family: 'Inter', ui-monospace, monospace; }
+  *:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 8px; }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -26px) scale(1.05); }
+    66%      { transform: translate(-16px, 18px) scale(0.96); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(79, 70, 229, 0.4); }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-blob { animation: none; }
+    .kfl-reveal { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Suivi des dépenses sur WhatsApp — כספ'לה","description":"Suivi des dépenses sur WhatsApp : envoyez un seul message et le bot enregistre, classe et résume tout dans une feuille Google personnelle. Sans application, entièrement en français.","url":"https://kesefle.com/fr/maakav-hotzaot-whatsapp","inLanguage":"fr","isPartOf":{"@type":"WebSite","name":"כספ'לה","url":"https://kesefle.com/"},"about":{"@type":"SoftwareApplication","name":"כספ'לה","applicationCategory":"FinanceApplication","operatingSystem":"WhatsApp, Android, iOS, Web","offers":{"@type":"Offer","price":"0","priceCurrency":"ILS"}}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Accueil","item":"https://kesefle.com/"},{"@type":"ListItem","position":2,"name":"Suivi des dépenses sur WhatsApp","item":"https://kesefle.com/fr/maakav-hotzaot-whatsapp"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Comment faire le suivi de ses dépenses sur WhatsApp ?","acceptedAnswer":{"@type":"Answer","text":"Vous envoyez au bot כספ'לה un message comme « 245 supermarché », et il enregistre la dépense, reconnaît la catégorie et la sauvegarde dans votre feuille Google personnelle. Aucune application ni aucun formulaire n'est nécessaire."}},{"@type":"Question","name":"Faut-il télécharger une application ?","acceptedAnswer":{"@type":"Answer","text":"Non. Tout le suivi des dépenses se fait directement dans WhatsApp, déjà installé sur votre téléphone. Vous ajoutez simplement le numéro du bot à vos contacts et vous commencez à envoyer des messages."}},{"@type":"Question","name":"Où sont enregistrées les données ?","acceptedAnswer":{"@type":"Answer","text":"Toutes les dépenses sont enregistrées dans une feuille Google Sheets de votre compte Google privé. Vous êtes propriétaire de vos données, et nous n'en conservons aucune copie sur notre serveur."}},{"@type":"Question","name":"Combien ça coûte ?","acceptedAnswer":{"@type":"Answer","text":"Il existe une formule gratuite pour débuter, ainsi que des formules Pro et Famille en abonnement mensuel. Vous pouvez commencer à suivre vos dépenses sans carte bancaire."}}]}</script>
+</head>
+<body class="bg-white text-ink-900 antialiased dark:bg-ink-950 dark:text-white">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white">Aller au contenu</a>
+
+<!-- ambient blobs -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div class="animate-blob absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-brand-500/15 blur-3xl"></div>
+  <div class="animate-blob absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-accent-500/12 blur-3xl" style="animation-delay:-5s"></div>
+</div>
+
+<!-- ============== HEADER ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-950/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/fr" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
+      <span class="kfl-logo-text">כספ'לה</span>
+    </a>
+
+    <!-- Desktop dropdown menu -->
+    <div class="hidden items-center gap-0.5 md:flex">
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Produit<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Démo en direct</a>
+            </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Tarifs<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/fr/pricing#tiers" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Formules</a>
+            <a href="/fr/pricing#compare" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Comparatif des fonctionnalités</a>
+            </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Guides<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/blog" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Blog</a>
+            <a href="/start" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Démarrage rapide</a>
+          </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Entreprise<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/fr/about" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">À propos</a>
+            <a href="/roadmap" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Feuille de route</a>
+          </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Contact<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/fr/contact" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Parlez-nous</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA + mobile hamburger -->
+    <div class="flex items-center gap-2">
+      <div class="lang-switch relative" data-current-lang="fr">
+        <button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">Français</span></button>
+        <ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden>
+          <li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li>
+          <li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li>
+          <li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li>
+          <li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li>
+          <li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li>
+          <li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li>
+        </ul>
+      </div>
+      <a href="/account" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">Commencer gratuitement</a>
+      <button type="button" aria-label="Menu" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu (native accordion) -->
+  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-200/60 bg-white/95 px-5 py-3 backdrop-blur dark:border-ink-700/60 dark:bg-ink-950/95 md:hidden">
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Produit<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Démo en direct</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Tarifs<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/fr/pricing#tiers" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Formules</a><a href="/fr/pricing#compare" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Comparatif des fonctionnalités</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Guides<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/blog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Blog</a><a href="/start" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Démarrage rapide</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Entreprise<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/fr/about" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">À propos</a><a href="/roadmap" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Feuille de route</a></div></details>
+    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Contact<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/fr/contact" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Parlez-nous</a></div></details>
+    <a href="/account" class="mt-3 block rounded-xl bg-brand-600 px-4 py-2.5 text-center text-sm font-bold text-white">Commencer gratuitement</a>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ============== HERO ============== -->
+  <section class="relative overflow-hidden px-5 pt-28 pb-14 md:pt-32 md:pb-20">
+    <div class="mx-auto max-w-3xl text-center">
+      <nav aria-label="breadcrumb" class="mb-4 text-xs text-ink-500 dark:text-ink-400">
+        <a href="/fr" class="hover:text-brand-600 dark:hover:text-brand-300">Accueil</a>
+        <span class="mx-1.5 opacity-50">/</span>
+        <span class="font-semibold text-ink-700 dark:text-ink-200">Suivi des dépenses sur WhatsApp</span>
+      </nav>
+      <p class="text-sm font-bold text-brand-600 dark:text-brand-400">Sans application. Sans formulaire. En français.</p>
+      <h1 class="mt-3 text-4xl md:text-5xl font-black tracking-tight">Suivi des dépenses sur WhatsApp<br><span class="bg-gradient-to-l from-brand-500 to-accent-500 bg-clip-text text-transparent">Un seul message, et c'est enregistré.</span></h1>
+      <p class="mt-5 text-lg text-ink-600 dark:text-ink-300 max-w-xl mx-auto">
+        Vous envoyez « 245 supermarché » au bot sur WhatsApp — et il enregistre la dépense, reconnaît la catégorie et résume tout dans votre feuille Google personnelle. Sans télécharger une application de plus et sans transmettre vos données à qui que ce soit.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a href="https://wa.me/972547760643?text=%D7%A9%D7%9C%D7%95%D7%9D%21" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25d366] px-6 py-4 text-base font-bold text-white shadow-glow transition hover:bg-[#1ebe5a]">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          Commencer sur WhatsApp
+        </a>
+        <a href="/account" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white px-6 py-4 text-base font-bold text-ink-900 transition hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:hover:bg-ink-700">
+          Ouvrir un compte gratuit
+        </a>
+      </div>
+      <p class="mt-4 text-xs text-ink-500 dark:text-ink-400">Gratuit pour débuter · Sans carte bancaire · Vos données restent chez vous</p>
+    </div>
+  </section>
+
+  <!-- ============== CHAT DEMO ============== -->
+  <section class="px-5 pb-12">
+    <div class="mx-auto max-w-md kfl-lift rounded-3xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="mb-3 flex items-center gap-2 text-xs font-bold text-ink-500 dark:text-ink-400">
+        <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#25d366] opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-[#25d366]"></span></span>
+        À quoi ressemble une conversation avec le bot
+      </div>
+      <div class="space-y-2.5">
+        <div class="flex justify-end"><div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">245 supermarché</div></div>
+        <div class="flex justify-start"><div class="max-w-[85%] rounded-2xl rounded-tr-md bg-ink-100 px-3.5 py-2 text-[14px] text-ink-900 dark:bg-ink-700 dark:text-white">✅ Enregistré : <span class="num">₪245</span> · Courses</div></div>
+        <div class="flex justify-end"><div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">42 café Aroma</div></div>
+        <div class="flex justify-start"><div class="max-w-[85%] rounded-2xl rounded-tr-md bg-ink-100 px-3.5 py-2 text-[14px] text-ink-900 dark:bg-ink-700 dark:text-white">✅ Enregistré : <span class="num">₪42</span> · Café</div></div>
+        <div class="flex justify-end"><div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">résumé</div></div>
+        <div class="flex justify-start"><div class="max-w-[85%] rounded-2xl rounded-tr-md bg-ink-100 px-3.5 py-2 text-[14px] text-ink-900 dark:bg-ink-700 dark:text-white">📊 Ce mois-ci : dépenses <span class="num">₪3,120</span> · revenus <span class="num">₪8,500</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== BENEFITS ============== -->
+  <section class="px-5 py-12 bg-gradient-to-b from-brand-50/50 to-transparent dark:from-brand-500/5">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="text-center text-3xl font-black tracking-tight">Pourquoi suivre ses dépenses justement sur WhatsApp ?</h2>
+      <p class="mt-3 text-center text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">Parce que vous y êtes déjà. L'habitude la plus facile à garder est celle qui n'exige aucune nouvelle application.</p>
+      <div class="mt-10 grid gap-5 md:grid-cols-3">
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">⚡</div>
+          <h3 class="mt-4 text-lg font-extrabold">Enregistré en 5 secondes</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Vous ouvrez la discussion déjà ouverte, vous envoyez un montant et un libellé, et c'est tout. Sans ouvrir d'application, sans vous connecter ni remplir de champs.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">🧠</div>
+          <h3 class="mt-4 text-lg font-extrabold">Classement automatique</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Le bot reconnaît tout seul s'il s'agit d'alimentation, de carburant, de taxe foncière ou de café — et range dans la bonne catégorie. Vous pouvez aussi corriger en un message.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">🔒</div>
+          <h3 class="mt-4 text-lg font-extrabold">Vos données, à vous seul</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Chaque dépense est enregistrée dans votre feuille Google Sheets privée. Vous en êtes propriétaire — sans serveur intermédiaire qui en garderait une copie.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">📊</div>
+          <h3 class="mt-4 text-lg font-extrabold">Résumé instantané</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Vous envoyez « résumé » et vous recevez le bilan du mois — combien est sorti, combien est entré, et où va l'argent.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">🇮🇱</div>
+          <h3 class="mt-4 text-lg font-extrabold">Comprend l'hébreu et le français</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Il comprend l'hébreu, les noms d'enseignes israéliennes et les termes locaux. Écrivez comme vous parlez — il comprendra.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">👨‍👩‍👧</div>
+          <h3 class="mt-4 text-lg font-extrabold">Adapté aussi à la famille</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Les conjoints peuvent enregistrer sur la même feuille depuis le téléphone de chacun, et voir ainsi toutes les dépenses au même endroit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== HOW IT WORKS ============== -->
+  <section class="px-5 py-12">
+    <div class="mx-auto max-w-3xl">
+      <h2 class="text-center text-3xl font-black tracking-tight">Comment commencer le suivi des dépenses sur WhatsApp</h2>
+      <ol class="mt-10 space-y-5">
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">1</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Ouvrez un compte avec Google</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">Connexion rapide sur la <a href="/account" class="font-semibold text-brand-600 hover:underline dark:text-brand-300">page d'inscription</a>. Une feuille personnelle est créée dans votre propre Google Drive privé.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">2</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Ajoutez le bot à WhatsApp</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">Enregistrez le numéro du bot dans vos contacts et envoyez « bonjour ». En deux secondes, il répond avec les instructions.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">3</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Envoyez votre première dépense</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">Essayez « 50 café » ou « 1800 taxe foncière ». Le bot enregistre, classe et renvoie une confirmation — et la ligne est déjà dans la feuille.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">4</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Suivez dans la feuille ou le tableau de bord</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">À tout moment, vous pouvez envoyer « résumé », ou ouvrir la feuille pour voir les graphiques, les catégories et le solde mensuel.</p>
+          </div>
+        </li>
+      </ol>
+      <div class="mt-10 text-center">
+        <a href="/start" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-6 py-4 text-base font-bold text-white shadow-glow transition hover:bg-brand-500">
+          Vers le guide de démarrage rapide
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== INTERNAL LINKS ============== -->
+  <section class="px-5 py-12 bg-gradient-to-b from-transparent to-brand-50/50 dark:to-brand-500/5">
+    <div class="mx-auto max-w-4xl">
+      <h2 class="text-center text-2xl font-black tracking-tight">Pour aller plus loin</h2>
+      <div class="mt-8 grid gap-4 sm:grid-cols-3">
+        <a href="/fr/nihul-taktziv-mishpachti" class="kfl-lift block rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-2xl">👨‍👩‍👧‍👦</div>
+          <h3 class="mt-3 text-base font-extrabold">Gestion du budget familial</h3>
+          <p class="mt-1.5 text-sm text-ink-600 dark:text-ink-300">Comment gérer le budget familial ensemble, sans Excel compliqué.</p>
+        </a>
+        <a href="/fr/nihul-hotzaot-esek-katan" class="kfl-lift block rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-2xl">💼</div>
+          <h3 class="mt-3 text-base font-extrabold">Gestion des dépenses d'une petite entreprise</h3>
+          <p class="mt-1.5 text-sm text-ink-600 dark:text-ink-300">Suivi des revenus et des dépenses pour les indépendants et les petites entreprises.</p>
+        </a>
+        <a href="/blog/maakav-hochaot-be-ivrit" class="kfl-lift block rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-2xl">📚</div>
+          <h3 class="mt-3 text-base font-extrabold">Guide du suivi des dépenses</h3>
+          <p class="mt-1.5 text-sm text-ink-600 dark:text-ink-300">Tout ce qu'il faut savoir pour commencer à suivre ses dépenses correctement.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== FAQ ============== -->
+  <section class="px-5 py-12">
+    <div class="mx-auto max-w-3xl">
+      <h2 class="text-center text-3xl font-black tracking-tight">Questions fréquentes</h2>
+      <div class="mt-8 space-y-3">
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Comment faire le suivi de ses dépenses sur WhatsApp ?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Vous envoyez au bot un message comme « 245 supermarché », et il enregistre la dépense, reconnaît la catégorie et la sauvegarde dans votre feuille Google personnelle. Aucune application ni aucun formulaire n'est nécessaire.</p>
+        </details>
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Faut-il télécharger une application ?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Non. Tout le suivi des dépenses se fait directement dans WhatsApp, déjà installé sur votre téléphone. Vous ajoutez simplement le numéro du bot à vos contacts et vous commencez à envoyer des messages.</p>
+        </details>
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Où sont enregistrées les données ?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Toutes les dépenses sont enregistrées dans une feuille Google Sheets de votre compte Google privé. Vous êtes propriétaire de vos données, et nous n'en conservons aucune copie sur notre serveur.</p>
+        </details>
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Combien ça coûte ?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Il existe une formule gratuite pour débuter, ainsi que des formules Pro et Famille en abonnement mensuel. Vous pouvez commencer à suivre vos dépenses sans carte bancaire. Tous les détails sur la <a href="/fr/pricing" class="font-semibold text-brand-600 hover:underline dark:text-brand-300">page des tarifs</a>.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== FINAL CTA ============== -->
+  <section class="px-5 py-14">
+    <div class="mx-auto max-w-3xl rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-500/10 to-accent-500/10 p-8 text-center md:p-12">
+      <h2 class="text-3xl md:text-4xl font-black tracking-tight">Prêt à suivre votre argent ?</h2>
+      <p class="mt-3 text-ink-600 dark:text-ink-300 max-w-xl mx-auto">Votre première dépense est enregistrée en moins d'une minute. Sans application, sans engagement.</p>
+      <a href="/account" class="mt-7 inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-lg font-black text-white shadow-glow transition hover:bg-brand-500">
+        Commencer maintenant gratuitement
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+      </a>
+    </div>
+  </section>
+</main>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-950">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/fr" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" loading="lazy" decoding="async" />
+        <span class="kfl-logo-text">כספ'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">Votre argent, en pilote automatique.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Produit</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/fr/pricing" class="hover:text-ink-900 dark:hover:text-white">Tarifs</a></li>
+        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">Démo interactive</a></li>
+        <li><a href="/start" class="hover:text-ink-900 dark:hover:text-white">Démarrage rapide</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Guides</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/fr/maakav-hotzaot-whatsapp" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">Suivi des dépenses sur WhatsApp →</a></li>
+        <li><a href="/fr/nihul-taktziv-mishpachti" class="hover:text-ink-900 dark:hover:text-white">Gestion du budget familial</a></li>
+        <li><a href="/fr/nihul-hotzaot-esek-katan" class="hover:text-ink-900 dark:hover:text-white">Gestion des dépenses d'une petite entreprise</a></li>
+        <li><a href="/blog" class="hover:text-ink-900 dark:hover:text-white">Blog</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Contact</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:info@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">E-mail</a></li>
+        <li><a href="/fr/about" class="hover:text-ink-900 dark:hover:text-white">À propos</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    &copy; <span class="num">2026</span> כספ'לה. Tous droits réservés. 🇮🇱
+  </div>
+</footer>
+
+<script>
+// scroll reveal
+(function(){
+  if (!('IntersectionObserver' in window)) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) { e.target.classList.add('kfl-in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('section').forEach(function(s){ s.classList.add('kfl-reveal'); io.observe(s); });
+})();
+// dark-mode preference (matches the rest of the site)
+(function(){
+  try {
+    var saved = localStorage.getItem('kesefle_theme');
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark)) document.documentElement.classList.add('dark');
+  } catch (e) {}
+})();
+</script>
+<script>/* SW auto-update */
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+<script src="/js/i18n-published.js"></script>
+<script src="/js/lang-switch.js" defer></script>
+</body>
+</html>

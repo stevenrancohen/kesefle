@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="ru" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Семейный бюджет в WhatsApp — приложение для учёта расходов | כספ'לה</title>
+<meta name="description" content="Ведение семейного бюджета без сложного Excel: вся семья записывает расходы в WhatsApp, и всё собирается в одной общей таблице с месячным итогом. На русском, бесплатно для старта. Цены в ₪." />
+<meta name="keywords" content="семейный бюджет, приложение для семейного бюджета, ведение семейного бюджета, учёт семейных расходов, контроль расходов семьи, семейный бюджет в Израиле, учёт расходов в шекелях, планирование бюджета семьи" />
+<meta name="theme-color" content="#6366F1" />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://kesefle.com/ru/nihul-taktziv-mishpachti" />
+<link rel="alternate" hreflang="he-IL" href="https://kesefle.com/nihul-taktziv-mishpachti" />
+<link rel="alternate" hreflang="ar" href="https://kesefle.com/ar/nihul-taktziv-mishpachti" />
+<link rel="alternate" hreflang="ru" href="https://kesefle.com/ru/nihul-taktziv-mishpachti" />
+<link rel="alternate" hreflang="fr" href="https://kesefle.com/fr/nihul-taktziv-mishpachti" />
+<link rel="alternate" hreflang="it" href="https://kesefle.com/it/nihul-taktziv-mishpachti" />
+<link rel="alternate" hreflang="x-default" href="https://kesefle.com/nihul-taktziv-mishpachti" />
+<meta property="og:title" content="Семейный бюджет в WhatsApp — приложение для учёта расходов | כספ'לה" />
+<meta property="og:description" content="Вся семья записывает расходы в WhatsApp, и всё собирается в одной общей таблице с месячным итогом. На русском, без Excel." />
+<meta property="og:image" content="https://kesefle.com/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://kesefle.com/ru/nihul-taktziv-mishpachti" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="ru_RU" />
+<meta property="og:site_name" content="כספ'לה" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Семейный бюджет в WhatsApp — приложение для учёта расходов | כספ'לה" />
+<meta name="twitter:description" content="Вся семья записывает расходы в WhatsApp, и всё собирается в одной общей таблице с месячным итогом." />
+<meta name="twitter:image" content="https://kesefle.com/og-image.png" />
+<link rel="icon" type="image/png" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.tailwindcss.com" />
+<link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" />
+<style>
+  /* === Critical first-paint fallback (perf pass 2026-06-03) ===
+     Tailwind loads from a render-blocking CDN tag below; if that CDN is
+     slow or blocked the page would flash unstyled. These INLINE base rules
+     paint instantly with the same values the body's Tailwind utilities
+     produce, so once Tailwind arrives nothing shifts. Light-mode default. */
+  html { background-color: #ffffff; }
+  html.dark { background-color: #070b16; }
+  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #ffffff; color: #0f1422; }
+  html.dark body { background-color: #070b16; color: #ffffff; }
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/brand.css" />
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], mono: ['Inter', 'ui-monospace', 'SFMono-Regular', 'monospace'] },
+        colors: {
+          ink:     { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
+          brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+          accent:  { 50:'#eff6ff', 100:'#dbeafe', 300:'#93c5fd', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8' }
+        },
+        boxShadow: { glow: '0 30px 80px -20px rgb(79 70 229 / 0.35)', soft: '0 8px 30px -10px rgb(15 20 34 / 0.15)' },
+      },
+    },
+  };
+</script>
+<style>
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; scroll-behavior: smooth; }
+  body { font-family: 'Heebo', system-ui, sans-serif; font-feature-settings: "kern" 1, "liga" 1; }
+  /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
+  h1, h2, h3 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h4, h5 {
+    font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  h1, h2 { letter-spacing: -0.025em; }
+  .num, .mono { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; font-family: 'Inter', ui-monospace, monospace; }
+  *:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 8px; }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -26px) scale(1.05); }
+    66%      { transform: translate(-16px, 18px) scale(0.96); }
+  }
+  .animate-blob { animation: blob-drift 14s ease-in-out infinite; will-change: transform; }
+  .kfl-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-reveal.kfl-in { opacity: 1; transform: translateY(0); }
+  .kfl-lift { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .kfl-lift:hover { transform: translateY(-3px); box-shadow: 0 24px 60px -28px rgba(79, 70, 229, 0.4); }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-blob { animation: none; }
+    .kfl-reveal { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Приложение для семейного бюджета — כספ'לה","description":"Ведение семейного бюджета без Excel: вся семья записывает расходы в WhatsApp, и всё собирается в одной общей таблице с месячным итогом. Полностью на русском.","url":"https://kesefle.com/ru/nihul-taktziv-mishpachti","inLanguage":"ru","isPartOf":{"@type":"WebSite","name":"כספ'לה","url":"https://kesefle.com/"},"about":{"@type":"SoftwareApplication","name":"כספ'לה","applicationCategory":"FinanceApplication","operatingSystem":"WhatsApp, Android, iOS, Web","offers":{"@type":"Offer","price":"0","priceCurrency":"ILS"}}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://kesefle.com/ru"},{"@type":"ListItem","position":2,"name":"Семейный бюджет","item":"https://kesefle.com/ru/nihul-taktziv-mishpachti"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Как вести семейный бюджет с כספ'לה?","acceptedAnswer":{"@type":"Answer","text":"Каждый член семьи отправляет свои расходы боту в WhatsApp, и все они сохраняются в одной общей таблице Google. Так вы видите все расходы семьи в одном месте, с месячным итогом по категориям."}},{"@type":"Question","name":"Могут ли супруги записывать в один бюджет?","acceptedAnswer":{"@type":"Answer","text":"Да. Можно добавить супруга или супругу в семью, и каждый записывает со своего телефона в одну общую таблицу. Расходы помечаются по тому, кто их записал."}},{"@type":"Question","name":"Нужно ли отдельное приложение для ведения бюджета?","acceptedAnswer":{"@type":"Answer","text":"Нет. Учёт ведётся прямо в WhatsApp, который уже установлен у всей семьи, а данные хранятся в таблице Google. Ничего скачивать не нужно, и нет кривой обучения."}},{"@type":"Question","name":"Сколько стоит ведение семейного бюджета?","acceptedAnswer":{"@type":"Answer","text":"Можно начать бесплатно, а есть семейный тариф с ежемесячной оплатой, который позволяет добавлять других членов семьи и получать более продвинутые отчёты. Цены указаны в шекелях (₪)."}}]}</script>
+</head>
+<body class="bg-white text-ink-900 antialiased dark:bg-ink-950 dark:text-white">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:right-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white">Перейти к содержимому</a>
+
+<!-- ambient blobs -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+  <div class="animate-blob absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-brand-500/15 blur-3xl"></div>
+  <div class="animate-blob absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-accent-500/12 blur-3xl" style="animation-delay:-5s"></div>
+</div>
+
+<!-- ============== HEADER ============== -->
+<header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-950/70">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <a href="/ru" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
+      <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
+      <span class="kfl-logo-text">כספ'לה</span>
+    </a>
+
+    <!-- Desktop dropdown menu -->
+    <div class="hidden items-center gap-0.5 md:flex">
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Продукт<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/demo" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Живое демо</a>
+            </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Цены<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/ru/pricing#tiers" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Тарифы</a>
+            <a href="/ru/pricing#compare" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Сравнение возможностей</a>
+            </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Руководства<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/blog" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Блог</a>
+            <a href="/start" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Быстрый старт</a>
+          </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Компания<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/ru/about" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">О нас</a>
+            <a href="/roadmap" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Дорожная карта</a>
+          </div>
+        </div>
+      </div>
+      <div class="group relative">
+        <button class="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-200 dark:hover:bg-ink-800 dark:hover:text-white">Контакты<svg class="h-3 w-3 opacity-50 transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+          <div class="w-60 rounded-2xl border border-ink-200 bg-white p-1.5 shadow-2xl dark:border-ink-700 dark:bg-ink-800">
+            <a href="/ru/contact" class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-brand-50 hover:text-brand-700 dark:text-ink-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-300">Связаться с нами</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA + mobile hamburger -->
+    <div class="flex items-center gap-2">
+      <div class="lang-switch relative" data-current-lang="ru">
+        <button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">Русский</span></button>
+        <ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden>
+          <li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li>
+          <li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li>
+          <li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li>
+          <li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li>
+          <li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li>
+          <li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li>
+        </ul>
+      </div>
+      <a href="/account" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">Начать бесплатно</a>
+      <button type="button" aria-label="Меню" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu (native accordion) -->
+  <div id="kfl-mnav" class="hidden max-h-[78vh] overflow-y-auto border-t border-ink-200/60 bg-white/95 px-5 py-3 backdrop-blur dark:border-ink-700/60 dark:bg-ink-950/95 md:hidden">
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Продукт<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/demo" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Живое демо</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Цены<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/ru/pricing#tiers" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Тарифы</a><a href="/ru/pricing#compare" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Сравнение возможностей</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Руководства<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/blog" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Блог</a><a href="/start" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Быстрый старт</a></div></details>
+    <details class="border-b border-ink-100 py-1 dark:border-ink-800"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Компания<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/ru/about" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">О нас</a><a href="/roadmap" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Дорожная карта</a></div></details>
+    <details class="py-1"><summary class="flex cursor-pointer items-center justify-between py-2.5 text-base font-bold text-ink-900 marker:content-none dark:text-white">Контакты<span class="text-ink-500">+</span></summary><div class="pb-2"><a href="/ru/contact" class="block py-1.5 pr-3 text-sm text-ink-600 dark:text-ink-300">Связаться с нами</a></div></details>
+    <a href="/account" class="mt-3 block rounded-xl bg-brand-600 px-4 py-2.5 text-center text-sm font-bold text-white">Начать бесплатно</a>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ============== HERO ============== -->
+  <section class="relative overflow-hidden px-5 pt-28 pb-14 md:pt-32 md:pb-20">
+    <div class="mx-auto max-w-3xl text-center">
+      <nav aria-label="breadcrumb" class="mb-4 text-xs text-ink-500 dark:text-ink-400">
+        <a href="/ru" class="hover:text-brand-600 dark:hover:text-brand-300">Главная</a>
+        <span class="mx-1.5 opacity-50">/</span>
+        <span class="font-semibold text-ink-700 dark:text-ink-200">Семейный бюджет</span>
+      </nav>
+      <p class="text-sm font-bold text-brand-600 dark:text-brand-400">Вся семья. Одна таблица. Без Excel.</p>
+      <h1 class="mt-3 text-4xl md:text-5xl font-black tracking-tight">Ведение семейного бюджета<br><span class="bg-gradient-to-l from-brand-500 to-accent-500 bg-clip-text text-transparent">просто, как отправить сообщение.</span></h1>
+      <p class="mt-5 text-lg text-ink-600 dark:text-ink-300 max-w-xl mx-auto">
+        Приложение для ведения семейного бюджета, которое работает прямо в WhatsApp. Все домашние записывают расходы одним простым сообщением, и всё собирается в одной общей таблице с месячным итогом по категориям — без сложных таблиц и без ссор о том, кто забыл всё внести.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a href="/account" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-6 py-4 text-base font-bold text-white shadow-glow transition hover:bg-brand-500">
+          Начать вести семейный бюджет
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        </a>
+        <a href="/demo" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white px-6 py-4 text-base font-bold text-ink-900 transition hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-white dark:hover:bg-ink-700">
+          Посмотреть демо
+        </a>
+      </div>
+      <p class="mt-4 text-xs text-ink-500 dark:text-ink-400">Бесплатно для старта · Без банковской карты · Данные остаются у семьи</p>
+    </div>
+  </section>
+
+  <!-- ============== CHAT DEMO ============== -->
+  <section class="px-5 pb-12">
+    <div class="mx-auto max-w-md kfl-lift rounded-3xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+      <div class="mb-3 flex items-center gap-2 text-xs font-bold text-ink-500 dark:text-ink-400">
+        <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#25d366] opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-[#25d366]"></span></span>
+        Каждый записывает со своего телефона
+      </div>
+      <div class="space-y-2.5">
+        <div class="flex justify-end"><div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">320 продукты на субботу</div></div>
+        <div class="flex justify-start"><div class="max-w-[85%] rounded-2xl rounded-tr-md bg-ink-100 px-3.5 py-2 text-[14px] text-ink-900 dark:bg-ink-700 dark:text-white">✅ Записано: <span class="num">₪320</span> · Питание · Папа</div></div>
+        <div class="flex justify-end"><div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">150 кружок ребёнка</div></div>
+        <div class="flex justify-start"><div class="max-w-[85%] rounded-2xl rounded-tr-md bg-ink-100 px-3.5 py-2 text-[14px] text-ink-900 dark:bg-ink-700 dark:text-white">✅ Записано: <span class="num">₪150</span> · Дети и образование · Мама</div></div>
+        <div class="flex justify-end"><div class="max-w-[80%] rounded-2xl rounded-tl-md bg-[#dcf8c6] px-3.5 py-2 text-[14px] text-ink-900">остаток</div></div>
+        <div class="flex justify-start"><div class="max-w-[85%] rounded-2xl rounded-tr-md bg-ink-100 px-3.5 py-2 text-[14px] text-ink-900 dark:bg-ink-700 dark:text-white">👨‍👩‍👧 В этом месяце: расходы семьи <span class="num">₪7,840</span> из бюджета <span class="num">₪9,000</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== BENEFITS ============== -->
+  <section class="px-5 py-12 bg-gradient-to-b from-brand-50/50 to-transparent dark:from-brand-500/5">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="text-center text-3xl font-black tracking-tight">Почему семьи выбирают כספ'לה</h2>
+      <p class="mt-3 text-center text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">Ведение бюджета не должно быть проектом. Это должна быть лёгкая привычка, которую может поддерживать вся семья.</p>
+      <div class="mt-10 grid gap-5 md:grid-cols-3">
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">👫</div>
+          <h3 class="mt-4 text-lg font-extrabold">Общая таблица для всей семьи</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Муж и жена записывают каждый со своего телефона, и расходы попадают в одну таблицу — с пометкой, кто что записал.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">📅</div>
+          <h3 class="mt-4 text-lg font-extrabold">Ясная картина за месяц</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Сколько ушло на еду, на образование, на дом — с разбивкой по категориям, чтобы точно знать, куда уходят деньги каждый месяц.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">🎯</div>
+          <h3 class="mt-4 text-lg font-extrabold">Лимит на каждую категорию</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Задаёте месячный потолок для категории и получаете уведомление в WhatsApp, когда приближаетесь к нему — до того, как превысите.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">🧒</div>
+          <h3 class="mt-4 text-lg font-extrabold">Расходы на детей в одном месте</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Кружки, школа, одежда и игрушки — всё фиксируется, чтобы вы знали, во сколько на самом деле обходится воспитание семьи.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">🔒</div>
+          <h3 class="mt-4 text-lg font-extrabold">Полная конфиденциальность</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Данные хранятся в таблице Google вашей семьи. Никто посторонний не видит, сколько вы тратите.</p>
+        </div>
+        <div class="kfl-lift rounded-2xl border border-ink-200/70 bg-white p-6 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-2xl">⚡</div>
+          <h3 class="mt-4 text-lg font-extrabold">Без кривой обучения</h3>
+          <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">Все уже умеют отправлять сообщения в WhatsApp. Не нужно осваивать приложение и запоминать пароли.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== HOW IT WORKS ============== -->
+  <section class="px-5 py-12">
+    <div class="mx-auto max-w-3xl">
+      <h2 class="text-center text-3xl font-black tracking-tight">Как настроить семейный бюджет за минуту</h2>
+      <ol class="mt-10 space-y-5">
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">1</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Создаёте семейный аккаунт</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">Регистрируетесь через Google на <a href="/account" class="font-semibold text-brand-600 hover:underline dark:text-brand-300">странице регистрации</a>. В вашем Google Диске создаётся таблица семейного бюджета.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">2</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Добавляете супруга или супругу</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">Отправляете ссылку-приглашение, и каждый подключает свой WhatsApp к одному общему бюджету.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">3</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Записываете расходы каждый день</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">Каждый расход одним сообщением — «320 супермаркет», «150 кружок». Бот распределяет по категориям и вносит в семейную таблицу.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-4">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500/15 font-mono text-lg font-bold text-brand-600 dark:text-brand-300">4</span>
+          <div class="pt-1">
+            <h3 class="text-base font-extrabold">Проверяете остаток в любой момент</h3>
+            <p class="mt-1 text-sm text-ink-600 dark:text-ink-300">Отправляете «остаток» или открываете дашборд и видите, сколько осталось в месячном бюджете семьи.</p>
+          </div>
+        </li>
+      </ol>
+      <div class="mt-10 text-center">
+        <a href="/start" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-6 py-4 text-base font-bold text-white shadow-glow transition hover:bg-brand-500">
+          К руководству по быстрому старту
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== INTERNAL LINKS ============== -->
+  <section class="px-5 py-12 bg-gradient-to-b from-transparent to-brand-50/50 dark:to-brand-500/5">
+    <div class="mx-auto max-w-4xl">
+      <h2 class="text-center text-2xl font-black tracking-tight">Узнать больше</h2>
+      <div class="mt-8 grid gap-4 sm:grid-cols-3">
+        <a href="/ru/maakav-hotzaot-whatsapp" class="kfl-lift block rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-2xl">💬</div>
+          <h3 class="mt-3 text-base font-extrabold">Учёт расходов в WhatsApp</h3>
+          <p class="mt-1.5 text-sm text-ink-600 dark:text-ink-300">Как записывать каждый расход одним сообщением, без приложения.</p>
+        </a>
+        <a href="/ru/nihul-hotzaot-esek-katan" class="kfl-lift block rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-2xl">💼</div>
+          <h3 class="mt-3 text-base font-extrabold">Учёт расходов малого бизнеса</h3>
+          <p class="mt-1.5 text-sm text-ink-600 dark:text-ink-300">Для семей, которые ведут ещё и бизнес — разделение личного и рабочего.</p>
+        </a>
+        <a href="/blog/taktziv-mishpachti-bwatsap" class="kfl-lift block rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <div class="text-2xl">📚</div>
+          <h3 class="mt-3 text-base font-extrabold">Руководство по семейному бюджету</h3>
+          <p class="mt-1.5 text-sm text-ink-600 dark:text-ink-300">Советы по составлению месячного бюджета, который действительно работает.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== FAQ ============== -->
+  <section class="px-5 py-12">
+    <div class="mx-auto max-w-3xl">
+      <h2 class="text-center text-3xl font-black tracking-tight">Частые вопросы</h2>
+      <div class="mt-8 space-y-3">
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Как вести семейный бюджет с כספ'לה?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Каждый член семьи отправляет свои расходы боту в WhatsApp, и все они сохраняются в одной общей таблице Google. Так вы видите все расходы семьи в одном месте, с месячным итогом по категориям.</p>
+        </details>
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Могут ли супруги записывать в один бюджет?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Да. Можно добавить супруга или супругу в семью, и каждый записывает со своего телефона в одну общую таблицу. Расходы помечаются по тому, кто их записал.</p>
+        </details>
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Нужно ли отдельное приложение для ведения бюджета?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Нет. Учёт ведётся прямо в WhatsApp, который уже установлен у всей семьи, а данные хранятся в таблице Google. Ничего скачивать не нужно, и нет кривой обучения.</p>
+        </details>
+        <details class="group rounded-2xl border border-ink-200/70 bg-white p-5 shadow-soft dark:border-ink-700 dark:bg-ink-800">
+          <summary class="flex cursor-pointer items-center justify-between text-base font-bold marker:content-none">Сколько стоит ведение семейного бюджета?<span class="text-ink-400 transition-transform group-open:rotate-45">+</span></summary>
+          <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Можно начать бесплатно, а есть семейный тариф с ежемесячной оплатой, который позволяет добавлять других членов семьи и получать более продвинутые отчёты. Подробности на <a href="/ru/pricing" class="font-semibold text-brand-600 hover:underline dark:text-brand-300">странице цен</a>.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== FINAL CTA ============== -->
+  <section class="px-5 py-14">
+    <div class="mx-auto max-w-3xl rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-500/10 to-accent-500/10 p-8 text-center md:p-12">
+      <h2 class="text-3xl md:text-4xl font-black tracking-tight">Дайте семье контроль над деньгами</h2>
+      <p class="mt-3 text-ink-600 dark:text-ink-300 max-w-xl mx-auto">Настройка семейного бюджета занимает минуту. Дальше это просто ещё одно сообщение в WhatsApp.</p>
+      <a href="/account" class="mt-7 inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-lg font-black text-white shadow-glow transition hover:bg-brand-500">
+        Начать сейчас бесплатно
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 6l-6 6 6 6"/></svg>
+      </a>
+    </div>
+  </section>
+</main>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-ink-200 bg-white py-12 dark:border-ink-700 dark:bg-ink-950">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 md:grid-cols-4">
+    <div>
+      <a href="/ru" class="flex items-center gap-2 font-extrabold text-xl tracking-tight dark:text-white">
+        <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" loading="lazy" decoding="async" />
+        <span class="kfl-logo-text">כספ'לה</span>
+      </a>
+      <p class="mt-3 text-sm text-ink-500 dark:text-ink-300">Ваши деньги на автопилоте.</p>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Продукт</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/ru/pricing" class="hover:text-ink-900 dark:hover:text-white">Цены</a></li>
+        <li><a href="/demo" class="hover:text-ink-900 dark:hover:text-white">Интерактивное демо</a></li>
+        <li><a href="/start" class="hover:text-ink-900 dark:hover:text-white">Быстрый старт</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Руководства</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="/ru/maakav-hotzaot-whatsapp" class="hover:text-ink-900 dark:hover:text-white">Учёт расходов в WhatsApp</a></li>
+        <li><a href="/ru/nihul-taktziv-mishpachti" class="font-semibold text-brand-700 hover:text-brand-900 dark:text-brand-300 dark:hover:text-brand-200">Семейный бюджет →</a></li>
+        <li><a href="/ru/nihul-hotzaot-esek-katan" class="hover:text-ink-900 dark:hover:text-white">Учёт расходов малого бизнеса</a></li>
+        <li><a href="/blog" class="hover:text-ink-900 dark:hover:text-white">Блог</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-bold dark:text-white">Контакты</p>
+      <ul class="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-300">
+        <li><a href="https://wa.me/972547760643" target="_blank" rel="noopener" class="hover:text-ink-900 dark:hover:text-white">WhatsApp</a></li>
+        <li><a href="mailto:info@kesefle.com" class="hover:text-ink-900 dark:hover:text-white">Эл. почта</a></li>
+        <li><a href="/ru/about" class="hover:text-ink-900 dark:hover:text-white">О нас</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 max-w-6xl border-t border-ink-200 px-5 pt-6 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-300">
+    &copy; <span class="num">2026</span> כספ'לה. Все права защищены. 🇮🇱
+  </div>
+</footer>
+
+<script>
+// scroll reveal
+(function(){
+  if (!('IntersectionObserver' in window)) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) { e.target.classList.add('kfl-in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('section').forEach(function(s){ s.classList.add('kfl-reveal'); io.observe(s); });
+})();
+// dark-mode preference (matches the rest of the site)
+(function(){
+  try {
+    var saved = localStorage.getItem('kesefle_theme');
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark)) document.documentElement.classList.add('dark');
+  } catch (e) {}
+})();
+</script>
+<script>/* SW auto-update */
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+<script src="/js/i18n-published.js"></script>
+<script src="/js/lang-switch.js" defer></script>
+</body>
+</html>
