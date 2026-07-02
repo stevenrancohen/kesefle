@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-27-apollo';
+const KFL_BUILD_VERSION = '2026-06-27-music';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -2645,6 +2645,12 @@ function _doPostRouter_(e) {
               if (!__bizPref && typeof _resolveBusinessNamePrefix_ === "function") {
                 var __bizList = (typeof _ownerBusinessList_ === "function") ? _ownerBusinessList_(__from_) : [];
                 __bizPref = _resolveBusinessNamePrefix_(__text_, __bizList);
+                // BARE business-NAME routing (Steven 2026-06-27): let the owner
+                // drop the "עסק" marker -- "מוזיקה 50 seedance" resolves the same
+                // as "עסק מוזיקה 50 seedance". Synthesize the marker + re-resolve.
+                // Owner-only (this whole block is _isOwnerPhone_-gated) so there
+                // is no tenant collision; the owner controls their own biz names.
+                if (!__bizPref) __bizPref = _resolveBusinessNamePrefix_('עסק ' + __text_, __bizList);
                 if (__bizPref) Logger.log('doPost: named-biz resolved -> N=' + __bizPref.n);
               }
               if (__bizPref) {
