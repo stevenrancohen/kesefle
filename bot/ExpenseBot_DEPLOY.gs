@@ -149,7 +149,7 @@ const BOT_PHONE_E164 = '+972547760643';
 var _ACTIVE_PHONE_NUMBER_ID_ = '';
 const KESEFLE_API_BASE = PropertiesService.getScriptProperties().getProperty('KESEFLE_API_BASE') || 'https://kesefle.com';
 // Bump on every deploy so the "בדיקה" self-check confirms which build is live.
-const KFL_BUILD_VERSION = '2026-06-27-activation2';
+const KFL_BUILD_VERSION = '2026-06-27-apollo';
 
 // Phase A v2: confidence threshold for the menu-first picker. Below this,
 // the bot asks via interactive list instead of silent-writing. Configurable
@@ -531,6 +531,7 @@ const CATEGORY_MAP = [
   // skips the dashboard increment while still filing the תנועות row as עסק.
   {"keywords":["קולקציה","קולקציות","src collection","srccollection","אספנות","art canvas","art collection","glass collection","זכוכית אומנותית","קנבס אומנותי","הדפס אמנותי","פסלון","ציור","הזמנת אמנות","art print","sculpture"],"category":"עסק","subcategory":"קולקציות"},
   {"keywords":["גיא","להעביר לגיא","להעביר ל-גיא","ל-גיא","תשלום לגיא"],"category":"הוצאות זמניות","subcategory":"גיא"},
+  {"keywords":["אפולו","אפולו כלב","כלב אפולו","רישיון אפולו","חיסון אפולו","וטרינר אפולו","אוכל לאפולו","תרופות לאפולו","ביטוח לאפולו","טיפול לאפולו"],"category":"שונות ואחרים","subcategory":"אפולו"},
   {"keywords":["חצי אירון מן","חצי איירון מן","איירון מן","ironman","half ironman","triathlon","טריאתלון","תחרות איירון מן","מרוץ איירון"],"category":"הוצאות זמניות","subcategory":"חצי איירון מן"},
   {"keywords":["חצי אוסטריה","מרוץ אוסטריה","אוסטריה מרוץ","austria race","austria marathon","austria triathlon"],"category":"הוצאות זמניות","subcategory":"מרוץ - אוסטריה"},
   {"keywords":["crossfit","goactive","gym","אימון","בריכה","גו אקטיב","חדר כושר","חוגים","יוגה","כושר","מאמן אישי","מכון כושר","פיט פלוס","פילאטיס","קאנטרי קלאב","שחייה"],"category":"הוצאות קבועות","subcategory":"מכון כושר"},
@@ -11300,6 +11301,19 @@ function _kfl_bigIndexLookup(text) {
 }
 
 function matchCategorySmart(text, fromPhone) {
+  // Step 0: OWNER-PRIORITY personal words (Steven 2026-06-27). A message that
+  // mentions "אפולו" (Steven's dog) MUST file under the "אפולו" subcategory no
+  // matter what other keywords it carries -- otherwise "רישיון/חיסון/וטרינר" win
+  // the longest-match and it lands in business/health/pets. Owner-gated so a
+  // tenant's "Apollo <brand>" is never affected. Runs before the learned cache
+  // so it is authoritative for the owner.
+  try {
+    if (typeof _isOwnerPhone_ === 'function' && _isOwnerPhone_(fromPhone) &&
+        /אפולו/.test(String(text || ''))) {
+      return { category: 'שונות ואחרים', subcategory: 'אפולו', isIncome: false };
+    }
+  } catch (_ownerPriErr) {}
+
   // Step 1: learned cache (user-corrected categorizations)
   var cached = _learnedLookup(text);
   if (cached) {
