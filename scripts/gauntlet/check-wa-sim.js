@@ -51,6 +51,19 @@ if (acc == null || acc < BASELINE_ACCURACY) {
   console.error(`  x wa-sim: corpus accuracy ${acc}% < baseline ${BASELINE_ACCURACY}% (ratchet floor)`);
   fail = 1;
 }
+// 10K CATEGORY RATCHET (2026-07-03): the 17k persona corpus asserts CATEGORY at
+// the dashboard-bucket level via wa-sim-triage. Floor = 70% (72.01% at ratchet
+// time; raise as it climbs). Also floors amount/income accuracy.
+try {
+  execSync(`node scripts/wa-sim-triage.js tests/wa-sim/corpus-10k.jsonl --json > ${TMP}.10k 2>/dev/null || true`, { cwd: ROOT, encoding: "utf8", maxBuffer: 64*1024*1024 });
+  const r10 = JSON.parse(fs.readFileSync(TMP + ".10k", "utf8"));
+  const cat = r10.category && r10.category.accuracy, amt = r10.amount && r10.amount.accuracy, inc = r10.isIncome && r10.isIncome.accuracy;
+  if (cat == null || cat < 70) { console.error(`  x 10k corpus CATEGORY ${cat}% < 70% floor`); fail = 1; }
+  if (amt == null || amt < 98.5) { console.error(`  x 10k corpus AMOUNT ${amt}% < 98.5% floor`); fail = 1; }
+  if (inc == null || inc < 97) { console.error(`  x 10k corpus INCOME ${inc}% < 97% floor`); fail = 1; }
+  if (!fail) console.log(`  10k corpus: category ${cat}% / amount ${amt}% / income ${inc}% — floors 70/98.5/97 OK`);
+} catch (e) { console.error("  x 10k ratchet failed to run: " + e.message); fail = 1; }
+
 if (!fail) {
   console.log(`  wa-sim corpus: ${acc}% accuracy (>= ${BASELINE_ACCURACY}% floor), 0 disappeared-money — OK`);
 }
