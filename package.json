@@ -11,7 +11,7 @@
     "qa": "node bot/qa-battery.js",
     "wa-sim": "node scripts/wa-sim.js",
     "wa-sweep": "node scripts/wa-sim-sweep.js",
-    "test:wa": "node tests/test_wa_config_mock.mjs"
+    "test:wa": "node tests/test_wa_config_mock.mjs && node tests/test_meta_data_deletion.mjs"
   },
   "engines": {
     "node": ">=20"

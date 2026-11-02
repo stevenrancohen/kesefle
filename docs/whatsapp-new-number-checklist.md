@@ -15,7 +15,7 @@
 - הערה: בקוד הבוט כתוב בהערה WABA 986476207210292 — לא תואם ל-WABA שבשימוש. לבדוק ולתקן את `WHATSAPP_BUSINESS_ACCOUNT_ID`.
 
 ## אפשר לעשות כבר עכשיו (לא תלוי במספר)
-- [ ] להשלים ב-App Settings → Basic: App domains = `kesefle.com`, Data deletion URL (למשל `https://kesefle.com/privacy#delete` או endpoint ייעודי), אייקון וקטגוריה.
+- [ ] להשלים ב-App Settings → Basic: App domains = `kesefle.com`, User data deletion → Data Deletion Callback URL = `https://kesefle.com/api/meta/data-deletion` (או Instructions URL = `https://kesefle.com/data-deletion`) — אחרי מיזוג ה-PR, אייקון וקטגוריה.
 - [ ] להתחיל אימות עסק (Business Verification) ל-portfolio 1052373695596923.
 - [ ] להכין תבניות ב-WABA 1359061932987272 (welcome / link-confirm / תזכורות) ולשלוח לאישור.
 - [ ] לוודא שהמשתמש `kesefle-bot` משויך ל-WABA 1359061932987272 עם Full control, ולאפליקציה.

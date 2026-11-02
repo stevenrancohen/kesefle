@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>סטטוס בקשת מחיקה | Deletion status — כספ'לה</title>
+<meta name="robots" content="noindex" />
+<link rel="stylesheet" href="/css/brand.css" />
+<style>body{font-family:Heebo,Arial,sans-serif;max-width:640px;margin:40px auto;padding:0 18px;line-height:1.7}#s{padding:14px;border-radius:10px;background:#f4f4f4}</style>
+</head>
+<body>
+<h1>סטטוס בקשת מחיקת נתונים <small dir="ltr">/ Deletion request status</small></h1>
+<form id="f"><label>קוד אישור / Confirmation code: <input id="id" dir="ltr" required pattern="KDEL[0-9A-F]{16}" /></label> <button>בדיקה / Check</button></form>
+<p id="s">—</p>
+<script>
+(function(){
+  var L={received_pending_manual_review:'הבקשה התקבלה וממתינה לטיפול (עד 30 יום). / Request received, pending processing (up to 30 days).'};
+  var s=document.getElementById('s'), inp=document.getElementById('id');
+  function check(id){
+    s.textContent='…';
+    fetch('/api/meta/data-deletion?id='+encodeURIComponent(id)).then(function(r){return r.json();}).then(function(j){
+      s.textContent = j && j.ok ? ('#'+j.id+' — '+(L[j.status]||j.status)) : 'קוד לא תקין / Invalid code';
+    }).catch(function(){ s.textContent='שגיאה, נסו שוב / Error, try again'; });
+  }
+  var q=new URLSearchParams(location.search).get('id'); if(q){ inp.value=q; check(q); }
+  document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();check(inp.value.trim());});
+})();
+</script>
+</body>
+</html>
