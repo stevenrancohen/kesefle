@@ -1076,6 +1076,8 @@ function _isIncomeCategory_(category, subcategory) {
   var s = String(subcategory || '').trim();
   if (c === 'הכנסות') return true;
   if (c === 'עסק' && s === 'מחזור') return true;
+  if (c === 'עסק מוזיקה' && s === 'הכנסות מוזיקה') return true;
+  if (c === 'הוצאות ecom' && s === 'הכנסות ecom') return true;
   return false;
 }
 
@@ -11197,10 +11199,78 @@ function _kflBizOpHit_(t) {
   return false;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SPECIAL BUSINESS ROUTING (C33, repo-integrated)
+//
+// The live Apps Script project used to carry these routes only in separate ZZ
+// files.  Keeping them here makes the checked-in bot and the single-file deploy
+// artifact authoritative too.  These helpers are pure: they do not touch
+// Sheets, Properties, triggers, or the importer.
+var _KFL_MUSIC_CAT_ = 'עסק מוזיקה';
+var _KFL_MUSIC_SUBS_ = ['הפצה ומנויים','הפקה וכלים','שיווק מוזיקה','הופעות ונסיעות','ציוד מוזיקה','כללי (מוזיקה)','הכנסות מוזיקה'];
+var _KFL_MUSIC_MARK_ = /(^|[\s,:\-(])(עסק\s*מו[זס]יקה|מו[זס]יקה|music|balimore|בלימור|richard\s*dall|ריצ'?רד\s*דאל)(?=$|[\s,:\-.!?)])/i;
+var _KFL_MUSIC_BRANDS_ = /(^|[\s,:\-(])(distrokid|distro\s*kid|דיסטרוקיד|דיסטרו\s*קיד|landr|לנדר|splice|ספלייס|suno|סונו|udio|submithub|groover|tunecore|cd\s*baby|ableton|אייבלטון|beatport|bandcamp|soundcloud|סאונדקלאוד|mastering|מאסטרינג|spotify\s*for\s*artists|apple\s*music\s*for\s*artists)(?=$|[\s,:\-.!?)])/i;
+var _KFL_MUSIC_KW_ = [
+  [/distrokid|דיסטרוקיד|דיסטרו\s*קיד|distro\s*kid|landr|לנדר|tunecore|cd\s*baby|ditto|amuse|הפצה|spotify\s*for\s*artists|apple\s*music\s*for\s*artists|אגודת|acum|אקו["״]?ם/i, 'הפצה ומנויים'],
+  [/suno|סונו|udio|splice|ספלייס|ableton|אייבלטון|fl\s*studio|logic\s*pro|plugin|פלאגין|sample|סמפל|mastering|מאסטרינג|mixing|מיקס|vocal|ווקאל|הפקה|beat|ביט|stem|elevenlabs|אולפן|studio/i, 'הפקה וכלים'],
+  [/קידום|promo|submithub|groover|playlist|פלייליסט|(^|\s)ads?(\s|$)|פרסום|שיווק|ממומן|אינסטגרם|instagram|tiktok|טיקטוק|youtube|יוטיוב|higgsfield|runway|קליפ|clip|video|וידאו|cover|עטיפ|canva|קנבה|midjourney|לוגו|logo|אתר|website|orshot|metricool/i, 'שיווק מוזיקה'],
+  [/הופע|gig|show|live|נסיע|טיס|מלון|hotel|flight|festival|פסטיבל|מועדון|club/i, 'הופעות ונסיעות'],
+  [/אוזני|headphone|מיקרופון|(^|\s)mic(\s|$)|microphone|כרטיס\s*קול|interface|controller|קונטרולר|מוניטור|monitor|midi|ציוד|equipment|רמקול|speaker/i, 'ציוד מוזיקה']
+];
+function _kflMusicRoute_(rawText, matched, coreIsInc) {
+  if (!matched || typeof matched !== 'object') return null;
+  var s = String(rawText || '');
+  if (!(_KFL_MUSIC_MARK_.test(s) || _KFL_MUSIC_BRANDS_.test(s) || String(matched.category || '') === _KFL_MUSIC_CAT_)) return null;
+  var body = s.replace(/עסק\s*מו[זס]יקה|מו[זס]יקה|music/gi, ' ');
+  var inc = coreIsInc === true || /(^|\s)(הכנסה|הכנסות|תמלוגים|royalt\w*|payout|נכנס|נכנסו|קיבלתי|שילמו\s*לי)(\s|$)/i.test(s);
+  if (inc && !/(^|\s)(הוצאה|הוצאות|שילמתי|קניתי|מנוי)(\s|$)/.test(s)) {
+    matched.category = _KFL_MUSIC_CAT_; matched.subcategory = 'הכנסות מוזיקה'; matched.isIncome = true; return true;
+  }
+  var sub = 'כללי (מוזיקה)';
+  for (var i = 0; i < _KFL_MUSIC_KW_.length; i++) if (_KFL_MUSIC_KW_[i][0].test(body)) { sub = _KFL_MUSIC_KW_[i][1]; break; }
+  matched.category = _KFL_MUSIC_CAT_; matched.subcategory = sub; matched.isIncome = false; return false;
+}
+
+var _KFL_ECOM_CAT_ = 'הוצאות ecom';
+var _KFL_ECOM_SUBS_ = ['דומיין ואתר','פרסום ושיווק','מלאי ומוצרים','משלוחים ולוגיסטיקה','כלים ומנויים','עמלות ותשלומים','כללי (ecom)','הכנסות ecom'];
+var _KFL_ECOM_MARK_ = /(^|[\s,:\-(])(ecom|e-?commerce|איקומרס|אי-?קומרס|אי קומרס|חנות\s*אונליין|עסק\s*ecom|הוצאות\s*ecom|דרופשיפינג|dropshipping|drop\s*shipping)(?=$|[\s,:\-.!?)])/i;
+var _KFL_ECOM_BRANDS_ = /(^|[\s,:\-(])(all\s?u|allu|אול\s?יו|shopify|שופיפיי|klaviyo|woocommerce|printful|printify|dsers|zendrop|spocket|oberlo|namecheap|godaddy|גודדי|bigcommerce|gorgias|cj\s*dropshipping|autods)(?=$|[\s,:\-.!?)])/i;
+var _KFL_ECOM_KW_ = [
+  [/עמל(ה|ת|ות)|\bfees?\b|paypal|פייפאל|stripe|payoneer|פיוניר|מע["״]?מ|\bvat\b|\btax/i, 'עמלות ותשלומים'],
+  [/משלוח|shipping|delivery|\bdhl\b|fedex|\bups\b|מכס|customs|fulfil|לוגיסט|logistic|אריזה|packag|שליח|courier/i, 'משלוחים ולוגיסטיקה'],
+  [/מלאי|inventory|מוצר|product|ספק|supplier|aliexpress|אליאקספרס|alibaba|עליבאבא|דוגמ|sample|zendrop|spocket|printful|printify|dropship|דרופשיפ|סחורה|יבוא|import|\bcj\b/i, 'מלאי ומוצרים'],
+  [/פרסום|\bads?\b|מודע|קמפיין|campaign|\bmeta\b|מטא|פייסבוק|facebook|instagram|אינסטגרם|tiktok|טיקטוק|google|גוגל|influenc|משפיענ|קריאייטיב|creative|canva|קנבה|\bugc\b|שיווק|promo|קידום|pinterest|snapchat/i, 'פרסום ושיווק'],
+  [/דומי+נ|דומי+ן|domain|hosting|אחסון|shopify|שופיפיי|\bwix\b|וויקס|wordpress|woocommerce|bigcommerce|theme|תבנית|namecheap|godaddy|גודדי|cloudflare|\bssl\b|אתר|website|\bsite\b|landing|דף נחיתה/i, 'דומיין ואתר'],
+  [/klaviyo|mailchimp|gorgias|zendesk|dsers|oberlo|autods|zapier|notion|\bcrm\b|chatgpt|openai|\bapps?\b|אפליקצי|subscription|מנוי|\btool|כלי|saas|תוכנ/i, 'כלים ומנויים']
+];
+function _kflEcomRoute_(rawText, matched, coreIsInc) {
+  if (!matched || typeof matched !== 'object') return null;
+  var s = String(rawText || '');
+  if (!(_KFL_ECOM_MARK_.test(s) || _KFL_ECOM_BRANDS_.test(s) || String(matched.category || '') === _KFL_ECOM_CAT_)) return null;
+  var body = s.replace(/עסק\s*ecom|הוצאות\s*ecom|e-?commerce|ecom|איקומרס|אי-?קומרס|אי קומרס/gi, ' ');
+  var inc = coreIsInc === true || /(^|\s)(הכנסה|הכנסות|מכירה|מכירות|payout|נכנס|נכנסו|קיבלתי|שילמו\s*לי|revenue|sales)(\s|$)/i.test(s);
+  if (inc && !/(^|\s)(הוצאה|הוצאות|שילמתי|קניתי|מנוי|עמלה)(\s|$)/.test(s)) {
+    matched.category = _KFL_ECOM_CAT_; matched.subcategory = 'הכנסות ecom'; matched.isIncome = true; return true;
+  }
+  var sub = 'כללי (ecom)';
+  for (var i = 0; i < _KFL_ECOM_KW_.length; i++) if (_KFL_ECOM_KW_[i][0].test(body)) { sub = _KFL_ECOM_KW_[i][1]; break; }
+  matched.category = _KFL_ECOM_CAT_; matched.subcategory = sub; matched.isIncome = false; return false;
+}
+
+function _kflSpecialBusinessRoute_(text) {
+  var s = String(text || '');
+  var matched = { category: '', subcategory: '', isIncome: false };
+  if (_KFL_MUSIC_MARK_.test(s) || _KFL_MUSIC_BRANDS_.test(s)) { _kflMusicRoute_(s, matched, false); return matched; }
+  if (_KFL_ECOM_MARK_.test(s) || _KFL_ECOM_BRANDS_.test(s)) { _kflEcomRoute_(s, matched, false); return matched; }
+  return null;
+}
+
 function matchCategory(text) {
   if (!text) return _matchCategory_long(text);
   var t = String(text).toLowerCase().trim();
   t = t.replace(/[   ​]/g, ' ').replace(/\s+/g, ' ');
+  var specialBusiness = (typeof _kflSpecialBusinessRoute_ === 'function') ? _kflSpecialBusinessRoute_(t) : null;
+  if (specialBusiness) return specialBusiness;
   // 2026-06-02: accept the clitic prefix forms (בעסק / לעסק / מעסק / העסק /
   // ועסק) in addition to the standalone עסק, so a natural sentence like
   // "...הכנסה בעסק..." routes business (e.g. "הכנסה" -> מחזור income). The
@@ -11271,6 +11341,11 @@ function _classifyBareBusinessExpense_(text) {
 
   // Normalize odd whitespace (NBSP / narrow-NBSP / zero-width) to plain spaces.
   var t = raw.replace(/[  ​]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Music/e-commerce messages must continue through the normal expense flow,
+  // where FX is converted before category matching.  The old bare-business
+  // gate otherwise wrote them early into the photo business as raw ILS.
+  if (typeof _kflSpecialBusinessRoute_ === 'function' && _kflSpecialBusinessRoute_(t)) return null;
 
   // Must contain the Hebrew word עסק, standalone OR in a clitic prefix form
   // (בעסק / לעסק / מעסק / העסק / ועסק), optionally directly preceded by
@@ -11372,7 +11447,17 @@ function _classifyBareBusinessExpense_(text) {
   // EXPENSES are never income here.
   var isIncome = (sub === 'מחזור');
 
-  return { amount: amount, category: 'עסק', subcategory: sub, cleanedDesc: cleanedDesc, isIncome: isIncome };
+  // This gate writes before processExpense, so it must perform the same FX
+  // conversion itself for a genuine photo-business expense.  A bare number
+  // remains ILS; conversion happens only when the user supplied a currency.
+  var fxInfo = null;
+  try { fxInfo = (typeof parseForeignCurrencyHint === 'function') ? parseForeignCurrencyHint(t) : null; } catch (_bbeFxErr) {}
+  if (fxInfo && fxInfo.autoConverted && fxInfo.ilsAmount > 0) {
+    amount = fxInfo.ilsAmount;
+    if (fxInfo.note) cleanedDesc += ' — ' + fxInfo.note;
+  }
+
+  return { amount: amount, category: 'עסק', subcategory: sub, cleanedDesc: cleanedDesc, isIncome: isIncome, fx: fxInfo || null };
 }
 
 // A char that can be part of a word (digit, Latin, or Hebrew letter).
@@ -11544,6 +11629,11 @@ function matchCategorySmart(text, fromPhone) {
       return { category: 'שונות ואחרים', subcategory: 'אפולו', isIncome: false };
     }
   } catch (_ownerPriErr) {}
+
+  // Special businesses are deterministic and authoritative.  Run them before
+  // a stale learned-cache entry can send a music/e-commerce expense elsewhere.
+  var specialBusiness = (typeof _kflSpecialBusinessRoute_ === 'function') ? _kflSpecialBusinessRoute_(text) : null;
+  if (specialBusiness) return specialBusiness;
 
   // Step 1: learned cache (user-corrected categorizations)
   var cached = _learnedLookup(text);
@@ -15227,6 +15317,10 @@ function _normalizeSubForDashboard_(subcategory, category, isIncome) {
     .trim();
   if (!raw) return raw;
   var cat = String(category == null ? '' : category).trim();
+
+  // Dedicated business dashboards already use these exact row labels.
+  if (cat === 'עסק מוזיקה' && ['הפצה ומנויים','הפקה וכלים','שיווק מוזיקה','הופעות ונסיעות','ציוד מוזיקה','כללי (מוזיקה)','הכנסות מוזיקה'].indexOf(raw) >= 0) return raw;
+  if (cat === 'הוצאות ecom' && ['דומיין ואתר','פרסום ושיווק','מלאי ומוצרים','משלוחים ולוגיסטיקה','כלים ומנויים','עמלות ותשלומים','כללי (ecom)','הכנסות ecom'].indexOf(raw) >= 0) return raw;
 
   // 0. PERSONAL INCOME GUARD (disappearing-income fix 2026-06-27): income must
   // land on a personal income row, else col H = income + an expense col-E label

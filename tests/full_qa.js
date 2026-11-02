@@ -50,6 +50,7 @@ console.log('\n══ 1. Unit suites (isolation + parser) ══');
 const UNIT_SUITES = [
   'bot/test_isolation.js', 'bot/test_isolation_edge_cases.js', 'bot/test_parser.js',
   'bot/test_classify.js', 'bot/test_edge_cases.js', 'bot/test_classifier_primitives.js',
+  'bot/test_music_business_midmessage.js',
   'bot/test_category_picker.js', 'bot/test_picker_always_shown.js', 'bot/test_pending_state_hijack.js',
   'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js',
   'bot/test_objective_commands.js', 'bot/test_objective_reminders_cron.js', 'tests/golden_set.js',
