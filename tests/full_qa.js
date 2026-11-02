@@ -248,7 +248,7 @@ ok('_dashboardDetailNote_ is best-effort (wrapped in try/catch at call sites)',
 // replies go out the dead Numero number and no one can reach the bot.
 console.log('\n══ 5d. WhatsApp number routing ══');
 ok('default Phone Number ID = test number 1086749664527399 (not the dead Numero id)',
-   /getProperty\('WHATSAPP_PHONE_NUMBER_ID'\)\s*\|\|\s*'1086749664527399'/.test(BOT));
+   /getProperty\('WHATSAPP_PHONE_NUMBER_ID'\)\s*\|\|[^\n]*'1086749664527399'/.test(BOT));
 ok('doPost captures the inbound phone_number_id into _ACTIVE_PHONE_NUMBER_ID_',
    /_ACTIVE_PHONE_NUMBER_ID_\s*=\s*\(__meta_/.test(BOT) && /metadata/.test(BOT));
 // 2026-06-03 provider-aware send: the 3 send sites no longer build the Meta
@@ -260,9 +260,9 @@ ok('doPost captures the inbound phone_number_id into _ACTIVE_PHONE_NUMBER_ID_',
 ok('every /messages send targets the inbound number via _waSendConfig_ (no bare hardcoded id)',
    !/WHATSAPP_PHONE_NUMBER_ID \+ '\/messages'/.test(BOT) &&
    /_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID/.test(BOT) &&
-   /https:\/\/graph\.facebook\.com\/v21\.0\/' \+ \(_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID\) \+ '\/messages'/.test(BOT) &&
+   /https:\/\/graph\.facebook\.com\/' \+ WA_GRAPH_VERSION \+ '\/' \+ \(_ACTIVE_PHONE_NUMBER_ID_ \|\| WHATSAPP_PHONE_NUMBER_ID\) \+ '\/messages'/.test(BOT) &&
    (BOT.match(/_waSendConfig_\(\)/g) || []).length >= 4);
-ok('BOT_PHONE_E164 displays the real production number', /BOT_PHONE_E164 = '\+972547760643'/.test(BOT));
+ok('BOT_PHONE_E164 reads Script Property BOT_PHONE_E164 with the current number as fallback', /BOT_PHONE_E164 = PropertiesService\.getScriptProperties\(\)\.getProperty\('BOT_PHONE_E164'\) \|\| '\+972547760643'/.test(BOT));
 
 // ── 5e. Minimal OAuth scope (drive.file) — publishable without CASA audit ────
 // Provisioning must CREATE a fresh sheet (app-created → drive.file) rather than

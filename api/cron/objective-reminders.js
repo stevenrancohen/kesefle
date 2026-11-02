@@ -14,12 +14,13 @@
 // the CRON_SECRET env var. Direct browser requests are rejected.
 
 import { withRequestId, log } from '../../lib/log.js';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 const CRON_SECRET = process.env.CRON_SECRET;
-const META_TOKEN = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-const META_PHONE_ID = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+const META_TOKEN = getWaConfig().accessToken;
+const META_PHONE_ID = getWaConfig().phoneNumberId;
 
 // 36 hours — never DM the same user twice within this window even if the
 // cron is invoked multiple times per day (Vercel won't, but be defensive).
@@ -137,7 +138,7 @@ async function sendDM(toPhone, text) {
   if (!META_TOKEN || !META_PHONE_ID) {
     return { ok: false, reason: 'meta_env_missing' };
   }
-  const url = `https://graph.facebook.com/v21.0/${META_PHONE_ID}/messages`;
+  const url = messagesUrl(process.env, META_PHONE_ID);
   let resp;
   try {
     resp = await fetch(url, {

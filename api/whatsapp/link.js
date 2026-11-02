@@ -27,13 +27,14 @@ import { getUserId } from '../_lib/session.js';
 // (wraps crypto.timingSafeEqual) instead of a local copy, so the primitive
 // only has to be hardened in one place.
 import { constantTimeEqual } from '../../lib/crypto.js';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 // Sends a one-shot WhatsApp welcome to a freshly-linked user. Fire-and-forget
 // from the confirm path — if Meta is down or the token has rotated, the link
 // itself still succeeds; we just skip the welcome. Never throws upward.
 async function sendWelcomeWhatsApp(phone, userRec, sheetRec) {
-  const token = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = getWaConfig().accessToken;
+  const phoneId = getWaConfig().phoneNumberId;
   if (!token || !phoneId) {
     throw new Error('whatsapp_env_not_configured');
   }
@@ -47,7 +48,7 @@ async function sendWelcomeWhatsApp(phone, userRec, sheetRec) {
     '• 1200 שכר דירה\n\n' +
     'אני אכניס הכל לגיליון שלך אוטומטית. 📊' +
     (sheetUrl ? `\n\n📄 הגיליון שלך:\n${sheetUrl}` : '');
-  const resp = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+  const resp = await fetch(messagesUrl(process.env, phoneId), {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({

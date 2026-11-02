@@ -11,6 +11,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { constantTimeEqual } from '../../lib/crypto.js';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 // 2026-05-31 hardening (docs/AUDIT_WEEKLY_DIGEST_AND_CRONS_2026_05_31.md §2):
 // Keep the literal as a documented fallback so a missing env var doesn't break
@@ -112,12 +113,12 @@ function buildDigest(commits, isFirstRun, isAfternoon) {
 
 // ── עזר: שליחה לוואטסאפ ────────────────────────────────────────────
 async function sendWhatsApp(text) {
-  var token = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-  var phoneId = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  var token = getWaConfig().accessToken;
+  var phoneId = getWaConfig().phoneNumberId;
   if (!token || !phoneId) {
     throw new Error('whatsapp_not_configured: missing META_ACCESS_TOKEN or META_PHONE_NUMBER_ID');
   }
-  var url = 'https://graph.facebook.com/v21.0/' + phoneId + '/messages';
+  var url = messagesUrl(process.env, phoneId);
   var resp = await fetch(url, {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },

@@ -113,7 +113,11 @@ const ORDERS_TAB_NAME = 'הזמנות';
 const TRANSACTIONS_SHEET = 'תנועות';
 const DASHBOARD_SHEET = 'מאזן שנתי';
 
-const VERIFY_TOKEN = 'expense_bot_verify_2026';
+// Webhook verify token: Script Property WA_VERIFY_TOKEN overrides; the legacy
+// literal stays as fallback so behaviour is unchanged until the property is set.
+const VERIFY_TOKEN = PropertiesService.getScriptProperties().getProperty('WA_VERIFY_TOKEN') || 'expense_bot_verify_2026';
+// Graph API version: Script Property WA_GRAPH_VERSION (e.g. v21.0) overrides.
+const WA_GRAPH_VERSION = PropertiesService.getScriptProperties().getProperty('WA_GRAPH_VERSION') || 'v21.0';
 // Admin-action secret: the destructive ?action= maintenance endpoints prefer a
 // PRIVATE Script Property ADMIN_ACTION_SECRET. Set + rotate it to lock them down
 // (the public VERIFY_TOKEN below stops triggering them). Falls back to
@@ -140,8 +144,8 @@ const WHATSAPP_TOKEN = PropertiesService.getScriptProperties().getProperty('WHAT
 // otherwise replies + crons go out the dead Numero number. (Replies also
 // auto-target the inbound number via _ACTIVE_PHONE_NUMBER_ID_, set in doPost.)
 // WABA ID: 986476207210292. Test numbers deliver only to allow-listed recipients.
-const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || '1086749664527399';
-const BOT_PHONE_E164 = '+972547760643';
+const WHATSAPP_PHONE_NUMBER_ID = PropertiesService.getScriptProperties().getProperty('WHATSAPP_PHONE_NUMBER_ID') || PropertiesService.getScriptProperties().getProperty('WA_PHONE_NUMBER_ID') || '1086749664527399';
+const BOT_PHONE_E164 = PropertiesService.getScriptProperties().getProperty('BOT_PHONE_E164') || '+972547760643';
 
 // Set per-request from the inbound webhook metadata (phone_number_id) so the
 // bot ALWAYS replies from the SAME number the user messaged — even if the
@@ -12709,7 +12713,7 @@ function _handleReceiptImage_(fromPhone, image) {
 
   // Step 1 — Meta's media endpoint returns a short-lived signed URL.
   // TODO: 360dialog media download differs (waba-v2 + D360-API-KEY) -- receipt/voice media fetch is Meta-only until then; text expenses unaffected.
-  var mediaMetaUrl = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(mediaId);
+  var mediaMetaUrl = 'https://graph.facebook.com/' + WA_GRAPH_VERSION + '/' + encodeURIComponent(mediaId);
   var metaRes = UrlFetchApp.fetch(mediaMetaUrl, {
     method: 'get',
     headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN },
@@ -12962,7 +12966,7 @@ function _handleVoiceMessage_(fromPhone, audio) {
   }
 
   // TODO: 360dialog media download differs (waba-v2 + D360-API-KEY) -- receipt/voice media fetch is Meta-only until then; text expenses unaffected.
-  var mediaMetaUrl = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(mediaId);
+  var mediaMetaUrl = 'https://graph.facebook.com/' + WA_GRAPH_VERSION + '/' + encodeURIComponent(mediaId);
   var metaRes = UrlFetchApp.fetch(mediaMetaUrl, {
     method: 'get',
     headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN },
@@ -14558,7 +14562,7 @@ function _waSendConfig_() {
   return {
     ok: true,
     provider: 'meta',
-    url: 'https://graph.facebook.com/v21.0/' + (_ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID) + '/messages',
+    url: 'https://graph.facebook.com/' + WA_GRAPH_VERSION + '/' + (_ACTIVE_PHONE_NUMBER_ID_ || WHATSAPP_PHONE_NUMBER_ID) + '/messages',
     headers: { 'Authorization': 'Bearer ' + WHATSAPP_TOKEN, 'Content-Type': 'application/json' }
   };
 }

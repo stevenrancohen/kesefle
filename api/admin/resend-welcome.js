@@ -11,6 +11,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { requireAdmin } from '../../lib/auth.js';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -37,10 +38,10 @@ function normalizeE164(input) {
 }
 
 async function sendWhatsAppText(phone, body) {
-  const token = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = getWaConfig().accessToken;
+  const phoneId = getWaConfig().phoneNumberId;
   if (!token || !phoneId) throw new Error('whatsapp_env_not_configured');
-  const resp = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+  const resp = await fetch(messagesUrl(process.env, phoneId), {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({

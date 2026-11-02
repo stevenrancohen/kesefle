@@ -10,11 +10,12 @@
 // All values returned MUST be safe to expose to the public (no secrets).
 
 import { withRequestId } from '../lib/log.js';
+import { publicWaConfig } from '../lib/wa-config.js';
 
 // The real 360dialog production WhatsApp Business number. Same default lives
 // hardcoded across the wa.me/ anchors site-wide. KESEFLE_BOT_NUMBER can still
 // override it via env for a future renumber without a redeploy.
-const DEFAULT_BOT_NUMBER = '972547760643';
+// Default now lives in lib/wa-config.js (DEFAULT_PUBLIC_BOT_NUMBER).
 
 async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
@@ -22,16 +23,11 @@ async function handlerImpl(req, res) {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
 
-  const botNumber = String(process.env.KESEFLE_BOT_NUMBER || DEFAULT_BOT_NUMBER).replace(/\D+/g, '');
+  const wa = publicWaConfig(process.env); // WA_PHONE_E164 > KESEFLE_BOT_NUMBER > default
+  const botNumber = wa.BOT_NUMBER;
   const botDisplayName = String(process.env.KESEFLE_BOT_NAME || "כספ'לה");
 
-  // Human-friendly display. Israeli mobiles (972 5x xxx xxxx) render as the
-  // familiar "+972 5x-xxx-xxxx". Any other shape falls back to a plain "+"
-  // prefix so an env override with a different country code still reads sanely.
-  const ilMatch = botNumber.match(/^972(\d{2})(\d{3})(\d{4})$/);
-  const botNumberDisplay = ilMatch
-    ? `+972 ${ilMatch[1]}-${ilMatch[2]}-${ilMatch[3]}`
-    : '+' + botNumber;
+  const botNumberDisplay = wa.BOT_NUMBER_DISPLAY;
 
   // Cache for 60s -- changes propagate within a minute, but we don't pay for
   // every page load to hit a serverless function.
@@ -41,10 +37,11 @@ async function handlerImpl(req, res) {
     BOT_NUMBER: botNumber,
     BOT_NUMBER_DISPLAY: botNumberDisplay,
     BOT_NAME: botDisplayName,
+    BOT_WA_LINK: wa.BOT_WA_LINK,
     // Drift signal: did the env override the default? Useful for the admin
     // drift detector to know whether the hardcoded HTML anchors are still
     // accurate or have been overtaken by an env change.
-    bot_number_is_default: botNumber === DEFAULT_BOT_NUMBER,
+    bot_number_is_default: wa.bot_number_is_default,
     // Surface a hint about whether features that depend on a real WABA are
     // available. Steven sets this env var to '1' once Meta approves.
     waba_approved: process.env.WABA_APPROVED === '1',

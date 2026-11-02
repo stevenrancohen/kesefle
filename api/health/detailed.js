@@ -10,6 +10,7 @@
 // contains the actual status.
 
 import { withRequestId, log } from '../../lib/log.js';
+import { getWaConfig, graphBase } from '../../lib/wa-config.js';
 
 async function probeKV() {
   const url = process.env.KV_REST_API_URL;
@@ -44,7 +45,7 @@ async function probeMeta() {
   // Public Facebook Graph health — no auth needed.
   const start = Date.now();
   try {
-    const r = await fetch('https://graph.facebook.com/v21.0/', { method: 'HEAD' });
+    const r = await fetch(graphBase() + '/', { method: 'HEAD' });
     // Meta returns 400 on naked GET but the host is reachable; treat any
     // sub-500 as "Meta is up". 500+ means Meta itself is broken.
     return { ok: r.status < 500, status: r.status, latencyMs: Date.now() - start };

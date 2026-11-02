@@ -34,6 +34,9 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const LINK_SRC = fs.readFileSync(path.join(ROOT, 'api/whatsapp/link.js'), 'utf8');
+// link.js resolves Meta config via lib/wa-config.js; inline it (exports stripped)
+// so the extracted functions can call getWaConfig()/messagesUrl().
+const WA_CONFIG_SRC = fs.readFileSync(path.join(ROOT, 'lib/wa-config.js'), 'utf8').replace(/^export /gm, '');
 const APPEND_SRC = fs.readFileSync(path.join(ROOT, 'api/sheet/append.js'), 'utf8');
 const GETEXP_SRC = fs.readFileSync(path.join(ROOT, 'api/sheet/getExpenses.js'), 'utf8');
 
@@ -209,6 +212,7 @@ function buildLinkHandler(stubs) {
   const src = redirectDynamicImports(LINK_SRC);
   const body =
     KV_ENV +
+    WA_CONFIG_SRC + '\n' +
     extractFn(src, 'sendWelcomeWhatsApp') + '\n' +
     extractFn(src, 'verifyAccessToken') + '\n' +
     extractFn(src, 'kvGet') + '\n' +

@@ -4891,7 +4891,7 @@ function generatePseudoSeries(target, n, intLike) {
 
   var STORAGE_STATE = 'kfl_onboarding_state_v1';
   var STORAGE_DISMISS = 'kfl_onboarding_dismissed';
-  var BOT_NUMBER = '972547760643'; // see /api/config for runtime override
+  var BOT_NUMBER = (window.KESEFLE_BOT_NUMBER || '972547760643'); // runtime override via /api/config (js/wa-links.js)
 
   function loadState() {
     try { return JSON.parse(localStorage.getItem(STORAGE_STATE) || '{}'); }
@@ -5167,5 +5167,6 @@ window.addEventListener('load', function () {
   }, 2500);
 });
 </script>
+<script src="/js/wa-links.js" defer></script>
 </body>
 </html>

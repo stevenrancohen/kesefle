@@ -10,7 +10,8 @@
     "gauntlet": "bash scripts/gauntlet.sh",
     "qa": "node bot/qa-battery.js",
     "wa-sim": "node scripts/wa-sim.js",
-    "wa-sweep": "node scripts/wa-sim-sweep.js"
+    "wa-sweep": "node scripts/wa-sim-sweep.js",
+    "test:wa": "node tests/test_wa_config_mock.mjs"
   },
   "engines": {
     "node": ">=20"

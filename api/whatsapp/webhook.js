@@ -16,6 +16,7 @@ import { rateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { buildExpenseRow, appendRowToUserSheet } from '../../lib/sheet-writer.js';
 import { recordExpenseActivity } from '../../lib/user-activity.js';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 // CRITICAL: disable Vercel's default JSON body parser so we can capture the RAW request bytes
 // for HMAC signature verification. Re-stringifying req.body with JSON.stringify will produce
@@ -59,14 +60,14 @@ async function kvGet(key) {
 }
 
 async function sendReply(toPhone, text) {
-  const phoneId = process.env.META_PHONE_NUMBER_ID;
-  const token = process.env.META_ACCESS_TOKEN;
+  const phoneId = getWaConfig().phoneNumberId;
+  const token = getWaConfig().accessToken;
   if (!phoneId || !token) {
     log.warn('wa.send_reply.env_missing', {});
     return;
   }
   try {
-    await fetch(`https://graph.facebook.com/v19.0/${phoneId}/messages`, {
+    await fetch(messagesUrl(process.env, phoneId), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -94,7 +95,7 @@ async function handlerImpl(req, res) {
   // the POST path's fail-closed 503 for unset META_APP_SECRET below. Also
   // swapped strict-equality for constantTimeEqual to remove the timing leak.
   if (req.method === 'GET') {
-    const expectedToken = process.env.META_VERIFY_TOKEN;
+    const expectedToken = getWaConfig().verifyToken;
     if (!expectedToken) {
       // Fail closed if the secret isn't configured — refuse to confirm any
       // ownership claim until an operator sets the env var.

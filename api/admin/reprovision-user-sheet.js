@@ -29,6 +29,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { requireAdmin } from '../../lib/auth.js';
 import { createUserSheetWithRefresh } from '../../lib/sheet-writer.js';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -105,8 +106,8 @@ async function resolveSubFromBody(body) {
 
 // ── WhatsApp welcome send (best-effort, doesn't fail the request) ─────────
 async function sendWhatsAppWelcome(phone, sheetUrl, firstName) {
-  const token = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = getWaConfig().accessToken;
+  const phoneId = getWaConfig().phoneNumberId;
   if (!token || !phoneId) return { sent: false, reason: 'whatsapp_env_not_configured' };
   const greeting = firstName ? `שלום ${firstName}!` : 'שלום!';
   const body =
@@ -115,7 +116,7 @@ async function sendWhatsAppWelcome(phone, sheetUrl, firstName) {
     'שלח/י עכשיו את ההוצאה הראשונה — לדוגמה "45 קפה" — והיא תיכנס לגיליון אוטומטית.\n\n' +
     'צריך עזרה? כתוב/י "עזרה".';
   try {
-    const r = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+    const r = await fetch(messagesUrl(process.env, phoneId), {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
