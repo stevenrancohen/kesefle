@@ -48,7 +48,7 @@ If ANY ❌ appears, fix that first. The most common issue is missing `WHATSAPP_T
 1. Go to https://developers.facebook.com/apps
 2. Find your Kesefle/Expenses Bot app → **WhatsApp → Configuration → Webhooks**
 3. Verify the **Callback URL** is your Apps Script deployment URL (from Step 1)
-4. Verify the **Verify Token** matches `expense_bot_verify_2026` (line 27 of the bot code)
+4. Verify the **Verify Token** matches the Script Property `WA_VERIFY_TOKEN` (no fallback in code — if unset, the handshake is refused)
 5. Click **"Verify and Save"** — should say "Successfully verified"
 6. Make sure the **`messages` webhook field** is **subscribed** (toggle on, green)
 

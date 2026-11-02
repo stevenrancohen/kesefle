@@ -1,144 +1,425 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
-    { "source": "/signup", "destination": "/account", "permanent": false },
-    { "source": "/login", "destination": "/account", "permanent": false },
-    { "source": "/signin", "destination": "/account", "permanent": false },
-    { "source": "/register", "destination": "/account", "permanent": false },
-    { "source": "/careers", "destination": "/about", "permanent": false },
-    { "source": "/jobs", "destination": "/about", "permanent": false },
-    { "source": "/security", "destination": "/privacy", "permanent": true },
-    { "source": "/support", "destination": "/contact", "permanent": true },
-    { "source": "/faq", "destination": "/pricing#billing-faq", "permanent": true },
-    { "source": "/api-docs", "destination": "/docs", "permanent": false },
-    { "source": "/developers", "destination": "/docs", "permanent": false },
-    { "source": "/api", "destination": "/docs", "permanent": false },
-    { "source": "/affiliate", "destination": "/referral", "permanent": false },
-    { "source": "/invite", "destination": "/referral", "permanent": false },
-    { "source": "/groups", "destination": "/", "permanent": true },
-    { "source": "/split", "destination": "/", "permanent": true },
-    { "source": "/splitwise", "destination": "/", "permanent": true },
-    { "source": "/story", "destination": "/about", "permanent": false },
-    { "source": "/timeline", "destination": "/about", "permanent": false },
-    { "source": "/tools", "destination": "/", "permanent": true },
-    { "source": "/tools/:tool*", "destination": "/", "permanent": true },
-    { "source": "/automations", "destination": "/admin", "permanent": false },
-    { "source": "/features", "destination": "/#how", "permanent": false },
-    { "source": "/blog/feed", "destination": "/blog", "permanent": true },
-    { "source": "/rss", "destination": "/blog", "permanent": true },
-    { "source": "/pwa", "destination": "/install", "permanent": false },
-    { "source": "/download", "destination": "/install", "permanent": false },
-    { "source": "/install-app", "destination": "/install", "permanent": false },
-    { "source": "/compare", "destination": "/pricing", "permanent": true },
-    { "source": "/account/cancel", "destination": "/cancel", "permanent": false },
-    { "source": "/trust", "destination": "/privacy", "permanent": true },
-    { "source": "/changelog", "destination": "/", "permanent": true },
-    { "source": "/changelog.rss", "destination": "/", "permanent": true },
-    { "source": "/status", "destination": "/", "permanent": false },
-    { "source": "/business", "destination": "/", "permanent": true },
-    { "source": "/business/", "destination": "/", "permanent": true },
-    { "source": "/family", "destination": "/", "permanent": true },
-    { "source": "/family-invite", "destination": "/", "permanent": true },
-    { "source": "/group", "destination": "/", "permanent": true },
-    { "source": "/guides", "destination": "/blog", "permanent": true },
-    { "source": "/articles", "destination": "/blog", "permanent": true }
+    {
+      "source": "/signup",
+      "destination": "/account",
+      "permanent": false
+    },
+    {
+      "source": "/login",
+      "destination": "/account",
+      "permanent": false
+    },
+    {
+      "source": "/signin",
+      "destination": "/account",
+      "permanent": false
+    },
+    {
+      "source": "/register",
+      "destination": "/account",
+      "permanent": false
+    },
+    {
+      "source": "/careers",
+      "destination": "/about",
+      "permanent": false
+    },
+    {
+      "source": "/jobs",
+      "destination": "/about",
+      "permanent": false
+    },
+    {
+      "source": "/security",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/support",
+      "destination": "/contact",
+      "permanent": true
+    },
+    {
+      "source": "/faq",
+      "destination": "/pricing#billing-faq",
+      "permanent": true
+    },
+    {
+      "source": "/api-docs",
+      "destination": "/docs",
+      "permanent": false
+    },
+    {
+      "source": "/developers",
+      "destination": "/docs",
+      "permanent": false
+    },
+    {
+      "source": "/api",
+      "destination": "/docs",
+      "permanent": false
+    },
+    {
+      "source": "/affiliate",
+      "destination": "/referral",
+      "permanent": false
+    },
+    {
+      "source": "/invite",
+      "destination": "/referral",
+      "permanent": false
+    },
+    {
+      "source": "/groups",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/split",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/splitwise",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/story",
+      "destination": "/about",
+      "permanent": false
+    },
+    {
+      "source": "/timeline",
+      "destination": "/about",
+      "permanent": false
+    },
+    {
+      "source": "/tools",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/tools/:tool*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/automations",
+      "destination": "/admin",
+      "permanent": false
+    },
+    {
+      "source": "/features",
+      "destination": "/#how",
+      "permanent": false
+    },
+    {
+      "source": "/blog/feed",
+      "destination": "/blog",
+      "permanent": true
+    },
+    {
+      "source": "/rss",
+      "destination": "/blog",
+      "permanent": true
+    },
+    {
+      "source": "/pwa",
+      "destination": "/install",
+      "permanent": false
+    },
+    {
+      "source": "/download",
+      "destination": "/install",
+      "permanent": false
+    },
+    {
+      "source": "/install-app",
+      "destination": "/install",
+      "permanent": false
+    },
+    {
+      "source": "/compare",
+      "destination": "/pricing",
+      "permanent": true
+    },
+    {
+      "source": "/account/cancel",
+      "destination": "/cancel",
+      "permanent": false
+    },
+    {
+      "source": "/trust",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/changelog",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/changelog.rss",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/status",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/business",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/business/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/family",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/family-invite",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/group",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/guides",
+      "destination": "/blog",
+      "permanent": true
+    },
+    {
+      "source": "/articles",
+      "destination": "/blog",
+      "permanent": true
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://accounts.google.com https://connect.facebook.net https://appleid.cdn-apple.com https://www.googletagmanager.com https://analytics.tiktok.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://sheets.googleapis.com https://oauth2.googleapis.com https://accounts.google.com https://www.googleapis.com https://www.google-analytics.com https://stats.g.doubleclick.net https://connect.facebook.net https://www.facebook.com https://analytics.tiktok.com; frame-src https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://accounts.google.com https://connect.facebook.net https://appleid.cdn-apple.com https://www.googletagmanager.com https://analytics.tiktok.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://sheets.googleapis.com https://oauth2.googleapis.com https://accounts.google.com https://www.googleapis.com https://www.google-analytics.com https://stats.g.doubleclick.net https://connect.facebook.net https://www.facebook.com https://analytics.tiktok.com; frame-src https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        }
       ]
     },
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
       ]
     },
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Service-Worker-Allowed", "value": "/" },
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
       ]
     },
     {
       "source": "/manifest.webmanifest",
       "headers": [
-        { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
       ]
     },
     {
       "source": "/app.webmanifest",
       "headers": [
-        { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
       ]
     },
     {
       "source": "/(.*)\\.(png|jpg|jpeg|gif|webp|avif|svg|ico|woff|woff2|ttf|otf)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=2592000, stale-while-revalidate=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000, stale-while-revalidate=86400"
+        }
       ]
     },
     {
       "source": "/lib/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=86400"
+        }
       ]
     },
     {
       "source": "/.well-known/security.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/humans.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/robots.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
       ]
     },
     {
       "source": "/sitemap.xml",
       "headers": [
-        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
       ]
     }
   ],
   "crons": [
-    { "path": "/api/cron/kv-backup", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/reminders", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/recurring", "schedule": "5 6 * * *" },
-    { "path": "/api/cron/lifecycle", "schedule": "0 7 * * *" },
-    { "path": "/api/cron/budget-check", "schedule": "0 8 * * *" },
-    { "path": "/api/cron/kv-monitor", "schedule": "0 * * * *" },
-    { "path": "/api/cron/steven-daily-digest", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/steven-daily-digest?afternoon=1", "schedule": "0 14 * * *" },
-    { "path": "/api/cron/customer-weekly-digest", "schedule": "0 7 * * 0" },
-    { "path": "/api/cron/morning-nudge", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/weekly-question", "schedule": "30 7 * * 3" },
-    { "path": "/api/cron/objective-reminders", "schedule": "0 17 * * 0,2,4" },
-    { "path": "/api/cron/projection-nudge", "schedule": "0 7 24 * *" }
+    {
+      "path": "/api/cron/kv-backup",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/recurring",
+      "schedule": "5 6 * * *"
+    },
+    {
+      "path": "/api/cron/lifecycle",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/budget-check",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/kv-monitor",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/steven-daily-digest",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/steven-daily-digest?afternoon=1",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/customer-weekly-digest",
+      "schedule": "0 7 * * 0"
+    },
+    {
+      "path": "/api/cron/morning-nudge",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-question",
+      "schedule": "30 7 * * 3"
+    },
+    {
+      "path": "/api/cron/objective-reminders",
+      "schedule": "0 17 * * 0,2,4"
+    },
+    {
+      "path": "/api/cron/projection-nudge",
+      "schedule": "0 7 24 * *"
+    }
   ],
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/wa",
+      "destination": "/api/config?go=wa"
+    }
+  ]
 }

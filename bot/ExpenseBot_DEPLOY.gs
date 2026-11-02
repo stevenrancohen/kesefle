@@ -22,7 +22,7 @@
  *     4. Top-right: Deploy → New deployment → Web app → Execute as: "Me",
  *        Who has access: "Anyone". Copy the resulting /exec URL.
  *     5. Paste that URL into Meta WhatsApp → API Setup → Webhook → Callback
- *        URL. Verify token is "expense_bot_verify_2026". Subscribe "messages".
+ *        URL. Verify token = the value of Script Property WA_VERIFY_TOKEN (no default). Subscribe "messages".
  *
  *   עברית:
  *     1. פתחו את עורך Apps Script (https://script.google.com) ומצאו את
@@ -35,7 +35,7 @@
  *     4. למעלה משמאל: Deploy → New deployment → Web app → Execute as "Me",
  *        Access: "Anyone". העתיקו את כתובת ה-/exec.
  *     5. הדביקו את הכתובת ב-Meta WhatsApp → API Setup → Webhook → Callback
- *        URL. אסימון אימות: "expense_bot_verify_2026". הירשמו ל-messages.
+ *        URL. אסימון אימות: הערך של Script Property WA_VERIFY_TOKEN (אין ברירת מחדל). הירשמו ל-messages.
  *
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║   REQUIRED SCRIPT PROPERTIES / הגדרות נדרשות                            ║
@@ -113,9 +113,10 @@ const ORDERS_TAB_NAME = 'הזמנות';
 const TRANSACTIONS_SHEET = 'תנועות';
 const DASHBOARD_SHEET = 'מאזן שנתי';
 
-// Webhook verify token: Script Property WA_VERIFY_TOKEN overrides; the legacy
-// literal stays as fallback so behaviour is unchanged until the property is set.
-const VERIFY_TOKEN = PropertiesService.getScriptProperties().getProperty('WA_VERIFY_TOKEN') || 'expense_bot_verify_2026';
+// Webhook verify token: Script Property WA_VERIFY_TOKEN ONLY -- no code fallback
+// (secrets never live in the repo). Unset => doGet refuses the Meta handshake
+// and admin ?action= endpoints are disabled (fail closed).
+const VERIFY_TOKEN = String(PropertiesService.getScriptProperties().getProperty('WA_VERIFY_TOKEN') || '').trim();
 // Graph API version: Script Property WA_GRAPH_VERSION (e.g. v21.0) overrides.
 const WA_GRAPH_VERSION = PropertiesService.getScriptProperties().getProperty('WA_GRAPH_VERSION') || 'v21.0';
 // Admin-action secret: the destructive ?action= maintenance endpoints prefer a
@@ -129,6 +130,7 @@ function _kfl_adminSecret_() {
 }
 function _kfl_ctEq_(a, b) {
   a = String(a == null ? '' : a); b = String(b == null ? '' : b);
+  if (!b) return false; // unset secret never matches (fail closed)
   if (a.length !== b.length) return false;
   var r = 0; for (var i = 0; i < a.length; i++) r |= (a.charCodeAt(i) ^ b.charCodeAt(i));
   return r === 0;
@@ -1309,7 +1311,11 @@ function doGet(e) {
   const token = e.parameter['hub.verify_token'];
   const challenge = e.parameter['hub.challenge'];
 
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+  if (mode === 'subscribe' && !VERIFY_TOKEN) {
+    Logger.log('doGet: webhook verify refused - Script Property WA_VERIFY_TOKEN is not set');
+    return ContentService.createTextOutput('Service unavailable: WA_VERIFY_TOKEN not configured');
+  }
+  if (mode === 'subscribe' && _kfl_ctEq_(token, VERIFY_TOKEN)) {
     return ContentService.createTextOutput(challenge);
   }
   return ContentService.createTextOutput('Forbidden');

@@ -5,14 +5,16 @@
  * files (name starts with ZZ_ so it sorts last, like ZZ_KFL_CANON_PATCH.gs).
  * Function declarations here override same-named functions in ExpenseBot.gs.
  *
- * Behaviour is UNCHANGED until you set Script Properties: every getter falls
- * back to today's hardcoded value.
+ * SECRETS (token, verify token) have NO fallback: the strict getters throw a
+ * clear KFL_WA_CONFIG_MISSING error and sends return {ok:false} before any
+ * UrlFetchApp call. Non-secret IDs/numbers fall back to today's values (safe:
+ * a wrong public ID cannot leak data, and keeps current behaviour).
  *
  * Script Properties read (all optional):
  *   WHATSAPP_PHONE_NUMBER_ID  (alias WA_PHONE_NUMBER_ID)  fallback 1086749664527399 (test number)
- *   WHATSAPP_TOKEN            (alias WA_ACCESS_TOKEN)     fallback ''
+ *   WHATSAPP_TOKEN            (alias WA_ACCESS_TOKEN)     REQUIRED, no fallback
  *   WHATSAPP_BUSINESS_ACCOUNT_ID (alias WA_WABA_ID)       fallback '' (WABA check off)
- *   WA_VERIFY_TOKEN                                       fallback 'expense_bot_verify_2026'
+ *   WA_VERIFY_TOKEN                                       REQUIRED, no fallback
  *   WA_GRAPH_VERSION                                      fallback 'v21.0'
  *   BOT_PHONE_E164                                        fallback '+972547760643'
  *
@@ -20,8 +22,11 @@
  * in ExpenseBot.gs and cannot be redeclared from another file. To make THEM
  * property-driven, replace these 3 lines in ExpenseBot.gs (search for them):
  *
- *   const VERIFY_TOKEN = 'expense_bot_verify_2026';
- *     -> const VERIFY_TOKEN = _kflWaVerifyToken_();
+ *   const VERIFY_TOKEN = '<legacy literal>';
+ *     -> const VERIFY_TOKEN = _kflWaVerifyTokenOrEmpty_();
+ *        (NOT the throwing getter: a top-level throw would break every
+ *        request. Empty => doGet must refuse the handshake; see repo
+ *        bot/ExpenseBot_DEPLOY.gs doGet for the fail-closed check.)
  *   const WHATSAPP_PHONE_NUMBER_ID = PropertiesService...|| '1086749664527399';
  *     -> const WHATSAPP_PHONE_NUMBER_ID = _kflWaPhoneNumberId_();
  *   const BOT_PHONE_E164 = '+972547760643';
@@ -37,7 +42,6 @@
 
 var KFL_WA_DEFAULTS_ = {
   PHONE_NUMBER_ID: '1086749664527399',
-  VERIFY_TOKEN: 'expense_bot_verify_2026',
   GRAPH_VERSION: 'v21.0',
   PHONE_E164: '+972547760643'
 };
@@ -51,9 +55,25 @@ function _kflWaProp_(names) {
   return '';
 }
 function _kflWaPhoneNumberId_() { return _kflWaProp_(['WHATSAPP_PHONE_NUMBER_ID', 'WA_PHONE_NUMBER_ID']) || KFL_WA_DEFAULTS_.PHONE_NUMBER_ID; }
-function _kflWaToken_()         { return _kflWaProp_(['WHATSAPP_TOKEN', 'WA_ACCESS_TOKEN']); }
+function _kflWaMissing_(name) {
+  var err = new Error('KFL_WA_CONFIG_MISSING: Script Property ' + name + ' is not set (no code fallback for secrets)');
+  err.name = 'KflWaConfigError';
+  return err;
+}
+function _kflWaTokenOrEmpty_()       { return _kflWaProp_(['WHATSAPP_TOKEN', 'WA_ACCESS_TOKEN']); }
+function _kflWaVerifyTokenOrEmpty_() { return _kflWaProp_(['WA_VERIFY_TOKEN']); }
+// Strict getters: throw a clear error when the secret is missing.
+function _kflWaToken_() {
+  var t = _kflWaTokenOrEmpty_();
+  if (!t || t.indexOf('PASTE_') === 0) throw _kflWaMissing_('WHATSAPP_TOKEN');
+  return t;
+}
 function _kflWaWabaId_()        { return _kflWaProp_(['WHATSAPP_BUSINESS_ACCOUNT_ID', 'WA_WABA_ID']); }
-function _kflWaVerifyToken_()   { return _kflWaProp_(['WA_VERIFY_TOKEN']) || KFL_WA_DEFAULTS_.VERIFY_TOKEN; }
+function _kflWaVerifyToken_() {
+  var v = _kflWaVerifyTokenOrEmpty_();
+  if (!v) throw _kflWaMissing_('WA_VERIFY_TOKEN');
+  return v;
+}
 function _kflWaGraphVersion_() {
   var v = _kflWaProp_(['WA_GRAPH_VERSION']);
   var m = String(v).match(/^v?(\d+)(?:\.(\d+))?$/);
@@ -97,8 +117,11 @@ function _waSendConfig_() {
                  'Content-Type': 'application/x-www-form-urlencoded' },
       from: twFrom };
   }
-  var token = _kflWaToken_();
-  if (!token || token.indexOf('PASTE_') === 0) return { ok: false, provider: 'meta', reason: 'no_token' };
+  var token = _kflWaTokenOrEmpty_();
+  if (!token || token.indexOf('PASTE_') === 0) {
+    Logger.log('_waSendConfig_: KFL_WA_CONFIG_MISSING WHATSAPP_TOKEN - send skipped, no network call');
+    return { ok: false, provider: 'meta', reason: 'no_token' };
+  }
   var active = (typeof _ACTIVE_PHONE_NUMBER_ID_ !== 'undefined') ? _ACTIVE_PHONE_NUMBER_ID_ : '';
   return { ok: true, provider: 'meta', url: _kflWaMessagesUrl_(active),
     headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } };
@@ -106,14 +129,14 @@ function _waSendConfig_() {
 
 // Diagnostics only — prints resolved config, no network, no writes.
 function kflWaConfigReport() {
-  var t = _kflWaToken_();
+  var t = _kflWaTokenOrEmpty_();
   var lines = [
     'phone_e164       = ' + _kflWaPhoneE164_(),
     'phone_number_id  = ' + _kflWaPhoneNumberId_(),
     'waba_id          = ' + (_kflWaWabaId_() || '(unset - WABA check off)'),
     'graph_version    = ' + _kflWaGraphVersion_(),
-    'verify_token     = ' + (_kflWaProp_(['WA_VERIFY_TOKEN']) ? '(from property)' : '(legacy default)'),
-    'access_token     = ' + (t ? ('set, ' + t.length + ' chars, ...' + t.slice(-4)) : 'MISSING'),
+    'verify_token     = ' + (_kflWaVerifyTokenOrEmpty_() ? '(set, from property)' : 'MISSING - Meta handshake will be refused'),
+    'access_token     = ' + (t ? ('set, ' + t.length + ' chars') : 'MISSING'),
     'messages_url     = ' + _kflWaMessagesUrl_(),
     'wa.me            = ' + _kflWaMeLink_()
   ];

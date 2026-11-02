@@ -52,7 +52,7 @@
    `SHEET_OWNER_PHONE`).
 4. **Deploy → Manage deployments → ✏️ edit → Version: New version → Deploy.**
 5. Copy the **/exec** URL → in **Meta → WhatsApp → Configuration → Webhook**, set
-   Callback URL = that /exec URL, Verify token = `expense_bot_verify_2026`,
+   Callback URL = that /exec URL, Verify token = the value of Script Property `WA_VERIFY_TOKEN`,
    Subscribe to **messages**. Click **Verify and save**.
 
 ## Phase 4 — WhatsApp Business profile

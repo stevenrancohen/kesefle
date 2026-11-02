@@ -69,7 +69,7 @@
   <main id="view" class="mx-auto max-w-lg px-4 pb-28 pt-20"></main>
 
   <!-- Floating "log via WhatsApp" -->
-  <a id="waFab" href="https://wa.me/972547766361" target="_blank" rel="noopener"
+  <a id="waFab" href="/wa?line=app" target="_blank" rel="noopener"
      class="fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/30 active:scale-95">
     <span>＋</span> רשום הוצאה בוואטסאפ
   </a>
@@ -111,7 +111,7 @@ function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class
 function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-500">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
 function errState(e){ if(e&&e.isAuth) return signInState(); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
 function bar(label,val,max,tone){ var pct=max>0?Math.round(val/max*100):0; var c=tone||'bg-brand-500'; return '<div class="py-2"><div class="flex items-center justify-between text-sm"><span class="truncate">'+esc(label)+'</span><span class="font-semibold tabular-nums">'+money(val)+'</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full '+c+'" style="width:'+Math.max(3,pct)+'%"></div></div></div>'; }
-var WA_LINK='https://wa.me/972547766361';
+var WA_LINK='/wa?line=app';
 function onbStep(n,t){ return '<div class="flex items-center gap-3"><span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white">'+n+'</span><span class="text-sm">'+t+'</span></div>'; }
 // First-run / empty-month nudge: drives the first WhatsApp expense (the activation moment).
 function onboardingCard(){
@@ -338,7 +338,7 @@ async function renderAccount(view){
   function rowLink(href,icon,label,sub,ext){ return '<a href="'+esc(href)+'"'+(ext?' target="_blank" rel="noopener"':'')+' class="flex items-center gap-3 px-4 py-3.5"><span class="grid h-9 w-9 place-items-center rounded-xl bg-ink-50 dark:bg-ink-800 text-base">'+icon+'</span><span class="flex-1"><span class="block text-sm font-medium">'+esc(label)+'</span>'+(sub?'<span class="block text-[11px] text-ink-500">'+esc(sub)+'</span>':'')+'</span><span class="text-ink-300">‹</span></a>'; }
   var links='<div class="card mt-4 divide-y divide-ink-100 dark:divide-ink-800">'+
     (sheet&&sheet.spreadsheetUrl?rowLink(sheet.spreadsheetUrl,'📊','הגיליון שלי','פתח/י את הגיליון ב-Google Sheets',true):rowLink('/account','📊','הגדרת גיליון','חבר/י את הגיליון שלך'))+
-    rowLink('https://wa.me/972547766361','💬','הבוט בוואטסאפ','רשום/י הוצאה או בקש/י סיכום',true)+
+    rowLink('/wa?line=app','💬','הבוט בוואטסאפ','רשום/י הוצאה או בקש/י סיכום',true)+
     rowLink('/account','⚙','הגדרות חשבון','תוכנית, קטגוריות, פרטיות')+
     rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
   '</div>';

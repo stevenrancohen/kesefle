@@ -22,7 +22,7 @@ const W = await import('../lib/wa-config.js');
 
 console.log('\n== 1. config resolution ==');
 const c0 = W.getWaConfig({});
-ok('empty env -> default public number, v21.0, no id/token', c0.phoneDigits === '972547760643' && c0.graphVersion === 'v21.0' && !c0.phoneNumberId && !c0.accessToken && c0.phoneIsDefault);
+ok('empty env -> default public number, v21.0, no id/token', c0.phoneDigits === W.DEFAULT_PUBLIC_BOT_NUMBER && c0.graphVersion === 'v21.0' && !c0.phoneNumberId && !c0.accessToken && c0.phoneIsDefault);
 const cl = W.getWaConfig({ META_PHONE_NUMBER_ID: 'legacyid', WHATSAPP_TOKEN: 'legtok', META_VERIFY_TOKEN: 'legv', KESEFLE_BOT_NUMBER: '972500000000' });
 ok('legacy env names still honoured', cl.phoneNumberId === 'legacyid' && cl.accessToken === 'legtok' && cl.verifyToken === 'legv' && cl.phoneDigits === MOCK_DIGITS);
 const cn = W.getWaConfig({ ...NEW_ENV, META_PHONE_NUMBER_ID: 'OLD', META_ACCESS_TOKEN: 'OLD', META_VERIFY_TOKEN: 'OLD', KESEFLE_BOT_NUMBER: '15556408123' });
@@ -47,7 +47,7 @@ ok('waMeLink digits only', W.waMeLink(MOCK_E164) === 'https://wa.me/972500000000
 ok('waMeLink encodes Hebrew text', W.waMeLink(MOCK_DIGITS, 'קוד 123456') === 'https://wa.me/972500000000?text=' + encodeURIComponent('קוד 123456'));
 // browser rewriter
 const src = fs.readFileSync(path.join(ROOT, 'js/wa-links.js'), 'utf8');
-const anchors = ['https://wa.me/972547760643?text=%D7%94%D7%99%D7%99', 'https://wa.me/?text=share', 'https://wa.me/972547760643'].map((h) => ({ h, keep: false, getAttribute() { return this.h; }, setAttribute(_k, v) { this.h = v; }, hasAttribute(k) { return k === 'data-wa-keep' && this.keep; } }));
+const anchors = ['https://wa.me/972599999999?text=%D7%94%D7%99%D7%99', 'https://wa.me/?text=share', 'https://wa.me/972599999999'].map((h) => ({ h, keep: false, getAttribute() { return this.h; }, setAttribute(_k, v) { this.h = v; }, hasAttribute(k) { return k === 'data-wa-keep' && this.keep; } }));
 anchors.push({ h: 'https://wa.me/972541111111', keep: true, getAttribute() { return this.h; }, setAttribute(_k, v) { this.h = v; }, hasAttribute() { return this.keep; } });
 const sandbox = { window: {}, document: { querySelectorAll: () => anchors }, fetch: undefined };
 vm.runInNewContext(src, sandbox);
@@ -88,14 +88,19 @@ const runGs = (props) => {
   vm.runInNewContext(gs, ctx); return ctx;
 };
 let g = runGs({});
-ok('no properties -> current values (behaviour unchanged)', g._kflWaPhoneNumberId_() === '1086749664527399' && g._kflWaVerifyToken_() === 'expense_bot_verify_2026' && g._kflWaGraphVersion_() === 'v21.0' && g._kflWaPhoneE164_() === '+972547760643');
+ok('no properties -> non-secret defaults kept', g._kflWaPhoneNumberId_() === '1086749664527399' && g._kflWaGraphVersion_() === 'v21.0' && /^\+972\d{9}$/.test(g._kflWaPhoneE164_()));
+let thrownV = ''; try { g._kflWaVerifyToken_(); } catch (e) { thrownV = e.message; }
+ok('no WA_VERIFY_TOKEN -> strict getter throws clear error', /KFL_WA_CONFIG_MISSING: Script Property WA_VERIFY_TOKEN/.test(thrownV));
+let thrownT = ''; try { g._kflWaToken_(); } catch (e) { thrownT = e.message; }
+ok('no WHATSAPP_TOKEN -> strict getter throws clear error', /KFL_WA_CONFIG_MISSING: Script Property WHATSAPP_TOKEN/.test(thrownT));
+ok('report says MISSING, no fallback secret', /verify_token\s+= MISSING/.test(g.kflWaConfigReport().join('\n')));
 ok('no token -> _waSendConfig_ refuses (no_token)', g._waSendConfig_().reason === 'no_token');
 g = runGs({ WHATSAPP_PHONE_NUMBER_ID: MOCK_PNID, WHATSAPP_TOKEN: 'mock-token', WA_VERIFY_TOKEN: 'mock-verify', WA_GRAPH_VERSION: 'v22.0', BOT_PHONE_E164: MOCK_E164 });
 const sc = g._waSendConfig_();
 ok('properties -> mock number everywhere', g._kflWaPhoneE164_() === '+972500000000' && g._kflWaMeLink_() === 'https://wa.me/972500000000' && sc.url === 'https://graph.facebook.com/v22.0/000000000000000/messages' && sc.headers.Authorization === 'Bearer mock-token');
 g._ACTIVE_PHONE_NUMBER_ID_ = '222';
 ok('send targets inbound _ACTIVE_PHONE_NUMBER_ID_ first', g._waSendConfig_().url.includes('/222/messages'));
-ok('report masks token', g.kflWaConfigReport().join('\n').indexOf('mock-token') === -1);
+ok('report masks token (no tail chars either)', g.kflWaConfigReport().join('\n').indexOf('mock-token') === -1 && g.kflWaConfigReport().join('\n').indexOf('...') === -1);
 
 console.log('\n== 7. link-code flow ==');
 const BOT = fs.readFileSync(path.join(ROOT, 'bot/ExpenseBot_DEPLOY.gs'), 'utf8');

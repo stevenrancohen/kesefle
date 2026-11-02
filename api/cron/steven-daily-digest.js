@@ -1,7 +1,7 @@
 // /api/cron/steven-daily-digest
 //
 // תקציר יומי בעברית של מה שנעשה בפרויקט -- נשלח לטלפון של סטיבן
-// (972547760643) כל בוקר ב-9:00 שעון ישראל (06:00 UTC).
+// (KESEFLE_OWNER_PHONE / config/kesefle-numbers.js) כל בוקר ב-9:00 שעון ישראל (06:00 UTC).
 //
 // המקור: API של GitHub. אנחנו שולפים את הקומיטים מ-main מאז ה-cron
 // האחרון, מקבצים אותם לפי נושא, ומפרמטים בעברית.
@@ -11,13 +11,13 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { constantTimeEqual } from '../../lib/crypto.js';
-import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
+import { getOwnerPhone, getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 // 2026-05-31 hardening (docs/AUDIT_WEEKLY_DIGEST_AND_CRONS_2026_05_31.md §2):
 // Keep the literal as a documented fallback so a missing env var doesn't break
 // the morning digest, but prefer the env so the value lives in Vercel config
 // not source. Set STEVEN_ADMIN_PHONE in Vercel env to override.
-const STEVEN_PHONE     = process.env.STEVEN_ADMIN_PHONE || '972547760643';
+const STEVEN_PHONE     = getOwnerPhone(process.env, ['STEVEN_ADMIN_PHONE']);
 const GITHUB_REPO      = 'stevenrancohen/kesefle';
 const HOURS_LOOKBACK   = 24;
 const AFTERNOON_LOOKBACK = 8;  // מצב אחה"צ: מסתכל רק על 8 השעות האחרונות (מאז הבוקר)

@@ -94,11 +94,12 @@ async function handlerImpl(req, res) {
   // attacker hijack webhook registration during any misconfig window. Mirrors
   // the POST path's fail-closed 503 for unset META_APP_SECRET below. Also
   // swapped strict-equality for constantTimeEqual to remove the timing leak.
+  // Fail closed if the secret isn't configured: refuse any ownership claim
+  // until an operator sets WA_VERIFY_TOKEN (no code fallback, by design).
   if (req.method === 'GET') {
     const expectedToken = getWaConfig().verifyToken;
     if (!expectedToken) {
-      // Fail closed if the secret isn't configured — refuse to confirm any
-      // ownership claim until an operator sets the env var.
+      log.error('wa.webhook.verify_token_missing', { reqId: req.reqId, need: 'WA_VERIFY_TOKEN' });
       return res.status(503).json({ ok: false, error: 'verify_token_not_configured' });
     }
     const mode = req.query['hub.mode'];

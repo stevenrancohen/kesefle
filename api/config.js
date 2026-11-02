@@ -10,7 +10,7 @@
 // All values returned MUST be safe to expose to the public (no secrets).
 
 import { withRequestId } from '../lib/log.js';
-import { publicWaConfig } from '../lib/wa-config.js';
+import { publicWaConfig, resolveWaRedirect } from '../lib/wa-config.js';
 
 // The real 360dialog production WhatsApp Business number. Same default lives
 // hardcoded across the wa.me/ anchors site-wide. KESEFLE_BOT_NUMBER can still
@@ -21,6 +21,15 @@ async function handlerImpl(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+  }
+
+  // GET /wa (rewritten to /api/config?go=wa) -> 302 to the configured wa.me
+  // target. This is how every site/email link reaches the bot without the
+  // number being written into HTML. ?text= and ?line=app are passed through.
+  if (req.query && req.query.go === 'wa') {
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+    res.setHeader('Location', resolveWaRedirect(req.query, process.env));
+    return res.status(302).end();
   }
 
   const wa = publicWaConfig(process.env); // WA_PHONE_E164 > KESEFLE_BOT_NUMBER > default
