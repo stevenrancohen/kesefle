@@ -114,8 +114,8 @@ if (m) {
   assert(shortcuts.some((s) => s.url === '/dashboard'), 'a shortcut opens /dashboard');
   // log-expense action: in this product, logging an expense IS sending the bot
   // a WhatsApp message. Accept either a wa.me deep-link or an on-site /expense.
-  assert(shortcuts.some((s) => /wa\.me\//.test(String(s.url)) || /\/expense\b/.test(String(s.url))),
-    'a shortcut is a log-expense action (wa.me deep-link or /expense)');
+  assert(shortcuts.some((s) => /wa\.me\//.test(String(s.url)) || /^(https:\/\/kesefle\.com)?\/wa(\?|$)/.test(String(s.url)) || /\/expense\b/.test(String(s.url))),
+    'a shortcut is a log-expense action (wa.me deep-link, /wa redirect or /expense)');
 
   // No shortcut may target a path that vercel.json redirects away from -- that
   // turns the shortcut into a one-way trip to the homepage. We only need to

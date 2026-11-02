@@ -29,8 +29,8 @@ assert(/kvScan\(['"]objective:\*['"]/.test(CRON),
   'cron enumerates via kvScan("objective:*")');
 assert(/dryRun|dry/.test(CRON),
   'cron supports dryRun mode for ad-hoc testing');
-assert(/graph\.facebook\.com\/v21\.0/.test(CRON),
-  'cron uses Meta Graph v21.0 (pinned, same as other crons)');
+assert(/graph\.facebook\.com\/v21\.0/.test(CRON) || /messagesUrl\(process\.env/.test(CRON),
+  'cron uses Meta Graph via lib/wa-config messagesUrl (default v21.0)');
 assert(/lastReminderAt|reminderCount/.test(CRON),
   'cron updates lastReminderAt + reminderCount on successful send');
 

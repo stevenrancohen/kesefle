@@ -26,6 +26,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { constantTimeEqual } from '../../lib/crypto.js';
 import { createHash } from 'node:crypto';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 const MAX_USERS_PER_RUN = 500;     // safety cap
 const SEND_THROTTLE_MS  = 1000;    // 1s between sends
@@ -106,10 +107,10 @@ function isAuthorizedCronCall(req) {
 }
 
 async function sendWhatsApp(toPhone, text) {
-  const token = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = getWaConfig().accessToken;
+  const phoneId = getWaConfig().phoneNumberId;
   if (!token || !phoneId) throw new Error('whatsapp_not_configured');
-  const url = 'https://graph.facebook.com/v21.0/' + phoneId + '/messages';
+  const url = messagesUrl(process.env, phoneId);
   const resp = await fetch(url, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },

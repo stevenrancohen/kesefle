@@ -1,3 +1,4 @@
+import { getWaConfig, graphBase, waConfigStatus } from '../lib/wa-config.js';
 // /api/health
 // Reports liveness + dependency status. Useful for uptime monitoring (UptimeRobot, BetterUptime, etc.)
 // Reports:
@@ -40,10 +41,12 @@ function envFlags() {
     google_client_id: !!process.env.GOOGLE_CLIENT_ID,
     google_client_secret: !!process.env.GOOGLE_CLIENT_SECRET,
     kv: !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN),
-    meta_verify_token: !!process.env.META_VERIFY_TOKEN,
+    meta_verify_token: !!getWaConfig().verifyToken,
     meta_app_secret: !!process.env.META_APP_SECRET,
-    meta_phone_number_id: !!process.env.META_PHONE_NUMBER_ID,
-    meta_access_token: !!process.env.META_ACCESS_TOKEN,
+    meta_phone_number_id: !!getWaConfig().phoneNumberId,
+    meta_access_token: !!getWaConfig().accessToken,
+    // Names of missing WhatsApp settings only -- never values.
+    wa_config_missing: waConfigStatus().missing,
     template_sheet_id: !!process.env.KESEFLE_TEMPLATE_SHEET_ID,
     // Payments: PayPal + crypto (auto) and Bit/bank (manual). Stripe was removed.
     paypal_client_id: !!process.env.PAYPAL_CLIENT_ID,

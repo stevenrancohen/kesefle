@@ -29,6 +29,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { rateLimitId } from '../../lib/ratelimit.js';
+import { getWaConfig, messagesUrl } from '../../lib/wa-config.js';
 
 const MAX_TEXT_LEN = 4096; // Meta hard limit on text body.
 
@@ -95,8 +96,8 @@ async function handlerImpl(req, res) {
   // Meta env vars — accept both the modern META_* and legacy WHATSAPP_*
   // names so an env-var rename doesn't break the cron. Fail closed so we
   // never quietly drop sends when the env is misconfigured.
-  const token = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = getWaConfig().accessToken;
+  const phoneId = getWaConfig().phoneNumberId;
   if (!token || !phoneId) {
     log.error('wa.send.meta_env_missing', { reqId: req.reqId });
     return res.status(503).json({ ok: false, error: 'whatsapp_not_configured' });
@@ -104,7 +105,7 @@ async function handlerImpl(req, res) {
 
   // Pinned to v21.0 (same as link.js's welcome path) so a Meta API bump
   // doesn't change behaviour out from under us.
-  const url = `https://graph.facebook.com/v21.0/${phoneId}/messages`;
+  const url = messagesUrl(process.env, phoneId);
 
   // Build the Meta payload for whichever mode we're in.
   let payload;

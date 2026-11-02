@@ -290,7 +290,7 @@ detects version drift), a Sunday weekly digest, and the recurring/group jobs.
 `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `SHEET_ID` (owner master),
 `KESEFLE_BOT_SECRET` (must match Vercel), optional `ANTHROPIC_API_KEY` (LLM
 fallback) + `OPENAI_API_KEY` (voice), `VERCEL_KV_REST_URL` + `VERCEL_KV_REST_TOKEN`
-(KV-backed onboarding state), webhook verify token `expense_bot_verify_2026`.
+(KV-backed onboarding state), webhook verify token from env `WA_VERIFY_TOKEN` (Apps Script: Script Property `WA_VERIFY_TOKEN`; no code fallback).
 
 No secrets are ever committed. `.env.example` is illustrative only and may lag the
 list above — trust this section + the README.

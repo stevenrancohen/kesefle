@@ -91,7 +91,7 @@ Vercel → Settings → Functions → Function Region → Frankfurt (fra1) → S
 ### 6. Meta Webhook Subscription (10 דק) — אם הבוט לא מקבל הודעות
 
 Meta App → WhatsApp → Configuration → Webhook → Subscribe → Fields: `messages`.
-Verify Token: `expense_bot_verify_2026` (כבר בקוד ה-Apps Script).
+Verify Token: הערך של Script Property `WA_VERIFY_TOKEN` (אין ערך ברירת מחדל בקוד).
 
 אם בודקים "55 סופר" וזה מגיע לגיליון → הכל מחובר. שלב זה לא נדרש.
 

@@ -24,6 +24,7 @@
 import { requireAdmin } from '../lib/auth.js';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
+import { getWaConfig, graphBase } from '../lib/wa-config.js';
 
 async function kvFetch(path, opts = {}) {
   const url = process.env.KV_REST_API_URL;
@@ -465,8 +466,8 @@ function publicBotStatus(req, res) {
   return res.status(200).json({
     ok: true,
     bot: {
-      meta_phone_number_id: process.env.META_PHONE_NUMBER_ID || null, // public-safe identifier
-      configured_bot_phone_e164: process.env.BOT_PHONE_E164 || null,
+      meta_phone_number_id: getWaConfig().phoneNumberId || null, // public-safe identifier
+      configured_bot_phone_e164: getWaConfig().phoneE164 || null,
       webhook_url: `${(req.headers['x-forwarded-proto'] || 'https')}://${req.headers.host || 'kesefle.vercel.app'}/api/whatsapp/webhook`,
     },
     checked_at: new Date().toISOString(),
@@ -513,8 +514,8 @@ async function publicTestWebhook(req, res) {
         value: {
           messaging_product: 'whatsapp',
           metadata: {
-            display_phone_number: process.env.BOT_PHONE_E164 || 'unknown',
-            phone_number_id: process.env.META_PHONE_NUMBER_ID || 'unknown',
+            display_phone_number: getWaConfig().phoneE164,
+            phone_number_id: getWaConfig().phoneNumberId || 'unknown',
           },
           contacts: [{ profile: { name: 'Diagnostic Tester' }, wa_id: phone.replace(/^\+/, '') }],
           messages: [{

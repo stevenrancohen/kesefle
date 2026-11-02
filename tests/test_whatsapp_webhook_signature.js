@@ -31,7 +31,7 @@ console.log('\n── webhook GET handshake (audit F1 — CRITICAL) ──');
 // 1) Source must read META_VERIFY_TOKEN once and check for falsy.
 check(
   'reads META_VERIFY_TOKEN and fails closed when unset (503)',
-  /const expectedToken = process\.env\.META_VERIFY_TOKEN[\s\S]{0,200}if\s*\(\s*!expectedToken\s*\)[\s\S]{0,200}503/.test(src)
+  /const expectedToken = (?:process\.env\.META_VERIFY_TOKEN|getWaConfig\(\)\.verifyToken)[\s\S]{0,200}if\s*\(\s*!expectedToken\s*\)[\s\S]{0,200}503/.test(src)
 );
 
 // 2) Source must reject non-subscribe modes BEFORE the token compare.
