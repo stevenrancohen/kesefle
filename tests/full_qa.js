@@ -56,6 +56,7 @@ const UNIT_SUITES = [
   'bot/test_objective_commands.js', 'bot/test_objective_reminders_cron.js', 'tests/golden_set.js',
   'tests/recurring_detect.js', 'tests/test_bank_parsers.js', 'tests/test_sheet_writer_row_building.js',
   'tests/test_summary_column_schema.js', 'tests/test_gdpr_delete_key_completeness.js',
+  'tests/test_meta_data_deletion.mjs',
   'tests/test_billing_manual_audit_log.js', 'tests/test_weekly_question_cron.js',
   // 2026-06 QA-safety pass: register high-value suites that existed but were
   // never run by this gate (isolation / billing-signature / classifier). All
