@@ -14,7 +14,9 @@
 // default https://kesefle.com).
 
 import crypto from 'node:crypto';
-import { getMetaDeletionRequest, recordMetaDeletionRequest } from '../../lib/secure-kv.js';
+import { requireAuth } from '../../lib/auth.js';
+import { withRateLimit } from '../../lib/ratelimit.js';
+import { bindMetaDeletionRequest, getMetaDeletionRequest, recordMetaDeletionRequest } from '../../lib/secure-kv.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -53,9 +55,41 @@ async function readBody(req) {
   });
 }
 
+async function claimIdentity(req, res) {
+  const id = String((req.query && req.query.id) || '');
+  if (!/^KDEL[0-9A-F]{16}$/.test(id)) return res.status(400).json({ ok: false, error: 'bad_id' });
+
+  let body = {};
+  try {
+    const raw = await readBody(req);
+    body = typeof raw === 'string' ? JSON.parse(raw || '{}') : raw;
+  } catch (_e) {
+    return res.status(400).json({ ok: false, error: 'bad_json' });
+  }
+  if (body?.confirmation !== 'VERIFY-MY-ACCOUNT') {
+    return res.status(400).json({ ok: false, error: 'confirmation_required' });
+  }
+
+  const bound = await bindMetaDeletionRequest({ code: id, userSub: req.user.sub }, { reqId: req.reqId });
+  if (!bound.ok) {
+    if (bound.error === 'not_found') return res.status(404).json({ ok: false, error: 'deletion_request_not_found' });
+    if (bound.error === 'already_bound') return res.status(409).json({ ok: false, error: 'request_already_bound' });
+    if (bound.error === 'status_locked') return res.status(409).json({ ok: false, error: 'request_status_locked' });
+    return res.status(503).json({ ok: false, error: 'identity_binding_unavailable' });
+  }
+  return res.status(200).json({ ok: true, id, status: bound.status });
+}
+
+const claimIdentityAuthed = requireAuth(
+  withRateLimit({ key: 'meta_deletion_claim', limit: 5, windowSec: 3600 })(claimIdentity)
+);
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const base = String(process.env.PUBLIC_BASE_URL || 'https://kesefle.com').replace(/\/+$/, '');
+  if (req.method === 'POST' && String((req.query && req.query.action) || '') === 'claim') {
+    return claimIdentityAuthed(req, res);
+  }
   if (req.method === 'GET') {
     const id = String((req.query && req.query.id) || '');
     if (!/^KDEL[0-9A-F]{16}$/.test(id)) return res.status(400).json({ ok: false, error: 'bad_id' });

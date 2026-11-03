@@ -5,31 +5,49 @@
 <title>סטטוס בקשת מחיקה | Deletion status — כספ'לה</title>
 <meta name="robots" content="noindex" />
 <link rel="stylesheet" href="/css/brand.css" />
-<style>body{font-family:Heebo,Arial,sans-serif;max-width:640px;margin:40px auto;padding:0 18px;line-height:1.7}#s{padding:14px;border-radius:10px;background:#f4f4f4}</style>
+<style>body{font-family:Heebo,Arial,sans-serif;max-width:640px;margin:40px auto;padding:0 18px;line-height:1.7}#s,#verify{padding:14px;border-radius:10px;background:#f4f4f4}#verify{margin-top:12px}button{cursor:pointer;padding:8px 14px}.hidden{display:none}</style>
 </head>
 <body>
 <h1>סטטוס בקשת מחיקת נתונים <small dir="ltr">/ Deletion request status</small></h1>
 <form id="f"><label>קוד אישור / Confirmation code: <input id="id" dir="ltr" required pattern="KDEL[0-9A-F]{16}" /></label> <button>בדיקה / Check</button></form>
 <p id="s">—</p>
+<section id="verify" class="hidden">
+  <strong>אימות זהות / Verify identity</strong>
+  <p>יש להתחבר תחילה לחשבון Google של כספ'לה, ואז לאשר כאן את קישור הבקשה לחשבון. פעולה זו עדיין אינה מוחקת נתונים. / Sign in to your Kesefle Google account, then confirm that this request belongs to it. This step does not delete data.</p>
+  <button id="claim" type="button">קישור לחשבון המחובר / Link to signed-in account</button>
+  <p id="claim-msg"></p>
+</section>
 <script>
 (function(){
   var L={
     received_pending_identity_verification:'הבקשה נשמרה וממתינה לאימות זהות לפני מחיקה. / Request saved; identity verification is required before deletion.',
+    identity_verified:'הזהות אומתה. הבקשה ממתינה לתהליך המחיקה המאובטח. / Identity verified; the request is waiting for the secure deletion process.',
     processing:'המחיקה מתבצעת כעת. / Deletion is in progress.',
     completed:'המחיקה הושלמה. / Deletion completed.',
     failed_retrying:'אירעה תקלה זמנית; המערכת תנסה שוב. / Temporary failure; the system will retry.'
   };
-  var s=document.getElementById('s'), inp=document.getElementById('id');
+  var s=document.getElementById('s'), inp=document.getElementById('id'), verify=document.getElementById('verify'), claimMsg=document.getElementById('claim-msg');
   function check(id){
     s.textContent='…';
+    verify.classList.add('hidden');
     fetch('/api/meta/data-deletion?id='+encodeURIComponent(id)).then(function(r){return r.json().then(function(j){return {status:r.status,body:j};});}).then(function(x){
       var j=x.body;
-      if(j && j.ok){ s.textContent='#'+j.id+' — '+(L[j.status]||j.status); return; }
+      if(j && j.ok){ s.textContent='#'+j.id+' — '+(L[j.status]||j.status); if(j.status==='received_pending_identity_verification') verify.classList.remove('hidden'); return; }
       s.textContent = x.status===503 ? 'הסטטוס אינו זמין זמנית / Status temporarily unavailable' : 'הבקשה לא נמצאה / Request not found';
     }).catch(function(){ s.textContent='שגיאה, נסו שוב / Error, try again'; });
   }
   var q=new URLSearchParams(location.search).get('id'); if(q){ inp.value=q; check(q); }
   document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();check(inp.value.trim());});
+  document.getElementById('claim').addEventListener('click',function(){
+    var id=inp.value.trim(); claimMsg.textContent='…';
+    fetch('/api/meta/data-deletion?action=claim&id='+encodeURIComponent(id),{
+      method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirmation:'VERIFY-MY-ACCOUNT'})
+    }).then(function(r){return r.json().then(function(j){return {status:r.status,body:j};});}).then(function(x){
+      if(x.status===401){ claimMsg.innerHTML='יש <a href="/account">להתחבר לחשבון כספ\'לה</a> ולחזור לעמוד זה. / <a href="/account">Sign in to Kesefle</a>, then return here.'; return; }
+      if(x.body&&x.body.ok){ claimMsg.textContent=L.identity_verified; check(id); return; }
+      claimMsg.textContent=x.status===409?'הבקשה כבר קושרה לחשבון אחר או ננעלה לעיבוד. / Request already linked or locked for processing.':'האימות אינו זמין זמנית. / Verification temporarily unavailable.';
+    }).catch(function(){ claimMsg.textContent='שגיאה, נסו שוב / Error, try again'; });
+  });
 })();
 </script>
 </body>
