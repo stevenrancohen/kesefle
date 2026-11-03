@@ -13,12 +13,19 @@
 <p id="s">—</p>
 <script>
 (function(){
-  var L={received_pending_manual_review:'הבקשה התקבלה וממתינה לטיפול (עד 30 יום). / Request received, pending processing (up to 30 days).'};
+  var L={
+    received_pending_identity_verification:'הבקשה נשמרה וממתינה לאימות זהות לפני מחיקה. / Request saved; identity verification is required before deletion.',
+    processing:'המחיקה מתבצעת כעת. / Deletion is in progress.',
+    completed:'המחיקה הושלמה. / Deletion completed.',
+    failed_retrying:'אירעה תקלה זמנית; המערכת תנסה שוב. / Temporary failure; the system will retry.'
+  };
   var s=document.getElementById('s'), inp=document.getElementById('id');
   function check(id){
     s.textContent='…';
-    fetch('/api/meta/data-deletion?id='+encodeURIComponent(id)).then(function(r){return r.json();}).then(function(j){
-      s.textContent = j && j.ok ? ('#'+j.id+' — '+(L[j.status]||j.status)) : 'קוד לא תקין / Invalid code';
+    fetch('/api/meta/data-deletion?id='+encodeURIComponent(id)).then(function(r){return r.json().then(function(j){return {status:r.status,body:j};});}).then(function(x){
+      var j=x.body;
+      if(j && j.ok){ s.textContent='#'+j.id+' — '+(L[j.status]||j.status); return; }
+      s.textContent = x.status===503 ? 'הסטטוס אינו זמין זמנית / Status temporarily unavailable' : 'הבקשה לא נמצאה / Request not found';
     }).catch(function(){ s.textContent='שגיאה, נסו שוב / Error, try again'; });
   }
   var q=new URLSearchParams(location.search).get('id'); if(q){ inp.value=q; check(q); }
