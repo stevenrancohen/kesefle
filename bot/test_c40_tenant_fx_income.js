@@ -227,10 +227,20 @@ ok('FIXED = DEPLOY: identical tenant results for all ' + ALL.length + ' messages
 console.log('\n== 5. source contract ==');
 const twF = extractFn(SRC.FIXED, '_tenantWriteExpense_'), twD = extractFn(SRC.DEPLOY, '_tenantWriteExpense_');
 ok('_tenantWriteExpense_ is byte-identical in FIXED and DEPLOY', twF === twD);
+// C41 later changed the tenant pick flow (three functions + _kflLearnFromPick_ right after
+// _learnedSave); bot/test_c41_tenant_picker_isolation.js pins those. Everything else must still
+// be byte-identical to the base.
+const C41_PICK = ['_handleRelabelTap_', '_handlePendingTenantPick_', '_handlePendingCategoryText_'];
 if (BASE) {
   for (const [name, now, old] of [['FIXED', SRC.FIXED, BASE.fixed], ['DEPLOY', SRC.DEPLOY, BASE.deploy]]) {
-    const swapped = old.replace(extractFn(old, '_tenantWriteExpense_'), () => extractFn(now, '_tenantWriteExpense_'));
-    ok(name + ': only _tenantWriteExpense_ differs from ' + BASE_PIN.rev + ' (owner, group, family, receipt, picker, importer code untouched)', swapped === now);
+    let swapped = old;
+    for (const n of ['_tenantWriteExpense_'].concat(C41_PICK)) swapped = swapped.replace(extractFn(old, n), () => extractFn(now, n));
+    let nowCore = now;
+    if (now.indexOf('function _kflLearnFromPick_(') >= 0) {
+      const ls = extractFn(now, '_learnedSave'), h = extractFn(now, '_kflLearnFromPick_');
+      nowCore = now.slice(0, now.indexOf(ls) + ls.length) + now.slice(now.indexOf(h) + h.length);
+    }
+    ok(name + ': only _tenantWriteExpense_ differs from ' + BASE_PIN.rev + ' besides the C41 pick flow (owner, group, family, receipt, importer code untouched)', swapped === nowCore);
   }
 }
 ok('_tenantWriteExpense_ has no hard-coded isIncome:false and resolves the sign with _resolveIsIncome_', !/isIncome:\s*false/.test(twF) && twF.indexOf('_resolveIsIncome_(matched, rawText, matched.category, matched.subcategory)') > 0);

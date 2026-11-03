@@ -7872,9 +7872,11 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       // _learnedSave with 'user-correction' source auto-publishes to the
       // global cross-tenant store too, so EVERY tenant tap improves the
       // classifier for EVERY future user typing the same description.
+      // C41: a tenant's tap feeds only that shared store, never the owner's
+      // dictionary sheet (_kflLearnFromPick_); the owner keeps _learnedSave.
       try {
-        if (typeof _learnedSave === 'function' && last.description) {
-          _learnedSave(last.description, { category: relCategory, subcategory: relSubcategory || relCategory }, 'user-correction');
+        if (typeof _kflLearnFromPick_ === 'function' && last.description) {
+          _kflLearnFromPick_(fromPhone, last.description, { category: relCategory, subcategory: relSubcategory || relCategory }, 'user-correction');
         }
       } catch (_lsErr) { Logger.log('_handleRelabelTap_ learnedSave err: ' + (_lsErr && _lsErr.message)); }
       return { replyText: '✅ עברה ל-' + (relSubcategory || relCategory) + ' (ולמדתי — בפעם הבאה אזהה לבד). השורה בגיליון מעודכנת.' };
@@ -8374,11 +8376,14 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
   try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
   if (!botSecret) return { replyText: '😬 שגיאת קונפיגורציה.' };
   try {
+    // C41: the row's sign comes from _resolveIsIncome_ (the resolver every owner
+    // write uses: '+', salary, receive verbs, payroll / money-out guards), not
+    // from the picked category alone.
     var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/append', {
       method: 'post', contentType: 'application/json',
       headers: { 'x-kesefle-bot-secret': botSecret },
       payload: JSON.stringify({
-        phone: clean, amount: pending.amount, currency: 'ILS', isIncome: _isIncomeCategory_(pickedCategory, ''),
+        phone: clean, amount: pending.amount, currency: 'ILS', isIncome: !!_resolveIsIncome_(null, pending.rawText, pickedCategory, ''),
         category: pickedCategory, subcategory: pickedCategory, rawText: pending.rawText, botSecret: botSecret,
       }),
       muteHttpExceptions: true,
@@ -8387,8 +8392,8 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
     if (code >= 200 && code < 300) {
       // Teach the bot — next time same description routes correctly automatically.
       try {
-        if (typeof _learnedSave === 'function' && pending.description) {
-          _learnedSave(pending.description, { category: pickedCategory, subcategory: '' }, 'user-correction');
+        if (typeof _kflLearnFromPick_ === 'function' && pending.description) {
+          _kflLearnFromPick_(fromPhone, pending.description, { category: pickedCategory, subcategory: '' }, 'user-correction');
         }
       } catch (_lsErr) {}
       return { replyText:
@@ -8465,11 +8470,12 @@ function _handlePendingCategoryText_(fromPhone, text) {
     try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
     if (!botSecret) return { handled: true, replyText: '😬 שגיאת קונפיגורציה.' };
     try {
+      // C41: sign from _resolveIsIncome_, not from the picked category alone.
       var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/append', {
         method: 'post', contentType: 'application/json',
         headers: { 'x-kesefle-bot-secret': botSecret },
         payload: JSON.stringify({
-          phone: clean, amount: pending.amount, currency: 'ILS', isIncome: _isIncomeCategory_(category, ''),
+          phone: clean, amount: pending.amount, currency: 'ILS', isIncome: !!_resolveIsIncome_(null, pending.rawText, category, ''),
           category: category, subcategory: category, rawText: pending.rawText, botSecret: botSecret,
         }),
         muteHttpExceptions: true,
@@ -8477,8 +8483,8 @@ function _handlePendingCategoryText_(fromPhone, text) {
       var code = resp.getResponseCode();
       if (code >= 200 && code < 300) {
         try {
-          if (typeof _learnedSave === 'function' && pending.description) {
-            _learnedSave(pending.description, { category: category, subcategory: '' }, 'user-correction');
+          if (typeof _kflLearnFromPick_ === 'function' && pending.description) {
+            _kflLearnFromPick_(fromPhone, pending.description, { category: category, subcategory: '' }, 'user-correction');
           }
         } catch (_lsErr) {}
         return { handled: true, replyText:
@@ -12768,6 +12774,24 @@ function _learnedSave(text, result, source) {
   } catch (e) {
     Logger.log('_learnedSave error: ' + e.message);
   }
+}
+
+// C41 (2026-11-03): a category pick made by a NON-OWNER (tenant / client) after a
+// picker is learned only in the shared, hashed cross-user store -- never in the
+// OWNER's learned dictionary sheet (TENANT_ISOLATION_MODEL). Same publish rule as
+// _learnedSave (user-confirmed sources, non-empty category and subcategory). Owner
+// and no-sender calls keep the old behaviour (_learnedSave). An owner-check error
+// fails closed (_kflIsNonOwnerSender_, C38).
+function _kflLearnFromPick_(fromPhone, text, result, source) {
+  if (typeof _kflIsNonOwnerSender_ === 'function' && _kflIsNonOwnerSender_(fromPhone)) {
+    var t = String(text || '').toLowerCase().trim();
+    if (!t || !result || !result.category || !result.subcategory) return;
+    if (source === 'user' || source === 'user-correction' || source === 'user-direct' || source === 'llm-extracted') {
+      try { if (typeof _globalLearnPublish_ === 'function') _globalLearnPublish_(t, result.category, result.subcategory); } catch (_gpErr) {}
+    }
+    return;
+  }
+  return _learnedSave(text, result, source);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
