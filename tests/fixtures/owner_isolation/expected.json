@@ -1,0 +1,34 @@
+{
+ "_note": "Leak counts over the 41 audit_c36 messages (a leak = a non-owner write/classification carrying 'עסק מוזיקה' or 'הוצאות ecom'). 74666a8 / d57d48c5 are the pinned baselines (the C37 harness results); HEAD is the C38 fix and must be all-zero.",
+ "74666a8": {
+  "tenant": 30,
+  "group": 30,
+  "family": 37,
+  "receipt": 37,
+  "receiptNoDict": 30,
+  "ownerKept": 30,
+  "controlsLeaking": 0
+ },
+ "d57d48c5": {
+  "tenant": 0,
+  "group": 0,
+  "family": 34,
+  "receipt": 34,
+  "receiptNoDict": 0,
+  "ownerKept": 30,
+  "controlsLeaking": 0
+ },
+ "HEAD": {
+  "tenant": 0,
+  "group": 0,
+  "family": 0,
+  "receipt": 0,
+  "receiptNoDict": 0,
+  "ownerKept": 30,
+  "controlsLeaking": 0
+ },
+ "mutationGateRemoved": {
+  "family": 34,
+  "receipt": 34
+ }
+}
