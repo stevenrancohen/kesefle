@@ -8523,6 +8523,15 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     return { reply: '😕 לא הצלחתי לזהות סכום. נסה: "245 סופר"' };
   }
   var first = parsed.items[0];
+  // C40 (T6): a foreign-currency amount ("90$", "12 euro", "90 dollar") is
+  // converted to ILS the way the owner path does it (parseForeignCurrencyHint:
+  // FX_RATE_<code> override -> cached live rate -> default table). Single-item
+  // messages only, so a rate is never applied to the wrong item; the original
+  // text (with the foreign amount) still goes to the sheet as rawText.
+  try {
+    var __tfx = (parsed.items.length === 1 && typeof parseForeignCurrencyHint === 'function') ? parseForeignCurrencyHint(rawText) : null;
+    if (__tfx && isFinite(__tfx.ilsAmount) && __tfx.ilsAmount > 0) first.amount = __tfx.ilsAmount;
+  } catch (_tfxErr) { Logger.log('tenant FX err: ' + (_tfxErr && _tfxErr.message)); }
   var matched = null;
   // C34: a tenant's sheet has no 'עסק מוזיקה' / 'הוצאות ecom' (owner-only routes).
   try {
@@ -8578,11 +8587,18 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   var __pmLabel = __pm ? _paymentMethodLabel_(__pm) : '';
   var __rawTextWithPM = __pmLabel ? ('[' + __pmLabel + '] ' + String(rawText || '')) : rawText;
 
+  // C40 (T6): the tenant row carries the real sign -- the same resolver every
+  // owner write uses (salary, a leading '+', income categories, receive verbs,
+  // payroll / money-out guards) instead of a hard-coded expense. rawText, not the
+  // payment-method-prefixed text, so the '+' and leading-word rules still apply.
+  var __tIsInc = false;
+  try { __tIsInc = (typeof _resolveIsIncome_ === 'function') ? !!_resolveIsIncome_(matched, rawText, matched.category, matched.subcategory) : false; } catch (_tiErr) { __tIsInc = false; }
+
   var payload = {
     phone: String(fromPhone).replace(/[^0-9]/g, ''),
     amount: first.amount,
     currency: 'ILS',
-    isIncome: false,
+    isIncome: __tIsInc,
     category: category,
     subcategory: subcategory,
     rawText: __rawTextWithPM,

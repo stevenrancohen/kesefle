@@ -13,7 +13,7 @@
 //   * no live model; extra checks: owner keeps its dictionary, no-sender keeps it,
 //     the write-backs are skipped for non-owners, owner-check errors fail closed,
 //     a mutation (gate removed) brings the leaks back, source contract, FX / isIncome
-//     unchanged (still open P1, intentionally not fixed here);
+//     (open P1 when written; fixed by T6 in C40 -- section 5 now asserts the fix);
 //   * the masking scan covers only the files this change adds.
 // MOCK I/O ONLY: no sheet, network, Properties, trigger or deployment. Synthetic IDs.
 // Set KFL_OUT=<dir> to also write JSON/TXT proof files there.
@@ -133,6 +133,7 @@ function load(src, withDict, extra) {
       '_kflIsWordChar_', '_kflKwHit_', '_kflBizOpHit_', '_matchCategory_orig', '_matchCategory_long', '_coerceCategoryBySubcategory', '_normalizeBizSub_'].map((n) => extractFn(src, n)),
     specialBlock(src),
     ...['matchCategory', 'matchCategorySmart', '_parseIsraeliNumber_', 'parseAmountAndDescription', 'sanitizeForSheet',
+      '_isIncomeCategory_', '_resolveIsIncome_', // C40: the tenant writer now resolves the sign
       '_tenantWriteExpense_', '_groupRecordExpense_', '_familyLogExpense_'].map((n) => extractFn(src, n)),
   ].join('\n\n');
   vm.runInContext(code, ctx);
@@ -255,16 +256,24 @@ for (const rev of ['74666a8', 'd57d48c5']) {
     ['tenant', 'group', 'family', 'receipt', 'receiptNoDict'].every((k) => base[rev].counts[k] === e[k]) && base[rev].ownerKept === e.ownerKept && base[rev].controlsLeaking === e.controlsLeaking, base[rev].counts);
 }
 
-// ---------- 5. FX / isIncome: documented open P1, unchanged on purpose ----------
-console.log('\n== 5. FX / isIncome — open P1, must be unchanged by this fix ==');
+// ---------- 5. FX / isIncome: the P1 left open by C38 is fixed by T6 (C40) ----------
+// The leak counts in sections 1-4 are unchanged by T6; these two checks now assert the fix.
+// Rate: this sandbox's static table (the live fetch is stubbed off); the injected-rate
+// regression is bot/test_c40_tenant_fx_income.js.
+console.log('\n== 5. FX / isIncome — fixed by T6 (C40) ==');
 const pickFx = (p) => corpus.audit_c36.concat(corpus.extra).filter((c) => c.fx).map((c) => { const r = p.rows.find((x) => x.id === c.id); return { id: c.id, raw: c.fx.raw, tenantAmount: r.tenant.written ? r.tenant.amount : null }; });
-const pickInc = (p) => corpus.audit_c36.concat(corpus.extra).filter((c) => c.income).map((c) => { const r = p.rows.find((x) => x.id === c.id); return { id: c.id, tenantIsIncome: r.tenant.written ? r.tenant.isIncome : null }; });
+const pickInc = (p) => corpus.audit_c36.concat(corpus.extra).filter((c) => c.income).map((c) => { const r = p.rows.find((x) => x.id === c.id); return { id: c.id, msg: c.msg, tenantIsIncome: r.tenant.written ? r.tenant.isIncome : null }; });
 const fxHead = pickFx(head), incHead = pickInc(head);
-ok('OPEN P1 (documented): tenant FX amounts stay raw — ' + fxHead.map((f) => f.id + '=' + (f.tenantAmount === null ? 'asked' : '₪' + f.tenantAmount)).join(' '), fxHead.every((f) => f.tenantAmount === null || f.tenantAmount === f.raw));
-ok('OPEN P1 (documented): tenant writer still sends isIncome=false for income texts', incHead.every((x) => x.tenantIsIncome === null || x.tenantIsIncome === false));
+const envT6 = load(SRC.HEAD, true);
+const usdRate = run(envT6, (c) => c._kfl_fxRate('USD'));
+const sign = (msg) => { const m = run(envT6, (c) => c._kflWithoutSpecialBusiness_(() => c.matchCategory(msg))); return !!run(envT6, (c) => c._resolveIsIncome_(m, msg, m && m.category, m && m.subcategory)); };
+ok('T6: tenant FX amounts are converted to ILS (static rate ' + usdRate + ') — ' + fxHead.map((f) => f.id + '=' + (f.tenantAmount === null ? 'asked' : '₪' + f.tenantAmount)).join(' '),
+  fxHead.some((f) => f.tenantAmount !== null) && fxHead.every((f) => f.tenantAmount === null || f.tenantAmount === Math.round(f.raw * usdRate * 100) / 100));
+ok('T6: tenant isIncome follows the shared resolver — ' + incHead.map((x) => x.id + '=' + (x.tenantIsIncome === null ? 'asked' : x.tenantIsIncome)).join(' '),
+  incHead.some((x) => x.id === 'K1' && x.tenantIsIncome === true) && incHead.every((x) => x.tenantIsIncome === null || x.tenantIsIncome === sign(x.msg)));
 if (base['d57d48c5']) {
-  ok('FX / isIncome behaviour identical to d57d48c5 (this fix does not touch them)',
-    JSON.stringify(fxHead) === JSON.stringify(pickFx(base['d57d48c5'])) && JSON.stringify(incHead) === JSON.stringify(pickInc(base['d57d48c5'])));
+  ok('d57d48c5 baseline still books FX raw and isIncome=false (the T6 bugs before the fix)',
+    pickFx(base['d57d48c5']).every((f) => f.tenantAmount === null || f.tenantAmount === f.raw) && pickInc(base['d57d48c5']).every((x) => x.tenantIsIncome === null || x.tenantIsIncome === false));
 }
 
 // ---------- 6. masking (only the files this change adds) ----------
@@ -290,7 +299,7 @@ if (OUT) {
     inputs: { HEAD_FIXED: blobSha1(Buffer.from(SRC.HEAD, 'utf8')), HEAD_DEPLOY: blobSha1(Buffer.from(SRC.HEAD_DEPLOY, 'utf8')), baselines: BASELINE_PIN, ownerDictionaryRows: Object.keys(DICT).length, corpus: corpus.audit_c36.length + '+' + corpus.extra.length },
     counts: { HEAD: head.counts, HEAD_DEPLOY: headDeploy.counts, '74666a8': base['74666a8'] && base['74666a8'].counts, 'd57d48c5': base['d57d48c5'] && base['d57d48c5'].counts },
     owner: { keptSpecial: head.ownerKept, dictHits: head.ownerDictHits }, controlsLeaking: head.controlsLeaking,
-    openP1: { fx: fxHead, isIncome: incHead }, stubbedHelpers: head.stubbed, outboundRefused: head.refused,
+    fxIncomeT6: { fx: fxHead, isIncome: incHead, usdRate }, stubbedHelpers: head.stubbed, outboundRefused: head.refused,
     maskedValuesChecked: fpr, result: { pass, fail },
   };
   fs.writeFileSync(path.join(OUT, 'c38_summary.json'), JSON.stringify(summary, null, 1) + '\n');
