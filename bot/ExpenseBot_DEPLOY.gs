@@ -7222,7 +7222,13 @@ function _groupRecordExpense_(fromPhone, body) {
   }
   var first = parsed.items[0];
   var matched = null;
-  try { matched = typeof matchCategory === 'function' ? matchCategory(body) : null; } catch (_) {}
+  // C34: shared group expenses never use the owner's special-business routes.
+  try {
+    matched = typeof matchCategory !== 'function' ? null
+      : (typeof _kflWithoutSpecialBusiness_ === 'function'
+          ? _kflWithoutSpecialBusiness_(function () { return matchCategory(body); })
+          : matchCategory(body));
+  } catch (_) {}
   var category = (matched && matched.category) || '';
   var subcategory = (matched && matched.subcategory && matched.subcategory !== matched.category) ? matched.subcategory : '';
 
@@ -8593,7 +8599,13 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   }
   var first = parsed.items[0];
   var matched = null;
-  try { matched = typeof matchCategory === 'function' ? matchCategory(rawText) : null; } catch (_) {}
+  // C34: a tenant's sheet has no 'עסק מוזיקה' / 'הוצאות ecom' (owner-only routes).
+  try {
+    matched = typeof matchCategory !== 'function' ? null
+      : (typeof _kflWithoutSpecialBusiness_ === 'function'
+          ? _kflWithoutSpecialBusiness_(function () { return matchCategory(rawText); })
+          : matchCategory(rawText));
+  } catch (_) {}
   var category = (matched && matched.category) || 'אחר';
   var subcategory = (matched && matched.subcategory && matched.subcategory !== matched.category) ? matched.subcategory : '';
   _kflTrace_('tenant_write.parsed_and_classified', fromPhone, rawText, {
@@ -11258,7 +11270,42 @@ function _kflEcomRoute_(rawText, matched, coreIsInc) {
   matched.category = _KFL_ECOM_CAT_; matched.subcategory = sub; matched.isIncome = false; return false;
 }
 
+// C34 (2026-11-03): the special businesses are the OWNER's private books.
+// The tenant, group and family writers classify through the same
+// matchCategory() / matchCategorySmart(), so they run them inside
+// _kflWithoutSpecialBusiness_(): while suspended the router returns null and
+// those senders keep their own categories (a tenant's "apple music מנוי 20" or
+// "shopify 29$" must never be filed under 'עסק מוזיקה' / 'הוצאות ecom', which
+// exist only in the owner's sheet). Re-entrant; restored even if fn throws.
+var __kflSpecialSuspended = 0;
+function _kflWithoutSpecialBusiness_(fn) {
+  __kflSpecialSuspended++;
+  try { return fn(); } finally { __kflSpecialSuspended--; }
+}
+// True when `fromPhone` is a real NON-owner sender whose classification must
+// run with the special routes suspended. No sender (cron / internal / tests)
+// keeps the owner behaviour; an owner-check error fails closed (suspend).
+function _kflSpecialOffForSender_(fromPhone) {
+  if (__kflSpecialSuspended > 0) return false;           // already suspended
+  if (!String(fromPhone || '').replace(/[^0-9]/g, '')) return false;
+  if (typeof _isOwnerPhone_ !== 'function') return false;
+  try { return !_isOwnerPhone_(fromPhone); } catch (_e) { return true; }
+}
+// C38 (2026-11-03): the learned dictionary ('מילון לימוד') and the Auto
+// Synonyms tab live in the OWNER's sheet. A real non-owner sender (tenant,
+// family member, a tenant's receipt) is never classified from them and never
+// writes into them. Unlike _kflSpecialOffForSender_ this ignores the
+// suspension counter, so it also holds inside _kflWithoutSpecialBusiness_().
+// No sender (cron / internal / tests) keeps the owner behaviour; an
+// owner-check error fails closed.
+function _kflIsNonOwnerSender_(fromPhone) {
+  if (!String(fromPhone || '').replace(/[^0-9]/g, '')) return false;
+  if (typeof _isOwnerPhone_ !== 'function') return false;
+  try { return !_isOwnerPhone_(fromPhone); } catch (_e) { return true; }
+}
+
 function _kflSpecialBusinessRoute_(text) {
+  if (__kflSpecialSuspended > 0) return null;
   var s = String(text || '');
   var matched = { category: '', subcategory: '', isIncome: false };
   if (_KFL_MUSIC_MARK_.test(s) || _KFL_MUSIC_BRANDS_.test(s)) { _kflMusicRoute_(s, matched, false); return matched; }
@@ -11635,6 +11682,12 @@ function _kfl_bigIndexLookup(text) {
 }
 
 function matchCategorySmart(text, fromPhone) {
+  // C34: special businesses are owner-only. A non-owner sender (tenant,
+  // family member, a tenant's receipt) re-enters with them suspended, so the
+  // matchCategory() call below is covered too.
+  if (typeof _kflSpecialOffForSender_ === 'function' && _kflSpecialOffForSender_(fromPhone)) {
+    return _kflWithoutSpecialBusiness_(function () { return matchCategorySmart(text, fromPhone); });
+  }
   // Step 0: OWNER-PRIORITY personal words (Steven 2026-06-27). A message that
   // mentions "אפולו" (Steven's dog) MUST file under the "אפולו" subcategory no
   // matter what other keywords it carries -- otherwise "רישיון/חיסון/וטרינר" win
@@ -11653,8 +11706,12 @@ function matchCategorySmart(text, fromPhone) {
   var specialBusiness = (typeof _kflSpecialBusinessRoute_ === 'function') ? _kflSpecialBusinessRoute_(text) : null;
   if (specialBusiness) return specialBusiness;
 
+  // C38: the owner's learned sources (steps 1 / 1.5) and the two write-backs
+  // below are skipped for a real non-owner sender (see _kflIsNonOwnerSender_).
+  var __kflOwnerDataOff = (typeof _kflIsNonOwnerSender_ === 'function') && _kflIsNonOwnerSender_(fromPhone);
+
   // Step 1: learned cache (user-corrected categorizations)
-  var cached = _learnedLookup(text);
+  var cached = __kflOwnerDataOff ? null : _learnedLookup(text);
   if (cached) {
     Logger.log('matchCategorySmart: cache hit "' + text + '" → ' + cached.subcategory);
     return cached;
@@ -11663,7 +11720,7 @@ function matchCategorySmart(text, fromPhone) {
   // Step 1.5: Auto Synonyms tab (LLM-expanded synonyms from cronSynonymExpansion).
   // Checked BEFORE static CATEGORY_MAP so newly-learned variations win.
   try {
-    if (typeof _autoSynonymLookup_ === 'function') {
+    if (!__kflOwnerDataOff && typeof _autoSynonymLookup_ === 'function') {
       var synHit = _autoSynonymLookup_(text);
       if (synHit) {
         Logger.log('matchCategorySmart: auto-synonym hit "' + text + '" → ' + synHit.subcategory);
@@ -11690,7 +11747,7 @@ function matchCategorySmart(text, fromPhone) {
       Logger.log('matchCategorySmart: global-learn hit "' + text + '" -> ' + globalHit.subcategory);
       // Cache locally (source 'global', excluded from re-publish) so we never
       // hit the endpoint again for this text within this tenant.
-      try { _learnedSave(text, globalHit, 'global'); } catch (_glErr) {}
+      if (!__kflOwnerDataOff) { try { _learnedSave(text, globalHit, 'global'); } catch (_glErr) {} }
       // fromGlobal drives the "📚 למדתי ממשתמשים אחרים" note (shown once, since
       // the local cache above means the next identical message is a local hit).
       return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category, fromGlobal: true };
@@ -11734,7 +11791,7 @@ function matchCategorySmart(text, fromPhone) {
         rich.contract && !rich.contract.should_ask_user && richConf >= 0.6) {
       var ai = { category: rich.category, subcategory: rich.subcategory };
       Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory + ' (conf=' + richConf + ')');
-      _learnedSave(text, ai); // remember for next time
+      if (!__kflOwnerDataOff) _learnedSave(text, ai); // remember for next time (never from a non-owner, C38)
       return ai;
     }
     if (rich) {
@@ -19653,8 +19710,12 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
     return { handled: true, replyText: '😬 סכום לא תקין\n💡 תוודא שכתבת את הסכום בתחילת ההודעה' };
   }
 
+  // C34: the family sheet never uses the owner's special-business routes,
+  // even when the owner is the member logging the expense.
   var matched = (typeof matchCategorySmart === 'function')
-    ? matchCategorySmart(description, fromPhone)
+    ? (typeof _kflWithoutSpecialBusiness_ === 'function'
+        ? _kflWithoutSpecialBusiness_(function () { return matchCategorySmart(description, fromPhone); })
+        : matchCategorySmart(description, fromPhone))
     : { category: 'שונות', subcategory: 'שונות' };
   var category = (matched && matched.category) || 'שונות';
 

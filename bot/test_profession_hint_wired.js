@@ -17,7 +17,7 @@ ok('__lastItem call passes fromPhone', /matchCategorySmart\(__lastItem\.descript
 ok('__budgetLastItem call passes fromPhone', /matchCategorySmart\(__budgetLastItem\.description, fromPhone\)/.test(SRC));
 ok('it.description call passes fromPhone', /matchCategorySmart\(it\.description, fromPhone\)/.test(SRC));
 ok('receipt vendor call passes fromPhone', /matchCategorySmart\(\(vendor[^)]*\) \+ description, fromPhone\)/.test(SRC));
-ok('family-log call passes fromPhone', /\? matchCategorySmart\(description, fromPhone\)/.test(SRC));
+ok('family-log call passes fromPhone', /(\? |return )matchCategorySmart\(description, fromPhone\)/.test(SRC)); // C34 wraps the family call in _kflWithoutSpecialBusiness_
 ok('sole-item AI call passes fromPhone', /_aiCategorizeRich\(soleItem\.description, fromPhone\)/.test(SRC));
 // the hint is real: fromPhone -> profession, and matchCategorySmart forwards it
 ok('AI hint derives profession from fromPhone', /_profileProfessionCached_\(fromPhone\)/.test(SRC));
