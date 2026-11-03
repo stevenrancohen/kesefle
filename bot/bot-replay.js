@@ -63,6 +63,30 @@ function extractCategoryMap() {
   return extractDecl('const CATEGORY_MAP = [', '[', ']', { from: /^const\s+/, to: 'var ' });
 }
 
+// ─── C34 (2026-11-03) harness-fidelity helpers ───
+// Optional declaration: '' when the marker is absent (older sources), so the
+// replay keeps loading instead of throwing.
+function extractOptionalDecl(marker, open, close, rename) {
+  try { return extractDecl(marker, open, close, rename); } catch (e) { return ''; }
+}
+// The repo-integrated C33 special-business block (music / ecom routing) is a run
+// of top-level vars + functions that sits immediately before matchCategory().
+// Load it verbatim so every `typeof _kflSpecialBusinessRoute_ === 'function'`
+// guard in matchCategory / the bare-business detector is TRUE here, exactly as
+// in production. Returns '' when the block is absent.
+function extractSpecialBusinessBlock() {
+  const s = SRC.indexOf('// SPECIAL BUSINESS ROUTING (C33, repo-integrated)');
+  if (s < 0) return '';
+  const e = SRC.indexOf('function matchCategory(text)', s);
+  return e > s ? SRC.slice(s, e) : '';
+}
+// processExpense's C34 עסק-prefix guard is inline code (not a function), so the
+// replay detects it by its exact source line and models it below. If someone
+// removes the guard, the replay goes back to predicting the numbered picker for
+// "עסק מוזיקה …" / "עסק ecom …" and bot/test_c34_special_business_flow.js fails.
+const C34_PREFIX_GUARD_SRC = "if (__hStartsBiz && typeof _kflSpecialBusinessRoute_ === 'function' && _kflSpecialBusinessRoute_(__hT)) {";
+const HAS_C34_PREFIX_GUARD = SRC.indexOf(C34_PREFIX_GUARD_SRC) >= 0;
+
 // ─── Extract _ORDER_MATERIALS_ ───
 const matMatch = SRC.match(/var _ORDER_MATERIALS_ = \[[^\]]+\];/);
 if (!matMatch) throw new Error('_ORDER_MATERIALS_ not found');
@@ -102,6 +126,20 @@ const code = [
   extractFn('_normalizeBizSub_') || '',
   extractFn('parseBusinessOrder_') || '',
   extractFn('_parseBusinessNumberPrefix_') || '',
+  // C34 (2026-11-03): matchCategory calls _kflBizOpHit_ UNGUARDED for bare
+  // "עסק …" texts (it scans the 8k-entry KFL_BIZ_OP_SET brand list). Without
+  // these two the replay threw a ReferenceError on such texts.
+  extractOptionalDecl('var KFL_BIZ_OP_SET = {', '{', '}'),
+  extractFn('_kflBizOpHit_') || '',
+  // C34: the repo-integrated C33 music / ecom routing block (see helper above).
+  extractSpecialBusinessBlock(),
+  // C34: the bare-business write path canonicalizes col E with
+  // _normalizeSubForDashboard_(sub, 'עסק'); load it (+ its row tables) so the
+  // replay reports the subcategory that is actually written.
+  extractOptionalDecl('var _KFL_PERSONAL_DASH_ROWS = [', '[', ']'),
+  (SRC.match(/var _KFL_PERSONAL_INCOME_ROWS = [^;]+;/) || [''])[0],
+  extractOptionalDecl('var _KFL_SUB_TO_DASHBOARD_ROW = {', '{', '}'),
+  extractFn('_normalizeSubForDashboard_') || '',
   extractFn('matchCategory') || '',
   extractFn('_classifyBareBusinessExpense_') || '',
   // Sign resolver (2026-06-24 harness-fidelity fix): the real write path resolves
@@ -133,7 +171,7 @@ const code = [
   extractFn('_parseIsraeliNumber_') || '',
   extractFn('parseAmountAndDescription') || '',
   // Export the things we want to use
-  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, parseForeignCurrencyHint, parseAmountAndDescription, _resolveIsIncome_, _isIncomeCategory_, CATEGORY_MAP };',
+  'this.__bot = { parseBusinessOrder_, _parseBusinessNumberPrefix_, matchCategory, _classifyBareBusinessExpense_, parseForeignCurrencyHint, parseAmountAndDescription, _resolveIsIncome_, _isIncomeCategory_, CATEGORY_MAP, BUSINESS_CATEGORY_MAP, _normalizeSubForDashboard_: (typeof _normalizeSubForDashboard_ === "function" ? _normalizeSubForDashboard_ : null), _kflSpecialBusinessRoute_: (typeof _kflSpecialBusinessRoute_ === "function" ? _kflSpecialBusinessRoute_ : null) };',
 ].join('\n\n');
 
 vm.createContext(sandbox);
@@ -145,6 +183,36 @@ try {
 }
 
 const bot = sandbox.__bot || {};
+
+// ─── Legacy numbered business PICKER model (C34, 2026-11-03) ───
+// Pure model of processExpense's `if (__hStartsBiz) { … }` branch (runs only
+// when neither the bare-business detector nor the rich-order parser fired).
+// Returns { shown, amount, reason }. `shown` = the bot replies with the numbered
+// "🏢 עסק — ₪<raw amount>" menu and writes NOTHING until the user picks — the raw
+// amount is used as-is (no FX), which is why a "$" message must never land here.
+function predictBizPicker(t) {
+  const am = t.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)/);
+  const a = am ? parseFloat(am[1]) : null;
+  if (!(a && a > 0)) return { shown: false, amount: null, reason: 'no amount: falls through to the normal flow' };
+  const rest = t.replace(/^(עסק|biz|business)(?=$|[\s:\-,0-9])/i, '').replace(String(a), '').replace(/[,\-:\s]+/g, ' ').trim();
+  if (!(rest && rest.length >= 2)) return { shown: true, amount: a, reason: 'bare numbered picker (no description)' };
+  let m = null;
+  try { m = bot.matchCategory ? bot.matchCategory(t) : null; } catch (e) { m = null; }
+  const isDefault = !!(m && m.subcategory === 'הוצאות תפעוליות');
+  let found = false;
+  const tl = t.toLowerCase();
+  const map = bot.BUSINESS_CATEGORY_MAP || {};
+  outer: for (const c in map) {
+    for (const sub in map[c]) {
+      const kws = map[c][sub] || [];
+      for (let i = 0; i < kws.length; i++) {
+        if (tl.indexOf(String(kws[i]).toLowerCase()) >= 0) { found = true; break outer; }
+      }
+    }
+  }
+  if (found && m && !isDefault) return { shown: false, amount: a, reason: 'business keyword + non-default match: falls through to the normal flow' };
+  return { shown: true, amount: a, reason: 'numbered business picker (raw amount ' + a + ', no FX); nothing is written until the user picks' };
+}
 
 // ─── Replay one message ───
 function replay(input) {
@@ -161,16 +229,47 @@ function replay(input) {
     return out;
   }
 
+  // −1) עסק-prefix handling, mirroring processExpense (C34, 2026-11-03).
+  // processExpense runs the bare-business detector and the rich-order parser on
+  // the RAW text first. When neither fires and the message starts with
+  // עסק / biz / business it then either
+  //   (a) [C34 guard] strips the prefix of a music / ecom message and continues
+  //       the normal flow (FX → amount → classify) on the STRIPPED text (the repo
+  //       replacement for the live ZZ SRC_ROUTER_handle pre-clean), or
+  //   (b) shows the legacy numbered business PICKER (raw amount, no FX, nothing
+  //       written until the user picks), modelled by predictBizPicker().
+  // flowText is what the normal flow sees; order / עסק-N / bare-business keep
+  // using the raw `text`, like production.
+  let flowText = text;
+  if (/^(עסק|biz|business)(?=$|[\s:\-,0-9])/i.test(text)) {
+    // "עסק <N> …" is owned by the doPost numbered-business router (owner-only),
+    // which runs before processExpense; such messages never reach this branch.
+    let preOrder = null, preBbe = null, preBizN = null;
+    try { preBizN = bot._parseBusinessNumberPrefix_ ? bot._parseBusinessNumberPrefix_(text) : null; } catch (e) { preBizN = null; }
+    try { preOrder = bot.parseBusinessOrder_ ? bot.parseBusinessOrder_(text) : null; } catch (e) { preOrder = null; }
+    try { preBbe = bot._classifyBareBusinessExpense_ ? bot._classifyBareBusinessExpense_(text) : null; } catch (e) { preBbe = null; }
+    if (!preBizN && !preOrder && !preBbe) {
+      let special = null;
+      try { special = bot._kflSpecialBusinessRoute_ ? bot._kflSpecialBusinessRoute_(text) : null; } catch (e) { special = null; }
+      if (special && HAS_C34_PREFIX_GUARD) {
+        flowText = text.replace(/^(עסק|biz|business)\s*[:\-–—]?\s*/i, '').trim() || text;
+        out.decisions.bizPrefixGuard = { applied: true, strippedText: flowText, route: special.category + ' / ' + special.subcategory };
+      } else {
+        out.decisions.bizPicker = predictBizPicker(text);
+      }
+    }
+  }
+
   // 0) Foreign-currency (FX) conversion -- runs FIRST, exactly like
   // processExpense (const fx = parseForeignCurrencyHint(text)). When it fires,
   // the AMOUNT becomes the converted ILS value and the DESCRIPTION used for
   // classification is fx.cleanedText (currency word + number stripped), so the
   // classifier sees just the merchant/keyword text. Offline the rate comes from
   // the hardcoded KFL_FX_DEFAULTS (no network in this sandbox).
-  let classifyText = text;
+  let classifyText = flowText;
   if (typeof bot.parseForeignCurrencyHint === 'function') {
     try {
-      const fx = bot.parseForeignCurrencyHint(text);
+      const fx = bot.parseForeignCurrencyHint(flowText);
       if (fx) {
         out.decisions.fx = {
           autoConverted: !!fx.autoConverted,
@@ -203,7 +302,7 @@ function replay(input) {
       const fxDec = out.decisions.fx;
       const amountText = (fxDec && fxDec.autoConverted && fxDec.cleanedText)
         ? (fxDec.ilsAmount + ' ' + fxDec.cleanedText)
-        : text;
+        : flowText;
       const parsed = bot.parseAmountAndDescription(amountText);
       const items = (parsed && Array.isArray(parsed.items)) ? parsed.items : [];
       out.decisions.amountMatch = items.length ? {
@@ -301,14 +400,19 @@ function replay(input) {
           subcategory: bbe.subcategory,
           cleanedDesc: bbe.cleanedDesc,
         };
+        // C34: col E is written as _normalizeSubForDashboard_(sub, 'עסק') (the
+        // company-dashboard bucket), not the raw detector phrase.
+        let bbeSub = bbe.subcategory;
+        try { if (bot._normalizeSubForDashboard_) bbeSub = bot._normalizeSubForDashboard_(bbe.subcategory, 'עסק') || bbe.subcategory; } catch (e) { bbeSub = bbe.subcategory; }
         out.predicted_target = {
           sheet: 'OWNER (single business → col D=עסק)',
           tab: 'תנועות',
           category: bbe.category,
-          subcategory: bbe.subcategory,
+          subcategory: bbeSub,
+          subcategory_raw: bbe.subcategory,
           isIncome: !!bbe.isIncome,
           col_H_expected: bbe.isIncome ? 'FALSE (income)' : 'TRUE (expense)',
-          dashboard_row: 'מאזן חברה (עסק) / ' + bbe.subcategory,
+          dashboard_row: 'מאזן חברה (עסק) / ' + bbeSub,
         };
       } else {
         out.decisions.bareBusiness = { matched: false };
@@ -334,7 +438,10 @@ function replay(input) {
       if (classifyInput !== text) out.decisions.classifyText = classifyInput;
       const matched = bot.matchCategory(classifyInput);
       out.decisions.matchCategory = matched || null;
-      if (matched) {
+      // C34: when the bare-business detector fired, processExpense has already
+      // written the row and returned; matchCategory is informational only.
+      const bbeWrote = !!(out.decisions.bareBusiness && out.decisions.bareBusiness.matched);
+      if (matched && !bbeWrote) {
         out.predicted_target = out.predicted_target || {
           sheet: 'OWNER (or per-tenant)',
           tab: 'תנועות',
@@ -347,7 +454,7 @@ function replay(input) {
         // rawText = the original message (single-item production path). Additive:
         // the resolver itself is unchanged.
         const _sign = (typeof bot._resolveIsIncome_ === 'function')
-          ? bot._resolveIsIncome_(matched, text, matched.category, matched.subcategory)
+          ? bot._resolveIsIncome_(matched, flowText, matched.category, matched.subcategory)
           : !!matched.isIncome;
         out.predicted_target.isIncome = !!_sign;
         out.predicted_target.col_H_expected = _sign ? 'FALSE (income)' : 'TRUE (expense)';
@@ -362,6 +469,10 @@ function replay(input) {
 
   // 5) Risk notes
   out.risk_notes = [];
+  if (out.decisions.bizPicker && out.decisions.bizPicker.shown) {
+    out.risk_notes.push('Numbered business PICKER would be shown (raw amount, no FX): nothing is written until the user picks');
+    if (out.predicted_target) out.predicted_target.blocked_by_picker = true;
+  }
   if (out.decisions.matchCategory && out.decisions.matchCategory.isIncome) {
     out.risk_notes.push('Income detected — verify col H = FALSE (B1 fix pending)');
   }

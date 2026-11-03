@@ -11455,11 +11455,28 @@ function _classifyBareBusinessExpense_(text) {
   try { fxInfo = (typeof parseForeignCurrencyHint === 'function') ? parseForeignCurrencyHint(t) : null; } catch (_bbeFxErr) {}
   if (fxInfo && fxInfo.autoConverted && fxInfo.ilsAmount > 0) {
     amount = fxInfo.ilsAmount;
-    if (fxInfo.note) cleanedDesc += ' — ' + fxInfo.note;
+    // C33 parity (2026-11-03): same column-F text as the live C33 hook (ZZ
+    // wrapper of this function): the description without the currency word,
+    // then "— 24$ (≈70 ₪, שער 2.91)". The fx object also carries the live
+    // {orig, rate, sym} fields (KFL_CANON_SELFTEST8 reads r.fx.orig).
+    var fxSym = (typeof _kfl_currencyDisplay_ === 'function')
+      ? String(_kfl_currencyDisplay_(fxInfo.foreignSymbol)).trim() : '$';
+    var fxDesc = String(cleanedDesc || '')
+      .replace(/(\$|€|£|¥|\b(?:usd|eur|gbp|cad|aud|jpy|chf)\b|דולר\s*קנדי|דולר\s*אוסטרלי|דולרים|דולר|יורו|אירו|פאונד)/gi, ' ')
+      .replace(/\s+-\s+/g, ' ').replace(/^[\s\-–—:]+|[\s\-–—:]+$/g, '').replace(/\s+/g, ' ').trim();
+    cleanedDesc = (fxDesc || sub) + ' — ' + fxInfo.foreignAmount + fxSym +
+      ' (≈' + Math.round(amount) + ' ₪, שער ' + fxInfo.fxRate + ')';
+    fxInfo.orig = fxInfo.foreignAmount; fxInfo.rate = fxInfo.fxRate; fxInfo.sym = fxSym;
   }
 
   return { amount: amount, category: 'עסק', subcategory: sub, cleanedDesc: cleanedDesc, isIncome: isIncome, fx: fxInfo || null };
 }
+// C33 parity (2026-11-03): this function already contains the C33 hook
+// (music / ecom markers → null, USD conversion). The live project still carries
+// the same hook as a wrapper in ZZ_KFL_CANON_PATCH.gs, which skips functions
+// flagged __kflC33. Without the flag, deploying this file next to that ZZ would
+// wrap it a second time and convert "24 דולר - עסק vercel" twice (24 → 69.84 → 203).
+_classifyBareBusinessExpense_.__kflC33 = true;
 
 // A char that can be part of a word (digit, Latin, or Hebrew letter).
 function _kflIsWordChar_(ch) { return !!ch && /[0-9A-Za-z֐-׿]/.test(ch); }
