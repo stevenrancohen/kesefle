@@ -9436,6 +9436,17 @@ function processExpense(text, fromPhone) {
     // message that produced an order but whose write failed above, we do NOT
     // strip-and-pick (that regex assumes a leading עסק prefix); we let it fall
     // through to the normal classifier below instead.
+    // C34 (2026-11-03): "עסק מוזיקה …" / "עסק ecom …" are NOT photo-business
+    // messages. The live project strips the leading עסק in SRC_ROUTER_handle
+    // (ZZ override) before processExpense; the repo bot has no SRC_ROUTER_handle,
+    // so without this guard "עסק מוזיקה distrokid 20$" fell into the numbered
+    // photo-business picker below with the RAW (unconverted) amount. Strip the
+    // prefix and continue to the normal flow (FX + _kflSpecialBusinessRoute_).
+    if (__hStartsBiz && typeof _kflSpecialBusinessRoute_ === 'function' && _kflSpecialBusinessRoute_(__hT)) {
+      __hProps.deleteProperty('smart_pending');
+      text = __hT.replace(/^(עסק|biz|business)\s*[:\-–—]?\s*/i, '').trim() || __hT;
+      __hStartsBiz = false;
+    }
     if (__hStartsBiz) {
     var __hAM = __hT.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)/);
     var __hA = __hAM ? parseFloat(__hAM[1]) : null;
