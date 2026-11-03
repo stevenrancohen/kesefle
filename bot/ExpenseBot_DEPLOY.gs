@@ -7831,6 +7831,17 @@ function _handleRelabelTap_(fromPhone, newCategory) {
   if (!last || !last.rowIndex) {
     return { replyText: '🤔 לא מצאתי הוצאה אחרונה לשנות. שלח את ההוצאה שוב, ואז תוכל לבחור קטגוריה.' };
   }
+  // C42: the rows of the list's income section. A tenant tap on one of them used
+  // to send no sign, so col H kept the old value and an expense row moved there
+  // stayed an expense. For a non-owner the sign now comes from _resolveIsIncome_:
+  // the pick says income, the original text (last.description) keeps the payroll
+  // and money-out guards. Category / subcategory (routing) unchanged; every other
+  // tap and the owner keep the old behaviour.
+  var __relIncomeRows = { 'משכורת': 1, 'בונוס': 1, 'שכר דירה (הכנסה)': 1, 'קצבאות': 1, 'דיבידנדים': 1, 'החזר מס': 1 };
+  if (__pipe <= 0 && __relIncomeRows[relCategory] === 1 && typeof _resolveIsIncome_ === 'function' &&
+      typeof _kflIsNonOwnerSender_ === 'function' && _kflIsNonOwnerSender_(fromPhone)) {
+    try { relIsIncome = !!_resolveIsIncome_({ isIncome: true }, String(last.description || ''), relCategory, relSubcategory); } catch (_riErr) { relIsIncome = null; }
+  }
   var secret = '';
   try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
   if (!secret) return { replyText: '😬 שגיאת קונפיגורציה זמנית.' };
