@@ -27,6 +27,11 @@ const cp = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = process.env.KFL_OUT || '';
+// C44: the "only X differs from <pin>" / "byte-identical to <pin>" checks prove this change's
+// minimality at commit time and would fail on any later bot edit, so they run only with
+// KFL_SCOPE_PIN=1. Behaviour, owner isolation, FIXED/DEPLOY parity, fail-closed and mutation
+// checks always run (bot/test_c44_optional_scope_pins.js guards this split).
+const SCOPE_PIN = process.env.KFL_SCOPE_PIN === '1';
 const OWNER = '000000000001', TENANT = '000000000002'; // synthetic, not phone numbers
 const DICT_TAB = 'מילון לימוד', SYN_TAB = 'Auto Synonyms';
 const BASE_PIN = { rev: '9fa09b9', fixed: '591a9e72cad693fc938f612882704e65248c936a', deploy: 'cab2a8d9f6b62cddd5584a86bbf81266f84591ec' };
@@ -227,7 +232,9 @@ ok('no outbound call outside the captured endpoints', SC.every((s) => HEAD[s.id]
 console.log('\n== 5. source contract ==');
 const CHANGED = ['_handleRelabelTap_', '_handlePendingTenantPick_', '_handlePendingCategoryText_'];
 ok('changed functions and _kflLearnFromPick_ are byte-identical in FIXED and DEPLOY', safe(() => CHANGED.concat(['_kflLearnFromPick_']).every((n) => extractFn(SRC.FIXED, n) === extractFn(SRC.DEPLOY, n))));
-if (BASE) {
+if (!SCOPE_PIN) console.log('  note  scope pins not run (set KFL_SCOPE_PIN=1)');
+else if (!BASE) ok('KFL_SCOPE_PIN=1 needs the pinned ' + BASE_PIN.rev + ' objects', false);
+if (SCOPE_PIN && BASE) {
   for (const [name, now, old] of [['FIXED', SRC.FIXED, BASE.fixed], ['DEPLOY', SRC.DEPLOY, BASE.deploy]]) {
     // Rebuild HEAD from the base: swap in the three pick functions, then insert the new helper
     // (with its comment) right after _learnedSave. Anything else that differs fails this check.

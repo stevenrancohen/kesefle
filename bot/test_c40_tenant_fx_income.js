@@ -26,6 +26,11 @@ const cp = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = process.env.KFL_OUT || '';
+// C44: the "only X differs from <pin>" / "byte-identical to <pin>" checks prove this change's
+// minimality at commit time and would fail on any later bot edit, so they run only with
+// KFL_SCOPE_PIN=1. Behaviour, owner isolation, FIXED/DEPLOY parity, fail-closed and mutation
+// checks always run (bot/test_c44_optional_scope_pins.js guards this split).
+const SCOPE_PIN = process.env.KFL_SCOPE_PIN === '1';
 const TENANT = '000000000002'; // synthetic, not a phone number
 const RATE = { USD: 3.7, EUR: 4 }; // injected via FX_RATE_USD / FX_RATE_EUR
 const BASE_PIN = { rev: '265268d', fixed: '791fd810192ee49987fadee5933963abe8691fee', deploy: '142803429ccff2aa6a03478cd74013abc466e834' };
@@ -231,7 +236,9 @@ ok('_tenantWriteExpense_ is byte-identical in FIXED and DEPLOY', twF === twD);
 // _learnedSave); bot/test_c41_tenant_picker_isolation.js pins those. Everything else must still
 // be byte-identical to the base.
 const C41_PICK = ['_handleRelabelTap_', '_handlePendingTenantPick_', '_handlePendingCategoryText_'];
-if (BASE) {
+if (!SCOPE_PIN) console.log('  note  scope pins not run (set KFL_SCOPE_PIN=1)');
+else if (!BASE) ok('KFL_SCOPE_PIN=1 needs the pinned ' + BASE_PIN.rev + ' objects', false);
+if (SCOPE_PIN && BASE) {
   for (const [name, now, old] of [['FIXED', SRC.FIXED, BASE.fixed], ['DEPLOY', SRC.DEPLOY, BASE.deploy]]) {
     let swapped = old;
     for (const n of ['_tenantWriteExpense_'].concat(C41_PICK)) swapped = swapped.replace(extractFn(old, n), () => extractFn(now, n));

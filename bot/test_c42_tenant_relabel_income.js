@@ -29,6 +29,11 @@ const { pathToFileURL } = require('node:url');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = process.env.KFL_OUT || '';
+// C44: the "only X differs from <pin>" / "byte-identical to <pin>" checks prove this change's
+// minimality at commit time and would fail on any later bot edit, so they run only with
+// KFL_SCOPE_PIN=1. Behaviour, owner isolation, FIXED/DEPLOY parity, fail-closed and mutation
+// checks always run (bot/test_c44_optional_scope_pins.js guards this split).
+const SCOPE_PIN = process.env.KFL_SCOPE_PIN === '1';
 const OWNER = '000000000001', TENANT = '000000000002'; // synthetic, not phone numbers
 const DICT_TAB = 'מילון לימוד';
 const INCOME_SECTION = '📈 הכנסות';
@@ -263,7 +268,9 @@ ok('no outbound call outside the captured endpoints', SC.every((s) => HEAD[s.id]
 // ---------- 4. source contract ----------
 console.log('\n== 4. source contract ==');
 ok('_handleRelabelTap_ is byte-identical in FIXED and DEPLOY', extractFn(SRC.FIXED, '_handleRelabelTap_') === extractFn(SRC.DEPLOY, '_handleRelabelTap_'));
-if (BASE) {
+if (!SCOPE_PIN) console.log('  note  scope pins not run (set KFL_SCOPE_PIN=1)');
+else if (!BASE) ok('KFL_SCOPE_PIN=1 needs the pinned ' + BASE_PIN.rev + ' objects', false);
+if (SCOPE_PIN && BASE) {
   for (const [name, now, old] of [['FIXED', SRC.FIXED, BASE.fixed], ['DEPLOY', SRC.DEPLOY, BASE.deploy]]) {
     ok(name + ': only _handleRelabelTap_ differs from ' + BASE_PIN.rev, safe(() => old.replace(extractFn(old, '_handleRelabelTap_'), () => extractFn(now, '_handleRelabelTap_')) === now));
     const KEEP = ['matchCategorySmart', '_kflIsNonOwnerSender_', '_tenantWriteExpense_', '_kflLearnFromPick_', '_learnedSave', '_handlePendingTenantPick_', '_handlePendingCategoryText_', '_resolveIsIncome_', '_sendChangeCategoryPicker_', '_kfl_buildPickerSections_'];
