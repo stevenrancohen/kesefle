@@ -137,8 +137,12 @@ async function handlerImpl(req, res) {
   // the raw value only if the helper is somehow unavailable.
   let dashSub;
   try {
+    // C42: pass the sign the bot sent (only an explicit true counts) so an income
+    // relabel lands on an income row label -- the same income guard buildExpenseRow
+    // applies on append. Without it col H = income next to an expense row label
+    // hides the amount from both dashboard totals.
     dashSub = typeof normalizeSubcategoryForDashboard === 'function'
-      ? normalizeSubcategoryForDashboard(newSubcategory || newCategory, newCategory)
+      ? normalizeSubcategoryForDashboard(newSubcategory || newCategory, newCategory, body.isIncome === true)
       : (newSubcategory || newCategory);
   } catch (_normErr) {
     dashSub = newSubcategory || newCategory;

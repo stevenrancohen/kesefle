@@ -995,6 +995,8 @@ function _isIncomeCategory_(category, subcategory) {
   var s = String(subcategory || '').trim();
   if (c === 'הכנסות') return true;
   if (c === 'עסק' && s === 'מחזור') return true;
+  if (c === 'עסק מוזיקה' && s === 'הכנסות מוזיקה') return true;
+  if (c === 'הוצאות ecom' && s === 'הכנסות ecom') return true;
   return false;
 }
 
@@ -7145,7 +7147,13 @@ function _groupRecordExpense_(fromPhone, body) {
   }
   var first = parsed.items[0];
   var matched = null;
-  try { matched = typeof matchCategory === 'function' ? matchCategory(body) : null; } catch (_) {}
+  // C34: shared group expenses never use the owner's special-business routes.
+  try {
+    matched = typeof matchCategory !== 'function' ? null
+      : (typeof _kflWithoutSpecialBusiness_ === 'function'
+          ? _kflWithoutSpecialBusiness_(function () { return matchCategory(body); })
+          : matchCategory(body));
+  } catch (_) {}
   var category = (matched && matched.category) || '';
   var subcategory = (matched && matched.subcategory && matched.subcategory !== matched.category) ? matched.subcategory : '';
 
@@ -7748,6 +7756,17 @@ function _handleRelabelTap_(fromPhone, newCategory) {
   if (!last || !last.rowIndex) {
     return { replyText: '🤔 לא מצאתי הוצאה אחרונה לשנות. שלח את ההוצאה שוב, ואז תוכל לבחור קטגוריה.' };
   }
+  // C42: the rows of the list's income section. A tenant tap on one of them used
+  // to send no sign, so col H kept the old value and an expense row moved there
+  // stayed an expense. For a non-owner the sign now comes from _resolveIsIncome_:
+  // the pick says income, the original text (last.description) keeps the payroll
+  // and money-out guards. Category / subcategory (routing) unchanged; every other
+  // tap and the owner keep the old behaviour.
+  var __relIncomeRows = { 'משכורת': 1, 'בונוס': 1, 'שכר דירה (הכנסה)': 1, 'קצבאות': 1, 'דיבידנדים': 1, 'החזר מס': 1 };
+  if (__pipe <= 0 && __relIncomeRows[relCategory] === 1 && typeof _resolveIsIncome_ === 'function' &&
+      typeof _kflIsNonOwnerSender_ === 'function' && _kflIsNonOwnerSender_(fromPhone)) {
+    try { relIsIncome = !!_resolveIsIncome_({ isIncome: true }, String(last.description || ''), relCategory, relSubcategory); } catch (_riErr) { relIsIncome = null; }
+  }
   var secret = '';
   try { secret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
   if (!secret) return { replyText: '😬 שגיאת קונפיגורציה זמנית.' };
@@ -7789,9 +7808,11 @@ function _handleRelabelTap_(fromPhone, newCategory) {
       // _learnedSave with 'user-correction' source auto-publishes to the
       // global cross-tenant store too, so EVERY tenant tap improves the
       // classifier for EVERY future user typing the same description.
+      // C41: a tenant's tap feeds only that shared store, never the owner's
+      // dictionary sheet (_kflLearnFromPick_); the owner keeps _learnedSave.
       try {
-        if (typeof _learnedSave === 'function' && last.description) {
-          _learnedSave(last.description, { category: relCategory, subcategory: relSubcategory || relCategory }, 'user-correction');
+        if (typeof _kflLearnFromPick_ === 'function' && last.description) {
+          _kflLearnFromPick_(fromPhone, last.description, { category: relCategory, subcategory: relSubcategory || relCategory }, 'user-correction');
         }
       } catch (_lsErr) { Logger.log('_handleRelabelTap_ learnedSave err: ' + (_lsErr && _lsErr.message)); }
       return { replyText: '✅ עברה ל-' + (relSubcategory || relCategory) + ' (ולמדתי — בפעם הבאה אזהה לבד). השורה בגיליון מעודכנת.' };
@@ -8291,11 +8312,14 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
   try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
   if (!botSecret) return { replyText: '😬 שגיאת קונפיגורציה.' };
   try {
+    // C41: the row's sign comes from _resolveIsIncome_ (the resolver every owner
+    // write uses: '+', salary, receive verbs, payroll / money-out guards), not
+    // from the picked category alone.
     var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/append', {
       method: 'post', contentType: 'application/json',
       headers: { 'x-kesefle-bot-secret': botSecret },
       payload: JSON.stringify({
-        phone: clean, amount: pending.amount, currency: 'ILS', isIncome: _isIncomeCategory_(pickedCategory, ''),
+        phone: clean, amount: pending.amount, currency: 'ILS', isIncome: !!_resolveIsIncome_(null, pending.rawText, pickedCategory, ''),
         category: pickedCategory, subcategory: pickedCategory, rawText: pending.rawText, botSecret: botSecret,
       }),
       muteHttpExceptions: true,
@@ -8304,8 +8328,8 @@ function _handlePendingTenantPick_(fromPhone, pickedCategory) {
     if (code >= 200 && code < 300) {
       // Teach the bot — next time same description routes correctly automatically.
       try {
-        if (typeof _learnedSave === 'function' && pending.description) {
-          _learnedSave(pending.description, { category: pickedCategory, subcategory: '' }, 'user-correction');
+        if (typeof _kflLearnFromPick_ === 'function' && pending.description) {
+          _kflLearnFromPick_(fromPhone, pending.description, { category: pickedCategory, subcategory: '' }, 'user-correction');
         }
       } catch (_lsErr) {}
       return { replyText:
@@ -8382,11 +8406,12 @@ function _handlePendingCategoryText_(fromPhone, text) {
     try { botSecret = String(PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || ''); } catch (_se) {}
     if (!botSecret) return { handled: true, replyText: '😬 שגיאת קונפיגורציה.' };
     try {
+      // C41: sign from _resolveIsIncome_, not from the picked category alone.
       var resp = UrlFetchApp.fetch(KESEFLE_API_BASE + '/api/sheet/append', {
         method: 'post', contentType: 'application/json',
         headers: { 'x-kesefle-bot-secret': botSecret },
         payload: JSON.stringify({
-          phone: clean, amount: pending.amount, currency: 'ILS', isIncome: _isIncomeCategory_(category, ''),
+          phone: clean, amount: pending.amount, currency: 'ILS', isIncome: !!_resolveIsIncome_(null, pending.rawText, category, ''),
           category: category, subcategory: category, rawText: pending.rawText, botSecret: botSecret,
         }),
         muteHttpExceptions: true,
@@ -8394,8 +8419,8 @@ function _handlePendingCategoryText_(fromPhone, text) {
       var code = resp.getResponseCode();
       if (code >= 200 && code < 300) {
         try {
-          if (typeof _learnedSave === 'function' && pending.description) {
-            _learnedSave(pending.description, { category: category, subcategory: '' }, 'user-correction');
+          if (typeof _kflLearnFromPick_ === 'function' && pending.description) {
+            _kflLearnFromPick_(fromPhone, pending.description, { category: category, subcategory: '' }, 'user-correction');
           }
         } catch (_lsErr) {}
         return { handled: true, replyText:
@@ -8515,8 +8540,23 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
     return { reply: '😕 לא הצלחתי לזהות סכום. נסה: "245 סופר"' };
   }
   var first = parsed.items[0];
+  // C40 (T6): a foreign-currency amount ("90$", "12 euro", "90 dollar") is
+  // converted to ILS the way the owner path does it (parseForeignCurrencyHint:
+  // FX_RATE_<code> override -> cached live rate -> default table). Single-item
+  // messages only, so a rate is never applied to the wrong item; the original
+  // text (with the foreign amount) still goes to the sheet as rawText.
+  try {
+    var __tfx = (parsed.items.length === 1 && typeof parseForeignCurrencyHint === 'function') ? parseForeignCurrencyHint(rawText) : null;
+    if (__tfx && isFinite(__tfx.ilsAmount) && __tfx.ilsAmount > 0) first.amount = __tfx.ilsAmount;
+  } catch (_tfxErr) { Logger.log('tenant FX err: ' + (_tfxErr && _tfxErr.message)); }
   var matched = null;
-  try { matched = typeof matchCategory === 'function' ? matchCategory(rawText) : null; } catch (_) {}
+  // C34: a tenant's sheet has no 'עסק מוזיקה' / 'הוצאות ecom' (owner-only routes).
+  try {
+    matched = typeof matchCategory !== 'function' ? null
+      : (typeof _kflWithoutSpecialBusiness_ === 'function'
+          ? _kflWithoutSpecialBusiness_(function () { return matchCategory(rawText); })
+          : matchCategory(rawText));
+  } catch (_) {}
   var category = (matched && matched.category) || 'אחר';
   var subcategory = (matched && matched.subcategory && matched.subcategory !== matched.category) ? matched.subcategory : '';
   _kflTrace_('tenant_write.parsed_and_classified', fromPhone, rawText, {
@@ -8564,11 +8604,18 @@ function _tenantWriteExpense_(fromPhone, rawText, userRecord) {
   var __pmLabel = __pm ? _paymentMethodLabel_(__pm) : '';
   var __rawTextWithPM = __pmLabel ? ('[' + __pmLabel + '] ' + String(rawText || '')) : rawText;
 
+  // C40 (T6): the tenant row carries the real sign -- the same resolver every
+  // owner write uses (salary, a leading '+', income categories, receive verbs,
+  // payroll / money-out guards) instead of a hard-coded expense. rawText, not the
+  // payment-method-prefixed text, so the '+' and leading-word rules still apply.
+  var __tIsInc = false;
+  try { __tIsInc = (typeof _resolveIsIncome_ === 'function') ? !!_resolveIsIncome_(matched, rawText, matched.category, matched.subcategory) : false; } catch (_tiErr) { __tIsInc = false; }
+
   var payload = {
     phone: String(fromPhone).replace(/[^0-9]/g, ''),
     amount: first.amount,
     currency: 'ILS',
-    isIncome: false,
+    isIncome: __tIsInc,
     category: category,
     subcategory: subcategory,
     rawText: __rawTextWithPM,
@@ -9359,6 +9406,17 @@ function processExpense(text, fromPhone) {
     // message that produced an order but whose write failed above, we do NOT
     // strip-and-pick (that regex assumes a leading עסק prefix); we let it fall
     // through to the normal classifier below instead.
+    // C34 (2026-11-03): "עסק מוזיקה …" / "עסק ecom …" are NOT photo-business
+    // messages. The live project strips the leading עסק in SRC_ROUTER_handle
+    // (ZZ override) before processExpense; the repo bot has no SRC_ROUTER_handle,
+    // so without this guard "עסק מוזיקה distrokid 20$" fell into the numbered
+    // photo-business picker below with the RAW (unconverted) amount. Strip the
+    // prefix and continue to the normal flow (FX + _kflSpecialBusinessRoute_).
+    if (__hStartsBiz && typeof _kflSpecialBusinessRoute_ === 'function' && _kflSpecialBusinessRoute_(__hT)) {
+      __hProps.deleteProperty('smart_pending');
+      text = __hT.replace(/^(עסק|biz|business)\s*[:\-–—]?\s*/i, '').trim() || __hT;
+      __hStartsBiz = false;
+    }
     if (__hStartsBiz) {
     var __hAM = __hT.replace(/,/g, '').match(/(?:^|[\s:\-])([0-9]+(?:\.[0-9]+)?)/);
     var __hA = __hAM ? parseFloat(__hAM[1]) : null;
@@ -11112,10 +11170,113 @@ function _kflBizOpHit_(t) {
   return false;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SPECIAL BUSINESS ROUTING (C33, repo-integrated)
+//
+// The live Apps Script project used to carry these routes only in separate ZZ
+// files.  Keeping them here makes the checked-in bot and the single-file deploy
+// artifact authoritative too.  These helpers are pure: they do not touch
+// Sheets, Properties, triggers, or the importer.
+var _KFL_MUSIC_CAT_ = 'עסק מוזיקה';
+var _KFL_MUSIC_SUBS_ = ['הפצה ומנויים','הפקה וכלים','שיווק מוזיקה','הופעות ונסיעות','ציוד מוזיקה','כללי (מוזיקה)','הכנסות מוזיקה'];
+var _KFL_MUSIC_MARK_ = /(^|[\s,:\-(])(עסק\s*מו[זס]יקה|מו[זס]יקה|music|balimore|בלימור|richard\s*dall|ריצ'?רד\s*דאל)(?=$|[\s,:\-.!?)])/i;
+var _KFL_MUSIC_BRANDS_ = /(^|[\s,:\-(])(distrokid|distro\s*kid|דיסטרוקיד|דיסטרו\s*קיד|landr|לנדר|splice|ספלייס|suno|סונו|udio|submithub|groover|tunecore|cd\s*baby|ableton|אייבלטון|beatport|bandcamp|soundcloud|סאונדקלאוד|mastering|מאסטרינג|spotify\s*for\s*artists|apple\s*music\s*for\s*artists)(?=$|[\s,:\-.!?)])/i;
+var _KFL_MUSIC_KW_ = [
+  [/distrokid|דיסטרוקיד|דיסטרו\s*קיד|distro\s*kid|landr|לנדר|tunecore|cd\s*baby|ditto|amuse|הפצה|spotify\s*for\s*artists|apple\s*music\s*for\s*artists|אגודת|acum|אקו["״]?ם/i, 'הפצה ומנויים'],
+  [/suno|סונו|udio|splice|ספלייס|ableton|אייבלטון|fl\s*studio|logic\s*pro|plugin|פלאגין|sample|סמפל|mastering|מאסטרינג|mixing|מיקס|vocal|ווקאל|הפקה|beat|ביט|stem|elevenlabs|אולפן|studio/i, 'הפקה וכלים'],
+  [/קידום|promo|submithub|groover|playlist|פלייליסט|(^|\s)ads?(\s|$)|פרסום|שיווק|ממומן|אינסטגרם|instagram|tiktok|טיקטוק|youtube|יוטיוב|higgsfield|runway|קליפ|clip|video|וידאו|cover|עטיפ|canva|קנבה|midjourney|לוגו|logo|אתר|website|orshot|metricool/i, 'שיווק מוזיקה'],
+  [/הופע|gig|show|live|נסיע|טיס|מלון|hotel|flight|festival|פסטיבל|מועדון|club/i, 'הופעות ונסיעות'],
+  [/אוזני|headphone|מיקרופון|(^|\s)mic(\s|$)|microphone|כרטיס\s*קול|interface|controller|קונטרולר|מוניטור|monitor|midi|ציוד|equipment|רמקול|speaker/i, 'ציוד מוזיקה']
+];
+function _kflMusicRoute_(rawText, matched, coreIsInc) {
+  if (!matched || typeof matched !== 'object') return null;
+  var s = String(rawText || '');
+  if (!(_KFL_MUSIC_MARK_.test(s) || _KFL_MUSIC_BRANDS_.test(s) || String(matched.category || '') === _KFL_MUSIC_CAT_)) return null;
+  var body = s.replace(/עסק\s*מו[זס]יקה|מו[זס]יקה|music/gi, ' ');
+  var inc = coreIsInc === true || /(^|\s)(הכנסה|הכנסות|תמלוגים|royalt\w*|payout|נכנס|נכנסו|קיבלתי|שילמו\s*לי)(\s|$)/i.test(s);
+  if (inc && !/(^|\s)(הוצאה|הוצאות|שילמתי|קניתי|מנוי)(\s|$)/.test(s)) {
+    matched.category = _KFL_MUSIC_CAT_; matched.subcategory = 'הכנסות מוזיקה'; matched.isIncome = true; return true;
+  }
+  var sub = 'כללי (מוזיקה)';
+  for (var i = 0; i < _KFL_MUSIC_KW_.length; i++) if (_KFL_MUSIC_KW_[i][0].test(body)) { sub = _KFL_MUSIC_KW_[i][1]; break; }
+  matched.category = _KFL_MUSIC_CAT_; matched.subcategory = sub; matched.isIncome = false; return false;
+}
+
+var _KFL_ECOM_CAT_ = 'הוצאות ecom';
+var _KFL_ECOM_SUBS_ = ['דומיין ואתר','פרסום ושיווק','מלאי ומוצרים','משלוחים ולוגיסטיקה','כלים ומנויים','עמלות ותשלומים','כללי (ecom)','הכנסות ecom'];
+var _KFL_ECOM_MARK_ = /(^|[\s,:\-(])(ecom|e-?commerce|איקומרס|אי-?קומרס|אי קומרס|חנות\s*אונליין|עסק\s*ecom|הוצאות\s*ecom|דרופשיפינג|dropshipping|drop\s*shipping)(?=$|[\s,:\-.!?)])/i;
+var _KFL_ECOM_BRANDS_ = /(^|[\s,:\-(])(all\s?u|allu|אול\s?יו|shopify|שופיפיי|klaviyo|woocommerce|printful|printify|dsers|zendrop|spocket|oberlo|namecheap|godaddy|גודדי|bigcommerce|gorgias|cj\s*dropshipping|autods)(?=$|[\s,:\-.!?)])/i;
+var _KFL_ECOM_KW_ = [
+  [/עמל(ה|ת|ות)|\bfees?\b|paypal|פייפאל|stripe|payoneer|פיוניר|מע["״]?מ|\bvat\b|\btax/i, 'עמלות ותשלומים'],
+  [/משלוח|shipping|delivery|\bdhl\b|fedex|\bups\b|מכס|customs|fulfil|לוגיסט|logistic|אריזה|packag|שליח|courier/i, 'משלוחים ולוגיסטיקה'],
+  [/מלאי|inventory|מוצר|product|ספק|supplier|aliexpress|אליאקספרס|alibaba|עליבאבא|דוגמ|sample|zendrop|spocket|printful|printify|dropship|דרופשיפ|סחורה|יבוא|import|\bcj\b/i, 'מלאי ומוצרים'],
+  [/פרסום|\bads?\b|מודע|קמפיין|campaign|\bmeta\b|מטא|פייסבוק|facebook|instagram|אינסטגרם|tiktok|טיקטוק|google|גוגל|influenc|משפיענ|קריאייטיב|creative|canva|קנבה|\bugc\b|שיווק|promo|קידום|pinterest|snapchat/i, 'פרסום ושיווק'],
+  [/דומי+נ|דומי+ן|domain|hosting|אחסון|shopify|שופיפיי|\bwix\b|וויקס|wordpress|woocommerce|bigcommerce|theme|תבנית|namecheap|godaddy|גודדי|cloudflare|\bssl\b|אתר|website|\bsite\b|landing|דף נחיתה/i, 'דומיין ואתר'],
+  [/klaviyo|mailchimp|gorgias|zendesk|dsers|oberlo|autods|zapier|notion|\bcrm\b|chatgpt|openai|\bapps?\b|אפליקצי|subscription|מנוי|\btool|כלי|saas|תוכנ/i, 'כלים ומנויים']
+];
+function _kflEcomRoute_(rawText, matched, coreIsInc) {
+  if (!matched || typeof matched !== 'object') return null;
+  var s = String(rawText || '');
+  if (!(_KFL_ECOM_MARK_.test(s) || _KFL_ECOM_BRANDS_.test(s) || String(matched.category || '') === _KFL_ECOM_CAT_)) return null;
+  var body = s.replace(/עסק\s*ecom|הוצאות\s*ecom|e-?commerce|ecom|איקומרס|אי-?קומרס|אי קומרס/gi, ' ');
+  var inc = coreIsInc === true || /(^|\s)(הכנסה|הכנסות|מכירה|מכירות|payout|נכנס|נכנסו|קיבלתי|שילמו\s*לי|revenue|sales)(\s|$)/i.test(s);
+  if (inc && !/(^|\s)(הוצאה|הוצאות|שילמתי|קניתי|מנוי|עמלה)(\s|$)/.test(s)) {
+    matched.category = _KFL_ECOM_CAT_; matched.subcategory = 'הכנסות ecom'; matched.isIncome = true; return true;
+  }
+  var sub = 'כללי (ecom)';
+  for (var i = 0; i < _KFL_ECOM_KW_.length; i++) if (_KFL_ECOM_KW_[i][0].test(body)) { sub = _KFL_ECOM_KW_[i][1]; break; }
+  matched.category = _KFL_ECOM_CAT_; matched.subcategory = sub; matched.isIncome = false; return false;
+}
+
+// C34 (2026-11-03): the special businesses are the OWNER's private books.
+// The tenant, group and family writers classify through the same
+// matchCategory() / matchCategorySmart(), so they run them inside
+// _kflWithoutSpecialBusiness_(): while suspended the router returns null and
+// those senders keep their own categories (a tenant's "apple music מנוי 20" or
+// "shopify 29$" must never be filed under 'עסק מוזיקה' / 'הוצאות ecom', which
+// exist only in the owner's sheet). Re-entrant; restored even if fn throws.
+var __kflSpecialSuspended = 0;
+function _kflWithoutSpecialBusiness_(fn) {
+  __kflSpecialSuspended++;
+  try { return fn(); } finally { __kflSpecialSuspended--; }
+}
+// True when `fromPhone` is a real NON-owner sender whose classification must
+// run with the special routes suspended. No sender (cron / internal / tests)
+// keeps the owner behaviour; an owner-check error fails closed (suspend).
+function _kflSpecialOffForSender_(fromPhone) {
+  if (__kflSpecialSuspended > 0) return false;           // already suspended
+  if (!String(fromPhone || '').replace(/[^0-9]/g, '')) return false;
+  if (typeof _isOwnerPhone_ !== 'function') return false;
+  try { return !_isOwnerPhone_(fromPhone); } catch (_e) { return true; }
+}
+// C38 (2026-11-03): the learned dictionary ('מילון לימוד') and the Auto
+// Synonyms tab live in the OWNER's sheet. A real non-owner sender (tenant,
+// family member, a tenant's receipt) is never classified from them and never
+// writes into them. Unlike _kflSpecialOffForSender_ this ignores the
+// suspension counter, so it also holds inside _kflWithoutSpecialBusiness_().
+// No sender (cron / internal / tests) keeps the owner behaviour; an
+// owner-check error fails closed.
+function _kflIsNonOwnerSender_(fromPhone) {
+  if (!String(fromPhone || '').replace(/[^0-9]/g, '')) return false;
+  if (typeof _isOwnerPhone_ !== 'function') return false;
+  try { return !_isOwnerPhone_(fromPhone); } catch (_e) { return true; }
+}
+
+function _kflSpecialBusinessRoute_(text) {
+  if (__kflSpecialSuspended > 0) return null;
+  var s = String(text || '');
+  var matched = { category: '', subcategory: '', isIncome: false };
+  if (_KFL_MUSIC_MARK_.test(s) || _KFL_MUSIC_BRANDS_.test(s)) { _kflMusicRoute_(s, matched, false); return matched; }
+  if (_KFL_ECOM_MARK_.test(s) || _KFL_ECOM_BRANDS_.test(s)) { _kflEcomRoute_(s, matched, false); return matched; }
+  return null;
+}
+
 function matchCategory(text) {
   if (!text) return _matchCategory_long(text);
   var t = String(text).toLowerCase().trim();
   t = t.replace(/[   ​]/g, ' ').replace(/\s+/g, ' ');
+  var specialBusiness = (typeof _kflSpecialBusinessRoute_ === 'function') ? _kflSpecialBusinessRoute_(t) : null;
+  if (specialBusiness) return specialBusiness;
   // 2026-06-02: accept the clitic prefix forms (בעסק / לעסק / מעסק / העסק /
   // ועסק) in addition to the standalone עסק, so a natural sentence like
   // "...הכנסה בעסק..." routes business (e.g. "הכנסה" -> מחזור income). The
@@ -11186,6 +11347,11 @@ function _classifyBareBusinessExpense_(text) {
 
   // Normalize odd whitespace (NBSP / narrow-NBSP / zero-width) to plain spaces.
   var t = raw.replace(/[  ​]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Music/e-commerce messages must continue through the normal expense flow,
+  // where FX is converted before category matching.  The old bare-business
+  // gate otherwise wrote them early into the photo business as raw ILS.
+  if (typeof _kflSpecialBusinessRoute_ === 'function' && _kflSpecialBusinessRoute_(t)) return null;
 
   // Must contain the Hebrew word עסק, standalone OR in a clitic prefix form
   // (בעסק / לעסק / מעסק / העסק / ועסק), optionally directly preceded by
@@ -11287,8 +11453,35 @@ function _classifyBareBusinessExpense_(text) {
   // EXPENSES are never income here.
   var isIncome = (sub === 'מחזור');
 
-  return { amount: amount, category: 'עסק', subcategory: sub, cleanedDesc: cleanedDesc, isIncome: isIncome };
+  // This gate writes before processExpense, so it must perform the same FX
+  // conversion itself for a genuine photo-business expense.  A bare number
+  // remains ILS; conversion happens only when the user supplied a currency.
+  var fxInfo = null;
+  try { fxInfo = (typeof parseForeignCurrencyHint === 'function') ? parseForeignCurrencyHint(t) : null; } catch (_bbeFxErr) {}
+  if (fxInfo && fxInfo.autoConverted && fxInfo.ilsAmount > 0) {
+    amount = fxInfo.ilsAmount;
+    // C33 parity (2026-11-03): same column-F text as the live C33 hook (ZZ
+    // wrapper of this function): the description without the currency word,
+    // then "— 24$ (≈70 ₪, שער 2.91)". The fx object also carries the live
+    // {orig, rate, sym} fields (KFL_CANON_SELFTEST8 reads r.fx.orig).
+    var fxSym = (typeof _kfl_currencyDisplay_ === 'function')
+      ? String(_kfl_currencyDisplay_(fxInfo.foreignSymbol)).trim() : '$';
+    var fxDesc = String(cleanedDesc || '')
+      .replace(/(\$|€|£|¥|\b(?:usd|eur|gbp|cad|aud|jpy|chf)\b|דולר\s*קנדי|דולר\s*אוסטרלי|דולרים|דולר|יורו|אירו|פאונד)/gi, ' ')
+      .replace(/\s+-\s+/g, ' ').replace(/^[\s\-–—:]+|[\s\-–—:]+$/g, '').replace(/\s+/g, ' ').trim();
+    cleanedDesc = (fxDesc || sub) + ' — ' + fxInfo.foreignAmount + fxSym +
+      ' (≈' + Math.round(amount) + ' ₪, שער ' + fxInfo.fxRate + ')';
+    fxInfo.orig = fxInfo.foreignAmount; fxInfo.rate = fxInfo.fxRate; fxInfo.sym = fxSym;
+  }
+
+  return { amount: amount, category: 'עסק', subcategory: sub, cleanedDesc: cleanedDesc, isIncome: isIncome, fx: fxInfo || null };
 }
+// C33 parity (2026-11-03): this function already contains the C33 hook
+// (music / ecom markers → null, USD conversion). The live project still carries
+// the same hook as a wrapper in ZZ_KFL_CANON_PATCH.gs, which skips functions
+// flagged __kflC33. Without the flag, deploying this file next to that ZZ would
+// wrap it a second time and convert "24 דולר - עסק vercel" twice (24 → 69.84 → 203).
+_classifyBareBusinessExpense_.__kflC33 = true;
 
 // A char that can be part of a word (digit, Latin, or Hebrew letter).
 function _kflIsWordChar_(ch) { return !!ch && /[0-9A-Za-z֐-׿]/.test(ch); }
@@ -11447,6 +11640,12 @@ function _kfl_bigIndexLookup(text) {
 }
 
 function matchCategorySmart(text, fromPhone) {
+  // C34: special businesses are owner-only. A non-owner sender (tenant,
+  // family member, a tenant's receipt) re-enters with them suspended, so the
+  // matchCategory() call below is covered too.
+  if (typeof _kflSpecialOffForSender_ === 'function' && _kflSpecialOffForSender_(fromPhone)) {
+    return _kflWithoutSpecialBusiness_(function () { return matchCategorySmart(text, fromPhone); });
+  }
   // Step 0: OWNER-PRIORITY personal words (Steven 2026-06-27). A message that
   // mentions "אפולו" (Steven's dog) MUST file under the "אפולו" subcategory no
   // matter what other keywords it carries -- otherwise "רישיון/חיסון/וטרינר" win
@@ -11460,8 +11659,17 @@ function matchCategorySmart(text, fromPhone) {
     }
   } catch (_ownerPriErr) {}
 
+  // Special businesses are deterministic and authoritative.  Run them before
+  // a stale learned-cache entry can send a music/e-commerce expense elsewhere.
+  var specialBusiness = (typeof _kflSpecialBusinessRoute_ === 'function') ? _kflSpecialBusinessRoute_(text) : null;
+  if (specialBusiness) return specialBusiness;
+
+  // C38: the owner's learned sources (steps 1 / 1.5) and the two write-backs
+  // below are skipped for a real non-owner sender (see _kflIsNonOwnerSender_).
+  var __kflOwnerDataOff = (typeof _kflIsNonOwnerSender_ === 'function') && _kflIsNonOwnerSender_(fromPhone);
+
   // Step 1: learned cache (user-corrected categorizations)
-  var cached = _learnedLookup(text);
+  var cached = __kflOwnerDataOff ? null : _learnedLookup(text);
   if (cached) {
     Logger.log('matchCategorySmart: cache hit "' + text + '" → ' + cached.subcategory);
     return cached;
@@ -11470,7 +11678,7 @@ function matchCategorySmart(text, fromPhone) {
   // Step 1.5: Auto Synonyms tab (LLM-expanded synonyms from cronSynonymExpansion).
   // Checked BEFORE static CATEGORY_MAP so newly-learned variations win.
   try {
-    if (typeof _autoSynonymLookup_ === 'function') {
+    if (!__kflOwnerDataOff && typeof _autoSynonymLookup_ === 'function') {
       var synHit = _autoSynonymLookup_(text);
       if (synHit) {
         Logger.log('matchCategorySmart: auto-synonym hit "' + text + '" → ' + synHit.subcategory);
@@ -11497,7 +11705,7 @@ function matchCategorySmart(text, fromPhone) {
       Logger.log('matchCategorySmart: global-learn hit "' + text + '" -> ' + globalHit.subcategory);
       // Cache locally (source 'global', excluded from re-publish) so we never
       // hit the endpoint again for this text within this tenant.
-      try { _learnedSave(text, globalHit, 'global'); } catch (_glErr) {}
+      if (!__kflOwnerDataOff) { try { _learnedSave(text, globalHit, 'global'); } catch (_glErr) {} }
       // fromGlobal drives the "📚 למדתי ממשתמשים אחרים" note (shown once, since
       // the local cache above means the next identical message is a local hit).
       return { category: globalHit.category, subcategory: globalHit.subcategory || globalHit.category, fromGlobal: true };
@@ -11541,7 +11749,7 @@ function matchCategorySmart(text, fromPhone) {
         rich.contract && !rich.contract.should_ask_user && richConf >= 0.6) {
       var ai = { category: rich.category, subcategory: rich.subcategory };
       Logger.log('matchCategorySmart: AI categorized "' + text + '" → ' + ai.subcategory + ' (conf=' + richConf + ')');
-      _learnedSave(text, ai); // remember for next time
+      if (!__kflOwnerDataOff) _learnedSave(text, ai); // remember for next time (never from a non-owner, C38)
       return ai;
     }
     if (rich) {
@@ -12502,6 +12710,24 @@ function _learnedSave(text, result, source) {
   } catch (e) {
     Logger.log('_learnedSave error: ' + e.message);
   }
+}
+
+// C41 (2026-11-03): a category pick made by a NON-OWNER (tenant / client) after a
+// picker is learned only in the shared, hashed cross-user store -- never in the
+// OWNER's learned dictionary sheet (TENANT_ISOLATION_MODEL). Same publish rule as
+// _learnedSave (user-confirmed sources, non-empty category and subcategory). Owner
+// and no-sender calls keep the old behaviour (_learnedSave). An owner-check error
+// fails closed (_kflIsNonOwnerSender_, C38).
+function _kflLearnFromPick_(fromPhone, text, result, source) {
+  if (typeof _kflIsNonOwnerSender_ === 'function' && _kflIsNonOwnerSender_(fromPhone)) {
+    var t = String(text || '').toLowerCase().trim();
+    if (!t || !result || !result.category || !result.subcategory) return;
+    if (source === 'user' || source === 'user-correction' || source === 'user-direct' || source === 'llm-extracted') {
+      try { if (typeof _globalLearnPublish_ === 'function') _globalLearnPublish_(t, result.category, result.subcategory); } catch (_gpErr) {}
+    }
+    return;
+  }
+  return _learnedSave(text, result, source);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -15142,6 +15368,10 @@ function _normalizeSubForDashboard_(subcategory, category, isIncome) {
     .trim();
   if (!raw) return raw;
   var cat = String(category == null ? '' : category).trim();
+
+  // Dedicated business dashboards already use these exact row labels.
+  if (cat === 'עסק מוזיקה' && ['הפצה ומנויים','הפקה וכלים','שיווק מוזיקה','הופעות ונסיעות','ציוד מוזיקה','כללי (מוזיקה)','הכנסות מוזיקה'].indexOf(raw) >= 0) return raw;
+  if (cat === 'הוצאות ecom' && ['דומיין ואתר','פרסום ושיווק','מלאי ומוצרים','משלוחים ולוגיסטיקה','כלים ומנויים','עמלות ותשלומים','כללי (ecom)','הכנסות ecom'].indexOf(raw) >= 0) return raw;
 
   // 0. PERSONAL INCOME GUARD (disappearing-income fix 2026-06-27): income must
   // land on a personal income row, else col H = income + an expense col-E label
@@ -19456,8 +19686,12 @@ function _familyLogExpense_(fromPhone, member, amount, description) {
     return { handled: true, replyText: '😬 סכום לא תקין\n💡 תוודא שכתבת את הסכום בתחילת ההודעה' };
   }
 
+  // C34: the family sheet never uses the owner's special-business routes,
+  // even when the owner is the member logging the expense.
   var matched = (typeof matchCategorySmart === 'function')
-    ? matchCategorySmart(description, fromPhone)
+    ? (typeof _kflWithoutSpecialBusiness_ === 'function'
+        ? _kflWithoutSpecialBusiness_(function () { return matchCategorySmart(description, fromPhone); })
+        : matchCategorySmart(description, fromPhone))
     : { category: 'שונות', subcategory: 'שונות' };
   var category = (matched && matched.category) || 'שונות';
 
