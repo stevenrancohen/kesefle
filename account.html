@@ -387,7 +387,7 @@
                     <div class="font-bold text-emerald-900 dark:text-emerald-200">החיבור הושלם!</div>
                     <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.</div>
                     <div class="mt-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                      <a href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="kesefleLogFirstExpense()" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
+                      <a id="link-first-expense-wa" href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="kesefleLogFirstExpense()" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
                         שלח הוצאה ראשונה →
                       </a>
@@ -754,14 +754,30 @@ function kesefleStartWaitingForMsg() {
 // ============================================================
 // State machine:
 //   input   → user enters phone, clicks "Generate code"
-//   code    → 6-digit code displayed, polls /api/whatsapp/link?phone= every 4s
+//   code    → 6-digit code displayed, polls the signed-in user's verified status
 //   success → confirmed linked, shows confirmation + link to /welcome
 
-var KESEFLE_BOT_NUMBER = '972547760643'; // Meta TEST number (see api/config.js DEFAULT_BOT_NUMBER); overridden by KESEFLE_BOT_NUMBER env / scripts/swap-bot-number.sh at production cutover.
+var KESEFLE_BOT_NUMBER = '972547760643'; // Safe fallback; /api/config is canonical.
 var kflLinkPollTimer = null;
 var kflLinkTtlTimer = null;
 var kflLinkPhone = null;
 var kflLinkCode = null;
+
+// Keep every WhatsApp deep link aligned with the backend configuration. This
+// removes the old split-brain state where the app and the bot used different
+// phone numbers during a Meta number cutover.
+(function loadKesefleBotConfig() {
+  fetch('/api/config', { credentials: 'include', cache: 'no-store' })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(c) {
+      var n = String(c && c.BOT_NUMBER || '').replace(/\D+/g, '');
+      if (!/^\d{7,15}$/.test(n)) return;
+      KESEFLE_BOT_NUMBER = n;
+      var first = document.getElementById('link-first-expense-wa');
+      if (first) first.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent('245 סופר');
+    })
+    .catch(function() {});
+})();
 
 function _kflNormalizeIsraelPhone(input) {
   if (!input) return null;
@@ -771,6 +787,8 @@ function _kflNormalizeIsraelPhone(input) {
   while (s.indexOf('972972') === 0) s = s.slice(3);
   // Common paste case: user pasted full E.164 then typed 0 in front → "0972..." → "972..."
   if (s.indexOf('0972') === 0) s = s.slice(1);
+  // E.164 country code followed by a local trunk zero: "+972 054..." → "97254..."
+  if (s.indexOf('9720') === 0) s = '972' + s.slice(4);
   // 0xx... → 972xx...
   if (s.charAt(0) === '0') s = '972' + s.slice(1);
   // 5x... → 9725x... (user typed without leading 0)
@@ -977,13 +995,13 @@ function _kflStartPolling(phone) {
     var elapsed = Date.now() - startedAt;
     if (elapsed > POLL_MAX_MS) { _kflStopPolling(); var _ws = document.getElementById('link-waiting-status'); if (_ws) _ws.textContent = 'אם שלחת ולא קרה כלום — רענן את הדף או צור קוד חדש.'; return; }
     var nextDelay = elapsed < 30000 ? POLL_FAST_MS : POLL_SLOW_MS;
-    fetch('/api/whatsapp/link?phone=' + encodeURIComponent(phone), { credentials: 'include' })
+    fetch('/api/whatsapp/link?check=1', { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (j && j.ok && j.linked) {
           _kflStopPolling();
           if (kflLinkTtlTimer) { clearInterval(kflLinkTtlTimer); kflLinkTtlTimer = null; }
-          _kflShowLinkSuccess(phone);
+          _kflShowLinkSuccess(j.phone || phone);
           return;
         }
         kflLinkPollTimer = setTimeout(tick, nextDelay);
@@ -1067,12 +1085,28 @@ function kesefleLinkResetState() {
   _kflSetLinkState('input');
 }
 
-// On page load: if the user is already linked, jump straight to success.
+// On page load, trust the server's two-way mapping check. localStorage is only
+// a resilience fallback when the network is unavailable, never the authority.
 (function checkExistingLink() {
-  var phone = localStorage.getItem('kesefle_whatsapp_phone');
-  if (phone) {
-    setTimeout(function() { _kflShowLinkSuccess(phone); }, 600);
-  }
+  setTimeout(function() {
+    fetch('/api/whatsapp/link?check=1', { credentials: 'include' })
+      .then(function(r) { return r.json(); })
+      .then(function(j) {
+        if (j && j.ok && j.linked && j.phone) {
+          _kflShowLinkSuccess(j.phone);
+        } else {
+          try {
+            localStorage.removeItem('kesefle_whatsapp_linked');
+            localStorage.removeItem('kesefle_whatsapp_phone');
+          } catch (_e) {}
+        }
+      })
+      .catch(function() {
+        var cached = null;
+        try { cached = localStorage.getItem('kesefle_whatsapp_phone'); } catch (_e) {}
+        if (cached) _kflShowLinkSuccess(cached);
+      });
+  }, 600);
 })();
 
 // Live-feedback on phone input: auto-strip duplicate +972 country codes as user types/pastes.
@@ -1750,7 +1784,15 @@ function kesefleShowSigninPrompt() {
           try { localStorage.setItem('kesefle_user', JSON.stringify(meJson.user)); } catch (_) {}
           try { localStorage.setItem('kesefle_sheet', JSON.stringify(meJson.sheet)); } catch (_) {}
           var waLinked = false;
-          try { waLinked = localStorage.getItem('kesefle_whatsapp_linked') === '1'; } catch (_) {}
+          try {
+            var linkResp = await fetch('/api/whatsapp/link?check=1', { credentials: 'include' });
+            var linkJson = linkResp.ok ? await linkResp.json() : null;
+            waLinked = !!(linkJson && linkJson.ok && linkJson.linked && linkJson.phone);
+            if (waLinked) {
+              localStorage.setItem('kesefle_whatsapp_linked', '1');
+              localStorage.setItem('kesefle_whatsapp_phone', linkJson.phone);
+            }
+          } catch (_) {}
           if (waLinked) {
             window.location.href = '/dashboard';
             return;
