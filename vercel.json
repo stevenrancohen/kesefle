@@ -62,6 +62,12 @@
       ]
     },
     {
+      "source": "/js/(.*)\\.mjs",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
+      ]
+    },
+    {
       "source": "/sw.js",
       "headers": [
         { "key": "Service-Worker-Allowed", "value": "/" },
