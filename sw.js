@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v15-2026-11-07';
+const VERSION = 'v16-2026-11-07-ui-personas';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -32,6 +32,8 @@ const PRECACHE_URLS = [
   '/app',
   '/app.html',
   '/app.webmanifest',
+  '/expense',
+  '/expense.html',
   '/status',
   '/status.html',
   '/offline.html',
