@@ -30,7 +30,7 @@ const OUT = process.env.KFL_OUT || '';
 // C44: the "only X differs from <pin>" / "byte-identical to <pin>" checks prove this change's
 // minimality at commit time and would fail on any later bot edit, so they run only with
 // KFL_SCOPE_PIN=1. Behaviour, owner isolation, FIXED/DEPLOY parity, fail-closed and mutation
-// checks always run (bot/test_c44_optional_scope_pins.js guards this split).
+// checks always run (bot/proof_c44_optional_scope_pins.js documents this split).
 const SCOPE_PIN = process.env.KFL_SCOPE_PIN === '1';
 const OWNER = '000000000001', TENANT = '000000000002'; // synthetic, not phone numbers
 const DICT_TAB = 'מילון לימוד', SYN_TAB = 'Auto Synonyms';

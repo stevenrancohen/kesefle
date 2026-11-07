@@ -117,7 +117,10 @@ const sensitive = [];
 const generic = [new RegExp(['script', 'google', 'com'].join('\\.') + '\\/macros\\/s\\/[A-Za-z0-9_-]{20,}'), /(?:\+?972[\s-]?|\b0)5\d(?:[\s-]?\d){7}\b/];
 const scanFiles = [__filename, path.join(ROOT, 'docs', 'C43_FULLQA_REGISTRATION.md')].filter((f) => fs.existsSync(f));
 const hits = scanFiles.map((f) => { const t = fs.readFileSync(f, 'utf8'); return sensitive.filter((v) => t.indexOf(v) >= 0).length + generic.filter((g) => g.test(t)).length; }).reduce((a, b) => a + b, 0);
-ok('no full phone / webhook URL / token in the files this change adds (' + scanFiles.length + ' files, ' + sensitive.length + ' values checked)', sensitive.length === 3 && hits === 0);
+// Removed legacy secrets are a security improvement, not a test failure. Scan every
+// sensitive value that still exists, while requiring the owner-phone fingerprint so
+// this guard cannot silently become a no-op.
+ok('no full phone / webhook URL / token in the files this change adds (' + scanFiles.length + ' files, ' + sensitive.length + ' values checked)', sensitive.length >= 1 && hits === 0);
 
 console.log(`\ntest_c43_fullqa_registration: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

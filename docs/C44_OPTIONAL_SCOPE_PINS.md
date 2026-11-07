@@ -52,7 +52,11 @@
 
 **בנוסף:** השוואות ההתנהגות לבסיס (למשל "category זהה לבסיס") נשארו פעילות. שינוי מכוון בהתנהגות של ההודעות שנבדקות יפיל אותן, וזה רצוי.
 
-## בדיקת השמירה — `bot/test_c44_optional_scope_pins.js`
+## בדיקת השמירה — `bot/proof_c44_optional_scope_pins.js`
+
+לאחר האינטגרציה לקובץ הייצור, ההוכחה ההיסטורית שונתה מ-`test_*` ל-`proof_*`.
+היא קשורה ל-SHA המקורי של C44 ומיועדת לביקורת ידנית בלבד; כך ה-gauntlet לא מפעיל
+אוטומטית בדיקה שמוגדר בה במפורש שהיא צפויה להיכשל אחרי commit מוצר מאוחר יותר.
 
 **76 passed, 0 failed**, כ-3:20 דקות. היא לא רשומה ב-full_qa, כי היא מריצה אותו. כשלים ועריכות מוזרקים דרך `NODE_OPTIONS`, בלי לשנות אף קובץ ב-repo.
 
@@ -104,7 +108,7 @@
 | `bot/test_c41_tenant_picker_isolation.js` | **35 passed, 0 failed**. עם הדגל: **41, 0** |
 | `bot/test_c42_tenant_relabel_income.js` | **33 passed, 0 failed**. עם הדגל: **38, 0** |
 | `bot/test_c43_fullqa_registration.js` | **16 passed, 0 failed**. עם `KFL_FULLQA_PROOF=1`: **25, 0** |
-| `bot/test_c44_optional_scope_pins.js` | **76 passed, 0 failed** |
+| `bot/proof_c44_optional_scope_pins.js` | **76 passed, 0 failed** בהרצת ההוכחה המקורית |
 | `bot/test_c33_hooks_integration.js` | **72 passed, 0 failed, 1 xfail** (`"עסק 90$ vercel"`, יציאה 0) |
 | `tests/full_qa.js` | **168/168**, יציאה 0. עם הדגל: **168/168**, יציאה 0 |
 | `tests/test_no_hardcoded_secrets.mjs` | PASS |
