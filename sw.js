@@ -2,7 +2,8 @@
  * Cache strategy:
  *   - kesefle-static-v1   : precached HTML shells + offline fallback
  *   - kesefle-runtime-v1  : runtime cache for fonts, images, CSS
- *   - kesefle-api-v1      : short-lived stale-while-revalidate for /api (non-admin)
+ *   - API responses are network-only: financial and identity data must never
+ *     survive in a shared-device Cache Storage entry.
  *
  * Bypass cache entirely:
  *   - /api/admin/*  (admin endpoints must always hit the network)
@@ -11,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v14-2026-06-17';
+const VERSION = 'v15-2026-11-07';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -167,25 +168,13 @@ self.addEventListener('fetch', (event) => {
     return; // default network handling
   }
 
-  // Same-origin /api/* → network first w/ short stale-while-revalidate
+  // Same-origin /api/* → network only. Never cache personalized financial,
+  // account, phone-link, or configuration responses in Cache Storage.
   if (url.origin === self.location.origin && isApi(url)) {
-    event.respondWith((async () => {
-      try {
-        const resp = await fetch(request);
-        if (resp && resp.ok) {
-          const cache = await caches.open(API_CACHE);
-          cache.put(request, resp.clone()).catch(() => {});
-        }
-        return resp;
-      } catch (_) {
-        const cached = await caches.match(request, { cacheName: API_CACHE });
-        if (cached) return cached;
-        return new Response(JSON.stringify({ error: 'offline', message: 'אין חיבור לאינטרנט' }), {
-          status: 503,
-          headers: { 'content-type': 'application/json; charset=utf-8' }
-        });
-      }
-    })());
+    event.respondWith(fetch(request).catch(() => new Response(
+      JSON.stringify({ error: 'offline', message: 'אין חיבור לאינטרנט' }),
+      { status: 503, headers: { 'content-type': 'application/json; charset=utf-8' } }
+    )));
     return;
   }
 

@@ -216,6 +216,7 @@ function buildLinkHandler(stubs) {
     extractFn(src, 'kvSetNX') + '\n' +
     extractFn(src, 'kvDel') + '\n' +
     extractFn(src, 'normalizeE164') + '\n' +
+    extractFn(src, 'getVerifiedPhoneForUser') + '\n' +
     extractFn(src, 'gen6DigitCode') + '\n' +
     extractFn(src, 'handlerImpl') + '\n' +
     'return handlerImpl;';
@@ -333,6 +334,13 @@ async function happyPath() {
   ok('confirm: phone record carries the canonical sheet id', (world.kvObj('phone:' + PHONE) || {}).spreadsheetId === SHEET);
   ok('confirm: reverse userPhone:<sub> mapping written', (world.kvObj('userPhone:' + SUB) || {}).phone === PHONE);
   ok('confirm: linkCode consumed (single-use)', world.kvObj('linkCode:' + code) === null);
+  // The browser's signed-in status check must verify the reverse and forward
+  // records together and return the canonical phone to this same customer.
+  const statusHandler = buildLinkHandler(makeStubs(world, { sessionSub: SUB }));
+  const statusRes = mkRes();
+  await statusHandler({ method: 'GET', query: { check: '1' }, headers: {}, reqId: 't', socket: {} }, statusRes);
+  ok('status: two-way mapping reports linked for the owning session', statusRes._json && statusRes._json.linked === true);
+  ok('status: returns the canonical verified phone', statusRes._json && statusRes._json.phone === PHONE);
   // Drain microtasks/timers so the un-awaited welcome send completes.
   await new Promise(r => setImmediate(r));
   ok('confirm: welcome WhatsApp sent to the new phone', world.sentWhatsApp.some(m => m.to === PHONE), JSON.stringify(world.sentWhatsApp));

@@ -68,10 +68,10 @@
 
   <main id="view" class="mx-auto max-w-lg px-4 pb-28 pt-20"></main>
 
-  <!-- Floating "log via WhatsApp" -->
-  <a id="waFab" href="https://wa.me/972547766361" target="_blank" rel="noopener"
+  <!-- Always-available in-app entry. WhatsApp remains an optional channel. -->
+  <a id="expenseFab" href="/expense?from=app"
      class="fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/30 active:scale-95">
-    <span>＋</span> רשום הוצאה בוואטסאפ
+    <span>＋</span> הוסף תנועה
   </a>
 
   <!-- Bottom tab nav -->
@@ -111,20 +111,31 @@ function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class
 function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-500">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
 function errState(e){ if(e&&e.isAuth) return signInState(); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
 function bar(label,val,max,tone){ var pct=max>0?Math.round(val/max*100):0; var c=tone||'bg-brand-500'; return '<div class="py-2"><div class="flex items-center justify-between text-sm"><span class="truncate">'+esc(label)+'</span><span class="font-semibold tabular-nums">'+money(val)+'</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full '+c+'" style="width:'+Math.max(3,pct)+'%"></div></div></div>'; }
-var WA_LINK='https://wa.me/972547766361';
+// Runtime config is the single source of truth. The fallback is the currently
+// deployed number, but /api/config can switch every app surface at cutover.
+var WA_LINK='https://wa.me/972547760643';
+async function loadAppConfig(){
+  try{
+    var c=await apiGet('/api/config');
+    var n=String(c&&c.BOT_NUMBER||'').replace(/\D+/g,'');
+    if(/^\d{7,15}$/.test(n)) WA_LINK='https://wa.me/'+n;
+  }catch(_e){}
+}
 function onbStep(n,t){ return '<div class="flex items-center gap-3"><span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white">'+n+'</span><span class="text-sm">'+t+'</span></div>'; }
-// First-run / empty-month nudge: drives the first WhatsApp expense (the activation moment).
+// First-run / empty-month nudge: the web form works even while WhatsApp is
+// pending, so every customer can reach the activation moment immediately.
 function onboardingCard(){
   return '<div class="card p-6 text-center">'+
     '<div class="text-3xl">👋</div>'+
     '<div class="mt-2 font-display text-xl font-black">מתחילים לעקוב אחרי הכסף</div>'+
-    '<div class="mt-1 text-sm text-ink-500">שלח/י הוצאה אחת בוואטסאפ — והיא תופיע כאן מיד.</div>'+
+    '<div class="mt-1 text-sm text-ink-500">הוסף/י תנועה אחת — והיא תופיע כאן מיד.</div>'+
     '<div class="mt-5 space-y-3 text-right">'+
-      onbStep('1','פתח/י את הבוט בוואטסאפ')+
-      onbStep('2','כתוב/י הוצאה — לדוגמה: <span class="font-bold text-ink-700 dark:text-ink-200">קפה 15</span>')+
+      onbStep('1','פתח/י את טופס ההוספה המהיר')+
+      onbStep('2','הזן/י סכום ופירוט — לדוגמה: <span class="font-bold text-ink-700 dark:text-ink-200">קפה 15</span>')+
       onbStep('3','חזור/י לכאן — היא תופיע אוטומטית')+
     '</div>'+
-    '<a href="'+WA_LINK+'?text='+encodeURIComponent('היי')+'" target="_blank" rel="noopener" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">פתיחת הבוט בוואטסאפ ←</a>'+
+    '<a href="/expense?from=app-onboarding" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">הוספת תנועה ראשונה ←</a>'+
+    '<a href="'+WA_LINK+'?text='+encodeURIComponent('היי')+'" target="_blank" rel="noopener" class="mt-3 inline-flex text-xs font-semibold text-brand-600">מעדיפ/ה WhatsApp? פתיחת הבוט ←</a>'+
   '</div>';
 }
 
@@ -326,8 +337,11 @@ async function renderInsights(view){
 function isStandalone(){ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true; }
 function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent||'') && !window.MSStream; }
 async function renderAccount(view){
-  var d;
+  var d, link={ok:true,linked:false};
   try { d=await apiGet('/api/me'); } catch(e){ view.innerHTML=errState(e); return; }
+  // Phone status is useful but non-critical; a transient rate-limit/network
+  // error must not blank the entire account screen.
+  try { link=await apiGet('/api/whatsapp/link?check=1')||link; } catch(_e){}
   if(!d||!d.ok||!d.user){ view.innerHTML=errState(AuthError()); return; }
   var u=d.user||{}, sheet=d.sheet||null;
   var initials=(u.name||u.email||'?').trim().charAt(0).toUpperCase();
@@ -338,7 +352,8 @@ async function renderAccount(view){
   function rowLink(href,icon,label,sub,ext){ return '<a href="'+esc(href)+'"'+(ext?' target="_blank" rel="noopener"':'')+' class="flex items-center gap-3 px-4 py-3.5"><span class="grid h-9 w-9 place-items-center rounded-xl bg-ink-50 dark:bg-ink-800 text-base">'+icon+'</span><span class="flex-1"><span class="block text-sm font-medium">'+esc(label)+'</span>'+(sub?'<span class="block text-[11px] text-ink-500">'+esc(sub)+'</span>':'')+'</span><span class="text-ink-300">‹</span></a>'; }
   var links='<div class="card mt-4 divide-y divide-ink-100 dark:divide-ink-800">'+
     (sheet&&sheet.spreadsheetUrl?rowLink(sheet.spreadsheetUrl,'📊','הגיליון שלי','פתח/י את הגיליון ב-Google Sheets',true):rowLink('/account','📊','הגדרת גיליון','חבר/י את הגיליון שלך'))+
-    rowLink('https://wa.me/972547766361','💬','הבוט בוואטסאפ','רשום/י הוצאה או בקש/י סיכום',true)+
+    (link.linked?rowLink(WA_LINK,'✅','WhatsApp מחובר','המספר המאומת: +'+String(link.phone||''),true):rowLink('/account#step-3','📱','חיבור WhatsApp','אמת/י את המספר ללא SMS בתשלום'))+
+    rowLink(WA_LINK,'💬','הבוט בוואטסאפ','רשום/י הוצאה או בקש/י סיכום',true)+
     rowLink('/account','⚙','הגדרות חשבון','תוכנית, קטגוריות, פרטיות')+
     rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
   '</div>';
@@ -382,7 +397,7 @@ async function kflLogout(){
 function applyTheme(t){ document.documentElement.classList.toggle('dark', t==='dark'); var m=document.querySelector('meta[name=theme-color]'); if(m) m.content=(t==='dark'?'#070b16':'#2563eb'); }
 function toggleTheme(){ var t=document.documentElement.classList.contains('dark')?'light':'dark'; localStorage.setItem('kfl_app_theme',t); applyTheme(t); }
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__kflDeferredPrompt=e; var ib=$('#installBtn'); if(ib){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ e.prompt(); await e.userChoice; }catch(_){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; } });
-(function(){
+(async function(){
   applyTheme(localStorage.getItem('kfl_app_theme') || ((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
   try { var u=JSON.parse(localStorage.getItem('kesefle_user')||'{}'); if(u&&(u.name||u.email)) $('#whoami').textContent=u.name||u.email; } catch(e){}
   buildTabs();
@@ -390,6 +405,7 @@ window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); 
   $('#refreshBtn').onclick=function(){ route(true); };
   window.addEventListener('hashchange', function(){ route(); });
   if(!location.hash) location.hash='#/';
+  await loadAppConfig();
   route();
   if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('/sw.js'); } catch(e){} }
   // Pull-to-refresh: only when scrolled to the very top; passive listeners so it

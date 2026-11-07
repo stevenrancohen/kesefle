@@ -148,6 +148,26 @@ function normalizeE164(input) {
   return s;
 }
 
+// The permanent phone index and its reverse index must agree. Reading only a
+// legacy field on user:<sub> made returning customers look unlinked even after
+// a successful confirmation, while trusting only userPhone:<sub> could accept
+// a stale mapping. Verify both directions before reporting a connection.
+async function getVerifiedPhoneForUser(userSub) {
+  if (!userSub) return { linked: false, phone: null };
+  const reverse = await kvGet(`userPhone:${userSub}`);
+  let candidate = normalizeE164(reverse?.phone);
+  if (!candidate) {
+    const legacy = await kvGet(`user:${userSub}`);
+    candidate = normalizeE164(legacy?.linkedPhone || legacy?.phone);
+  }
+  if (!candidate) return { linked: false, phone: null };
+  const forward = await kvGet(`phone:${candidate}`);
+  if (!forward || forward.userSub !== userSub) {
+    return { linked: false, phone: null, reason: 'mapping_mismatch' };
+  }
+  return { linked: true, phone: candidate };
+}
+
 
 // Cryptographically-safe, UNBIASED 6-digit code (100000-999999).
 // The old `100000 + (buf[0] % 900000)` form is biased because 2^32 is not
@@ -245,9 +265,8 @@ async function handlerImpl(req, res) {
       const sessSub = getUserId(req);
       if (!sessSub) return res.status(200).json({ ok: true, linked: false });
       try {
-        const userRec = await kvGet(`user:${sessSub}`);
-        const phoneFromUser = userRec?.linkedPhone || userRec?.phone || null;
-        return res.status(200).json({ ok: true, linked: !!phoneFromUser, phone: phoneFromUser || null });
+        const status = await getVerifiedPhoneForUser(sessSub);
+        return res.status(200).json({ ok: true, linked: status.linked, phone: status.phone });
       } catch (_e) {
         return res.status(200).json({ ok: true, linked: false });
       }
@@ -272,8 +291,11 @@ async function handlerImpl(req, res) {
     if (!rec) return res.status(200).json({ ok: true, linked: false });
 
     if (!isBotCaller) {
-      // Anonymous (browser polling) -- minimal response, no billing leak.
-      return res.status(200).json({ ok: true, linked: true });
+      // Browser polling is account-bound: a phone linked to somebody else must
+      // never make this session show a false success. Anonymous callers learn
+      // nothing about whether a number belongs to a Kesefle customer.
+      const sessSub = getUserId(req);
+      return res.status(200).json({ ok: true, linked: !!sessSub && rec.userSub === sessSub });
     }
 
     // Bot path: full record incl. effective plan from the canonical user
@@ -437,8 +459,8 @@ async function handlerImpl(req, res) {
   }
 
   // Already linked? Tell the user so they don't generate a new code unnecessarily.
-  const existing = await kvGet(`userPhone:${userSub}`);
-  if (existing && existing.phone === phone) {
+  const existing = await getVerifiedPhoneForUser(userSub);
+  if (existing.linked && existing.phone === phone) {
     return res.status(200).json({ ok: true, alreadyLinked: true, phone });
   }
 
