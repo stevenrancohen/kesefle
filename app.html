@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
 <title>כספ'לה — האפליקציה</title>
-<meta name="theme-color" content="#102a43" />
+<meta name="theme-color" content="#090a0d" />
 <link rel="manifest" href="/app.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -21,49 +21,65 @@
     theme: { extend: {
       fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'], display: ['Rubik', 'Heebo', 'sans-serif'] },
       colors: {
-        ink:    { 50:'#f5f7fa',100:'#e9eef4',200:'#d6e0ea',300:'#aebdca',400:'#7d91a5',500:'#5b7083',600:'#415668',700:'#2b3f50',800:'#1b2d3c',900:'#102331',950:'#091722' },
-        brand:  { 50:'#ecfdf8',100:'#d1faee',200:'#a7f3dc',300:'#6ee7c7',400:'#34d3aa',500:'#10b98f',600:'#079879',700:'#087962',800:'#0a604f',900:'#0b4f43' },
-        accent: { 500:'#f6b94b',600:'#e9a631' },
+        ink:    { 50:'#f7f7f5',100:'#ececea',200:'#d7d8d5',300:'#b4b6b4',400:'#8c9093',500:'#696e73',600:'#50555b',700:'#363a40',800:'#202329',900:'#14161b',950:'#090a0d' },
+        brand:  { 50:'#fffbea',100:'#fff3c4',200:'#ffe676',300:'#fddd48',400:'#f8cb23',500:'#e7b20a',600:'#b98700',700:'#8a6200',800:'#5c4100',900:'#3d2b00' },
+        accent: { 400:'#5b86ff',500:'#3f6ff5',600:'#2b56d9' },
       },
     } },
   };
 </script>
 <style>
-  body { font-family:'Heebo',system-ui,sans-serif; background:radial-gradient(circle at 80% -10%,rgba(16,185,143,.13),transparent 34%),#f5f7fa; -webkit-tap-highlight-color:transparent; }
-  html.dark body { background:radial-gradient(circle at 80% -10%,rgba(16,185,143,.13),transparent 32%),#091722; }
+  body { font-family:'Heebo',system-ui,sans-serif; background:radial-gradient(circle at 12% -8%,rgba(63,111,245,.10),transparent 29%),radial-gradient(circle at 88% 0%,rgba(253,221,72,.10),transparent 26%),#f7f7f5; -webkit-tap-highlight-color:transparent; }
+  html.dark body { background:radial-gradient(circle at 12% -8%,rgba(63,111,245,.15),transparent 28%),radial-gradient(circle at 88% 0%,rgba(253,221,72,.09),transparent 24%),#090a0d; }
   .font-display { font-family:'Rubik','Heebo',sans-serif; letter-spacing:-0.02em; }
-  .card { background:rgba(255,255,255,.97); border:1px solid #e9eef4; border-radius:1.375rem; box-shadow:0 18px 45px rgba(16,35,49,.07); }
-  html.dark .card { background:rgba(16,35,49,.96); border-color:#1b3b4c; box-shadow:0 18px 45px rgba(0,0,0,.18); }
+  .card { background:rgba(255,255,255,.97); border:1px solid #dedfdd; border-radius:1.5rem; box-shadow:0 18px 55px rgba(9,10,13,.08); }
+  html.dark .card { background:linear-gradient(145deg,rgba(23,25,31,.98),rgba(14,15,19,.98)); border-color:#30333b; box-shadow:0 22px 60px rgba(0,0,0,.32); }
   .tab { color:#8a95b3; }
-  .tab.active { color:#079879; }
-  html.dark .tab.active { color:#6ee7c7; }
+  .tab.active { color:#8a6200; }
+  html.dark .tab.active { color:#fddd48; }
   button, a, input, select { min-height:44px; }
   .space-pill { color:#5b7083; border:1px solid transparent; transition:.18s ease; }
-  .space-pill.active { color:#087962; background:#d1faee; border-color:#a7f3dc; box-shadow:0 5px 18px rgba(16,185,143,.12); }
-  html.dark .space-pill.active { color:#a7f3dc; background:rgba(8,121,98,.28); border-color:rgba(52,211,170,.3); }
-  .hero-card { position:relative; overflow:hidden; color:#fff; background:linear-gradient(145deg,#102a43 0%,#0a604f 58%,#10b98f 125%); border:0; box-shadow:0 24px 55px rgba(10,96,79,.24); }
-  .hero-card:after { content:''; position:absolute; left:-55px; top:-70px; width:190px; height:190px; border-radius:999px; background:rgba(255,255,255,.08); }
+  .space-pill.active { color:#5c4100; background:#fff3c4; border-color:#fddd48; box-shadow:0 5px 18px rgba(231,178,10,.14); }
+  html.dark .space-pill.active { color:#fff; background:#202329; border-color:#fddd48; box-shadow:inset 0 0 0 1px rgba(253,221,72,.12),0 8px 24px rgba(0,0,0,.3); }
+  .hero-card { position:relative; overflow:hidden; color:#fff; background:radial-gradient(circle at 15% 15%,rgba(63,111,245,.20),transparent 33%),radial-gradient(circle at 88% 88%,rgba(255,74,67,.15),transparent 38%),linear-gradient(145deg,#191b21 0%,#0d0e12 72%); border:1px solid #343741; box-shadow:0 28px 70px rgba(0,0,0,.32); }
+  .hero-card:before { content:''; position:absolute; inset:0 0 auto; height:4px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+  .hero-card:after { content:''; position:absolute; left:-70px; top:-85px; width:220px; height:220px; border-radius:999px; border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.025); }
   .hero-card > * { position:relative; z-index:1; }
+  .next-card { position:relative; overflow:hidden; }
+  .next-card:before { content:''; position:absolute; inset:0 auto 0 0; width:4px; background:#fddd48; }
+  html.dark .next-card { background:linear-gradient(120deg,#171920,#111318); }
+  .eyebrow { color:#8a6200; font-size:11px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+  html.dark .eyebrow { color:#fddd48; }
   .metric { background:rgba(245,247,250,.82); border:1px solid #e9eef4; border-radius:1rem; }
-  html.dark .metric { background:rgba(9,23,34,.58); border-color:#1b3b4c; }
+  html.dark .metric { background:#111318; border-color:#30333b; }
   .progress { height:8px; border-radius:999px; overflow:hidden; background:#e9eef4; }
-  .progress > i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#079879,#34d3aa); }
-  html.dark .progress { background:#1b3b4c; }
+  .progress > i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#fddd48,#f8cb23); }
+  html.dark .progress { background:#282b32; }
   .skel { background:linear-gradient(90deg,#eef0f6 25%,#dde1ec 37%,#eef0f6 63%); background-size:400% 100%; animation:sk 1.3s ease infinite; border-radius:.5rem; }
   html.dark .skel { background:linear-gradient(90deg,#1e2638 25%,#2f3b54 37%,#1e2638 63%); background-size:400% 100%; }
   @keyframes sk { 0%{background-position:100% 50%} 100%{background-position:0 50%} }
   .safe-top { padding-top:env(safe-area-inset-top); }
   .safe-bottom { padding-bottom:env(safe-area-inset-bottom); }
-  *:focus-visible { outline:3px solid rgba(16,185,143,.45); outline-offset:2px; border-radius:10px; }
+  *:focus-visible { outline:3px solid rgba(253,221,72,.58); outline-offset:2px; border-radius:10px; }
   main::-webkit-scrollbar { display:none; }
   .kfl-spin { animation:kfl-rot .8s linear infinite; }
   @keyframes kfl-rot { to { transform:rotate(360deg); } }
-  #ptrInd > div { background:#0a604f; }
+  #ptrInd > div { background:#fddd48; color:#090a0d!important; }
+  .promo-strip { background:#050506; color:#d7d8d5; border-bottom:1px solid #23252b; }
+  .promo-strip a { color:#fddd48; }
+  .spectrum { height:3px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+  html.dark .bg-brand-700 { background-color:#fddd48!important; color:#090a0d!important; }
+  html.dark .text-brand-700 { color:#fddd48!important; }
+  html.dark .border-brand-300 { border-color:#fddd48!important; }
+  html.dark .bg-brand-50 { background-color:rgba(253,221,72,.10)!important; }
+  html.dark .bg-brand-900\/20 { background-color:rgba(253,221,72,.08)!important; }
+  html.dark input, html.dark select { color:#f7f7f5; }
+  html.dark input::placeholder { color:#696e73; }
   @media (min-width:900px) {
     .desktop-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(320px,.75fr); gap:18px; align-items:start; }
-    .desktop-sticky { position:sticky; top:148px; }
+    .desktop-sticky { position:sticky; top:176px; }
     #view { padding-bottom:60px; }
-    nav.bottom-nav { left:50%; right:auto; bottom:22px; width:min(520px,calc(100% - 32px)); transform:translateX(-50%); border:1px solid #e9eef4; border-radius:22px; box-shadow:0 18px 45px rgba(16,35,49,.16); overflow:hidden; }
+    nav.bottom-nav { left:50%; right:auto; bottom:22px; width:min(520px,calc(100% - 32px)); transform:translateX(-50%); border:1px solid #30333b; border-radius:22px; box-shadow:0 18px 45px rgba(0,0,0,.34); overflow:hidden; }
     #expenseFab { bottom:88px; }
   }
   @media (prefers-reduced-motion: reduce) { .kfl-spin{animation:none;} .skel{animation:none;} }
@@ -73,26 +89,31 @@
 
   <!-- Top app bar -->
   <header class="safe-top fixed inset-x-0 top-0 z-30 border-b border-ink-100 dark:border-ink-800 bg-white/90 dark:bg-ink-950/90 backdrop-blur">
+    <div class="promo-strip flex min-h-[30px] items-center justify-center gap-3 px-4 text-[11px] font-bold">
+      <span>כל הכסף שלך. תמונה אחת ברורה.</span>
+      <a href="#/insights" class="underline decoration-brand-300/50 underline-offset-4">לתובנות של היום</a>
+    </div>
     <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
-      <a href="#/" aria-label="כספלה — בית" class="grid h-10 w-10 place-items-center rounded-2xl bg-brand-700 font-display text-lg font-black text-white shadow-lg shadow-brand-800/20">כ</a>
+      <a href="#/" aria-label="כספלה — בית" class="grid h-11 w-11 place-items-center rounded-xl bg-brand-300 font-display text-lg font-black text-ink-950 shadow-lg shadow-brand-500/20">כ</a>
       <div class="flex-1">
         <div class="font-display text-lg font-black leading-none">כספ'לה</div>
         <div id="whoami" class="text-[11px] text-ink-500">האפליקציה שלך</div>
       </div>
       <span id="syncTime" class="self-center text-[10px] tabular-nums text-ink-500"></span>
-      <button id="refreshBtn" aria-label="רענון נתונים" class="grid h-10 w-10 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">⟳</button>
-      <button id="themeBtn" aria-label="מצב כהה או בהיר" class="grid h-10 w-10 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">◐</button>
+      <button id="refreshBtn" aria-label="רענון נתונים" class="grid h-11 w-11 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">⟳</button>
+      <button id="themeBtn" aria-label="מצב כהה או בהיר" class="grid h-11 w-11 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">◐</button>
     </div>
     <div class="mx-auto max-w-6xl px-4 pb-2.5 sm:px-6">
-      <div id="spaceSwitcher" aria-label="בחירת מרחב כספי" class="grid grid-cols-3 rounded-2xl bg-ink-50 p-1 dark:bg-ink-900">
+      <div id="spaceSwitcher" aria-label="בחירת מרחב כספי" class="grid grid-cols-3 rounded-2xl bg-ink-50 p-1 dark:bg-[#111318]">
         <button data-space="personal" class="space-pill rounded-xl px-2 py-1.5 text-xs font-bold">אישי</button>
         <button data-space="household" class="space-pill rounded-xl px-2 py-1.5 text-xs font-bold">זוגי / משפחתי</button>
         <button data-space="business" class="space-pill rounded-xl px-2 py-1.5 text-xs font-bold">עסק</button>
       </div>
     </div>
+    <div class="spectrum" aria-hidden="true"></div>
   </header>
 
-  <main id="view" class="mx-auto max-w-6xl px-4 pb-28 pt-36 sm:px-6"></main>
+  <main id="view" class="mx-auto max-w-6xl px-4 pb-28 pt-44 sm:px-6"></main>
 
   <!-- Always-available in-app entry. WhatsApp remains an optional channel. -->
   <a id="expenseFab" href="/expense?from=app"
@@ -101,7 +122,7 @@
   </a>
 
   <!-- Bottom tab nav -->
-  <nav aria-label="ניווט ראשי" class="bottom-nav safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 dark:border-ink-800 bg-white/95 dark:bg-ink-950/95 backdrop-blur">
+  <nav aria-label="ניווט ראשי" class="bottom-nav safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 dark:border-[#30333b] bg-white/95 dark:bg-[#111318]/95 backdrop-blur">
     <div id="tabs" class="mx-auto grid max-w-lg grid-cols-4"></div>
   </nav>
 
@@ -132,6 +153,7 @@ function num(n){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleSt
 function agoDays(d){ if(!d) return ''; var x=new Date(d); if(isNaN(x.getTime())) return ''; var diff=Math.round((Date.now()-x.getTime())/86400000); if(diff<0) return x.toLocaleDateString('he-IL',{day:'numeric',month:'short'}); if(diff===0) return 'היום'; if(diff===1) return 'אתמול'; if(diff<7) return 'לפני '+diff+' ימים'; return x.toLocaleDateString('he-IL',{day:'numeric',month:'short'}); }
 var HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 function thisMonthLabel(){ var d=new Date(); return HEB_MONTHS[d.getMonth()]+' '+d.getFullYear(); }
+function daysLeftInMonth(){ var d=new Date(); return Math.max(0,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-d.getDate()); }
 function loadingHero(){ return '<div class="card p-5"><div class="skel h-3 w-24"></div><div class="skel mt-3 h-9 w-40"></div><div class="mt-5 grid grid-cols-2 gap-3"><div class="skel h-14"></div><div class="skel h-14"></div></div></div><div class="skel mt-4 h-40 w-full rounded-2xl"></div>'; }
 function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class="text-3xl">∅</div><div class="mt-2 text-sm font-semibold">'+esc(t||'אין נתונים עדיין')+'</div>'+(sub?'<div class="mt-1 text-xs text-ink-500">'+esc(sub)+'</div>':'')+'</div>'; }
 function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-500">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
@@ -264,11 +286,11 @@ async function renderHome(view){
   var net=total.income-total.expense;
   var title=space==='household'?(APP.group&&APP.group.name||'הבית שלנו'):space==='business'?(APP.onboarding.companyName||'העסק שלי'):'הכסף שלי';
   var hero='<section class="card hero-card p-5 sm:p-7">'+
-    '<div class="flex items-start justify-between gap-4"><div><div class="text-xs font-bold text-white/70">'+esc(title)+' · '+thisMonthLabel()+'</div><h1 class="mt-2 font-display text-2xl font-black sm:text-3xl">'+(space==='business'?'תזרים החודש':space==='household'?'התמונה המשותפת':'מה מצב הכסף?')+'</h1></div><span class="rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold">'+esc(currentPersona().short)+'</span></div>'+
-    '<div class="mt-5 font-display text-4xl font-black tabular-nums sm:text-5xl">'+money(net)+'</div><div class="mt-1 text-xs text-white/70">הכנסות פחות הוצאות שנרשמו</div>'+
+    '<div class="flex items-start justify-between gap-4"><div><div class="text-xs font-bold text-brand-300">'+esc(title)+' · '+thisMonthLabel()+'</div><h1 class="mt-2 font-display text-2xl font-black sm:text-4xl">'+(space==='business'?'תזרים החודש':space==='household'?'התמונה המשותפת':'מה מצב הכסף?')+'</h1></div><div class="flex flex-col items-end gap-2"><span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold">'+esc(currentPersona().short)+'</span><span class="text-[10px] text-white/55">עוד '+num(daysLeftInMonth())+' ימים בחודש</span></div></div>'+
+    '<div class="mt-6 font-display text-5xl font-black tabular-nums sm:text-7xl">'+money(net)+'</div><div class="mt-1 text-xs text-white/60">הכנסות פחות הוצאות שנרשמו</div>'+
     '<div class="mt-6 grid grid-cols-3 gap-2"><div class="rounded-2xl bg-white/10 p-3"><div class="text-[10px] text-white/65">הכנסות</div><div class="mt-1 text-base font-black">'+money(total.income)+'</div></div><div class="rounded-2xl bg-white/10 p-3"><div class="text-[10px] text-white/65">הוצאות</div><div class="mt-1 text-base font-black">'+money(total.expense)+'</div></div><div class="rounded-2xl bg-white/10 p-3"><div class="text-[10px] text-white/65">תנועות</div><div class="mt-1 text-base font-black">'+num(total.count)+'</div></div></div></section>';
   var move=nextMove(total,rows);
-  var action='<section class="card mt-4 p-5"><div class="text-[11px] font-black uppercase tracking-wider text-brand-700">הצעד הבא שלך</div><h2 class="mt-1 font-display text-lg font-black">'+esc(move.title)+'</h2><p class="mt-1 text-sm leading-6 text-ink-500">'+esc(move.text)+'</p><a href="'+esc(move.href)+'" '+(move.href.indexOf('http')===0?'target="_blank" rel="noopener"':'')+' class="mt-3 inline-flex items-center text-sm font-black text-brand-700">'+esc(move.cta)+' ‹</a></section>';
+  var action='<section class="card next-card mt-4 p-5"><div class="eyebrow">הצעד הבא שלך</div><h2 class="mt-1 font-display text-xl font-black">'+esc(move.title)+'</h2><p class="mt-1 text-sm leading-6 text-ink-500 dark:text-ink-300">'+esc(move.text)+'</p><a href="'+esc(move.href)+'" '+(move.href.indexOf('http')===0?'target="_blank" rel="noopener"':'')+' class="mt-3 inline-flex items-center rounded-full bg-brand-700 px-4 py-2 text-sm font-black text-white">'+esc(move.cta)+' ‹</a></section>';
   var tc=calcCategories(rows), maxC=tc.length?tc[0].total:0;
   var cats=tc.length?'<section class="card mt-4 p-5"><div class="flex items-center justify-between"><h2 class="font-display text-lg font-black">לאן הכסף הלך</h2><a href="#/insights" class="text-xs font-bold text-brand-700">פירוט מלא</a></div><div class="mt-2">'+tc.slice(0,5).map(function(c){return bar(c.name,c.total,maxC);}).join('')+'</div></section>':'';
   var side=space==='household'?familyHomeCard(rows):space==='business'?businessHomeCard(total):personalHomeCard(total);
@@ -286,15 +308,15 @@ function nextMove(total,rows){
 function personalHomeCard(total){
   var title=APP.prefs.persona==='employee'?'המשכורת עובדת בשבילך':'שקט כלכלי, צעד אחר צעד';
   var copy=total.income?'אחרי ההוצאות נותרו '+money(total.income-total.expense)+' החודש. עקביות חשובה יותר משלמות.':'כשתתווסף הכנסה, נוכל להראות כמה באמת פנוי אחרי ההוצאות.';
-  return '<section class="card p-5"><div class="text-[11px] font-bold text-brand-700">המבט האישי</div><h2 class="mt-1 font-display text-lg font-black">'+esc(title)+'</h2><p class="mt-3 text-sm leading-6 text-ink-500">'+esc(copy)+'</p></section>';
+  return '<section class="card p-5"><div class="eyebrow">המבט האישי</div><h2 class="mt-1 font-display text-xl font-black">'+esc(title)+'</h2><p class="mt-3 text-sm leading-6 text-ink-500 dark:text-ink-300">'+esc(copy)+'</p></section>';
 }
 function familyHomeCard(rows){
   var ms=calcMembers(rows), count=APP.group?APP.group.memberCount:ms.length;
   var body=ms.length?ms.slice(0,4).map(function(m){return '<div class="flex items-center justify-between border-t border-ink-100 py-3 first:border-0 dark:border-ink-800"><div class="flex items-center gap-2"><span class="grid h-8 w-8 place-items-center rounded-full bg-brand-50 text-xs font-black text-brand-700">'+esc(m.name.charAt(0))+'</span><span class="text-sm font-bold">'+esc(m.name)+'</span></div><span class="text-sm font-black">'+money(m.total)+'</span></div>';}).join(''):'<p class="mt-3 text-sm leading-6 text-ink-500">כשכל בן או בת בית רושמים מהטלפון שלהם, כאן תופיע חלוקה ברורה לפי שם.</p>';
-  return '<section class="card p-5"><div class="flex items-center justify-between"><div><div class="text-[11px] font-bold text-brand-700">המרחב המשותף</div><h2 class="font-display text-lg font-black">'+esc(APP.group&&APP.group.name||'הבית שלנו')+'</h2></div><span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">'+num(count||0)+' חברים</span></div><div class="mt-3">'+body+'</div>'+(APP.group?'':'<a href="'+WA_LINK+'?text='+encodeURIComponent('כספלה צור משפחה')+'" target="_blank" rel="noopener" class="mt-3 inline-flex text-sm font-black text-brand-700">יצירת בית משותף ‹</a>')+'</section>';
+  return '<section class="card p-5"><div class="flex items-center justify-between"><div><div class="eyebrow">המרחב המשותף</div><h2 class="font-display text-xl font-black">'+esc(APP.group&&APP.group.name||'הבית שלנו')+'</h2></div><span class="rounded-full border border-brand-300/40 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">'+num(count||0)+' חברים</span></div><div class="mt-3">'+body+'</div>'+(APP.group?'':'<a href="'+WA_LINK+'?text='+encodeURIComponent('כספלה צור משפחה')+'" target="_blank" rel="noopener" class="mt-3 inline-flex text-sm font-black text-brand-700">יצירת בית משותף ‹</a>')+'</section>';
 }
 function businessHomeCard(total){
-  return '<section class="card p-5"><div class="text-[11px] font-bold text-brand-700">מבט עסקי</div><h2 class="mt-1 font-display text-lg font-black">רווח תזרימי '+money(total.income-total.expense)+'</h2><div class="mt-4 grid grid-cols-2 gap-2"><a href="/tax-report" class="metric p-3"><span class="block text-xs font-black">דוח מס ומע״מ</span><span class="mt-1 block text-[11px] text-ink-500">ריכוז שנתי</span></a><a href="/expense?from=business-card&space=business" class="metric p-3"><span class="block text-xs font-black">הוצאה עסקית</span><span class="mt-1 block text-[11px] text-ink-500">קליטה מהירה</span></a></div><p class="mt-3 text-[11px] leading-5 text-ink-500">הסכום מבוסס על התנועות שסווגו כעסקיות, ואינו תחליף לדוח חשבונאי.</p></section>';
+  return '<section class="card p-5"><div class="eyebrow">מבט עסקי</div><h2 class="mt-1 font-display text-xl font-black">רווח תזרימי '+money(total.income-total.expense)+'</h2><div class="mt-4 grid grid-cols-2 gap-2"><a href="/tax-report" class="metric p-3"><span class="block text-xs font-black">דוח מס ומע״מ</span><span class="mt-1 block text-[11px] text-ink-500">ריכוז שנתי</span></a><a href="/expense?from=business-card&space=business" class="metric p-3"><span class="block text-xs font-black">הוצאה עסקית</span><span class="mt-1 block text-[11px] text-ink-500">קליטה מהירה</span></a></div><p class="mt-3 text-[11px] leading-5 text-ink-500">הסכום מבוסס על התנועות שסווגו כעסקיות, ואינו תחליף לדוח חשבונאי.</p></section>';
 }
 function txRow(t){
   var income=!!t.is_income; var amt=Number(t.amount)||0; var member=String(t.member||'').trim(); if(/^(true|false|0|1)$/i.test(member))member='';
@@ -307,7 +329,7 @@ function txRow(t){
 
 // ───────── TRANSACTIONS (full history from getExpenses + search + month groups) ─────────
 async function renderTx(view){
-  view.innerHTML='<div class="mb-3 flex items-end justify-between"><div><div class="text-xs font-bold text-brand-700">'+esc(SPACE_LABELS[activeSpace()])+'</div><h1 class="font-display text-3xl font-black">כל התנועות</h1></div><div id="txCount" class="text-xs text-ink-500"></div></div>'+
+  view.innerHTML='<div class="mb-3 flex items-end justify-between"><div><div class="eyebrow">'+esc(SPACE_LABELS[activeSpace()])+'</div><h1 class="font-display text-4xl font-black">כל התנועות</h1></div><div id="txCount" class="text-xs text-ink-500"></div></div>'+
     '<input id="txSearch" type="search" inputmode="search" aria-label="חיפוש תנועות" placeholder="חיפוש לפי תיאור או קטגוריה…" class="mb-1 w-full rounded-2xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500/40" />'+
     '<div id="txList" class="mt-2">'+loadingHero()+'</div>';
   var d;
@@ -336,7 +358,7 @@ async function renderTx(view){
 
 // ───────── INSIGHTS ─────────
 async function renderInsights(view){
-  var head='<div class="mb-5"><div class="text-xs font-bold text-brand-700">'+esc(SPACE_LABELS[activeSpace()])+'</div><h1 class="font-display text-3xl font-black">תובנות שעוזרות להחליט</h1><div class="mt-1 text-xs text-ink-500">'+thisMonthLabel()+'</div></div>';
+  var head='<div class="mb-5"><div class="eyebrow">'+esc(SPACE_LABELS[activeSpace()])+'</div><h1 class="font-display text-4xl font-black">תובנות שעוזרות להחליט</h1><div class="mt-1 text-xs text-ink-500">'+thisMonthLabel()+'</div></div>';
   view.innerHTML=head+loadingHero();
   var d, ex, bg;
   try {
@@ -450,7 +472,7 @@ async function renderInsights(view){
 function isStandalone(){ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true; }
 function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent||'') && !window.MSStream; }
 function personaChooser(){
-  return '<div class="card mt-4 p-5"><div class="flex items-start justify-between gap-3"><div><div class="text-[11px] font-bold text-brand-700">התאמה אישית</div><div class="mt-1 font-display text-lg font-black">איך הכסף שלך מתנהל?</div><div class="mt-1 text-xs leading-5 text-ink-500">נשנה את סדר העדיפויות והתובנות. הנתונים עצמם לא יימחקו ולא ישתנו.</div></div><span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">'+esc(currentPersona().short)+'</span></div><div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">'+
+  return '<div class="card mt-4 p-5"><div class="flex items-start justify-between gap-3"><div><div class="eyebrow">התאמה אישית</div><div class="mt-1 font-display text-xl font-black">איך הכסף שלך מתנהל?</div><div class="mt-1 text-xs leading-5 text-ink-500">נשנה את סדר העדיפויות והתובנות. הנתונים עצמם לא יימחקו ולא ישתנו.</div></div><span class="rounded-full border border-brand-300/40 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">'+esc(currentPersona().short)+'</span></div><div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">'+
     Object.keys(PERSONAS).map(function(k){var p=PERSONAS[k],on=APP.prefs.persona===k;return '<button data-persona="'+k+'" class="rounded-2xl border p-3 text-right '+(on?'border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/20':'border-ink-100 dark:border-ink-800')+'"><span class="flex items-center justify-between"><strong class="text-sm">'+esc(p.label)+'</strong>'+(on?'<span class="text-brand-700">✓</span>':'')+'</span><span class="mt-1 block text-[11px] leading-5 text-ink-500">'+esc(p.desc)+'</span></button>';}).join('')+
   '</div></div>';
 }
@@ -464,7 +486,7 @@ async function renderAccount(view){
   APP.me=d; paintSpaceSwitcher();
   var u=d.user||{}, sheet=d.sheet||null;
   var initials=(u.name||u.email||'?').trim().charAt(0).toUpperCase();
-  var head='<div class="mb-5"><div class="text-xs font-bold text-brand-700">שליטה והתאמה</div><h1 class="font-display text-3xl font-black">החשבון שלי</h1></div>';
+  var head='<div class="mb-5"><div class="eyebrow">שליטה והתאמה</div><h1 class="font-display text-4xl font-black">החשבון שלי</h1></div>';
   var prof='<div class="card flex items-center gap-3 p-4">'+
     (u.picture?'<img src="'+esc(u.picture)+'" alt="" class="h-12 w-12 rounded-full" referrerpolicy="no-referrer">':'<div class="grid h-12 w-12 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">'+esc(initials)+'</div>')+
     '<div class="min-w-0"><div class="truncate font-semibold">'+esc(u.name||'משתמש/ת כספ\'לה')+'</div><div class="truncate text-xs text-ink-500">'+esc(u.email||'')+'</div></div></div>';
@@ -520,11 +542,11 @@ async function kflLogout(){
 }
 
 // ───────── theme + PWA + boot ─────────
-function applyTheme(t){ document.documentElement.classList.toggle('dark', t==='dark'); var m=document.querySelector('meta[name=theme-color]'); if(m) m.content=(t==='dark'?'#091722':'#102a43'); }
+function applyTheme(t){ document.documentElement.classList.toggle('dark', t==='dark'); var m=document.querySelector('meta[name=theme-color]'); if(m) m.content=(t==='dark'?'#090a0d':'#f7f7f5'); }
 function toggleTheme(){ var t=document.documentElement.classList.contains('dark')?'light':'dark'; localStorage.setItem('kfl_app_theme',t); applyTheme(t); }
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__kflDeferredPrompt=e; var ib=$('#installBtn'); if(ib){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ e.prompt(); await e.userChoice; }catch(_){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; } });
 (async function(){
-  applyTheme(localStorage.getItem('kfl_app_theme') || ((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+  applyTheme(localStorage.getItem('kfl_app_theme') || 'dark');
   try { var u=JSON.parse(localStorage.getItem('kesefle_user')||'{}'); if(u&&(u.name||u.email)) $('#whoami').textContent=u.name||u.email; } catch(e){}
   buildTabs();
   bindSpaceSwitcher();

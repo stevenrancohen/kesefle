@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v16-2026-11-07-ui-personas';
+const VERSION = 'v17-2026-11-07-goall4u-ui';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;

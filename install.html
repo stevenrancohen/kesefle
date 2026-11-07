@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>התקנה — איך להוסיף את כספ'לה למסך הבית · Kesefle</title>
 <meta name="description" content="התקן את כספ'לה כאפליקציה בטלפון או במחשב — Android, iPhone, iPad, macOS, Windows. ללא חנות אפליקציות." />
-<meta name="theme-color" content="#6366F1" />
+<meta name="theme-color" content="#090a0d" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="icon" type="image/png" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -45,10 +45,10 @@
      slow or blocked the page would flash unstyled. These INLINE base rules
      paint instantly with the same values the body's Tailwind utilities
      produce, so once Tailwind arrives nothing shifts. Light-mode default. */
-  html { background-color: #f7f8fb; }
-  html.dark { background-color: #070b16; }
-  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #f7f8fb; color: #0f1422; }
-  html.dark body { background-color: #070b16; color: #ffffff; }
+  html { background-color: #f7f7f5; }
+  html.dark { background-color: #090a0d; }
+  body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #f7f7f5; color: #14161b; }
+  html.dark body { background:radial-gradient(circle at 12% -8%,rgba(63,111,245,.15),transparent 28%),radial-gradient(circle at 88% 0%,rgba(253,221,72,.09),transparent 24%),#090a0d; color:#f7f7f5; }
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/brand.css" />
@@ -58,8 +58,8 @@ tailwind.config = {
   theme: { extend: {
     fontFamily: { sans: ['Heebo', 'system-ui', 'sans-serif'] },
     colors: {
-      ink: { 50:'#f7f8fb', 100:'#eef0f6', 200:'#dde1ec', 300:'#bcc4d6', 400:'#8a95b3', 500:'#5d6b8f', 600:'#41506f', 700:'#2f3b54', 800:'#1e2638', 900:'#0f1422', 950:'#070b16' },
-      brand:   { 50:'#f0f9ff', 100:'#e0f2fe', 200:'#bae6fd', 300:'#7dd3fc', 400:'#38bdf8', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a' },
+      ink: { 50:'#f7f7f5',100:'#ececea',200:'#d7d8d5',300:'#b4b6b4',400:'#8c9093',500:'#696e73',600:'#50555b',700:'#363a40',800:'#202329',900:'#14161b',950:'#090a0d' },
+      brand: { 50:'#fffbea',100:'#fff3c4',200:'#ffe676',300:'#fddd48',400:'#f8cb23',500:'#e7b20a',600:'#b98700',700:'#8a6200',800:'#5c4100',900:'#3d2b00' },
     }
   }}
 };
@@ -79,11 +79,18 @@ tailwind.config = {
     letter-spacing: -0.02em;
   }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
-  .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#2563eb,#1e40af); color:white; font-weight:900; font-size:18px; }
-  .device-tab { transition: all 0.2s; }
-  .device-tab.active { background: #2563eb; color: white; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:#fddd48; color:#090a0d; font-weight:900; font-size:18px; }
+  .device-tab { min-height:44px; transition: all 0.2s; }
+  .device-tab.active { background:#fddd48; border-color:#fddd48; color:#090a0d; }
   .device-content { display: none; }
   .device-content.active { display: block; }
+  header nav a, header nav button { min-height:44px; }
+  footer a { display:inline-flex; min-height:44px; align-items:center; padding-inline:.4rem; }
+  header:after { content:''; position:absolute; inset:auto 0 0; height:3px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+  html.dark header { background:rgba(9,10,13,.92)!important; border-color:#30333b!important; }
+  html.dark .device-content { background:linear-gradient(145deg,#17191f,#0f1014)!important; border-color:#30333b!important; box-shadow:0 28px 70px rgba(0,0,0,.3); }
+  html.dark .text-brand-700, html.dark .text-brand-300 { color:#fddd48!important; }
+  html.dark .bg-brand-600 { background-color:#fddd48!important; color:#090a0d!important; }
 </style>
 <script src="/lib/analytics.js" defer></script>
 </head>
@@ -94,8 +101,8 @@ tailwind.config = {
 <header class="fixed inset-x-0 top-0 z-50 border-b border-ink-200/50 bg-white/70 backdrop-blur-lg dark:border-ink-700/50 dark:bg-ink-950/70">
   <nav class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
     <a href="/" class="flex items-center gap-2 font-extrabold text-xl tracking-tight">
-      <img src="/icon-192.png" alt="כספ'לה" class="h-8 w-8 rounded-xl shadow-soft" />
-      <span class="kfl-logo-text">כספ'לה</span>
+      <span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-300 font-black text-ink-950 shadow-soft">כ</span>
+      <span class="font-display text-ink-900 dark:text-white">כספ'לה</span>
     </a>
 
     <!-- Desktop dropdown menu (6 categories) -->
@@ -158,7 +165,7 @@ tailwind.config = {
     <div class="flex items-center gap-2">
       <div class="lang-switch relative" data-current-lang="he"><button type="button" aria-haspopup="listbox" aria-expanded="false" class="lang-trigger flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800">🌐 <span class="lang-label">עברית</span></button><ul role="listbox" class="lang-menu absolute end-0 top-full mt-1 min-w-[8.5rem] rounded-xl border border-ink-200 bg-white p-1 shadow-2xl dark:border-ink-700 dark:bg-ink-800" hidden><li role="option" data-lang="he" lang="he" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">עברית</li><li role="option" data-lang="ar" lang="ar" dir="rtl" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">العربية</li><li role="option" data-lang="ru" lang="ru" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Русский</li><li role="option" data-lang="fr" lang="fr" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Français</li><li role="option" data-lang="it" lang="it" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">Italiano</li><li role="option" data-lang="en" lang="en" class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:text-ink-100">English</li></ul></div>
       <a href="/account" class="hidden rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500 md:inline-block">התחל חינם</a>
-      <button type="button" aria-label="תפריט" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-10 w-10 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
+      <button type="button" aria-label="תפריט" aria-expanded="false" onclick="var m=document.getElementById('kfl-mnav');var o=m.classList.toggle('hidden');this.setAttribute('aria-expanded',!o)" class="grid h-11 w-11 place-items-center rounded-xl border border-ink-200 text-ink-700 dark:border-ink-700 dark:text-ink-200 md:hidden">
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
@@ -183,7 +190,7 @@ tailwind.config = {
       <span class="num">⚡</span> אין חנות אפליקציות · ללא הורדה
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">הוסף את כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">למסך הבית של הטלפון</span></h1>
-    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — אפליקציה אמיתית, רצה offline, אבל בלי צורך באישור של אפל/גוגל ובלי לחכות 24 שעות להורדה.</p>
+    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — נפתחת גם בלי רשת, ומתעדכנת בלי חנות. רענון נתונים והוספת תנועה דורשים חיבור לאינטרנט.</p>
   </section>
 
   <!-- Device tabs -->
@@ -204,7 +211,7 @@ tailwind.config = {
           <div>
             <p class="font-bold text-lg">פתח Safari</p>
             <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">חשוב: <b>חייב להיות Safari</b>, לא Chrome ב-iPhone. iOS לא מאפשר התקנה דרך דפדפנים אחרים.</p>
-            <p class="text-sm mt-2">גש לכתובת: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.vercel.app</code></p>
+            <p class="text-sm mt-2">גש לכתובת: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.com/app</code></p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -249,7 +256,7 @@ tailwind.config = {
           <span class="step-num shrink-0">1</span>
           <div>
             <p class="font-bold text-lg">פתח Chrome</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">גש לכתובת: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.vercel.app</code></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">גש לכתובת: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.com/app</code></p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -295,7 +302,7 @@ tailwind.config = {
           <span class="step-num shrink-0">1</span>
           <div>
             <p class="font-bold text-lg">פתח את כספ'לה ב-Safari או Chrome</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1"><code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded">kesefle.vercel.app</code></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1"><code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded">kesefle.com/app</code></p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -330,7 +337,7 @@ tailwind.config = {
           <span class="step-num shrink-0">1</span>
           <div>
             <p class="font-bold text-lg">פתח את כספ'לה ב-Chrome או Edge</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1"><code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded">kesefle.vercel.app</code></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1"><code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded">kesefle.com/app</code></p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -378,7 +385,7 @@ tailwind.config = {
         <summary class="font-bold cursor-pointer">לא רואה אפשרות "הוסף למסך הבית" / "התקן אפליקציה"</summary>
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">בדוק:
           <br/>• אתה משתמש בדפדפן הנכון (Safari ב-iPhone, Chrome/Edge במחשב, Chrome ב-Android)
-          <br/>• אתה גולש דרך HTTPS (kesefle.vercel.app, לא http://)
+          <br/>• אתה גולש דרך HTTPS (kesefle.com/app, לא http://)
           <br/>• הדפדפן מעודכן לגרסה האחרונה
           <br/>• ביקרת בכמה דפים באתר (חלק מהדפדפנים מבקשים זאת לפני ההצעה)
         </p>
@@ -414,7 +421,7 @@ tailwind.config = {
 </footer>
 
 <script>
-  if (localStorage.getItem('kesefle_theme') === 'dark') document.documentElement.classList.add('dark');
+  if (localStorage.getItem('kfl_app_theme') !== 'light') document.documentElement.classList.add('dark');
   // Device tab switching
   document.querySelectorAll('.device-tab').forEach(function(btn) {
     btn.addEventListener('click', function() {
