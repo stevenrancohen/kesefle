@@ -92,12 +92,15 @@ ok('legacy reveal / parallax / magnetic scripts are guarded', unguarded.length =
 
 // 6. homepage sections
 const home = read('index.html');
-['kfx-story', 'kfx-compare', 'kfx-3d'].forEach((id) => ok('homepage has #' + id, home.indexOf('id="' + id + '"') !== -1));
+['kfx-story', 'kfx-marquee', 'kfx-compare', 'kfx-3d'].forEach((id) => ok('homepage has #' + id, home.indexOf('id="' + id + '"') !== -1));
+ok('marquee is decorative for screen readers', /id="kfx-marquee" class="kfx-marquee" aria-hidden="true"/.test(home));
+ok('a paragraph is marked for the scroll highlight', /data-kfx-highlight/.test(home));
+ok('css: page transitions are on, and off for reduced motion', /@view-transition \{ navigation: auto; \}/.test(css) && /@view-transition \{ navigation: none; \}/.test(css));
 ok('story final state is in the markup (lit row, final balance)', /kfx-row-new is-lit/.test(home) && /data-kfx-spent>3,425 ₪</.test(home) && /data-kfx-left>1,575 ₪</.test(home));
 ok('story stage is decorative for screen readers, steps stay readable', /class="kfx-story__stage" aria-hidden="true"/.test(home) && /<ol class="kfx-story__steps">/.test(home));
 ok('before/after has a keyboard range with a label', /class="kfx-compare__range" type="range"[^>]*aria-label="/.test(home));
 ok('3D viewer points at the versioned module and keeps a CSS fallback', /data-kfx-3d="\/js\/kfx-phone3d\.mjs\?v=/.test(home) && /kfx-3d__fallback/.test(home));
-const sections = ['kfx-story', 'kfx-compare', 'kfx-3d'].map((id) => {
+const sections = ['kfx-story', 'kfx-marquee', 'kfx-compare', 'kfx-3d'].map((id) => {
   const i = home.indexOf('id="' + id + '"');
   return home.slice(i, home.indexOf('</section>', i));
 }).join('\n');

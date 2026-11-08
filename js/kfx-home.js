@@ -222,7 +222,12 @@
 
     if (animated && w.gsap && w.ScrollTrigger) {
       if (KFX.splitReveal) qsa('h2', root).forEach(function (h2) { KFX.splitReveal(h2); });
-      fadeUp(qsa('.kfx-lead', root).concat([frame]));
+      fadeUp(qsa('.kfx-lead', root));
+      frame.setAttribute('data-kfx-r', '');
+      gsap.fromTo(frame, { scale: 0.9, y: 40, opacity: 0.4 }, {
+        scale: 1, y: 0, opacity: 1, ease: 'none',
+        scrollTrigger: { trigger: frame, start: 'top bottom', end: 'top 40%', scrub: 0.5 }
+      });
       set(7);
       ScrollTrigger.create({
         trigger: frame, start: 'top 70%', once: true,
@@ -276,6 +281,54 @@
     io.observe(viewer);
   }
 
+  /* ================================================================ HERO OUT */
+  // while the hero scrolls away the copy rises faster than the phone, which
+  // settles back a little: a soft hand-over into the story below. CSS vars feed
+  // the individual translate/scale properties, so the hero's own CSS
+  // transitions on transform never fight the scrub.
+  function buildHeroOut() {
+    var hero = d.getElementById('kfl-hero');
+    if (!hero) return;
+    var copy = qs('[data-stage="1"]', hero), demo = qs('[data-stage="2"]', hero);
+    if (!copy || !demo) return;
+    copy.style.translate = '0 var(--kfx-hy, 0px)';
+    demo.style.translate = '0 var(--kfx-hy, 0px)';
+    demo.style.scale = 'var(--kfx-hs, 1)';
+    var st = { trigger: hero, start: 'top top', end: 'bottom top', scrub: 0.4 };
+    gsap.fromTo(copy, { '--kfx-hy': '0px' }, { '--kfx-hy': '-90px', ease: 'none', scrollTrigger: st });
+    gsap.fromTo(demo, { '--kfx-hy': '0px', '--kfx-hs': 1 }, { '--kfx-hy': '-36px', '--kfx-hs': 0.93, ease: 'none', scrollTrigger: Object.assign({}, st) });
+  }
+
+  /* ================================================================ MARQUEE */
+  // [data-kfx-marquee]: an endless band of real messages; scrolling speeds it
+  // up, scrolling back turns it around, a fast flick leans it a little
+  function buildMarquee() {
+    qsa('[data-kfx-marquee]').forEach(function (band) {
+      var track = qs('.kfx-marquee__track', band);
+      if (!track || track.getAttribute('data-kfx-doubled')) return;
+      track.innerHTML += track.innerHTML;
+      track.setAttribute('data-kfx-doubled', '1');
+      var loop = gsap.to(track, { xPercent: 50, ease: 'none', duration: 34, repeat: -1 });
+      var skew = gsap.quickTo(track, 'skewX', { duration: 0.5, ease: 'power3' });
+      var dir = 1;
+      ScrollTrigger.create({
+        trigger: band, start: 'top bottom', end: 'bottom top',
+        onUpdate: function (self) {
+          var v = self.getVelocity();
+          if (self.direction !== dir) dir = self.direction;
+          var boost = Math.min(5, Math.abs(v) / 450);
+          gsap.to(loop, { timeScale: dir * (1 + boost), duration: 0.35, overwrite: true });
+          skew(Math.max(-7, Math.min(7, v / -320)));
+        },
+        onToggle: function (self) { if (!self.isActive) skew(0); }
+      });
+      ScrollTrigger.addEventListener('scrollEnd', function () {
+        skew(0);
+        gsap.to(loop, { timeScale: dir, duration: 0.8, overwrite: true });
+      });
+    });
+  }
+
   /* ================================================================ shared */
   function fadeUp(els) {
     els = els.filter(Boolean);
@@ -289,7 +342,9 @@
   }
 
   KFX.homeInit = function () {
+    try { buildHeroOut(); } catch (e) { warn('hero', e); }
     try { buildStory(); } catch (e) { warn('story', e); var n = storyNodes(); if (n) storyFinal(n); }
+    try { buildMarquee(); } catch (e) { warn('marquee', e); }
     try { buildCompare(true); } catch (e) { warn('compare', e); }
     try { build3D(true); } catch (e) { warn('3d', e); }
   };

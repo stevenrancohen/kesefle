@@ -348,7 +348,8 @@ export function mount(viewer, canvas, opts) {
   resize();
 
   return {
-    setScroll(p) { scrollY = (p - 0.5) * 1.1; if (!drag) wake(); },
+    // the phone turns with the page: about a third of a turn while the section crosses the screen
+    setScroll(p) { scrollY = (p - 0.5) * Math.PI * 1.15; if (!drag) wake(); },
     destroy() {
       visible = false; if (raf) cancelAnimationFrame(raf);
       io.disconnect(); if (ro) ro.disconnect();

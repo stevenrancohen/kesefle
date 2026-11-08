@@ -341,6 +341,52 @@
     });
   }
 
+  /* ------------------------------------------------------------ tilt cards */
+  // pricing / feature cards lean toward the pointer, with a soft light under it
+  function initTilt() {
+    if (!fine) return;
+    qsa('[data-kfx-tilt], .kfl-lift.rounded-3xl').forEach(function (card) {
+      if (card.closest('nav, footer, [role="dialog"], .kfx-story, .kfx-compare, .kfx-3d')) return;
+      var r0 = card.getBoundingClientRect();
+      if (!r0.width || r0.width > 720) return;
+      card.classList.add('kfx-tilt');
+      card.style.transitionProperty = 'box-shadow, background-color, border-color, color';
+      // perspective is (re)applied on enter: a finished reveal clears the transform cache
+      card.addEventListener('pointerenter', function () { gsap.set(card, { transformPerspective: 900 }); }, { passive: true });
+      var rx = gsap.quickTo(card, 'rotationX', { duration: 0.6, ease: 'power3' });
+      var ry = gsap.quickTo(card, 'rotationY', { duration: 0.6, ease: 'power3' });
+      var lift = gsap.quickTo(card, 'y', { duration: 0.6, ease: 'power3' });
+      card.addEventListener('pointermove', function (e) {
+        if (e.pointerType && e.pointerType !== 'mouse') return;
+        var r = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        ry((px - 0.5) * 9); rx((0.5 - py) * 7); lift(-4);
+        card.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+      }, { passive: true });
+      card.addEventListener('pointerleave', function () { rx(0); ry(0); lift(0); });
+    });
+  }
+
+  /* ------------------------------------------------------------ scroll highlight */
+  // [data-kfx-highlight]: the words go from faint to full ink while the
+  // paragraph crosses the screen (scrubbed, so it follows the reader)
+  function initHighlight() {
+    if (!w.SplitText) return;
+    qsa('[data-kfx-highlight]').forEach(function (el) {
+      var to = w.getComputedStyle(el).color;
+      w.SplitText.create(el, {
+        type: 'words', wordsClass: 'kfx-hl-w', aria: 'auto', autoSplit: true,
+        onSplit: function (self) {
+          return gsap.fromTo(self.words, { color: '#c3cad8' }, {
+            color: to, ease: 'none', stagger: 0.12,
+            scrollTrigger: { trigger: el, start: 'top 82%', end: 'bottom 48%', scrub: 0.5 }
+          });
+        }
+      });
+    });
+  }
+
   /* ------------------------------------------------------------ intro */
   function heroIntro(withPreloader) {
     if (d.body) d.body.classList.add('kfl-loaded');
@@ -389,6 +435,8 @@
     run(initImages, 'images');
     run(initCounters, 'counters');
     run(initHoverReveal, 'hover');
+    run(initHighlight, 'highlight');
+    run(initTilt, 'tilt');
     run(initMagnetic, 'magnetic');
     liftPreloader(function (had) { run(function () { heroIntro(had); }, 'intro'); });
     var refresh = function () { ScrollTrigger.refresh(); };

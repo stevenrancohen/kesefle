@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
-const V = 'kfx1';
+const V = 'kfx2';
 // app, admin, account and utility pages keep their own UI untouched
 const EXCLUDE = new Set([
   'account.html', 'admin-os.html', 'admin.html', 'app.html', 'dashboard.html', 'expense.html',
