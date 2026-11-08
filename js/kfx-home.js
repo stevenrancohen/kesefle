@@ -329,6 +329,51 @@
     });
   }
 
+  /* ================================================================ PRICING */
+  // the plans are dealt onto the table (the recommended one lands last), it
+  // gets a running light around its border and leans toward the pointer
+  function buildPricing() {
+    var sec = d.getElementById('pricing');
+    var grid = sec && qs('.grid', sec);
+    if (!grid) return;
+    var cards = qsa(':scope > div', grid).filter(function (c) { return /\brounded-3xl\b/.test(c.className); });
+    if (cards.length < 2) return;
+    var feat = cards.filter(function (c) { return c.classList.contains('border-brand-500'); })[0];
+    if (feat) {
+      feat.classList.add('kfx-spot');
+      feat.setAttribute('data-kfx-tilt', '');
+      ScrollTrigger.create({
+        trigger: feat, start: 'top bottom', end: 'bottom top',
+        onToggle: function (self) { feat.classList.toggle('kfx-spot-on', self.isActive); }
+      });
+    }
+    cards.forEach(function (c) {
+      c.setAttribute('data-kfx-skip', '');
+      c.setAttribute('data-kfx-r', '');
+      // GSAP owns transform here; CSS keeps the colour and shadow transitions
+      c.style.transitionProperty = 'box-shadow, background-color, border-color, color';
+    });
+    var oneRow = cards[0].offsetTop === cards[cards.length - 1].offsetTop;
+    var order = feat && oneRow ? cards.filter(function (c) { return c !== feat; }).concat([feat]) : cards;
+    // one row: a 3D deal; stacked (phones): a lighter rise that never widens the page
+    var from = oneRow
+      ? { y: 120, rotationX: -30, opacity: 0, transformPerspective: 1100, transformOrigin: '50% 100%' }
+      : { y: 70, scale: 0.96, opacity: 0, transformOrigin: '50% 100%' };
+    var to = { y: 0, rotationX: 0, scale: 1, opacity: 1, duration: 1.25, ease: 'expo.out', clearProps: 'transform,opacity' };
+    if (oneRow) {
+      gsap.set(order, from);
+      ScrollTrigger.create({
+        trigger: grid, start: 'top 84%', once: true,
+        onEnter: function () { gsap.to(order, Object.assign({ stagger: 0.14 }, to)); }
+      });
+    } else {
+      order.forEach(function (c) {
+        gsap.set(c, from);
+        ScrollTrigger.create({ trigger: c, start: 'top 90%', once: true, onEnter: function () { gsap.to(c, to); } });
+      });
+    }
+  }
+
   /* ================================================================ shared */
   function fadeUp(els) {
     els = els.filter(Boolean);
@@ -347,6 +392,10 @@
     try { buildMarquee(); } catch (e) { warn('marquee', e); }
     try { buildCompare(true); } catch (e) { warn('compare', e); }
     try { build3D(true); } catch (e) { warn('3d', e); }
+    try { buildPricing(); } catch (e) {
+      warn('pricing', e);
+      qsa('#pricing .grid > [data-kfx-r]').forEach(function (c) { c.style.opacity = ''; c.style.transform = ''; });
+    }
   };
   KFX.homeStatic = function () {
     var n = storyNodes();

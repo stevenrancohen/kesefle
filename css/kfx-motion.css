@@ -368,7 +368,8 @@ html.kfx-cursor-on .kfx-cursor-ring.is-text, html.kfx-cursor-on .kfx-cursor.is-t
 }
 
 /* ==========================================================================
-   SITE WIDE EXTRAS  ·  page transitions, tilt cards, scroll highlight
+   SITE WIDE EXTRAS  ·  page transitions, tilt cards, scroll highlight,
+   accordions, living gradients, footer links and wordmark
    ========================================================================== */
 /* cross page transition (Chrome, Edge, Safari 18): the old page lifts away, the new one settles in */
 @view-transition { navigation: auto; }
@@ -388,6 +389,46 @@ html.kfx-cursor-on .kfx-cursor-ring.is-text, html.kfx-cursor-on .kfx-cursor.is-t
 /* words light up as a paragraph scrolls through the screen */
 .kfx-hl-w { transition: none; }
 
+/* smooth accordions: the body wrapper clips while its height animates */
+details[data-kfx-acc] > .kfx-acc { overflow: hidden; }
+/* gradient words in section titles keep a slow living shimmer */
+html.kfx-anim main h2 .bg-clip-text { background-size: 220% 100%; animation: kfx-sheen 7s ease-in-out infinite alternate; }
+@keyframes kfx-sheen { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+/* footer links: a thin underline grows in from the reading side */
+html.kfx-anim footer li > a:not([class*="bg-"]):not([class*="rounded"]) {
+  background-image: linear-gradient(currentColor, currentColor); background-repeat: no-repeat; background-position: 100% 100%; background-size: 0% 1px;
+  transition: background-size .45s cubic-bezier(.16, 1, .3, 1), color .2s;
+}
+html.kfx-anim footer li > a:not([class*="bg-"]):not([class*="rounded"]):dir(ltr) { background-position: 0% 100%; }
+html.kfx-anim footer li > a:not([class*="bg-"]):not([class*="rounded"]):hover,
+html.kfx-anim footer li > a:not([class*="bg-"]):not([class*="rounded"]):focus-visible { background-size: 100% 1px; }
+/* footer wordmark: outlined, rises and fills with blue at the end of the page */
+.kfx-wordmark {
+  position: relative; overflow: hidden; margin-top: clamp(28px, 5vw, 64px); text-align: center; pointer-events: none; user-select: none;
+  font: 900 clamp(72px, 19vw, 300px)/.86 Rubik, Heebo, system-ui, sans-serif; letter-spacing: -.055em;
+}
+.kfx-wordmark__in { position: relative; display: inline-block; padding: 0 .04em; will-change: transform; }
+.kfx-wordmark__o { display: block; color: transparent; -webkit-text-stroke: 1.5px rgba(37, 99, 235, .28); }
+.kfx-wordmark__f { position: absolute; inset: 0; display: block; padding: inherit; color: transparent; background: linear-gradient(180deg, #60a5fa, #2563eb 70%); -webkit-background-clip: text; background-clip: text; }
+html.dark .kfx-wordmark__o { -webkit-text-stroke-color: rgba(96, 165, 250, .3); }
+
+/* ==========================================================================
+   PRICING  ·  the recommended plan gets a light running around its border
+   ========================================================================== */
+@property --kfx-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+/* the dealt cards are tilted in 3D for a moment: never let that widen the page */
+html.kfx-anim #pricing { overflow-x: clip; }
+.kfx-spot { isolation: isolate; border-color: rgba(59, 130, 246, .36) !important; }
+html.dark .kfx-spot { border-color: rgba(96, 165, 250, .32) !important; }
+.kfx-spot::before {
+  content: ""; position: absolute; inset: -2px; z-index: 0; border-radius: inherit; padding: 2px; pointer-events: none;
+  background: conic-gradient(from var(--kfx-ang), rgba(79, 70, 229, 0) 0deg, rgba(79, 70, 229, 0) 205deg, rgba(96, 165, 250, .9) 272deg, #2563eb 318deg, #4f46e5 346deg, rgba(79, 70, 229, 0) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: kfx-spin 5s linear infinite; animation-play-state: paused;
+}
+.kfx-spot.kfx-spot-on::before { animation-play-state: running; }
+@keyframes kfx-spin { to { --kfx-ang: 360deg; } }
+
 /* ==========================================================================
    MARQUEE  ·  real messages run across the page, faster when you scroll
    ========================================================================== */
@@ -405,5 +446,6 @@ html.kfx-cursor-on .kfx-cursor-ring.is-text, html.kfx-cursor-on .kfx-cursor.is-t
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
   .kfx-caret { animation: none; }
+  .kfx-spot::before, html.kfx-anim main h2 .bg-clip-text { animation: none; }
   .kfx-cursor, .kfx-cursor-ring, .kfx-float-img { display: none !important; }
 }

@@ -8,8 +8,9 @@
 //   - the boot snippet hands motion over only when reduced motion is off and
 //     keeps the explicit light choice from the theme toggle
 //   - legacy inline motion steps aside instead of running twice
-//   - the homepage carries the story, before/after and 3D sections with a
-//     readable final state, and the new Hebrew copy has no dashes
+//   - the homepage carries the story, marquee, before/after and 3D sections
+//     with a readable final state, and the new Hebrew copy has no dashes
+//   - accordions, footer wordmark and the pricing deal stay safe
 //
 // Run: node tests/test_kfx_motion.js
 'use strict';
@@ -96,6 +97,14 @@ const home = read('index.html');
 ok('marquee is decorative for screen readers', /id="kfx-marquee" class="kfx-marquee" aria-hidden="true"/.test(home));
 ok('a paragraph is marked for the scroll highlight', /data-kfx-highlight/.test(home));
 ok('css: page transitions are on, and off for reduced motion', /@view-transition \{ navigation: auto; \}/.test(css) && /@view-transition \{ navigation: none; \}/.test(css));
+// pass 3: accordions, wordmark, pricing deal + running border light
+const eng = read('js/kfx-motion.js'), homeJs = read('js/kfx-home.js');
+ok('accordions never touch the header, nav or mobile menu', /initAccordions[\s\S]*?closest\('header, nav, #kfl-mnav/.test(eng));
+ok('accordion body clips only itself', /details\[data-kfx-acc\] > \.kfx-acc \{ overflow: hidden; \}/.test(css));
+ok('footer wordmark is decorative', /initWordmark[\s\S]*?setAttribute\('aria-hidden', 'true'\)/.test(eng));
+ok('pricing deal is wired on the homepage', /function buildPricing\(/.test(homeJs) && /buildPricing\(\)/.test(homeJs));
+ok('pricing can never widen the page while cards are tilted', /html\.kfx-anim #pricing \{ overflow-x: clip; \}/.test(css));
+ok('running border light pauses off screen and stops for reduced motion', /animation-play-state: paused/.test(css) && /\.kfx-spot\.kfx-spot-on::before \{ animation-play-state: running; \}/.test(css) && /\.kfx-spot::before, html\.kfx-anim main h2 \.bg-clip-text \{ animation: none; \}/.test(css));
 ok('story final state is in the markup (lit row, final balance)', /kfx-row-new is-lit/.test(home) && /data-kfx-spent>3,425 ₪</.test(home) && /data-kfx-left>1,575 ₪</.test(home));
 ok('story stage is decorative for screen readers, steps stay readable', /class="kfx-story__stage" aria-hidden="true"/.test(home) && /<ol class="kfx-story__steps">/.test(home));
 ok('before/after has a keyboard range with a label', /class="kfx-compare__range" type="range"[^>]*aria-label="/.test(home));

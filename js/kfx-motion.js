@@ -11,6 +11,7 @@
  *   - staggered block reveals, clip-path image reveals, parallax layers
  *   - number counters + text scramble
  *   - magnetic buttons, custom cursor, hover-reveal cards, floating images
+ *   - smooth <details> accordions, footer wordmark that fills on arrival
  *   - hands over to KFX.homeInit (pinned scroll-scrubbed story, before/after,
  *     3D viewer) when the homepage module is present
  *
@@ -387,6 +388,72 @@
     });
   }
 
+  /* ------------------------------------------------------------ accordions */
+  // every <details> on the page (FAQ, guides) opens and closes with a smooth
+  // height animation instead of a jump; keyboard and screen readers keep the
+  // native summary behaviour
+  function initAccordions() {
+    var refreshSoon = (function () {
+      var t = 0;
+      return function () { w.clearTimeout(t); t = w.setTimeout(function () { ScrollTrigger.refresh(); }, 60); };
+    })();
+    qsa('details').forEach(function (det) {
+      if (det.closest('header, nav, #kfl-mnav, [role="dialog"], [aria-modal="true"], .no-kfx') || det.hasAttribute('data-kfx-acc')) return;
+      var sum = det.firstElementChild;
+      if (!sum || sum.tagName !== 'SUMMARY' || !sum.nextSibling) return;
+      det.setAttribute('data-kfx-acc', '');
+      var body = d.createElement('div');
+      body.className = 'kfx-acc';
+      while (sum.nextSibling) body.appendChild(sum.nextSibling);
+      det.appendChild(body);
+      var tw = null;
+      sum.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (tw) { tw.kill(); tw = null; }
+        var closing = det.hasAttribute('open') && !det.classList.contains('kfx-acc-closing');
+        if (closing) {
+          det.classList.add('kfx-acc-closing');
+          tw = gsap.fromTo(body, { height: body.offsetHeight, opacity: 1 }, {
+            height: 0, opacity: 0, duration: 0.34, ease: 'power2.inOut',
+            onComplete: function () {
+              det.removeAttribute('open'); det.classList.remove('kfx-acc-closing');
+              gsap.set(body, { clearProps: 'height,opacity' }); tw = null; refreshSoon();
+            }
+          });
+        } else {
+          var from = det.classList.contains('kfx-acc-closing') ? body.offsetHeight : 0;
+          det.classList.remove('kfx-acc-closing');
+          det.setAttribute('open', '');
+          tw = gsap.fromTo(body, { height: from, opacity: from ? 1 : 0 }, {
+            height: 'auto', opacity: 1, duration: 0.46, ease: 'power3.out',
+            onComplete: function () { gsap.set(body, { clearProps: 'height,opacity' }); tw = null; refreshSoon(); }
+          });
+        }
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------ footer wordmark */
+  // pages with a full footer end on a big outlined wordmark that rises and
+  // fills with blue as the reader reaches the bottom (decorative)
+  function initWordmark() {
+    var foot = qsa('footer').filter(function (f) { return qsa('ul', f).length >= 2 && !f.closest('main, article'); }).pop();
+    if (!foot || foot.querySelector('.kfx-wordmark')) return;
+    var logo = d.querySelector('.kfl-logo-text');
+    var name = ((logo && logo.textContent) || '').trim() || 'כספ\'לה';
+    var wm = d.createElement('div');
+    wm.className = 'kfx-wordmark';
+    wm.setAttribute('aria-hidden', 'true');
+    var inner = d.createElement('div');
+    inner.className = 'kfx-wordmark__in';
+    var o = d.createElement('span'); o.className = 'kfx-wordmark__o'; o.textContent = name;
+    var f = d.createElement('span'); f.className = 'kfx-wordmark__f'; f.textContent = name;
+    inner.appendChild(o); inner.appendChild(f); wm.appendChild(inner); foot.appendChild(wm);
+    var st = { trigger: wm, start: 'top bottom', end: 'max', scrub: 0.6 };
+    gsap.fromTo(inner, { yPercent: 38 }, { yPercent: 0, ease: 'none', scrollTrigger: st });
+    gsap.fromTo(f, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none', scrollTrigger: Object.assign({}, st, { start: 'top 92%' }) });
+  }
+
   /* ------------------------------------------------------------ intro */
   function heroIntro(withPreloader) {
     if (d.body) d.body.classList.add('kfl-loaded');
@@ -437,6 +504,8 @@
     run(initHoverReveal, 'hover');
     run(initHighlight, 'highlight');
     run(initTilt, 'tilt');
+    run(initAccordions, 'accordions');
+    run(initWordmark, 'wordmark');
     run(initMagnetic, 'magnetic');
     liftPreloader(function (had) { run(function () { heroIntro(had); }, 'intro'); });
     var refresh = function () { ScrollTrigger.refresh(); };
