@@ -91,6 +91,19 @@
     box-shadow: 0 20px 50px -25px rgba(16, 185, 129, 0.45);
   }
   #onboarding.is-complete .progress-fill { width: 100% !important; }
+  #step-3.is-current {
+    margin-inline: -0.75rem;
+    padding: 0.75rem;
+    border: 1px solid #c7d2fe;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+    box-shadow: 0 14px 35px -28px rgba(79, 70, 229, 0.8);
+  }
+  #step-3.is-current > span { background: #4f46e5; }
+  html.dark #step-3.is-current {
+    border-color: rgba(129, 140, 248, 0.45);
+    background: rgba(79, 70, 229, 0.12);
+  }
 
   /* Confetti for celebration */
   @keyframes confetti-fall {
@@ -260,15 +273,16 @@
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">2</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 font-bold">
-                <span>צור את הגיליון שלך</span>
+                <span id="step-2-title">צור את הגיליון שלך</span>
                 <span class="why-tip">
                   <button type="button" aria-label="למה צריך גישה ל-Drive?">?</button>
                   <span class="why-body">למה צריך הרשאה ל-Google Drive? כדי להעתיק תבנית גיליון לדרייב שלך — הגיליון נשמר אצלך, פרטי, רק שלך. אנחנו לא רואים את הקבצים האחרים שלך.</span>
                 </span>
               </div>
-              <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
-              <!-- Sheet structure preview (what they'll get) -->
-              <div id="sheet-preview" class="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px]">
+              <div id="sheet-provision-controls">
+                <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
+                <!-- Sheet structure preview (what they'll get) -->
+                <div id="sheet-preview" class="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px]">
                 <div dir="ltr" class="grid grid-cols-[32px_1fr_62px_56px] sm:grid-cols-[44px_1fr_70px_64px] gap-px border-b border-slate-200 bg-slate-100 text-[9px] font-bold uppercase tracking-wide text-slate-500">
                   <div class="px-1.5 py-1.5 sm:px-2">Date</div>
                   <div class="px-1.5 py-1.5 sm:px-2">Description</div>
@@ -293,20 +307,29 @@
                   <div class="num px-1.5 py-1.5 sm:px-2 text-right text-emerald-600">+₪8,500</div>
                   <div class="px-1.5 py-1.5 sm:px-2">💰 הכנסה</div>
                 </div>
+                </div>
+                <div class="mb-2 text-[11px] text-slate-500">↑ ככה הגיליון שלך ייראה. נוצר אצלך ב-Drive, פרטי, רק שלך.</div>
+                <button onclick="kesefleProvisionSheet()" id="btn-provision" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  צור את הגיליון שלי
+                </button>
+                <!-- Granular live progress steps (shown during provisioning) -->
+                <div id="provision-progress" class="mt-3 hidden space-y-2 rounded-xl border border-emerald-100 bg-white p-3">
+                  <div class="prov-step" id="prov-step-auth"><span class="prov-dot"></span><span>מבקש הרשאה מגוגל…</span></div>
+                  <div class="prov-step" id="prov-step-drive"><span class="prov-dot"></span><span>מתחבר ל-Google Drive…</span></div>
+                  <div class="prov-step" id="prov-step-copy"><span class="prov-dot"></span><span>מעתיק את התבנית לדרייב שלך…</span></div>
+                  <div class="prov-step" id="prov-step-finish"><span class="prov-dot"></span><span>מסיים ומקשר…</span></div>
+                </div>
+                <div id="provision-status" class="mt-2 hidden text-sm"></div>
               </div>
-              <div class="mb-2 text-[11px] text-slate-500">↑ ככה הגיליון שלך ייראה. נוצר אצלך ב-Drive, פרטי, רק שלך.</div>
-              <button onclick="kesefleProvisionSheet()" id="btn-provision" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                צור את הגיליון שלי
-              </button>
-              <!-- Granular live progress steps (shown during provisioning) -->
-              <div id="provision-progress" class="mt-3 hidden space-y-2 rounded-xl border border-emerald-100 bg-white p-3">
-                <div class="prov-step" id="prov-step-auth"><span class="prov-dot"></span><span>מבקש הרשאה מגוגל…</span></div>
-                <div class="prov-step" id="prov-step-drive"><span class="prov-dot"></span><span>מתחבר ל-Google Drive…</span></div>
-                <div class="prov-step" id="prov-step-copy"><span class="prov-dot"></span><span>מעתיק את התבנית לדרייב שלך…</span></div>
-                <div class="prov-step" id="prov-step-finish"><span class="prov-dot"></span><span>מסיים ומקשר…</span></div>
+              <div id="sheet-ready-summary" class="hidden rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                <div class="font-bold">✓ הגיליון שלך כבר מוכן</div>
+                <div class="mt-1 text-xs text-emerald-800">אין צורך ליצור גיליון נוסף. אפשר להוסיף תנועה ראשונה עכשיו ולחבר WhatsApp בהמשך.</div>
+                <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <a id="account-quick-add" href="/expense?from=account-activation" class="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 font-bold text-white hover:bg-emerald-700">הוספת תנועה ראשונה ←</a>
+                  <a id="sheet-ready-link" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[44px] items-center justify-center px-3 font-bold text-emerald-700 underline">פתיחת הגיליון הקיים</a>
+                </div>
               </div>
-              <div id="provision-status" class="mt-2 hidden text-sm"></div>
             </div>
           </li>
           <li class="flex items-start gap-3" id="step-3">
@@ -320,6 +343,10 @@
                 </span>
               </div>
               <div class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
+              <div id="whatsapp-availability-note" class="mb-3 hidden rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                <strong class="block">WhatsApp עדיין נפתח בהדרגה לכל החשבונות.</strong>
+                אין צורך לחכות: אפשר <a href="/expense?from=whatsapp-pending" class="inline-flex min-h-[44px] items-center font-bold underline">להוסיף תנועה באפליקציה</a> ולחבר את המספר אחר כך.
+              </div>
 
               <!-- Sub-state A: not yet linked — show phone input + Generate Code button -->
               <div id="link-state-input">
@@ -332,7 +359,7 @@
                     placeholder="054-123-4567"
                     aria-label="מספר וואטסאפ"
                     dir="ltr"
-                    class="flex-1 min-w-[180px] rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-800 dark:text-white"
+                    class="flex-1 min-h-[44px] min-w-[180px] rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-800 dark:text-white"
                   />
                   <button
                     type="button"
@@ -426,8 +453,8 @@
         <div class="text-sm font-semibold text-slate-500">סטטוס</div>
         <div class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-lg ring-1 ring-emerald-100">🟢</div>
       </div>
-      <div class="mt-2 text-3xl font-black text-emerald-600">פעיל</div>
-      <div class="mt-1 text-xs text-slate-500">הבוט מקשיב ומוכן</div>
+      <div id="service-status-title" class="mt-2 text-3xl font-black text-emerald-600">פעיל</div>
+      <div id="service-status-copy" class="mt-1 text-xs text-slate-500">האפליקציה והבוט מוכנים</div>
     </div>
   </section>
 
@@ -437,7 +464,7 @@
       <div class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-white shadow-sm">📊</div>
       <div class="min-w-0 flex-1">
         <div class="font-bold">הגיליון שלך מוכן</div>
-        <div class="text-sm text-slate-600">כל הוצאה שתשלח לבוט תופיע כאן.</div>
+        <div class="text-sm text-slate-600">כל תנועה שתוסיף באפליקציה או ב-WhatsApp תופיע כאן.</div>
       </div>
       <a id="sheet-link" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[44px] flex-shrink-0 items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">פתח גיליון →</a>
     </div>
@@ -681,6 +708,30 @@ function kesefleLogout() {
 }
 
 // Progress + celebration helpers
+var kflWabaApproved = null;
+
+function kesefleShowExistingSheetStep(sheet) {
+  if (!sheet || !sheet.spreadsheetUrl) return false;
+  var controls = document.getElementById('sheet-provision-controls');
+  var ready = document.getElementById('sheet-ready-summary');
+  var link = document.getElementById('sheet-ready-link');
+  var title = document.getElementById('step-2-title');
+  var next = document.getElementById('step-3');
+  var bannerTitle = document.getElementById('banner-title');
+  var bannerSubtitle = document.getElementById('banner-subtitle');
+  if (controls) controls.classList.add('hidden');
+  if (ready) ready.classList.remove('hidden');
+  if (link) link.href = sheet.spreadsheetUrl;
+  if (title) title.textContent = 'הגיליון שלך מוכן';
+  if (next) {
+    if (kflWabaApproved === false) next.classList.remove('is-current');
+    else next.classList.add('is-current');
+  }
+  if (bannerTitle) bannerTitle.textContent = 'הגיליון מוכן — אפשר להתחיל עכשיו';
+  if (bannerSubtitle) bannerSubtitle.textContent = 'הוסף תנועה ראשונה באפליקציה. את WhatsApp אפשר לחבר גם בהמשך.';
+  return true;
+}
+
 function kesefleUpdateOnboardingProgress() {
   var step1Done = !!kesefleGetUser();
   var sheet = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
@@ -694,7 +745,7 @@ function kesefleUpdateOnboardingProgress() {
   if (bar) bar.style.width = pct + '%';
   if (label) label.innerHTML = (done >= 3)
     ? 'הושלם ✓'
-    : 'שלב <span class="num">' + done + '</span> מתוך <span class="num">3</span>';
+    : '<span class="num">' + done + '</span> מתוך <span class="num">3</span> הושלמו';
 
   if (step2Done) kesefleMarkStepDone(2);
   if (step3Done) kesefleMarkStepDone(3);
@@ -770,6 +821,17 @@ var kflLinkCode = null;
   fetch('/api/config', { credentials: 'include', cache: 'no-store' })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(c) {
+      if (c && typeof c.waba_approved === 'boolean') kflWabaApproved = c.waba_approved;
+      if (c && c.waba_approved === false) {
+        var note = document.getElementById('whatsapp-availability-note');
+        var phoneStep = document.getElementById('step-3');
+        var statusTitle = document.getElementById('service-status-title');
+        var statusCopy = document.getElementById('service-status-copy');
+        if (note) note.classList.remove('hidden');
+        if (phoneStep) phoneStep.classList.remove('is-current');
+        if (statusTitle) statusTitle.textContent = 'האפליקציה פעילה';
+        if (statusCopy) statusCopy.textContent = 'הוספה באפליקציה זמינה; WhatsApp בהשקה הדרגתית';
+      }
       var n = String(c && c.BOT_NUMBER || '').replace(/\D+/g, '');
       if (!/^\d{7,15}$/.test(n)) return;
       KESEFLE_BOT_NUMBER = n;
@@ -1846,6 +1908,7 @@ function kesefleShowSigninPrompt() {
     if (s && s.spreadsheetUrl) {
       var sl = document.getElementById('sheet-link'); if (sl) sl.href = s.spreadsheetUrl;
       var ls = document.getElementById('linked-sheet'); if (ls) ls.classList.remove('hidden');
+      kesefleShowExistingSheetStep(s);
       // Existing-user re-provision card lives next to the linked-sheet card.
       var rc = document.getElementById('reprovision-card'); if (rc) rc.classList.remove('hidden');
     }
@@ -2389,18 +2452,17 @@ async function kesefleProvisionSheet() {
           localStorage.setItem('kesefle_sheet', JSON.stringify(j));
           document.getElementById('sheet-link').href = j.spreadsheetUrl;
           document.getElementById('linked-sheet').classList.remove('hidden');
-          status.className = 'mt-2 text-sm font-bold text-emerald-700';
-          status.innerHTML = '✓ הגיליון מוכן! מעבירה אותך למסך הברוך הבא…';
-          status.classList.remove('hidden');
-          btn.style.display = 'none';
+          kesefleShowExistingSheetStep(j);
           if (window.kfl) window.kfl.track('sheet_provisioned', { plan: u.plan || 'free' });
           kesefleUpdateOnboardingProgress();
-          // First-time success — guide user to /welcome to learn the bot commands.
-          // Skip redirect if user is re-provisioning (sheet was already linked before this run).
-          var alreadySeenWelcome = sessionStorage.getItem('kfl_welcome_seen') === '1';
-          if (!alreadySeenWelcome) {
-            setTimeout(function() { window.location.href = '/welcome'; }, 1500);
-          }
+          // Keep activation on one page: the user can record a first movement
+          // immediately in the app, while WhatsApp linking remains optional.
+          setTimeout(function() {
+            var quickAdd = document.getElementById('account-quick-add');
+            if (quickAdd) quickAdd.focus({ preventScroll: true });
+            var step = document.getElementById('step-2');
+            if (step) step.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 250);
         } else {
           if (prog) prog.classList.add('hidden');
           status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';
