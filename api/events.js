@@ -167,7 +167,9 @@ const ALLOWED_EVENTS = new Set([
   'page_view', 'cta_click', 'signup_start', 'signup_complete',
   'sheet_provisioned', 'first_message_received', 'subscribe_clicked',
   'export_downloaded', 'feature_used', 'help_search', 'install_pwa',
-  'referral_share', 'referral_redeem',
+  'referral_share', 'referral_redeem', 'pricing_trial_selected',
+  'pricing_trial_arrived', 'pricing_trial_started',
+  'pricing_paypal_selected', 'pricing_paypal_arrived',
 ]);
 const ALLOWED_META_KEYS = new Set([
   'plan', 'category', 'source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',

@@ -329,6 +329,11 @@ const ANALYTICS_EVENTS = [
   'subscribe_clicked',
   'export_downloaded',
   'feature_used',
+  'pricing_trial_selected',
+  'pricing_trial_arrived',
+  'pricing_trial_started',
+  'pricing_paypal_selected',
+  'pricing_paypal_arrived',
 ];
 
 function lastNDates(n) {
@@ -394,13 +399,34 @@ async function getAnalytics(req, res) {
   for (const ev of ANALYTICS_EVENTS) totals[ev] = daysOut.reduce((s, d) => s + (d.events[ev] || 0), 0);
   const funnel = funnelEvents.map(ev => ({ event: ev, count: totals[ev] }));
 
+  // Pricing conversion is intentionally reported from unique per-tab sessions,
+  // not raw event totals. This makes refresh/back/retry sends idempotent for
+  // funnel reporting without introducing a persistent identifier or cookie.
+  const uniqueTotals = {};
+  for (const ev of ANALYTICS_EVENTS) {
+    uniqueTotals[ev] = daysOut.reduce((s, d) => s + (d.unique_sessions[ev] || 0), 0);
+  }
+  const pricingFunnel = {
+    trial: [
+      { event: 'pricing_trial_selected', count: uniqueTotals.pricing_trial_selected },
+      { event: 'pricing_trial_arrived', count: uniqueTotals.pricing_trial_arrived },
+      { event: 'pricing_trial_started', count: uniqueTotals.pricing_trial_started },
+    ],
+    paypal: [
+      { event: 'pricing_paypal_selected', count: uniqueTotals.pricing_paypal_selected },
+      { event: 'pricing_paypal_arrived', count: uniqueTotals.pricing_paypal_arrived },
+    ],
+  };
+
   return res.status(200).json({
     ok: true,
     window_days: days,
     events: ANALYTICS_EVENTS,
     days: daysOut,
     totals,
+    unique_totals: uniqueTotals,
     funnel,
+    pricing_funnel: pricingFunnel,
   });
 }
 

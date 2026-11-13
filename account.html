@@ -190,6 +190,7 @@
   }
 </style>
 <script src="/lib/analytics.js" defer></script>
+<script src="/js/pricing-funnel.js" defer></script>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#6366F1">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -1574,6 +1575,12 @@ async function kesefleHandleOAuthReturn(code, state) {
     });
     var j = await r.json();
     if (!r.ok || !j.ok) throw new Error((j && (j.detail || j.error)) || ('HTTP ' + r.status));
+    if (j.trialStarted) {
+      try {
+        sessionStorage.setItem('kfl_pricing_trial_started_pending', '1');
+        if (window.kflPricingFunnel) window.kflPricingFunnel.markTrialStarted();
+      } catch (_trialAnalyticsError) {}
+    }
     try {
       sessionStorage.removeItem('kfl_pkce_verifier_' + state);
       sessionStorage.removeItem('kfl_pkce_verifier');
