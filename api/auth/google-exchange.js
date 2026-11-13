@@ -318,6 +318,7 @@ async function handlerImpl(req, res) {
     accessToken: tokens.access_token,
     expiresIn: tokens.expires_in,
     hasRefreshToken: !!tokens.refresh_token,
+    trialStarted: !!isNewUser,
     redirect: '/dashboard',
   });
 }
