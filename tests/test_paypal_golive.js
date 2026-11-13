@@ -53,6 +53,7 @@ const SUBSCRIPTION = fs.readFileSync(path.join(ROOT, 'lib/subscription.js'), 'ut
 const CANCELFLOW = fs.readFileSync(path.join(ROOT, 'api/billing/cancel-flow.js'), 'utf8');
 const REVENUE = fs.readFileSync(path.join(ROOT, 'api/admin/revenue.js'), 'utf8');
 const UPGRADE_HTML = fs.readFileSync(path.join(ROOT, 'upgrade.html'), 'utf8');
+const PAYPAL_RETURN = fs.readFileSync(path.join(ROOT, 'js/paypal-return.js'), 'utf8');
 
 const failures = [];
 function assert(cond, label) {
@@ -519,11 +520,13 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
   assert(/bodyParser:\s*false/.test(PP), 'paypal.js disables the body parser (raw bytes for signature verify)');
   assert(/"webhook_event":'\s*\+\s*raw/.test(PP), 'verifyWebhook splices the RAW delivered bytes into the verify payload');
   assert(/readRawBody\(/.test(PP), 'router reads the raw body once for all actions');
-  assert(/action=confirm/.test(UPGRADE_HTML) && /subscription_id/.test(UPGRADE_HTML),
-    'upgrade.html fires the return-leg confirm with the subscription_id');
-  assert(/credentials:\s*'include'/.test(UPGRADE_HTML), 'confirm call sends the session cookie');
-  assert(/paypal === 'success'/.test(UPGRADE_HTML), 'celebratory state requires the EXPLICIT paypal=success param');
-  assert(/if \(isSuccess\)/.test(UPGRADE_HTML), 'confetti gated on explicit success only');
+  assert(/\/js\/paypal-return\.js/.test(UPGRADE_HTML) && /action=confirm/.test(PAYPAL_RETURN) && /subscription_id/.test(PAYPAL_RETURN),
+    'upgrade.html controller fires the return-leg confirm with the subscription_id');
+  assert(/credentials:\s*'include'/.test(PAYPAL_RETURN), 'confirm call sends the session cookie');
+  assert(/paypal !== 'success'/.test(PAYPAL_RETURN), 'only the EXPLICIT paypal=success path attempts confirmation');
+  assert(/if \(last\.ok\)\s*\{\s*renderSuccess\(\)/.test(PAYPAL_RETURN),
+    'celebration requires an authenticated successful confirmation response');
+  assert(/id="state-success" hidden/.test(UPGRADE_HTML), 'success is fail-closed and hidden in the no-JS/default state');
   assert(/return_url: `\$\{SITE\}\/upgrade\?paypal=success`/.test(PP), 'subscribe return_url still lands on /upgrade?paypal=success');
 
   // restore plan env
