@@ -96,20 +96,31 @@ tailwind.config = {
 <div class="confetti" id="confetti" hidden></div>
 
 <main class="flex-1 flex items-center justify-center px-5 py-12">
-  <!-- Both states are pre-rendered and toggled by JS reading ?paypal=.
-       Defaulting to SUCCESS visible / CANCEL hidden means the page never
-       flashes blank and degrades gracefully if JS is disabled (the common
-       case after a completed PayPal approval is success). -->
+  <!-- States are pre-rendered and toggled by js/paypal-return.js. The safe
+       default is verification, never success: a return URL alone does not
+       prove that PayPal activated the subscription. -->
   <div class="max-w-lg w-full text-center">
 
     <!-- Single shared heading + icon; text/style set by JS per state so the
-         page keeps exactly one top-level heading. Defaults to success wording. -->
-    <div id="state-icon" class="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl mb-6 shadow-lg shadow-brand-500/30">✓</div>
-    <h1 id="upgrade-title" class="text-3xl md:text-5xl font-black tracking-tight">השדרוג הושלם!</h1>
-    <p id="upgrade-sub" class="mt-4 text-lg text-ink-600">תודה שהצטרפת לכספ'לה! קיבלנו אותך בחזרה מ-PayPal ואנחנו מאשרים ומפעילים את המנוי שלך ממש עכשיו.</p>
+         page keeps exactly one top-level heading. -->
+    <div id="state-icon" class="mx-auto w-20 h-20 rounded-full bg-ink-100 ring-1 ring-ink-200 flex items-center justify-center text-4xl mb-6">…</div>
+    <h1 id="upgrade-title" class="text-3xl md:text-5xl font-black tracking-tight">בודקים את השדרוג</h1>
+    <p id="upgrade-sub" class="mt-4 text-lg text-ink-600">חזרת מ-PayPal. אנחנו מאמתים שהמנוי אושר לפני שנציג אותו כפעיל.</p>
+
+    <!-- ===== VERIFYING / RECOVERY ===== -->
+    <div id="state-pending">
+      <div class="mt-8 rounded-3xl border border-ink-200 bg-white p-6 text-right" role="status" aria-live="polite">
+        <p class="font-bold text-lg mb-2">אימות מול PayPal</p>
+        <p id="confirm-status" class="text-sm text-ink-600">האימות מתבצע עכשיו. אין צורך לרענן או לבצע תשלום נוסף.</p>
+      </div>
+      <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+        <button id="btn-confirm-retry" type="button" hidden class="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700 disabled:opacity-60">בדוק שוב</button>
+        <a href="/account" class="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink-300 bg-white px-8 py-3.5 text-base font-semibold text-ink-900 transition hover:border-brand-500 hover:text-brand-700">לעמוד החשבון</a>
+      </div>
+    </div>
 
     <!-- ===== SUCCESS ===== -->
-    <div id="state-success">
+    <div id="state-success" hidden>
       <div class="mt-8 rounded-3xl border border-ink-200 bg-white p-6 text-right">
         <p class="font-bold text-lg mb-3">מה הלאה?</p>
         <ul class="space-y-3 text-sm">
@@ -144,78 +155,8 @@ tailwind.config = {
   </div>
 </main>
 
+<script src="/js/paypal-return.js"></script>
 <script>
-  // Decide which state to show from ?paypal=. PayPal returns ?paypal=success
-  // on approval and ?paypal=cancel on cancel (api/billing/paypal.js return_url
-  // / cancel_url). HONEST states: the celebratory success state (confetti +
-  // "completed") requires the EXPLICIT paypal=success param; cancel variants
-  // show the cancel state; anything else (direct visit, mangled param) shows a
-  // neutral status page — never a fake celebration.
-  (function () {
-    var params = null;
-    var paypal = '';
-    var subscriptionId = '';
-    try {
-      params = new URLSearchParams(window.location.search);
-      paypal = (params.get('paypal') || '').toLowerCase();
-      subscriptionId = params.get('subscription_id') || '';
-    } catch (_e) {}
-    var isCancel = paypal === 'cancel' || paypal === 'cancelled' || paypal === 'canceled';
-    var isSuccess = paypal === 'success';
-    var success = document.getElementById('state-success');
-    var cancel = document.getElementById('state-cancel');
-    var titleEl = document.getElementById('upgrade-title');
-    var subEl = document.getElementById('upgrade-sub');
-    var iconEl = document.getElementById('state-icon');
-    if (isCancel) {
-      if (success) success.hidden = true;
-      if (cancel) cancel.hidden = false;
-      // Repoint the shared heading/icon to the cancel wording (textContent =
-      // XSS-safe). One heading total; we only swap its text.
-      if (titleEl) titleEl.textContent = 'ביטלת את השדרוג';
-      if (subEl) subEl.textContent = 'לא בוצע שום חיוב. החשבון שלך נשאר בדיוק כפי שהיה — אפשר לשדרג בכל רגע שתרצה.';
-      if (iconEl) { iconEl.className = 'mx-auto w-20 h-20 rounded-full bg-ink-100 ring-1 ring-ink-200 flex items-center justify-center text-4xl mb-6'; iconEl.textContent = '↩'; }
-      try { document.title = "בוטל — כספ'לה"; } catch (_t) {}
-    } else if (!isSuccess) {
-      // Direct visit / unknown param: neutral status, no celebration.
-      if (titleEl) titleEl.textContent = 'סטטוס שדרוג';
-      if (subEl) subEl.textContent = 'אם השלמת תשלום ב-PayPal, האישור מתעדכן בחשבונך תוך כמה דקות. אפשר לבדוק את המסלול בדשבורד או בעמוד החשבון.';
-      if (iconEl) { iconEl.className = 'mx-auto w-20 h-20 rounded-full bg-ink-100 ring-1 ring-ink-200 flex items-center justify-center text-4xl mb-6'; iconEl.textContent = '…'; }
-    }
-    // Confetti ONLY on explicit success.
-    if (isSuccess) {
-      var c = document.getElementById('confetti');
-      if (c) {
-        c.hidden = false;
-        var colors = ['#2563eb', '#1d4ed8', '#7dd3fc', '#38bdf8', '#a855f7', '#f59e0b'];
-        for (var i = 0; i < 60; i++) {
-          var s = document.createElement('span');
-          s.style.left = (Math.random() * 100) + 'vw';
-          s.style.background = colors[i % colors.length];
-          s.style.animationDelay = (Math.random() * 0.5) + 's';
-          s.style.animationDuration = (2.5 + Math.random() * 2) + 's';
-          c.appendChild(s);
-        }
-        setTimeout(function () { c.remove(); }, 5500);
-      }
-      // Return-leg activation: PayPal appends ?subscription_id=I-XXX to the
-      // return URL. Confirm it server-side (cookie-auth'd) so the account is
-      // upgraded even if the webhook is delayed/misconfigured. Best-effort —
-      // the webhook remains the primary path; failures here change nothing.
-      if (subscriptionId) {
-        fetch('/api/billing/paypal?action=confirm', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscriptionId: subscriptionId })
-        }).then(function (r) { return r.json().catch(function () { return {}; }); }).then(function (j) {
-          if (j && j.ok && subEl) {
-            subEl.textContent = 'המנוי שלך אושר ופעיל! כל יכולות הפרימיום פתוחות עכשיו.';
-          }
-        }).catch(function () { /* webhook path still covers activation */ });
-      }
-    }
-  })();
   // Service worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {}); });
