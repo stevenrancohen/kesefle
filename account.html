@@ -885,6 +885,20 @@ function _kflSetLinkState(state) {
   });
 }
 
+function _kflPostLinkCodeRequest(phone, accessToken) {
+  var payload = { phone: phone };
+  if (accessToken) payload.accessToken = accessToken;
+  return fetch('/api/whatsapp/link', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 async function kesefleLinkRequestCode() {
   var input = document.getElementById('link-phone-input');
   var btn = document.getElementById('link-gen-btn');
@@ -896,25 +910,22 @@ async function kesefleLinkRequestCode() {
   }
   if (btn) { btn.disabled = true; btn.textContent = '...יוצרת קוד'; }
 
-  // We need the user's access token. The provision flow stores it in window.kfl
-  // or we can grab it fresh via initTokenClient. Simpler path: trigger a fresh
-  // token client request (cached, won't show consent if already granted).
-  var accessToken = null;
   try {
-    accessToken = await _kflGetFreshAccessToken();
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
-    _kflShowLinkError('שגיאת אימות: ' + (e.message || e));
-    return;
-  }
-
-  try {
-    var r = await fetch('/api/whatsapp/link', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: accessToken, phone: phone }),
-    });
+    // The secure login cookie is the durable source of identity. Only older
+    // session-less clients need the short-lived Google token compatibility path.
+    var r = await _kflPostLinkCodeRequest(phone, null);
+    if (r.status === 401) {
+      var accessToken;
+      try {
+        accessToken = await _kflGetFreshAccessToken();
+      } catch (_authError) {
+        if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
+        _kflShowLinkError('ההתחברות פגה — מעבירים אותך להתחברות מחדש…');
+        setTimeout(kesefleStartRedirectSignin, 1300);
+        return;
+      }
+      r = await _kflPostLinkCodeRequest(phone, accessToken);
+    }
     var j = await r.json();
     if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     if (!j.ok) {

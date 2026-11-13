@@ -2,8 +2,9 @@
 //
 // Flow for linking a user's WhatsApp number to their Kesefle account:
 //
-// 1. User on /account submits their E.164 phone → POST { phone } here with an authed accessToken
-// 2. We verify the accessToken via tokeninfo, get the userSub
+// 1. User on /account submits their E.164 phone → POST { phone } with the login session cookie
+// 2. We verify the session and canonical sheet ownership server-side. Older
+//    session-less clients may fall back to a verified Google access token.
 // 3. Generate a 6-digit code (e.g. 482917) + store {code → userSub} in KV with 10-min TTL
 // 4. Return the code to the browser
 // 5. Browser shows "Open WhatsApp and send: קוד 482917"
@@ -12,7 +13,7 @@
 // 8. Bot writes to the user's sheet from then on
 //
 // Endpoints:
-//   POST /api/whatsapp/link  { accessToken, phone }       → { ok, code, expiresIn }
+//   POST /api/whatsapp/link  { phone, accessToken? }      → { ok, code, expiresIn }
 //   POST /api/whatsapp/link?action=confirm { code, phone } → { ok, userSub, sheetId } (called by webhook)
 //   GET  /api/whatsapp/link?phone=E164                    → { ok, linked: true/false, userSub? } (status check)
 //
@@ -69,7 +70,33 @@ async function verifyAccessToken(accessToken) {
   const info = await r.json();
   if (info.error) throw new Error('tokeninfo_error_' + info.error);
   if (!info.sub) throw new Error('tokeninfo_missing_sub');
+  // tokeninfo validates the signature and expiry. When our client ID is
+  // configured, also bind the legacy fallback token to this application.
+  const expectedAudience = String(process.env.GOOGLE_CLIENT_ID || '').trim();
+  const presentedAudience = String(info.aud || info.azp || '').trim();
+  if (expectedAudience && presentedAudience !== expectedAudience) {
+    throw new Error('tokeninfo_audience_mismatch');
+  }
   return info;
+}
+
+function isSameOriginRequest(req) {
+  const origin = String(req.headers?.origin || '').trim();
+  const rawHost = String(req.headers?.['x-forwarded-host'] || req.headers?.host || '')
+    .split(',')[0]
+    .trim();
+  if (!origin || !rawHost) return false;
+
+  try {
+    const parsed = new URL(origin);
+    if (parsed.host.toLowerCase() !== rawHost.toLowerCase()) return false;
+    if (parsed.protocol === 'https:') return true;
+    return process.env.NODE_ENV !== 'production'
+      && parsed.protocol === 'http:'
+      && /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(parsed.host);
+  } catch (_e) {
+    return false;
+  }
 }
 
 async function kvGet(key) {
@@ -444,7 +471,13 @@ async function handlerImpl(req, res) {
   // stale access token was the cause of `invalid_access_token` at this step.
   // Fall back to verifying an access token from the body for session-less calls.
   let userSub = getUserId(req);
-  if (!userSub) {
+  if (userSub) {
+    // Cookie credentials are sent automatically by the browser, so require a
+    // same-origin request before allowing this state-changing action.
+    if (!isSameOriginRequest(req)) {
+      return res.status(403).json({ ok: false, error: 'origin_not_allowed' });
+    }
+  } else {
     const accessToken = String(body?.accessToken || '').trim();
     if (!accessToken || accessToken.length < 20) {
       return res.status(401).json({ ok: false, error: 'not_signed_in' });
@@ -456,6 +489,17 @@ async function handlerImpl(req, res) {
       log.warn('link.request.token_invalid', { reqId: req.reqId, error: e.message });
       return res.status(401).json({ ok: false, error: 'session_expired' });
     }
+  }
+
+  // A verified identity is not enough to mint a link code. Require Kesefle's
+  // canonical server-side onboarding records and an owned sheet first.
+  const [sheetRec, userRec] = await Promise.all([
+    kvGet(`sheet:${userSub}`),
+    kvGet(`user:${userSub}`),
+  ]);
+  const ownedSheetId = sheetRec?.spreadsheetId || userRec?.spreadsheetId || null;
+  if (!ownedSheetId) {
+    return res.status(403).json({ ok: false, error: 'sheet_not_ready' });
   }
 
   // Already linked? Tell the user so they don't generate a new code unnecessarily.

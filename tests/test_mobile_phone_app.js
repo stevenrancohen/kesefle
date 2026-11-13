@@ -33,6 +33,10 @@ assert(/linked: !!sessSub && rec\.userSub === sessSub/.test(link), 'browser poll
 assert(/9720/.test(account) && /s\.slice\(4\)/.test(account), 'frontend normalizes +972 followed by a trunk zero');
 assert(/whatsapp\/link\?check=1/.test(account), 'account UI polls authenticated session status');
 assert(/loadKesefleBotConfig/.test(account) && /api\/config/.test(account), 'account deep links follow runtime bot configuration');
+assert(/_kflPostLinkCodeRequest\(phone, null\)/.test(account), 'account requests a phone-link code with the secure session first');
+assert(/r\.status === 401/.test(account) && /_kflGetFreshAccessToken/.test(account), 'Google token is retained only as a 401 compatibility fallback');
+assert(/isSameOriginRequest\(req\)/.test(link) && /origin_not_allowed/.test(link), 'session-authenticated link mutation is same-origin protected');
+assert(/sheet_not_ready/.test(link) && /ownedSheetId/.test(link), 'link-code mint requires canonical server-side sheet ownership');
 assert(!/cache\.put\(request, resp\.clone\(\)\)/.test(sw.slice(sw.indexOf("if (url.origin === self.location.origin && isApi(url))"), sw.indexOf('// Same-origin navigation requests'))), 'service worker does not cache personalized API responses');
 
 if (failed) process.exit(1);
