@@ -211,6 +211,7 @@ function buildLinkHandler(stubs) {
     KV_ENV +
     extractFn(src, 'sendWelcomeWhatsApp') + '\n' +
     extractFn(src, 'verifyAccessToken') + '\n' +
+    extractFn(src, 'isSameOriginRequest') + '\n' +
     extractFn(src, 'kvGet') + '\n' +
     extractFn(src, 'kvSet') + '\n' +
     extractFn(src, 'kvSetNX') + '\n' +
@@ -264,8 +265,11 @@ function buildGetExpensesHandler(stubs) {
 }
 
 // ── Convenience request builders ─────────────────────────────────────────────
-function reqMintPOST(body) {
-  return { method: 'POST', query: {}, headers: {}, body, reqId: 't', socket: {} };
+function reqMintPOST(body, { origin = 'https://kesefle.com', host = 'kesefle.com' } = {}) {
+  const headers = {};
+  if (origin !== null) headers.origin = origin;
+  if (host !== null) headers.host = host;
+  return { method: 'POST', query: {}, headers, body, reqId: 't', socket: {} };
 }
 function reqConfirmPOST(body, botSecret) {
   const headers = {};
@@ -384,6 +388,99 @@ async function failurePaths() {
     ok('mint: not-signed-in -> 401', res._status === 401, res._status);
     ok('mint: 401 carries not_signed_in error', res._json && res._json.error === 'not_signed_in', res._json && res._json.error);
     ok('mint: no code minted when unauthenticated', !res._json || !res._json.code);
+  }
+
+  // Session-cookie requests are accepted only from Kesefle's own origin.
+  {
+    const world = makeWorld();
+    const SUB = 'google:cross-origin';
+    seedUser(world, SUB, { sheetId: 'SHEET_CROSS_ORIGIN' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: SUB }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000010' },
+      { origin: 'https://evil.example', host: 'kesefle.com' }
+    ), res);
+    ok('mint: cross-origin session request -> 403', res._status === 403, res._status);
+    ok('mint: cross-origin session carries origin_not_allowed', res._json && res._json.error === 'origin_not_allowed', res._json && res._json.error);
+    ok('mint: cross-origin session mints no code', !res._json || !res._json.code);
+  }
+
+  // A valid session still needs a canonical, server-owned sheet record.
+  {
+    const world = makeWorld();
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: 'google:not-provisioned' }));
+    const res = mkRes();
+    await handler(reqMintPOST({ phone: '972500000011' }), res);
+    ok('mint: session without owned sheet -> 403', res._status === 403, res._status);
+    ok('mint: missing ownership carries sheet_not_ready', res._json && res._json.error === 'sheet_not_ready', res._json && res._json.error);
+    ok('mint: missing ownership mints no code', !res._json || !res._json.code);
+  }
+
+  // Backward compatibility: an older client without a session may still use
+  // a valid Google token, but the token must belong to this Google client ID.
+  {
+    const world = makeWorld();
+    const SUB = 'google:legacy-client';
+    const TOKEN = 'legacy-access-token-valid-1234567890';
+    seedUser(world, SUB, { sheetId: 'SHEET_LEGACY' });
+    world.tokeninfo.set(TOKEN, { sub: SUB, aud: 'test-google-client' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000012', accessToken: TOKEN },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: valid access-token fallback -> 200', res._status === 200, res._status);
+    ok('mint: fallback code binds to token user', !!res._json?.code && world.kvObj('linkCode:' + res._json.code)?.userSub === SUB);
+  }
+
+  {
+    const world = makeWorld();
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000013', accessToken: 'expired-access-token-1234567890' },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: expired access-token fallback -> 401', res._status === 401, res._status);
+    ok('mint: expired fallback carries session_expired', res._json && res._json.error === 'session_expired', res._json && res._json.error);
+  }
+
+  {
+    const world = makeWorld();
+    const SUB = 'google:wrong-audience';
+    const TOKEN = 'wrong-audience-token-1234567890';
+    seedUser(world, SUB, { sheetId: 'SHEET_WRONG_AUD' });
+    world.tokeninfo.set(TOKEN, { sub: SUB, aud: 'some-other-google-client' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000014', accessToken: TOKEN },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: wrong-audience token -> 401', res._status === 401, res._status);
+    ok('mint: wrong-audience token mints no code', !res._json || !res._json.code);
+  }
+
+  {
+    const world = makeWorld();
+    const PHONE = '972500000015';
+    const OWNER = 'google:fallback-phone-owner';
+    const ATTACKER = 'google:fallback-attacker';
+    const TOKEN = 'fallback-attacker-token-1234567890';
+    seedUser(world, OWNER, { sheetId: 'SHEET_FALLBACK_OWNER' });
+    seedUser(world, ATTACKER, { sheetId: 'SHEET_FALLBACK_ATTACKER' });
+    world.store.set('phone:' + PHONE, JSON.stringify({ userSub: OWNER, spreadsheetId: 'SHEET_FALLBACK_OWNER' }));
+    world.tokeninfo.set(TOKEN, { sub: ATTACKER, aud: 'test-google-client' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: PHONE, accessToken: TOKEN },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: fallback cannot claim another user phone -> 409', res._status === 409, res._status);
+    ok('mint: fallback preserves original phone owner', world.kvObj('phone:' + PHONE)?.userSub === OWNER);
   }
 
   // 2b. EXPIRED / INVALID CODE -> confirm 404. (TTL expiry == key absent in KV.)
@@ -558,8 +655,10 @@ async function tenantIsolation() {
     KESEFLE_BOT_SECRET: process.env.KESEFLE_BOT_SECRET,
     META_ACCESS_TOKEN: process.env.META_ACCESS_TOKEN,
     META_PHONE_NUMBER_ID: process.env.META_PHONE_NUMBER_ID,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   };
   try {
+    process.env.GOOGLE_CLIENT_ID = 'test-google-client';
     await happyPath();
     await failurePaths();
     await tenantIsolation();
