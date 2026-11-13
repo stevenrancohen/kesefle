@@ -41,6 +41,7 @@ const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 const CATCHUP_DAYS = 3;          // daily cron also catches the last 3 days
 const MAX_TEMPLATES = 50;
 const FREE_TEMPLATE_LIMIT = 5; // free tier cap; premium (paid/trial/referral) = unlimited
+const RECURRING_UPGRADE_URL = 'https://kesefle.com/pricing?from=recurring-limit';
 const LOGGED_TTL_SEC = 45 * 86400;
 
 // ── KV helpers ────────────────────────────────────────────────────────────────
@@ -315,7 +316,8 @@ async function addTemplate(body, res) {
   if (list.length >= FREE_TEMPLATE_LIMIT && !(await isPremiumByPhone(phone))) {
     return res.status(402).json({
       ok: false, error: 'free_limit_reached', limit: FREE_TEMPLATE_LIMIT,
-      message: 'במסלול החינמי אפשר עד 5 הוצאות קבועות. שדרג ל-Pro להוצאות קבועות ללא הגבלה: kesefle.com/upgrade',
+      upgrade_url: RECURRING_UPGRADE_URL,
+      message: 'במסלול החינמי אפשר עד 5 הוצאות קבועות. אפשר להשוות מסלולים ללא חיוב אוטומטי: ' + RECURRING_UPGRADE_URL,
     });
   }
   const tpl = {
@@ -570,7 +572,8 @@ async function sessionDispatch(action, sub, phone, body, res) {
     if (list.length >= FREE_TEMPLATE_LIMIT && !(await isPremiumBySub(sub))) {
       return res.status(402).json({
         ok: false, error: 'free_limit_reached', limit: FREE_TEMPLATE_LIMIT,
-        message: 'במסלול החינמי אפשר עד 5 הוצאות קבועות. שדרג ל-Pro להוצאות קבועות ללא הגבלה: kesefle.com/upgrade',
+        upgrade_url: RECURRING_UPGRADE_URL,
+        message: 'במסלול החינמי אפשר עד 5 הוצאות קבועות. אפשר להשוות מסלולים ללא חיוב אוטומטי: ' + RECURRING_UPGRADE_URL,
       });
     }
     list.push(built.tpl);

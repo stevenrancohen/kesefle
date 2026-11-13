@@ -2000,6 +2000,7 @@ var KFL_FIXED_CATS = [
   { label: 'חוג / חינוך',         category: 'חינוך',       subcategory: 'חוגים ותנועת נוער' },
   { label: 'אחר',                 category: 'הוצאות קבועות', subcategory: 'קבוע' }
 ];
+var KFL_RECURRING_UPGRADE_URL = '/pricing?from=recurring-limit';
 
 function _kflFixedPhone() {
   try { return localStorage.getItem('kesefle_whatsapp_phone') || ''; } catch (e) { return ''; }
@@ -2014,6 +2015,32 @@ function _kflFixedLocalGet() {
 }
 function _kflFixedLocalSet(list) {
   try { localStorage.setItem(_kflFixedLocalKey(), JSON.stringify(list || [])); } catch (e) {}
+}
+function _kflFixedDraftKey() {
+  return 'kesefle_fixed_paywall_draft:' + (_kflFixedPhone() || 'anon');
+}
+function _kflFixedDraftSave(draft) {
+  try { sessionStorage.setItem(_kflFixedDraftKey(), JSON.stringify(draft || {})); } catch (e) {}
+}
+function _kflFixedDraftClear() {
+  try { sessionStorage.removeItem(_kflFixedDraftKey()); } catch (e) {}
+}
+function _kflFixedDraftRestore() {
+  var draft = null;
+  try { draft = JSON.parse(sessionStorage.getItem(_kflFixedDraftKey()) || 'null'); } catch (e) {}
+  if (!draft) return false;
+  var cat = document.getElementById('fx-category');
+  var amount = document.getElementById('fx-amount');
+  var day = document.getElementById('fx-day');
+  var custom = document.getElementById('fx-custom');
+  var catIndex = Math.max(0, Math.min(KFL_FIXED_CATS.length - 1, Number(draft.categoryIndex) || 0));
+  if (cat) cat.value = String(catIndex);
+  if (amount && Number(draft.amount) > 0) amount.value = String(draft.amount);
+  if (day && Number(draft.day) >= 1 && Number(draft.day) <= 28) day.value = String(draft.day);
+  if (custom) custom.value = String(draft.custom || '').slice(0, 40);
+  var wrap = document.getElementById('fx-customwrap');
+  if (wrap) wrap.classList.toggle('hidden', KFL_FIXED_CATS[catIndex].label !== 'אחר');
+  return true;
 }
 
 function _kflFixedMsg(text, kind) {
@@ -2175,7 +2202,7 @@ async function kesefleFixedAdd() {
   }
 
   // Try the server in the exact recurring contract shape.
-  var ok = false, errCode = '';
+  var ok = false, errCode = '', paywall = false;
   try {
     var r = await fetch('/api/recurring', {
       method: 'POST',
@@ -2193,13 +2220,39 @@ async function kesefleFixedAdd() {
     });
     var j = await r.json().catch(function () { return {}; });
     if (r.ok && j && j.ok) { ok = true; if (j.template && j.template.id) tpl.id = j.template.id; }
-    else errCode = (j && j.error) || ('http_' + r.status);
+    else {
+      errCode = (j && j.error) || ('http_' + r.status);
+      paywall = r.status === 402 || errCode === 'free_limit_reached';
+    }
   } catch (e) { errCode = 'network'; }
+
+  // A 402 is an intentional plan limit, not a sync failure. Never add the
+  // rejected rule to the local mirror (that would look active while the cron
+  // never sees it), and never clear the form. Keep a per-tab, phone-scoped
+  // draft so refresh/back from pricing restores the user's exact intent.
+  if (paywall) {
+    _kflFixedDraftSave({
+      categoryIndex: Number(catEl.value) || 0,
+      amount: amount,
+      day: day,
+      custom: String((customEl && customEl.value) || '').slice(0, 40),
+    });
+    _kflFixedRender(_kflFixedLocalGet());
+    _kflFixedMsg(
+      'הגעת למגבלת 5 ההוצאות הקבועות במסלול החינמי. ההוצאות שכבר שמרת נשארות פעילות; ההוצאה החדשה עדיין לא נשמרה.<br>' +
+      '<a href="' + KFL_RECURRING_UPGRADE_URL + '" class="mt-2 inline-flex min-h-[44px] items-center rounded-xl bg-brand-600 px-4 py-2 font-bold text-white">השווה מסלולים</a>' +
+      '<span class="mt-1 block text-[11px]">מעבר לעמוד המסלולים אינו מבצע חיוב אוטומטי.</span>',
+      'warn'
+    );
+    if (btn) { btn.disabled = false; btn.textContent = 'הוסף הוצאה קבועה'; }
+    return;
+  }
 
   // Mirror locally regardless so the list always reflects what the user added.
   var list = _kflFixedLocalGet(); list.push(tpl); _kflFixedLocalSet(list);
 
   if (ok) {
+    _kflFixedDraftClear();
     // Re-pull from server to stay authoritative; render happens inside.
     await kesefleFixedList();
     _kflFixedMsg('✓ נוסף! ' + description + ' (₪' + amount.toLocaleString('he-IL') + ') ייכנס לגיליון בכל ' + day + ' לחודש.', 'ok');
@@ -2280,6 +2333,7 @@ function kesefleFixedReveal() {
   var sec = document.getElementById('fixed-expenses');
   if (!sec) return;
   try { _kflFixedInitInputs(); } catch (e) {}
+  try { _kflFixedDraftRestore(); } catch (e) {}
   sec.classList.remove('hidden');
   try { kesefleFixedList(); } catch (e) {}
 }
