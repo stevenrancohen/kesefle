@@ -62,6 +62,13 @@ function daysBetween(a, b) {
   return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// Pure predicate so the conversion nudge's audience stays explicit and
+// regression-testable: Free (including an expired trial represented as Free)
+// receives it on day 14; an active paid plan never does.
+export function shouldSendDay14Upgrade(user, days) {
+  return days === 14 && (user?.plan === 'free' || !user?.plan);
+}
+
 // ISO 8601 week key (e.g. "2026-W21"). Used as a dedup namespace for the
 // weekly digest so re-running the cron the same Sunday doesn't double-send.
 function isoWeekKey(d) {
@@ -256,7 +263,7 @@ async function handlerImpl(req, res) {
         if (r.ok || r.skipped) { stats.day_7++; scheduled++; }
       }
       // Day 14: upgrade nudge (only for free plan).
-      if (days === 14 && (u.plan === 'free' || !u.plan)) {
+      if (shouldSendDay14Upgrade(u, days)) {
         const r = await maybeSend(u.userSub, 'day_14_upgrade_to_pro', baseVars);
         if (r.ok || r.skipped) { stats.day_14++; scheduled++; }
       }

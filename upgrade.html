@@ -124,7 +124,7 @@ tailwind.config = {
 
       <p class="mt-6 text-xs text-ink-500">העדכון נכנס תוך כמה שניות. אם המסלול עדיין מופיע כחינמי, רעננו את הדשבורד בעוד רגע &mdash; PayPal שולח לנו את האישור ברקע.</p>
 
-      <a href="/dashboard" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">המשך לדשבורד &larr;</a>
+      <a id="upgrade-return-primary" href="/dashboard" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">המשך לדשבורד &larr;</a>
     </div>
 
     <!-- ===== CANCEL ===== -->
@@ -136,7 +136,7 @@ tailwind.config = {
 
       <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
         <a href="/pricing" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">חזרה למסלולים</a>
-        <a href="/dashboard" class="inline-flex items-center justify-center rounded-2xl border border-ink-300 bg-white px-8 py-3.5 text-base font-semibold text-ink-900 transition hover:border-brand-500 hover:text-brand-700">לדשבורד שלי</a>
+        <a id="upgrade-return-cancel" href="/dashboard" class="inline-flex items-center justify-center rounded-2xl border border-ink-300 bg-white px-8 py-3.5 text-base font-semibold text-ink-900 transition hover:border-brand-500 hover:text-brand-700">חזרה בלי לבצע רכישה</a>
       </div>
     </div>
 
@@ -144,6 +144,7 @@ tailwind.config = {
   </div>
 </main>
 
+<script src="/js/email-upgrade-context.js"></script>
 <script>
   // Decide which state to show from ?paypal=. PayPal returns ?paypal=success
   // on approval and ?paypal=cancel on cancel (api/billing/paypal.js return_url
@@ -152,6 +153,24 @@ tailwind.config = {
   // show the cancel state; anything else (direct visit, mangled param) shows a
   // neutral status page — never a fake celebration.
   (function () {
+    // Preserve a same-origin, allowlisted return captured when the user came
+    // from the trial-expiry email. Session storage survives refresh, OAuth and
+    // the PayPal round-trip; external/open-redirect values are rejected by the
+    // shared helper. Direct checkout keeps the existing dashboard default.
+    try {
+      var emailContext = window.kflEmailUpgradeContext &&
+        window.kflEmailUpgradeContext.capture(window.location.search, window.sessionStorage, window.location.origin);
+      var safeReturn = emailContext && emailContext.returnTo;
+      if (safeReturn) {
+        var primaryReturn = document.getElementById('upgrade-return-primary');
+        var cancelReturn = document.getElementById('upgrade-return-cancel');
+        if (primaryReturn) {
+          primaryReturn.href = safeReturn;
+          primaryReturn.textContent = 'חזרה לחשבון שלי ←';
+        }
+        if (cancelReturn) cancelReturn.href = safeReturn;
+      }
+    } catch (_contextError) {}
     var params = null;
     var paypal = '';
     var subscriptionId = '';

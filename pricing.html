@@ -1101,6 +1101,7 @@ window.kflSetPeriod = function (period) {
   } catch (_e) {}
 })();
 </script>
+<script src="/js/email-upgrade-context.js"></script>
 <script>
 /* ── PayPal subscribe wiring (revenue) ─────────────────────────────────────
    Turns the Pro / משפחה CTAs into real "Subscribe with PayPal" actions that
@@ -1132,6 +1133,29 @@ function _kflPriceNotify(msg) {
     document.body.appendChild(t);
     setTimeout(function () { try { t.remove(); } catch (_r) {} }, 6000);
   } catch (_e) { try { window.alert(msg); } catch (_a) {} }
+}
+var _kflEmailUpgrade = (function () {
+  try {
+    if (!window.kflEmailUpgradeContext) return { source: '', returnTo: '' };
+    return window.kflEmailUpgradeContext.capture(
+      window.location.search,
+      window.sessionStorage,
+      window.location.origin
+    );
+  } catch (_e) { return { source: '', returnTo: '' }; }
+})();
+// The email source is revenue attribution, not identity. Record this landing
+// immediately (the generic A/B tracker below may not be enabled) and never let
+// analytics failure affect the comparison or checkout experience.
+if (_kflEmailUpgrade.source) {
+  try {
+    fetch('/api/log/funnel-event', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: 'pricing_viewed', meta: { source: _kflEmailUpgrade.source } }),
+      keepalive: true,
+    }).catch(function () {});
+  } catch (_emailAttributionError) {}
 }
 function _kflReadPeriod() {
   try { return sessionStorage.getItem('kfl_pricing_period') === 'year' ? 'year' : 'month'; } catch (_e) { return 'month'; }
@@ -1223,7 +1247,10 @@ window.kflPricingCta = function (plan, ev) {
       fetch('/api/log/funnel-event', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'pricing_viewed', meta: { source: fired.join('|') } }),
+        body: JSON.stringify({
+          event: 'pricing_viewed',
+          meta: { source: (_kflEmailUpgrade.source || fired.join('|')).slice(0, 80) }
+        }),
         keepalive: true,
       }).catch(function () {});
     } catch (_e) {}
