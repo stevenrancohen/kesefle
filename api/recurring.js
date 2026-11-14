@@ -42,6 +42,34 @@ const CATCHUP_DAYS = 3;          // daily cron also catches the last 3 days
 const MAX_TEMPLATES = 50;
 const FREE_TEMPLATE_LIMIT = 5; // free tier cap; premium (paid/trial/referral) = unlimited
 const LOGGED_TTL_SEC = 45 * 86400;
+const PUBLIC_SITE_ORIGIN = 'https://kesefle.com';
+
+// A recurring-limit CTA must land on the pricing comparison, not /upgrade
+// (which is the PayPal return/status page). The source query is intentionally
+// explicit for funnel attribution, while return_to is a fixed same-origin path
+// chosen by the server -- never user input.
+function recurringUpgradeUrl(surface = 'web') {
+  const bot = surface === 'bot';
+  const source = bot ? 'recurring_limit_bot' : 'recurring_limit';
+  const returnTo = bot ? '/dashboard#/recurring' : '/account#fixed-expenses';
+  const path = `/pricing?source=${encodeURIComponent(source)}&return_to=${encodeURIComponent(returnTo)}#tiers`;
+  return bot ? PUBLIC_SITE_ORIGIN + path : path;
+}
+
+function recurringLimitPayload(surface = 'web') {
+  const upgradeUrl = recurringUpgradeUrl(surface);
+  return {
+    ok: false,
+    error: 'free_limit_reached',
+    limit: FREE_TEMPLATE_LIMIT,
+    source: surface === 'bot' ? 'recurring_limit_bot' : 'recurring_limit',
+    return_to: surface === 'bot' ? '/dashboard#/recurring' : '/account#fixed-expenses',
+    upgrade_url: upgradeUrl,
+    message: surface === 'bot'
+      ? `הגעת למגבלת 5 ההוצאות הקבועות במסלול החינמי. להשוואת מסלולים: ${upgradeUrl}`
+      : 'הגעת למגבלת 5 ההוצאות הקבועות במסלול החינמי. הפרטים שהזנת יישמרו בדפדפן בזמן השוואת המסלולים.',
+  };
+}
 
 // ── KV helpers ────────────────────────────────────────────────────────────────
 async function kvGet(key) {
@@ -313,10 +341,7 @@ async function addTemplate(body, res) {
   if (list.length >= MAX_TEMPLATES) return res.status(409).json({ ok: false, error: 'too_many_templates', max: MAX_TEMPLATES });
   // Free tier is capped at 5 templates; premium is unlimited.
   if (list.length >= FREE_TEMPLATE_LIMIT && !(await isPremiumByPhone(phone))) {
-    return res.status(402).json({
-      ok: false, error: 'free_limit_reached', limit: FREE_TEMPLATE_LIMIT,
-      message: 'במסלול החינמי אפשר עד 5 הוצאות קבועות. שדרג ל-Pro להוצאות קבועות ללא הגבלה: kesefle.com/upgrade',
-    });
+    return res.status(402).json(recurringLimitPayload('bot'));
   }
   const tpl = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
@@ -568,10 +593,7 @@ async function sessionDispatch(action, sub, phone, body, res) {
     const list = (await kvGet(listKey)) || [];
     if (list.length >= MAX_TEMPLATES) return res.status(409).json({ ok: false, error: 'too_many_templates', max: MAX_TEMPLATES });
     if (list.length >= FREE_TEMPLATE_LIMIT && !(await isPremiumBySub(sub))) {
-      return res.status(402).json({
-        ok: false, error: 'free_limit_reached', limit: FREE_TEMPLATE_LIMIT,
-        message: 'במסלול החינמי אפשר עד 5 הוצאות קבועות. שדרג ל-Pro להוצאות קבועות ללא הגבלה: kesefle.com/upgrade',
-      });
+      return res.status(402).json(recurringLimitPayload('web'));
     }
     list.push(built.tpl);
     await kvSet(listKey, list);
@@ -702,3 +724,9 @@ async function handlerImpl(req, res) {
 export default withRequestId(
   withRateLimit({ key: 'recurring', limit: 60, windowSec: 60 })(handlerImpl)
 );
+
+export const __test = {
+  sessionDispatch,
+  recurringUpgradeUrl,
+  recurringLimitPayload,
+};

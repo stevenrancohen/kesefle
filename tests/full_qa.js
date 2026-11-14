@@ -88,6 +88,7 @@ const UNIT_SUITES = [
   'tests/test_mobile_phone_app.js',                    // mobile app: direct entry, canonical bot config, account-bound two-way phone verification, no stale number
   'tests/test_ui_preferences.js',                      // adaptive UI: tenant-scoped persona + personal/household/business spaces, mobile touch targets
   'tests/test_goall4u_ui.js',                           // visual system: dark retail-style hierarchy, spectrum rail, honest install/offline copy, canonical domain
+  'tests/test_upgrade_cta_context.js',                  // recurring limit: correct pricing route, safe return context, draft preservation, Free/expired/Pro behavior
   'tests/test_admin_console_data_sources.js',         // admin console: deepened sections wire ONLY real requireAdmin endpoints (funnel-summary, registration-health, recent-signups, revenue, launch-monitor) + one-click recovery (reprovision/resend) + masked identity + honest "not instrumented" notes; no fabricated tiles
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
