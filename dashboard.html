@@ -319,19 +319,22 @@
        Mobile: pinned higher (bottom-24) so it doesn't sit on top of the FAB.
        The FAB also dims when this bar is visible (see kflShowBulkBar). -->
   <div id="kfl-bulk-bar" class="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-auto sm:max-w-md z-40 hidden">
-    <div class="rounded-2xl bg-white dark:bg-white text-ink-900 dark:text-ink-900 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500 text-white text-sm font-black" id="kfl-bulk-count">0</span>
-        <span class="text-sm font-bold">נבחרו</span>
+    <div class="rounded-2xl bg-white dark:bg-white text-ink-900 dark:text-ink-900 shadow-2xl px-4 py-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="grid h-7 w-7 place-items-center rounded-full bg-brand-500 text-white text-sm font-black" id="kfl-bulk-count">0</span>
+          <span class="text-sm font-bold">נבחרו</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="kflBulkDelete()" class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-xs font-bold text-white transition" id="kfl-bulk-delete">
+            🗑 מחק
+          </button>
+          <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-white dark:hover:bg-ink-100 dark:hover:text-ink-900">
+            ביטול
+          </button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button onclick="kflBulkDelete()" class="rounded-xl bg-red-500 hover:bg-red-600 px-3 py-2 text-xs font-bold text-white transition" id="kfl-bulk-delete">
-          🗑 מחק
-        </button>
-        <button onclick="kflBulkClear()" class="rounded-xl border border-ink-600 dark:border-ink-300 px-3 py-2 text-xs font-bold transition hover:bg-white dark:hover:bg-ink-100 dark:hover:text-ink-900">
-          ביטול
-        </button>
-      </div>
+      <div id="kfl-bulk-status" role="status" aria-live="polite" class="mt-2 hidden break-words rounded-xl px-3 py-2 text-xs font-semibold"></div>
     </div>
   </div>
 
@@ -2071,6 +2074,68 @@ function showReauthBanner() {
 var LAST_DASHBOARD = null;
 var LAST_TX = null;
 
+// A failed bulk delete must never discard the user's selection. Keep only the
+// selected transaction identities in per-tab, per-user storage; this lets a
+// rate-limited/network-failed attempt survive refresh or a trip back from
+// another page without making any row look deleted before the server confirms.
+function _kflBulkRecoveryStorageKey() {
+  var u = null;
+  try { u = kesefleGetUser(); } catch (_e) {}
+  return 'kesefle_bulk_delete_recovery:' + ((u && u.sub) || 'anon');
+}
+
+function _kflBulkRowKeys(rows) {
+  var seen = Object.create(null);
+  return (rows || []).map(function (t) {
+    var base = JSON.stringify([
+      String((t && t.date) || ''),
+      Number((t && t.amount) || 0),
+      String((t && (t.description || t.subcategory)) || 'הוצאה'),
+      !!(t && t.is_income),
+    ]);
+    var occurrence = seen[base] || 0;
+    seen[base] = occurrence + 1;
+    return base + '#' + occurrence;
+  });
+}
+
+function _kflBulkReadRecovery() {
+  try {
+    var parsed = JSON.parse(sessionStorage.getItem(_kflBulkRecoveryStorageKey()) || '[]');
+    return Array.isArray(parsed) ? parsed.filter(function (v) { return typeof v === 'string'; }) : [];
+  } catch (_e) { return []; }
+}
+
+function _kflBulkSaveRecovery(selected, rows) {
+  var keys = _kflBulkRowKeys(rows);
+  var saved = [];
+  (selected || new Set()).forEach(function (idx) {
+    if (keys[idx]) saved.push(keys[idx]);
+  });
+  try {
+    if (saved.length) sessionStorage.setItem(_kflBulkRecoveryStorageKey(), JSON.stringify(saved));
+    else sessionStorage.removeItem(_kflBulkRecoveryStorageKey());
+  } catch (_e) {}
+  return saved;
+}
+
+function _kflBulkClearRecovery() {
+  try { sessionStorage.removeItem(_kflBulkRecoveryStorageKey()); } catch (_e) {}
+}
+
+function _kflBulkRecoveryIndices(rows) {
+  var saved = new Set(_kflBulkReadRecovery());
+  var keys = _kflBulkRowKeys(rows);
+  var restored = new Set();
+  keys.forEach(function (key, idx) { if (saved.has(key)) restored.add(idx); });
+  // Drop identities that no longer exist in the refreshed result. This is
+  // important after a partial external edit: recovery can never select a
+  // different transaction merely because list indices shifted.
+  if (restored.size) _kflBulkSaveRecovery(restored, rows);
+  else if (saved.size) _kflBulkClearRecovery();
+  return restored;
+}
+
 // Init: gate access to authenticated users only.
 // Now ASYNC -- before redirecting, we try /api/me (cookie-based) to
 // hydrate localStorage. That covers the returning-user-on-fresh-device
@@ -2414,11 +2479,10 @@ function renderDashboard(d) {
   if (recent.length === 0) { showEmptyState(); return; }
   var list = document.getElementById('recent-list');
   list.innerHTML = '';
-  // Reset bulk-select state when re-rendering.
-  window._kflSelected = window._kflSelected || new Set();
+  // Restore only a selection saved after a server-rejected delete. Ordinary
+  // re-renders still start empty, matching the previous behavior.
   window._kflRecentRows = recent.slice(0, 10); // store for bulk action lookup
-  window._kflSelected.clear();
-  if (typeof kflBulkBarUpdate === 'function') kflBulkBarUpdate();
+  window._kflSelected = _kflBulkRecoveryIndices(window._kflRecentRows);
   recent.slice(0, 10).forEach(function(t, i) {
     var meta = categoryMeta(t.subcategory || t.category);
     var row = document.createElement('div');
@@ -2440,13 +2504,23 @@ function renderDashboard(d) {
       '<div class="' + amountColor + ' num text-base font-black">' + sign + num(t.amount) + '</div>';
     list.appendChild(row);
     // Wire the checkbox to the global selection set.
-    row.querySelector('.kfl-tx-check').addEventListener('change', function (e) {
+    var checkbox = row.querySelector('.kfl-tx-check');
+    checkbox.checked = window._kflSelected.has(i);
+    checkbox.addEventListener('change', function (e) {
       var idx = Number(e.target.getAttribute('data-idx'));
       if (e.target.checked) window._kflSelected.add(idx);
       else window._kflSelected.delete(idx);
+      // Once recovery exists, keep it in sync with any user adjustment.
+      if (_kflBulkReadRecovery().length) {
+        _kflBulkSaveRecovery(window._kflSelected, window._kflRecentRows || []);
+      }
       if (typeof kflBulkBarUpdate === 'function') kflBulkBarUpdate();
     });
   });
+  if (typeof kflBulkBarUpdate === 'function') kflBulkBarUpdate();
+  if (window._kflSelected.size && typeof kflBulkShowStatus === 'function') {
+    kflBulkShowStatus('הבחירה מהניסיון הקודם שוחזרה. לא נמחק דבר.', 'warn');
+  }
 
   // --- Top categories: donut + colored legend
   var cats = d.top_categories || [];
@@ -5098,10 +5172,21 @@ window.kflBulkBarUpdate = function () {
   else { bar.classList.add('hidden'); }
 };
 
+window.kflBulkShowStatus = function (text, kind) {
+  var el = document.getElementById('kfl-bulk-status');
+  if (!el) return;
+  if (!text) { el.textContent = ''; el.classList.add('hidden'); return; }
+  el.textContent = text;
+  el.className = 'mt-2 break-words rounded-xl px-3 py-2 text-xs font-semibold ' +
+    (kind === 'ok' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-900');
+};
+
 window.kflBulkClear = function () {
   if (window._kflSelected) window._kflSelected.clear();
+  _kflBulkClearRecovery();
   var boxes = document.querySelectorAll('.kfl-tx-check');
   for (var i = 0; i < boxes.length; i++) boxes[i].checked = false;
+  window.kflBulkShowStatus('', '');
   window.kflBulkBarUpdate();
 };
 
@@ -5124,6 +5209,7 @@ window.kflBulkDelete = async function () {
   if (!confirm('למחוק ' + matches.length + ' הוצאות מהגיליון? פעולה זו לא ניתנת לביטול.')) return;
   var btn = document.getElementById('kfl-bulk-delete');
   btn.disabled = true; btn.textContent = '...מוחקת';
+  window.kflBulkShowStatus('', '');
   try {
     var r = await fetch('/api/sheet/delete-rows', {
       method: 'POST', credentials: 'include',
@@ -5136,17 +5222,26 @@ window.kflBulkDelete = async function () {
       if (j.notFound && j.notFound.length) {
         msg += ' (לא נמצאו: ' + j.notFound.length + ')';
       }
+      // Only a server-confirmed delete may clear the selection/draft.
+      window.kflBulkClear();
       alert(msg);
       // Reload dashboard data so the deletion reflects immediately.
       if (typeof kesefleRefresh === 'function') kesefleRefresh();
     } else {
-      alert('שגיאה: ' + (j.error || r.status) + (j.detail ? ' — ' + String(j.detail).slice(0, 80) : ''));
+      _kflBulkSaveRecovery(sel, rows);
+      if (r.status === 429 || j.error === 'rate_limited') {
+        var minutes = Math.max(1, Math.ceil(Number(j.retryAfter || j.retry_after || 60) / 60));
+        var waitLabel = minutes === 1 ? 'דקה' : (minutes + ' דקות');
+        window.kflBulkShowStatus('לא נמחק דבר. הבחירה נשמרה — אפשר לנסות שוב בעוד ' + waitLabel + '.', 'warn');
+      } else {
+        window.kflBulkShowStatus('לא נמחק דבר. הבחירה נשמרה כדי שאפשר יהיה לנסות שוב.', 'warn');
+      }
     }
   } catch (e) {
-    alert('שגיאת רשת: ' + (e.message || e));
+    _kflBulkSaveRecovery(sel, rows);
+    window.kflBulkShowStatus('שגיאת רשת — לא נמחק דבר והבחירה נשמרה לניסיון חוזר.', 'warn');
   } finally {
     btn.disabled = false; btn.textContent = '🗑 מחק';
-    window.kflBulkClear();
   }
 };
 </script>
