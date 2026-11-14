@@ -28,7 +28,7 @@ for (const file of installPages) {
   assert.doesNotMatch(html, /kesefle\.vercel\.app/, `${file} must not send users to the obsolete host`);
   assert.match(html, /kesefle\.com\/app/, `${file} must point to the installable app`);
 }
-assert.match(read('install.html'), /רענון נתונים והוספת תנועה דורשים חיבור לאינטרנט/);
+assert.match(read('install.html'), /צפייה בנתונים עדכניים והוספת תנועה דורשות חיבור לאינטרנט/);
 assert.match(read('sw.js'), /v17-2026-11-07-goall4u-ui/);
 
 console.log('GOALL4U-inspired UI system: PASS');

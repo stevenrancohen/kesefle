@@ -6,7 +6,7 @@
 <title>Installation — comment ajouter כספ'לה à l'écran d'accueil · Kesefle</title>
 <meta name="description" content="Installez כספ'לה comme une application sur votre téléphone ou votre ordinateur — Android, iPhone, iPad, macOS, Windows. Sans magasin d'applications." />
 <meta name="theme-color" content="#6366F1" />
-<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/app.webmanifest" />
 <link rel="icon" type="image/png" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <meta property="og:title" content="Installez כספ'לה — une vraie application sans magasin" />
@@ -81,7 +81,7 @@ tailwind.config = {
   }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#2563eb,#1e40af); color:white; font-weight:900; font-size:18px; }
-  .device-tab { transition: all 0.2s; }
+  .device-tab { min-height:44px; transition: all 0.2s; }
   .device-tab.active { background: #2563eb; color: white; }
   .device-content { display: none; }
   .device-content.active { display: block; }
@@ -205,7 +205,8 @@ tailwind.config = {
       <span class="num">⚡</span> Pas de magasin d'applications · Sans téléchargement
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Ajoutez כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">à l'écran d'accueil de votre téléphone</span></h1>
-    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — une vraie application, fonctionnant hors ligne, mais sans avoir besoin de l'approbation d'Apple/Google et sans attendre 24 heures pour la télécharger.</p>
+    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — l'enveloppe de l'application s'ouvre sans réseau et se met à jour sans store. Les données à jour et l'ajout d'une opération nécessitent Internet.</p>
+    <a href="https://kesefle.com/app" class="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 sm:w-auto">Ouvrir כספ'לה sur kesefle.com/app</a>
   </section>
 
   <!-- Device tabs -->
@@ -232,8 +233,8 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">Touchez le bouton de partage</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">En bas de l'écran — l'icône d'un carré avec une flèche vers le haut <span class="num">↑</span></p>
+            <p class="font-bold text-lg">Ouvrez le menu de la page, puis Partager</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Dans Safari, touchez le bouton du menu de la page, puis « Partager ». Si l'icône de partage (carré avec flèche vers le haut <span class="num">↑</span>) est visible directement, touchez-la.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -277,16 +278,15 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">Attendez la bannière d'installation</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">En général, Chrome affiche une <b>bannière en bas</b> : « Install Kesefle / Installer ». Touchez-la et passez directement à l'étape 4.</p>
-            <p class="text-sm mt-2">Si la bannière n'apparaît pas, passez à l'étape 3.</p>
+            <p class="font-bold text-lg">Ouvrez le menu Chrome <span class="num">⋮</span></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Touchez les trois points dans le coin supérieur de Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">3</span>
           <div>
-            <p class="font-bold text-lg">Menu (3 points verticaux) → « Ajouter à l'écran d'accueil » / « Installer l'application »</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Dans le coin supérieur droit de Chrome.</p>
+            <p class="font-bold text-lg">Choisissez « Ajouter à l'écran d'accueil »</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Choisissez ensuite « Installer et créer un raccourci » ou « Installer l'application » — le libellé varie légèrement selon la version de Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -300,7 +300,7 @@ tailwind.config = {
           <span class="step-num shrink-0">5</span>
           <div>
             <p class="font-bold text-lg">✓ C'est prêt !</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה fonctionne comme une vraie application. Elle marche aussi hors ligne (elle affiche le tableau de bord depuis le cache).</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה s'ouvre dans une fenêtre autonome comme une application. Sans réseau, l'enveloppe ou un message hors ligne s'affiche ; les données à jour et l'ajout nécessitent Internet.</p>
           </div>
         </li>
       </ol>
@@ -387,7 +387,7 @@ tailwind.config = {
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Pas d'approbation Apple/Google</b> — nous n'avons pas besoin d'attendre des semaines l'approbation d'une mise à jour.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Mises à jour automatiques</b> — pas besoin de télécharger une nouvelle version. Utilisez la PWA → vous obtenez la toute dernière version.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Moins d'espace de stockage</b> — l'application occupe environ 1 Mo au lieu de 50 à 100 Mo.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Fonctionne hors ligne</b> — le tableau de bord est enregistré dans le cache local et s'ouvre même sans connexion.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Enveloppe accessible hors ligne</b> — l'application s'ouvre et indique l'absence de réseau. Pour votre confidentialité, les données financières ne sont pas stockées dans un cache partagé.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Aucune commission à payer</b> — Apple prélève 30 %. Avec une PWA, 100 % du paiement de Pro/Family nous revient et ne va pas à Apple.</div></li>
     </ul>
   </section>
@@ -410,8 +410,8 @@ tailwind.config = {
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Fermez complètement l'application (pas seulement la réduire) et rouvrez-la. Si cela ne suffit pas — supprimez l'application et réinstallez-la via le navigateur. Le Service Worker mettra le cache à jour avec la nouvelle version.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
-        <summary class="font-bold cursor-pointer">Je ne vois pas le tableau de bord lorsque je suis hors ligne</summary>
-        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Vérifiez que vous avez utilisé l'application au moins une fois en étant en ligne — c'est alors que le Service Worker enregistre les pages. Si vous ouvrez l'application pour la première fois hors ligne, elle ne pourra rien afficher (il n'y a rien à charger).</p>
+        <summary class="font-bold cursor-pointer">Que reste-t-il disponible sans Internet ?</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Après une visite en ligne, l'enveloppe de l'application et la page hors ligne peuvent s'ouvrir. Les données financières viennent de votre compte et ne sont pas conservées dans le cache partagé ; reconnectez-vous pour actualiser ou ajouter une opération.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
         <summary class="font-bold cursor-pointer">Je veux désinstaller l'application</summary>

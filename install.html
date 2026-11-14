@@ -6,7 +6,7 @@
 <title>התקנה — איך להוסיף את כספ'לה למסך הבית · Kesefle</title>
 <meta name="description" content="התקן את כספ'לה כאפליקציה בטלפון או במחשב — Android, iPhone, iPad, macOS, Windows. ללא חנות אפליקציות." />
 <meta name="theme-color" content="#090a0d" />
-<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/app.webmanifest" />
 <link rel="icon" type="image/png" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <meta property="og:title" content="התקן את כספ'לה — אפליקציה אמיתית בלי חנות" />
@@ -201,7 +201,8 @@ tailwind.config = {
       <span class="num">⚡</span> אין חנות אפליקציות · ללא הורדה
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">הוסף את כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">למסך הבית של הטלפון</span></h1>
-    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — נפתחת גם בלי רשת, ומתעדכנת בלי חנות. רענון נתונים והוספת תנועה דורשים חיבור לאינטרנט.</p>
+    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — מעטפת האפליקציה נפתחת גם בלי רשת ומתעדכנת בלי חנות. צפייה בנתונים עדכניים והוספת תנועה דורשות חיבור לאינטרנט.</p>
+    <a href="https://kesefle.com/app" class="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 sm:w-auto">פתח/י את האפליקציה ב־kesefle.com/app</a>
   </section>
 
   <!-- Device tabs -->
@@ -228,8 +229,8 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">לחץ על כפתור השיתוף</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">בתחתית המסך — אייקון של ריבוע עם חץ למעלה <span class="num">↑</span></p>
+            <p class="font-bold text-lg">פתח את תפריט העמוד ובחר שיתוף</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">ב-Safari הקש על כפתור תפריט העמוד ואז על "שתף". אם אייקון השיתוף (ריבוע עם חץ למעלה <span class="num">↑</span>) מוצג ישירות, אפשר להקיש עליו.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -273,16 +274,15 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">חכה לבאנר ההתקנה</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">לרוב Chrome מציג <b>באנר בתחתית</b>: "Install Kesefle / התקן". לחץ עליו ועבור ישר לשלב 4.</p>
-            <p class="text-sm mt-2">אם הבאנר לא הופיע, המשך לשלב 3.</p>
+            <p class="font-bold text-lg">פתח את תפריט Chrome <span class="num">⋮</span></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">הקש על שלוש הנקודות בפינה העליונה של Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">3</span>
           <div>
-            <p class="font-bold text-lg">תפריט (3 נקודות אנכיות) → "הוסף למסך הבית" / "התקן אפליקציה"</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">בפינה הימנית-עליונה של Chrome.</p>
+            <p class="font-bold text-lg">בחר "הוסף למסך הבית"</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">לאחר מכן בחר "התקנה ויצירת קיצור דרך" או "התקן אפליקציה" — הניסוח משתנה מעט בין גרסאות Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -296,7 +296,7 @@ tailwind.config = {
           <span class="step-num shrink-0">5</span>
           <div>
             <p class="font-bold text-lg">✓ מוכן!</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה רצה כאפליקציה אמיתית. עובדת גם offline (מציגה את הדשבורד מהמטמון).</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה נפתחת מחלון עצמאי כמו אפליקציה. בלי חיבור תוצג מעטפת או הודעת offline; נתונים עדכניים והוספה דורשים רשת.</p>
           </div>
         </li>
       </ol>
@@ -383,7 +383,7 @@ tailwind.config = {
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>אין אישור אפל/גוגל</b> — אנחנו לא צריכים לחכות שבועות לאישור עדכון.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>עדכונים אוטומטיים</b> — אין צורך להוריד גרסה חדשה. תשתמש ב-PWA → תקבל את הגרסה החדשה ביותר.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>פחות נפח אחסון</b> — האפליקציה תופסת ~1MB במקום 50-100MB.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>עובדת offline</b> — הדשבורד נשמר בקאש המקומי, פותח גם בלי חיבור.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>מעטפת זמינה גם בלי רשת</b> — האפליקציה נפתחת ומציגה חיווי offline. מטעמי פרטיות, נתונים פיננסיים אינם נשמרים במטמון משותף.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>לא משלמים עמלות</b> — אפל לוקחת 30%. עם PWA, 100% מהתשלום של Pro/Family הולך אלינו ולא ל-Apple.</div></li>
     </ul>
   </section>
@@ -406,8 +406,8 @@ tailwind.config = {
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">סגור את האפליקציה לחלוטין (לא רק minimize) ופתח שוב. אם זה לא עוזר — מחק את האפליקציה ותתקין מחדש דרך הדפדפן. ה-Service Worker יעדכן את הקאש לגרסה החדשה.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
-        <summary class="font-bold cursor-pointer">אני לא רואה את הדשבורד כשאני offline</summary>
-        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">בדוק שהשתמשת באפליקציה לפחות פעם אחת כשהיית online — אז ה-Service Worker שומר את הדפים. אם תפתח את האפליקציה לראשונה offline, היא לא תוכל להציג כלום (אין מה לטעון).</p>
+        <summary class="font-bold cursor-pointer">מה זמין בלי חיבור לאינטרנט?</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">מעטפת האפליקציה ודף ה-offline יכולים להיפתח אחרי ביקור מקוון. הנתונים הפיננסיים עצמם מגיעים מהחשבון שלך ואינם נשמרים במטמון המשותף; התחבר מחדש כדי לרענן נתונים או להוסיף תנועה.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
         <summary class="font-bold cursor-pointer">אני רוצה להסיר את האפליקציה</summary>

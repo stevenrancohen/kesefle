@@ -6,7 +6,7 @@
 <title>التثبيت — كيف تضيف כספ'לה إلى الشاشة الرئيسية · Kesefle</title>
 <meta name="description" content="ثبّت כספ'לה كتطبيق على هاتفك أو حاسوبك — Android وiPhone وiPad وmacOS وWindows. بدون متجر تطبيقات." />
 <meta name="theme-color" content="#6366F1" />
-<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/app.webmanifest" />
 <link rel="icon" type="image/png" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <meta property="og:title" content="ثبّت כספ'לה — تطبيق حقيقي بلا متجر" />
@@ -83,7 +83,7 @@ tailwind.config = {
   }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#2563eb,#1e40af); color:white; font-weight:900; font-size:18px; }
-  .device-tab { transition: all 0.2s; }
+  .device-tab { min-height:44px; transition: all 0.2s; }
   .device-tab.active { background: #2563eb; color: white; }
   .device-content { display: none; }
   .device-content.active { display: block; }
@@ -207,7 +207,8 @@ tailwind.config = {
       <span class="num">⚡</span> بلا متجر تطبيقات · بدون تنزيل
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">أضِف כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">إلى الشاشة الرئيسية لهاتفك</span></h1>
-    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = تطبيق ويب تقدّمي — تطبيق حقيقي يعمل دون اتصال، لكن بلا حاجة إلى موافقة آبل/جوجل وبلا انتظار 24 ساعة للتنزيل.</p>
+    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = تطبيق ويب تقدّمي — تُفتح واجهة التطبيق حتى دون اتصال وتتحدّث بلا متجر. عرض البيانات المحدثة وإضافة حركة مالية يتطلبان اتصالًا بالإنترنت.</p>
+    <a href="https://kesefle.com/app" class="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 sm:w-auto">افتح כספ'לה على kesefle.com/app</a>
   </section>
 
   <!-- Device tabs -->
@@ -234,8 +235,8 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">اضغط على زر المشاركة</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">في أسفل الشاشة — أيقونة مربّع وبداخله سهم لأعلى <span class="num">↑</span></p>
+            <p class="font-bold text-lg">افتح قائمة الصفحة واختر المشاركة</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">في Safari اضغط زر قائمة الصفحة ثم "مشاركة". إذا ظهرت أيقونة المشاركة مباشرةً (مربّع وسهم لأعلى <span class="num">↑</span>) فيمكنك الضغط عليها.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -279,16 +280,15 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">انتظر شريط التثبيت</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">يعرض Chrome غالبًا <b>شريطًا في الأسفل</b>: "Install Kesefle / تثبيت". اضغط عليه وانتقل مباشرةً إلى الخطوة 4.</p>
-            <p class="text-sm mt-2">إذا لم يظهر الشريط، تابِع إلى الخطوة 3.</p>
+            <p class="font-bold text-lg">افتح قائمة Chrome <span class="num">⋮</span></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">اضغط على النقاط الثلاث في الزاوية العلوية من Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">3</span>
           <div>
-            <p class="font-bold text-lg">القائمة (ثلاث نقاط عمودية) ← "إضافة إلى الشاشة الرئيسية" / "تثبيت التطبيق"</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">في الزاوية العلوية اليمنى من Chrome.</p>
+            <p class="font-bold text-lg">اختر "إضافة إلى الشاشة الرئيسية"</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">ثم اختر "تثبيت وإنشاء اختصار" أو "تثبيت التطبيق" — قد تختلف العبارة قليلًا بين إصدارات Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -302,7 +302,7 @@ tailwind.config = {
           <span class="step-num shrink-0">5</span>
           <div>
             <p class="font-bold text-lg">✓ جاهز!</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">يعمل כספ'לה كتطبيق حقيقي. ويعمل أيضًا دون اتصال (يعرض لوحة المعلومات من الذاكرة المؤقتة).</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">يُفتح כספ'לה في نافذة مستقلة كتطبيق. عند انقطاع الاتصال تظهر واجهة أو رسالة عدم اتصال؛ البيانات المحدثة والإضافة تتطلبان الإنترنت.</p>
           </div>
         </li>
       </ol>
@@ -389,7 +389,7 @@ tailwind.config = {
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>بلا موافقة آبل/جوجل</b> — لسنا بحاجة إلى انتظار أسابيع للموافقة على تحديث.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>تحديثات تلقائية</b> — لا حاجة لتنزيل إصدار جديد. استخدم الـ PWA ← تحصل على أحدث إصدار.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>مساحة تخزين أقل</b> — يشغل التطبيق نحو 1 ميغابايت بدلًا من 50-100 ميغابايت.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>يعمل دون اتصال</b> — تُحفظ لوحة المعلومات في الذاكرة المؤقتة المحلية، فتُفتح حتى دون اتصال.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>واجهة متاحة دون اتصال</b> — يُفتح التطبيق ويعرض حالة عدم الاتصال. ولحماية الخصوصية لا تُخزَّن البيانات المالية في ذاكرة تخزين مؤقت مشتركة.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>لا ندفع عمولات</b> — تأخذ آبل 30%. مع الـ PWA، يذهب 100% من مدفوعات Pro/Family إلينا وليس إلى آبل.</div></li>
     </ul>
   </section>
@@ -412,8 +412,8 @@ tailwind.config = {
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">أغلِق التطبيق تمامًا (وليس فقط تصغيره) ثم افتحه من جديد. إن لم ينفع ذلك — احذف التطبيق وأعِد تثبيته عبر المتصفح. سيحدّث الـ Service Worker الذاكرة المؤقتة إلى الإصدار الجديد.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
-        <summary class="font-bold cursor-pointer">لا أرى لوحة المعلومات عندما أكون دون اتصال</summary>
-        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">تحقّق من أنك استخدمت التطبيق مرة واحدة على الأقل وأنت متّصل — عندها يحفظ الـ Service Worker الصفحات. إن فتحت التطبيق لأول مرة دون اتصال، فلن يتمكّن من عرض أي شيء (لا يوجد ما يُحمَّل).</p>
+        <summary class="font-bold cursor-pointer">ما المتاح دون اتصال بالإنترنت؟</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">يمكن فتح واجهة التطبيق وصفحة عدم الاتصال بعد زيارة متصلة. تأتي البيانات المالية من حسابك ولا تُحفظ في الذاكرة المؤقتة المشتركة؛ أعد الاتصال لتحديث البيانات أو إضافة حركة.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
         <summary class="font-bold cursor-pointer">أريد إزالة التطبيق</summary>

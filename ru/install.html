@@ -6,7 +6,7 @@
 <title>Установка — как добавить כספ'לה на главный экран · Kesefle</title>
 <meta name="description" content="Установите כספ'לה как приложение на телефон или компьютер — Android, iPhone, iPad, macOS, Windows. Без магазина приложений." />
 <meta name="theme-color" content="#6366F1" />
-<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/app.webmanifest" />
 <link rel="icon" type="image/png" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <meta property="og:title" content="Установите כספ'לה — настоящее приложение без магазина" />
@@ -85,7 +85,7 @@ tailwind.config = {
   }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#2563eb,#1e40af); color:white; font-weight:900; font-size:18px; }
-  .device-tab { transition: all 0.2s; }
+  .device-tab { min-height:44px; transition: all 0.2s; }
   .device-tab.active { background: #2563eb; color: white; }
   .device-content { display: none; }
   .device-content.active { display: block; }
@@ -209,7 +209,8 @@ tailwind.config = {
       <span class="num">⚡</span> Без магазина приложений · без скачивания
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Добавьте כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">на главный экран телефона</span></h1>
-    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — настоящее приложение, работает офлайн, но без необходимости одобрения от Apple/Google и без ожидания 24 часов на загрузку.</p>
+    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — оболочка приложения открывается без сети и обновляется без магазина. Для актуальных данных и добавления операции нужен интернет.</p>
+    <a href="https://kesefle.com/app" class="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 sm:w-auto">Открыть כספ'לה на kesefle.com/app</a>
   </section>
 
   <!-- Device tabs -->
@@ -236,8 +237,8 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">Нажмите кнопку «Поделиться»</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Внизу экрана — иконка квадрата со стрелкой вверх <span class="num">↑</span></p>
+            <p class="font-bold text-lg">Откройте меню страницы и выберите «Поделиться»</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">В Safari нажмите кнопку меню страницы, затем «Поделиться». Если значок «Поделиться» (квадрат со стрелкой вверх <span class="num">↑</span>) виден сразу, нажмите его.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -281,16 +282,15 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">Дождитесь баннера установки</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Обычно Chrome показывает <b>баннер внизу</b>: «Install Kesefle / Установить». Нажмите на него и переходите сразу к шагу 4.</p>
-            <p class="text-sm mt-2">Если баннер не появился, переходите к шагу 3.</p>
+            <p class="font-bold text-lg">Откройте меню Chrome <span class="num">⋮</span></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Нажмите три точки в верхнем углу Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">3</span>
           <div>
-            <p class="font-bold text-lg">Меню (три вертикальные точки) → «Добавить на главный экран» / «Установить приложение»</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">В правом верхнем углу Chrome.</p>
+            <p class="font-bold text-lg">Выберите «Добавить на главный экран»</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Затем выберите «Установить и создать ярлык» или «Установить приложение» — формулировка немного различается в версиях Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -304,7 +304,7 @@ tailwind.config = {
           <span class="step-num shrink-0">5</span>
           <div>
             <p class="font-bold text-lg">✓ Готово!</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה работает как настоящее приложение. Работает и офлайн (показывает дашборд из кэша).</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה открывается в отдельном окне как приложение. Без сети видна оболочка или сообщение об офлайне; актуальные данные и добавление требуют интернета.</p>
           </div>
         </li>
       </ol>
@@ -391,7 +391,7 @@ tailwind.config = {
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Никакого одобрения Apple/Google</b> — нам не нужно неделями ждать одобрения обновления.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Автоматические обновления</b> — не нужно скачивать новую версию. Откроете PWA → получите самую свежую версию.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Меньше места в памяти</b> — приложение занимает ~1 МБ вместо 50–100 МБ.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Работает офлайн</b> — дашборд хранится в локальном кэше, открывается даже без подключения.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Оболочка доступна офлайн</b> — приложение открывается и показывает статус без сети. Ради конфиденциальности финансовые данные не хранятся в общем кэше.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Без комиссий</b> — Apple берёт 30%. С PWA 100% оплаты за Pro/Family идёт нам, а не Apple.</div></li>
     </ul>
   </section>
@@ -414,8 +414,8 @@ tailwind.config = {
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Полностью закройте приложение (не просто сверните) и откройте снова. Если не помогает — удалите приложение и установите заново через браузер. Service Worker обновит кэш до новой версии.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
-        <summary class="font-bold cursor-pointer">Я не вижу дашборд, когда я офлайн</summary>
-        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Убедитесь, что вы хотя бы раз использовали приложение, будучи онлайн — тогда Service Worker сохраняет страницы. Если открыть приложение впервые офлайн, оно не сможет ничего показать (нечего загружать).</p>
+        <summary class="font-bold cursor-pointer">Что доступно без интернета?</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">После онлайн-визита могут открываться оболочка приложения и офлайн-страница. Финансовые данные загружаются из вашего аккаунта и не сохраняются в общем кэше; подключитесь, чтобы обновить данные или добавить операцию.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
         <summary class="font-bold cursor-pointer">Я хочу удалить приложение</summary>
