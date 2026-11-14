@@ -185,6 +185,7 @@
 </style>
 <script src="/lib/analytics.js" defer></script>
   <script src="/js/analytics-loader.js" defer></script>
+  <script src="/js/upgrade-intent.js"></script>
 </head>
 <body class="min-h-screen bg-ink-50 bg-mesh text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-950 dark:text-white">
 
@@ -299,8 +300,12 @@
     transform: translateX(0);
   }
   @media (max-width: 767.98px) {
-    #kfl-sidebar { transform: translateX(100%); display: block !important; }
-    #kfl-sidebar.is-open { transform: translateX(0); }
+    /* Keep the closed RTL sidebar out of layout entirely. A translated fixed
+       panel still widened mobile screenshots/pages in Chromium. */
+    html, body { overflow-x: clip; }
+    .kfl-parallax { display: none !important; }
+    #kfl-sidebar { transform: none; display: none !important; }
+    #kfl-sidebar.is-open { transform: none; display: block !important; }
     #kfl-sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 25; }
   }
 </style>
@@ -1224,8 +1229,10 @@
     <div id="kfl-cats-body" class="hidden">
       <p id="kfl-cats-locked" class="hidden text-sm text-ink-500 dark:text-ink-400 mb-3">
         🔒 קטגוריות מותאמות אישית זמינות במסלול Pro/Family.
-        <a href="/pricing" class="font-bold text-brand-600 dark:text-brand-600 underline">שדרג כאן →</a>
+        <a id="kfl-cats-upgrade" href="/pricing?source=custom_categories&amp;return_to=%2Fdashboard%3Ffocus%3Dcustom-categories%23%2Foverview#tiers" class="font-bold text-brand-600 dark:text-brand-600 underline">השווה מסלולים וחזור לכאן →</a>
+        <span class="mt-1 block text-xs">פתיחת עמוד המסלולים אינה מבצעת חיוב.</span>
       </p>
+      <div id="kfl-cats-status" class="hidden mb-3 rounded-xl border px-3 py-2 text-xs" role="status" aria-live="polite"></div>
       <div id="kfl-cats-pro" class="hidden space-y-3">
         <p class="text-xs text-ink-500 dark:text-ink-400">
           הוסף קטגוריות אישיות שיופיעו לבחירה בבוט ובטופס האתר. עד <span class="num">50</span> קטגוריות.
@@ -4781,6 +4788,55 @@ function generatePseudoSeries(target, n, intLike) {
 (function () {
   var section = document.getElementById('kfl-custom-cats');
   if (!section) return;
+  var DRAFT_KEY = 'kfl_custom_category_upgrade_draft';
+  var RETURN_TO = '/dashboard?focus=custom-categories#/overview';
+  var FALLBACK_UPGRADE = '/pricing?source=custom_categories&return_to=' + encodeURIComponent(RETURN_TO) + '#tiers';
+
+  function draftGet() {
+    try { return String(sessionStorage.getItem(DRAFT_KEY) || '').trim().slice(0, 60); }
+    catch (_e) { return ''; }
+  }
+  function draftSet(value) {
+    try { sessionStorage.setItem(DRAFT_KEY, String(value || '').trim().slice(0, 60)); } catch (_e) {}
+  }
+  function draftClear() {
+    try { sessionStorage.removeItem(DRAFT_KEY); } catch (_e) {}
+  }
+  function safeUpgradeHref(raw) {
+    try {
+      var u = new URL(String(raw || ''), window.location.origin);
+      if (u.origin !== window.location.origin || u.pathname !== '/pricing') return FALLBACK_UPGRADE;
+      var helper = window.KesefleUpgradeIntent;
+      var src = helper ? helper.source(u.searchParams.get('source')) : '';
+      var ret = helper ? helper.returnPath(u.searchParams.get('return_to'), window.location.origin) : '';
+      if (src !== 'custom_categories' || ret !== RETURN_TO) return FALLBACK_UPGRADE;
+      return u.pathname + u.search + '#tiers';
+    } catch (_e) { return FALLBACK_UPGRADE; }
+  }
+  function statusMessage(message, upgradeHref) {
+    var el = document.getElementById('kfl-cats-status');
+    if (!el) return;
+    el.className = 'mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200';
+    el.textContent = message;
+    if (upgradeHref) {
+      var link = document.createElement('a');
+      link.id = 'kfl-cats-draft-upgrade';
+      link.href = safeUpgradeHref(upgradeHref);
+      link.className = 'mt-2 inline-flex min-h-[44px] items-center rounded-xl bg-brand-600 px-4 py-2 font-bold text-white';
+      link.textContent = 'השווה מסלולים וחזור לטיוטה ←';
+      el.appendChild(document.createElement('br'));
+      el.appendChild(link);
+    }
+    el.classList.remove('hidden');
+  }
+  function focusIfRequested() {
+    var requested = false;
+    try { requested = new URLSearchParams(window.location.search).get('focus') === 'custom-categories'; } catch (_e) {}
+    if (!requested && !draftGet()) return;
+    var body = document.getElementById('kfl-cats-body');
+    if (body) body.classList.remove('hidden');
+    setTimeout(function () { try { section.scrollIntoView({ block: 'start' }); } catch (_e) {} }, 0);
+  }
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -4819,11 +4875,20 @@ function generatePseudoSeries(target, n, intLike) {
           '<button onclick="kflCatRemove(\'' + escapeHtml(item.name).replace(/'/g, '\\\'') + '\')" class="text-xs text-ink-500 dark:text-ink-500 hover:text-red-500" title="הסר">×</button>' +
         '</li>';
       }).join('') || '<li class="text-xs text-ink-500 dark:text-ink-400 italic py-2">אין עדיין קטגוריות מותאמות.</li>';
+      var savedDraft = draftGet();
+      if (savedDraft) {
+        var input = document.getElementById('kfl-cats-input');
+        if (input && !input.value) input.value = savedDraft;
+        statusMessage('הטיוטה שלך נשמרה. אפשר להוסיף אותה עכשיו.', '');
+      }
     } else {
       pro.classList.add('hidden');
       locked.classList.remove('hidden');
       badge.textContent = 'Pro';
+      var pendingDraft = draftGet();
+      if (pendingDraft) statusMessage('הטיוטה "' + pendingDraft + '" שמורה במכשיר. פתיחת עמוד המסלולים אינה מבצעת חיוב.', FALLBACK_UPGRADE);
     }
+    focusIfRequested();
   }
 
   window.kflCatAdd = async function () {
@@ -4839,8 +4904,14 @@ function generatePseudoSeries(target, n, intLike) {
       var j = await r.json();
       if (j.ok) {
         input.value = '';
+        draftClear();
+        var status = document.getElementById('kfl-cats-status');
+        if (status) status.classList.add('hidden');
         var data = await fetchList();
         render(data);
+      } else if (j.error === 'upgrade_required') {
+        draftSet(name);
+        statusMessage('הקטגוריה לא נוספה. השם שהקלדת נשמר כטיוטה; פתיחת עמוד המסלולים אינה מבצעת חיוב.', j.upgrade_url || FALLBACK_UPGRADE);
       } else {
         alert(j.detail || j.error || 'שגיאה');
       }
