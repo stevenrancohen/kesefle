@@ -190,6 +190,7 @@
   }
 </style>
 <script src="/lib/analytics.js" defer></script>
+<script src="/js/upgrade-context.js"></script>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#6366F1">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -1176,6 +1177,11 @@ function kesefleCapturePlanSelection() {
     if (period === 'month' || period === 'year') {
       sessionStorage.setItem('kesefle_selected_period', period);
     }
+    // Preserve only a validated same-origin return path across OAuth + PayPal.
+    // The shared helper rejects external URLs and non-product paths.
+    if (window.KesefleUpgradeContext) {
+      window.KesefleUpgradeContext.capture(window.location.search, sessionStorage, window.location.origin);
+    }
   } catch (e) { /* sessionStorage unavailable in private mode -- benign */ }
 }
 try { kesefleCapturePlanSelection(); } catch (e) {}
@@ -2016,6 +2022,47 @@ function _kflFixedLocalSet(list) {
   try { localStorage.setItem(_kflFixedLocalKey(), JSON.stringify(list || [])); } catch (e) {}
 }
 
+var KFL_FIXED_UPGRADE_DRAFT_KEY = 'kfl_recurring_upgrade_draft';
+function _kflFixedDraftSet(tpl) {
+  try { sessionStorage.setItem(KFL_FIXED_UPGRADE_DRAFT_KEY, JSON.stringify(tpl || {})); } catch (e) {}
+}
+function _kflFixedDraftGet() {
+  try { return JSON.parse(sessionStorage.getItem(KFL_FIXED_UPGRADE_DRAFT_KEY) || 'null'); }
+  catch (e) { return null; }
+}
+function _kflFixedDraftClear() {
+  try { sessionStorage.removeItem(KFL_FIXED_UPGRADE_DRAFT_KEY); } catch (e) {}
+}
+function _kflFixedSafeUpgradeHref(raw) {
+  var fallback = '/pricing?source=recurring_limit&return_to=' + encodeURIComponent('/account#fixed-expenses') + '#tiers';
+  try {
+    var u = new URL(String(raw || ''), window.location.origin);
+    if (u.origin !== window.location.origin || u.pathname !== '/pricing') return fallback;
+    var source = window.KesefleUpgradeContext ? window.KesefleUpgradeContext.normalizeSource(u.searchParams.get('source')) : '';
+    var returnTo = window.KesefleUpgradeContext ? window.KesefleUpgradeContext.safeReturnPath(u.searchParams.get('return_to'), window.location.origin) : '';
+    if (source !== 'recurring_limit' || returnTo !== '/account#fixed-expenses') return fallback;
+    return u.pathname + u.search + '#tiers';
+  } catch (e) { return fallback; }
+}
+function _kflFixedRestoreDraft() {
+  var draft = _kflFixedDraftGet();
+  if (!draft || !isFinite(Number(draft.amount)) || Number(draft.amount) <= 0) return false;
+  var catEl = document.getElementById('fx-category');
+  var amtEl = document.getElementById('fx-amount');
+  var dayEl = document.getElementById('fx-day');
+  var customEl = document.getElementById('fx-custom');
+  var idx = KFL_FIXED_CATS.findIndex(function (c) {
+    return c.label === draft.description || (c.category === draft.category && c.subcategory === draft.subcategory);
+  });
+  if (idx < 0) idx = KFL_FIXED_CATS.length - 1;
+  if (catEl) { catEl.value = String(idx); catEl.dispatchEvent(new Event('change')); }
+  if (amtEl) amtEl.value = String(draft.amount);
+  if (dayEl) dayEl.value = String((draft.freq && draft.freq.day) || 1);
+  if (customEl && KFL_FIXED_CATS[idx].label === 'אחר') customEl.value = String(draft.description || '');
+  _kflFixedMsg('הטיוטה שלך נשמרה. אפשר להמשיך מכאן בלי להקליד מחדש.', 'warn');
+  return true;
+}
+
 function _kflFixedMsg(text, kind) {
   var el = document.getElementById('fx-msg');
   if (!el) return;
@@ -2175,7 +2222,7 @@ async function kesefleFixedAdd() {
   }
 
   // Try the server in the exact recurring contract shape.
-  var ok = false, errCode = '';
+  var ok = false, errCode = '', upgradeUrl = '';
   try {
     var r = await fetch('/api/recurring', {
       method: 'POST',
@@ -2193,15 +2240,35 @@ async function kesefleFixedAdd() {
     });
     var j = await r.json().catch(function () { return {}; });
     if (r.ok && j && j.ok) { ok = true; if (j.template && j.template.id) tpl.id = j.template.id; }
-    else errCode = (j && j.error) || ('http_' + r.status);
+    else {
+      errCode = (j && j.error) || ('http_' + r.status);
+      upgradeUrl = (j && j.upgrade_url) || '';
+    }
   } catch (e) { errCode = 'network'; }
 
-  // Mirror locally regardless so the list always reflects what the user added.
+  // A plan-limit response is not a saved recurring rule. Keep it as a draft,
+  // leave the form populated, and send the user to the attributed pricing page.
+  // This prevents a false "saved" row and makes back/refresh lossless.
+  if (!ok && errCode === 'free_limit_reached') {
+    _kflFixedDraftSet(tpl);
+    _kflFixedRender(_kflFixedLocalGet());
+    var safeUpgrade = _kflFixedSafeUpgradeHref(upgradeUrl);
+    _kflFixedMsg(
+      'הגעת למגבלת ההוצאות הקבועות במסלול החינמי. הפרטים שהזנת נשמרו בדפדפן. ' +
+      '<a id="fx-upgrade-link" href="' + safeUpgrade + '" class="mt-2 inline-flex min-h-[44px] items-center rounded-xl bg-brand-600 px-4 py-2 font-bold text-white">השווה מסלולים וחזור לטיוטה ←</a>',
+      'warn'
+    );
+    if (btn) { btn.disabled = false; btn.textContent = 'הוסף הוצאה קבועה'; }
+    return;
+  }
+
+  // Non-limit failures keep the legacy local mirror/fallback behavior.
   var list = _kflFixedLocalGet(); list.push(tpl); _kflFixedLocalSet(list);
 
   if (ok) {
     // Re-pull from server to stay authoritative; render happens inside.
     await kesefleFixedList();
+    _kflFixedDraftClear();
     _kflFixedMsg('✓ נוסף! ' + description + ' (₪' + amount.toLocaleString('he-IL') + ') ייכנס לגיליון בכל ' + day + ' לחודש.', 'ok');
     _kflFixedResetForm();
     try { _kflFunnel('fixed_expense_added'); } catch (e) {}
@@ -2281,7 +2348,11 @@ function kesefleFixedReveal() {
   if (!sec) return;
   try { _kflFixedInitInputs(); } catch (e) {}
   sec.classList.remove('hidden');
+  try { _kflFixedRestoreDraft(); } catch (e) {}
   try { kesefleFixedList(); } catch (e) {}
+  if (window.location.hash === '#fixed-expenses') {
+    setTimeout(function () { try { sec.scrollIntoView({ block: 'start' }); } catch (e) {} }, 0);
+  }
 }
 
 // ── Blank-screen safety net ──────────────────────────────────────────────────

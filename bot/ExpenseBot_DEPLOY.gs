@@ -5082,7 +5082,12 @@ function _recurringAdd_(fromPhone, body) {
   if (parsed.category) payload.category = parsed.category;
   if (parsed.startDate) payload.startDate = parsed.startDate;
   var r = _recurringAPI_('add', payload);
-  if (!r || !r.ok) return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  if (!r || !r.ok) {
+    // A 402 limit response carries the attributed pricing URL. Surface the
+    // actionable message instead of reducing it to "free_limit_reached".
+    if (r && r.error === 'free_limit_reached' && r.message) return String(r.message);
+    return '😬 שגיאה: ' + (r && r.error || 'unknown');
+  }
   return '🔁 נרשמה הוצאה קבועה: ' + _money_(parsed.amount) + ' ' + payload.description +
     ' — הרישום הבא: ' + (r.nextDue || '?') + '.\n' +
     'רוצה לרשום למפרע מתחילת החודש? שלח: *סנכרן הוצאות קבועות*';

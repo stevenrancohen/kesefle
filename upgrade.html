@@ -35,6 +35,7 @@
   body { font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background-color: #f7f8fb; color: #0f1422; }
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="/js/upgrade-context.js"></script>
 <link rel="stylesheet" href="/css/brand.css" />
 <script>
 tailwind.config = {
@@ -124,7 +125,7 @@ tailwind.config = {
 
       <p class="mt-6 text-xs text-ink-500">העדכון נכנס תוך כמה שניות. אם המסלול עדיין מופיע כחינמי, רעננו את הדשבורד בעוד רגע &mdash; PayPal שולח לנו את האישור ברקע.</p>
 
-      <a href="/dashboard" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">המשך לדשבורד &larr;</a>
+      <a id="upgrade-primary-return" href="/dashboard" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">המשך לדשבורד &larr;</a>
     </div>
 
     <!-- ===== CANCEL ===== -->
@@ -136,7 +137,7 @@ tailwind.config = {
 
       <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
         <a href="/pricing" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-8 py-3.5 text-base font-black text-white shadow-soft transition hover:bg-brand-700">חזרה למסלולים</a>
-        <a href="/dashboard" class="inline-flex items-center justify-center rounded-2xl border border-ink-300 bg-white px-8 py-3.5 text-base font-semibold text-ink-900 transition hover:border-brand-500 hover:text-brand-700">לדשבורד שלי</a>
+        <a id="upgrade-cancel-return" href="/dashboard" class="inline-flex items-center justify-center rounded-2xl border border-ink-300 bg-white px-8 py-3.5 text-base font-semibold text-ink-900 transition hover:border-brand-500 hover:text-brand-700">לדשבורד שלי</a>
       </div>
     </div>
 
@@ -160,6 +161,29 @@ tailwind.config = {
       paypal = (params.get('paypal') || '').toLowerCase();
       subscriptionId = params.get('subscription_id') || '';
     } catch (_e) {}
+    // The originating limit flow stores a strictly validated same-origin path
+    // before checkout. Re-read and validate it on every refresh; never trust a
+    // raw query value on this post-payment page.
+    var upgradeContext = { source: 'direct', returnTo: '' };
+    try {
+      if (window.KesefleUpgradeContext) {
+        upgradeContext = window.KesefleUpgradeContext.read(sessionStorage, window.location.origin);
+      }
+    } catch (_ctxErr) {}
+    if (upgradeContext.returnTo) {
+      var primaryReturn = document.getElementById('upgrade-primary-return');
+      var cancelReturn = document.getElementById('upgrade-cancel-return');
+      if (primaryReturn) {
+        primaryReturn.href = upgradeContext.returnTo;
+        primaryReturn.textContent = upgradeContext.source.indexOf('recurring_limit') === 0
+          ? 'חזרה להוצאה הקבועה ←'
+          : 'חזרה למה שעשית ←';
+      }
+      if (cancelReturn) {
+        cancelReturn.href = upgradeContext.returnTo;
+        cancelReturn.textContent = 'חזרה בלי לאבד את הטיוטה';
+      }
+    }
     var isCancel = paypal === 'cancel' || paypal === 'cancelled' || paypal === 'canceled';
     var isSuccess = paypal === 'success';
     var success = document.getElementById('state-success');
