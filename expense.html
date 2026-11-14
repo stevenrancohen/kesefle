@@ -57,6 +57,19 @@ tailwind.config = {
   html.dark .bg-brand-600, html.dark .bg-brand-700 { background-color:#fddd48!important; color:#090a0d!important; }
   html.dark input, html.dark select { color:#f7f7f5; }
   html.dark input::placeholder { color:#696e73; }
+  .amount-chip,.category-chip { border:1px solid #d7d8d5; background:rgba(255,255,255,.88); transition:.16s ease; }
+  .amount-chip:active,.category-chip:active { transform:scale(.97); }
+  .amount-chip[aria-pressed="true"],.category-chip[aria-pressed="true"] { border-color:#f8cb23; background:#fff3c4; color:#5c4100; box-shadow:inset 0 0 0 1px rgba(248,203,35,.28); }
+  html.dark .amount-chip,html.dark .category-chip { border-color:#30333b; background:#14161b; color:#d7d8d5; }
+  html.dark .amount-chip[aria-pressed="true"],html.dark .category-chip[aria-pressed="true"] { border-color:#fddd48; background:rgba(253,221,72,.12); color:#fddd48; }
+  .field-shell { border:2px solid #d7d8d5; background:rgba(247,247,245,.55); transition:.16s ease; }
+  .field-shell:focus-within { border-color:#e7b20a; background:#fff; box-shadow:0 0 0 4px rgba(253,221,72,.16); }
+  html.dark .field-shell { border-color:#30333b; background:#111318; }
+  html.dark .field-shell:focus-within { border-color:#fddd48; background:#111318; }
+  #kfl-submit:disabled { cursor:wait; opacity:.68; }
+  .form-note { display:flex; align-items:center; gap:8px; border-radius:14px; background:#f7f7f5; padding:10px 12px; color:#696e73; }
+  html.dark .form-note { background:#111318; }
+  @media (prefers-reduced-motion:reduce) { .amount-chip,.category-chip{transition:none;} }
 </style>
   <script src="/js/analytics-loader.js" defer></script>
 </head>
@@ -99,15 +112,33 @@ tailwind.config = {
       <!-- Amount -->
       <div>
         <label for="kfl-amount" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">סכום (₪)</label>
-        <div class="flex items-center rounded-2xl border-2 border-ink-200 px-4 focus-within:border-brand-500 dark:border-ink-700"><span class="text-2xl font-black text-ink-400">₪</span><input id="kfl-amount" type="number" inputmode="decimal" step="0.01" min="0.01" max="100000000" required placeholder="0" autocomplete="off"
+        <div class="field-shell flex items-center rounded-2xl px-4"><span class="text-2xl font-black text-ink-400">₪</span><input id="kfl-amount" type="number" inputmode="decimal" step="0.01" min="0.01" max="100000000" required placeholder="0" autocomplete="off"
           class="w-full border-0 bg-transparent py-3 text-4xl font-black outline-none" style="direction:ltr;text-align:left" /></div>
+        <div class="mt-2 grid grid-cols-4 gap-2" aria-label="סכומים מהירים">
+          <button type="button" class="amount-chip rounded-xl px-2 py-1 text-sm font-bold" data-amount="20" aria-pressed="false">₪20</button>
+          <button type="button" class="amount-chip rounded-xl px-2 py-1 text-sm font-bold" data-amount="50" aria-pressed="false">₪50</button>
+          <button type="button" class="amount-chip rounded-xl px-2 py-1 text-sm font-bold" data-amount="100" aria-pressed="false">₪100</button>
+          <button type="button" class="amount-chip rounded-xl px-2 py-1 text-sm font-bold" data-amount="200" aria-pressed="false">₪200</button>
+        </div>
       </div>
 
       <!-- Description -->
       <div>
         <label for="kfl-desc" class="block text-xs font-bold text-ink-600 dark:text-ink-300 mb-1.5">פירוט</label>
-        <input id="kfl-desc" type="text" required maxlength="200" placeholder="למשל: קפה, סופר או תשלום מלקוח" autocomplete="off"
-          class="w-full rounded-2xl border-2 border-ink-200 bg-transparent px-4 py-3 text-base outline-none focus:border-brand-500 dark:border-ink-700" />
+        <div class="field-shell rounded-2xl"><input id="kfl-desc" type="text" required maxlength="200" placeholder="למשל: קפה, סופר או תשלום מלקוח" autocomplete="off"
+          class="w-full rounded-2xl border-0 bg-transparent px-4 py-3 text-base outline-none" /></div>
+      </div>
+
+      <div>
+        <div class="mb-2 flex items-center justify-between"><span class="text-xs font-bold text-ink-600 dark:text-ink-300">קטגוריה מהירה</span><span class="text-[11px] text-ink-500">אפשר לשנות אחר כך</span></div>
+        <div class="grid grid-cols-3 gap-2" aria-label="קטגוריות מהירות">
+          <button type="button" class="category-chip rounded-xl px-2 py-2 text-xs font-bold" data-category="אוכל לבית" aria-pressed="false">🛒 סופר</button>
+          <button type="button" class="category-chip rounded-xl px-2 py-2 text-xs font-bold" data-category="אוכל בחוץ" aria-pressed="false">☕ אוכל</button>
+          <button type="button" class="category-chip rounded-xl px-2 py-2 text-xs font-bold" data-category="דלק" aria-pressed="false">⛽ דלק</button>
+          <button type="button" class="category-chip rounded-xl px-2 py-2 text-xs font-bold" data-category="חשמל" aria-pressed="false">⚡ חשמל</button>
+          <button type="button" class="category-chip rounded-xl px-2 py-2 text-xs font-bold" data-category="ביגוד" aria-pressed="false">🛍 קניות</button>
+          <button type="button" class="category-chip rounded-xl px-2 py-2 text-xs font-bold" data-category="שיווק ופרסום" aria-pressed="false">💼 עסק</button>
+        </div>
       </div>
 
       <details id="kfl-more" class="rounded-2xl border border-ink-200 px-4 dark:border-ink-700">
@@ -245,7 +276,8 @@ tailwind.config = {
         שמירת התנועה
       </button>
 
-      <p id="kfl-status" class="text-center text-sm min-h-[20px]"></p>
+      <div class="form-note text-xs"><span aria-hidden="true">🔒</span><span>נשמר ישירות בגיליון הפרטי שלך. לא משתפים נתונים עם מפרסמים.</span></div>
+      <p id="kfl-status" class="text-center text-sm min-h-[20px]" role="status" aria-live="polite"></p>
     </form>
 
     <!-- Recent entries saved this session — instant confirmation that the
@@ -294,12 +326,35 @@ tailwind.config = {
       inc.className = 'flex-1 rounded-xl py-2 text-sm font-bold text-ink-600 dark:text-ink-300';
       document.getElementById('kfl-title').textContent = 'הוספת הוצאה';
     }
+    if (window.kflPaintQuickCategories) window.kflPaintQuickCategories(isIncome);
   };
 
   // Category picker: "__custom__" reveals the free-text field; any other
   // pick hides it. The chosen value is the col-D string the dashboard sums.
   var catSelect = document.getElementById('kfl-cat-select');
   var catCustom = document.getElementById('kfl-cat');
+  function paintCategoryChips(value) {
+    document.querySelectorAll('[data-category]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-category') === value ? 'true' : 'false');
+    });
+  }
+  window.kflPaintQuickCategories = function (incomeMode) {
+    var expenseItems = [
+      ['אוכל לבית','🛒 סופר'], ['אוכל בחוץ','☕ אוכל'], ['דלק','⛽ דלק'],
+      ['חשמל','⚡ חשמל'], ['ביגוד','🛍 קניות'], ['שיווק ופרסום','💼 עסק']
+    ];
+    var incomeItems = [
+      ['משכורת','💳 משכורת'], ['בונוס','✨ בונוס'], ['הכנסה מעסק','💼 לקוח'],
+      ['שכר דירה (הכנסה)','🏠 שכירות'], ['קצבאות','🏛 קצבה'], ['החזר מס','↩ החזר מס']
+    ];
+    var items = incomeMode ? incomeItems : expenseItems;
+    document.querySelectorAll('[data-category]').forEach(function (b, i) {
+      b.setAttribute('data-category', items[i][0]);
+      b.textContent = items[i][1];
+    });
+    if (!items.some(function (item) { return item[0] === catSelect.value; })) catSelect.value = '';
+    paintCategoryChips(catSelect.value);
+  };
   catSelect.addEventListener('change', function () {
     if (catSelect.value === '__custom__') {
       catCustom.classList.remove('hidden');
@@ -307,12 +362,39 @@ tailwind.config = {
     } else {
       catCustom.classList.add('hidden');
     }
+    paintCategoryChips(catSelect.value);
   });
   // Resolve the effective category string from the picker (or free text).
   function kflResolveCategory() {
     if (catSelect.value === '__custom__') return catCustom.value.trim();
     return catSelect.value.trim();
   }
+
+  // Quick picks turn the common mobile flow into amount + category + detail.
+  // The complete sheet taxonomy remains available under "more options".
+  document.querySelectorAll('[data-category]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var value = b.getAttribute('data-category');
+      catSelect.value = value;
+      catCustom.classList.add('hidden');
+      paintCategoryChips(value);
+    });
+  });
+  var amountInput = document.getElementById('kfl-amount');
+  function paintAmountChips(value) {
+    document.querySelectorAll('[data-amount]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(value) === b.getAttribute('data-amount') ? 'true' : 'false');
+    });
+  }
+  document.querySelectorAll('[data-amount]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      amountInput.value = b.getAttribute('data-amount');
+      paintAmountChips(amountInput.value);
+      document.getElementById('kfl-desc').focus();
+    });
+  });
+  amountInput.addEventListener('input', function () { paintAmountChips(amountInput.value); });
+  window.kflPaintQuickCategories(false);
 
   // Prepend a saved entry to the "saved now" list. Built with DOM nodes +
   // textContent so user-supplied description/category can't inject HTML.
@@ -354,6 +436,7 @@ tailwind.config = {
   var d = new Date();
   var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   document.getElementById('kfl-date').value = dateStr;
+  if (params.get('type') === 'income') window.kflSetType('income');
 
   document.getElementById('kfl-form').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -392,7 +475,7 @@ tailwind.config = {
       });
       var j = await r.json().catch(function () { return { ok: false }; });
       if (j.ok) {
-        status.innerHTML = '<span style="color:#1d4ed8;font-weight:bold">✓ נשמר בגיליון!</span>';
+        status.innerHTML = '<span style="color:#059669;font-weight:bold">✓ נשמר בגיליון — אפשר להוסיף עוד תנועה</span>';
         // Show it in the "saved now" list for instant confirmation.
         kflAddRecent({
           amount: amount,
@@ -405,6 +488,7 @@ tailwind.config = {
         document.getElementById('kfl-amount').value = '';
         document.getElementById('kfl-desc').value = '';
         document.getElementById('kfl-vat').checked = false;
+        paintAmountChips('');
         document.getElementById('kfl-amount').focus();
         // Fire funnel pixel for analytics.
         try {
@@ -430,7 +514,7 @@ tailwind.config = {
       status.style.color = '#dc2626';
     } finally {
       btn.disabled = false;
-      btn.textContent = 'שמור בגיליון →';
+      btn.textContent = 'שמירת התנועה';
     }
   });
 })();
