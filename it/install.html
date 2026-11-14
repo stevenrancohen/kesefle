@@ -6,7 +6,7 @@
 <title>Installazione — come aggiungere כספ'לה alla schermata Home · Kesefle</title>
 <meta name="description" content="Installa כספ'לה come app sul telefono o sul computer — Android, iPhone, iPad, macOS, Windows. Senza app store." />
 <meta name="theme-color" content="#6366F1" />
-<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/app.webmanifest" />
 <link rel="icon" type="image/png" href="/favicon-32.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <meta property="og:title" content="Installa כספ'לה — un'app vera senza store" />
@@ -81,7 +81,7 @@ tailwind.config = {
   }
   .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   .step-num { width: 36px; height: 36px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#2563eb,#1e40af); color:white; font-weight:900; font-size:18px; }
-  .device-tab { transition: all 0.2s; }
+  .device-tab { min-height:44px; transition: all 0.2s; }
   .device-tab.active { background: #2563eb; color: white; }
   .device-content { display: none; }
   .device-content.active { display: block; }
@@ -205,7 +205,8 @@ tailwind.config = {
       <span class="num">⚡</span> Nessun app store · senza download
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Aggiungi כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">alla schermata Home del telefono</span></h1>
-    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — un'app vera, che funziona offline, ma senza bisogno dell'approvazione di Apple/Google e senza aspettare 24 ore per il download.</p>
+    <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — l'involucro dell'app si apre senza rete e si aggiorna senza store. I dati aggiornati e l'aggiunta di un movimento richiedono Internet.</p>
+    <a href="https://kesefle.com/app" class="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 sm:w-auto">Apri כספ'לה su kesefle.com/app</a>
   </section>
 
   <!-- Device tabs -->
@@ -232,8 +233,8 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">Tocca il pulsante Condividi</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">In fondo allo schermo — l'icona di un quadrato con una freccia verso l'alto <span class="num">↑</span></p>
+            <p class="font-bold text-lg">Apri il menu della pagina e scegli Condividi</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">In Safari tocca il pulsante del menu della pagina, poi « Condividi ». Se l'icona Condividi (quadrato con freccia verso l'alto <span class="num">↑</span>) è visibile direttamente, toccala.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -277,16 +278,15 @@ tailwind.config = {
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">Attendi il banner di installazione</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Di solito Chrome mostra un <b>banner in basso</b>: "Install Kesefle / Installa". Toccalo e passa direttamente al passaggio 4.</p>
-            <p class="text-sm mt-2">Se il banner non è apparso, continua con il passaggio 3.</p>
+            <p class="font-bold text-lg">Apri il menu Chrome <span class="num">⋮</span></p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Tocca i tre puntini nell'angolo superiore di Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">3</span>
           <div>
-            <p class="font-bold text-lg">Menu (3 puntini verticali) → "Aggiungi alla schermata Home" / "Installa app"</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Nell'angolo in alto a destra di Chrome.</p>
+            <p class="font-bold text-lg">Scegli "Aggiungi alla schermata Home"</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Poi scegli "Installa e crea scorciatoia" o "Installa app" — la dicitura varia leggermente tra le versioni di Chrome.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -300,7 +300,7 @@ tailwind.config = {
           <span class="step-num shrink-0">5</span>
           <div>
             <p class="font-bold text-lg">✓ Fatto!</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה funziona come un'app vera. Funziona anche offline (mostra la dashboard dalla cache).</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">כספ'לה si apre in una finestra autonoma come un'app. Senza rete appare l'involucro o un messaggio offline; dati aggiornati e aggiunta richiedono Internet.</p>
           </div>
         </li>
       </ol>
@@ -387,7 +387,7 @@ tailwind.config = {
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Nessuna approvazione di Apple/Google</b> — non dobbiamo aspettare settimane per l'approvazione di un aggiornamento.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Aggiornamenti automatici</b> — non serve scaricare una nuova versione. Usi la PWA → ricevi la versione più recente.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Meno spazio di archiviazione</b> — l'app occupa ~1MB invece di 50-100MB.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Funziona offline</b> — la dashboard viene salvata nella cache locale, si apre anche senza connessione.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Involucro disponibile offline</b> — l'app si apre e segnala l'assenza di rete. Per la privacy, i dati finanziari non vengono salvati in una cache condivisa.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Niente commissioni</b> — Apple prende il 30%. Con la PWA, il 100% del pagamento di Pro/Family va a noi e non ad Apple.</div></li>
     </ul>
   </section>
@@ -410,8 +410,8 @@ tailwind.config = {
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Chiudi completamente l'app (non solo riducila a icona) e riaprila. Se non funziona — elimina l'app e reinstallala tramite il browser. Il Service Worker aggiornerà la cache alla nuova versione.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
-        <summary class="font-bold cursor-pointer">Non vedo la dashboard quando sono offline</summary>
-        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Verifica di aver usato l'app almeno una volta mentre eri online — solo allora il Service Worker salva le pagine. Se apri l'app per la prima volta offline, non potrà mostrare nulla (non c'è niente da caricare).</p>
+        <summary class="font-bold cursor-pointer">Cosa resta disponibile senza Internet?</summary>
+        <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Dopo una visita online possono aprirsi l'involucro dell'app e la pagina offline. I dati finanziari provengono dal tuo account e non vengono salvati nella cache condivisa; riconnettiti per aggiornare o aggiungere un movimento.</p>
       </details>
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
         <summary class="font-bold cursor-pointer">Voglio rimuovere l'app</summary>

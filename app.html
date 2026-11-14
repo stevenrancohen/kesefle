@@ -505,7 +505,7 @@ async function renderAccount(view){
   // never fires beforeinstallprompt); nothing once already installed (standalone).
   var install;
   if(isStandalone()){ install=''; }
-  else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-1 text-xs text-ink-500">הקש/י על כפתור השיתוף בתחתית הדפדפן (הריבוע עם החץ ↑), ואז על &rdquo;הוסף למסך הבית&ldquo; / Add to Home Screen.</div></div>'; }
+  else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-1 text-xs text-ink-500">ב-Safari: תפריט העמוד ← שיתוף (או אייקון הריבוע עם החץ ↑), ואז &rdquo;הוסף למסך הבית&ldquo; / Add to Home Screen.</div></div>'; }
   else { install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>'; }
   var logout='<button onclick="kflLogout()" class="mt-4 w-full rounded-2xl border border-ink-100 dark:border-ink-700 py-3 text-sm font-semibold text-ink-500">התנתקות</button>';
   view.innerHTML=head+'<div class="desktop-grid"><div>'+prof+personaChooser()+'</div><aside>'+links+invite+install+logout+'</aside></div>';
