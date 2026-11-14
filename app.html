@@ -32,8 +32,9 @@
   body { font-family:'Heebo',system-ui,sans-serif; background:radial-gradient(circle at 12% -8%,rgba(63,111,245,.10),transparent 29%),radial-gradient(circle at 88% 0%,rgba(253,221,72,.10),transparent 26%),#f7f7f5; -webkit-tap-highlight-color:transparent; }
   html.dark body { background:radial-gradient(circle at 12% -8%,rgba(63,111,245,.15),transparent 28%),radial-gradient(circle at 88% 0%,rgba(253,221,72,.09),transparent 24%),#090a0d; }
   .font-display { font-family:'Rubik','Heebo',sans-serif; letter-spacing:-0.02em; }
-  .card { background:rgba(255,255,255,.97); border:1px solid #dedfdd; border-radius:1.5rem; box-shadow:0 18px 55px rgba(9,10,13,.08); }
+  .card { background:rgba(255,255,255,.97); border:1px solid #dedfdd; border-radius:1.5rem; box-shadow:0 18px 55px rgba(9,10,13,.08); transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease; }
   html.dark .card { background:linear-gradient(145deg,rgba(23,25,31,.98),rgba(14,15,19,.98)); border-color:#30333b; box-shadow:0 22px 60px rgba(0,0,0,.32); }
+  @media (hover:hover) { .card-interactive:hover { transform:translateY(-2px); border-color:#c9c9c5; box-shadow:0 22px 60px rgba(9,10,13,.12); } html.dark .card-interactive:hover { border-color:#474b55; box-shadow:0 26px 70px rgba(0,0,0,.42); } }
   .tab { color:#8a95b3; }
   .tab.active { color:#8a6200; }
   html.dark .tab.active { color:#fddd48; }
@@ -68,6 +69,24 @@
   .promo-strip { background:#050506; color:#d7d8d5; border-bottom:1px solid #23252b; }
   .promo-strip a { color:#fddd48; }
   .spectrum { height:3px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+  .quick-rail { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(112px,1fr); gap:10px; overflow-x:auto; padding:2px 2px 10px; scroll-snap-type:x proximity; scrollbar-width:none; }
+  .quick-rail::-webkit-scrollbar { display:none; }
+  .quick-card { min-height:112px; scroll-snap-align:start; display:flex; flex-direction:column; justify-content:space-between; border:1px solid #dedfdd; border-radius:1.25rem; padding:14px; background:rgba(255,255,255,.96); box-shadow:0 10px 30px rgba(9,10,13,.06); transition:.18s ease; }
+  .quick-card:active { transform:scale(.98); }
+  @media (hover:hover) { .quick-card:hover { transform:translateY(-2px); border-color:#bfc0bd; box-shadow:0 16px 36px rgba(9,10,13,.10); } }
+  html.dark .quick-card { background:#14161b; border-color:#30333b; box-shadow:0 14px 38px rgba(0,0,0,.22); }
+  .quick-icon { display:grid; width:38px; height:38px; place-items:center; border-radius:13px; }
+  .quick-icon svg, .nav-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-add { display:flex; min-height:56px; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:#090a0d; }
+  .nav-add-bubble { display:grid; width:50px; height:50px; margin-top:-22px; place-items:center; border:5px solid #fff; border-radius:18px; background:#fddd48; box-shadow:0 10px 24px rgba(185,135,0,.32); }
+  html.dark .nav-add-bubble { border-color:#111318; }
+  .nav-add-label { color:#5c4100; }
+  html.dark .nav-add-label { color:#fddd48; }
+  .nav-add-bubble svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; }
+  .tab { position:relative; }
+  .tab.active:after { content:''; position:absolute; inset:auto 35% 3px; height:3px; border-radius:999px; background:#fddd48; }
+  .global-search { display:none; }
+  @media (min-width:640px) { .global-search { display:flex; } }
   html.dark .bg-brand-700 { background-color:#fddd48!important; color:#090a0d!important; }
   html.dark .text-brand-700 { color:#fddd48!important; }
   html.dark .border-brand-300 { border-color:#fddd48!important; }
@@ -80,9 +99,9 @@
     .desktop-sticky { position:sticky; top:176px; }
     #view { padding-bottom:60px; }
     nav.bottom-nav { left:50%; right:auto; bottom:22px; width:min(520px,calc(100% - 32px)); transform:translateX(-50%); border:1px solid #30333b; border-radius:22px; box-shadow:0 18px 45px rgba(0,0,0,.34); overflow:hidden; }
-    #expenseFab { bottom:88px; }
+    .quick-rail { grid-auto-columns:minmax(122px,1fr); overflow:visible; }
   }
-  @media (prefers-reduced-motion: reduce) { .kfl-spin{animation:none;} .skel{animation:none;} }
+  @media (prefers-reduced-motion: reduce) { .kfl-spin{animation:none;} .skel{animation:none;} .card,.quick-card{transition:none;} }
 </style>
 </head>
 <body class="text-ink-900 dark:text-ink-50">
@@ -99,6 +118,10 @@
         <div class="font-display text-lg font-black leading-none">כספ'לה</div>
         <div id="whoami" class="text-[11px] text-ink-500">האפליקציה שלך</div>
       </div>
+      <a href="#/tx" class="global-search items-center gap-2 rounded-2xl border border-ink-100 bg-ink-50 px-3 text-xs font-bold text-ink-500 dark:border-ink-700 dark:bg-ink-900" aria-label="חיפוש בתנועות">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></span>
+        חיפוש בתנועות
+      </a>
       <span id="syncTime" class="self-center text-[10px] tabular-nums text-ink-500"></span>
       <button id="refreshBtn" aria-label="רענון נתונים" class="grid h-11 w-11 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">⟳</button>
       <button id="themeBtn" aria-label="מצב כהה או בהיר" class="grid h-11 w-11 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">◐</button>
@@ -115,15 +138,9 @@
 
   <main id="view" class="mx-auto max-w-6xl px-4 pb-28 pt-44 sm:px-6"></main>
 
-  <!-- Always-available in-app entry. WhatsApp remains an optional channel. -->
-  <a id="expenseFab" href="/expense?from=app"
-     class="fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-brand-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-brand-800/30 active:scale-95">
-    <span>＋</span> הוסף תנועה
-  </a>
-
   <!-- Bottom tab nav -->
   <nav aria-label="ניווט ראשי" class="bottom-nav safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 dark:border-[#30333b] bg-white/95 dark:bg-[#111318]/95 backdrop-blur">
-    <div id="tabs" class="mx-auto grid max-w-lg grid-cols-4"></div>
+    <div id="tabs" class="mx-auto grid max-w-lg grid-cols-5"></div>
   </nav>
 
 <script>
@@ -193,7 +210,7 @@ async function loadPersonalization(){
 }
 function paintSpaceSwitcher(){
   var space=activeSpace();
-  document.querySelectorAll('[data-space]').forEach(function(b){ b.classList.toggle('active',b.getAttribute('data-space')===space); });
+  document.querySelectorAll('[data-space]').forEach(function(b){ var on=b.getAttribute('data-space')===space; b.classList.toggle('active',on); b.setAttribute('aria-pressed',on?'true':'false'); });
   var fab=$('#expenseFab'); if(fab) fab.href='/expense?from=app&space='+encodeURIComponent(space);
   var who=$('#whoami'); if(who){ var u=APP.me&&APP.me.user, name=u&&(u.name||u.email); who.textContent=(name?name+' · ':'')+currentPersona().short; }
 }
@@ -244,12 +261,30 @@ function onboardingCard(){
 
 // ───────── tabs / routes ─────────
 var TABS=[
-  {id:'',label:'בית',icon:'⌂',render:renderHome},
-  {id:'tx',label:'תנועות',icon:'≣',render:renderTx},
-  {id:'insights',label:'תובנות',icon:'◑',render:renderInsights},
-  {id:'account',label:'חשבון',icon:'☺',render:renderAccount},
+  {id:'',label:'בית',icon:'home',render:renderHome},
+  {id:'tx',label:'תנועות',icon:'list',render:renderTx},
+  {id:'insights',label:'תובנות',icon:'chart',render:renderInsights},
+  {id:'account',label:'חשבון',icon:'user',render:renderAccount},
 ];
-function buildTabs(){ $('#tabs').innerHTML=TABS.map(function(t){ return '<a class="tab flex flex-col items-center gap-0.5 py-2.5" data-id="'+t.id+'" href="#/'+t.id+'"><span class="text-xl leading-none">'+t.icon+'</span><span class="text-[10px] font-semibold">'+esc(t.label)+'</span></a>'; }).join(''); }
+function lineIcon(name){
+  var p={
+    home:'<path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10v10h13V10"></path><path d="M9.5 20v-6h5v6"></path>',
+    list:'<path d="M8 6h13M8 12h13M8 18h13"></path><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path>',
+    chart:'<path d="M4 19V9M10 19V5M16 19v-7M22 19V8"></path><path d="M2 19h22"></path>',
+    user:'<circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>',
+    plus:'<path d="M12 5v14M5 12h14"></path>',
+    search:'<circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path>',
+    wallet:'<path d="M4 6.5h14a2 2 0 0 1 2 2v10H4a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2h12"></path><path d="M16 11h6v4h-6a2 2 0 0 1 0-4Z"></path>',
+    income:'<path d="M12 20V5M6 11l6-6 6 6"></path>',
+    budget:'<circle cx="12" cy="12" r="9"></circle><path d="M12 7v10M15 9.5c-.6-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.1 1.7 3 2c1.9.3 3 1 3 2s-1.3 2-3 2c-1.4 0-2.4-.5-3-1.5"></path>'
+  };
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(p[name]||p.wallet)+'</svg>';
+}
+function buildTabs(){
+  var links=TABS.map(function(t){ return '<a class="tab flex flex-col items-center gap-0.5 py-2.5" data-id="'+t.id+'" href="#/'+t.id+'"><span class="nav-icon">'+lineIcon(t.icon)+'</span><span class="text-[10px] font-semibold">'+esc(t.label)+'</span></a>'; });
+  links.splice(2,0,'<a id="expenseFab" href="/expense?from=app" class="nav-add" aria-label="הוספת תנועה"><span class="nav-add-bubble">'+lineIcon('plus')+'</span><span class="nav-add-label text-[10px] font-black">הוספה</span></a>');
+  $('#tabs').innerHTML=links.join('');
+}
 function setActiveTab(id){ document.querySelectorAll('#tabs .tab').forEach(function(a){ var on=a.getAttribute('data-id')===id; a.classList.toggle('active', on); if(on){ a.setAttribute('aria-current','page'); } else { a.removeAttribute('aria-current'); } }); }
 function currentId(){ return (location.hash||'').replace(/^#\/?/,''); }
 var __routing=false, __routeAgain=false;
@@ -295,7 +330,18 @@ async function renderHome(view){
   var cats=tc.length?'<section class="card mt-4 p-5"><div class="flex items-center justify-between"><h2 class="font-display text-lg font-black">לאן הכסף הלך</h2><a href="#/insights" class="text-xs font-bold text-brand-700">פירוט מלא</a></div><div class="mt-2">'+tc.slice(0,5).map(function(c){return bar(c.name,c.total,maxC);}).join('')+'</div></section>':'';
   var side=space==='household'?familyHomeCard(rows):space==='business'?businessHomeCard(total):personalHomeCard(total);
   var recent=rows.length?'<section class="card mt-4 p-2"><div class="flex items-center justify-between px-2 py-2"><h2 class="font-display text-lg font-black">תנועות אחרונות</h2><a href="#/tx" class="text-xs font-bold text-brand-700">הצגת הכל</a></div><div class="divide-y divide-ink-100 dark:divide-ink-800">'+rows.slice(0,7).map(txRow).join('')+'</div></section>':emptyState('עוד אין תנועות במרחב הזה','ברגע שתתווסף תנועה היא תופיע כאן.');
-  view.innerHTML='<div class="desktop-grid"><div>'+hero+action+cats+'</div><aside class="desktop-sticky">'+side+recent+'</aside></div>';
+  view.innerHTML='<div class="desktop-grid"><div>'+hero+quickActions()+action+cats+'</div><aside class="desktop-sticky">'+side+recent+'</aside></div>';
+}
+function quickActions(){
+  var space=activeSpace();
+  var actions=[
+    {label:'הוצאה',sub:'קליטה מהירה',href:'/expense?from=app-quick&space='+space,icon:'wallet',tone:'bg-red-50 text-red-500 dark:bg-red-900/30'},
+    {label:'הכנסה',sub:'משכורת או לקוח',href:'/expense?from=app-quick&type=income&space='+space,icon:'income',tone:'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30'},
+    {label:'חיפוש',sub:'בכל התנועות',href:'#/tx',icon:'search',tone:'bg-blue-50 text-blue-600 dark:bg-blue-900/30'},
+    {label:'תובנות',sub:'מגמות ותקציב',href:'#/insights',icon:'chart',tone:'bg-brand-50 text-brand-700 dark:bg-brand-900/30'},
+    {label:'תקציב',sub:'הגדרות ושליטה',href:'/dashboard#/budgets',icon:'budget',tone:'bg-violet-50 text-violet-600 dark:bg-violet-900/30'}
+  ];
+  return '<section class="mt-4" aria-labelledby="quickTitle"><div class="mb-2 flex items-center justify-between px-1"><h2 id="quickTitle" class="font-display text-lg font-black">פעולות מהירות</h2><span class="text-[11px] text-ink-500">הכול במקום אחד</span></div><div class="quick-rail">'+actions.map(function(a){return '<a class="quick-card" href="'+esc(a.href)+'"><span class="quick-icon '+a.tone+'">'+lineIcon(a.icon)+'</span><span><strong class="block text-sm">'+esc(a.label)+'</strong><span class="block text-[11px] text-ink-500">'+esc(a.sub)+'</span></span></a>';}).join('')+'</div></section>';
 }
 function nextMove(total,rows){
   var space=activeSpace(), net=total.income-total.expense;
