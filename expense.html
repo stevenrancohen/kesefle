@@ -438,7 +438,28 @@ tailwind.config = {
   document.getElementById('kfl-date').value = dateStr;
   if (params.get('type') === 'income') window.kflSetType('income');
 
-  document.getElementById('kfl-form').addEventListener('submit', async function (e) {
+  var form = document.getElementById('kfl-form');
+  window.__kflExpenseDirty = false;
+  ['input', 'change'].forEach(function (eventName) {
+    form.addEventListener(eventName, function () { window.__kflExpenseDirty = true; });
+  });
+  form.addEventListener('click', function (event) {
+    if (event.target && event.target.closest
+        && event.target.closest('[data-amount],[data-category],#type-expense,#type-income')) {
+      window.__kflExpenseDirty = true;
+    }
+  });
+  function kflApplyPendingUpdateAfterSave() {
+    if (!window.__kflExpenseUpdatePending) return;
+    setTimeout(function () {
+      // The user may already be typing the next movement. Never trade a fresh
+      // entry for a service-worker refresh; the next successful save retries.
+      if (window.__kflExpenseDirty) return;
+      location.reload();
+    }, 700);
+  }
+
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
     var btn = document.getElementById('kfl-submit');
     var status = document.getElementById('kfl-status');
@@ -490,6 +511,8 @@ tailwind.config = {
         document.getElementById('kfl-vat').checked = false;
         paintAmountChips('');
         document.getElementById('kfl-amount').focus();
+        window.__kflExpenseDirty = false;
+        kflApplyPendingUpdateAfterSave();
         // Fire funnel pixel for analytics.
         try {
           fetch('/api/log/funnel-event', {
@@ -520,6 +543,6 @@ tailwind.config = {
 })();
 </script>
 <script>/* SW auto-update */
-if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
+if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;function showPending(){if(document.getElementById('kfl-update-pending'))return;var n=document.createElement('div');n.id='kfl-update-pending';n.setAttribute('role','status');n.style.cssText='position:fixed;left:16px;right:16px;bottom:16px;z-index:80;border-radius:14px;background:#0f1422;color:#fff;padding:12px 16px;text-align:center;font:700 12px Heebo,system-ui,sans-serif;box-shadow:0 12px 36px rgba(0,0,0,.28)';n.textContent='עדכון מוכן — הדף יתרענן אחרי שמירת התנועה';document.body.appendChild(n);}navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;if(window.__kflExpenseDirty){window.__kflExpenseUpdatePending=true;showPending();return;}reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
 </body>
 </html>

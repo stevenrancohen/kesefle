@@ -133,11 +133,43 @@ async function assertAuthRouteIsGuestOnly(name, globals = {}) {
   assert.strictEqual(bootstrapContext.APP.me, null, 'stale identity is cleared after auth rejection');
   assert.strictEqual(bootstrapContext.APP.group, null, 'stale group is cleared after auth rejection');
 
+  const retryView = { innerHTML: '' };
+  const retryGuestStates = [];
+  let retryAttempts = 0;
+  let retryRoutes = 0;
+  const retryContext = {
+    APP: { me: null, group: null },
+    __bootstrapping: false,
+    $: (selector) => selector === '#view' ? retryView : null,
+    setGuestMode: (on) => retryGuestStates.push(on),
+    loadingHero: () => 'LOADING',
+    signInState: () => html,
+    errState: (error) => error && error.isOffline ? 'OFFLINE' : 'ERROR',
+    loadAppConfig: async () => {},
+    loadPersonalization: async () => {
+      retryAttempts++;
+      if (retryAttempts === 1) throw { isOffline: true };
+      retryContext.APP.me = { user: { sub: 'verified' } };
+      return true;
+    },
+    route: async () => { retryRoutes++; },
+  };
+  vm.createContext(retryContext);
+  vm.runInContext(extractFn(app, 'bootstrapApp'), retryContext);
+  assert.strictEqual(await retryContext.bootstrapApp(), false, 'offline bootstrap reports not ready');
+  assert.strictEqual(retryView.innerHTML, 'OFFLINE', 'offline bootstrap keeps the truthful offline card');
+  assert.strictEqual(retryContext.APP.me, null, 'offline bootstrap clears unverified account state');
+  assert.strictEqual(await retryContext.bootstrapApp(), true, 'retry re-runs the authenticated bootstrap after connectivity returns');
+  assert.strictEqual(retryAttempts, 2, 'retry performs a fresh /api/me personalization probe');
+  assert.strictEqual(retryRoutes, 1, 'successful retry renders the authenticated route exactly once');
+  assert.deepStrictEqual(retryGuestStates, [true, true, false], 'retry remains private until server authentication succeeds');
+  assert.match(app, /onclick="bootstrapApp\(\)"/, 'offline retry button invokes the full authentication bootstrap');
+
   const routeSource = extractFn(app, 'route');
   assert(routeSource.indexOf('if(!APP.me)') < routeSource.indexOf('sec.render(view)'), 'route blocks protected renderers until server auth succeeds');
   assert.doesNotMatch(app, /kesefle_user[^\n]*whoami/, 'boot never treats localStorage identity as proof');
   assert.match(app, /setGuestMode\(true\);\s*\$\('#view'\)\.innerHTML=signInState\(\);\s*buildTabs\(\)/, 'boot paints the private guest shell before building account chrome');
-  assert.match(sw, /v20-2026-11-23-guest-session/, 'service worker cache version covers both the guest shell and cookie-session foundation');
+  assert.match(sw, /v21-2026-11-23-unified-app/, 'service worker cache version covers the guest shell, cookie-session foundation and unified app identity');
   console.log('Guest app first-run preview: PASS');
 })().catch((error) => {
   console.error(error);
