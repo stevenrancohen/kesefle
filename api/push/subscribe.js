@@ -31,6 +31,7 @@
 import { withRequestId, log } from '../../lib/log.js';
 import { requireAuth } from '../../lib/auth.js';
 import { rateLimitId } from '../../lib/ratelimit.js';
+import { isTrustedPushEndpoint } from '../../lib/push-endpoint.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -81,10 +82,7 @@ async function kvDel(key) {
 function isValidEndpoint(s) {
   if (typeof s !== 'string' || !s) return false;
   if (s.length > MAX_ENDPOINT_LEN) return false;
-  // Push services are always https://. Reject anything else (defensive).
-  let url;
-  try { url = new URL(s); } catch { return false; }
-  return url.protocol === 'https:';
+  return isTrustedPushEndpoint(s);
 }
 
 function isValidB64Url(s, minLen, maxLen) {
@@ -120,7 +118,9 @@ function sanitizeDeviceInfo(raw) {
 // ── Handlers ────────────────────────────────────────────────────────────────
 async function handleGet(req, res, userSub) {
   const rec = await kvGet(subscriptionKey(userSub));
-  const subscribed = !!(rec && rec.subscription && rec.subscription.endpoint);
+  const subscribed = !!(
+    rec && rec.subscription && isTrustedPushEndpoint(rec.subscription.endpoint)
+  );
   return res.status(200).json({ ok: true, subscribed });
 }
 
