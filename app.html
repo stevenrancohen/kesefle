@@ -708,6 +708,7 @@ async function renderAccount(view){
   }; }
 }
 async function kflLogout(){
+  try{ if(window.KesefleSession&&window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout(); }catch(e){}
   try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include',keepalive:true}); }catch(e){}
   try{ if(window.KesefleSession) window.KesefleSession.clearAllIdentityStorage(); else localStorage.removeItem('kesefle_user'); }catch(e){}
   // Purge cached per-user API responses so a different account on the same device

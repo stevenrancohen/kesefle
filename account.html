@@ -707,6 +707,8 @@ function _kflClearProgress() {
 async function kesefleLogout() {
   // Await the cookie clear before navigating; keepalive also lets the request
   // finish if the browser begins unloading during a slow mobile connection.
+  try { if (window.KesefleSession && window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout(); }
+  catch (e) {}
   try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }); }
   catch (e) {}
   if (window.KesefleSession) window.KesefleSession.clearAllIdentityStorage();

@@ -50,7 +50,7 @@ const ROOT = path.resolve(__dirname, '..');
   const senderSource = fs.readFileSync(path.join(ROOT, 'lib/push.js'), 'utf8');
   assert.match(subscribeSource, /isTrustedPushEndpoint\(s\)/,
     'subscription writes use the shared endpoint trust policy');
-  assert.match(subscribeSource, /isTrustedPushEndpoint\(rec\.subscription\.endpoint\)/,
+  assert.match(subscribeSource, /storedEndpoint = rec\?\.subscription\?\.endpoint[\s\S]*isTrustedPushEndpoint\(storedEndpoint\)/,
     'subscription status does not bless a legacy untrusted record');
   assert.match(senderSource, /if \(!isTrustedPushEndpoint\(subscription\.endpoint\)\)/,
     'the outbound sender revalidates legacy stored endpoints');
