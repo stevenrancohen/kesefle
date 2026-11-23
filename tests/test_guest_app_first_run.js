@@ -137,7 +137,7 @@ async function assertAuthRouteIsGuestOnly(name, globals = {}) {
   assert(routeSource.indexOf('if(!APP.me)') < routeSource.indexOf('sec.render(view)'), 'route blocks protected renderers until server auth succeeds');
   assert.doesNotMatch(app, /kesefle_user[^\n]*whoami/, 'boot never treats localStorage identity as proof');
   assert.match(app, /setGuestMode\(true\);\s*\$\('#view'\)\.innerHTML=signInState\(\);\s*buildTabs\(\)/, 'boot paints the private guest shell before building account chrome');
-  assert.match(sw, /v19-2026-11-23-guest-first-run/, 'service worker cache version is bumped for installed phones');
+  assert.match(sw, /v20-2026-11-23-guest-session/, 'service worker cache version covers both the guest shell and cookie-session foundation');
   console.log('Guest app first-run preview: PASS');
 })().catch((error) => {
   console.error(error);

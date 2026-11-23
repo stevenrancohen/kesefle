@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v19-2026-11-23-guest-first-run';
+const VERSION = 'v20-2026-11-23-guest-session';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -32,6 +32,7 @@ const PRECACHE_URLS = [
   '/app',
   '/app.html',
   '/app.webmanifest',
+  '/lib/browser-session.js',
   '/expense',
   '/expense.html',
   '/status',
