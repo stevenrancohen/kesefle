@@ -87,6 +87,7 @@ const UNIT_SUITES = [
   'tests/test_api_error_wrapper_hardening.js',       // hardening: getExpenses wrapped in withRequestId + paypal subscribe/webhook return stable error codes (no e.message leak)
   'tests/pwa.js',                                     // PWA hardening: manifest validity, maskable icon, theme-color parity, SW cache-versioning + skipWaiting/clients.claim + offline fallback, controllerchange auto-update (#13), install CTA (#125), iOS meta
   'tests/test_mobile_phone_app.js',                    // mobile app: direct entry, canonical bot config, account-bound two-way phone verification, no stale number
+  'tests/test_whatsapp_capability_ui.js',              // mobile trust: fail-closed WhatsApp CTAs, app-first fallback, late-response/timer race guards
   'tests/test_phone_session_first.js',                 // phone link: cookie-only mobile flow, atomic verification, expired-session recovery
   'tests/test_phone_reverse_backfill.js',               // phone link migration: markerless forward routes get one safe reverse index; conflicts fail closed
   'bot/test_link_code_intercept.js',                   // WhatsApp link code: highest-priority routing, truthful API errors, FIXED/DEPLOY parity

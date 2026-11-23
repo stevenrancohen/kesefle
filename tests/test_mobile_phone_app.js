@@ -47,14 +47,20 @@ function extractFn(source, name) {
 const mobileSurfaces = app + appManifest + mainManifest;
 assert(!mobileSurfaces.includes('972547766361'), 'stale/pending WhatsApp number removed from mobile surfaces');
 assert(/api\/config/.test(app) && /BOT_NUMBER/.test(app), 'app reads the canonical bot number from /api/config');
+assert(/var WHATSAPP_AVAILABLE=false;\s*var WA_LINK='';/.test(app), 'app starts with WhatsApp capability fail-closed');
+assert(/c&&c\.ok===true&&c\.waba_approved===true&&\/\^\[1-9\]\\d\{6,14\}\$\//.test(app), 'app requires approved config plus valid E.164 number');
 assert(/href="\/expense\?from=app"/.test(app), 'app has an always-available direct expense entry');
 assert(/\/expense\?from=pwa-shortcut/.test(appManifest) && /\/expense\?from=pwa-shortcut/.test(mainManifest), 'PWA shortcuts work without WhatsApp');
 assert(/payload\.error==='offline'/.test(app) && /e&&e\.isOffline/.test(app), 'app recognizes the service worker offline response');
 assert(/אין חיבור לאינטרנט/.test(app) && /נתונים פיננסיים לא נשמרים במטמון/.test(app), 'app shows a truthful privacy-safe offline state');
 assert(/kflLinkFirstExpense[\s\S]*onFirstClick\(\)/.test(welcome), 'real first-message CTA triggers the install milestone');
+assert(/if \(!canUseWhatsAppLinking\(\)\) return;[\s\S]*var requestGeneration = capabilityGeneration/.test(welcome), 'welcome blocks link mutation before capability and verified-sheet approval');
+assert(/whatsapp_linking_unavailable[\s\S]*setWhatsAppAvailability\(false/.test(welcome), 'welcome maps backend rollout rejection to the web fallback');
+assert(/id="kfl-web-first"/.test(welcome) && /\/expense\?from=welcome-fallback/.test(welcome), 'welcome exposes a free app-first activation path');
 assert(/beforeinstallprompt[\s\S]*kfl_first_msg_clicked[\s\S]*maybeShowPwaInstall/.test(welcome), 'late install events re-check the completed milestone');
 assert(/id="pwa-ios-install-link" href="\/install"/.test(welcome), 'iOS gets a manual install-guide fallback');
 assert(/__kflExpenseDirty/.test(expense) && /__kflExpenseUpdatePending/.test(expense), 'service-worker updates defer reload while the expense form is dirty');
+assert(/id="kfl-whatsapp-option" class="[^"]*hidden/.test(expense) && /c\.waba_approved === true/.test(expense), 'expense form hides WhatsApp until strict capability approval');
 assert(/יתרענן אחרי שמירת התנועה/.test(expense), 'dirty-form update deferral is explained to the user');
 
 let pendingTimer = null;
