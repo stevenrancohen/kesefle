@@ -14519,7 +14519,13 @@ function handleLinkCodeDetailed_(code, fromPhone) {
     return result_('😬 לא הצלחתי לזהות את המספר שלך מההודעה\n💡 נסה לשלוח שוב מאותו וואטסאפ', 'terminal', 'missing_phone');
   }
   var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
-  var authHeaders = botSecret ? { 'x-kesefle-bot-secret': botSecret } : {};
+  // Fail closed locally. Sending a confirm request without the shared secret
+  // can never succeed and needlessly exposes the code + phone to an
+  // unauthenticated request path.
+  if (!botSecret) {
+    return result_('😬 שירות הקישור אינו מוגדר כרגע.\n💡 אין צורך לנסות שוב ברצף — פנה לתמיכה דרך https://kesefle.com', 'terminal', 'bot_not_configured');
+  }
+  var authHeaders = { 'x-kesefle-bot-secret': botSecret };
   // Confirm is the single source of truth. It is atomic and exposes a 24-hour
   // replay receipt, so a GET precheck would add latency and can race with the
   // mutation without improving correctness.

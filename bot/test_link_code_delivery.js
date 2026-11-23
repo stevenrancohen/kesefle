@@ -49,6 +49,7 @@ function harness() {
   const claimTtls = [];
   let kvAvailable = true;
   let finalizeAvailable = true;
+  let lockAvailable = true;
   let lockCalls = 0;
   let id = 0;
   const context = {
@@ -61,7 +62,7 @@ function harness() {
     }) },
     LockService: { getScriptLock: () => {
       lockCalls++;
-      return { tryLock: () => true, hasLock: () => true, releaseLock: () => {} };
+      return { tryLock: () => lockAvailable, hasLock: () => lockAvailable, releaseLock: () => {} };
     } },
     sendWhatsAppMessage: (to, reply) => {
       sent.push({ to, reply });
@@ -102,7 +103,8 @@ function harness() {
     claimTtls,
     getLockCalls: () => lockCalls,
     setKvAvailable: (value) => { kvAvailable = value; },
-    setFinalizeAvailable: (value) => { finalizeAvailable = value; }
+    setFinalizeAvailable: (value) => { finalizeAvailable = value; },
+    setLockAvailable: (value) => { lockAvailable = value; }
   };
 }
 
@@ -172,6 +174,13 @@ result = h.deliver('wamid-router-lock', '972501234567', terminal, true);
 ok('held router lock is reused during KV outage', result.ok && h.sent.length === 1 && h.getLockCalls() === 0);
 
 h = harness();
+h.setKvAvailable(false);
+h.setLockAvailable(false);
+result = h.deliver('wamid-lock-busy', '972501234567', terminal);
+ok('KV outage plus busy fallback lock does not silently lose the customer reply',
+  result.ok && h.sent.length === 1 && h.logs.some((line) => /lock busy/.test(line)));
+
+h = harness();
 h.setFinalizeAvailable(false);
 result = h.deliver('wamid-finalize-outage', '972501234567', success);
 ok('provider success survives durable finalization outage', result.ok && h.sent.length === 1);
@@ -182,6 +191,47 @@ h = harness();
 result = h.deliver('', '972501234567', success);
 ok('missing wamid favors delivering the customer reply', result.ok && h.sent.length === 1);
 ok('missing wamid logs degraded idempotency', h.logs.some((line) => /missing wamid/.test(line)));
+
+function runProviderSend(provider, status) {
+  let request = null;
+  const context = {
+    Logger: { log: () => {} },
+    _waSendConfig_: () => ({
+      ok: true,
+      provider,
+      url: 'https://provider.example/messages',
+      from: '972500000000',
+      headers: { Authorization: 'test' }
+    }),
+    _unwrapConciergeJson_: (message) => message,
+    _waNormE164Digits_: (value) => String(value).replace(/\D/g, ''),
+    _waEncodeForm_: (fields) => Object.keys(fields)
+      .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(fields[key]))
+      .join('&'),
+    UrlFetchApp: { fetch: (url, options) => {
+      request = { url, options };
+      return {
+        getResponseCode: () => status,
+        getContentText: () => status >= 200 && status < 300 ? '{"accepted":true}' : '{"error":"rejected"}'
+      };
+    } }
+  };
+  vm.createContext(context);
+  vm.runInContext(extractFn(SRC, 'sendWhatsAppMessage'), context);
+  return { result: context.sendWhatsAppMessage('972501234567', 'provider-test'), request };
+}
+
+let providerRun = runProviderSend('meta', 200);
+ok('Meta HTTP 200 is treated as provider acceptance', providerRun.result.ok && providerRun.result.code === 200);
+providerRun = runProviderSend('360dialog', 200);
+ok('360dialog HTTP 200 is treated as provider acceptance', providerRun.result.ok && providerRun.result.code === 200);
+providerRun = runProviderSend('twilio', 201);
+ok('Twilio HTTP 201 is treated as provider acceptance',
+  providerRun.result.ok && providerRun.result.code === 201 && /Body=provider-test/.test(providerRun.request.options.payload));
+providerRun = runProviderSend('twilio', 400);
+ok('Twilio non-2xx is rejected and cannot finalize a delivery lease', !providerRun.result.ok && providerRun.result.code === 400);
+providerRun = runProviderSend('meta', 500);
+ok('Meta non-2xx is rejected and cannot finalize a delivery lease', !providerRun.result.ok && providerRun.result.code === 500);
 
 console.log('test_link_code_delivery: ' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

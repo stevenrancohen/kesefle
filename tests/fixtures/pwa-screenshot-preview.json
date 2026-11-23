@@ -1,0 +1,27 @@
+{
+  "synthetic": true,
+  "notice": "נתוני הדגמה",
+  "capturedAt": "2026-11-23",
+  "user": {
+    "sub": "pwa-screenshot-fixture",
+    "name": "נתוני הדגמה",
+    "email": "demo@example.invalid"
+  },
+  "preferences": {
+    "persona": "employee",
+    "activeSpace": "personal"
+  },
+  "summary": {
+    "month_count": 6,
+    "month_income": 8200,
+    "month_expenses": 3859
+  },
+  "expenses": [
+    { "date": "2026-11-23", "amount": 245, "category": "מזון", "description": "סופר", "is_income": false },
+    { "date": "2026-11-22", "amount": 58, "category": "תחבורה", "description": "רב־קו", "is_income": false },
+    { "date": "2026-11-20", "amount": 46, "category": "פנאי", "description": "קפה עם חברים", "is_income": false },
+    { "date": "2026-11-10", "amount": 8200, "category": "הכנסה", "description": "משכורת", "is_income": true },
+    { "date": "2026-11-08", "amount": 3200, "category": "דיור", "description": "שכר דירה", "is_income": false },
+    { "date": "2026-11-03", "amount": 310, "category": "חשבונות", "description": "חשמל", "is_income": false }
+  ]
+}

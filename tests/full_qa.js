@@ -86,13 +86,23 @@ const UNIT_SUITES = [
   'tests/test_api_error_wrapper_hardening.js',       // hardening: getExpenses wrapped in withRequestId + paypal subscribe/webhook return stable error codes (no e.message leak)
   'tests/pwa.js',                                     // PWA hardening: manifest validity, maskable icon, theme-color parity, SW cache-versioning + skipWaiting/clients.claim + offline fallback, controllerchange auto-update (#13), install CTA (#125), iOS meta
   'tests/test_mobile_phone_app.js',                    // mobile app: direct entry, canonical bot config, account-bound two-way phone verification, no stale number
-  'tests/test_phone_session_first.js',                 // phone link: cookie-first mobile flow, 401-only token fallback, expired-session recovery
+  'tests/test_phone_session_first.js',                 // phone link: cookie-only mobile flow, atomic verification, expired-session recovery
+  'tests/test_phone_reverse_backfill.js',               // phone link migration: markerless forward routes get one safe reverse index; conflicts fail closed
   'bot/test_link_code_intercept.js',                   // WhatsApp link code: highest-priority routing, truthful API errors, FIXED/DEPLOY parity
   'bot/test_link_code_delivery.js',                    // WhatsApp link reply: atomic lease, provider-ack finalization, lost-response retry
   'tests/test_account_activation_fallback.js',         // onboarding: existing sheet skips duplicate provisioning; app-first activation survives WhatsApp rollout
   'tests/test_ui_preferences.js',                      // adaptive UI: tenant-scoped persona + personal/household/business spaces, mobile touch targets
   'tests/test_goall4u_ui.js',                           // visual system: dark retail-style hierarchy, spectrum rail, honest install/offline copy, canonical domain
+  'tests/test_session_csrf.js',                         // auth: cookie mutations require same-origin + __Host- cookie migration stays backwards-compatible
+  'tests/test_install_domain_trust.js',                 // PWA trust: canonical /app manifest + link, accurate offline privacy copy, mobile install guidance
+  'tests/test_install_prompt_runtime.js',               // install UX: real beforeinstallprompt, accepted/declined, installed and iPhone states
+  'tests/test_pwa_install_quality.js',                   // install quality: real manifest screenshots + fail-closed required offline shell
+  'tests/test_guest_app_first_run.js',                  // logged-out app: persona-aware value preview, no fabricated financial data, secure Google CTA
+  'tests/test_offline_retry_runtime.js',                // offline UX: only healthy Kesefle JSON may redirect back to /app
   'tests/test_admin_console_data_sources.js',         // admin console: deepened sections wire ONLY real requireAdmin endpoints (funnel-summary, registration-health, recent-signups, revenue, launch-monitor) + one-click recovery (reprovision/resend) + masked identity + honest "not instrumented" notes; no fabricated tiles
+  'tests/test_admin_monitor_session_auth.js',         // admin monitor: no hardcoded/localStorage shared secret; canonical requireAdmin session only
+  'tests/test_browser_session_hygiene.js',            // browser auth: presentation-only storage, cookie-only API calls, safe PKCE return, PWA cache rollout
+  'tests/test_legacy_session_upgrade.js',             // browser auth rollout: verified legacy ID token upgrades only an existing canonical user to HttpOnly session
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.
 for (const f of [...new Set(UNIT_SUITES)]) {
@@ -192,8 +202,11 @@ ok('recurring.js resolves token from user:{userSub}', /resolveTenantWriteRecord/
 ok('account.js delete purges token:{sub}', /'token:'\s*\+\s*userSub/.test(ACCOUNT));
 ok('account.js delete revokes encrypted-envelope grant', /refreshTokenEnvelope[\s\S]{0,80}decryptRefreshToken/.test(ACCOUNT));
 ok('link.js does NOT log the link code', !/code_issued'[^)]*\bcode\b/.test(LINK));
-// Round 3 audit M2: ctEq was replaced by the canonical constantTimeEqual import.
-ok('admin/stats.js uses constant-time token compare (no !==)', /constantTimeEqual\(/.test(ADMIN_STATS) && !/token !== ADMIN_TOKEN/.test(ADMIN_STATS) && !/bearer !== ADMIN_TOKEN/.test(ADMIN_STATS));
+// Admin monitor hardening: only the verified server session may authorize stats.
+ok('admin/stats.js uses canonical requireAdmin only (no shared ADMIN_TOKEN)',
+  /requireAdmin\(/.test(ADMIN_STATS) &&
+  /withRateLimit\(/.test(ADMIN_STATS) &&
+  !/ADMIN_TOKEN|constantTimeEqual|legacy_auth/.test(ADMIN_STATS));
 
 // ── 5b. Cross-user self-learning (privacy-safe global knowledge base) ───────
 // These guard the "learn from every correction, get smarter for everyone"
