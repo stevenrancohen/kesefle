@@ -70,6 +70,7 @@ function appsScriptHarness(properties = {}) {
     Number,
     String,
     isFinite,
+    _KFL_RELAY_MAX_ENVELOPE_CHARS: 1400000,
     Logger: { log: () => {} },
     CacheService: { getScriptCache: () => ({ remove: (key) => removedCacheKeys.push(key) }) },
     PropertiesService: { getScriptProperties: () => ({ getProperty: (key) => props[key] || '' }) },
@@ -108,7 +109,10 @@ ok('relay uses a domain-separated canonical MAC',
   /RELAY_DOMAIN = 'kesefle-whatsapp-relay-v1'/.test(API) &&
   /`\$\{RELAY_DOMAIN\}\\n\$\{ts\}\\n\$\{bodyB64\}`/.test(API));
 ok('relay secret is independent and minimum 32 characters', /WHATSAPP_RELAY_SECRET/.test(API) && /secret\.length < 32/.test(API));
-ok('relay target is HTTPS and restricted to Apps Script hosts', /url\.protocol === 'https:'/.test(API) && /script\.google\.com/.test(API));
+ok('relay target is HTTPS and restricted to Apps Script hosts', /url\.protocol !== 'https:'/.test(API) && /script\.google\.com/.test(API));
+ok('raw webhook body is capped before HMAC and relay allocation',
+  /MAX_RAW_BODY_BYTES = 1_000_000/.test(API) && /totalBytes > MAX_RAW_BODY_BYTES/.test(API) &&
+  /e\?\.code === 'body_too_large'[\s\S]{0,100}status\(413\)/.test(API));
 ok('relay is time bounded', /AbortSignal\.timeout\(RELAY_TIMEOUT_MS\)/.test(API));
 ok('final redirect URL is revalidated before reading the acknowledgement',
   /if \(!isAllowedRelayUrl\(response\.url\)\)/.test(API));
@@ -123,7 +127,9 @@ ok('Apps Script request and exact ContentService redirect hosts are allowed',
 ok('lookalike, insecure, and unrelated relay hosts are rejected',
   !apiContext.isAllowedRelayUrl('https://script.google.com.evil.example/exec') &&
   !apiContext.isAllowedRelayUrl('http://script.googleusercontent.com/macros/echo') &&
-  !apiContext.isAllowedRelayUrl('https://example.com/exec'));
+  !apiContext.isAllowedRelayUrl('https://example.com/exec') &&
+  !apiContext.isAllowedRelayUrl('https://script.google.com/not-an-apps-script-exec') &&
+  !apiContext.isAllowedRelayUrl('https://script.googleusercontent.com/not-content-service'));
 const metaMac = crypto.createHmac('sha256', 'meta-secret').update(Buffer.from(rawBody)).digest('hex');
 ok('real Vercel verifier accepts the correct Meta signature',
   apiContext.verifyMetaSignature(Buffer.from(rawBody), 'sha256=' + metaMac, 'meta-secret'));
@@ -147,6 +153,12 @@ ok('future timestamp outside the skew is rejected', !result.valid && result.reas
 
 result = context._unwrapVerifiedRelay_({ postData: { contents: JSON.stringify(envelope(rawBody, now, { bodyB64: '%%%=' })) } });
 ok('malformed base64 is rejected', !result.valid && result.reason === 'relay_body_invalid');
+result = context._unwrapVerifiedRelay_({ postData: { contents: JSON.stringify(envelope('x'.repeat(1500001), now)) } });
+ok('oversized signed relay envelope is rejected before JSON parse',
+  result.relayed && !result.valid && result.reason === 'relay_envelope_too_large');
+result = context._unwrapVerifiedRelay_({ postData: { contents: 'x'.repeat(1400001) } });
+ok('oversized unsigned public input is rejected before JSON parse',
+  result.relayed && !result.valid && result.reason === 'relay_envelope_too_large');
 
 context = appsScriptHarness({ WHATSAPP_RELAY_SECRET: '' });
 result = context._unwrapVerifiedRelay_({ postData: { contents: JSON.stringify(envelope(rawBody)) } });
@@ -212,12 +224,35 @@ function runDoPost(routerText) {
   return { content: response.getContent(), cleared };
 }
 
+function runVerifiedAuthReject() {
+  function output(content) {
+    return { getContent: () => content, setMimeType() { return this; } };
+  }
+  const routerContext = {
+    Logger: { log: () => {} },
+    ContentService: { MimeType: { TEXT: 'text' }, createTextOutput: output },
+    LockService: { getScriptLock: () => ({ tryLock: () => true, hasLock: () => true, releaseLock: () => {} }) },
+    _verifyMetaWebhook_: () => ({ valid: false, reason: 'waba_id_mismatch' }),
+  };
+  vm.createContext(routerContext);
+  vm.runInContext(extractFn(FIXED, '_doPostRouter_'), routerContext);
+  const response = routerContext._doPostRouter_({
+    __kflVerifiedRelay: true,
+    postData: { contents: rawBody },
+  });
+  return response.getContent();
+}
+
 let wrapper = runDoPost('err');
 ok('router exception sentinel becomes a retryable relay error and clears WAMID claim',
   wrapper.content === 'RELAY_ERROR' && wrapper.cleared === 1);
 wrapper = runDoPost('RELAY_RETRY');
 ok('link-code retry sentinel becomes a retryable relay error and clears any claim',
   wrapper.content === 'RELAY_ERROR' && wrapper.cleared === 1);
+const authRejectText = runVerifiedAuthReject();
+wrapper = runDoPost(authRejectText);
+ok('verified WABA/auth rejection cannot become RELAY_OK and clears any WAMID claim',
+  authRejectText === 'RELAY_RETRY' && wrapper.content === 'RELAY_ERROR' && wrapper.cleared === 1);
 wrapper = runDoPost('OK');
 ok('successful processing alone receives explicit relay acknowledgement',
   wrapper.content === 'RELAY_OK' && wrapper.cleared === 0);

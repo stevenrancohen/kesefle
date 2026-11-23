@@ -1342,9 +1342,18 @@ function doGet(e) {
 // Returns { valid: bool, reason: string }. Callers log the reason but never
 // echo it to the response (so probers can't infer why they failed).
 // ============================================================
+var _KFL_RELAY_MAX_ENVELOPE_CHARS = 1400000;
+
 function _unwrapVerifiedRelay_(e) {
   var raw = e && e.postData && e.postData.contents;
   if (!raw) return { relayed: false, valid: false, reason: 'no_body' };
+  raw = String(raw);
+  // Reject before JSON.parse so the public Apps Script endpoint cannot be
+  // used as an unbounded parsing/memory sink. This still leaves headroom for
+  // the base64 envelope produced from Vercel's 1 MB raw-body ceiling.
+  if (raw.length > _KFL_RELAY_MAX_ENVELOPE_CHARS) {
+    return { relayed: true, valid: false, reason: 'relay_envelope_too_large' };
+  }
 
   var envelope;
   try { envelope = JSON.parse(raw); }
@@ -2564,7 +2573,12 @@ function _doPostRouter_(e) {
     var __verify_ = _verifyMetaWebhook_(e, __raw_);
     if (!__verify_.valid) {
       Logger.log('doPost: webhook rejected — ' + __verify_.reason);
-      return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+      // A Vercel-verified delivery must never be acknowledged as processed
+      // when the local WABA/auth policy rejects it. Propagate a retry so a
+      // temporary Apps Script misconfiguration cannot silently lose money.
+      // Direct unsigned probes keep the quiet OK response to avoid retry noise.
+      var __authRejectReply_ = e && e.__kflVerifiedRelay === true ? 'RELAY_RETRY' : 'OK';
+      return ContentService.createTextOutput(__authRejectReply_).setMimeType(ContentService.MimeType.TEXT);
     }
 
     var __parsed_ = __raw_ ? JSON.parse(__raw_) : null;
@@ -14718,7 +14732,13 @@ function handleLinkCodeDetailed_(code, fromPhone) {
     return result_('😬 לא הצלחתי לזהות את המספר שלך מההודעה\n💡 נסה לשלוח שוב מאותו וואטסאפ', 'terminal', 'missing_phone');
   }
   var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
-  var authHeaders = botSecret ? { 'x-kesefle-bot-secret': botSecret } : {};
+  // Fail closed locally. Sending a confirm request without the shared secret
+  // can never succeed and needlessly exposes the code + phone to an
+  // unauthenticated request path.
+  if (!botSecret) {
+    return result_('😬 שירות הקישור אינו מוגדר כרגע.\n💡 אין צורך לנסות שוב ברצף — פנה לתמיכה דרך https://kesefle.com', 'terminal', 'bot_not_configured');
+  }
+  var authHeaders = { 'x-kesefle-bot-secret': botSecret };
   // Confirm is the single source of truth. It is atomic and exposes a 24-hour
   // replay receipt, so a GET precheck would add latency and can race with the
   // mutation without improving correctness.
@@ -14866,13 +14886,27 @@ function _deliverLinkCodeCacheFallback_(key, fromPhone, outcome, routerHasLock) 
   try {
     if (routerHasLock) {
       cache = CacheService.getScriptCache();
-      if (cache.get(cacheKey)) return { ok: true, skipped: true, reason: 'cache_deduped' };
+      var heldMarker = cache.get(cacheKey);
+      if (heldMarker) {
+        return {
+          ok: true,
+          skipped: true,
+          reason: String(heldMarker).indexOf('sent') === 0 ? 'cache_deduped' : 'reply_in_flight'
+        };
+      }
       cache.put(cacheKey, 'sending', 60);
     } else {
       lock = LockService.getScriptLock();
       if (lock.tryLock(1500)) {
         cache = CacheService.getScriptCache();
-        if (cache.get(cacheKey)) return { ok: true, skipped: true, reason: 'cache_deduped' };
+        var cachedMarker = cache.get(cacheKey);
+        if (cachedMarker) {
+          return {
+            ok: true,
+            skipped: true,
+            reason: String(cachedMarker).indexOf('sent') === 0 ? 'cache_deduped' : 'reply_in_flight'
+          };
+        }
         cache.put(cacheKey, 'sending', 60);
       } else {
         Logger.log('link reply: fallback lock busy; sending without a claim');

@@ -25,12 +25,38 @@ import { recordExpenseActivity } from '../../lib/user-activity.js';
 // different bytes than Meta sent (key ordering, whitespace, escape sequences), failing verification.
 export const config = { api: { bodyParser: false } };
 
+const MAX_RAW_BODY_BYTES = 1_000_000;
+
 async function readRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on('data', (chunk) => chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
+    let totalBytes = 0;
+    let settled = false;
+    req.on('data', (chunk) => {
+      if (settled) return;
+      const bytes = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+      totalBytes += bytes.length;
+      if (totalBytes > MAX_RAW_BODY_BYTES) {
+        settled = true;
+        const error = new Error('body too large');
+        error.code = 'body_too_large';
+        reject(error);
+        return;
+      }
+      chunks.push(bytes);
+    });
+    req.on('end', () => {
+      if (!settled) {
+        settled = true;
+        resolve(Buffer.concat(chunks, totalBytes));
+      }
+    });
+    req.on('error', (error) => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    });
   });
 }
 
@@ -58,10 +84,15 @@ function createRelayEnvelope(rawBody, secret, nowMs = Date.now()) {
 function isAllowedRelayUrl(value) {
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' &&
-      (url.hostname === 'script.google.com' ||
-       url.hostname === 'script.googleusercontent.com' ||
-       url.hostname.endsWith('.script.googleusercontent.com'));
+    if (url.protocol !== 'https:' || url.username || url.password) return false;
+    const hostname = url.hostname.toLowerCase();
+    if (hostname === 'script.google.com') {
+      return /^\/macros\/s\/[^/]+\/exec\/?$/.test(url.pathname);
+    }
+    if (hostname === 'script.googleusercontent.com' || hostname.endsWith('.script.googleusercontent.com')) {
+      return url.pathname === '/macros/echo';
+    }
+    return false;
   } catch (_e) {
     return false;
   }
@@ -205,6 +236,9 @@ async function handlerImpl(req, res) {
   try {
     rawBody = await readRawBody(req);
   } catch (e) {
+    if (e?.code === 'body_too_large') {
+      return res.status(413).json({ ok: false, error: 'payload_too_large' });
+    }
     return res.status(400).json({ ok: false, error: 'body read failed' });
   }
 

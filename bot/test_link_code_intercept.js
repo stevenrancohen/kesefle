@@ -75,11 +75,11 @@ ok('five-digit code does not match', !re.test('קוד 12345'));
 function response(status, body) {
   return { getResponseCode: () => status, getContentText: () => JSON.stringify(body) };
 }
-function runOutcome(status, body, thrown) {
+function runOutcome(status, body, thrown, botSecret = 'bot-secret-test') {
   const requests = [];
   const context = {
     KESEFLE_API_BASE: 'https://example.test',
-    PropertiesService: { getScriptProperties: () => ({ getProperty: () => 'bot-secret-test' }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: () => botSecret }) },
     UrlFetchApp: { fetch: (url, options) => {
       requests.push({ url, options });
       if (thrown) throw new Error('network down');
@@ -111,6 +111,9 @@ ok('storage outage is retryable with same code', runtime.outcome.retryable && /�
 runtime = runOutcome(503, { error: 'bot_secret_not_configured' });
 ok('missing bot secret is a terminal configuration error',
   !runtime.outcome.retryable && runtime.outcome.reason === 'bot_not_configured' && !/אותו קוד/.test(runtime.outcome.reply));
+runtime = runOutcome(200, { ok: true }, false, '');
+ok('missing local bot secret fails closed without a network request',
+  !runtime.outcome.retryable && runtime.outcome.reason === 'bot_not_configured' && runtime.requests.length === 0);
 runtime = runOutcome(429, { error: 'rate_limit_exceeded' });
 ok('rate limit remains retryable', runtime.outcome.retryable && runtime.outcome.reason === 'rate_limited');
 runtime = runOutcome(404, { error: 'code_expired_or_invalid' });
@@ -140,6 +143,41 @@ claim = runSetNx(200, JSON.stringify({ result: true }));
 ok('unexpected SET NX result degrades instead of suppressing a reply', !claim.available && !claim.acquired);
 claim = runSetNx(200, '{}');
 ok('missing Redis result degrades instead of suppressing a reply', !claim.available && !claim.acquired);
+
+function runCompare(operation, status, bodyText) {
+  const commands = [];
+  const context = {
+    _kvCreds_: () => ({ url: 'https://redis.example', tok: 'secret' }),
+    UrlFetchApp: { fetch: (_url, options) => {
+      commands.push(JSON.parse(options.payload));
+      return { getResponseCode: () => status, getContentText: () => bodyText };
+    } },
+    Logger: { log: () => {} }
+  };
+  vm.createContext(context);
+  vm.runInContext(extractFn(FIXED, '_kvCommand_'), context);
+  vm.runInContext(extractFn(FIXED, '_kvCompareSet_'), context);
+  vm.runInContext(extractFn(FIXED, '_kvCompareDelete_'), context);
+  const result = operation === 'set'
+    ? context._kvCompareSet_('linkReply:test', 'sending:mine', 'sent:success', 600)
+    : context._kvCompareDelete_('linkReply:test', 'sending:mine');
+  return { result, commands };
+}
+
+let compare = runCompare('set', 200, JSON.stringify({ result: 1 }));
+ok('real compare-set accepts only a successful atomic mutation',
+  compare.result && compare.commands[0][0] === 'EVAL');
+compare = runCompare('delete', 200, JSON.stringify({ result: 1 }));
+ok('real compare-delete accepts only a successful atomic mutation',
+  compare.result && compare.commands[0][0] === 'EVAL');
+compare = runCompare('set', 200, JSON.stringify({ result: 0 }));
+ok('compare-set ownership mismatch fails closed', !compare.result);
+compare = runCompare('delete', 500, JSON.stringify({ result: 1 }));
+ok('compare-delete HTTP outage fails closed', !compare.result);
+compare = runCompare('set', 200, '{malformed');
+ok('compare-set malformed Redis response fails closed', !compare.result);
+compare = runCompare('delete', 200, JSON.stringify({ error: 'ERR unavailable' }));
+ok('compare-delete Redis error fails closed', !compare.result);
 
 console.log('test_link_code_intercept: ' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
