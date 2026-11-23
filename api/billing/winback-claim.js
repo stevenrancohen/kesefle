@@ -1,51 +1,70 @@
-// api/billing/winback-claim.js
+// Public endpoint backing /win-back.html.
 //
-// Public endpoint backing /win-back.html. Validates the token (= first 24
-// chars of the user's userSub, sent in the win-back email), records the
-// claim, alerts Steven, and returns success. Steven manually applies the
-// 50% lifetime discount in PayPal admin.
-//
-// POST body: { token: '<userSub.slice(0,24)>' }
-// Rate limit: 30 / hour / IP (defends against token enumeration).
+// A claim token is an opaque 14-day AES-GCM envelope. After decryption we can
+// read the exact user key directly, bind the offer to the cancellation record,
+// and atomically create one pending admin action. No identity-prefix token and
+// no KV keyspace scan are involved. The former predictable 24-character links
+// are intentionally hard-cut rather than kept alive behind a temporary SCAN;
+// their error response directs the customer to support for a reissued offer.
 
-import { withRequestId, log } from '../../lib/log.js';
+import { withRequestId, log, subHash } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { sendAlert } from '../../lib/alert.js';
+import { verifyWinbackToken, WinbackTokenError } from '../../lib/winback-token.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+const CLAIM_TTL_SEC = 365 * 24 * 60 * 60;
 
 async function kvFetch(path, opts = {}) {
   if (!KV_URL || !KV_TOKEN) return { ok: false, kvOutage: true };
-  const r = await fetch(`${KV_URL}${path}`, {
-    method: opts.method || 'GET',
-    headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  const j = await r.json().catch(() => ({}));
-  return { ok: r.ok, status: r.status, ...j };
-}
-
-async function kvGet(key) {
-  const r = await kvFetch(`/get/${encodeURIComponent(key)}`);
-  if (!r.ok) return null;
-  try { return r.result ? JSON.parse(r.result) : null; } catch { return null; }
-}
-
-async function kvScan(pattern) {
-  let cursor = '0';
-  const keys = [];
-  for (let i = 0; i < 20; i++) {
-    const r = await kvFetch(`/scan/${cursor}?match=${encodeURIComponent(pattern)}&count=200`);
-    if (!r.ok) break;
-    cursor = r.result?.[0] || '0';
-    keys.push(...(r.result?.[1] || []));
-    if (cursor === '0') break;
+  let response;
+  try {
+    response = await fetch(`${KV_URL}${path}`, {
+      method: opts.method || 'GET',
+      headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+    });
+  } catch (error) {
+    return { ok: false, networkError: error.message };
   }
-  return keys;
+  const json = await response.json().catch(() => ({}));
+  return { ok: response.ok, status: response.status, ...(json && typeof json === 'object' ? json : {}) };
 }
 
-async function handlerImpl(req, res) {
+async function kvGetJson(key) {
+  const result = await kvFetch(`/get/${encodeURIComponent(key)}`);
+  if (!result.ok) return { ok: false, status: result.status, value: null };
+  if (result.result == null) return { ok: true, value: null };
+  if (typeof result.result === 'object') return { ok: true, value: result.result };
+  try {
+    let value = JSON.parse(result.result);
+    // The previous claim endpoint serialized its record before passing it to
+    // a helper that serialized again. Unwrap at most one legacy JSON-string
+    // layer so that old successful claims remain replay-safe.
+    if (typeof value === 'string') value = JSON.parse(value);
+    return { ok: true, value };
+  }
+  catch (_e) { return { ok: false, corrupt: true, value: null }; }
+}
+
+async function kvSetNxEx(key, value, ttlSec) {
+  const result = await kvFetch(
+    `/set/${encodeURIComponent(key)}?NX=true&EX=${Number(ttlSec)}`,
+    { method: 'POST', body: value },
+  );
+  if (!result.ok) return { ok: false, inserted: false, status: result.status };
+  if (result.result === 'OK') return { ok: true, inserted: true };
+  if (result.result == null) return { ok: true, inserted: false };
+  return { ok: false, inserted: false, ambiguous: true };
+}
+
+function cancellationMatches(record, expectedIso) {
+  try { return new Date(record?.cancelled_at).toISOString() === expectedIso; }
+  catch (_e) { return false; }
+}
+
+export async function handlerImpl(req, res, deps = {}) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -53,76 +72,98 @@ async function handlerImpl(req, res) {
   if (!KV_URL || !KV_TOKEN) return res.status(503).json({ ok: false, error: 'kv_outage' });
 
   let body = req.body;
-  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (_e) { body = {}; } }
   const token = String(body?.token || '').trim();
-  // PR-S (2026-05-27 security audit Bug #7): token MUST be exactly 24 chars.
-  // The earlier `length < 8 || length > 64` window was too loose. Paired with
-  // the `startsWith` removal below, this enforces exact-prefix match.
-  if (token.length !== 24) {
-    return res.status(400).json({ ok: false, error: 'invalid_token' });
-  }
 
-  // Token = first 24 chars of userSub. We can't reverse a hash here -- we
-  // resolve by scanning exit_survey:* records (a 30d-cancelled user is the
-  // only valid claim source). Scoped scan is cheap because exit_survey:*
-  // is small (one entry per cancellation).
-  const exitKeys = await kvScan('exit_survey:*');
-  let matchedSub = null;
-  for (const k of exitKeys) {
-    const sub = k.replace('exit_survey:', '');
-    // PR-S (2026-05-27 security audit Bug #7): drop the `sub.startsWith(token)`
-    // arm. With it, a 8-char token would forge-match anyone whose userSub
-    // begins with those chars. Exact 24-char prefix match only.
-    if (sub.slice(0, 24) === token) {
-      matchedSub = sub;
-      break;
-    }
-  }
-  if (!matchedSub) {
-    log.warn('winback.token_no_match', { reqId: req.reqId, tokenPrefix: token.slice(0, 8) });
-    return res.status(404).json({ ok: false, error: 'token_not_found', detail: 'הקישור לא תקף או שכבר הופעל. צור איתנו קשר ב-info@kesefle.com' });
-  }
-
-  // Idempotency: already claimed?
-  const existing = await kvGet(`winback:${matchedSub}`);
-  if (existing?.claimed_at) {
-    return res.status(200).json({
-      ok: true,
-      already_claimed: true,
-      claimed_at: existing.claimed_at,
-      note: 'ההנחה כבר הופעלה. נציג יחזור אליך בקרוב.',
+  let offer;
+  try {
+    offer = verifyWinbackToken(token, { nowMs: deps.nowMs ?? Date.now() });
+  } catch (error) {
+    const expired = error instanceof WinbackTokenError && error.code === 'expired_token';
+    return res.status(expired ? 410 : 400).json({
+      ok: false,
+      error: expired ? 'token_expired' : 'invalid_token',
+      detail: expired
+        ? 'תוקף ההצעה הסתיים. אפשר לפנות אלינו ב-info@kesefle.com.'
+        : 'הקישור לא תקף. אפשר לפנות אלינו ב-info@kesefle.com.',
     });
   }
 
-  // Record the claim. Steven manually applies the PayPal discount via /admin
-  // -- safer than auto-modifying a subscription from a public endpoint with
-  // a weak token.
+  const exitResult = await kvGetJson(`exit_survey:${offer.userSub}`);
+  if (!exitResult.ok) {
+    log.error('winback.exit_survey_read_failed', { reqId: req.reqId, sub: subHash(offer.userSub) });
+    return res.status(503).json({ ok: false, error: 'temporarily_unavailable' });
+  }
+  if (!exitResult.value
+    || String(exitResult.value.userSub || '') !== offer.userSub
+    || !cancellationMatches(exitResult.value, offer.cancelledAt)) {
+    log.warn('winback.cancellation_mismatch', { reqId: req.reqId, sub: subHash(offer.userSub) });
+    return res.status(404).json({
+      ok: false,
+      error: 'offer_not_found',
+      detail: 'הקישור לא תקף או שאינו תואם לביטול האחרון.',
+    });
+  }
+
+  const claimedAt = new Date(deps.nowMs ?? Date.now()).toISOString();
   const record = {
-    userSub: matchedSub,
-    claimed_at: new Date().toISOString(),
+    userSub: offer.userSub,
+    cancelled_at: offer.cancelledAt,
+    offer_issued_at: offer.issuedAt,
+    offer_expires_at: offer.expiresAt,
+    claimed_at: claimedAt,
     discount_pct: 50,
-    discount_months: 0, // 0 = forever (until they cancel)
+    discount_months: 0,
     status: 'pending_admin_action',
   };
-  await kvFetch(`/set/${encodeURIComponent('winback:' + matchedSub)}?EX=${365 * 24 * 3600}`, {
-    method: 'POST',
-    body: JSON.stringify(record),
-  });
+  const claimKey = `winback:${offer.userSub}`;
+  const write = await kvSetNxEx(claimKey, record, CLAIM_TTL_SEC);
+  if (!write.ok) {
+    log.error('winback.claim_write_failed', { reqId: req.reqId, sub: subHash(offer.userSub) });
+    return res.status(503).json({ ok: false, error: 'temporarily_unavailable' });
+  }
 
-  // Fetch user info for the alert.
-  const user = await kvGet(`user:${matchedSub}`);
+  if (!write.inserted) {
+    const existing = await kvGetJson(claimKey);
+    const strictCurrentClaim = existing.ok
+      && existing.value?.claimed_at
+      && String(existing.value.userSub || '') === offer.userSub
+      && cancellationMatches(existing.value, offer.cancelledAt)
+      && Number(existing.value.discount_pct) === 50;
+    const strictLegacyClaim = existing.ok
+      && existing.value?.claimed_at
+      && !existing.value.cancelled_at
+      && String(existing.value.userSub || '') === offer.userSub
+      && Number(existing.value.discount_pct) === 50;
+    if (strictCurrentClaim || strictLegacyClaim) {
+      return res.status(200).json({
+        ok: true,
+        already_claimed: true,
+        claimed_at: existing.value.claimed_at,
+        note: 'ההנחה כבר נרשמה. נציג יחזור אליך בקרוב.',
+      });
+    }
+    if (existing.ok && existing.value?.claimed_at) {
+      return res.status(409).json({ ok: false, error: 'offer_already_used' });
+    }
+    return res.status(503).json({ ok: false, error: 'temporarily_unavailable' });
+  }
 
-  log.info('winback.claim_recorded', { reqId: req.reqId, userSub: matchedSub });
-  sendAlert({
+  const userResult = await kvGetJson(`user:${offer.userSub}`);
+  const user = userResult.ok ? userResult.value : null;
+  log.info('winback.claim_recorded', { reqId: req.reqId, sub: subHash(offer.userSub) });
+
+  const alertFn = deps.sendAlertFn || sendAlert;
+  Promise.resolve().then(() => alertFn({
     severity: 'info',
     title: '🎁 WINBACK CLAIM',
-    body: `userSub ${matchedSub} (${user?.email || 'unknown email'}) claimed the 50% lifetime winback discount.\n\nApply manually in PayPal admin: discount their subscription 50% on the NEXT renewal. Then send them a "ברוך השב" WhatsApp message.`,
+    body: `userSub ${offer.userSub} (${user?.email || 'unknown email'}) claimed the 50% lifetime winback discount.\n\nApply manually in PayPal admin: discount their subscription 50% on the NEXT renewal. Then send them a "ברוך השב" WhatsApp message.`,
     tags: ['winback', 'revenue-recovery'],
-  }).catch(() => {});
+  })).catch(() => {});
 
   return res.status(200).json({
     ok: true,
-    claimed_at: record.claimed_at,
+    claimed_at: claimedAt,
     note: 'ההנחה נרשמה. נציג יחזור אליך בוואטסאפ עם הצעד הבא.',
   });
 }

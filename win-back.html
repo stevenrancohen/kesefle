@@ -122,10 +122,17 @@ tailwind.config = {
   if (localStorage.getItem('kesefle_theme') === 'dark') document.documentElement.classList.add('dark');
 
   var url = new URL(window.location.href);
-  var token = url.searchParams.get('token') || '';
+  // New offers keep the bearer token in the URL fragment so it is not sent in
+  // the HTTP request or Referer header. Query parsing remains for encrypted
+  // tokens copied through fragment-rewriting clients; their cryptographic
+  // 14-day expiry bounds this fallback. Predictable legacy prefixes are not
+  // accepted. Either URL form is removed from browser history immediately.
+  var fragment = new URLSearchParams((url.hash || '').replace(/^#/, ''));
+  var token = fragment.get('token') || url.searchParams.get('token') || '';
+  if (token) history.replaceState(null, document.title, url.pathname);
   var status = document.getElementById('kfl-claim-status');
   if (!token) {
-    status.textContent = 'קישור לא תקין. נא להשתמש בקישור מתוך המייל.';
+    status.textContent = 'קישור לא תקין. נא להשתמש בקישור מתוך ההודעה שקיבלת.';
     status.style.color = '#dc2626';
     document.getElementById('kfl-claim').disabled = true;
     return;
@@ -143,7 +150,7 @@ tailwind.config = {
       });
       var j = await r.json().catch(function(){ return { ok: false }; });
       if (j.ok) {
-        status.innerHTML = '<span style="color:#1d4ed8;font-weight:bold">✓ ההנחה הופעלה!</span> ניצור איתך קשר בוואטסאפ עם הצעד הבא.';
+        status.innerHTML = '<span style="color:#1d4ed8;font-weight:bold">✓ הבקשה נרשמה!</span> ניצור איתך קשר בוואטסאפ עם הצעד הבא.';
       } else {
         status.textContent = '✗ ' + (j.error || 'שגיאה זמנית') + (j.detail ? ': ' + j.detail.slice(0, 80) : '');
         status.style.color = '#dc2626';
@@ -169,7 +176,5 @@ tailwind.config = {
   } catch (_e) {}
 })();
 </script>
-<script>/* SW auto-update */
-if("serviceWorker" in navigator){(function(){var had=!!navigator.serviceWorker.controller,reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!had)return;reloaded=true;location.reload();});navigator.serviceWorker.ready.then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});})();}</script>
 </body>
 </html>
