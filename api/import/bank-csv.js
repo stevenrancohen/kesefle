@@ -44,7 +44,7 @@ import {
 } from '../../lib/sheet-writer.js';
 import { TX_TAB } from '../../lib/sheet-tabs.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
-import { findGroupForSubcategory } from '../../lib/categories.js';
+import { classifyTransactionDescription } from '../../lib/transaction-classifier.js';
 import crypto from 'node:crypto';
 
 // Keep in sync with lib/sheet-writer.js TX_HEADERS -- col I "ניכוי מע״מ"
@@ -156,86 +156,14 @@ function rowHash(r) {
   return crypto.createHash('sha256').update(key).digest('hex').slice(0, 24);
 }
 
-// ---------------------------------------------------------------------------
-// Category classification. We re-use the bot's strategy (long-keyword-first
-// substring match) but only over a small in-module table tuned for what
-// shows up in BANK STATEMENT descriptions. For anything we don't recognise
-// we fall back to 'אישי' top-level + 'מזון ופארמה - כללי'-style "כללי"
-// subcategory chosen via findGroupForSubcategory.
-// ---------------------------------------------------------------------------
-// Each entry: { kw: lowercase Hebrew/English keyword, sub: subcategory label
-// (must exist in lib/categories.js) }. Top-level category is resolved at
-// classify time via findGroupForSubcategory(sub).
-const BANK_KEYWORDS = [
-  // Food / groceries
-  { kw: 'שופרסל', sub: 'מזון' },
-  { kw: 'רמי לוי', sub: 'מזון' },
-  { kw: 'יוחננוף', sub: 'מזון' },
-  { kw: 'ויקטורי', sub: 'מזון' },
-  { kw: 'מגה',     sub: 'מזון' },
-  { kw: 'אושר עד', sub: 'מזון' },
-  { kw: 'טיב טעם', sub: 'מזון' },
-  { kw: 'סופר',    sub: 'מזון' },
-  // Restaurants / eating out
-  { kw: 'מקדונלד', sub: 'מסעדה ואוכל בחוץ' },
-  { kw: 'בורגר',   sub: 'מסעדה ואוכל בחוץ' },
-  { kw: 'דומינו',  sub: 'מסעדה ואוכל בחוץ' },
-  { kw: 'מסעדה',   sub: 'מסעדה ואוכל בחוץ' },
-  { kw: 'פיצה',    sub: 'מסעדה ואוכל בחוץ' },
-  { kw: 'wolt',    sub: 'מסעדה ואוכל בחוץ' },
-  { kw: '10bis',   sub: 'מסעדה ואוכל בחוץ' },
-  // Transport
-  { kw: 'פז',         sub: 'דלק' },
-  { kw: 'דלק',        sub: 'דלק' },
-  { kw: 'סונול',      sub: 'דלק' },
-  { kw: 'דור אלון',   sub: 'דלק' },
-  { kw: 'חניון',      sub: 'חניה' },
-  { kw: 'חניה',       sub: 'חניה' },
-  { kw: 'אגרה',       sub: 'כבישי אגרה' },
-  { kw: 'כביש 6',     sub: 'כבישי אגרה' },
-  { kw: 'רכבת ישראל', sub: 'תחבורה ציבורית' },
-  { kw: 'רב קו',      sub: 'תחבורה ציבורית' },
-  { kw: 'אגד',        sub: 'תחבורה ציבורית' },
-  // Utilities / housing
-  { kw: 'חברת חשמל', sub: 'חשמל' },
-  { kw: 'חשמל',      sub: 'חשמל' },
-  { kw: 'מי אביבים', sub: 'מים וביוב' },
-  { kw: 'תאגיד מים', sub: 'מים וביוב' },
-  { kw: 'מים',       sub: 'מים וביוב' },
-  { kw: 'ועד בית',   sub: 'מיסי ישוב / ועד בית' },
-  { kw: 'ארנונה',    sub: 'ארנונה' },
-  { kw: 'משכנתה',    sub: 'משכנתה' },
-  { kw: 'שכר דירה',  sub: 'שכר דירה' },
-  // Communication
-  { kw: 'פרטנר',   sub: 'טלפון נייד ונייח' },
-  { kw: 'סלקום',   sub: 'טלפון נייד ונייח' },
-  { kw: 'פלאפון',  sub: 'טלפון נייד ונייח' },
-  { kw: 'הוט',     sub: 'טלויזיה ואינטרנט (ספק ותשתית)' },
-  { kw: 'יס',      sub: 'טלויזיה ואינטרנט (ספק ותשתית)' },
-  { kw: 'בזק',     sub: 'טלויזיה ואינטרנט (ספק ותשתית)' },
-  { kw: 'netflix', sub: 'שירותי תוכן' },
-  { kw: 'spotify', sub: 'שירותי תוכן' },
-  // Income
-  { kw: 'משכורת',          sub: 'שכר עבודה 1' },
-  { kw: 'שכר',             sub: 'שכר עבודה 1' },
-  { kw: 'ביטוח לאומי',     sub: 'קצבת ילדים' },
-  { kw: 'החזר ביטוח לאומי', sub: 'קצבת ילדים' },
-  { kw: 'קצבת',            sub: 'קצבת ילדים' },
-];
-
-// Build a sorted (longest-first) keyword list once per cold start.
-const BANK_KEYWORDS_SORTED = BANK_KEYWORDS
-  .map(e => ({ kw: e.kw.toLowerCase(), sub: e.sub }))
-  .sort((a, b) => b.kw.length - a.kw.length);
-
 function classifyFromDescription(description, isIncome) {
-  const t = String(description || '').toLowerCase();
-  for (const e of BANK_KEYWORDS_SORTED) {
-    if (t.includes(e.kw)) {
-      const cat = findGroupForSubcategory(e.sub) || (isIncome ? 'הכנסות שונות' : 'מזון ופארמה');
-      return { category: cat, subcategory: e.sub };
-    }
-  }
+  const match = classifyTransactionDescription(description, {
+    isIncome,
+    // Preserve the bank importer's historical cross-direction matching. The
+    // interactive web form uses strict direction so its explicit toggle wins.
+    legacyDirection: true,
+  });
+  if (match) return { category: match.category, subcategory: match.subcategory };
   if (isIncome) return { category: 'הכנסות שונות', subcategory: 'הכנסות שונות - כללי' };
   return { category: 'מזון ופארמה', subcategory: 'מזון ופארמה - כללי' };
 }
