@@ -93,8 +93,10 @@ function harness() {
   vm.createContext(context);
   vm.runInContext(extractFn(SRC, '_deliverLinkCodeCacheFallback_'), context);
   vm.runInContext(extractFn(SRC, '_deliverLinkCodeOutcome_'), context);
+  vm.runInContext(extractFn(SRC, '_linkCodeNeedsRelayRetry_'), context);
   return {
     deliver: context._deliverLinkCodeOutcome_,
+    needsRelayRetry: context._linkCodeNeedsRelayRetry_,
     state,
     cache,
     sent,
@@ -160,6 +162,20 @@ ok('KV outage degrades to locked cache and still replies', result.ok && h.sent.l
 ok('fallback acquires a lock when router has none', h.getLockCalls() === 1);
 result = h.deliver('wamid-fallback', '972501234567', terminal);
 ok('locked cache suppresses duplicate terminal reply', result.skipped && h.sent.length === 1);
+
+h = harness();
+h.setKvAvailable(false);
+h.cache.set('linkreply:linkReply:wamid-fallback-race', 'sending');
+result = h.deliver('wamid-fallback-race', '972501234567', success);
+ok('cache fallback distinguishes an in-flight send from a completed reply',
+  result.skipped && result.reason === 'reply_in_flight' && h.sent.length === 0);
+ok('in-flight cache fallback forces relay retry instead of a false acknowledgement',
+  h.needsRelayRetry(success, result));
+
+h.cache.set('linkreply:linkReply:wamid-fallback-sent', 'sent');
+result = h.deliver('wamid-fallback-sent', '972501234567', success);
+ok('completed cache fallback remains safely deduped',
+  result.skipped && result.reason === 'cache_deduped' && !h.needsRelayRetry(success, result));
 
 h = harness();
 h.setKvAvailable(false);

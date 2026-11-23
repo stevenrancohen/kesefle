@@ -66,6 +66,11 @@ check(
   'POST uses timingSafeEqual for HMAC compare',
   /timingSafeEqual\s*\(/.test(src)
 );
+check(
+  'POST rejects malformed non-hex signatures before timingSafeEqual',
+  /\^\[a-f0-9\]\{64\}\$/.test(src) &&
+  src.indexOf("/^[a-f0-9]{64}$/.test(expected)") < src.indexOf('crypto.timingSafeEqual')
+);
 
 console.log('\n── webhook PII logging (audit F4 — MEDIUM) ──');
 
