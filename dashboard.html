@@ -54,6 +54,12 @@
 <style>
   html, body { overflow-x: hidden; }
   body { font-family: 'Heebo', system-ui, sans-serif; }
+  /* Security-critical first paint: keep optional WhatsApp surfaces hidden even
+     if the Tailwind CDN is unavailable, without overriding responsive uses of
+     `.hidden md:block` elsewhere in the dashboard. */
+  [data-wa-action][aria-disabled="true"],
+  [data-wa-only].hidden,
+  #dashboard-whatsapp-link-note.hidden { display: none !important; }
   /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
   h1, h2, h3 {
     font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
@@ -448,7 +454,7 @@
       <div id="insights-empty" class="hidden rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
         <div class="text-3xl" aria-hidden="true">🪄</div>
         <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עוד אין תובנות לחודש הזה</div>
-        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד כמה הוצאות החודש בוואטסאפ — והתובנות יופיעו כאן אוטומטית.</p>
+        <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד כמה הוצאות החודש באפליקציה — והתובנות יופיעו כאן אוטומטית.</p>
       </div>
 
       <!-- Insights grid -->
@@ -802,7 +808,7 @@
         <div id="subs-empty" class="hidden mt-4 rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center dark:border-ink-700 dark:bg-ink-800/40">
           <div class="text-3xl" aria-hidden="true">🧾</div>
           <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-200">עדיין לא זוהו מנויים קבועים</div>
-          <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד הוצאות לאורך כמה חודשים בוואטסאפ — וכשנזהה חיוב שחוזר על עצמו (נטפליקס, חדר כושר, ביטוח…) נציג אותו כאן עם העלות השנתית.</p>
+          <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">תעד הוצאות לאורך כמה חודשים — וכשנזהה חיוב שחוזר על עצמו (נטפליקס, חדר כושר, ביטוח…) נציג אותו כאן עם העלות השנתית.</p>
         </div>
 
         <!-- Populated view -->
@@ -862,10 +868,11 @@
           <div class="text-4xl">🎯</div>
           <div class="mt-2 text-sm font-bold text-ink-700">עוד לא הגדרת יעד</div>
           <p class="mt-1 text-xs text-ink-500">הגדר יעד (חופש, רכב, דירה) וקבל מסלול חודשי לחיסכון.</p>
-          <a href="https://wa.me/972547760643?text=%D7%99%D7%A2%D7%93%20%D7%97%D7%99%D7%A1%D7%9B%D7%95%D7%9F" target="_blank" rel="noopener"
-             class="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
+          <a data-wa-action data-kfl-bot-message="יעד חיסכון" href="#" aria-disabled="true" target="_blank" rel="noopener"
+             class="mt-4 hidden inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
             הגדר יעד עם הבוט
           </a>
+          <p data-app-only class="mt-3 text-xs text-ink-500">הגדרת יעדים דרך WhatsApp תופיע כאן כשהשירות זמין.</p>
         </div>
       </div>
     </div>
@@ -888,11 +895,12 @@
         <div id="budget-empty" class="mt-4 hidden rounded-2xl border border-dashed border-ink-200 bg-ink-50 p-6 text-center">
           <div class="text-4xl">💰</div>
           <div class="mt-2 text-sm font-bold text-ink-700">אין תקציבים?</div>
-          <p class="mt-1 text-xs text-ink-500">הגדר אחד בוואטסאפ: <span class="font-bold">/תקציב מזון ופארמה 1500</span></p>
-          <a href="https://wa.me/972547760643?text=%D7%AA%D7%A7%D7%A6%D7%99%D7%91%20%D7%9E%D7%96%D7%95%D7%9F%20%D7%95%D7%A4%D7%90%D7%A8%D7%9E%D7%94%201500" target="_blank" rel="noopener"
-             class="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
+          <p class="mt-1 text-xs text-ink-500">אפשר להגדיר תקציב חודשי לכל קטגוריה ולעקוב אחרי הניצול כאן.</p>
+          <a data-wa-action data-kfl-bot-message="תקציב מזון ופארמה 1500" href="#" aria-disabled="true" target="_blank" rel="noopener"
+             class="mt-4 hidden inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-600">
             הגדר תקציב עם הבוט
           </a>
+          <p data-app-only class="mt-3 text-xs text-ink-500">הגדרת תקציב דרך WhatsApp תופיע כאן כשהשירות זמין.</p>
         </div>
         <!-- List of budget bars -->
         <ul id="budget-list" class="mt-4 hidden space-y-3"></ul>
@@ -945,6 +953,16 @@
     </div>
   </section>
 
+  <section id="dashboard-whatsapp-link-note" class="mb-6 hidden rounded-2xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-400/40 dark:bg-brand-500/10" aria-live="polite">
+    <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div class="font-bold text-ink-900 dark:text-white">WhatsApp זמין, אבל החשבון שלך עדיין לא מקושר</div>
+        <p class="mt-1 text-xs text-ink-600 dark:text-ink-300">אפשר להמשיך לעבוד באפליקציה כרגיל, או להשלים את הקישור כדי לקבל גם פעולות דרך WhatsApp.</p>
+      </div>
+      <a href="/account?force=1&amp;from=dashboard-whatsapp" class="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-700">קשר את החשבון</a>
+    </div>
+  </section>
+
   <!-- empty state (when no transactions yet) -->
   <section id="empty-state" class="hidden overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-brand-50 via-white to-brand-50 shadow-glow dark:border-ink-700 dark:from-ink-800 dark:via-ink-900 dark:to-ink-800">
     <!-- Demo preview toggle: shows users what the dashboard WILL look like once they have data -->
@@ -962,45 +980,43 @@
       <div class="p-5 sm:p-8 md:p-10">
         <span class="inline-flex items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
           <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500"></span>
-          הבוט מקשיב — מחכה להודעה שלך
+          האפליקציה מוכנה — מתחילים בתנועה אחת
         </span>
         <h2 class="mt-4 text-2xl font-black leading-tight sm:text-3xl md:text-4xl">
           ההוצאה הראשונה שלך
-          <span class="bg-gradient-to-l from-brand-600 to-brand-400 bg-clip-text text-transparent">במרחק הודעה אחת.</span>
+          <span class="bg-gradient-to-l from-brand-600 to-brand-400 bg-clip-text text-transparent">במרחק הקלדה אחת.</span>
         </h2>
         <p class="mt-3 text-ink-600 dark:text-ink-300">
-          פתח וואטסאפ, שלח <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — והשורה הזאת תופיע אצלך בדיוק כמו בתצוגה משמאל. <span class="num">2</span> שניות. בלי טפסים.
+          פתח את טופס ההוספה המהיר, הזן <span class="font-semibold text-ink-900 dark:text-white">"<span class="num">245</span> סופר"</span> — והתנועה תישמר בגיליון שלך ותופיע כאן.
         </p>
         <div class="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-          <a id="empty-whatsapp" href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" class="group inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-6 py-3.5 font-bold text-white shadow-glow transition hover:bg-[#1ebe5c]">
+          <a href="/expense?from=dashboard-empty" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-brand-600 px-6 py-3.5 font-bold text-white shadow-glow transition hover:bg-brand-700">הוספת תנועה ראשונה →</a>
+          <a data-wa-action data-kfl-bot-message="245 סופר" id="empty-whatsapp" href="#" aria-disabled="true" target="_blank" rel="noopener" class="group hidden inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-6 py-3.5 font-bold text-white shadow-glow transition hover:bg-[#1ebe5c]">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
             פתח וואטסאפ ושלח עכשיו
           </a>
-          <a id="empty-copy-msg" href="#" onclick="kesefleCopyDemoMsg(event)" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-ink-200 bg-white px-5 py-3.5 text-sm font-semibold text-ink-700 hover:border-ink-300 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100 dark:hover:bg-ink-700">
-            העתק הודעה לדוגמה
-          </a>
         </div>
         <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-ink-500 dark:text-ink-400">
-          <span class="flex items-center gap-1.5"><span class="text-brand-500">✓</span> בלי להתקין אפליקציה</span>
+          <span class="flex items-center gap-1.5"><span class="text-brand-500">✓</span> עובד ישירות מהטלפון</span>
           <span class="flex items-center gap-1.5"><span class="text-brand-500">✓</span> רושם בעברית, באנגלית, במעורב</span>
-          <span class="flex items-center gap-1.5"><span class="text-brand-500">✓</span> שולח אישור בחזרה</span>
+          <span class="flex items-center gap-1.5"><span class="text-brand-500">✓</span> נשמר בגיליון שלך</span>
         </div>
 
         <!-- 3-step walkthrough: shows the variety of message types -->
-        <div class="mt-7 border-t border-ink-200 pt-5 dark:border-ink-700">
+        <div data-wa-only class="mt-7 hidden border-t border-ink-200 pt-5 dark:border-ink-700">
           <p class="text-[11px] font-extrabold uppercase tracking-wider text-ink-500 dark:text-ink-400">3 דרכים לרשום הוצאה</p>
           <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <a href="https://wa.me/972547760643?text=45%20%D7%A7%D7%A4%D7%94" target="_blank" rel="noopener" class="group rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
+            <a data-wa-action data-kfl-bot-message="45 קפה" href="#" aria-disabled="true" target="_blank" rel="noopener" class="group hidden block rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
               <div class="text-xs font-bold text-ink-500 dark:text-ink-400">1. טקסט פשוט</div>
               <div class="mt-1 font-mono text-sm font-bold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">"45 קפה"</div>
               <div class="mt-1 text-[10px] text-ink-500 dark:text-ink-400">סכום + תיאור. הקטגוריה אוטומטית.</div>
             </a>
-            <a href="https://wa.me/972547760643?text=%D7%A1%D7%95%D7%A4%D7%A8%20%D7%A8%D7%9E%D7%99%20%D7%9C%D7%95%D7%99%20230%20%E2%82%AA" target="_blank" rel="noopener" class="group rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
+            <a data-wa-action data-kfl-bot-message="סופר רמי לוי 230 ₪" href="#" aria-disabled="true" target="_blank" rel="noopener" class="group hidden block rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
               <div class="text-xs font-bold text-ink-500 dark:text-ink-400">2. עם שם חנות</div>
               <div class="mt-1 font-mono text-sm font-bold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">"סופר רמי לוי 230"</div>
               <div class="mt-1 text-[10px] text-ink-500 dark:text-ink-400">סדר חופשי. מזהה את הסכום והמטרה.</div>
             </a>
-            <a href="https://wa.me/972547760643?text=%F0%9F%93%B7%20%D7%A6%D7%99%D7%9C%D7%95%D7%9D%20%D7%A7%D7%91%D7%9C%D7%94" target="_blank" rel="noopener" class="group rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
+            <a data-wa-action data-kfl-bot-message="📷 צילום קבלה" href="#" aria-disabled="true" target="_blank" rel="noopener" class="group hidden block rounded-xl border border-ink-200 bg-white p-3 hover:border-brand-400 hover:bg-brand-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:border-brand-500 dark:hover:bg-brand-500/10">
               <div class="text-xs font-bold text-ink-500 dark:text-ink-400">3. צילום קבלה</div>
               <div class="mt-1 font-mono text-sm font-bold text-ink-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">📷 שלח תמונה</div>
               <div class="mt-1 text-[10px] text-ink-500 dark:text-ink-400">קורא את הסכום והשם מהקבלה.</div>
@@ -1301,12 +1317,15 @@
 
   <!-- quick actions -->
   <section class="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-    <a href="https://wa.me/972547760643?text=%D7%99%D7%95%D7%9E%D7%99%3F" target="_blank" rel="noopener" class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+    <a href="/expense?from=dashboard-quick" class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+      <div class="text-2xl">＋</div><div class="mt-2 font-bold">הוספת תנועה</div><div class="mt-1 text-xs text-ink-500 dark:text-ink-400">טופס מהיר מהטלפון</div>
+    </a>
+    <a data-wa-action data-kfl-bot-message="יומי?" href="#" aria-disabled="true" target="_blank" rel="noopener" class="kfl-lift hidden block min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
       <div class="text-2xl">💬</div>
       <div class="mt-2 font-bold">שאל סיכום יומי</div>
       <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">"יומי?" בוואטסאפ</div>
     </a>
-    <a href="https://wa.me/972547760643?text=%D7%97%D7%95%D7%93%D7%A9%D7%99%3F" target="_blank" rel="noopener" class="kfl-lift min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
+    <a data-wa-action data-kfl-bot-message="חודשי?" href="#" aria-disabled="true" target="_blank" rel="noopener" class="kfl-lift hidden block min-w-0 rounded-2xl border border-ink-200 bg-white p-6 text-center shadow-soft hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-800 dark:hover:bg-ink-700">
       <div class="text-2xl">📊</div>
       <div class="mt-2 font-bold">סיכום חודשי</div>
       <div class="mt-1 text-xs text-ink-500 dark:text-ink-400">"חודשי?" בוואטסאפ</div>
@@ -1438,8 +1457,8 @@
       </div>
       <div class="text-base font-bold text-ink-900 dark:text-white">לא הוגדרו תקציבים או יעדים</div>
       <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">
-        בינתיים תוכל להגדיר יעדים בוואטסאפ: <span class="num font-mono">קבע יעד אוכל 3000</span>.<br>
-        ממשק מלא בדף הזה מגיע ב-PR הבא.
+        הגדרת יעדים ותקציבים תופיע כאן כשהממשק המלא יהיה זמין.<br>
+        בינתיים אפשר להמשיך לעקוב אחרי ההוצאות והתזרים באפליקציה.
       </div>
     </div>
   </div>
@@ -1455,8 +1474,8 @@
       </div>
       <div class="text-base font-bold text-ink-900 dark:text-white">תזרים קבוע יופיע כאן</div>
       <div class="mt-1 text-sm text-ink-500 dark:text-ink-400">
-        הוסף בבוט: <span class="num font-mono">קבוע משכורת 14000 בכל 1 לחודש</span>.<br>
-        ניהול ויזואלי (השהיה, דילוג, עריכה) מגיע ב-PR הבא.
+        ניהול תנועות קבועות, כולל השהיה, דילוג ועריכה, יופיע כאן בהמשך.<br>
+        התנועות הקיימות שלך ממשיכות להופיע בדשבורד כרגיל.
       </div>
     </div>
   </div>
@@ -1858,7 +1877,7 @@ function kesefleToggleDemoPreview() {
       ribbon = document.createElement('div');
       ribbon.id = 'demo-ribbon';
       ribbon.className = 'mb-4 flex items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-300';
-      ribbon.innerHTML = '<span class="inline-flex items-center gap-2"><span class="grid h-6 w-6 place-items-center rounded-full bg-amber-200 text-amber-900 dark:bg-amber-500/30 dark:text-amber-200">!</span>זוהי תצוגת הדגמה — לא הנתונים שלך</span><a href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs text-white hover:bg-amber-700">שלח הודעה אמיתית →</a>';
+      ribbon.innerHTML = '<span class="inline-flex items-center gap-2"><span class="grid h-6 w-6 place-items-center rounded-full bg-amber-200 text-amber-900 dark:bg-amber-500/30 dark:text-amber-200">!</span>זוהי תצוגת הדגמה — לא הנתונים שלך</span><a href="/expense?from=dashboard-demo" class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs text-white hover:bg-amber-700">הוסף תנועה אמיתית →</a>';
       var main = document.querySelector('main');
       if (main) main.insertBefore(ribbon, main.firstChild);
     }
@@ -2177,7 +2196,7 @@ function showEmptyState() {
   // Empty hero is now the single focal CTA — collapse the start-checklist so
   // it doesn't duplicate the "send first expense" ask above it.
   try { if (window.kflOnboardingRefresh) window.kflOnboardingRefresh(); } catch (_e) {}
-  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">אין תנועות עדיין. שלח לבוט הודעה ראשונה.</div>';
+  document.getElementById('recent-list').innerHTML = '<div class="rounded-2xl bg-ink-50 p-4 text-center text-sm text-ink-500 dark:bg-ink-950 dark:text-ink-400">אין תנועות עדיין. הוסף תנועה ראשונה באפליקציה.</div>';
   document.getElementById('categories-list').innerHTML = '<div class="text-sm text-ink-500 dark:text-ink-400">אין נתונים עדיין.</div>';
 }
 
@@ -2702,7 +2721,7 @@ function generatePseudoSeries(target, n, intLike) {
         tips.push('נסה לתעד הוצאות עוד חודש-חודשיים כדי לקבל ניתוח מדויק יותר.');
       }
     }
-    if (!tips.length) tips.push('מעולה -- הכל בטווח בריא. המשך לתעד כל הוצאה בוואטסאפ.');
+    if (!tips.length) tips.push('מעולה -- הכל בטווח בריא. המשך לתעד כל הוצאה באפליקציה.');
 
     return {
       overall: overall,
@@ -3662,7 +3681,7 @@ function generatePseudoSeries(target, n, intLike) {
     var names = cats ? Object.keys(cats) : [];
     if (!names.length) {
       _setInsightText('insight-budget-value', 'לא הוגדרו');
-      _setInsightText('insight-budget-detail', 'הגדר תקציב בוואטסאפ');
+      _setInsightText('insight-budget-detail', 'הגדרת תקציב תיפתח כאן');
       return;
     }
     var overCount = 0, nearCount = 0, worstName = null, worstPct = -1;
@@ -4818,9 +4837,9 @@ function generatePseudoSeries(target, n, intLike) {
 })();
 </script>
 <script>
-/* Onboarding checklist: 4 steps, persists in localStorage. Auto-detects two
-   of them (first expense + budget set) from page state; the other two are
-   manual checks the user clicks. Hides itself entirely once all 4 are done
+/* Onboarding checklist: 3 actionable steps, persists in localStorage. Auto-detects
+   the first expense from page state; the other two are manual checks the user
+   clicks. Hides itself entirely once all 3 are done
    or when 'kfl_onboarding_dismissed' is set. */
 (function () {
   if (window.__kflOnboardingBound) return;
@@ -4828,7 +4847,6 @@ function generatePseudoSeries(target, n, intLike) {
 
   var STORAGE_STATE = 'kfl_onboarding_state_v1';
   var STORAGE_DISMISS = 'kfl_onboarding_dismissed';
-  var BOT_NUMBER = '972547760643'; // see /api/config for runtime override
 
   function loadState() {
     try { return JSON.parse(localStorage.getItem(STORAGE_STATE) || '{}'); }
@@ -4841,10 +4859,10 @@ function generatePseudoSeries(target, n, intLike) {
   var STEPS = [
     {
       id: 'first_expense',
-      title: 'שלח הוצאה ראשונה לבוט',
+      title: 'הוסף תנועה ראשונה באפליקציה',
       hint: 'לדוגמה: "45 קפה" או "1200 שכר דירה"',
-      cta_label: 'פתח וואטסאפ',
-      cta_url: 'https://wa.me/' + BOT_NUMBER + '?text=45%20%D7%A7%D7%A4%D7%94',
+      cta_label: 'הוספה מהירה',
+      cta_url: '/expense?from=dashboard-checklist',
       autoDetect: function () {
         // Detect from #recent-list having at least 1 child
         var rec = document.getElementById('recent-list');
@@ -4852,20 +4870,9 @@ function generatePseudoSeries(target, n, intLike) {
       },
     },
     {
-      id: 'set_budget',
-      title: 'הגדר תקציב חודשי',
-      hint: 'שלח לבוט: "/תקציב מזון 1500"',
-      cta_label: 'הגדר תקציב',
-      cta_url: 'https://wa.me/' + BOT_NUMBER + '?text=%2F%D7%AA%D7%A7%D7%A6%D7%99%D7%91%20%D7%9E%D7%96%D7%95%D7%9F%201500',
-      autoDetect: function () {
-        // No reliable client-side signal; rely on user click
-        return false;
-      },
-    },
-    {
       id: 'vat_deductible',
       title: 'סמן הוצאה אחת לניכוי מע״מ',
-      hint: 'אחרי הוצאה עסקית — שלח "/מעמ" לבוט',
+      hint: 'למד איך לסמן הוצאה עסקית ולשמור את פרטי המע״מ',
       cta_label: 'איך עושים?',
       cta_url: '/help#vat',
       autoDetect: function () { return false; },
@@ -4887,7 +4894,7 @@ function generatePseudoSeries(target, n, intLike) {
     if (!section || !list) return;
     // Don't compete with the full-bleed empty-state hero. While the user has
     // zero transactions the big "send your first expense" panel IS the single
-    // obvious next action; this 4-step checklist (which leads with the same
+    // obvious next action; this 3-step checklist (which leads with the same
     // step) would only split attention. It re-appears automatically once the
     // user has data and the empty state is hidden.
     var emptyHero = document.getElementById('empty-state');
@@ -5086,6 +5093,80 @@ window.kflBulkDelete = async function () {
     window.kflBulkClear();
   }
 };
+</script>
+<script>
+/* Dashboard WhatsApp capability controller.
+   WhatsApp stays hidden unless the server confirms both an approved WABA
+   and a verified phone link for the signed-in user. The web app remains the
+   primary path in every other state, including network and malformed-data
+   failures. */
+(function () {
+  var PHONE_RE = /^[1-9]\d{6,14}$/;
+  window.__kflDashboardWhatsAppAvailable = false;
+
+  function setCapability(available, botNumber, authoritativeUnlinked) {
+    var number = String(botNumber || '').replace(/\D+/g, '');
+    var enabled = available === true && PHONE_RE.test(number);
+    window.__kflDashboardWhatsAppAvailable = enabled;
+
+    var actions = document.querySelectorAll('[data-wa-action]');
+    for (var i = 0; i < actions.length; i++) {
+      var action = actions[i];
+      if (enabled) {
+        var message = action.getAttribute('data-kfl-bot-message') || '';
+        action.href = 'https://wa.me/' + number + '?text=' + encodeURIComponent(message);
+        action.classList.remove('hidden');
+        action.removeAttribute('aria-disabled');
+      } else {
+        action.href = '#';
+        action.classList.add('hidden');
+        action.setAttribute('aria-disabled', 'true');
+      }
+    }
+
+    var whatsappOnly = document.querySelectorAll('[data-wa-only]');
+    for (var j = 0; j < whatsappOnly.length; j++) {
+      whatsappOnly[j].classList.toggle('hidden', !enabled);
+    }
+
+    var appOnly = document.querySelectorAll('[data-app-only]');
+    for (var k = 0; k < appOnly.length; k++) {
+      appOnly[k].classList.toggle('hidden', enabled);
+    }
+
+    var linkNote = document.getElementById('dashboard-whatsapp-link-note');
+    if (linkNote) linkNote.classList.toggle('hidden', authoritativeUnlinked !== true || enabled);
+  }
+
+  window.kflApplyDashboardWhatsAppCapability = setCapability;
+  setCapability(false, '', false);
+
+  fetch('/api/config', { credentials: 'same-origin', cache: 'no-store' })
+    .then(function (response) { return response.ok ? response.json() : null; })
+    .then(function (config) {
+      var botNumber = String(config && config.BOT_NUMBER || '').replace(/\D+/g, '');
+      if (!(config && config.ok === true && config.waba_approved === true && PHONE_RE.test(botNumber))) {
+        setCapability(false, '', false);
+        return null;
+      }
+
+      return fetch('/api/whatsapp/link?check=1', { credentials: 'include', cache: 'no-store' })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (linkStatus) {
+          var linkedPhone = String(linkStatus && linkStatus.phone || '').replace(/\D+/g, '');
+          if (linkStatus && linkStatus.ok === true && linkStatus.linked === true && PHONE_RE.test(linkedPhone)) {
+            setCapability(true, botNumber, false);
+          } else if (linkStatus && linkStatus.ok === true && linkStatus.linked === false &&
+            Object.prototype.hasOwnProperty.call(linkStatus, 'phone')) {
+            setCapability(false, '', true);
+          } else {
+            setCapability(false, '', false);
+          }
+        })
+        .catch(function () { setCapability(false, '', false); });
+    })
+    .catch(function () { setCapability(false, '', false); });
+})();
 </script>
 <!-- Dashboard tour script tag removed 2026-05-24 per Steven's request. -->
 <script>/* SW auto-update: reload once when a new service worker takes control, so users never get stuck on a stale cached page */
