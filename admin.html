@@ -1435,6 +1435,8 @@
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
       // Clear the HttpOnly cookie before refresh -> probe will fail -> gate.
+      try { if (window.KesefleSession && window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout(); }
+      catch (_e) {}
       try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }); }
       catch (_e) {}
       if (window.KesefleSession) window.KesefleSession.clearAllIdentityStorage();

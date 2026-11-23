@@ -910,7 +910,6 @@
 
   <!-- Web Push opt-in card. Hidden by default; only revealed if:
          - PushManager + Notification APIs are supported
-         - Notification.permission === 'default' (not granted, not denied)
          - the user hasn't dismissed the card before (localStorage flag)
          - /api/config returned a non-empty vapid_public_key
        Steven's WABA is pending so push is the immediate engagement channel. -->
@@ -919,8 +918,8 @@
       <div class="flex items-start gap-3">
         <div class="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-white text-2xl shadow-soft dark:bg-ink-800">🔔</div>
         <div>
-          <div class="font-bold text-ink-900 dark:text-white">הפעל התראות לדפדפן</div>
-          <div class="mt-1 text-xs text-ink-600 dark:text-ink-300">
+          <div id="kfl-push-title" class="font-bold text-ink-900 dark:text-white">הפעל התראות לדפדפן</div>
+          <div id="kfl-push-copy" class="mt-1 text-xs text-ink-600 dark:text-ink-300">
             התראות מיידיות על חריגות תקציב, סיכומים שבועיים ועדכונים — ישירות למכשיר, גם בלי וואטסאפ.
           </div>
         </div>
@@ -1645,6 +1644,8 @@ function kesefleGetSheet() {
 async function kesefleLogout() {
   // Best-effort server-side clear of the HttpOnly session cookie, then
   // local cleanup, then redirect.
+  try { if (window.KesefleSession && window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout(); }
+  catch (e) {}
   try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }); }
   catch (e) {}
   if (window.KesefleSession) window.KesefleSession.clearAllIdentityStorage();
@@ -4367,10 +4368,10 @@ function generatePseudoSeries(target, n, intLike) {
 /* Web Push opt-in flow.
    Shows the #kfl-push-card iff:
      - PushManager + Notification + serviceWorker are all supported
-     - Notification.permission === 'default'
-     - localStorage 'kfl_push_dismissed' is unset
      - GET /api/config returned a non-empty vapid_public_key
-     - GET /api/push/subscribe returned { subscribed: false }
+     - this browser's endpoint fingerprint does not match the current account
+   A dismissal cools down only the first permission prompt; it never suppresses
+   a shared-device account-isolation repair after permission was granted.
    On click: request permission, subscribe via PushManager, POST the
    subscription to /api/push/subscribe. On success, hide the card forever. */
 (function(){
@@ -4412,43 +4413,73 @@ function generatePseudoSeries(target, n, intLike) {
     return out;
   }
 
+  async function fingerprintPushEndpoint(endpoint) {
+    if (!endpoint || !window.crypto || !window.crypto.subtle || typeof TextEncoder !== 'function') return '';
+    try {
+      var bytes = new TextEncoder().encode(endpoint);
+      var digest = await window.crypto.subtle.digest('SHA-256', bytes);
+      return Array.from(new Uint8Array(digest)).map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+    } catch (_e) { return ''; }
+  }
+
   async function maybeShowCard() {
     var card = getCard(); if (!card) return;
 
     // Quick local checks first -- avoid any network calls if we can.
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
-    if (Notification.permission !== 'default') {
-      // 'granted' -> hide (user already opted in elsewhere). 'denied' -> hide
-      // (browser will silently no-op the subscribe call anyway).
-      if (Notification.permission === 'granted') hideCardForever();
-      return;
+    if (Notification.permission === 'denied') return;
+    if (Notification.permission === 'default') {
+      try {
+        // Cool down only the permission prompt. A granted-but-stale endpoint is
+        // an account-isolation repair and must not inherit another user's snooze.
+        var until = parseInt(localStorage.getItem(CARD_DISMISSED) || '0', 10);
+        if (until && (Date.now() - until) < 7 * 24 * 3600 * 1000) return;
+      } catch(_e){}
     }
-    try {
-      if (localStorage.getItem(SUBSCRIBED_FLAG)) return;
-      // Short cooldown after manual dismiss: don't pester within 7 days.
-      var until = parseInt(localStorage.getItem(CARD_DISMISSED) || '0', 10);
-      if (until && (Date.now() - until) < 7 * 24 * 3600 * 1000) return;
-    } catch(_e){}
 
-    // Fetch config + current subscription status. We need both before showing
-    // the card, but they're cheap and run in parallel.
+    // Fetch config, current account ownership and this browser's subscription.
+    // Browser permission alone is not account ownership: on a shared phone it
+    // may refer to the person who just signed out.
     var vapidPub = '';
     var alreadySubscribed = false;
+    var matchesDevice = false;
+    var localSubscription = null;
+    var status = null;
     try {
-      var results = await Promise.all([
+      var setup = await Promise.all([
         fetch('/api/config', { credentials: 'same-origin' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
-        fetch('/api/push/subscribe', { credentials: 'same-origin' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+        navigator.serviceWorker.ready.then(function(reg){ return reg.pushManager.getSubscription(); }).catch(function(){ return null; }),
       ]);
-      if (results[0] && results[0].vapid_public_key) vapidPub = results[0].vapid_public_key;
-      if (results[1] && results[1].subscribed) alreadySubscribed = true;
+      if (setup[0] && setup[0].vapid_public_key) vapidPub = setup[0].vapid_public_key;
+      localSubscription = setup[1] || null;
+      var fingerprint = await fingerprintPushEndpoint(localSubscription && localSubscription.endpoint);
+      status = await fetch('/api/push/subscribe', {
+        credentials: 'same-origin',
+        headers: fingerprint ? { 'X-Push-Endpoint-Fingerprint': fingerprint } : {},
+      }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+      if (!status || status.ok !== true || typeof status.subscribed !== 'boolean' || typeof status.matchesDevice !== 'boolean') {
+        status = null;
+      } else {
+        alreadySubscribed = status.subscribed;
+        matchesDevice = status.matchesDevice;
+      }
     } catch(_e){}
 
     if (!vapidPub) return;                 // owner hasn't generated VAPID keys -- silently skip
-    if (alreadySubscribed) { hideCardForever(); return; }
+    if (!status) return;                   // unknown server state: do not rotate a healthy endpoint
+    if (alreadySubscribed && localSubscription && matchesDevice) { hideCardForever(); return; }
 
     // Stash the public key on the card element so the click handler doesn't
     // have to refetch it.
     card.dataset.vapid = vapidPub;
+    if (Notification.permission === 'granted') {
+      var title = document.getElementById('kfl-push-title');
+      var copy = document.getElementById('kfl-push-copy');
+      var button = getBtn();
+      if (title) title.textContent = 'חבר התראות לחשבון הזה';
+      if (copy) copy.textContent = 'ההרשאה קיימת במכשיר, אבל ההתראות עדיין לא משויכות לחשבון הנוכחי.';
+      if (button) button.textContent = 'חבר התראות';
+    }
     card.classList.remove('hidden');
   }
 
@@ -4458,7 +4489,8 @@ function generatePseudoSeries(target, n, intLike) {
     if (!vapidPub || !btn) return;
     btn.disabled = true; btn.textContent = 'מבקש הרשאה…';
     try {
-      var perm = await Notification.requestPermission();
+      var perm = Notification.permission;
+      if (perm === 'default') perm = await Notification.requestPermission();
       if (perm !== 'granted') {
         setStatus(perm === 'denied' ? 'ההרשאה נדחתה. ניתן לשנות בהגדרות הדפדפן.' : 'ההרשאה לא ניתנה.', true);
         btn.disabled = false; btn.textContent = 'הפעל התראות';
@@ -4466,10 +4498,63 @@ function generatePseudoSeries(target, n, intLike) {
       }
       btn.textContent = 'נרשם…';
       var reg = await navigator.serviceWorker.ready;
-      var sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8(vapidPub),
-      });
+      var sub = await reg.pushManager.getSubscription();
+      var previousEndpoint = sub && sub.endpoint || '';
+      if (sub) {
+        // Recheck ownership at click time. The card can remain open while
+        // another tab creates a subscription, so its render-time snapshot is
+        // not authoritative enough to decide whether this endpoint is reusable.
+        var fingerprint = await fingerprintPushEndpoint(sub.endpoint);
+        if (!fingerprint) {
+          setStatus('לא הצלחנו לאמת את מינוי ההתראות במכשיר. נסה שוב.', true);
+          btn.disabled = false; btn.textContent = 'נסה שוב';
+          return;
+        }
+        var ownershipResponse;
+        var ownershipStatus;
+        try {
+          ownershipResponse = await fetch('/api/push/subscribe', {
+            credentials: 'same-origin',
+            headers: { 'X-Push-Endpoint-Fingerprint': fingerprint },
+          });
+          ownershipStatus = ownershipResponse.ok ? await ownershipResponse.json() : null;
+        } catch (_e) { ownershipStatus = null; }
+        if (!ownershipStatus || ownershipStatus.ok !== true ||
+            typeof ownershipStatus.subscribed !== 'boolean' || typeof ownershipStatus.matchesDevice !== 'boolean') {
+          setStatus('לא הצלחנו לאמת למי שייכות ההתראות. נסה שוב כשהחיבור יציב.', true);
+          btn.disabled = false; btn.textContent = 'נסה שוב';
+          return;
+        }
+        if (ownershipStatus.subscribed && ownershipStatus.matchesDevice) {
+          setStatus('ההתראות כבר מחוברות לחשבון הזה.', false);
+          setTimeout(hideCardForever, 900);
+          return;
+        }
+
+        // An endpoint left by another account must be rotated, not merely
+        // reassigned. Otherwise the old account can still address the same token
+        // until its server record is eventually cleaned up.
+        var unsubscribed = false;
+        try { unsubscribed = await sub.unsubscribe(); } catch (_e) {}
+        if (unsubscribed !== true) {
+          setStatus('לא הצלחנו לנתק את ההתראות מהחשבון הקודם. נסה שוב.', true);
+          btn.disabled = false; btn.textContent = 'נסה שוב';
+          return;
+        }
+        sub = null;
+      }
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8(vapidPub),
+        });
+      }
+      if (previousEndpoint && sub.endpoint === previousEndpoint) {
+        try { await sub.unsubscribe(); } catch (_e) {}
+        setStatus('הדפדפן לא הצליח להחליף את מינוי ההתראות הישן. נסה שוב מאוחר יותר.', true);
+        btn.disabled = false; btn.textContent = 'נסה שוב';
+        return;
+      }
       var payload = {
         subscription: sub.toJSON(),
         deviceInfo: {
