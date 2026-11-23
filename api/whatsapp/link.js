@@ -180,6 +180,23 @@ local function decode(raw)
   return value
 end
 
+local function normalizePhone(raw)
+  local value = tostring(raw or ''):gsub('%D', '')
+  while string.sub(value, 1, 6) == '972972' do
+    value = string.sub(value, 4)
+  end
+  if string.sub(value, 1, 4) == '9720' then
+    value = '972' .. string.sub(value, 5)
+  end
+  if string.sub(value, 1, 1) == '0' then
+    value = '972' .. string.sub(value, 2)
+  end
+  if string.len(value) == 9 and string.sub(value, 1, 1) == '5' then
+    value = '972' .. value
+  end
+  return value
+end
+
 local challengeRaw = redis.call('GET', KEYS[1])
 if not challengeRaw then return 'expired' end
 local challenge = decode(challengeRaw)
@@ -242,6 +259,12 @@ local user = decode(redis.call('GET', KEYS[6]))
 if not sheet or not user or tostring(sheet.spreadsheetId or '') ~= ARGV[4] then
   return 'account_not_ready'
 end
+local legacyPhone = normalizePhone(user.phoneE164)
+if legacyPhone == '' then legacyPhone = normalizePhone(user.linkedPhone) end
+if legacyPhone == '' then legacyPhone = normalizePhone(user.phone) end
+if legacyPhone ~= '' and legacyPhone ~= ARGV[2] then
+  return 'phone_change_blocked'
+end
 
 redis.call('SET', KEYS[3], ARGV[5])
 redis.call('SET', KEYS[4], ARGV[6])
@@ -276,9 +299,9 @@ function normalizeE164(input) {
   // DIFFERENT KV key than the bot computes, so the user linked under one key
   // and the bot looked up another ("linked but the bot ignores me"):
   // "+972 054-..." keeps the zero after the country code.
-  if (s.startsWith('9720')) s = '972' + s.slice(4);
   // double country code from a double paste: 972972...
-  if (s.startsWith('972972')) s = s.slice(3);
+  while (s.startsWith('972972')) s = s.slice(3);
+  if (s.startsWith('9720')) s = '972' + s.slice(4);
   // If it starts with 0 (e.g., 0541234567), assume Israel and prepend 972.
   if (s.startsWith('0')) s = '972' + s.slice(1);
   // bare Israeli mobile without the leading zero: 5XXXXXXXX (9 digits)
@@ -298,12 +321,14 @@ async function getVerifiedPhoneForUser(userSub) {
   let candidate = normalizeE164(reverse?.phone);
   if (!candidate) {
     const legacy = await kvGet(`user:${userSub}`);
-    candidate = normalizeE164(legacy?.linkedPhone || legacy?.phone);
+    candidate = [legacy?.phoneE164, legacy?.linkedPhone, legacy?.phone]
+      .map(normalizeE164)
+      .find(Boolean) || null;
   }
   if (!candidate) return { linked: false, phone: null };
   const forward = await kvGet(`phone:${candidate}`);
   if (!forward || forward.userSub !== userSub) {
-    return { linked: false, phone: null, reason: 'mapping_mismatch' };
+    return { linked: false, phone: candidate, reason: 'mapping_mismatch' };
   }
   return { linked: true, phone: candidate };
 }
@@ -627,6 +652,12 @@ async function handlerImpl(req, res) {
   }
 
   // === REQUEST action (default) — user requests a linking code ===
+  // Keep the migration window closed while WhatsApp is unavailable. This is
+  // the same public feature flag used by /api/config and prevents an old tab
+  // or client from minting a new legacy forward route between backfill scans.
+  if (process.env.WABA_APPROVED !== '1') {
+    return res.status(503).json({ ok: false, error: 'whatsapp_linking_unavailable' });
+  }
   const phone = normalizeE164(body?.phone);
   if (!phone) {
     return res.status(400).json({ ok: false, error: 'invalid_phone' });
@@ -673,7 +704,7 @@ async function handlerImpl(req, res) {
   if (existing.linked && existing.phone === phone) {
     return res.status(200).json({ ok: true, alreadyLinked: true, phone });
   }
-  if (existing.linked && existing.phone !== phone) {
+  if (existing.phone && existing.phone !== phone) {
     // Phone-keyed recurring/group/profile state is not yet migrated as one
     // audited transfer. Refuse a partial remap that could leave an old number
     // active or orphan customer data; support can verify and migrate it safely.

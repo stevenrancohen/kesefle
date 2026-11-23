@@ -129,6 +129,14 @@ function makeWorld() {
         return { ok: true, status: 200, json: async () => ({ result: 'stored' }) };
       }
       if (kind === 'confirm') {
+        const normalizePhone = (raw) => {
+          let value = String(raw || '').replace(/\D+/g, '');
+          while (value.startsWith('972972')) value = value.slice(3);
+          if (value.startsWith('9720')) value = '972' + value.slice(4);
+          if (value.startsWith('0')) value = '972' + value.slice(1);
+          if (/^5\d{8}$/.test(value)) value = '972' + value;
+          return value;
+        };
         const parse = (key) => {
           if (!store.has(key)) return null;
           try { return JSON.parse(store.get(key)); } catch (_e) { return false; }
@@ -173,6 +181,12 @@ function makeWorld() {
         const user = parse(keys[5]);
         if (!sheet || !user || String(sheet.spreadsheetId || '') !== args[3]) {
           return { ok: true, status: 200, json: async () => ({ result: 'account_not_ready' }) };
+        }
+        const legacyPhone = [user.phoneE164, user.linkedPhone, user.phone]
+          .map(normalizePhone)
+          .find(Boolean) || '';
+        if (legacyPhone && legacyPhone !== args[1]) {
+          return { ok: true, status: 200, json: async () => ({ result: 'phone_change_blocked' }) };
         }
         store.set(keys[2], args[4]);
         store.set(keys[3], args[5]);
@@ -485,6 +499,20 @@ async function happyPath() {
 async function failurePaths() {
   console.log('\n=== 2. FAILURE PATHS (401 not-signed-in / 404 bad code / 409 phone taken) ===\n');
   process.env.KESEFLE_BOT_SECRET = BOT_SECRET;
+
+  // The reverse-index migration runs while WABA is frozen. Old tabs and
+  // clients must not mint a new route between the migration's scan and apply.
+  {
+    const world = makeWorld();
+    const SUB = 'google:waba-frozen';
+    seedUser(world, SUB, { sheetId: 'SHEET_WABA_FROZEN' });
+    process.env.WABA_APPROVED = '0';
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world, { sessionSub: SUB }))(reqMintPOST({ phone: '972500000099' }), res);
+    ok('mint: WABA freeze rejects code generation', res._status === 503 && res._json.error === 'whatsapp_linking_unavailable', JSON.stringify(res._json));
+    ok('mint: WABA freeze creates no challenge or route', !world.kvKeys().some((key) => key.startsWith('linkCode:') || key.startsWith('activeLink:')));
+    process.env.WABA_APPROVED = '1';
+  }
 
   // 2a. NOT SIGNED IN -> mint refuses with 401 (no session cookie, no token).
   {
@@ -865,6 +893,50 @@ async function failurePaths() {
       && !world.kvKeys().some(key => key.startsWith('activeLink:')));
   }
 
+  // Legacy secure-kv records used user.phoneE164 + phone:<old> without the
+  // newer userPhone:<sub> reverse pointer. They must still block a second
+  // active route to the same financial account.
+  {
+    const world = makeWorld();
+    const SUB = 'google:legacy-forward-only';
+    const OLD = '972510303030';
+    const NEXT = '972510404040';
+    seedUser(world, SUB, { sheetId: 'SHEET_LEGACY_FORWARD' });
+    const user = world.kvObj('user:' + SUB);
+    user.phoneE164 = '+' + OLD;
+    world.store.set('user:' + SUB, JSON.stringify(user));
+    world.store.set('phone:' + OLD, JSON.stringify({ userSub: SUB, spreadsheetId: 'SHEET_LEGACY_FORWARD' }));
+    const mint = mkRes();
+    await buildLinkHandler(makeStubs(world, { sessionSub: SUB }))(reqMintPOST({ phone: NEXT }), mint);
+    ok('legacy forward-only: canonical phoneE164 blocks a second phone before mint',
+      mint._status === 409 && mint._json.error === 'phone_change_requires_support', JSON.stringify(mint._json));
+    ok('legacy forward-only: old route remains intact', world.kvObj('phone:' + OLD)?.userSub === SUB);
+    ok('legacy forward-only: no new challenge or route is created', world.kvObj('phone:' + NEXT) === null
+      && !world.kvKeys().some(key => key.startsWith('activeLink:')));
+  }
+
+  // Re-check the legacy user marker inside the atomic confirm transition so a
+  // route that appears after mint cannot race into a dual-phone account.
+  {
+    const world = makeWorld();
+    const SUB = 'google:legacy-confirm-race';
+    const OLD = '972510505050';
+    const NEXT = '972510606060';
+    seedUser(world, SUB, { sheetId: 'SHEET_LEGACY_RACE' });
+    seedChallenge(world, '919293', SUB, NEXT);
+    const user = world.kvObj('user:' + SUB);
+    user.phoneE164 = OLD;
+    world.store.set('user:' + SUB, JSON.stringify(user));
+    world.store.set('phone:' + OLD, JSON.stringify({ userSub: SUB, spreadsheetId: 'SHEET_LEGACY_RACE' }));
+    const confirm = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '919293', phone: NEXT }, BOT_SECRET), confirm);
+    ok('legacy confirm race: atomic transition rejects a newly discovered old route',
+      confirm._status === 503 && confirm._json.error === 'verification_state_changed', JSON.stringify(confirm._json));
+    ok('legacy confirm race: no second forward or reverse route is committed',
+      world.kvObj('phone:' + NEXT) === null && world.kvObj('userPhone:' + SUB) === null);
+    ok('legacy confirm race: old route stays intact', world.kvObj('phone:' + OLD)?.userSub === SUB);
+  }
+
   // 2f. APPEND for a phone that was never linked -> 404 no_user_for_phone.
   {
     const world = makeWorld();
@@ -978,9 +1050,11 @@ async function tenantIsolation() {
     META_ACCESS_TOKEN: process.env.META_ACCESS_TOKEN,
     META_PHONE_NUMBER_ID: process.env.META_PHONE_NUMBER_ID,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    WABA_APPROVED: process.env.WABA_APPROVED,
   };
   try {
     process.env.GOOGLE_CLIENT_ID = 'test-google-client';
+    process.env.WABA_APPROVED = '1';
     await happyPath();
     await failurePaths();
     await tenantIsolation();

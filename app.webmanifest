@@ -19,6 +19,11 @@
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
+  "screenshots": [
+    { "src": "/pwa-screenshots/app-home-mobile.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "נתוני הדגמה: תמונת מצב חודשית, פעולות מהירות והצעד הבא באפליקציית כספ'לה" },
+    { "src": "/pwa-screenshots/quick-entry-mobile.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "נתוני הדגמה: טופס ריק ומהיר להוספת הוצאה או הכנסה מהטלפון" },
+    { "src": "/pwa-screenshots/app-home-wide.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "נתוני הדגמה: לוח כספי מלא למסך רחב עם תנועות אחרונות ותמונה חודשית" }
+  ],
   "shortcuts": [
     { "name": "תנועות אחרונות", "short_name": "תנועות", "url": "/app#/tx", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
     { "name": "תובנות", "short_name": "תובנות", "url": "/app#/insights", "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
