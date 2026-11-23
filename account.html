@@ -2021,8 +2021,24 @@ function _kflFixedMsg(text, kind) {
   if (!el) return;
   var cls = kind === 'ok' ? 'text-emerald-700' : kind === 'warn' ? 'text-amber-700' : 'text-red-600';
   el.className = 'mt-2 text-xs ' + cls;
-  el.innerHTML = text;
+  // Messages can contain user-supplied recurring-expense descriptions.
+  // Keep the generic status path text-only so HTML is never interpreted.
+  el.textContent = String(text == null ? '' : text);
   el.classList.remove('hidden');
+}
+function _kflFixedCommandMsg(botCmd) {
+  var el = document.getElementById('fx-msg');
+  if (!el) return;
+  _kflFixedMsg('', 'warn');
+  el.appendChild(document.createTextNode('נשמר ברשימה. כדי שייכנס לגיליון אוטומטית, שלח לבוט את ההודעה:'));
+  el.appendChild(document.createElement('br'));
+  var copy = document.createElement('button');
+  copy.type = 'button';
+  copy.className = 'mt-1 inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2 py-1 font-mono text-[11px] font-bold text-amber-800 hover:bg-amber-200';
+  copy.dataset.cmd = String(botCmd || '');
+  copy.textContent = '📋 ' + String(botCmd || '');
+  copy.addEventListener('click', function () { kesefleFixedCopyCmd(copy); });
+  el.appendChild(copy);
 }
 function _kflFixedClearMsg() {
   var el = document.getElementById('fx-msg');
@@ -2213,16 +2229,9 @@ async function kesefleFixedAdd() {
     var botCmd = 'קבוע ' + description + ' ' + amount + ' בכל ' + day + ' לחודש';
     var auth = /unauthorized|bot_secret_not_configured|http_401|http_503/.test(errCode);
     if (auth) {
-      _kflFixedMsg(
-        'נשמר ברשימה. כדי שייכנס לגיליון אוטומטית, שלח לבוט את ההודעה:<br>' +
-        '<button type="button" onclick="kesefleFixedCopyCmd(this)" data-cmd="' +
-        botCmd.replace(/"/g, '&quot;') +
-        '" class="mt-1 inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2 py-1 font-mono text-[11px] font-bold text-amber-800 hover:bg-amber-200">' +
-        '📋 ' + botCmd.replace(/</g, '&lt;') + '</button>',
-        'warn'
-      );
+      _kflFixedCommandMsg(botCmd);
     } else {
-      _kflFixedMsg('נשמר ברשימה, אבל לא הצלחנו לסנכרן כרגע (' + String(errCode).replace(/</g, '&lt;') + '). ננסה שוב מאוחר יותר.', 'warn');
+      _kflFixedMsg('נשמר ברשימה, אבל לא הצלחנו לסנכרן כרגע (' + String(errCode) + '). ננסה שוב מאוחר יותר.', 'warn');
     }
   }
   if (btn) { btn.disabled = false; btn.textContent = 'הוסף הוצאה קבועה'; }
