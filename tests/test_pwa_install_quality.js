@@ -149,8 +149,8 @@ async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], 
       open: async (name) => ({
         match: async (request) => {
           const value = typeof request === 'string' ? request : new URL(request.url).pathname;
-          if (/kesefle-static-v25/.test(name) && staticPaths.includes(value)) return staticHit;
-          if (/kesefle-runtime-v25/.test(name) && runtimePaths.includes(value)) return runtimeHit;
+          if (/kesefle-static-v26/.test(name) && staticPaths.includes(value)) return staticHit;
+          if (/kesefle-runtime-v26/.test(name) && runtimePaths.includes(value)) return runtimeHit;
           return null;
         },
         put: async () => {},
@@ -258,13 +258,13 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   const missingRequired = await runInstall({ failedFetch: '/offline.html' });
   assert.ok(missingRequired.error, 'missing required offline shell rejects installation');
   assert.strictEqual(missingRequired.skipped, 0, 'failed required shell never calls skipWaiting');
-  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v25/.test(name)),
+  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v26/.test(name)),
     'failed required shell removes the incomplete versioned cache');
 
   const failedRequiredWrite = await runInstall({ failedPut: '/app.webmanifest' });
   assert.ok(failedRequiredWrite.error, 'failed required cache write rejects installation');
   assert.strictEqual(failedRequiredWrite.skipped, 0, 'failed required cache write never activates');
-  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v25/.test(name)),
+  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v26/.test(name)),
     'failed required cache write cleans up the incomplete cache');
 
   const badRequiredStatus = await runInstall({ failedStatus: '/offline.html' });

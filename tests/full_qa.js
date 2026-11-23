@@ -104,6 +104,8 @@ const UNIT_SUITES = [
   'tests/test_pwa_install_quality.js',                   // install quality: real manifest screenshots + fail-closed required offline shell
   'tests/test_push_endpoint_trust.js',                   // Web Push SSRF boundary: official providers only + send-time revalidation
   'tests/test_push_logout_isolation.js',                 // shared-device privacy: endpoint-scoped logout + browser unsubscribe before cookie clear
+  'tests/test_app_push_optin.js',                        // canonical app: explicit account-bound Push settings, permission timing, safe endpoint rotation
+  'tests/test_budget_push_independent.js',               // budget alerts: Push works without phone; either successful channel owns monthly dedupe
   'tests/test_guest_app_first_run.js',                  // logged-out app: persona-aware value preview, no fabricated financial data, secure Google CTA
   'tests/test_offline_retry_runtime.js',                // offline UX: only healthy Kesefle JSON may redirect back to /app
   'tests/test_admin_console_data_sources.js',         // admin console: deepened sections wire ONLY real requireAdmin endpoints (funnel-summary, registration-health, recent-signups, revenue, launch-monitor) + one-click recovery (reprovision/resend) + masked identity + honest "not instrumented" notes; no fabricated tiles
@@ -463,11 +465,11 @@ ok('api/sheet/tax-report.js exists + uses requireAuth + has rate limit',
    /requireAuth\(handlerImpl\)/.test(TAX_REPORT_API) &&
    /rateLimitId\(userSub,\s*\{\s*key:\s*'sheet_tax_report'/.test(TAX_REPORT_API));
 
-// ── 5i. Budgets (per-category monthly caps + WhatsApp overspend alerts) ─────
+// ── 5i. Budgets (per-category monthly caps + independent channel alerts) ────
 // Users set a cap per category via /api/budgets (authed) or the bot's
 // "תקציב X N" command (bot-secret). The daily cron checks MTD spending vs
-// cap and fires a WhatsApp message via /api/whatsapp/send when the user
-// crosses the threshold. These assertions guard the load-bearing pieces
+// cap and alerts through Push and, when linked, WhatsApp when the user crosses
+// the threshold. These assertions guard the load-bearing pieces
 // from regression: auth + rate limit on the CRUD endpoint, CRON_SECRET on
 // the cron, the cron path in vercel.json, server-side category validation
 // against the single source of truth in lib/categories.js, and the
@@ -491,6 +493,9 @@ ok('budgets validates categories against lib/categories.js EXPENSE_GROUPS',
    /invalid_category/.test(BUDGETS_API));
 ok('budget-check dedup key uses YYYY-MM + category',
    /budget_alerted:\$\{userSub\}:\$\{ymNow\}:\$\{category\}/.test(BUDGET_CRON));
+ok('budget Push is phone-independent and either successful channel dedupes',
+   !/if \(!phone\) \{ skipped\+\+; continue; \}/.test(BUDGET_CRON) &&
+   /whatsAppResult\.ok \|\| pushResult\?\.ok/.test(BUDGET_CRON));
 
 // ── 5j. Bot data queries (conversational Q&A on the user's sheet) ───────────
 // Users ask "כמה הוצאתי החודש" / "ההוצאה הכי גדולה" etc. The bot pattern-

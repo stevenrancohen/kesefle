@@ -7,7 +7,8 @@
 //   2. Read MTD spending per category from their תנועות tab.
 //   3. For each budgeted category, compute MTD / cap = pct.
 //   4. If pct >= threshold AND we haven't already alerted this user this
-//      month for this category, send a WhatsApp message via /api/whatsapp/send.
+//      month for this category, deliver independently through every available
+//      channel (Web Push and, when linked, WhatsApp).
 //      Dedup key: `budget_alerted:{userSub}:{YYYY-MM}:{category}` with 35d TTL
 //      (35 = one month + safety margin so any clock skew across month rollover
 //      doesn't double-fire).
@@ -20,10 +21,12 @@ import { decryptRefreshToken } from '../../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
 import { sendPush } from '../../lib/push.js';
 import { TX_TAB } from '../../lib/sheet-tabs.js';
+import { randomUUID } from 'node:crypto';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 const ALERT_TTL_SEC = 35 * 86400; // ~one month plus safety margin
+const DELIVERY_LEASE_TTL_SEC = 10 * 60;
 
 // ── KV helpers ──────────────────────────────────────────────────────────────
 async function kvFetch(path, opts = {}) {
@@ -63,6 +66,57 @@ async function kvGet(key) {
 
 async function kvSetEx(key, val, ttlSec) {
   return kvFetch(`/set/${encodeURIComponent(key)}?EX=${ttlSec}`, { method: 'POST', body: val });
+}
+
+async function kvEval(script, keys, args) {
+  if (!KV_URL || !KV_TOKEN) return { ok: false, value: null };
+  try {
+    const command = ['EVAL', script, String(keys.length), ...keys, ...args.map(String)];
+    const r = await fetch(KV_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(command),
+    });
+    if (!r.ok) return { ok: false, value: null };
+    const j = await r.json().catch(() => null);
+    if (!j || Object.prototype.hasOwnProperty.call(j, 'error') || typeof j.result !== 'string') {
+      return { ok: false, value: null };
+    }
+    return { ok: true, value: j.result };
+  } catch (_e) { return { ok: false, value: null }; }
+}
+
+async function kvAcquireDeliveryLease(key, token) {
+  const r = await kvFetch(`/set/${encodeURIComponent(key)}?NX=true&EX=${DELIVERY_LEASE_TTL_SEC}`, {
+    method: 'POST',
+    body: token,
+  });
+  if (!r.ok || Object.prototype.hasOwnProperty.call(r, 'error') ||
+      !Object.prototype.hasOwnProperty.call(r, 'result')) {
+    return { ok: false, acquired: false };
+  }
+  return { ok: true, acquired: r.result === 'OK' };
+}
+
+async function kvFinalizeDelivery(key, token, deliveredValue) {
+  const script = `#!lua flags=allow-key-locking
+-- KESEFLE_FINALIZE_BUDGET_ALERT_V1
+local current = redis.call('GET', KEYS[1])
+if current ~= ARGV[1] then return 'not_owner' end
+redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3])
+return 'stored'`;
+  const result = await kvEval(script, [key], [token, deliveredValue, ALERT_TTL_SEC]);
+  return result.ok && result.value === 'stored';
+}
+
+async function kvReleaseDeliveryLease(key, token) {
+  const script = `#!lua flags=allow-key-locking
+-- KESEFLE_RELEASE_BUDGET_ALERT_V1
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'not_owner' end
+redis.call('DEL', KEYS[1])
+return 'released'`;
+  const result = await kvEval(script, [key], [token]);
+  return result.ok && result.value === 'released';
 }
 
 async function kvExists(key) {
@@ -202,10 +256,10 @@ async function handlerImpl(req, res) {
       continue;
     }
 
-    // Resolve the user's phone (so we can WhatsApp them) and sheet/token.
+    // Phone is optional: Web Push is a first-class channel for web-first users.
+    // Sheet/token authority is resolved by userSub and never depends on phone.
     const userPhoneRec = await kvGet(`userPhone:${userSub}`);
     const phone = userPhoneRec?.phone || null;
-    if (!phone) { skipped++; continue; } // can't alert without a linked phone
 
     const sheetRec = await kvGet(`sheet:${userSub}`);
     const userRec = (await kvGet(`user:${userSub}`)) || {};
@@ -256,20 +310,26 @@ async function handlerImpl(req, res) {
       if (pct < threshold) continue;
 
       const dedupKey = `budget_alerted:${userSub}:${ymNow}:${category}`;
-      if (await kvExists(dedupKey)) continue;
+      const leaseToken = `lease:${randomUUID()}`;
+      const lease = await kvAcquireDeliveryLease(dedupKey, leaseToken);
+      if (!lease.ok) {
+        errors++;
+        log.warn('budget_check.lease_failed', { reqId: req.reqId, sub: subHash(userSub), category });
+        continue;
+      }
+      if (!lease.acquired) continue;
 
       const capStr = Math.round(cap).toLocaleString('he-IL');
       const spentStr = spent.toLocaleString('he-IL');
       const pctStr = Math.round(pct);
       const text = `התראה: עברת ${threshold}% מתקציב ${category} (₪${spentStr} מתוך ₪${capStr}, ${pctStr}%)`;
 
-      const sendResult = await sendWhatsAppAlert(selfBaseUrl, phone, text);
-      // Best-effort push (env-fail-soft when VAPID isn't configured or the
-      // user never opted in). Push is a SECOND channel, not a replacement
-      // for WhatsApp -- both can succeed independently. Pushed BEFORE the
-      // dedup-key write so a push-only failure doesn't re-trigger tomorrow.
+      const whatsAppResult = phone
+        ? await sendWhatsAppAlert(selfBaseUrl, phone, text)
+        : { ok: false, skipped: true, reason: 'no_linked_phone' };
+      let pushResult = { ok: false, skipped: true, reason: 'push_failed' };
       try {
-        await sendPush(userSub, {
+        pushResult = await sendPush(userSub, {
           title: 'התראת תקציב',
           body: text,
           tag: `budget-${category}`,
@@ -277,13 +337,33 @@ async function handlerImpl(req, res) {
         });
       } catch (_pushErr) { /* push must never abort the cron */ }
 
-      if (sendResult.ok) {
-        await kvSetEx(dedupKey, JSON.stringify({ at: new Date().toISOString(), spent, cap, pct: pctStr }), ALERT_TTL_SEC);
-        alerted++;
-        perUser.push({ userSub, category, spent, cap, pct: pctStr });
+      // One alert per category/month once at least one channel confirms
+      // delivery. A WhatsApp outage must not make successful Push repeat daily.
+      if (whatsAppResult.ok || pushResult?.ok) {
+        const finalized = await kvFinalizeDelivery(
+          dedupKey,
+          leaseToken,
+          JSON.stringify({ at: new Date().toISOString(), spent, cap, pct: pctStr }),
+        );
+        if (finalized) {
+          alerted++;
+          perUser.push({ userSub, category, spent, cap, pct: pctStr });
+        } else {
+          errors++;
+          log.warn('budget_check.dedup_finalize_failed', {
+            reqId: req.reqId, sub: subHash(userSub), category,
+          });
+        }
       } else {
+        await kvReleaseDeliveryLease(dedupKey, leaseToken);
         errors++;
-        log.warn('budget_check.send_failed', { reqId: req.reqId, sub: subHash(userSub), category, detail: sendResult });
+        log.warn('budget_check.send_failed', {
+          reqId: req.reqId,
+          sub: subHash(userSub),
+          category,
+          whatsapp: { ok: !!whatsAppResult.ok, skipped: !!whatsAppResult.skipped, reason: whatsAppResult.reason || '' },
+          push: { ok: !!pushResult?.ok, skipped: !!pushResult?.skipped, reason: pushResult?.reason || '' },
+        });
       }
     }
   }

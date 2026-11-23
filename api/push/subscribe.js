@@ -2,7 +2,7 @@
 //
 // CRUD for the current user's Web Push PushSubscription.
 //
-//   POST   { subscription: { endpoint, keys: { p256dh, auth } }, deviceInfo? }
+//   POST   { subscription: { endpoint, keys: { p256dh, auth } }, expectedUserSub, deviceInfo? }
 //          -> { ok: true, stored: true }
 //          Persists the subscription at KV key  push_sub:{userSub}.
 //
@@ -11,7 +11,7 @@
 //          "enable notifications" card. An optional endpoint SHA-256 header
 //          verifies device ownership without exposing the endpoint itself.
 //
-//   DELETE -> { ok: true, removed: <bool> }
+//   DELETE { endpoint?, expectedUserSub } -> { ok: true, removed: <bool> }
 //          User toggled off / uninstalled. Removes the KV record.
 //
 // Auth: requireAuth (session cookie or Bearer ID token).
@@ -53,7 +53,11 @@ async function kvGet(key) {
     });
     if (!r.ok) return { ok: false, value: null };
     const j = await r.json();
-    return { ok: true, value: j?.result ? JSON.parse(j.result) : null };
+    if (!j || Object.prototype.hasOwnProperty.call(j, 'error') ||
+        !Object.prototype.hasOwnProperty.call(j, 'result')) {
+      return { ok: false, value: null };
+    }
+    return { ok: true, value: j.result == null ? null : JSON.parse(j.result) };
   } catch (_e) { return { ok: false, value: null }; }
 }
 
@@ -65,7 +69,9 @@ async function kvSet(key, value) {
       headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(value),
     });
-    return r.ok;
+    if (!r.ok) return false;
+    const j = await r.json().catch(() => null);
+    return !!(j && !Object.prototype.hasOwnProperty.call(j, 'error') && j.result === 'OK');
   } catch (_e) { return false; }
 }
 
@@ -173,6 +179,9 @@ async function handlePost(req, res, userSub) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   body = body || {};
+  if (typeof body.expectedUserSub !== 'string' || body.expectedUserSub !== userSub) {
+    return res.status(409).json({ ok: false, error: 'account_changed' });
+  }
 
   const err = validateSubscription(body.subscription);
   if (err) return res.status(400).json({ ok: false, error: err });
@@ -210,6 +219,14 @@ async function handleDelete(req, res, userSub) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   body = body || {};
+  const hasExpectedSub = typeof body.expectedUserSub === 'string' && body.expectedUserSub.length > 0;
+  // Compatibility for already-open v25 tabs: allow only an endpoint-exact
+  // authenticated DELETE. The atomic comparison below prevents a legacy tab
+  // from removing a newer phone's record. POST remains strictly account-bound.
+  const legacyEndpointDelete = !hasExpectedSub && typeof body.endpoint === 'string' && !!body.endpoint;
+  if ((!hasExpectedSub && !legacyEndpointDelete) || (hasExpectedSub && body.expectedUserSub !== userSub)) {
+    return res.status(409).json({ ok: false, removed: false, error: 'account_changed' });
+  }
   if (body.endpoint != null && (
     typeof body.endpoint !== 'string' || !body.endpoint || body.endpoint.length > MAX_ENDPOINT_LEN
   )) {
