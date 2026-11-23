@@ -91,7 +91,7 @@ function normalizeCode(c) {
 
 function baseUrl(req) {
   // Honor x-forwarded-host on Vercel; fall back to host header; default to canonical.
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'kesefle.vercel.app';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || 'kesefle.com';
   const proto = req.headers['x-forwarded-proto'] || 'https';
   return `${proto}://${host}`;
 }

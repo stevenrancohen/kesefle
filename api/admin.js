@@ -467,7 +467,7 @@ function publicBotStatus(req, res) {
     bot: {
       meta_phone_number_id: process.env.META_PHONE_NUMBER_ID || null, // public-safe identifier
       configured_bot_phone_e164: process.env.BOT_PHONE_E164 || null,
-      webhook_url: `${(req.headers['x-forwarded-proto'] || 'https')}://${req.headers.host || 'kesefle.vercel.app'}/api/whatsapp/webhook`,
+      webhook_url: `${(req.headers['x-forwarded-proto'] || 'https')}://${req.headers.host || 'kesefle.com'}/api/whatsapp/webhook`,
     },
     checked_at: new Date().toISOString(),
   });

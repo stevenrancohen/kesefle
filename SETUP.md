@@ -9,7 +9,7 @@ To make the social login buttons work in production, you need to create three OA
    - User type: **External**.
    - App name: `כספ'לה` (Kesef'le).
    - Support email + developer email: your email.
-   - Authorized domains: `kesefle.vercel.app` (and your real domain when you have one).
+   - Authorized domains: `kesefle.com`.
    - Scopes: `email`, `profile`, `openid`.
 3. Sidebar → **Credentials** → **Create Credentials** → **OAuth client ID**:
    - Type: **Web application**.
@@ -35,11 +35,11 @@ Then in `index.html`, the deploy script (or manual find-replace) substitutes `__
    - Permissions: `email`, `public_profile`.
    - For Instagram Business access: add `instagram_basic` later.
 5. Sidebar → **Settings** → **Basic**:
-   - App Domains: `kesefle.vercel.app`.
+   - App Domains: `kesefle.com`.
    - Privacy Policy URL + Terms of Service URL: required for going live.
 6. Sidebar → **Use Cases** → **Authentication** → **Settings**:
    - Valid OAuth Redirect URIs: not needed for JS SDK flow.
-   - Allowed Domains for the JavaScript SDK: `kesefle.vercel.app`.
+   - Allowed Domains for the JavaScript SDK: `kesefle.com`.
 7. Copy the **App ID** (top of dashboard) and **App Secret** (Settings → Basic, reveal).
 
 **Add to Vercel:**
@@ -64,7 +64,7 @@ If you proceed:
    - Identifier: `com.kesefle.web.signin` (this is your `APPLE_CLIENT_ID`).
    - Enable **Sign In with Apple** → Configure:
      - Primary App ID: the one from step 2.
-     - Domains: `kesefle.vercel.app`.
+     - Domains: `kesefle.com`.
      - Return URLs: `https://kesefle.com/api/auth/apple/callback`.
 4. **Keys** → **+** → enable **Sign In with Apple** → download the `.p8` key file. (You only get to download once — save it.)
 

@@ -9,7 +9,7 @@
 # Exits 0 if all critical checks pass, 1 otherwise.
 
 set -u
-BASE="${1:-https://kesefle.vercel.app}"
+BASE="${1:-https://kesefle.com}"
 pass=0
 fail=0
 
