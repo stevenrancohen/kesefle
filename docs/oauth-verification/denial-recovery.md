@@ -4,19 +4,20 @@ Verification rejection is uncommon but happens. Don't panic. Here's the playbook
 
 ## Common rejection reasons + fixes
 
-### "Brand verification failed — we couldn't confirm you own kesefle.vercel.app"
+### "Brand verification failed — we couldn't confirm you own kesefle.com"
 
 **Fix:**
 - Add the verification HTML file to the site (Google sends a URL like `googlexxxxx.html`)
-- OR add a DNS TXT record to vercel.app (you'll need to ask Vercel support since they own the domain)
-- **Easier path:** buy your own domain (e.g., `kesefle.com` for $12/year), point it at Vercel, then verify domain ownership via DNS TXT record (instant)
+- Or add Google's DNS TXT record to the `kesefle.com` DNS zone, then retry ownership verification
+- Confirm the OAuth consent screen lists `kesefle.com` under Authorized domains
 
-### "Restricted scope justification is insufficient"
+### "Scope justification is insufficient"
 
 **Fix:**
 - Resubmit with the more detailed scope-justifications.md
-- Specifically emphasize: "We only call drive.readonly on a single hardcoded template file ID. We never list or enumerate the user's Drive."
-- Provide a code snippet pointing them to api/sheet/provision.js
+- Specifically emphasize that the app creates a fresh Sheet and uses only
+  `drive.file`; it does not request `drive.readonly` or enumerate the user's Drive
+- Provide code references to `api/sheet/provision.js` and `lib/sheet-writer.js`
 
 ### "Demo video doesn't show the OAuth consent screen clearly"
 
@@ -58,27 +59,20 @@ After 2 unsuccessful resubmissions:
 2. Post on `cloud-platform-discuss` Stack Exchange
 3. Last resort: tweet @GoogleCloud with case number
 
-## Alternative paths (if verification keeps failing)
+## Architecture fallback (only if the current minimal flow is rejected)
 
-### Option A: Use only `drive.file` scope (drop `drive.readonly`)
-- Pros: Easier verification, less data collection
-- Cons: Must use a service account to copy the template (more complex backend), users see a different Sheet ownership
+The product already uses the minimal `drive.file` architecture and creates the
+Sheet directly in the user's account. Do not re-add `drive.readonly`, a broad
+`spreadsheets` grant, or a service-account ownership-transfer flow just to work
+around a review question. First respond with the code evidence above.
 
-### Option B: Service Account architecture
-- Kesefle owns a service account that has access to the template
-- Service account creates the Sheet on the user's behalf
-- Service account transfers ownership of the Sheet to the user
-- No need for user's `drive.readonly` scope
-- Pros: Verification much easier (only `drive.file` and `spreadsheets` needed)
-- Cons: ~4 hours of backend work to refactor
-
-### Option C: Use OAuth only for SSO, store data on our servers
+### Last resort: use OAuth only for SSO, store data on our servers
 - Drop Drive integration entirely
 - Users log in with Google but data lives in our Postgres
 - Pros: No sensitive scopes, verification trivial
 - Cons: Users no longer own their data — defeats Kesefle's whole pitch
 
-Don't go down Option C unless absolutely forced. Option B is the realistic fallback if verification keeps stalling.
+Don't use this path unless the product strategy deliberately changes.
 
 ## Tracking verification progress
 

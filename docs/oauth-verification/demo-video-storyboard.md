@@ -14,21 +14,21 @@
 
 ### Frame 1 — Title (5 sec)
 - Open a black browser tab
-- Add a text overlay (any tool): "Kesefle OAuth Demo — kesefle.vercel.app"
+- Add a text overlay (any tool): "Kesefle OAuth Demo — kesefle.com"
 - Sub-text: "Showing scope usage for verification"
 - Hold for 5 seconds
 
 ### Frame 2 — Landing page (5 sec)
 - Navigate to `https://kesefle.com/`
 - Scroll slowly to show:
-  - The hero (WhatsApp bot explanation)
-  - The Trust section ("Why give a WhatsApp bot access to your money?")
+  - The mobile app and quick-entry value proposition
+  - The privacy section explaining that the Sheet stays in the user's Drive
 - Don't click anything yet
 
 ### Frame 3 — Click "Start free" (3 sec)
 - Click the green "התחל חינם" button in the nav (top right)
 - The page scrolls to the signup section
-- The signup section shows 3 buttons: Google, Facebook, Apple
+- The signup section shows the current Google sign-in action
 
 ### Frame 4 — Click Google (2 sec)
 - Click "התחבר עם Google" (the white button with Google logo)
@@ -43,24 +43,24 @@
 - **PAUSE** here for 5 seconds with NO clicks — let them read everything
 - The screen should show:
   - "Kesefle wants access to your Google Account"
-  - 4 scopes listed:
+  - Only the current minimal scopes:
     - See your name, email, profile picture
     - See, edit, create, and delete only the specific Google Drive files you use with this app (drive.file)
-    - **View files in your Google Drive** (drive.readonly) ← Google specifically watches this
-    - See, edit, create, and delete your spreadsheets in Google Drive
+- If `drive.readonly` or a broad standalone `spreadsheets` permission appears,
+  stop the recording and fix the deployed OAuth request before continuing
 - Hover over each scope slowly — show that you understand what each one does
 - **Then** click "Allow"
 
 ### Frame 7 — Account page loads (5 sec)
 - Browser redirects to `https://kesefle.com/account`
-- Page shows the 3-step onboarding:
+- Page shows the current onboarding:
   - ✅ Step 1: Google connected
   - ⏳ Step 2: Create your sheet
-  - ⏳ Step 3: Link WhatsApp
+  - The app remains usable even if the optional WhatsApp channel is unavailable
 
 ### Frame 8 — Create the Sheet (10 sec — CRITICAL)
 - Click "Create your sheet" (Step 2)
-- Page shows loading state: "Copying template..." then "Creating spreadsheet..." then "Done"
+- Page shows the loading state while a fresh spreadsheet is created, then "Done"
 - A new browser tab can open showing the user's NEW Sheet in their Drive
 
 ### Frame 9 — Show the Sheet (10 sec)
@@ -68,17 +68,15 @@
 - Scroll through the 4 tabs (תנועות, הזמנות, מאזן אישי, מאזן חברה)
 - This is the visual proof: a Sheet was created in the user's Drive, no other files touched
 
-### Frame 10 — Back to account, link WhatsApp (10 sec)
+### Frame 10 — Back to the app (10 sec)
 - Switch back to /account tab
-- Click on Step 3 ("Link WhatsApp number")
-- Enter a phone number (use a real one you control)
-- Click "Generate code"
-- Show the 6-digit code displayed
+- Open the app and add one test movement through the quick-entry form
+- Show that the movement appears in the user's Sheet
 
-### Frame 11 — Optional: show the WhatsApp message (15 sec)
-- If you have time, switch to WhatsApp (web or screen mirror)
-- Show sending "קוד 123456" to the Kesefle bot number
-- Show the bot reply: "✅ הקישור הושלם!"
+### Frame 11 — Optional: show WhatsApp linking (15 sec)
+- Only include this frame if the production WABA capability is approved and the
+  account page offers the link flow
+- Make clear this is an optional input channel, not required to use the app
 
 ### Frame 12 — Privacy + Terms (5 sec)
 - Back to browser
@@ -89,7 +87,7 @@
 
 ### Frame 13 — Outro (3 sec)
 - Show the homepage one more time
-- Text overlay: "Kesefle — kesefle.vercel.app — Hebrew WhatsApp expense bot"
+- Text overlay: "Kesefle — kesefle.com — Your money, in one mobile app"
 
 ## Total: ~90 seconds
 
