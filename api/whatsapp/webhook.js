@@ -6,6 +6,9 @@
 //   META_APP_SECRET    — for HMAC signature verification of incoming POSTs
 //   META_PHONE_NUMBER_ID — the WhatsApp phone number ID (for sending replies)
 //   META_ACCESS_TOKEN  — system user access token (for sending replies)
+//   WHATSAPP_RELAY_ENABLED — "1" routes verified Meta deliveries to Apps Script
+//   WHATSAPP_RELAY_URL — Apps Script /exec URL (only used when relay is enabled)
+//   WHATSAPP_RELAY_SECRET — independent HMAC secret shared with Apps Script
 //   KV_REST_API_URL, KV_REST_API_TOKEN — for looking up user-by-phone
 //
 // IMPORTANT: This is the multi-tenant version. Each user's expenses go to THEIR sheet.
@@ -22,21 +25,120 @@ import { recordExpenseActivity } from '../../lib/user-activity.js';
 // different bytes than Meta sent (key ordering, whitespace, escape sequences), failing verification.
 export const config = { api: { bodyParser: false } };
 
+const MAX_RAW_BODY_BYTES = 1_000_000;
+
 async function readRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
-    req.on('data', (chunk) => chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
+    let totalBytes = 0;
+    let settled = false;
+    req.on('data', (chunk) => {
+      if (settled) return;
+      const bytes = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+      totalBytes += bytes.length;
+      if (totalBytes > MAX_RAW_BODY_BYTES) {
+        settled = true;
+        const error = new Error('body too large');
+        error.code = 'body_too_large';
+        reject(error);
+        return;
+      }
+      chunks.push(bytes);
+    });
+    req.on('end', () => {
+      if (!settled) {
+        settled = true;
+        resolve(Buffer.concat(chunks, totalBytes));
+      }
+    });
+    req.on('error', (error) => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    });
   });
 }
 
 function verifyMetaSignature(rawBody, signatureHeader, appSecret) {
   if (!signatureHeader || !signatureHeader.startsWith('sha256=')) return false;
-  const expected = signatureHeader.slice('sha256='.length);
+  const expected = signatureHeader.slice('sha256='.length).toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(expected)) return false;
   const computed = crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex');
-  if (expected.length !== computed.length) return false;
   return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(computed, 'hex'));
+}
+
+const RELAY_KIND = 'kesefle.whatsapp.relay';
+const RELAY_VERSION = 1;
+const RELAY_DOMAIN = 'kesefle-whatsapp-relay-v1';
+const RELAY_TIMEOUT_MS = 15000;
+
+function createRelayEnvelope(rawBody, secret, nowMs = Date.now()) {
+  const ts = Math.trunc(nowMs);
+  const bodyB64 = Buffer.from(rawBody).toString('base64');
+  const canonical = `${RELAY_DOMAIN}\n${ts}\n${bodyB64}`;
+  const mac = crypto.createHmac('sha256', secret).update(canonical, 'utf8').digest('hex');
+  return { kind: RELAY_KIND, v: RELAY_VERSION, ts, bodyB64, mac };
+}
+
+function isAllowedRelayUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password) return false;
+    const hostname = url.hostname.toLowerCase();
+    if (hostname === 'script.google.com') {
+      return /^\/macros\/s\/[^/]+\/exec\/?$/.test(url.pathname);
+    }
+    if (hostname === 'script.googleusercontent.com' || hostname.endsWith('.script.googleusercontent.com')) {
+      return url.pathname === '/macros/echo';
+    }
+    return false;
+  } catch (_e) {
+    return false;
+  }
+}
+
+async function relayToAppsScript(rawBody) {
+  const url = String(process.env.WHATSAPP_RELAY_URL || '').trim();
+  const secret = String(process.env.WHATSAPP_RELAY_SECRET || '');
+  if (!url || !secret || secret.length < 32 || !isAllowedRelayUrl(url)) {
+    log.error('wa.relay.config_invalid', {
+      hasUrl: !!url,
+      hasSecret: !!secret,
+      secretLongEnough: secret.length >= 32,
+      urlAllowed: !!url && isAllowedRelayUrl(url),
+    });
+    return { ok: false, error: 'relay_not_configured' };
+  }
+
+  const envelope = createRelayEnvelope(rawBody, secret);
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(envelope),
+      redirect: 'follow',
+      signal: AbortSignal.timeout(RELAY_TIMEOUT_MS),
+    });
+  } catch (error) {
+    log.error('wa.relay.transport_failed', { error: error?.name || 'relay_transport_error' });
+    return { ok: false, error: 'relay_transport_failed' };
+  }
+
+  if (!isAllowedRelayUrl(response.url)) {
+    log.error('wa.relay.redirect_rejected', { status: response.status });
+    return { ok: false, error: 'relay_redirect_rejected' };
+  }
+  const acknowledgement = await response.text().catch(() => '');
+  if (!response.ok || acknowledgement.trim() !== 'RELAY_OK') {
+    log.error('wa.relay.rejected', {
+      status: response.status,
+      explicitAck: acknowledgement.trim() === 'RELAY_OK',
+    });
+    return { ok: false, error: 'relay_not_acknowledged' };
+  }
+  return { ok: true };
 }
 
 async function kvGet(key) {
@@ -134,6 +236,9 @@ async function handlerImpl(req, res) {
   try {
     rawBody = await readRawBody(req);
   } catch (e) {
+    if (e?.code === 'body_too_large') {
+      return res.status(413).json({ ok: false, error: 'payload_too_large' });
+    }
     return res.status(400).json({ ok: false, error: 'body read failed' });
   }
 
@@ -150,6 +255,19 @@ async function handlerImpl(req, res) {
   const sig = req.headers['x-hub-signature-256'];
   if (!verifyMetaSignature(rawBody, sig, appSecret)) {
     return res.status(401).json({ ok: false, error: 'invalid signature' });
+  }
+
+  // Production cutover path: Meta talks only to this HMAC-verifying endpoint;
+  // Apps Script receives a separate, short-lived signed envelope. Returning a
+  // non-2xx here makes Meta retry, while Apps Script's WAMID dedupe prevents a
+  // successful delivery from being processed twice. The relay is opt-in so the
+  // existing Vercel-native handler remains available during staged rollout.
+  if (process.env.WHATSAPP_RELAY_ENABLED === '1') {
+    const relay = await relayToAppsScript(rawBody);
+    if (!relay.ok) {
+      return res.status(503).json({ ok: false, error: relay.error });
+    }
+    return res.status(200).json({ ok: true, relayed: true });
   }
 
   // 3. Parse the message

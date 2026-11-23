@@ -15,6 +15,7 @@
 <link rel="alternate" hreflang="he-IL" href="https://kesefle.com/account" />
 <link rel="alternate" hreflang="x-default" href="https://kesefle.com/account" />
 <meta name="theme-color" content="#6366F1" />
+<script src="/lib/browser-session.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Rubik:wght@600;700;800;900&display=swap" />
@@ -51,6 +52,7 @@
      replaces these styles when it executes -- this is just a safety net. */
   html, body { background: #ffffff; color: #1e2638; margin: 0; padding: 0; min-height: 100vh; }
   body { font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+  .hidden { display: none !important; }
   /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
   h1, h2, h3 {
     font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
@@ -91,6 +93,19 @@
     box-shadow: 0 20px 50px -25px rgba(16, 185, 129, 0.45);
   }
   #onboarding.is-complete .progress-fill { width: 100% !important; }
+  #step-3.is-current {
+    margin-inline: -0.75rem;
+    padding: 0.75rem;
+    border: 1px solid #c7d2fe;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+    box-shadow: 0 14px 35px -28px rgba(79, 70, 229, 0.8);
+  }
+  #step-3.is-current > span { background: #4f46e5; }
+  html.dark #step-3.is-current {
+    border-color: rgba(129, 140, 248, 0.45);
+    background: rgba(79, 70, 229, 0.12);
+  }
 
   /* Confetti for celebration */
   @keyframes confetti-fall {
@@ -190,7 +205,7 @@
   }
 </style>
 <script src="/lib/analytics.js" defer></script>
-  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="manifest" href="/app.webmanifest">
   <meta name="theme-color" content="#6366F1">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/js/analytics-loader.js" defer></script>
@@ -237,8 +252,8 @@
     <div class="relative flex items-start gap-3 sm:gap-4 min-w-0">
       <div id="banner-icon" class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl sm:text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors">👋</div>
       <div class="flex-1 min-w-0 overflow-hidden">
-        <h1 id="banner-title" class="text-base sm:text-xl font-black text-ink-900 break-words leading-snug">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h1>
-        <p id="banner-subtitle" class="mt-1 text-sm sm:text-base text-slate-700 break-words">פחות מדקה, ואתה מתחיל לעקוב אחרי הכסף שלך — ישר מתוך וואטסאפ.</p>
+        <h1 id="banner-title" class="text-base sm:text-xl font-black text-ink-900 break-words leading-snug">ברוך הבא! מכינים את האפליקציה שלך</h1>
+        <p id="banner-subtitle" class="mt-1 text-sm sm:text-base text-slate-700 break-words">אפשר להתחיל לעקוב אחרי הכסף באפליקציה; WhatsApp יופיע רק כשהוא זמין לחשבון.</p>
 
         <!-- Progress bar showing step completion -->
         <div class="mt-4 flex items-center gap-3">
@@ -260,15 +275,16 @@
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">2</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 font-bold">
-                <span>צור את הגיליון שלך</span>
+                <span id="step-2-title">צור את הגיליון שלך</span>
                 <span class="why-tip">
                   <button type="button" aria-label="למה צריך גישה ל-Drive?">?</button>
                   <span class="why-body">למה צריך הרשאה ל-Google Drive? כדי להעתיק תבנית גיליון לדרייב שלך — הגיליון נשמר אצלך, פרטי, רק שלך. אנחנו לא רואים את הקבצים האחרים שלך.</span>
                 </span>
               </div>
-              <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
-              <!-- Sheet structure preview (what they'll get) -->
-              <div id="sheet-preview" class="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px]">
+              <div id="sheet-provision-controls">
+                <div class="text-sm text-slate-600 mb-2">נעתיק תבנית ל-Google Drive שלך. רק שלך, אצלך.</div>
+                <!-- Sheet structure preview (what they'll get) -->
+                <div id="sheet-preview" class="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px]">
                 <div dir="ltr" class="grid grid-cols-[32px_1fr_62px_56px] sm:grid-cols-[44px_1fr_70px_64px] gap-px border-b border-slate-200 bg-slate-100 text-[9px] font-bold uppercase tracking-wide text-slate-500">
                   <div class="px-1.5 py-1.5 sm:px-2">Date</div>
                   <div class="px-1.5 py-1.5 sm:px-2">Description</div>
@@ -293,51 +309,67 @@
                   <div class="num px-1.5 py-1.5 sm:px-2 text-right text-emerald-600">+₪8,500</div>
                   <div class="px-1.5 py-1.5 sm:px-2">💰 הכנסה</div>
                 </div>
+                </div>
+                <div class="mb-2 text-[11px] text-slate-500">↑ ככה הגיליון שלך ייראה. נוצר אצלך ב-Drive, פרטי, רק שלך.</div>
+                <button onclick="kesefleProvisionSheet()" id="btn-provision" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  צור את הגיליון שלי
+                </button>
+                <!-- Granular live progress steps (shown during provisioning) -->
+                <div id="provision-progress" class="mt-3 hidden space-y-2 rounded-xl border border-emerald-100 bg-white p-3">
+                  <div class="prov-step" id="prov-step-auth"><span class="prov-dot"></span><span>מבקש הרשאה מגוגל…</span></div>
+                  <div class="prov-step" id="prov-step-drive"><span class="prov-dot"></span><span>מתחבר ל-Google Drive…</span></div>
+                  <div class="prov-step" id="prov-step-copy"><span class="prov-dot"></span><span>מעתיק את התבנית לדרייב שלך…</span></div>
+                  <div class="prov-step" id="prov-step-finish"><span class="prov-dot"></span><span>מסיים ומקשר…</span></div>
+                </div>
+                <div id="provision-status" class="mt-2 hidden text-sm"></div>
               </div>
-              <div class="mb-2 text-[11px] text-slate-500">↑ ככה הגיליון שלך ייראה. נוצר אצלך ב-Drive, פרטי, רק שלך.</div>
-              <button onclick="kesefleProvisionSheet()" id="btn-provision" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                צור את הגיליון שלי
-              </button>
-              <!-- Granular live progress steps (shown during provisioning) -->
-              <div id="provision-progress" class="mt-3 hidden space-y-2 rounded-xl border border-emerald-100 bg-white p-3">
-                <div class="prov-step" id="prov-step-auth"><span class="prov-dot"></span><span>מבקש הרשאה מגוגל…</span></div>
-                <div class="prov-step" id="prov-step-drive"><span class="prov-dot"></span><span>מתחבר ל-Google Drive…</span></div>
-                <div class="prov-step" id="prov-step-copy"><span class="prov-dot"></span><span>מעתיק את התבנית לדרייב שלך…</span></div>
-                <div class="prov-step" id="prov-step-finish"><span class="prov-dot"></span><span>מסיים ומקשר…</span></div>
+              <div id="sheet-ready-summary" class="hidden rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                <div class="font-bold">✓ הגיליון שלך כבר מוכן</div>
+                <div class="mt-1 text-xs text-emerald-800">אין צורך ליצור גיליון נוסף. אפשר להוסיף תנועה ראשונה עכשיו ולחבר WhatsApp בהמשך.</div>
+                <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <a id="account-quick-add" href="/expense?from=account-activation" class="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 font-bold text-white hover:bg-emerald-700">הוספת תנועה ראשונה ←</a>
+                  <a id="sheet-ready-link" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[44px] items-center justify-center px-3 font-bold text-emerald-700 underline">פתיחת הגיליון הקיים</a>
+                </div>
               </div>
-              <div id="provision-status" class="mt-2 hidden text-sm"></div>
             </div>
           </li>
           <li class="flex items-start gap-3" id="step-3">
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 font-bold">
-                <span>חבר את מספר הוואטסאפ שלך</span>
+                <span id="step-3-title">חבר את מספר הוואטסאפ שלך</span>
                 <span class="why-tip">
                   <button type="button" aria-label="למה צריך את המספר?">?</button>
-                  <span class="why-body">למה צריך את המספר? כדי שכשתשלח הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
+                  <span class="why-body">למה צריך את המספר? כדי שכשתשלח הודעה בוואטסאפ, נדע איזה חשבון וגיליון לעדכן. המספר נשמר לצורך הניתוב הזה ואינו מוצג למשתמשים אחרים.</span>
                 </span>
               </div>
-              <div class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
+              <div id="step-3-description" class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
+              <div id="whatsapp-availability-note" class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900" role="status" aria-live="polite">
+                <strong class="block">WhatsApp עדיין נפתח בהדרגה לכל החשבונות.</strong>
+                אין צורך לחכות: אפשר <a href="/expense?from=whatsapp-pending" class="inline-flex min-h-[44px] items-center font-bold underline">להוסיף תנועה באפליקציה</a> ולחבר את המספר אחר כך.
+              </div>
 
               <!-- Sub-state A: not yet linked — show phone input + Generate Code button -->
-              <div id="link-state-input">
+              <div id="link-state-input" class="hidden">
                 <div class="flex flex-wrap items-center gap-2">
                   <input
                     id="link-phone-input"
+                    disabled
                     type="tel"
                     inputmode="tel"
                     autocomplete="tel"
                     placeholder="054-123-4567"
                     aria-label="מספר וואטסאפ"
                     dir="ltr"
-                    class="flex-1 min-w-[180px] rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-800 dark:text-white"
+                    class="flex-1 min-h-[44px] min-w-[180px] rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200 dark:border-ink-700 dark:bg-ink-800 dark:text-white"
                   />
                   <button
                     type="button"
                     onclick="kesefleLinkRequestCode()"
                     id="link-gen-btn"
+                    disabled
+                    aria-disabled="true"
                     class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
@@ -385,13 +417,14 @@
                   <div class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-white">✓</div>
                   <div class="min-w-0 flex-1">
                     <div class="font-bold text-emerald-900 dark:text-emerald-200">החיבור הושלם!</div>
-                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.</div>
+                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <bdi id="link-confirmed-phone" dir="ltr" class="font-mono">+972...</bdi> <span id="link-success-instruction">מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.</span></div>
                     <div class="mt-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                      <a id="link-first-expense-wa" href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="kesefleLogFirstExpense()" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
+                      <a id="link-first-expense-wa" href="#" target="_blank" rel="noopener" onclick="return kesefleLogFirstExpense(event)" class="hidden min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
                         שלח הוצאה ראשונה →
                       </a>
-                      <a href="/welcome" class="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">מדריך הפקודות ←</a>
+                      <a id="link-first-expense-web" href="/expense?from=linked-whatsapp-unavailable" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">הוסף תנועה באפליקציה →</a>
+                      <a href="/welcome" class="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">מדריך התחלה ←</a>
                     </div>
                   </div>
                 </div>
@@ -426,8 +459,8 @@
         <div class="text-sm font-semibold text-slate-500">סטטוס</div>
         <div class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-lg ring-1 ring-emerald-100">🟢</div>
       </div>
-      <div class="mt-2 text-3xl font-black text-emerald-600">פעיל</div>
-      <div class="mt-1 text-xs text-slate-500">הבוט מקשיב ומוכן</div>
+      <div id="service-status-title" class="mt-2 text-3xl font-black text-emerald-600">פעיל</div>
+      <div id="service-status-copy" class="mt-1 text-xs text-slate-500">הוספה באפליקציה זמינה</div>
     </div>
   </section>
 
@@ -437,7 +470,7 @@
       <div class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-white shadow-sm">📊</div>
       <div class="min-w-0 flex-1">
         <div class="font-bold">הגיליון שלך מוכן</div>
-        <div class="text-sm text-slate-600">כל הוצאה שתשלח לבוט תופיע כאן.</div>
+        <div class="text-sm text-slate-600">כל תנועה שתוסיף באפליקציה או ב-WhatsApp תופיע כאן.</div>
       </div>
       <a id="sheet-link" href="#" target="_blank" rel="noopener" class="inline-flex min-h-[44px] flex-shrink-0 items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">פתח גיליון →</a>
     </div>
@@ -559,7 +592,10 @@ function kesefleGetUser() {
   } catch { return null; }
 }
 function kesefleSetUser(u) {
-  localStorage.setItem('kesefle_user', JSON.stringify(u));
+  var profile = window.KesefleSession
+    ? window.KesefleSession.sanitizeProfileObject(u)
+    : { version: 2, sub: u && u.sub, email: u && u.email, name: u && u.name, picture: u && u.picture, plan: u && u.plan };
+  localStorage.setItem('kesefle_user', JSON.stringify(profile));
 }
 
 // ── PayPal subscribe (revenue: wires the upgrade button to the already-built
@@ -668,38 +704,143 @@ function _kflGetProgress() {
 function _kflClearProgress() {
   try { localStorage.removeItem('kesefle_signup_progress'); } catch (e) {}
 }
-function kesefleLogout() {
-  // Best-effort server-side clear of the HttpOnly session cookie, then
-  // local cleanup, then redirect. Fire-and-forget the POST -- the
-  // redirect happens whether or not the server reachable.
-  try {
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
-  } catch (e) {}
-  localStorage.removeItem('kesefle_user');
-  localStorage.removeItem('kesefle_sheet');
+async function kesefleLogout() {
+  // Await the cookie clear before navigating; keepalive also lets the request
+  // finish if the browser begins unloading during a slow mobile connection.
+  try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }); }
+  catch (e) {}
+  if (window.KesefleSession) window.KesefleSession.clearAllIdentityStorage();
+  else {
+    localStorage.removeItem('kesefle_user');
+    localStorage.removeItem('kesefle_sheet');
+  }
   window.location.href = '/';
 }
 
 // Progress + celebration helpers
+var kflWabaApproved = false;
+var kflOnboardingCelebrated = false;
+
+function kesefleApplyWhatsAppAvailability(approved) {
+  approved = approved === true;
+  kflWabaApproved = approved;
+  var note = document.getElementById('whatsapp-availability-note');
+  var phoneStep = document.getElementById('step-3');
+  var title = document.getElementById('step-3-title');
+  var description = document.getElementById('step-3-description');
+  var inputState = document.getElementById('link-state-input');
+  var codeState = document.getElementById('link-state-code');
+  var phoneInput = document.getElementById('link-phone-input');
+  var codeButton = document.getElementById('link-gen-btn');
+  var successState = document.getElementById('link-state-success');
+  var successInstruction = document.getElementById('link-success-instruction');
+  var whatsappAction = document.getElementById('link-first-expense-wa');
+  var webAction = document.getElementById('link-first-expense-web');
+  var statusTitle = document.getElementById('service-status-title');
+  var statusCopy = document.getElementById('service-status-copy');
+
+  if (whatsappAction) whatsappAction.classList.toggle('hidden', !approved);
+  if (whatsappAction) whatsappAction.classList.toggle('inline-flex', approved);
+  if (whatsappAction && !approved) whatsappAction.href = '#';
+  if (webAction) webAction.classList.toggle('hidden', approved);
+  if (webAction) webAction.classList.toggle('inline-flex', !approved);
+  if (successInstruction) successInstruction.textContent = approved
+    ? 'מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.'
+    : 'מקושר לחשבון שלך. שירות WhatsApp בהשקה הדרגתית; אפשר להמשיך באפליקציה.';
+
+  if (approved) {
+    if (note) note.classList.add('hidden');
+    if (title) title.textContent = 'חבר את מספר הוואטסאפ שלך';
+    if (description) description.textContent = 'הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.';
+    if (phoneInput) phoneInput.disabled = false;
+    if (codeButton) {
+      codeButton.disabled = false;
+      codeButton.removeAttribute('aria-disabled');
+    }
+    var codeVisible = codeState && !codeState.classList.contains('hidden');
+    var successVisible = successState && !successState.classList.contains('hidden');
+    if (inputState && !codeVisible && !successVisible) inputState.classList.remove('hidden');
+    if (phoneStep && !successVisible) phoneStep.classList.add('is-current');
+    if (statusTitle) statusTitle.textContent = 'האפליקציה ו־WhatsApp פעילים';
+    if (statusCopy) statusCopy.textContent = 'אפשר להוסיף תנועות באפליקציה או דרך הבוט';
+    kesefleUpdateOnboardingProgress();
+    return;
+  }
+
+  if (note) note.classList.remove('hidden');
+  if (phoneStep) phoneStep.classList.remove('is-current');
+  if (title) title.textContent = 'WhatsApp — אופציונלי';
+  if (description) description.textContent = 'החיבור ייפתח בהדרגה ואינו נדרש להפעלת החשבון.';
+  if (inputState) inputState.classList.add('hidden');
+  if (codeState) codeState.classList.add('hidden');
+  if (phoneInput) phoneInput.disabled = true;
+  if (codeButton) {
+    codeButton.disabled = true;
+    codeButton.setAttribute('aria-disabled', 'true');
+  }
+  if (statusTitle) statusTitle.textContent = 'האפליקציה פעילה';
+  if (statusCopy) statusCopy.textContent = 'הוספה באפליקציה זמינה; WhatsApp בהשקה הדרגתית';
+
+  // Invalidate a request that may have started while config was still loading.
+  // Also stop an already-visible code from resurfacing through its TTL/poller.
+  kflLinkRequestGeneration += 1;
+  kflLinkCode = null;
+  kflLinkPhone = null;
+  _kflStopPolling();
+  if (kflLinkTtlTimer) {
+    clearInterval(kflLinkTtlTimer);
+    kflLinkTtlTimer = null;
+  }
+
+  // The config request may resolve before or after account/sheet hydration.
+  // Recompute here so either ordering produces an honest 2-step activation.
+  kesefleUpdateOnboardingProgress();
+}
+
+function kesefleShowExistingSheetStep(sheet) {
+  if (!sheet || !sheet.spreadsheetUrl) return false;
+  var controls = document.getElementById('sheet-provision-controls');
+  var ready = document.getElementById('sheet-ready-summary');
+  var link = document.getElementById('sheet-ready-link');
+  var title = document.getElementById('step-2-title');
+  var next = document.getElementById('step-3');
+  var bannerTitle = document.getElementById('banner-title');
+  var bannerSubtitle = document.getElementById('banner-subtitle');
+  if (controls) controls.classList.add('hidden');
+  if (ready) ready.classList.remove('hidden');
+  if (link) link.href = sheet.spreadsheetUrl;
+  if (title) title.textContent = 'הגיליון שלך מוכן';
+  if (next) {
+    if (kflWabaApproved === true) next.classList.add('is-current');
+    else next.classList.remove('is-current');
+  }
+  if (bannerTitle) bannerTitle.textContent = 'הגיליון מוכן — אפשר להתחיל עכשיו';
+  if (bannerSubtitle) bannerSubtitle.textContent = 'הוסף תנועה ראשונה באפליקציה. את WhatsApp אפשר לחבר גם בהמשך.';
+  return true;
+}
+
 function kesefleUpdateOnboardingProgress() {
   var step1Done = !!kesefleGetUser();
   var sheet = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
   var step2Done = !!(sheet && sheet.spreadsheetUrl);
   var step3Done = localStorage.getItem('kesefle_whatsapp_linked') === '1';
+  var whatsappRequired = kflWabaApproved === true;
+  var totalSteps = whatsappRequired ? 3 : 2;
 
-  var done = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
-  var pct = Math.round((done / 3) * 100);
+  var done = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (whatsappRequired && step3Done ? 1 : 0);
+  var pct = Math.round((done / totalSteps) * 100);
   var bar = document.getElementById('onboarding-progress');
   var label = document.getElementById('progress-label');
   if (bar) bar.style.width = pct + '%';
-  if (label) label.innerHTML = (done >= 3)
+  if (label) label.innerHTML = (done >= totalSteps)
     ? 'הושלם ✓'
-    : 'שלב <span class="num">' + done + '</span> מתוך <span class="num">3</span>';
+    : '<span class="num">' + done + '</span> מתוך <span class="num">' + totalSteps + '</span> הושלמו';
 
   if (step2Done) kesefleMarkStepDone(2);
   if (step3Done) kesefleMarkStepDone(3);
 
-  if (done === 3) kesefleCelebrate();
+  if (done >= totalSteps) kesefleCelebrate();
+  else kesefleRenderOnboardingCompletion(false);
 }
 
 function kesefleMarkStepDone(n) {
@@ -713,17 +854,52 @@ function kesefleMarkStepDone(n) {
   }
 }
 
-function kesefleCelebrate() {
+function kesefleRenderOnboardingCompletion(complete) {
   var banner = document.getElementById('onboarding');
-  if (!banner || banner.classList.contains('is-complete')) return;
-  banner.classList.add('is-complete');
+  if (!banner) return;
+  banner.classList.toggle('is-complete', complete === true);
 
   var icon = document.getElementById('banner-icon');
-  if (icon) { icon.textContent = '🎉'; icon.className = 'grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl transition-colors'; }
   var t = document.getElementById('banner-title');
-  if (t) t.textContent = 'הכל מוכן! כספ\'לה פעיל';
   var s = document.getElementById('banner-subtitle');
-  if (s) s.innerHTML = 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/dashboard" class="font-bold text-emerald-700 underline">לדשבורד שלי ←</a>';
+  if (!complete) {
+    var userReady = false;
+    var sheetReady = false;
+    try { userReady = !!kesefleGetUser(); } catch (_userStateError) {}
+    try {
+      var storedSheet = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
+      sheetReady = !!(userReady && storedSheet && storedSheet.spreadsheetUrl);
+    } catch (_sheetStateError) {}
+    if (icon) { icon.textContent = '👋'; icon.className = 'grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl sm:text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors'; }
+    if (t) t.textContent = !userReady
+      ? 'מתחברים כדי להתחיל'
+      : sheetReady
+        ? (kflWabaApproved === true ? 'הגיליון מוכן — נשאר לחבר WhatsApp' : 'הגיליון מוכן — אפשר להתחיל')
+        : 'נשלים את הגיליון לפני התנועה הראשונה';
+    if (s) s.textContent = !userReady
+      ? 'עדיין לא זוהה חשבון פעיל. מתחברים עם Google לפני יצירת הגיליון והזנת נתונים.'
+      : sheetReady
+        ? (kflWabaApproved === true
+        ? 'אפשר להוסיף תנועה באפליקציה כבר עכשיו, או להשלים את חיבור המספר.'
+        : 'אפשר להתחיל לעקוב אחרי הכסף באפליקציה; WhatsApp יופיע רק כשהוא זמין לחשבון.')
+        : 'החשבון מחובר, אבל עדיין לא נמצא גיליון פעיל. משלימים את ההגדרה בלי לאבד נתונים.';
+    return;
+  }
+
+  if (icon) { icon.textContent = '🎉'; icon.className = 'grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl transition-colors'; }
+  if (t) t.textContent = kflWabaApproved === false ? 'האפליקציה מוכנה — אפשר להתחיל' : 'הכל מוכן! כספ\'לה פעיל';
+  if (s) s.innerHTML = kflWabaApproved === false
+    ? 'הוסף תנועה ראשונה באפליקציה — היא תישמר מיד בגיליון שלך. <a href="/expense?from=activation-complete" class="font-bold text-emerald-700 underline">להוספה מהירה ←</a>'
+    : 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/app" class="font-bold text-emerald-700 underline">לאפליקציה שלי ←</a>';
+}
+
+function kesefleCelebrate() {
+  var banner = document.getElementById('onboarding');
+  if (!banner) return;
+  // Repaint every time because capability can change after account hydration.
+  kesefleRenderOnboardingCompletion(true);
+  if (kflOnboardingCelebrated) return;
+  kflOnboardingCelebrated = true;
 
   // Confetti burst
   var host = document.getElementById('confetti-host');
@@ -762,6 +938,7 @@ var kflLinkPollTimer = null;
 var kflLinkTtlTimer = null;
 var kflLinkPhone = null;
 var kflLinkCode = null;
+var kflLinkRequestGeneration = 0;
 
 // Keep every WhatsApp deep link aligned with the backend configuration. This
 // removes the old split-brain state where the app and the bot used different
@@ -771,12 +948,17 @@ var kflLinkCode = null;
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(c) {
       var n = String(c && c.BOT_NUMBER || '').replace(/\D+/g, '');
-      if (!/^\d{7,15}$/.test(n)) return;
+      var available = !!(c && c.ok === true && c.waba_approved === true && /^[1-9]\d{6,14}$/.test(n));
+      if (!available) {
+        kesefleApplyWhatsAppAvailability(false);
+        return;
+      }
       KESEFLE_BOT_NUMBER = n;
       var first = document.getElementById('link-first-expense-wa');
       if (first) first.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent('245 סופר');
+      kesefleApplyWhatsAppAvailability(true);
     })
-    .catch(function() {});
+    .catch(function() { kesefleApplyWhatsAppAvailability(false); });
 })();
 
 function _kflNormalizeIsraelPhone(input) {
@@ -800,20 +982,45 @@ function _kflNormalizeIsraelPhone(input) {
 function _kflShowLinkError(msg) {
   var el = document.getElementById('link-error');
   if (!el) return;
-  // WHAT + WHY + WHAT TO DO with a Try-again button.
-  var safe = String(msg || 'שגיאה').replace(/</g,'&lt;');
-  el.innerHTML = '<div class="rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-700">' +
-                 '<div class="font-bold">' + safe + '</div>' +
-                 '<div class="mt-1 flex flex-wrap gap-2 items-center">' +
-                 '<button type="button" onclick="kesefleLinkRequestCode()" class="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700">נסה שוב</button>' +
-                 '<details class="text-[11px] text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary>' +
-                 '<div class="mt-1">לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודא שהמספר בפורמט 054-123-4567 ונסה שוב.</div>' +
-                 '</details></div></div>';
+  // Build with DOM APIs so server/network text is always rendered as text.
+  // Entity escaping alone is not sufficient protection for innerHTML sinks.
+  el.replaceChildren();
+  var box = document.createElement('div');
+  box.className = 'rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-700';
+  var title = document.createElement('div');
+  title.className = 'font-bold';
+  title.textContent = String(msg || 'שגיאה');
+  var actions = document.createElement('div');
+  actions.className = 'mt-1 flex flex-wrap gap-2 items-center';
+  var retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700';
+  retry.textContent = 'נסה שוב';
+  retry.addEventListener('click', kesefleLinkRequestCode);
+  var details = document.createElement('details');
+  details.className = 'text-[11px] text-red-700';
+  var summary = document.createElement('summary');
+  summary.className = 'cursor-pointer';
+  summary.textContent = 'מה זה אומר?';
+  var explanation = document.createElement('div');
+  explanation.className = 'mt-1';
+  explanation.textContent = 'לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודא שהמספר בפורמט 054-123-4567 ונסה שוב.';
+  details.append(summary, explanation);
+  actions.append(retry, details);
+  box.append(title, actions);
+  el.appendChild(box);
   el.classList.remove('hidden');
   setTimeout(function() { el.classList.add('hidden'); }, 12000);
 }
 
 function _kflSetLinkState(state) {
+  if (kflWabaApproved === false && (state === 'input' || state === 'code')) {
+    ['input', 'code'].forEach(function(s) {
+      var blocked = document.getElementById('link-state-' + s);
+      if (blocked) blocked.classList.add('hidden');
+    });
+    return;
+  }
   ['input', 'code', 'success'].forEach(function(s) {
     var el = document.getElementById('link-state-' + s);
     if (el) {
@@ -823,9 +1030,26 @@ function _kflSetLinkState(state) {
   });
 }
 
+function _kflPostLinkCodeRequest(phone) {
+  return fetch('/api/whatsapp/link', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ phone: phone }),
+  });
+}
+
 async function kesefleLinkRequestCode() {
+  if (kflWabaApproved === false) {
+    _kflShowLinkError('חיבור WhatsApp עדיין אינו זמין. אפשר להמשיך להשתמש באפליקציה.');
+    return;
+  }
   var input = document.getElementById('link-phone-input');
   var btn = document.getElementById('link-gen-btn');
+  var requestGeneration = ++kflLinkRequestGeneration;
   if (!input) return;
   var phone = _kflNormalizeIsraelPhone(input.value);
   if (!phone) {
@@ -834,26 +1058,14 @@ async function kesefleLinkRequestCode() {
   }
   if (btn) { btn.disabled = true; btn.textContent = '...יוצרת קוד'; }
 
-  // We need the user's access token. The provision flow stores it in window.kfl
-  // or we can grab it fresh via initTokenClient. Simpler path: trigger a fresh
-  // token client request (cached, won't show consent if already granted).
-  var accessToken = null;
   try {
-    accessToken = await _kflGetFreshAccessToken();
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
-    _kflShowLinkError('שגיאת אימות: ' + (e.message || e));
-    return;
-  }
-
-  try {
-    var r = await fetch('/api/whatsapp/link', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: accessToken, phone: phone }),
-    });
+    // Browser clients authenticate only with the hardened host-only session.
+    // A 401 is handled below by restarting sign-in; no Google token is exposed
+    // to or retransmitted by this page.
+    var r = await _kflPostLinkCodeRequest(phone);
+    if (kflWabaApproved === false || requestGeneration !== kflLinkRequestGeneration) return;
     var j = await r.json();
+    if (kflWabaApproved === false || requestGeneration !== kflLinkRequestGeneration) return;
     if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     if (!j.ok) {
       // Auth expired (the link step no longer relies on the ~1h access token,
@@ -867,8 +1079,20 @@ async function kesefleLinkRequestCode() {
         _kflShowLinkError('יותר מדי ניסיונות ברצף. המתיני דקה ונסה שוב.');
         return;
       }
-      if (/phone_already_linked_to_another_account/i.test(j.error || '')) {
+      if (/whatsapp_linking_unavailable/i.test(j.error || '')) {
+        kesefleApplyWhatsAppAvailability(false);
+        return;
+      }
+      if (/phone_change_requires_support/i.test(j.error || '')) {
+        _kflShowLinkError('לחשבון כבר מחובר מספר WhatsApp אחר. כדי להחליף מספר בלי לאבד נתונים, פנה לתמיכה.');
+        return;
+      }
+      if (/phone_already_linked_to_another_account|phone_unavailable/i.test(j.error || '')) {
         _kflShowLinkError('המספר הזה כבר מחובר לחשבון אחר.');
+        return;
+      }
+      if (/verification_storage_unavailable|verification_state_changed|code_generation_unavailable/i.test(j.error || '')) {
+        _kflShowLinkError('האימות לא זמין כרגע. המספר לא קושר — נסה שוב בעוד כמה שניות.');
         return;
       }
       _kflShowLinkError(j.error || 'שגיאה ביצירת קוד');
@@ -885,41 +1109,14 @@ async function kesefleLinkRequestCode() {
     _kflDisplayCode(j.code, j.expiresIn || 600);
     _kflStartPolling(phone);
   } catch (e) {
+    if (kflWabaApproved === false || requestGeneration !== kflLinkRequestGeneration) return;
     if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     _kflShowLinkError('שגיאת רשת: ' + (e.message || e));
   }
 }
 
-async function _kflGetFreshAccessToken() {
-  // Prefer the access token captured during the redirect sign-in — avoids the
-  // GIS popup, which renders blank in incognito/Safari (3rd-party cookies). The
-  // popup below is only a fallback for older non-redirect sessions.
-  try {
-    var su = kesefleGetUser();
-    if (su && su.idToken && String(su.idToken).length > 20) return su.idToken;
-  } catch (e) {}
-  return new Promise(function(resolve, reject) {
-    var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
-    if (!cid || cid.indexOf('__') === 0) return reject(new Error('Google Client ID לא מוגדר'));
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      return reject(new Error('Google SDK טרם נטען. רענן את הדף.'));
-    }
-    var client = window.google.accounts.oauth2.initTokenClient({
-      client_id: cid,
-      scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
-      callback: function(tokenResponse) {
-        if (tokenResponse.error || !tokenResponse.access_token) {
-          return reject(new Error(tokenResponse.error || 'לא קיבלנו אישור'));
-        }
-        resolve(tokenResponse.access_token);
-      }
-    });
-    // No prompt: if user already authorized, returns silently; otherwise shows consent.
-    client.requestAccessToken({ prompt: '' });
-  });
-}
-
 function _kflDisplayCode(code, ttlSec) {
+  if (kflWabaApproved === false) return;
   var display = document.getElementById('link-code-display');
   var inline = document.getElementById('link-code-inline');
   var waLink = document.getElementById('link-wa-deeplink');
@@ -940,6 +1137,12 @@ function _kflDisplayCode(code, ttlSec) {
   // TTL countdown
   var remaining = ttlSec;
   function tickTtl() {
+    if (kflWabaApproved === false) {
+      if (kflLinkTtlTimer) clearInterval(kflLinkTtlTimer);
+      kflLinkTtlTimer = null;
+      _kflStopPolling();
+      return;
+    }
     if (remaining <= 0) {
       if (ttlEl) ttlEl.textContent = '00:00';
       _kflShowLinkError('הקוד פג תוקף — צור קוד חדש');
@@ -965,6 +1168,10 @@ function _kflDisplayCode(code, ttlSec) {
 // if JS is disabled. The href is the universal https://wa.me/ form, set in
 // _kflDisplayCode. Polling continues from the bg tab when the user returns.
 function kesefleOpenWhatsAppLink(a, ev) {
+  if (kflWabaApproved !== true) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    return false;
+  }
   try {
     var url = (a && (a.getAttribute('data-wa-url') || a.href)) || '';
     if (!url || url.charAt(url.length - 1) === '#') return true; // nothing to open yet
@@ -986,18 +1193,21 @@ function kesefleOpenWhatsAppLink(a, ev) {
 // have to count every KV command this week.
 function _kflStartPolling(phone) {
   _kflStopPolling();
+  if (kflWabaApproved === false) return;
   var startedAt = Date.now();
   var POLL_FAST_MS = 6000;   // 6s for the first 30s (was 4s -> ~50% fewer commands)
   var POLL_SLOW_MS = 15000;  // 15s after that
   var POLL_MAX_MS = 10 * 60 * 1000; // poll the full code TTL (link.js EX=600s); the visibility guard pauses when the tab is hidden, so this stays KV-cheap
 
   function tick() {
+    if (kflWabaApproved === false) { _kflStopPolling(); return; }
     var elapsed = Date.now() - startedAt;
     if (elapsed > POLL_MAX_MS) { _kflStopPolling(); var _ws = document.getElementById('link-waiting-status'); if (_ws) _ws.textContent = 'אם שלחת ולא קרה כלום — רענן את הדף או צור קוד חדש.'; return; }
     var nextDelay = elapsed < 30000 ? POLL_FAST_MS : POLL_SLOW_MS;
     fetch('/api/whatsapp/link?check=1', { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (j) {
+        if (kflWabaApproved === false) { _kflStopPolling(); return; }
         if (j && j.ok && j.linked) {
           _kflStopPolling();
           if (kflLinkTtlTimer) { clearInterval(kflLinkTtlTimer); kflLinkTtlTimer = null; }
@@ -1007,6 +1217,7 @@ function _kflStartPolling(phone) {
         kflLinkPollTimer = setTimeout(tick, nextDelay);
       })
       .catch(function () {
+        if (kflWabaApproved === false) { _kflStopPolling(); return; }
         // Network blip -- keep polling at the slow cadence so we don't hammer.
         kflLinkPollTimer = setTimeout(tick, POLL_SLOW_MS);
       });
@@ -1066,7 +1277,11 @@ function _kflShowLinkSuccess(phone) {
 
 // Fired when the user taps the post-link "send first expense" CTA. Logs the
 // funnel step (no PII) and lets the native wa.me navigation proceed.
-function kesefleLogFirstExpense() {
+function kesefleLogFirstExpense(ev) {
+  if (kflWabaApproved !== true) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    return false;
+  }
   try {
     fetch('/api/log/funnel-event', {
       method: 'POST', credentials: 'include',
@@ -1075,6 +1290,7 @@ function kesefleLogFirstExpense() {
       keepalive: true,
     }).catch(function () {});
   } catch (_e) {}
+  return true;
 }
 
 function kesefleLinkResetState() {
@@ -1140,7 +1356,7 @@ function kesefleLinkResetState() {
 
 // ============ REFERRAL CODE PICKUP ============
 // Read ?ref=<code> (or sessionStorage from /referral landing) and remember it.
-// On first successful signup (kesefle_user with idToken present), POST it to /api/referral?action=redeem.
+// After a successful signup, redeem through the verified HttpOnly session.
 
 function kesefleReadReferralCode() {
   try {
@@ -1180,6 +1396,36 @@ function kesefleCapturePlanSelection() {
 }
 try { kesefleCapturePlanSelection(); } catch (e) {}
 
+// Preserve an auth return target across the Google redirect without allowing
+// arbitrary/open redirects. Only exact same-origin application routes are
+// accepted; the value is consumed once after a successful session exchange.
+function _kflSafeAuthNext(raw) {
+  var allowed = {
+    '/admin': true,
+    '/admin-os': true,
+    '/admin/monitor': true,
+    '/admin/launch-monitor': true,
+    '/app': true,
+    '/dashboard': true,
+  };
+  var value = String(raw || '').trim();
+  return allowed[value] ? value : null;
+}
+function _kflCaptureAuthNext() {
+  try {
+    var value = _kflSafeAuthNext(new URLSearchParams(window.location.search).get('next'));
+    if (value) sessionStorage.setItem('kfl_auth_next', value);
+  } catch (_e) {}
+}
+function _kflConsumeAuthNext() {
+  try {
+    var value = _kflSafeAuthNext(sessionStorage.getItem('kfl_auth_next'));
+    sessionStorage.removeItem('kfl_auth_next');
+    return value;
+  } catch (_e) { return null; }
+}
+_kflCaptureAuthNext();
+
 function kesefleShowInvitedChip(ref) {
   if (!ref || !ref.code) return;
   var banner = document.getElementById('ref-banner');
@@ -1202,16 +1448,11 @@ async function kesefleRedeemReferralIfPending() {
   var ref = kesefleReadReferralCode();
   if (!ref.code) return;
 
-  var u = kesefleGetUser();
-  if (!u || !u.idToken) return;  // need fresh login
-
   try {
     var r = await fetch('/api/referral?action=redeem', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + u.idToken,
-        'Content-Type': 'application/json',
-      },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: ref.code }),
     });
     var j = await r.json();
@@ -1504,6 +1745,18 @@ async function _kflPkce() {
   var digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
   return { verifier: verifier, challenge: _kflB64Url(digest) };
 }
+var KFL_PKCE_MAX_AGE_MS = 10 * 60 * 1000;
+function _kflClearPkce(state) {
+  try {
+    if (state) {
+      sessionStorage.removeItem('kfl_pkce_verifier_' + state);
+      sessionStorage.removeItem('kfl_pkce_started_' + state);
+    }
+    sessionStorage.removeItem('kfl_pkce_verifier');
+    sessionStorage.removeItem('kfl_pkce_started_at');
+    sessionStorage.removeItem('kfl_oauth_state');
+  } catch (_e) {}
+}
 
 async function kesefleStartRedirectSignin() {
   try { _kflFunnel('google_clicked', { browser: kesefleIsInAppBrowser() ? 'inapp' : 'standard' }); } catch (e) {}
@@ -1519,7 +1772,9 @@ async function kesefleStartRedirectSignin() {
     // The single-key fallback is kept for the legacy in-flight redirect on
     // OLDER clients that completed the redirect before this code shipped.
     sessionStorage.setItem('kfl_pkce_verifier_' + state, pk.verifier);
+    sessionStorage.setItem('kfl_pkce_started_' + state, String(Date.now()));
     sessionStorage.setItem('kfl_pkce_verifier', pk.verifier);
+    sessionStorage.setItem('kfl_pkce_started_at', String(Date.now()));
     sessionStorage.setItem('kfl_oauth_state', state);
     var redirectUri = window.location.origin + '/account';
     var params = new URLSearchParams({
@@ -1550,22 +1805,30 @@ async function kesefleHandleOAuthReturn(code, state) {
   // provision calls will fight 3rd-party cookie + WebView fights. Surface
   // the "open in Safari" card instead of looping through the error path.
   if (kesefleIsInAppBrowser()) { _kflLogMissedInApp('oauth_return_in_app'); kesefleShowInAppBrowserHelp(); return; }
-  var savedState = null, verifier = null;
+  var savedState = null, verifier = null, startedAt = 0;
   try {
     // Prefer the state-namespaced verifier (per-tab) so two parallel sign-ins
     // don't poison each other. Fall back to the legacy single-key slot for
     // in-flight redirects from an older client build.
     verifier = sessionStorage.getItem('kfl_pkce_verifier_' + state)
             || sessionStorage.getItem('kfl_pkce_verifier');
+    startedAt = Number(sessionStorage.getItem('kfl_pkce_started_' + state)
+            || sessionStorage.getItem('kfl_pkce_started_at') || 0);
     savedState = sessionStorage.getItem('kfl_oauth_state');
   } catch (e) {}
   var cleanUrl = window.location.origin + '/account';
   // Strip the single-use code from the URL immediately (refresh-safe).
   try { window.history.replaceState({}, document.title, cleanUrl); } catch (e) {}
-  if (!verifier || !savedState || savedState !== state) {
+  var pkceAge = Date.now() - startedAt;
+  if (!verifier || !savedState || savedState !== state || !startedAt
+      || pkceAge < -60000 || pkceAge > KFL_PKCE_MAX_AGE_MS) {
+    _kflClearPkce(state);
     kesefleShowSigninError('פג תוקף בקשת ההתחברות. נסה שוב.');
     return;
   }
+  // The verifier is now in function memory only. Consume every persistent
+  // copy before the network request so refresh/replay cannot reuse it.
+  _kflClearPkce(state);
   kesefleShowConnecting();
   try {
     var r = await fetch('/api/auth/google-exchange', {
@@ -1574,12 +1837,6 @@ async function kesefleHandleOAuthReturn(code, state) {
     });
     var j = await r.json();
     if (!r.ok || !j.ok) throw new Error((j && (j.detail || j.error)) || ('HTTP ' + r.status));
-    try {
-      sessionStorage.removeItem('kfl_pkce_verifier_' + state);
-      sessionStorage.removeItem('kfl_pkce_verifier');
-      sessionStorage.removeItem('kfl_oauth_state');
-    } catch (e) {}
-
     // Provision the user's sheet -- with auto-retry on transient failure.
     // Paid-traffic launch context: every drop-off costs ~€2-5 in ad spend.
     // We retry up to 3 times with exponential backoff (0.5s, 1.5s, 3.5s)
@@ -1637,7 +1894,9 @@ async function kesefleHandleOAuthReturn(code, state) {
       kesefleShowProvisionError(provisionError);
       return;
     }
-    window.location.reload();
+    var authNext = _kflConsumeAuthNext();
+    if (authNext) window.location.href = authNext;
+    else window.location.reload();
   } catch (e) {
     kesefleShowSigninError(e.message || String(e));
   }
@@ -1690,7 +1949,9 @@ async function kesefleRetryProvision() {
     var pj = await pr.json().catch(function () { return {}; });
     if (pj && pj.ok) {
       try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: pj.spreadsheetId, spreadsheetUrl: pj.spreadsheetUrl })); } catch (e) {}
-      window.location.reload();
+      var authNext = _kflConsumeAuthNext();
+      if (authNext) window.location.href = authNext;
+      else window.location.reload();
     } else {
       kesefleShowProvisionError((pj && (pj.detail || pj.error)) || ('HTTP ' + pr.status));
     }
@@ -1763,7 +2024,7 @@ function kesefleShowSigninPrompt() {
   if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
 
   // RETURNING-USER FAST PATH (Steven 2026-05-25; gated 2026-05-31):
-  // Send a user straight to their dashboard ONLY when onboarding is fully
+  // Send a user straight to the mobile app ONLY when onboarding is fully
   // done — i.e. they have BOTH a provisioned sheet AND a linked WhatsApp
   // number. The old code redirected as soon as a sheet existed, which
   // dumped a half-onboarded user (sheet created, phone NOT yet connected)
@@ -1773,15 +2034,15 @@ function kesefleShowSigninPrompt() {
   // expose link status, so we read the local flag. A user who cleared
   // storage simply falls through to the guided flow and re-links — never
   // trapped on the dashboard.
-  // Skipped when ?force=signin is on the URL (lets us re-link intentionally).
-  if (!_q.get('force')) {
+  // Skipped when ?force_signin=1 is on the URL (lets us re-link intentionally).
+  if (!_q.get('force') && _q.get('force_signin') !== '1') {
     try {
       var meResp = await fetch('/api/me', { credentials: 'include' });
       if (meResp.ok) {
         var meJson = await meResp.json();
         if (meJson && meJson.ok && meJson.user && meJson.sheet && meJson.sheet.spreadsheetUrl) {
           // Hydrate localStorage in case the dashboard reads it on first paint.
-          try { localStorage.setItem('kesefle_user', JSON.stringify(meJson.user)); } catch (_) {}
+          try { kesefleSetUser(meJson.user); } catch (_) {}
           try { localStorage.setItem('kesefle_sheet', JSON.stringify(meJson.sheet)); } catch (_) {}
           var waLinked = false;
           try {
@@ -1794,7 +2055,9 @@ function kesefleShowSigninPrompt() {
             }
           } catch (_) {}
           if (waLinked) {
-            window.location.href = '/dashboard';
+            // /app is the capability-aware surface. The legacy dashboard still
+            // contains WhatsApp-first copy and must not be the automatic path.
+            window.location.href = '/app';
             return;
           }
           // Sheet exists but WhatsApp not yet linked -> stay here and guide the
@@ -1846,6 +2109,7 @@ function kesefleShowSigninPrompt() {
     if (s && s.spreadsheetUrl) {
       var sl = document.getElementById('sheet-link'); if (sl) sl.href = s.spreadsheetUrl;
       var ls = document.getElementById('linked-sheet'); if (ls) ls.classList.remove('hidden');
+      kesefleShowExistingSheetStep(s);
       // Existing-user re-provision card lives next to the linked-sheet card.
       var rc = document.getElementById('reprovision-card'); if (rc) rc.classList.remove('hidden');
     }
@@ -2389,18 +2653,17 @@ async function kesefleProvisionSheet() {
           localStorage.setItem('kesefle_sheet', JSON.stringify(j));
           document.getElementById('sheet-link').href = j.spreadsheetUrl;
           document.getElementById('linked-sheet').classList.remove('hidden');
-          status.className = 'mt-2 text-sm font-bold text-emerald-700';
-          status.innerHTML = '✓ הגיליון מוכן! מעבירה אותך למסך הברוך הבא…';
-          status.classList.remove('hidden');
-          btn.style.display = 'none';
+          kesefleShowExistingSheetStep(j);
           if (window.kfl) window.kfl.track('sheet_provisioned', { plan: u.plan || 'free' });
           kesefleUpdateOnboardingProgress();
-          // First-time success — guide user to /welcome to learn the bot commands.
-          // Skip redirect if user is re-provisioning (sheet was already linked before this run).
-          var alreadySeenWelcome = sessionStorage.getItem('kfl_welcome_seen') === '1';
-          if (!alreadySeenWelcome) {
-            setTimeout(function() { window.location.href = '/welcome'; }, 1500);
-          }
+          // Keep activation on one page: the user can record a first movement
+          // immediately in the app, while WhatsApp linking remains optional.
+          setTimeout(function() {
+            var quickAdd = document.getElementById('account-quick-add');
+            if (quickAdd) quickAdd.focus({ preventScroll: true });
+            var step = document.getElementById('step-2');
+            if (step) step.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 250);
         } else {
           if (prog) prog.classList.add('hidden');
           status.className = 'mt-2 text-sm text-red-700 break-words bg-red-50 border border-red-200 rounded-xl p-3';

@@ -18,10 +18,10 @@
 // tests/test_morning_nudge_cron.js + bot/test_isolation.js): we read the REAL
 // source files as text, balanced-brace-extract the handler + its file-local
 // helpers, and materialise them with `new Function`, injecting their free
-// identifiers as mocks. The REAL `kvGet/kvSet/kvSetNX/kvDel` helpers run
-// UNMODIFIED against a shared in-memory KV via a mocked global.fetch (exactly
-// how the cron suites emulate Upstash) -- so the atomic-claim (SETNX), TTL, and
-// delete semantics are the production ones, not re-implementations. The only
+// identifiers as mocks. The REAL KV helpers run unmodified against a shared
+// in-memory KV via a mocked global.fetch. The fake models the two production
+// Lua state machines as indivisible calls so collision, replay, supersession,
+// and ownership semantics are exercised. The only
 // things stubbed are the genuine EXTERNAL boundaries that a unit test cannot
 // reach: the session-cookie verifier (getUserId/requireUser), the rate-limit
 // wrappers (always-allow), the Sheets writer, token decrypt/refresh, and the
@@ -66,15 +66,16 @@ function extractFn(src, name) {
 
 // ────────────────────────────────────────────────────────────────────────────
 // Shared in-memory KV + mocked global.fetch emulating Upstash REST + the three
-// external HTTP boundaries the handlers may touch (Google tokeninfo, Meta send,
-// Google Sheets read). One world per scenario => zero cross-test contamination.
+// external HTTP boundaries the handlers may touch (Google tokeninfo and Google
+// Sheets read). One world per scenario => zero cross-test contamination.
 // ────────────────────────────────────────────────────────────────────────────
 function makeWorld() {
   const store = new Map();           // KV: key -> raw JSON string (as Upstash stores it)
   const sheetWrites = [];            // every appendRowToUserSheet call (sheet writer stub)
   const sheetRows = new Map();       // spreadsheetId -> array-of-rows the Sheets read returns
-  const sentWhatsApp = [];           // Meta graph sends
   const tokeninfo = new Map();       // access token -> { sub } (Google tokeninfo stub)
+  const failOnce = new Set();        // exact "op:key" KV operations that fail once
+  const kvOps = [];                  // observed KV operations + query modifiers
 
   // Upstash REST shape: /get/<key>, /set/<key>[?EX=..|?NX=true], /del/<key>.
   // Mirrors makeWorld() in tests/test_morning_nudge_cron.js.
@@ -90,13 +91,6 @@ function makeWorld() {
       return { ok: true, status: 200, json: async () => info };
     }
 
-    // --- Meta WhatsApp send (sendWelcomeWhatsApp in link.js) ---
-    if (url.includes('graph.facebook.com')) {
-      const b = opts.body ? JSON.parse(opts.body) : {};
-      sentWhatsApp.push({ to: b.to, body: b.text && b.text.body });
-      return { ok: true, status: 200, json: async () => ({ messages: [{ id: 'wamid.welcome' }] }), text: async () => '' };
-    }
-
     // --- Google Sheets values read (fetchSheetRange in getExpenses.js) ---
     if (url.includes('sheets.googleapis.com')) {
       // .../spreadsheets/<id>/values/<range>
@@ -109,9 +103,112 @@ function makeWorld() {
 
     // --- Upstash KV ---
     const u = new URL(url);
+    if (u.pathname === '/' && opts.method === 'POST') {
+      const command = JSON.parse(opts.body || '[]');
+      if (command[0] !== 'EVAL') throw new Error('unexpected root command: ' + command[0]);
+      const script = String(command[1] || '');
+      const keyCount = Number(command[2]);
+      const keys = command.slice(3, 3 + keyCount);
+      const args = command.slice(3 + keyCount);
+      const kind = script.includes('KESEFLE_MINT_LINK_V2') ? 'mint'
+        : script.includes('KESEFLE_CONFIRM_LINK_V2') ? 'confirm' : 'unknown';
+      kvOps.push({ op: 'eval', key: kind, query: '' });
+      const failureKey = 'eval:' + kind;
+      if (failOnce.has(failureKey)) {
+        failOnce.delete(failureKey);
+        return { ok: false, status: 503, json: async () => ({ error: 'simulated_eval_failure' }) };
+      }
+
+      // Model each Lua script as one synchronous, indivisible transition.
+      if (kind === 'mint') {
+        if (store.has(keys[0])) {
+          return { ok: true, status: 200, json: async () => ({ result: 'collision' }) };
+        }
+        store.set(keys[0], args[0]);
+        store.set(keys[1], args[1]);
+        return { ok: true, status: 200, json: async () => ({ result: 'stored' }) };
+      }
+      if (kind === 'confirm') {
+        const normalizePhone = (raw) => {
+          let value = String(raw || '').replace(/\D+/g, '');
+          while (value.startsWith('972972')) value = value.slice(3);
+          if (value.startsWith('9720')) value = '972' + value.slice(4);
+          if (value.startsWith('0')) value = '972' + value.slice(1);
+          if (/^5\d{8}$/.test(value)) value = '972' + value;
+          return value;
+        };
+        const parse = (key) => {
+          if (!store.has(key)) return null;
+          try { return JSON.parse(store.get(key)); } catch (_e) { return false; }
+        };
+        const challenge = parse(keys[0]);
+        if (challenge === null) return { ok: true, status: 200, json: async () => ({ result: 'expired' }) };
+        if (!challenge) return { ok: true, status: 200, json: async () => ({ result: 'invalid_state' }) };
+        if (challenge.state === 'confirmed') {
+          const replayPhone = parse(keys[2]);
+          const replayReverse = parse(keys[3]);
+          const replaySheet = parse(keys[4]);
+          const replayUser = parse(keys[5]);
+          const result = challenge.userSub === args[0] && challenge.phone === args[1]
+            && challenge.attemptId === args[2]
+            && replayPhone && replayPhone.userSub === args[0]
+            && replayReverse && replayReverse.phone === args[1]
+            && replaySheet && replayUser
+            && String(replayPhone.spreadsheetId || '') === String(replaySheet.spreadsheetId || '')
+            ? 'replayed' : 'invalid_state';
+          return { ok: true, status: 200, json: async () => ({ result }) };
+        }
+        if (challenge.state !== 'pending' || challenge.userSub !== args[0]
+          || challenge.phone !== args[1] || challenge.attemptId !== args[2]) {
+          return { ok: true, status: 200, json: async () => ({ result: 'invalid_state' }) };
+        }
+        const active = parse(keys[1]);
+        if (!active || active.userSub !== args[0] || active.phone !== args[1]
+          || active.attemptId !== args[2] || active.code !== args[2]) {
+          return { ok: true, status: 200, json: async () => ({ result: 'superseded' }) };
+        }
+        const existingPhone = parse(keys[2]);
+        if (existingPhone === false) return { ok: true, status: 200, json: async () => ({ result: 'invalid_state' }) };
+        if (existingPhone && existingPhone.userSub !== args[0]) {
+          return { ok: true, status: 200, json: async () => ({ result: 'phone_unavailable' }) };
+        }
+        const existingReverse = parse(keys[3]);
+        if (existingReverse === false) return { ok: true, status: 200, json: async () => ({ result: 'invalid_state' }) };
+        if (existingReverse && existingReverse.phone && existingReverse.phone !== args[1]) {
+          return { ok: true, status: 200, json: async () => ({ result: 'phone_change_blocked' }) };
+        }
+        const sheet = parse(keys[4]);
+        const user = parse(keys[5]);
+        if (!sheet || !user || String(sheet.spreadsheetId || '') !== args[3]) {
+          return { ok: true, status: 200, json: async () => ({ result: 'account_not_ready' }) };
+        }
+        const legacyPhone = [user.phoneE164, user.linkedPhone, user.phone]
+          .map(normalizePhone)
+          .find(Boolean) || '';
+        if (legacyPhone && legacyPhone !== args[1]) {
+          return { ok: true, status: 200, json: async () => ({ result: 'phone_change_blocked' }) };
+        }
+        store.set(keys[2], args[4]);
+        store.set(keys[3], args[5]);
+        store.delete(keys[1]);
+        store.set(keys[0], args[6]);
+        if (failOnce.has('eval_after:confirm')) {
+          failOnce.delete('eval_after:confirm');
+          return { ok: false, status: 503, json: async () => ({ error: 'simulated_lost_response' }) };
+        }
+        return { ok: true, status: 200, json: async () => ({ result: 'linked' }) };
+      }
+      throw new Error('unmocked eval script');
+    }
     const parts = u.pathname.split('/').filter(Boolean);
     const op = parts[0];
     const key = decodeURIComponent(parts.slice(1).join('/'));
+    kvOps.push({ op, key, query: u.search });
+    const failureKey = op + ':' + key;
+    if (failOnce.has(failureKey)) {
+      failOnce.delete(failureKey);
+      return { ok: false, status: 503, json: async () => ({ error: 'simulated_kv_failure' }) };
+    }
     if (op === 'get') {
       const v = store.has(key) ? store.get(key) : null;
       return { ok: true, status: 200, json: async () => ({ result: v }) };
@@ -129,7 +226,8 @@ function makeWorld() {
     throw new Error('unmocked fetch: ' + url);
   };
 
-  return { store, sheetWrites, sheetRows, sentWhatsApp, tokeninfo,
+  return { store, sheetWrites, sheetRows, tokeninfo, failOnce, kvOps,
+    failNext(op, key) { failOnce.add(op + ':' + key); },
     kvObj(key) { return store.has(key) ? JSON.parse(store.get(key)) : null; },
     kvKeys() { return [...store.keys()]; } };
 }
@@ -150,7 +248,7 @@ function mkRes() {
 // `log` is a no-op sink. rateLimit/rateLimitId always allow (the dedicated
 // rate-limit suites already cover those paths). constantTimeEqual is a faithful
 // constant-shape equality. computeEntitlement is irrelevant to routing here.
-function makeStubs(world, { sessionSub = null } = {}) {
+function makeStubs(world, { sessionSub = null, cryptoOverride = null } = {}) {
   const log = { info() {}, warn() {}, error() {}, debug() {} };
   const rateLimit = async () => ({ ok: true });
   const rateLimitId = async () => ({ ok: true, count: 1 });
@@ -186,7 +284,8 @@ function makeStubs(world, { sessionSub = null } = {}) {
   };
   return { log, rateLimit, rateLimitId, constantTimeEqual, computeEntitlement,
     getUserId, requireUser, appendRowToUserSheet, buildExpenseRow,
-    recordExpenseActivity, decryptRefreshToken, exchangeRefreshForAccess, __mi };
+    recordExpenseActivity, decryptRefreshToken, exchangeRefreshForAccess, __mi,
+    crypto: cryptoOverride || globalThis.crypto };
 }
 
 // Rewrite the literal `await import('.../<lib>.js')` calls to `await __mi('<lib>')`
@@ -209,21 +308,23 @@ function buildLinkHandler(stubs) {
   const src = redirectDynamicImports(LINK_SRC);
   const body =
     KV_ENV +
-    extractFn(src, 'sendWelcomeWhatsApp') + '\n' +
     extractFn(src, 'verifyAccessToken') + '\n' +
+    extractFn(src, 'isSameOriginRequest') + '\n' +
     extractFn(src, 'kvGet') + '\n' +
+    extractFn(src, 'kvGetStrict') + '\n' +
     extractFn(src, 'kvSet') + '\n' +
-    extractFn(src, 'kvSetNX') + '\n' +
-    extractFn(src, 'kvDel') + '\n' +
+    extractFn(src, 'kvEval') + '\n' +
+    extractFn(src, 'mintLinkChallengeAtomic') + '\n' +
+    extractFn(src, 'confirmLinkChallengeAtomic') + '\n' +
     extractFn(src, 'normalizeE164') + '\n' +
     extractFn(src, 'getVerifiedPhoneForUser') + '\n' +
     extractFn(src, 'gen6DigitCode') + '\n' +
     extractFn(src, 'handlerImpl') + '\n' +
     'return handlerImpl;';
   return new Function(
-    'log', 'rateLimit', 'computeEntitlement', 'getUserId', 'constantTimeEqual', '__mi', 'crypto',
+    'log', 'rateLimit', 'rateLimitId', 'computeEntitlement', 'getUserId', 'constantTimeEqual', '__mi', 'crypto',
     body
-  )(stubs.log, stubs.rateLimit, stubs.computeEntitlement, stubs.getUserId, stubs.constantTimeEqual, stubs.__mi, globalThis.crypto);
+  )(stubs.log, stubs.rateLimit, stubs.rateLimitId, stubs.computeEntitlement, stubs.getUserId, stubs.constantTimeEqual, stubs.__mi, stubs.crypto);
 }
 
 function buildAppendHandler(stubs) {
@@ -264,8 +365,11 @@ function buildGetExpensesHandler(stubs) {
 }
 
 // ── Convenience request builders ─────────────────────────────────────────────
-function reqMintPOST(body) {
-  return { method: 'POST', query: {}, headers: {}, body, reqId: 't', socket: {} };
+function reqMintPOST(body, { origin = 'https://kesefle.com', host = 'kesefle.com' } = {}) {
+  const headers = {};
+  if (origin !== null) headers.origin = origin;
+  if (host !== null) headers.host = host;
+  return { method: 'POST', query: {}, headers, body, reqId: 't', socket: {} };
 }
 function reqConfirmPOST(body, botSecret) {
   const headers = {};
@@ -296,17 +400,24 @@ function seedUser(world, sub, { email, sheetId } = {}) {
   }));
 }
 
+function seedChallenge(world, code, sub, phone) {
+  const createdAt = new Date().toISOString();
+  world.store.set('linkCode:' + code, JSON.stringify({
+    schemaVersion: 2, state: 'pending', attemptId: code,
+    userSub: sub, phone, createdAt,
+  }));
+  world.store.set('activeLink:' + sub, JSON.stringify({
+    schemaVersion: 2, attemptId: code, code,
+    userSub: sub, phone, createdAt,
+  }));
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // 1. HAPPY PATH — full new-user chain, end to end.
 // ════════════════════════════════════════════════════════════════════════════
 async function happyPath() {
   console.log('\n=== 1. HAPPY PATH (sign-in -> mint -> confirm -> append -> getExpenses) ===\n');
   process.env.KESEFLE_BOT_SECRET = BOT_SECRET;
-  // The welcome-WhatsApp send (sendWelcomeWhatsApp) requires Meta creds AND is
-  // fire-and-forget; set the creds so it reaches our mocked graph endpoint, and
-  // we drain the event loop after confirm so the un-awaited promise resolves.
-  process.env.META_ACCESS_TOKEN = 'meta-tok';
-  process.env.META_PHONE_NUMBER_ID = '100';
   const world = makeWorld();
   const SUB = 'google:newuser-1';
   const PHONE = '972501112222';
@@ -322,6 +433,9 @@ async function happyPath() {
   const code = mintRes._json.code;
   ok('mint: linkCode:<code> stored with userSub binding', (world.kvObj('linkCode:' + code) || {}).userSub === SUB);
   ok('mint: code bound to the entered phone', (world.kvObj('linkCode:' + code) || {}).phone === PHONE);
+  ok('mint: code + active-attempt pointer are stored in one atomic transition',
+    world.kvOps.some(op => op.op === 'eval' && op.key === 'mint')
+      && world.kvObj('activeLink:' + SUB)?.code === code);
   ok('mint: phone NOT yet linked (no phone:<E164> until confirm)', world.kvObj('phone:' + PHONE) === null);
 
   // (b) Bot confirms with the code (bot-secret authed).
@@ -329,11 +443,15 @@ async function happyPath() {
   const confRes = mkRes();
   await confirmHandler(reqConfirmPOST({ code, phone: PHONE }, BOT_SECRET), confRes);
   ok('confirm: 200', confRes._status === 200, confRes._status);
-  ok('confirm: resolves to the right userSub', confRes._json && confRes._json.userSub === SUB, confRes._json && confRes._json.userSub);
+  ok('confirm: response is minimal and exposes no account/sheet data',
+    JSON.stringify(confRes._json) === JSON.stringify({ ok: true, status: 'linked', replayed: false }), JSON.stringify(confRes._json));
   ok('confirm: writes phone:<E164> -> userSub permanently', (world.kvObj('phone:' + PHONE) || {}).userSub === SUB);
   ok('confirm: phone record carries the canonical sheet id', (world.kvObj('phone:' + PHONE) || {}).spreadsheetId === SHEET);
+  ok('confirm: phone record identifies inbound-WhatsApp verification',
+    (world.kvObj('phone:' + PHONE) || {}).verificationMethod === 'whatsapp_inbound_code');
   ok('confirm: reverse userPhone:<sub> mapping written', (world.kvObj('userPhone:' + SUB) || {}).phone === PHONE);
-  ok('confirm: linkCode consumed (single-use)', world.kvObj('linkCode:' + code) === null);
+  ok('confirm: pending code becomes a replay-safe confirmed receipt', world.kvObj('linkCode:' + code)?.state === 'confirmed');
+  ok('confirm: active-attempt pointer is cleared after commit', world.kvObj('activeLink:' + SUB) === null);
   // The browser's signed-in status check must verify the reverse and forward
   // records together and return the canonical phone to this same customer.
   const statusHandler = buildLinkHandler(makeStubs(world, { sessionSub: SUB }));
@@ -341,9 +459,16 @@ async function happyPath() {
   await statusHandler({ method: 'GET', query: { check: '1' }, headers: {}, reqId: 't', socket: {} }, statusRes);
   ok('status: two-way mapping reports linked for the owning session', statusRes._json && statusRes._json.linked === true);
   ok('status: returns the canonical verified phone', statusRes._json && statusRes._json.phone === PHONE);
-  // Drain microtasks/timers so the un-awaited welcome send completes.
-  await new Promise(r => setImmediate(r));
-  ok('confirm: welcome WhatsApp sent to the new phone', world.sentWhatsApp.some(m => m.to === PHONE), JSON.stringify(world.sentWhatsApp));
+  ok('confirm: Vercel does not send a duplicate WhatsApp or expose a sheet URL',
+    !/graph\.facebook\.com/.test(LINK_SRC) && !('sheetUrl' in confRes._json));
+  const confirmSource = LINK_SRC.slice(
+    LINK_SRC.indexOf('// === CONFIRM action'),
+    LINK_SRC.indexOf('// === REQUEST action')
+  );
+  const confirm409s = [...confirmSource.matchAll(/status\(409\)\.json\(\{ ok: false, error: '([^']+)'/g)]
+    .map(match => match[1]);
+  ok('confirm: 409 is reserved for phone ownership conflict (Apps Script contract)',
+    confirm409s.length === 1 && confirm409s[0] === 'phone_unavailable', confirm409s.join(','));
 
   // (c) Bot appends a tenant expense row.
   const appendHandler = buildAppendHandler(makeStubs(world));
@@ -375,6 +500,20 @@ async function failurePaths() {
   console.log('\n=== 2. FAILURE PATHS (401 not-signed-in / 404 bad code / 409 phone taken) ===\n');
   process.env.KESEFLE_BOT_SECRET = BOT_SECRET;
 
+  // The reverse-index migration runs while WABA is frozen. Old tabs and
+  // clients must not mint a new route between the migration's scan and apply.
+  {
+    const world = makeWorld();
+    const SUB = 'google:waba-frozen';
+    seedUser(world, SUB, { sheetId: 'SHEET_WABA_FROZEN' });
+    process.env.WABA_APPROVED = '0';
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world, { sessionSub: SUB }))(reqMintPOST({ phone: '972500000099' }), res);
+    ok('mint: WABA freeze rejects code generation', res._status === 503 && res._json.error === 'whatsapp_linking_unavailable', JSON.stringify(res._json));
+    ok('mint: WABA freeze creates no challenge or route', !world.kvKeys().some((key) => key.startsWith('linkCode:') || key.startsWith('activeLink:')));
+    process.env.WABA_APPROVED = '1';
+  }
+
   // 2a. NOT SIGNED IN -> mint refuses with 401 (no session cookie, no token).
   {
     const world = makeWorld();
@@ -384,6 +523,99 @@ async function failurePaths() {
     ok('mint: not-signed-in -> 401', res._status === 401, res._status);
     ok('mint: 401 carries not_signed_in error', res._json && res._json.error === 'not_signed_in', res._json && res._json.error);
     ok('mint: no code minted when unauthenticated', !res._json || !res._json.code);
+  }
+
+  // Session-cookie requests are accepted only from Kesefle's own origin.
+  {
+    const world = makeWorld();
+    const SUB = 'google:cross-origin';
+    seedUser(world, SUB, { sheetId: 'SHEET_CROSS_ORIGIN' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: SUB }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000010' },
+      { origin: 'https://evil.example', host: 'kesefle.com' }
+    ), res);
+    ok('mint: cross-origin session request -> 403', res._status === 403, res._status);
+    ok('mint: cross-origin session carries origin_not_allowed', res._json && res._json.error === 'origin_not_allowed', res._json && res._json.error);
+    ok('mint: cross-origin session mints no code', !res._json || !res._json.code);
+  }
+
+  // A valid session still needs a canonical, server-owned sheet record.
+  {
+    const world = makeWorld();
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: 'google:not-provisioned' }));
+    const res = mkRes();
+    await handler(reqMintPOST({ phone: '972500000011' }), res);
+    ok('mint: session without owned sheet -> 403', res._status === 403, res._status);
+    ok('mint: missing ownership carries sheet_not_ready', res._json && res._json.error === 'sheet_not_ready', res._json && res._json.error);
+    ok('mint: missing ownership mints no code', !res._json || !res._json.code);
+  }
+
+  // Backward compatibility: an older client without a session may still use
+  // a valid Google token, but the token must belong to this Google client ID.
+  {
+    const world = makeWorld();
+    const SUB = 'google:legacy-client';
+    const TOKEN = 'legacy-access-token-valid-1234567890';
+    seedUser(world, SUB, { sheetId: 'SHEET_LEGACY' });
+    world.tokeninfo.set(TOKEN, { sub: SUB, aud: 'test-google-client' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000012', accessToken: TOKEN },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: valid access-token fallback -> 200', res._status === 200, res._status);
+    ok('mint: fallback code binds to token user', !!res._json?.code && world.kvObj('linkCode:' + res._json.code)?.userSub === SUB);
+  }
+
+  {
+    const world = makeWorld();
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000013', accessToken: 'expired-access-token-1234567890' },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: expired access-token fallback -> 401', res._status === 401, res._status);
+    ok('mint: expired fallback carries session_expired', res._json && res._json.error === 'session_expired', res._json && res._json.error);
+  }
+
+  {
+    const world = makeWorld();
+    const SUB = 'google:wrong-audience';
+    const TOKEN = 'wrong-audience-token-1234567890';
+    seedUser(world, SUB, { sheetId: 'SHEET_WRONG_AUD' });
+    world.tokeninfo.set(TOKEN, { sub: SUB, aud: 'some-other-google-client' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: '972500000014', accessToken: TOKEN },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: wrong-audience token -> 401', res._status === 401, res._status);
+    ok('mint: wrong-audience token mints no code', !res._json || !res._json.code);
+  }
+
+  {
+    const world = makeWorld();
+    const PHONE = '972500000015';
+    const OWNER = 'google:fallback-phone-owner';
+    const ATTACKER = 'google:fallback-attacker';
+    const TOKEN = 'fallback-attacker-token-1234567890';
+    seedUser(world, OWNER, { sheetId: 'SHEET_FALLBACK_OWNER' });
+    seedUser(world, ATTACKER, { sheetId: 'SHEET_FALLBACK_ATTACKER' });
+    world.store.set('phone:' + PHONE, JSON.stringify({ userSub: OWNER, spreadsheetId: 'SHEET_FALLBACK_OWNER' }));
+    world.tokeninfo.set(TOKEN, { sub: ATTACKER, aud: 'test-google-client' });
+    const handler = buildLinkHandler(makeStubs(world, { sessionSub: null }));
+    const res = mkRes();
+    await handler(reqMintPOST(
+      { phone: PHONE, accessToken: TOKEN },
+      { origin: null, host: null }
+    ), res);
+    ok('mint: fallback cannot claim another user phone -> 409', res._status === 409, res._status);
+    ok('mint: fallback preserves original phone owner', world.kvObj('phone:' + PHONE)?.userSub === OWNER);
   }
 
   // 2b. EXPIRED / INVALID CODE -> confirm 404. (TTL expiry == key absent in KV.)
@@ -411,14 +643,14 @@ async function failurePaths() {
     const mintRes = mkRes();
     await buildLinkHandler(makeStubs(world, { sessionSub: ATTACKER_SUB }))(reqMintPOST({ phone: PHONE }), mintRes);
     ok('mint: phone owned by another account -> pre-rejected 409', mintRes._status === 409, mintRes._status);
-    ok('mint: 409 carries phone_already_linked_to_another_account', mintRes._json && mintRes._json.error === 'phone_already_linked_to_another_account', mintRes._json && mintRes._json.error);
+    ok('mint: 409 uses the privacy-preserving phone_unavailable error', mintRes._json && mintRes._json.error === 'phone_unavailable', mintRes._json && mintRes._json.error);
 
     // Even if a stale code for the attacker existed, confirm must 409 (claim lost).
-    world.store.set('linkCode:654321', JSON.stringify({ userSub: ATTACKER_SUB, phone: PHONE }));
+    seedChallenge(world, '654321', ATTACKER_SUB, PHONE);
     const confRes = mkRes();
     await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '654321', phone: PHONE }, BOT_SECRET), confRes);
     ok('confirm: phone already linked elsewhere -> 409', confRes._status === 409, confRes._status);
-    ok('confirm: 409 carries phone_already_linked_to_another_account', confRes._json && confRes._json.error === 'phone_already_linked_to_another_account', confRes._json && confRes._json.error);
+    ok('confirm: 409 uses the privacy-preserving phone_unavailable error', confRes._json && confRes._json.error === 'phone_unavailable', confRes._json && confRes._json.error);
     ok('confirm: original owner mapping is UNCHANGED', (world.kvObj('phone:' + PHONE) || {}).userSub === OWNER_SUB);
   }
 
@@ -433,17 +665,276 @@ async function failurePaths() {
     ok('confirm: no mapping written without the secret', world.kvObj('phone:972503334444') === null);
   }
 
-  // 2e. CODE BOUND TO A DIFFERENT PHONE than the one confirming -> 409.
+  // 2e. CODE BOUND TO A DIFFERENT PHONE is indistinguishable from an invalid
+  // code to the caller, while leaving every mapping untouched.
   // (Shoulder-surfed code: a different handset must not hijack the account.)
   {
     const world = makeWorld();
     seedUser(world, 'google:victim', { sheetId: 'SHEET_VICTIM' });
-    world.store.set('linkCode:246810', JSON.stringify({ userSub: 'google:victim', phone: '972504445555' }));
+    seedChallenge(world, '246810', 'google:victim', '972504445555');
     const res = mkRes();
     await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '246810', phone: '972509998888' }, BOT_SECRET), res);
-    ok('confirm: code presented from a different phone -> 409', res._status === 409, res._status);
-    ok('confirm: 409 carries code_bound_to_different_phone', res._json && res._json.error === 'code_bound_to_different_phone', res._json && res._json.error);
+    ok('confirm: code presented from a different phone -> safe 404', res._status === 404, res._status);
+    ok('confirm: wrong handset gets the generic invalid-code error', res._json && res._json.error === 'code_expired_or_invalid', res._json && res._json.error);
     ok('confirm: no phone mapping for the wrong handset', world.kvObj('phone:972509998888') === null);
+  }
+
+  // Legacy/unbound code records fail closed. A code without the requested
+  // phone must never be usable from an arbitrary WhatsApp account.
+  {
+    const world = makeWorld();
+    const SUB = 'google:legacy-unbound';
+    seedUser(world, SUB, { sheetId: 'SHEET_LEGACY_UNBOUND' });
+    world.store.set('linkCode:135790', JSON.stringify({ userSub: SUB }));
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '135790', phone: '972506667777' }, BOT_SECRET), res);
+    ok('confirm: unbound legacy code -> safe 404', res._status === 404, res._status);
+    ok('confirm: unbound legacy code writes no phone mapping', world.kvObj('phone:972506667777') === null);
+  }
+
+  // An EVAL transport failure must not make a partial change. The whole
+  // challenge remains retryable and a later atomic call can complete it.
+  {
+    const world = makeWorld();
+    const SUB = 'google:atomic-retry';
+    const PHONE = '972507778888';
+    seedUser(world, SUB, { sheetId: 'SHEET_ATOMIC_RETRY' });
+    seedChallenge(world, '112233', SUB, PHONE);
+    world.failNext('eval', 'confirm');
+    const first = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '112233', phone: PHONE }, BOT_SECRET), first);
+    ok('confirm: atomic storage outage -> 503', first._status === 503 && first._json.error === 'verification_storage_unavailable', first._status);
+    ok('confirm: failed atomic call writes no forward mapping', world.kvObj('phone:' + PHONE) === null);
+    ok('confirm: failed atomic call writes no reverse mapping', world.kvObj('userPhone:' + SUB) === null);
+    ok('confirm: failed atomic call retains the pending challenge', world.kvObj('linkCode:112233')?.state === 'pending');
+    const retry = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '112233', phone: PHONE }, BOT_SECRET), retry);
+    ok('confirm: retry commits both mappings', retry._status === 200
+      && world.kvObj('phone:' + PHONE)?.userSub === SUB
+      && world.kvObj('userPhone:' + SUB)?.phone === PHONE, retry._status);
+    ok('confirm: retry leaves a confirmed receipt', world.kvObj('linkCode:112233')?.state === 'confirmed');
+    const committedPhone = JSON.stringify(world.kvObj('phone:' + PHONE));
+    const committedReverse = JSON.stringify(world.kvObj('userPhone:' + SUB));
+    const replay = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '112233', phone: PHONE }, BOT_SECRET), replay);
+    ok('confirm: exact receipt replay returns idempotent 200', replay._status === 200
+      && replay._json.status === 'already_confirmed' && replay._json.replayed === true, JSON.stringify(replay._json));
+    ok('confirm: replay performs no second mapping commit', JSON.stringify(world.kvObj('phone:' + PHONE)) === committedPhone);
+    world.store.delete('phone:' + PHONE);
+    const missingForward = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '112233', phone: PHONE }, BOT_SECRET), missingForward);
+    ok('confirm: receipt cannot replay after forward mapping deletion', missingForward._status === 404);
+    world.store.set('phone:' + PHONE, committedPhone);
+    world.store.set('userPhone:' + SUB, JSON.stringify({ phone: '972500000123' }));
+    const poisonedReverse = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '112233', phone: PHONE }, BOT_SECRET), poisonedReverse);
+    ok('confirm: receipt cannot replay across a poisoned reverse mapping', poisonedReverse._status === 404);
+    world.store.set('userPhone:' + SUB, committedReverse);
+    world.store.delete('user:' + SUB);
+    const deletedAccount = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '112233', phone: PHONE }, BOT_SECRET), deletedAccount);
+    ok('confirm: receipt cannot replay after canonical account deletion', deletedAccount._status === 404);
+  }
+
+  // If the atomic commit succeeds but its HTTP response is lost, the caller
+  // may see 503 once; the receipt makes the next delivery a safe 200 replay.
+  {
+    const world = makeWorld();
+    const SUB = 'google:lost-response';
+    const PHONE = '972507778889';
+    seedUser(world, SUB, { sheetId: 'SHEET_LOST_RESPONSE' });
+    seedChallenge(world, '223344', SUB, PHONE);
+    world.failNext('eval_after', 'confirm');
+    const lost = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '223344', phone: PHONE }, BOT_SECRET), lost);
+    ok('confirm: lost EVAL response surfaces as temporary 503', lost._status === 503, lost._status);
+    ok('confirm: lost response still leaves one consistent committed mapping',
+      world.kvObj('phone:' + PHONE)?.userSub === SUB && world.kvObj('userPhone:' + SUB)?.phone === PHONE);
+    const replay = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '223344', phone: PHONE }, BOT_SECRET), replay);
+    ok('confirm: redelivery after lost response returns replay 200', replay._status === 200
+      && replay._json.status === 'already_confirmed' && replay._json.replayed === true, JSON.stringify(replay._json));
+  }
+
+  // Code generation must preserve an already-active code on collision and
+  // retry with another random candidate instead of overwriting it.
+  {
+    const world = makeWorld();
+    const SUB = 'google:collision';
+    seedUser(world, SUB, { sheetId: 'SHEET_COLLISION' });
+    world.store.set('linkCode:111111', JSON.stringify({ userSub: 'google:someone-else', phone: '972500000099' }));
+    const values = [11111, 22222]; // -> 111111 collision, then 122222
+    const deterministicCrypto = { getRandomValues(buf) { buf[0] = values.shift(); return buf; } };
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world, { sessionSub: SUB, cryptoOverride: deterministicCrypto }))(
+      reqMintPOST({ phone: '972508889999' }), res);
+    ok('mint: code collision retries and succeeds', res._status === 200 && res._json.code === '122222', JSON.stringify(res._json));
+    ok('mint: collision never overwrites the active code', world.kvObj('linkCode:111111')?.userSub === 'google:someone-else');
+  }
+
+  // Six consecutive collisions exhaust the bounded retry loop without
+  // replacing the existing challenge or creating an active attempt.
+  {
+    const world = makeWorld();
+    const SUB = 'google:collision-exhausted';
+    seedUser(world, SUB, { sheetId: 'SHEET_COLLISION_EXHAUSTED' });
+    world.store.set('linkCode:111111', JSON.stringify({ userSub: 'google:protected' }));
+    const deterministicCrypto = { getRandomValues(buf) { buf[0] = 11111; return buf; } };
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world, { sessionSub: SUB, cryptoOverride: deterministicCrypto }))(
+      reqMintPOST({ phone: '972508880001' }), res);
+    ok('mint: repeated collisions -> 503 code_generation_unavailable',
+      res._status === 503 && res._json.error === 'code_generation_unavailable', JSON.stringify(res._json));
+    ok('mint: exhaustion preserves the existing challenge', world.kvObj('linkCode:111111')?.userSub === 'google:protected');
+    ok('mint: exhaustion creates no active attempt', world.kvObj('activeLink:' + SUB) === null);
+  }
+
+  // A later code for the same account atomically supersedes the older attempt.
+  {
+    const world = makeWorld();
+    const SUB = 'google:superseded';
+    const PHONE = '972508880002';
+    seedUser(world, SUB, { sheetId: 'SHEET_SUPERSEDED' });
+    const first = mkRes();
+    await buildLinkHandler(makeStubs(world, {
+      sessionSub: SUB,
+      cryptoOverride: { getRandomValues(buf) { buf[0] = 33333; return buf; } },
+    }))(reqMintPOST({ phone: PHONE }), first);
+    const second = mkRes();
+    await buildLinkHandler(makeStubs(world, {
+      sessionSub: SUB,
+      cryptoOverride: { getRandomValues(buf) { buf[0] = 44444; return buf; } },
+    }))(reqMintPOST({ phone: PHONE }), second);
+    const oldConfirm = mkRes();
+    await buildLinkHandler(makeStubs(world))(
+      reqConfirmPOST({ code: first._json.code, phone: PHONE }, BOT_SECRET), oldConfirm);
+    ok('confirm: older active attempt is safely superseded', oldConfirm._status === 404
+      && oldConfirm._json.error === 'code_expired_or_invalid', JSON.stringify(oldConfirm._json));
+    const currentConfirm = mkRes();
+    await buildLinkHandler(makeStubs(world))(
+      reqConfirmPOST({ code: second._json.code, phone: PHONE }, BOT_SECRET), currentConfirm);
+    ok('confirm: newest attempt still links successfully', currentConfirm._status === 200
+      && world.kvObj('userPhone:' + SUB)?.phone === PHONE, currentConfirm._status);
+  }
+
+  // Duplicate webhook deliveries converge: one first commit and one replay,
+  // both safe 200 responses, with a single final mapping pair.
+  {
+    const world = makeWorld();
+    const SUB = 'google:duplicate-delivery';
+    const PHONE = '972508880003';
+    seedUser(world, SUB, { sheetId: 'SHEET_DUPLICATE' });
+    seedChallenge(world, '556677', SUB, PHONE);
+    const a = mkRes();
+    const b = mkRes();
+    await Promise.all([
+      buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '556677', phone: PHONE }, BOT_SECRET), a),
+      buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '556677', phone: PHONE }, BOT_SECRET), b),
+    ]);
+    const statuses = [a._json?.status, b._json?.status].sort();
+    ok('confirm: concurrent duplicate deliveries both return 200', a._status === 200 && b._status === 200, a._status + '/' + b._status);
+    ok('confirm: duplicates resolve to one commit plus one replay',
+      statuses.join(',') === 'already_confirmed,linked', statuses.join(','));
+    ok('confirm: duplicate delivery leaves one consistent mapping pair',
+      world.kvObj('phone:' + PHONE)?.userSub === SUB && world.kvObj('userPhone:' + SUB)?.phone === PHONE);
+  }
+
+  // Two accounts racing for one E.164 cannot both win the atomic transition.
+  {
+    const world = makeWorld();
+    const PHONE = '972508880004';
+    const A = 'google:phone-race-a';
+    const B = 'google:phone-race-b';
+    seedUser(world, A, { sheetId: 'SHEET_PHONE_RACE_A' });
+    seedUser(world, B, { sheetId: 'SHEET_PHONE_RACE_B' });
+    seedChallenge(world, '667788', A, PHONE);
+    seedChallenge(world, '778899', B, PHONE);
+    const a = mkRes();
+    const b = mkRes();
+    await Promise.all([
+      buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '667788', phone: PHONE }, BOT_SECRET), a),
+      buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '778899', phone: PHONE }, BOT_SECRET), b),
+    ]);
+    const results = [a, b];
+    ok('confirm: same-phone race has exactly one winner', results.filter(r => r._status === 200).length === 1);
+    ok('confirm: same-phone race rejects the loser without overwrite', results.filter(r =>
+      r._status === 409 && r._json?.error === 'phone_unavailable').length === 1);
+    const winner = world.kvObj('phone:' + PHONE)?.userSub;
+    ok('confirm: winner forward/reverse mappings agree', (winner === A || winner === B)
+      && world.kvObj('userPhone:' + winner)?.phone === PHONE);
+  }
+
+  // KV failures are not misreported as missing/expired verification state.
+  {
+    const world = makeWorld();
+    world.failNext('get', 'linkCode:445566');
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '445566', phone: '972509990000' }, BOT_SECRET), res);
+    ok('confirm: KV read outage -> 503, not false 404',
+      res._status === 503 && res._json.error === 'verification_storage_unavailable', res._status + '/' + res._json.error);
+  }
+
+  // Different-phone relinking is blocked until all phone-keyed recurring,
+  // group, profile, and reminder state can be migrated as one audited action.
+  {
+    const world = makeWorld();
+    const SUB = 'google:relink';
+    const OLD = '972510101010';
+    const NEXT = '972510202020';
+    seedUser(world, SUB, { sheetId: 'SHEET_RELINK' });
+    world.store.set('phone:' + OLD, JSON.stringify({ userSub: SUB, spreadsheetId: 'SHEET_RELINK' }));
+    world.store.set('userPhone:' + SUB, JSON.stringify({ phone: OLD }));
+    const mint = mkRes();
+    await buildLinkHandler(makeStubs(world, { sessionSub: SUB }))(reqMintPOST({ phone: NEXT }), mint);
+    ok('relink: different phone is blocked before mint', mint._status === 409 && mint._json.error === 'phone_change_requires_support', JSON.stringify(mint._json));
+    ok('relink: old forward route stays intact', world.kvObj('phone:' + OLD)?.userSub === SUB);
+    ok('relink: old reverse route stays intact', world.kvObj('userPhone:' + SUB)?.phone === OLD);
+    ok('relink: no new phone route or challenge is created', world.kvObj('phone:' + NEXT) === null
+      && !world.kvKeys().some(key => key.startsWith('activeLink:')));
+  }
+
+  // Legacy secure-kv records used user.phoneE164 + phone:<old> without the
+  // newer userPhone:<sub> reverse pointer. They must still block a second
+  // active route to the same financial account.
+  {
+    const world = makeWorld();
+    const SUB = 'google:legacy-forward-only';
+    const OLD = '972510303030';
+    const NEXT = '972510404040';
+    seedUser(world, SUB, { sheetId: 'SHEET_LEGACY_FORWARD' });
+    const user = world.kvObj('user:' + SUB);
+    user.phoneE164 = '+' + OLD;
+    world.store.set('user:' + SUB, JSON.stringify(user));
+    world.store.set('phone:' + OLD, JSON.stringify({ userSub: SUB, spreadsheetId: 'SHEET_LEGACY_FORWARD' }));
+    const mint = mkRes();
+    await buildLinkHandler(makeStubs(world, { sessionSub: SUB }))(reqMintPOST({ phone: NEXT }), mint);
+    ok('legacy forward-only: canonical phoneE164 blocks a second phone before mint',
+      mint._status === 409 && mint._json.error === 'phone_change_requires_support', JSON.stringify(mint._json));
+    ok('legacy forward-only: old route remains intact', world.kvObj('phone:' + OLD)?.userSub === SUB);
+    ok('legacy forward-only: no new challenge or route is created', world.kvObj('phone:' + NEXT) === null
+      && !world.kvKeys().some(key => key.startsWith('activeLink:')));
+  }
+
+  // Re-check the legacy user marker inside the atomic confirm transition so a
+  // route that appears after mint cannot race into a dual-phone account.
+  {
+    const world = makeWorld();
+    const SUB = 'google:legacy-confirm-race';
+    const OLD = '972510505050';
+    const NEXT = '972510606060';
+    seedUser(world, SUB, { sheetId: 'SHEET_LEGACY_RACE' });
+    seedChallenge(world, '919293', SUB, NEXT);
+    const user = world.kvObj('user:' + SUB);
+    user.phoneE164 = OLD;
+    world.store.set('user:' + SUB, JSON.stringify(user));
+    world.store.set('phone:' + OLD, JSON.stringify({ userSub: SUB, spreadsheetId: 'SHEET_LEGACY_RACE' }));
+    const confirm = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '919293', phone: NEXT }, BOT_SECRET), confirm);
+    ok('legacy confirm race: atomic transition rejects a newly discovered old route',
+      confirm._status === 503 && confirm._json.error === 'verification_state_changed', JSON.stringify(confirm._json));
+    ok('legacy confirm race: no second forward or reverse route is committed',
+      world.kvObj('phone:' + NEXT) === null && world.kvObj('userPhone:' + SUB) === null);
+    ok('legacy confirm race: old route stays intact', world.kvObj('phone:' + OLD)?.userSub === SUB);
   }
 
   // 2f. APPEND for a phone that was never linked -> 404 no_user_for_phone.
@@ -558,8 +1049,12 @@ async function tenantIsolation() {
     KESEFLE_BOT_SECRET: process.env.KESEFLE_BOT_SECRET,
     META_ACCESS_TOKEN: process.env.META_ACCESS_TOKEN,
     META_PHONE_NUMBER_ID: process.env.META_PHONE_NUMBER_ID,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    WABA_APPROVED: process.env.WABA_APPROVED,
   };
   try {
+    process.env.GOOGLE_CLIENT_ID = 'test-google-client';
+    process.env.WABA_APPROVED = '1';
     await happyPath();
     await failurePaths();
     await tenantIsolation();
