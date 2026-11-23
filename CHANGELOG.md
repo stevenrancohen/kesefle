@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Kesefle. Internal log — for user-facing version, see [/changelog](https://kesefle.vercel.app/changelog).
+All notable changes to Kesefle. Internal engineering log.
 
 Format: feature batches grouped by date, sorted newest-first.
 

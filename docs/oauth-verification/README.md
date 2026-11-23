@@ -4,14 +4,18 @@ Steven, this folder has everything you need to submit Kesefle for Google OAuth v
 
 ## Why we need this
 
-Kesefle requests two **sensitive scopes**:
-- `https://www.googleapis.com/auth/drive.file` — to create the user's sheet
-- `https://www.googleapis.com/auth/drive.readonly` — to read the template Sheet for copying
+Kesefle requests the standard identity scopes (`openid`, `email`, `profile`)
+plus one narrowly scoped Drive permission:
+- `https://www.googleapis.com/auth/drive.file` — to create and use only the Sheet Kesefle creates for that user
 
-Sensitive scopes can only be used in production after Google reviews:
-1. **Brand verification** — proves you own kesefle.vercel.app
+The current signup flow does **not** request `drive.readonly` or the broad
+`spreadsheets` scope. It creates a fresh spreadsheet, so it never needs to copy
+or inspect an existing Drive file.
+
+Google may require review before the app is available to everyone:
+1. **Brand verification** — proves you own `kesefle.com`
 2. **App verification** — proves your app actually does what it claims, no spying
-3. **Restricted scope justification** — explains WHY each scope is needed
+3. **Scope justification** — explains why `drive.file` is necessary and minimal
 
 Without verification, anyone outside your "test users" list gets blocked with "Access denied — app has not completed verification".
 
@@ -37,7 +41,7 @@ Go to: https://console.cloud.google.com/apis/credentials/consent?project=1919387
    - **Application home page:** `https://kesefle.com/`
    - **Privacy policy:** `https://kesefle.com/privacy`
    - **Terms of service:** `https://kesefle.com/terms`
-   - **Authorized domains:** add `vercel.app` (so it covers kesefle.vercel.app)
+   - **Authorized domains:** add `kesefle.com`
    - **Developer contact info:** srcslcollection@gmail.com
 5. **Save and continue**
 
@@ -45,14 +49,17 @@ Go to: https://console.cloud.google.com/apis/credentials/consent?project=1919387
 
 Same flow, next page is "Scopes".
 
-For each sensitive scope, paste the justifications from `scope-justifications.md`:
+For each scope shown by the console, paste the matching justification from
+`scope-justifications.md`. The current code should show only:
 
 | Scope | Justification |
 |---|---|
-| `drive.file` | "We create one Sheet in the user's Drive when they sign up, and read/write only that one Sheet to record expenses they send via WhatsApp." |
-| `drive.readonly` | "We need read-only access to the master template Sheet so we can duplicate it into the user's Drive at sign-up. We never read other files." |
-| `spreadsheets` | "We write each expense the user sends via WhatsApp into their own Sheet. We never read or modify other spreadsheets." |
+| `drive.file` | "We create one Sheet in the user's Drive when they sign up, and read/write only that app-created Sheet to record the movements they submit." |
 | `openid + email + profile` | "Standard OAuth — to identify the user and show their name/email in the app." |
+
+If `drive.readonly` or a standalone `spreadsheets` scope appears, stop and check
+the deployed OAuth request before submitting; those permissions are not part of
+the current product contract.
 
 ### 3. Record the demo video (45-60 min)
 
@@ -75,7 +82,8 @@ Same OAuth consent screen page → click **"Publish app"** at the top.
 Google asks you to:
 1. Paste your YouTube Unlisted video URL
 2. Confirm you've read and accepted Google's [API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy)
-3. Confirm whether your app handles restricted scopes (yes, you have `drive.readonly`)
+3. Confirm the scope classification shown by the console; do not claim
+   `drive.readonly` or a broad `spreadsheets` permission
 4. Submit
 
 You'll get a confirmation email from `oauth-noreply@google.com`. Then wait.
@@ -84,9 +92,11 @@ You'll get a confirmation email from `oauth-noreply@google.com`. Then wait.
 
 Google often asks for clarification 5-10 days into review. Their email will be specific:
 
-- **"Show us how `drive.readonly` is used"** → reply with screenshots of api/sheet/provision.js where we call `files.copy` on the template ID
+- **"Show us how the Sheet is created"** → reply with screenshots of
+  `api/sheet/provision.js` and `lib/sheet-writer.js`, where the app creates a
+  fresh spreadsheet using the user's `drive.file` grant
 - **"Why don't you use `drive.appdata` instead?"** → reply: "Because users want the spreadsheet visible in their main Drive, not hidden in an app folder they can't access."
-- **"Show your privacy practices"** → link them to /privacy and /trust on the live site
+- **"Show your privacy practices"** → link them to `/privacy` on the live site
 
 Reply within 3 days or the case auto-closes and you have to restart.
 

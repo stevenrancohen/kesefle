@@ -96,6 +96,8 @@ const UNIT_SUITES = [
   'tests/test_account_activation_fallback.js',         // onboarding: existing sheet skips duplicate provisioning; app-first activation survives WhatsApp rollout
   'tests/test_ui_preferences.js',                      // adaptive UI: tenant-scoped persona + personal/household/business spaces, mobile touch targets
   'tests/test_goall4u_ui.js',                           // visual system: dark retail-style hierarchy, spectrum rail, honest install/offline copy, canonical domain
+  'tests/test_canonical_domain.js',                     // canonical domain/support contacts without removing the intentional legacy-origin allowlist
+  'tests/test_oauth_runbook_truth.js',                  // OAuth launch runbook: owned domain, app-first demo, drive.file-only scope contract
   'tests/test_session_csrf.js',                         // auth: cookie mutations require same-origin + __Host- cookie migration stays backwards-compatible
   'tests/test_install_domain_trust.js',                 // PWA trust: canonical /app manifest + link, accurate offline privacy copy, mobile install guidance
   'tests/test_install_prompt_runtime.js',               // install UX: real beforeinstallprompt, accepted/declined, installed and iPhone states

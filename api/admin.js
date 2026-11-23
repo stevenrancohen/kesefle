@@ -22,6 +22,7 @@
 // All other actions require admin auth (requireAdmin).
 
 import { requireAdmin } from '../lib/auth.js';
+import { publicSiteOrigin } from '../lib/public-site.js';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 
@@ -467,7 +468,7 @@ function publicBotStatus(req, res) {
     bot: {
       meta_phone_number_id: process.env.META_PHONE_NUMBER_ID || null, // public-safe identifier
       configured_bot_phone_e164: process.env.BOT_PHONE_E164 || null,
-      webhook_url: `${(req.headers['x-forwarded-proto'] || 'https')}://${req.headers.host || 'kesefle.vercel.app'}/api/whatsapp/webhook`,
+      webhook_url: `${publicSiteOrigin()}/api/whatsapp/webhook`,
     },
     checked_at: new Date().toISOString(),
   });

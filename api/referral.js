@@ -20,6 +20,7 @@
 import { requireAuth } from '../lib/auth.js';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
+import { publicSiteOrigin } from '../lib/public-site.js';
 
 // ---- KV helpers (REST API — no npm) ----
 async function kvGet(key) {
@@ -89,15 +90,8 @@ function normalizeCode(c) {
   return String(c || '').trim().toUpperCase();
 }
 
-function baseUrl(req) {
-  // Honor x-forwarded-host on Vercel; fall back to host header; default to canonical.
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'kesefle.vercel.app';
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  return `${proto}://${host}`;
-}
-
-function buildReferralUrl(req, code) {
-  return `${baseUrl(req)}/referral?ref=${encodeURIComponent(code)}`;
+function buildReferralUrl(_req, code) {
+  return `${publicSiteOrigin()}/referral?ref=${encodeURIComponent(code)}`;
 }
 
 // =============================================================

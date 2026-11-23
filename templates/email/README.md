@@ -76,12 +76,12 @@ async function sendWelcome(user) {
     unsubscribeUrl: `https://kesefle.com/unsubscribe?token=${user.unsubToken}`,
   });
   await resend.emails.send({
-    from: 'Kesefle <hello@kesefle.vercel.app>',
+    from: 'Kesefle <noreply@kesefle.com>',
     to: user.email,
     subject: `${user.firstName}, שמחים שהצטרפת לכספ'לה!`,
     html,
     headers: {
-      'List-Unsubscribe': `<https://kesefle.com/unsubscribe?token=${user.unsubToken}>, <mailto:unsubscribe@kesefle.vercel.app>`,
+      'List-Unsubscribe': `<https://kesefle.com/unsubscribe?token=${user.unsubToken}>, <mailto:info@kesefle.com>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   });
@@ -102,7 +102,7 @@ async function sendDigest(user, data) {
   const html = Handlebars.compile(tpl)({ ...data, userEmail: user.email });
   await sgMail.send({
     to: user.email,
-    from: { email: 'digest@kesefle.vercel.app', name: "Kesefle" },
+    from: { email: 'noreply@kesefle.com', name: "Kesefle" },
     subject: `סיכום השבוע - ${data.weekRange}`,
     html,
     asm: { groupId: 12345 },                  // suppression group for digest opt-out
@@ -123,7 +123,7 @@ const client = new ServerClient(process.env.POSTMARK_TOKEN);
 async function sendReceipt(user, payment) {
   const tpl = await fs.readFile('templates/email/payment-receipt.html', 'utf8');
   await client.sendEmail({
-    From: 'billing@kesefle.vercel.app',
+    From: 'noreply@kesefle.com',
     To: user.email,
     Subject: `קבלה - תשלום על ${payment.planName}`,
     HtmlBody: Mustache.render(tpl, { ...payment, ...user }),
