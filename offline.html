@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#6366F1" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="כספ'לה" />
-<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/app.webmanifest" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Rubik:wght@600;700;800;900&display=swap" />
@@ -125,33 +125,6 @@
     70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
     100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
   }
-  .summary {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(221, 225, 236, 0.08);
-    border-radius: 14px;
-    padding: 14px;
-    margin: 18px 0 22px;
-    text-align: right;
-    font-size: 14px;
-  }
-  .summary h3 {
-    margin: 0 0 10px;
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .summary-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px dashed rgba(255,255,255,0.06);
-  }
-  .summary-row:last-child { border-bottom: 0; }
-  .summary-row .label { color: rgba(255,255,255,0.7); }
-  .summary-row .value { font-weight: 700; direction: ltr; unicode-bidi: isolate; }
-  .summary-row.empty { color: rgba(255,255,255,0.45); justify-content: center; padding: 14px 0; font-size: 13px; }
   .btn {
     display: inline-flex;
     align-items: center;
@@ -214,20 +187,13 @@
     <div class="logo" aria-hidden="true">₪</div>
     <div id="status" class="status-dot" aria-live="polite">לא מקוון</div>
     <h1 id="title">אתה במצב לא מקוון</h1>
-    <p class="subtitle">אין כרגע חיבור לאינטרנט.<br>מה שראית לאחרונה עדיין נגיש מהזיכרון.</p>
-
-    <section class="summary" id="summary" aria-label="סיכום אחרון">
-      <h3>הנתונים האחרונים שנשמרו</h3>
-      <div id="summary-body">
-        <div class="summary-row empty">טוען את הסיכום האחרון…</div>
-      </div>
-    </section>
+    <p class="subtitle">אין כרגע חיבור לאינטרנט.<br>מטעמי פרטיות, נתונים פיננסיים עדכניים אינם נשמרים במטמון משותף. אפשר לפתוח אותם ולעדכן תנועות מיד כשהחיבור יחזור.</p>
 
     <button class="btn btn-primary" id="retry-btn" type="button">
       <span id="retry-icon" aria-hidden="true">↻</span>
       <span>נסה שוב</span>
     </button>
-    <a class="btn btn-ghost" href="/dashboard">לדשבורד הזמין</a>
+    <a class="btn btn-ghost" href="/app">חזרה לאפליקציה</a>
 
     <div class="links">
       <a href="/">דף הבית</a>
@@ -235,8 +201,8 @@
     </div>
 
     <p class="tip">
-      <strong>טיפ:</strong> כספ'לה עובדת גם דרך WhatsApp.<br>
-      תשלח הודעה לבוט וכשהאינטרנט יחזור — הכל יסתנכרן.
+      <strong>חשוב:</strong> גם שליחת הודעה ב־WhatsApp דורשת חיבור.<br>
+      נסה/י שוב כשהמכשיר יחזור לרשת.
     </p>
   </main>
 
@@ -247,79 +213,50 @@
   var statusEl = document.getElementById('status');
   var retryBtn = document.getElementById('retry-btn');
   var retryIcon = document.getElementById('retry-icon');
-  var summaryBody = document.getElementById('summary-body');
 
   function setOnline(isOnline) {
     if (isOnline) {
       statusEl.classList.add('online');
-      statusEl.textContent = 'חזרה לאינטרנט — מרענן…';
-      setTimeout(function() {
-        window.location.replace('/dashboard');
-      }, 600);
+      statusEl.textContent = 'בודק/ת את החיבור לכספ\'לה…';
     } else {
       statusEl.classList.remove('online');
       statusEl.textContent = 'לא מקוון';
     }
   }
 
-  function ilNum(n) {
-    if (n == null || isNaN(n)) return '—';
-    try { return Number(n).toLocaleString('he-IL', { maximumFractionDigits: 0 }); }
-    catch (e) { return String(n); }
-  }
-
-  function renderSummary(data) {
-    if (!data) {
-      summaryBody.innerHTML = '<div class="summary-row empty">אין סיכום שמור עדיין. תפתח את הדשבורד כשתחזור לאינטרנט.</div>';
-      return;
-    }
-    var rows = [];
-    if (data.balance != null)  rows.push(['מאזן',     '₪ ' + ilNum(data.balance)]);
-    if (data.expenses != null) rows.push(['הוצאות',   '₪ ' + ilNum(data.expenses)]);
-    if (data.income != null)   rows.push(['הכנסות',   '₪ ' + ilNum(data.income)]);
-    if (data.month)            rows.push(['חודש',     String(data.month)]);
-    if (data.updated)          rows.push(['עודכן',    String(data.updated)]);
-    if (!rows.length) {
-      summaryBody.innerHTML = '<div class="summary-row empty">אין סיכום שמור עדיין.</div>';
-      return;
-    }
-    summaryBody.innerHTML = rows.map(function(r) {
-      return '<div class="summary-row"><span class="label">' + r[0] + '</span><span class="value">' + r[1] + '</span></div>';
-    }).join('');
-  }
-
-  function loadLastSummary() {
-    try {
-      var raw = localStorage.getItem('kesefle_last_summary');
-      if (!raw) { renderSummary(null); return; }
-      var data = JSON.parse(raw);
-      renderSummary(data);
-    } catch (e) {
-      renderSummary(null);
-    }
-  }
-
-  function retry() {
+  async function retry() {
     retryIcon.classList.add('spin');
     retryBtn.disabled = true;
-    // small delay so the spinner shows
-    setTimeout(function() {
-      if (navigator.onLine) {
-        window.location.replace('/dashboard');
-      } else {
-        retryIcon.classList.remove('spin');
-        retryBtn.disabled = false;
-        statusEl.textContent = 'עדיין אין חיבור';
-        setTimeout(function() { statusEl.textContent = 'לא מקוון'; }, 1800);
+    setOnline(true);
+    try {
+      var response = await fetch('/api/health', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { accept: 'application/json' }
+      });
+      var contentType = response.headers.get('content-type') || '';
+      if (!response.ok || contentType.indexOf('application/json') === -1) {
+        throw new Error('health_unavailable');
       }
-    }, 450);
+      var health = await response.json();
+      if (!health || health.ok !== true) throw new Error('health_unavailable');
+      window.location.replace('/app');
+    } catch (_) {
+      retryIcon.classList.remove('spin');
+      retryBtn.disabled = false;
+      statusEl.classList.remove('online');
+      statusEl.textContent = 'עדיין אין חיבור לכספ\'לה';
+      setTimeout(function() { setOnline(false); }, 1800);
+    }
   }
 
   retryBtn.addEventListener('click', retry);
-  window.addEventListener('online', function() { setOnline(true); });
+  window.addEventListener('online', retry);
   window.addEventListener('offline', function() { setOnline(false); });
-  setOnline(navigator.onLine);
-  loadLastSummary();
+  // navigator.onLine only describes the local network interface. It can be
+  // true during a server outage or captive portal, so never redirect until
+  // the Kesefle health endpoint responds successfully.
+  setOnline(false);
 })();
 </script>
 </body>

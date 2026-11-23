@@ -90,6 +90,22 @@ assert(/isApi\(url\)[\s\S]{0,500}event\.respondWith\(fetch\(request\)/.test(sw),
 assert(/networkWithFallback\(request, OFFLINE_URL\)/.test(sw),
   'offline navigation falls back to the offline shell');
 
+const offline = read('offline.html');
+assert(/<link rel="manifest" href="\/app\.webmanifest"/.test(offline) &&
+  /href="\/app"/.test(offline),
+  'offline fallback keeps the canonical app identity and return path');
+assert(!/\/dashboard/.test(offline) && !/kesefle_last_summary/.test(offline) &&
+  !/summary-body/.test(offline),
+  'offline fallback has no legacy dashboard redirect or dead summary store');
+assert(/נתונים פיננסיים עדכניים אינם נשמרים/.test(offline) &&
+  /WhatsApp דורשת חיבור/.test(offline),
+  'offline fallback states privacy and connectivity limits honestly');
+assert(/fetch\('\/api\/health'/.test(offline) && /cache:\s*'no-store'/.test(offline) &&
+  /content-type/.test(offline) && /health\.ok !== true/.test(offline),
+  'offline retry verifies Kesefle availability before returning to the app');
+assert(!/setOnline\(navigator\.onLine\)/.test(offline),
+  'offline fallback does not trust the unreliable navigator online hint');
+
 const app = read('app.html');
 assert(/ב-Safari: תפריט העמוד ← שיתוף/.test(app) && /Open as Web App/.test(app) &&
   !/כפתור השיתוף בתחתית הדפדפן/.test(app),
