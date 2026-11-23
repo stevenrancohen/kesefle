@@ -339,7 +339,7 @@
                 <span>חבר את מספר הוואטסאפ שלך</span>
                 <span class="why-tip">
                   <button type="button" aria-label="למה צריך את המספר?">?</button>
-                  <span class="why-body">למה צריך את המספר? כדי שכשתשלח הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
+                  <span class="why-body">למה צריך את המספר? כדי שכשתשלח הודעה בוואטסאפ, נדע איזה חשבון וגיליון לעדכן. המספר נשמר לצורך הניתוב הזה ואינו מוצג למשתמשים אחרים.</span>
                 </span>
               </div>
               <div class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
@@ -862,15 +862,33 @@ function _kflNormalizeIsraelPhone(input) {
 function _kflShowLinkError(msg) {
   var el = document.getElementById('link-error');
   if (!el) return;
-  // WHAT + WHY + WHAT TO DO with a Try-again button.
-  var safe = String(msg || 'שגיאה').replace(/</g,'&lt;');
-  el.innerHTML = '<div class="rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-700">' +
-                 '<div class="font-bold">' + safe + '</div>' +
-                 '<div class="mt-1 flex flex-wrap gap-2 items-center">' +
-                 '<button type="button" onclick="kesefleLinkRequestCode()" class="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700">נסה שוב</button>' +
-                 '<details class="text-[11px] text-red-700"><summary class="cursor-pointer">מה זה אומר?</summary>' +
-                 '<div class="mt-1">לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודא שהמספר בפורמט 054-123-4567 ונסה שוב.</div>' +
-                 '</details></div></div>';
+  // Build with DOM APIs so server/network text is always rendered as text.
+  // Entity escaping alone is not sufficient protection for innerHTML sinks.
+  el.replaceChildren();
+  var box = document.createElement('div');
+  box.className = 'rounded-xl border border-red-200 bg-red-50 p-2.5 text-red-700';
+  var title = document.createElement('div');
+  title.className = 'font-bold';
+  title.textContent = String(msg || 'שגיאה');
+  var actions = document.createElement('div');
+  actions.className = 'mt-1 flex flex-wrap gap-2 items-center';
+  var retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700';
+  retry.textContent = 'נסה שוב';
+  retry.addEventListener('click', kesefleLinkRequestCode);
+  var details = document.createElement('details');
+  details.className = 'text-[11px] text-red-700';
+  var summary = document.createElement('summary');
+  summary.className = 'cursor-pointer';
+  summary.textContent = 'מה זה אומר?';
+  var explanation = document.createElement('div');
+  explanation.className = 'mt-1';
+  explanation.textContent = 'לרוב — מספר לא תקין, או החיבור לאינטרנט נקטע לרגע. ודא שהמספר בפורמט 054-123-4567 ונסה שוב.';
+  details.append(summary, explanation);
+  actions.append(retry, details);
+  box.append(title, actions);
+  el.appendChild(box);
   el.classList.remove('hidden');
   setTimeout(function() { el.classList.add('hidden'); }, 12000);
 }
@@ -940,8 +958,16 @@ async function kesefleLinkRequestCode() {
         _kflShowLinkError('יותר מדי ניסיונות ברצף. המתיני דקה ונסה שוב.');
         return;
       }
-      if (/phone_already_linked_to_another_account/i.test(j.error || '')) {
+      if (/phone_change_requires_support/i.test(j.error || '')) {
+        _kflShowLinkError('לחשבון כבר מחובר מספר WhatsApp אחר. כדי להחליף מספר בלי לאבד נתונים, פנה לתמיכה.');
+        return;
+      }
+      if (/phone_already_linked_to_another_account|phone_unavailable/i.test(j.error || '')) {
         _kflShowLinkError('המספר הזה כבר מחובר לחשבון אחר.');
+        return;
+      }
+      if (/verification_storage_unavailable|verification_state_changed|code_generation_unavailable/i.test(j.error || '')) {
+        _kflShowLinkError('האימות לא זמין כרגע. המספר לא קושר — נסה שוב בעוד כמה שניות.');
         return;
       }
       _kflShowLinkError(j.error || 'שגיאה ביצירת קוד');

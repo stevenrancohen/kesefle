@@ -28,7 +28,9 @@ assert(/\/expense\?from=pwa-shortcut/.test(appManifest) && /\/expense\?from=pwa-
 assert(/userPhone:\$\{userSub\}/.test(link), 'phone status reads the canonical reverse userPhone index');
 assert(/phone:\$\{candidate\}/.test(link) && /forward\.userSub !== userSub/.test(link), 'phone status verifies the forward mapping belongs to the same user');
 assert(/req\.query\.check === '1'/.test(link) && /getVerifiedPhoneForUser\(sessSub\)/.test(link), 'session status uses two-way verification');
-assert(/linked: !!sessSub && rec\.userSub === sessSub/.test(link), 'browser polling cannot succeed for another customer phone');
+assert(/!sessSub \|\| rec\.userSub !== sessSub/.test(link)
+  && /normalizeE164\(reverse\?\.phone\) === phone/.test(link),
+  'browser polling requires the same session and matching reverse mapping');
 
 assert(/9720/.test(account) && /s\.slice\(4\)/.test(account), 'frontend normalizes +972 followed by a trunk zero');
 assert(/whatsapp\/link\?check=1/.test(account), 'account UI polls authenticated session status');

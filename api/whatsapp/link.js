@@ -5,7 +5,8 @@
 // 1. User on /account submits their E.164 phone → POST { phone } with the login session cookie
 // 2. We verify the session and canonical sheet ownership server-side. Older
 //    session-less clients may fall back to a verified Google access token.
-// 3. Generate a 6-digit code (e.g. 482917) + store {code → userSub} in KV with 10-min TTL
+// 3. Generate a unique 6-digit code (e.g. 482917) + store {code → userSub}
+//    atomically in KV with a 10-min TTL
 // 4. Return the code to the browser
 // 5. Browser shows "Open WhatsApp and send: קוד 482917"
 // 6. Bot webhook receives the message, sees "קוד 482917", calls /api/whatsapp/link?action=confirm
@@ -14,13 +15,13 @@
 //
 // Endpoints:
 //   POST /api/whatsapp/link  { phone, accessToken? }      → { ok, code, expiresIn }
-//   POST /api/whatsapp/link?action=confirm { code, phone } → { ok, userSub, sheetId } (called by webhook)
+//   POST /api/whatsapp/link?action=confirm { code, phone } → { ok, status } (called by webhook)
 //   GET  /api/whatsapp/link?phone=E164                    → { ok, linked: true/false, userSub? } (status check)
 //
 // Env: KV_REST_API_URL, KV_REST_API_TOKEN, GOOGLE_CLIENT_ID
 
 import { withRequestId, log } from '../../lib/log.js';
-import { rateLimit } from '../../lib/ratelimit.js';
+import { rateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { computeEntitlement } from '../../lib/subscription.js';
 import { getUserId } from '../_lib/session.js';
 // Canonical constant-time compare (audit M2,
@@ -28,41 +29,6 @@ import { getUserId } from '../_lib/session.js';
 // (wraps crypto.timingSafeEqual) instead of a local copy, so the primitive
 // only has to be hardened in one place.
 import { constantTimeEqual } from '../../lib/crypto.js';
-
-// Sends a one-shot WhatsApp welcome to a freshly-linked user. Fire-and-forget
-// from the confirm path — if Meta is down or the token has rotated, the link
-// itself still succeeds; we just skip the welcome. Never throws upward.
-async function sendWelcomeWhatsApp(phone, userRec, sheetRec) {
-  const token = process.env.META_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
-  if (!token || !phoneId) {
-    throw new Error('whatsapp_env_not_configured');
-  }
-  const sheetUrl = sheetRec?.spreadsheetUrl
-    || (sheetRec?.spreadsheetId ? `https://docs.google.com/spreadsheets/d/${sheetRec.spreadsheetId}/edit` : '');
-  const body =
-    'מצוין! 🎉 המספר הזה מחובר עכשיו לחשבון שלך.\n\n' +
-    'נסה לשלוח לי הוצאה — לדוגמה:\n' +
-    '• 45 קפה\n' +
-    '• 230 סופר רמי לוי\n' +
-    '• 1200 שכר דירה\n\n' +
-    'אני אכניס הכל לגיליון שלך אוטומטית. 📊' +
-    (sheetUrl ? `\n\n📄 הגיליון שלך:\n${sheetUrl}` : '');
-  const resp = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to: phone,
-      type: 'text',
-      text: { body },
-    }),
-  });
-  if (!resp.ok) {
-    const detail = await resp.text().catch(() => '');
-    throw new Error(`meta_${resp.status}_${detail.slice(0, 120)}`);
-  }
-}
 
 async function verifyAccessToken(accessToken) {
   const r = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(accessToken));
@@ -100,15 +66,28 @@ function isSameOriginRequest(req) {
 }
 
 async function kvGet(key) {
+  const result = await kvGetStrict(key);
+  return result.ok ? result.value : null;
+}
+
+// Critical writes must distinguish "key missing" from "KV unavailable".
+// The old helper collapsed both states to null, which could turn an outage
+// into an incorrect expired-code response or a partial phone mapping.
+async function kvGetStrict(key) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return null;
-  const r = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!r.ok) return null;
-  const j = await r.json();
-  return j?.result ? JSON.parse(j.result) : null;
+  if (!url || !token) return { ok: false, value: null };
+  try {
+    const r = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!r.ok) return { ok: false, value: null };
+    const j = await r.json();
+    if (j?.result === null || j?.result === undefined) return { ok: true, value: null };
+    return { ok: true, value: JSON.parse(j.result) };
+  } catch (_e) {
+    return { ok: false, value: null };
+  }
 }
 
 async function kvSet(key, value, ttlSec) {
@@ -116,42 +95,176 @@ async function kvSet(key, value, ttlSec) {
   const token = process.env.KV_REST_API_TOKEN;
   if (!url || !token) return false;
   const path = ttlSec ? `${url}/set/${encodeURIComponent(key)}?EX=${ttlSec}` : `${url}/set/${encodeURIComponent(key)}`;
-  const r = await fetch(path, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(value),
-  });
-  return r.ok;
+  try {
+    const r = await fetch(path, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(value),
+    });
+    return r.ok;
+  } catch (_e) {
+    return false;
+  }
 }
 
-// Atomic set-if-not-exists via Upstash's `NX=true` modifier. Returns true if
-// the key was set (claim won), false if the key already existed (claim lost).
-// Used to atomically claim a phone -> user mapping so two confirm requests
-// for the same E.164 can never both succeed.
-async function kvSetNX(key, value) {
+// Execute one atomic Redis Lua transition over Upstash's REST API. Sending the
+// complete command as a JSON array avoids URL-size/escaping problems and keeps
+// network/HTTP/JSON ambiguity distinct from a typed script result.
+async function kvEval(script, keys, args) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return false;
-  const r = await fetch(`${url}/set/${encodeURIComponent(key)}?NX=true`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(value),
-  });
-  if (!r.ok) return false;
-  // Upstash returns { result: "OK" } on set, { result: null } on key-exists.
-  const j = await r.json().catch(() => ({}));
-  return j?.result === 'OK' || j?.result === 1;
+  if (!url || !token) return { ok: false, value: null };
+  try {
+    const command = ['EVAL', script, String(keys.length), ...keys, ...args.map(String)];
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(command),
+    });
+    if (!r.ok) return { ok: false, value: null };
+    const j = await r.json();
+    if (!j || Object.prototype.hasOwnProperty.call(j, 'error') || typeof j.result !== 'string') {
+      return { ok: false, value: null };
+    }
+    return { ok: true, value: j.result };
+  } catch (_e) {
+    return { ok: false, value: null };
+  }
 }
 
-async function kvDel(key) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return false;
-  const r = await fetch(`${url}/del/${encodeURIComponent(key)}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}` },
+// One active challenge per account. A new request atomically supersedes the
+// earlier active pointer, while SET-if-absent semantics protect another user's
+// live 6-digit code from random collision overwrite.
+async function mintLinkChallengeAtomic(code, userSub, phone, createdAt) {
+  const challengeKey = `linkCode:${code}`;
+  const activeKey = `activeLink:${userSub}`;
+  const challenge = JSON.stringify({
+    schemaVersion: 2,
+    state: 'pending',
+    attemptId: code,
+    userSub,
+    phone,
+    createdAt,
   });
-  return r.ok;
+  const active = JSON.stringify({
+    schemaVersion: 2,
+    attemptId: code,
+    code,
+    userSub,
+    phone,
+    createdAt,
+  });
+  const script = `#!lua flags=allow-key-locking
+-- KESEFLE_MINT_LINK_V2
+if redis.call('EXISTS', KEYS[1]) == 1 then
+  return 'collision'
+end
+redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[3])
+redis.call('SET', KEYS[2], ARGV[2], 'EX', ARGV[3])
+return 'stored'`;
+  return kvEval(script, [challengeKey, activeKey], [challenge, active, 600]);
+}
+
+// Atomically validate and commit the whole phone-link state transition. The
+// confirmed challenge remains as a short receipt so a lost HTTP response or
+// Meta redelivery can replay safely without a second commit.
+async function confirmLinkChallengeAtomic({
+  code, userSub, phone, spreadsheetId, phoneRecord, reverseRecord, receipt,
+}) {
+  const script = `#!lua flags=allow-key-locking
+-- KESEFLE_CONFIRM_LINK_V2
+local function decode(raw)
+  if not raw then return nil end
+  local ok, value = pcall(cjson.decode, raw)
+  if not ok or type(value) ~= 'table' then return nil end
+  return value
+end
+
+local challengeRaw = redis.call('GET', KEYS[1])
+if not challengeRaw then return 'expired' end
+local challenge = decode(challengeRaw)
+if not challenge then return 'invalid_state' end
+if challenge.state == 'confirmed' then
+  if challenge.userSub ~= ARGV[1]
+    or challenge.phone ~= ARGV[2]
+    or challenge.attemptId ~= ARGV[3] then
+    return 'invalid_state'
+  end
+  local replayPhone = decode(redis.call('GET', KEYS[3]))
+  local replayReverse = decode(redis.call('GET', KEYS[4]))
+  local replaySheet = decode(redis.call('GET', KEYS[5]))
+  local replayUser = decode(redis.call('GET', KEYS[6]))
+  if replayPhone
+    and replayReverse
+    and replaySheet
+    and replayUser
+    and replayPhone.userSub == ARGV[1]
+    and replayReverse.phone == ARGV[2]
+    and tostring(replayPhone.spreadsheetId or '') == tostring(replaySheet.spreadsheetId or '') then
+    return 'replayed'
+  end
+  return 'invalid_state'
+end
+if challenge.state ~= 'pending'
+  or challenge.userSub ~= ARGV[1]
+  or challenge.phone ~= ARGV[2]
+  or challenge.attemptId ~= ARGV[3] then
+  return 'invalid_state'
+end
+
+local active = decode(redis.call('GET', KEYS[2]))
+if not active
+  or active.userSub ~= ARGV[1]
+  or active.phone ~= ARGV[2]
+  or active.attemptId ~= ARGV[3]
+  or active.code ~= ARGV[3] then
+  return 'superseded'
+end
+
+local existingPhoneRaw = redis.call('GET', KEYS[3])
+if existingPhoneRaw then
+  local existingPhone = decode(existingPhoneRaw)
+  if not existingPhone then return 'invalid_state' end
+  if existingPhone.userSub ~= ARGV[1] then return 'phone_unavailable' end
+end
+
+local existingReverseRaw = redis.call('GET', KEYS[4])
+if existingReverseRaw then
+  local existingReverse = decode(existingReverseRaw)
+  if not existingReverse then return 'invalid_state' end
+  if existingReverse.phone and existingReverse.phone ~= ARGV[2] then
+    return 'phone_change_blocked'
+  end
+end
+
+local sheet = decode(redis.call('GET', KEYS[5]))
+local user = decode(redis.call('GET', KEYS[6]))
+if not sheet or not user or tostring(sheet.spreadsheetId or '') ~= ARGV[4] then
+  return 'account_not_ready'
+end
+
+redis.call('SET', KEYS[3], ARGV[5])
+redis.call('SET', KEYS[4], ARGV[6])
+redis.call('DEL', KEYS[2])
+redis.call('SET', KEYS[1], ARGV[7], 'EX', ARGV[8])
+return 'linked'`;
+  return kvEval(script, [
+    `linkCode:${code}`,
+    `activeLink:${userSub}`,
+    `phone:${phone}`,
+    `userPhone:${userSub}`,
+    `sheet:${userSub}`,
+    `user:${userSub}`,
+  ], [
+    userSub,
+    phone,
+    code,
+    spreadsheetId,
+    JSON.stringify(phoneRecord),
+    JSON.stringify(reverseRecord),
+    JSON.stringify(receipt),
+    86400,
+  ]);
 }
 
 // E.164 normalization — strip everything except digits, add country code if missing.
@@ -320,9 +433,17 @@ async function handlerImpl(req, res) {
     if (!isBotCaller) {
       // Browser polling is account-bound: a phone linked to somebody else must
       // never make this session show a false success. Anonymous callers learn
-      // nothing about whether a number belongs to a Kesefle customer.
+      // nothing about whether a number belongs to a Kesefle customer. Require
+      // the reverse mapping too so a partial confirm never looks successful.
       const sessSub = getUserId(req);
-      return res.status(200).json({ ok: true, linked: !!sessSub && rec.userSub === sessSub });
+      if (!sessSub || rec.userSub !== sessSub) {
+        return res.status(200).json({ ok: true, linked: false });
+      }
+      const reverse = await kvGet(`userPhone:${sessSub}`);
+      return res.status(200).json({
+        ok: true,
+        linked: normalizeE164(reverse?.phone) === phone,
+      });
     }
 
     // Bot path: full record incl. effective plan from the canonical user
@@ -381,83 +502,128 @@ async function handlerImpl(req, res) {
       return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
 
-    const pending = await kvGet(`linkCode:${code}`);
+    // The outer request limit sees only the webhook server's IP. Add explicit
+    // phone + challenge buckets after authenticating the bot so one sender or
+    // leaked code cannot monopolize confirmation work.
+    const [phoneLimit, codeLimit] = await Promise.all([
+      rateLimitId(phone, { key: 'wa_link_confirm_phone', limit: 20, windowSec: 600 }),
+      rateLimitId(code, { key: 'wa_link_confirm_code', limit: 8, windowSec: 600 }),
+    ]);
+    if (!phoneLimit.ok || !codeLimit.ok) {
+      const retryAfter = Math.max(phoneLimit.retryAfter || 0, codeLimit.retryAfter || 0, 600);
+      res.setHeader('Retry-After', String(retryAfter));
+      return res.status(429).json({ ok: false, error: 'rate_limit_exceeded', retry_after: retryAfter });
+    }
+
+    const pendingResult = await kvGetStrict(`linkCode:${code}`);
+    if (!pendingResult.ok) {
+      return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
+    }
+    const pending = pendingResult.value;
     if (!pending) return res.status(404).json({ ok: false, error: 'code_expired_or_invalid' });
 
-    const userSub = pending.userSub;
+    const userSub = typeof pending.userSub === 'string' ? pending.userSub.trim() : '';
+    if (!userSub || userSub.length > 256) {
+      log.error('link.confirm.invalid_pending_record', { reqId: req.reqId });
+      return res.status(404).json({ ok: false, error: 'code_expired_or_invalid' });
+    }
 
     // SECURITY: bind the code to the phone the account-holder entered at
     // REQUEST time. The 6-digit code is the only secret tying a phone to an
-    // account, so a leaked/shoulder-surfed code must not let a DIFFERENT
-    // phone link itself to the victim's account. Backward-compatible: codes
-    // issued before this field existed carry no pending.phone and are allowed.
-    if (pending.phone) {
-      const boundPhone = normalizeE164(pending.phone);
-      if (boundPhone && boundPhone !== phone) {
-        log.warn('link.confirm.phone_mismatch', {
-          reqId: req.reqId, expectedPhone: boundPhone, gotPhone: phone, userSub,
-        });
-        return res.status(409).json({ ok: false, error: 'code_bound_to_different_phone' });
+    // account, so a leaked/shoulder-surfed code must not let a different
+    // sender link itself. Legacy unbound records fail closed.
+    const boundPhone = normalizeE164(pending.phone);
+    if (!boundPhone || boundPhone !== phone) {
+      log.warn('link.confirm.phone_mismatch', {
+        reqId: req.reqId, hasBoundPhone: !!boundPhone, userSub,
+      });
+      return res.status(404).json({ ok: false, error: 'code_expired_or_invalid' });
+    }
+
+    let sheetRec = null;
+    let userRec = null;
+    if (pending.state !== 'confirmed') {
+      if (pending.state !== 'pending' || pending.attemptId !== code) {
+        return res.status(404).json({ ok: false, error: 'code_expired_or_invalid' });
+      }
+      // Prepare the canonical record outside Lua, then the script re-reads the
+      // same account/sheet keys and compares spreadsheetId before committing.
+      const [sheetResult, userResult] = await Promise.all([
+        kvGetStrict(`sheet:${userSub}`),
+        kvGetStrict(`user:${userSub}`),
+      ]);
+      if (!sheetResult.ok || !userResult.ok) {
+        return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
+      }
+      sheetRec = sheetResult.value;
+      userRec = userResult.value;
+      if (!sheetRec?.spreadsheetId || !userRec) {
+        return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
       }
     }
 
-    // Look up the user's sheet to attach to the phone mapping.
-    const sheetRec = await kvGet(`sheet:${userSub}`);
-    const userRec = await kvGet(`user:${userSub}`) || {};
-
-    // Permanent mapping: phone → user record (with sheet info for fast bot lookup)
+    // Permanent mapping: phone → user record (with sheet info for fast bot
+    // lookup). Receipt replays take the fast path in Lua and ignore dummy data.
+    const verifiedAt = new Date().toISOString();
     const permRec = {
+      schemaVersion: 2,
       userSub,
-      email: userRec.email || '',
-      plan: userRec.plan || 'free',
-      spreadsheetId: sheetRec?.spreadsheetId || userRec.spreadsheetId || null,
-      spreadsheetUrl: sheetRec?.spreadsheetUrl || userRec.spreadsheetUrl || null,
-      linkedAt: new Date().toISOString(),
+      email: userRec?.email || '',
+      plan: userRec?.plan || 'free',
+      spreadsheetId: sheetRec?.spreadsheetId || null,
+      spreadsheetUrl: sheetRec?.spreadsheetUrl || userRec?.spreadsheetUrl || null,
+      linkedAt: verifiedAt,
+      verifiedAt,
+      verificationMethod: 'whatsapp_inbound_code',
+      lastInboundAt: verifiedAt,
     };
-
-    // ATOMIC claim: SETNX (set-if-not-exists) eliminates the TOCTOU race where
-    // two confirm calls for the same phone within the same second both pass
-    // the "is it free?" check and the later write silently overwrites the
-    // earlier one. If SETNX fails, the key already exists -- either the same
-    // user is re-linking (idempotent, OK) or a different user beat us to it
-    // (409). We re-read after the failed claim to decide.
-    const claimed = await kvSetNX(`phone:${phone}`, permRec);
-    if (!claimed) {
-      const existingPhone = await kvGet(`phone:${phone}`);
-      if (existingPhone && existingPhone.userSub && existingPhone.userSub !== userSub) {
-        log.warn('link.confirm.phone_race_lost', {
-          reqId: req.reqId, phone, existingUserSub: existingPhone.userSub, attemptedUserSub: userSub,
-        });
-        // Cleanup the pending code so the loser cannot brute-force a re-claim
-        // by repeatedly hitting confirm with the same code.
-        await kvDel(`linkCode:${code}`).catch(() => {});
-        return res.status(409).json({ ok: false, error: 'phone_already_linked_to_another_account' });
-      }
-      // Same-user re-link: refresh the record (linkedAt + plan may have changed).
-      await kvSet(`phone:${phone}`, permRec);
-    }
-
-    // Reverse mapping: user → phone (so /account can detect "linked" state)
-    await kvSet(`userPhone:${userSub}`, { phone, linkedAt: permRec.linkedAt });
-
-    // Cleanup the pending code
-    await kvDel(`linkCode:${code}`);
-
-    // Welcome the freshly-linked user so they see the bot work immediately
-    // (instead of having to send their first expense to discover it does).
-    // Non-fatal: if the send fails (token issue, etc.) the link itself
-    // still succeeds — the user will simply not see the welcome.
-    sendWelcomeWhatsApp(phone, userRec, sheetRec).catch(err => {
-      log.warn('link.confirm.welcome_send_failed', { reqId: req.reqId, error: err.message });
-    });
-
-    return res.status(200).json({
-      ok: true,
+    const reverseRec = {
+      schemaVersion: 2,
+      phone,
+      linkedAt: verifiedAt,
+      verifiedAt,
+      verificationMethod: 'whatsapp_inbound_code',
+    };
+    const receipt = {
+      schemaVersion: 2,
+      state: 'confirmed',
+      attemptId: code,
       userSub,
-      email: permRec.email,
-      sheetId: permRec.spreadsheetId,
-      sheetUrl: permRec.spreadsheetUrl,
+      phone,
+      verifiedAt,
+    };
+    const transition = await confirmLinkChallengeAtomic({
+      code,
+      userSub,
+      phone,
+      spreadsheetId: sheetRec?.spreadsheetId || '',
+      phoneRecord: permRec,
+      reverseRecord: reverseRec,
+      receipt,
     });
+    if (!transition.ok) {
+      return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
+    }
+    if (transition.value === 'linked' || transition.value === 'replayed') {
+      return res.status(200).json({
+        ok: true,
+        status: transition.value === 'linked' ? 'linked' : 'already_confirmed',
+        replayed: transition.value === 'replayed',
+      });
+    }
+    if (['expired', 'superseded', 'invalid_state'].includes(transition.value)) {
+      return res.status(404).json({ ok: false, error: 'code_expired_or_invalid' });
+    }
+    if (transition.value === 'phone_unavailable') {
+      return res.status(409).json({ ok: false, error: 'phone_unavailable' });
+    }
+    if (transition.value === 'phone_change_blocked') {
+      return res.status(503).json({ ok: false, error: 'verification_state_changed' });
+    }
+    if (transition.value === 'account_not_ready') {
+      return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
+    }
+    return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
   }
 
   // === REQUEST action (default) — user requests a linking code ===
@@ -507,6 +673,12 @@ async function handlerImpl(req, res) {
   if (existing.linked && existing.phone === phone) {
     return res.status(200).json({ ok: true, alreadyLinked: true, phone });
   }
+  if (existing.linked && existing.phone !== phone) {
+    // Phone-keyed recurring/group/profile state is not yet migrated as one
+    // audited transfer. Refuse a partial remap that could leave an old number
+    // active or orphan customer data; support can verify and migrate it safely.
+    return res.status(409).json({ ok: false, error: 'phone_change_requires_support' });
+  }
 
   // Reject up-front if this phone already belongs to a different account.
   // Surfacing the error here (instead of only at confirm time) saves the
@@ -517,18 +689,34 @@ async function handlerImpl(req, res) {
     log.warn('link.request.phone_already_linked', {
       reqId: req.reqId, phone, existingUserSub: phoneRec.userSub, requestingUserSub: userSub,
     });
-    return res.status(409).json({ ok: false, error: 'phone_already_linked_to_another_account' });
+    return res.status(409).json({ ok: false, error: 'phone_unavailable' });
   }
 
-  // Generate a new code + store with 10-min TTL.
-  const code = gen6DigitCode();
-  const codeRec = {
-    userSub,
-    phone, // suggested phone — bot doesn't strictly need this since it sees the sender's phone
-    createdAt: new Date().toISOString(),
-  };
-  const ok = await kvSet(`linkCode:${code}`, codeRec, 600); // 10 min TTL
-  if (!ok) return res.status(500).json({ ok: false, error: 'kv_unavailable' });
+  // Generate a globally unique active code. One Lua transition protects a
+  // live code from collision and supersedes this user's prior active attempt.
+  let code = null;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const candidate = gen6DigitCode();
+    const stored = await mintLinkChallengeAtomic(
+      candidate,
+      userSub,
+      phone,
+      new Date().toISOString()
+    );
+    if (!stored.ok) {
+      return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
+    }
+    if (stored.value === 'stored') {
+      code = candidate;
+      break;
+    }
+    if (stored.value !== 'collision') {
+      return res.status(503).json({ ok: false, error: 'verification_storage_unavailable' });
+    }
+  }
+  if (!code) {
+    return res.status(503).json({ ok: false, error: 'code_generation_unavailable' });
+  }
 
   // Do NOT log the code itself — it's the secret that binds a phone to an account.
   log.info('link.code_issued', { reqId: req.reqId, userSub });

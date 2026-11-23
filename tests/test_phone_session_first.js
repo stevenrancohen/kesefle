@@ -126,12 +126,45 @@ async function expiredSessionScenario() {
   assert(flow.button.disabled === false, 'expired mobile session re-enables the action button');
 }
 
+function safeErrorRenderingScenario() {
+  const root = makeNode('root');
+  function makeNode(tag) {
+    return {
+      tag, children: [], textContent: '', className: '',
+      classList: { add() {}, remove() {} },
+      replaceChildren() { this.children = []; },
+      append(...items) { this.children.push(...items); },
+      appendChild(item) { this.children.push(item); return item; },
+      addEventListener(type, listener) { this.listenerType = type; this.listener = listener; },
+    };
+  }
+  const document = {
+    getElementById(id) { return id === 'link-error' ? root : null; },
+    createElement: makeNode,
+  };
+  const source = extractFn(account, '_kflShowLinkError') + '\nreturn _kflShowLinkError;';
+  const showError = new Function('document', 'setTimeout', 'kesefleLinkRequestCode', source)(
+    document, () => {}, () => {}
+  );
+  const payload = '&lt;img src=x onerror="globalThis.pwned=1"&gt;';
+  showError(payload);
+  const all = [];
+  (function walk(node) { all.push(node); (node.children || []).forEach(walk); })(root);
+  const title = all.find(node => node.className === 'font-bold');
+  const retry = all.find(node => node.tag === 'button');
+  assert(title && title.textContent === payload, 'server error text is rendered literally with textContent');
+  assert(!/innerHTML\s*=/.test(extractFn(account, '_kflShowLinkError')), 'phone-link error renderer has no innerHTML sink');
+  assert(retry && retry.listenerType === 'click' && typeof retry.listener === 'function', 'retry action uses an event listener, not inline JavaScript');
+  assert(!/המספר נשמר אצלנו מוצפן/.test(account), 'privacy copy does not falsely claim the plaintext routing number is encrypted');
+}
+
 (async function main() {
   const savedFetch = global.fetch;
   try {
     await sessionFirstScenario();
     await compatibilityFallbackScenario();
     await expiredSessionScenario();
+    safeErrorRenderingScenario();
   } catch (error) {
     failed++;
     console.error(error && error.stack ? error.stack : error);
