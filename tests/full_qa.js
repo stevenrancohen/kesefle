@@ -86,6 +86,8 @@ const UNIT_SUITES = [
   'tests/test_api_error_wrapper_hardening.js',       // hardening: getExpenses wrapped in withRequestId + paypal subscribe/webhook return stable error codes (no e.message leak)
   'tests/pwa.js',                                     // PWA hardening: manifest validity, maskable icon, theme-color parity, SW cache-versioning + skipWaiting/clients.claim + offline fallback, controllerchange auto-update (#13), install CTA (#125), iOS meta
   'tests/test_mobile_phone_app.js',                    // mobile app: direct entry, canonical bot config, account-bound two-way phone verification, no stale number
+  'tests/test_phone_session_first.js',                 // phone link: cookie-only mobile flow, atomic verification, expired-session recovery
+  'tests/test_phone_reverse_backfill.js',               // phone link migration: markerless forward routes get one safe reverse index; conflicts fail closed
   'tests/test_account_activation_fallback.js',         // onboarding: existing sheet skips duplicate provisioning; app-first activation survives WhatsApp rollout
   'tests/test_ui_preferences.js',                      // adaptive UI: tenant-scoped persona + personal/household/business spaces, mobile touch targets
   'tests/test_goall4u_ui.js',                           // visual system: dark retail-style hierarchy, spectrum rail, honest install/offline copy, canonical domain
