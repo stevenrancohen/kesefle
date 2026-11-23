@@ -2406,13 +2406,17 @@ function _doPostRouter_(e) {
       // expense. The matcher in processExpense (8631) was being bypassed by an
       // upstream router for this exact message, leaving users unable to link
       // (the broken plumbing behind the 0% activation). This entry point cannot
-      // be bypassed. handleLinkCode_ is idempotent (it checks already-linked).
+      // be bypassed. Link replies use a post-confirm, provider-aware delivery
+      // lease: a reply is marked sent only after WhatsApp accepts it, while a
+      // transient confirm/send failure stays retryable.
       var __linkCodeM = __text_ && String(__text_).match(/(?:קוד|code|link)\s*[:\-]?\s*(\d{6})\b/i);
-      if (__linkCodeM && typeof handleLinkCode_ === 'function') {
+      if (__linkCodeM && typeof handleLinkCodeDetailed_ === 'function') {
         try {
-          var __lcReply = handleLinkCode_(__linkCodeM[1], __from_);
-          if (typeof sendWhatsAppMessage === 'function' && __lcReply) sendWhatsAppMessage(__from_, __lcReply);
-        } catch (__lcErr) { Logger.log('doPost: link-code intercept err: ' + (__lcErr && __lcErr.message)); }
+          var __lcResult = handleLinkCodeDetailed_(__linkCodeM[1], __from_);
+          _deliverLinkCodeOutcome_(__msgId_, __from_, __lcResult, _gotLock);
+        } catch (__lcErr) {
+          Logger.log('doPost: link-code intercept err: ' + (__lcErr && __lcErr.message));
+        }
         return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
       }
 
@@ -14496,35 +14500,36 @@ function getEngineStatus() {
 // The Vercel side resolves the code → userSub, then permanently stores phone:<E164> → userSub
 // in KV, which the webhook + every future bot message uses to route to the right sheet.
 function handleLinkCode_(code, fromPhone) {
-  if (!fromPhone) {
-    return '😬 לא הצלחתי לזהות את המספר שלך מההודעה\n💡 נסה לשלוח שוב מאותו וואטסאפ';
-  }
-  // If this number is ALREADY linked, say so — no need to process a code (and
-  // avoid a confusing "code expired" reply when an old code is re-sent).
-  try {
-    var __statusUrl = KESEFLE_API_BASE + '/api/whatsapp/link?phone=' + encodeURIComponent(String(fromPhone));
-    // Anonymous response is enough here: we only need { linked }.
-    var __sResp = UrlFetchApp.fetch(__statusUrl, { method: 'get', muteHttpExceptions: true });
-    if (__sResp.getResponseCode() === 200) {
-      var __sBody = {};
-      try { __sBody = JSON.parse(__sResp.getContentText() || '{}'); } catch (_pe) {}
-      if (__sBody.ok && __sBody.linked) {
-        return '✅ *אתה כבר מחובר!*\n' +
-          '━━━━━━━━━━━━━━━━━━\n\n' +
-          'אין צורך בקוד — המספר הזה כבר מקושר לחשבון שלך.\n' +
-          'פשוט שלח הוצאה — למשל "45 קפה" או "245 סופר" — ואני אכניס אותה לגיליון. 📊';
-      }
-    }
-  } catch (_statusErr) { /* best-effort — fall through to the normal confirm */ }
+  return handleLinkCodeDetailed_(code, fromPhone).reply;
+}
 
-  var url = KESEFLE_API_BASE + '/api/whatsapp/link?action=confirm';
+// Detailed variant used by doPost so webhook idempotency can distinguish a
+// terminal reply from a transient 5xx/network failure. Legacy callers keep the
+// string-returning handleLinkCode_ contract above.
+function handleLinkCodeDetailed_(code, fromPhone) {
+  function result_(reply, kind, reason) {
+    return {
+      reply: reply,
+      kind: kind || 'terminal',
+      retryable: kind === 'retryable',
+      reason: reason || ''
+    };
+  }
+  if (!fromPhone) {
+    return result_('😬 לא הצלחתי לזהות את המספר שלך מההודעה\n💡 נסה לשלוח שוב מאותו וואטסאפ', 'terminal', 'missing_phone');
+  }
   var botSecret = PropertiesService.getScriptProperties().getProperty('KESEFLE_BOT_SECRET') || '';
+  var authHeaders = botSecret ? { 'x-kesefle-bot-secret': botSecret } : {};
+  // Confirm is the single source of truth. It is atomic and exposes a 24-hour
+  // replay receipt, so a GET precheck would add latency and can race with the
+  // mutation without improving correctness.
+  var url = KESEFLE_API_BASE + '/api/whatsapp/link?action=confirm';
   var payload = { code: String(code), phone: String(fromPhone) };
   try {
     var resp = UrlFetchApp.fetch(url, {
       method: 'post',
       contentType: 'application/json',
-      headers: botSecret ? { 'x-kesefle-bot-secret': botSecret } : {},
+      headers: authHeaders,
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     });
@@ -14532,30 +14537,168 @@ function handleLinkCode_(code, fromPhone) {
     var body = {};
     try { body = JSON.parse(resp.getContentText() || '{}'); } catch (e) {}
     if (status === 200 && body.ok) {
-      return '✅ *הקישור הושלם!*\n' +
+      return result_('✅ *הקישור הושלם!*\n' +
         '━━━━━━━━━━━━━━━━━━\n\n' +
         'מהרגע הזה, כל הוצאה שתשלח תיכתב אוטומטית לגיליון שלך.\n\n' +
         '💡 *לדוגמה — נסה:*\n' +
         '  • "245 סופר"\n' +
         '  • "42 קפה"\n' +
         '  • "8500 משכורת"\n\n' +
-        'כתוב "עזרה" לרשימת הפקודות המלאה.';
+        'כתוב "עזרה" לרשימת הפקודות המלאה.', 'success', body.replayed ? 'already_confirmed' : 'linked');
     }
-    if (status === 404) {
-      return '😬 הקוד פג תוקף או לא תקין\n💡 חזור ל-https://kesefle.com/account וצור קוד חדש (תקף ל-10 דק׳)';
+    var errorCode = String(body.error || '');
+    if (errorCode === 'code_expired_or_invalid' || status === 404) {
+      return result_('😬 הקוד פג תוקף או לא תקין\n💡 חזור ל-https://kesefle.com/account וצור קוד חדש (תקף ל-10 דק׳)', 'terminal', 'invalid_code');
+    }
+    if (errorCode === 'phone_unavailable') {
+      return result_('⚠️ המספר הזה כבר מחובר לחשבון אחר.\n💡 אם זה החשבון שלך — התחבר לאותו חשבון Google שאיתו נרשמת.', 'terminal', 'phone_unavailable');
+    }
+    if (errorCode === 'verification_state_changed') {
+      return result_('⚠️ מצב האימות השתנה.\n💡 פתח שוב את https://kesefle.com/account ושלח את הקוד העדכני שמופיע שם.', 'terminal', 'verification_state_changed');
+    }
+    if (errorCode === 'rate_limit_exceeded' || status === 429) {
+      return result_('⏳ היו יותר מדי ניסיונות ברצף.\n💡 המתן כמה דקות ושלח שוב את אותו קוד.', 'retryable', 'rate_limited');
+    }
+    if (errorCode === 'bot_secret_not_configured') {
+      return result_('😬 שירות הקישור אינו מוגדר כרגע.\n💡 אין צורך לנסות שוב ברצף — פנה לתמיכה דרך https://kesefle.com', 'terminal', 'bot_not_configured');
+    }
+    if (errorCode === 'verification_storage_unavailable' || status === 503) {
+      return result_('😬 שירות האימות לא זמין כרגע.\n💡 שלח את אותו קוד שוב בעוד רגע — אין צורך ליצור קוד חדש.', 'retryable', 'temporary_unavailable');
+    }
+    if (errorCode === 'unauthorized' || status === 401) {
+      return result_('😬 לא הצלחתי לאמת את הבקשה (הגדרת בוט)\n💡 פנה לתמיכה דרך https://kesefle.com', 'terminal', 'unauthorized');
     }
     if (status === 409) {
-      return '⚠️ המספר הזה כבר מחובר לחשבון אחר.\n💡 אם זה החשבון שלך — התחבר לאותו חשבון Google שאיתו נרשמת.';
-    }
-    if (status === 401) {
-      return '😬 לא הצלחתי לאמת את הבקשה (סוד בוט שגוי)\n💡 פנה לתמיכה דרך https://kesefle.com';
+      return result_('⚠️ לא ניתן להשלים את הקישור במצב הנוכחי.\n💡 פתח שוב את https://kesefle.com/account ושלח את הקוד העדכני.', 'terminal', 'verification_conflict');
     }
     Logger.log('handleLinkCode_: unexpected status=' + status + ' body=' + JSON.stringify(body));
-    return '😬 משהו השתבש בקישור\n💡 נסה שוב או צור קוד חדש ב-https://kesefle.com/account';
+    return result_('😬 משהו השתבש בקישור\n💡 נסה לשלוח את הקוד שוב בעוד רגע.', status >= 500 ? 'retryable' : 'terminal', 'unexpected_' + status);
   } catch (e) {
     Logger.log('handleLinkCode_ error: ' + (e && e.stack || e));
-    return '😬 שגיאת רשת\n💡 ננסה שוב בעוד רגע?';
+    return result_('😬 שגיאת רשת\n💡 שלח את אותו קוד שוב בעוד רגע.', 'retryable', 'network_error');
   }
+}
+
+// Deliver a link reply once per inbound WhatsApp message id. Durable Upstash
+// SET NX prevents concurrent webhook deliveries from both replying. We only
+// replace the lease with "sent" after the provider returns 2xx. Retryable API
+// outcomes deliberately bypass the durable marker so the same code can later
+// consume the API's replay receipt and send the first success reply.
+function _deliverLinkCodeOutcome_(messageId, fromPhone, outcome, routerHasLock) {
+  outcome = outcome || {};
+  if (!outcome.reply || typeof sendWhatsAppMessage !== 'function') {
+    return { ok: false, reason: 'no_reply' };
+  }
+  if (!messageId) {
+    Logger.log('link reply: missing wamid; idempotency unavailable');
+    return sendWhatsAppMessage(fromPhone, outcome.reply) || { ok: false, reason: 'send_failed' };
+  }
+  if (outcome.retryable) {
+    // Retry notices get a separate short cache marker. They never consume the
+    // durable success key, so a later API receipt can still send the first
+    // success reply for this same inbound wamid.
+    var retryKey = 'linkRetry:' + String(messageId).slice(0, 160) + ':' + String(outcome.reason || 'temporary').slice(0, 40);
+    return _deliverLinkCodeCacheFallback_(retryKey, fromPhone, outcome, routerHasLock);
+  }
+
+  var key = 'linkReply:' + String(messageId).slice(0, 200);
+  // If durable finalization failed after the provider accepted a reply, the
+  // local marker prevents an immediate duplicate while Upstash recovers.
+  try {
+    var localMarker = CacheService.getScriptCache().get('linkreply:' + key);
+    if (String(localMarker || '').indexOf('sent:') === 0) {
+      return { ok: true, skipped: true, reason: 'local_sent_marker' };
+    }
+  } catch (_localMarkerErr) {}
+  var token = 'sending:' + (typeof Utilities !== 'undefined' && Utilities.getUuid
+    ? Utilities.getUuid()
+    : String(new Date().getTime()) + ':' + Math.random());
+  // Apps Script web executions can run for six minutes. Keep the lease longer
+  // than that ceiling so a slow provider request cannot outlive its claim.
+  var claim = _kvSetNx_(key, token, 420);
+
+  // A concurrent sender may be about to release a failed lease. Briefly poll
+  // before giving up so an explicit provider failure remains retryable.
+  if (claim.available && !claim.acquired) {
+    for (var i = 0; i < 4; i++) {
+      var marker = kvGet(key);
+      if (String(marker || '').indexOf('sent:') === 0) return { ok: true, skipped: true };
+      if (!marker) {
+        claim = _kvSetNx_(key, token, 420);
+        if (!claim.available || claim.acquired) break;
+      }
+      try { Utilities.sleep(150); } catch (_sleepErr) {}
+    }
+    if (claim.available && !claim.acquired) return { ok: true, skipped: true, reason: 'reply_in_flight' };
+  }
+
+  if (!claim.available) {
+    Logger.log('link reply: durable lease unavailable; using locked cache fallback');
+    return _deliverLinkCodeCacheFallback_(key, fromPhone, outcome, routerHasLock);
+  }
+
+  var sendResult = null;
+  try {
+    sendResult = sendWhatsAppMessage(fromPhone, outcome.reply) || { ok: false };
+  } catch (sendErr) {
+    Logger.log('link reply: provider send threw: ' + (sendErr && sendErr.message));
+    _kvCompareDelete_(key, token);
+    return { ok: false, reason: 'send_exception' };
+  }
+  if (sendResult.ok) {
+    var ttl = outcome.kind === 'success' ? 86400 : 600;
+    var finalValue = 'sent:' + String(outcome.kind || 'terminal') + ':' + String(outcome.reason || 'unknown');
+    if (!_kvCompareSet_(key, token, finalValue, ttl)) {
+      // Provider accepted the reply; preserve a best-effort local marker if
+      // durable finalization is temporarily unavailable.
+      try { CacheService.getScriptCache().put('linkreply:' + key, finalValue, Math.min(ttl, 21600)); } catch (_cacheErr) {}
+      Logger.log('link reply: provider accepted but durable marker finalization failed');
+    }
+    return sendResult;
+  }
+  _kvCompareDelete_(key, token);
+  return sendResult;
+}
+
+function _deliverLinkCodeCacheFallback_(key, fromPhone, outcome, routerHasLock) {
+  var cache = null;
+  var lock = null;
+  var cacheKey = 'linkreply:' + key;
+  try {
+    if (routerHasLock) {
+      cache = CacheService.getScriptCache();
+      if (cache.get(cacheKey)) return { ok: true, skipped: true, reason: 'cache_deduped' };
+      cache.put(cacheKey, 'sending', 60);
+    } else {
+      lock = LockService.getScriptLock();
+      if (lock.tryLock(1500)) {
+        cache = CacheService.getScriptCache();
+        if (cache.get(cacheKey)) return { ok: true, skipped: true, reason: 'cache_deduped' };
+        cache.put(cacheKey, 'sending', 60);
+      } else {
+        Logger.log('link reply: fallback lock busy; sending without a claim');
+      }
+    }
+  } catch (_claimErr) {
+    Logger.log('link reply: cache fallback unavailable; sending without a claim');
+    cache = null;
+  } finally {
+    try { if (lock && lock.hasLock()) lock.releaseLock(); } catch (_unlockErr) {}
+  }
+  var result = null;
+  try {
+    result = sendWhatsAppMessage(fromPhone, outcome.reply) || { ok: false };
+  } catch (sendErr) {
+    Logger.log('link reply: fallback provider send threw: ' + (sendErr && sendErr.message));
+    result = { ok: false, reason: 'send_exception' };
+  }
+  try {
+    if (cache) {
+      if (result.ok) cache.put(cacheKey, 'sent', outcome.kind === 'success' ? 21600 : (outcome.retryable ? 60 : 600));
+      else cache.remove(cacheKey);
+    }
+  } catch (_finishErr) {}
+  return result;
 }
 
 function getCurrenciesMessage() {
@@ -19244,6 +19387,61 @@ function kvSet(key, value, ttlSeconds) {
     Logger.log('kvSet ' + key + ' err=' + (e && e.message));
     return false;
   }
+}
+
+// Atomic commands used by link-reply delivery. The tri-state return from
+// SET NX distinguishes an existing lease ({available:true, acquired:false})
+// from a storage outage ({available:false}), which must degrade to a local
+// locked cache instead of silently suppressing the customer's first reply.
+function _kvCommand_(command) {
+  var c = _kvCreds_();
+  if (!c) return { available: false, result: null };
+  try {
+    var res = UrlFetchApp.fetch(c.url, {
+      method: 'post',
+      muteHttpExceptions: true,
+      contentType: 'application/json',
+      payload: JSON.stringify(command),
+      headers: { Authorization: 'Bearer ' + c.tok }
+    });
+    if (res.getResponseCode() !== 200) {
+      Logger.log('_kvCommand_: http=' + res.getResponseCode());
+      return { available: false, result: null };
+    }
+    var body = JSON.parse(res.getContentText() || '{}');
+    if (!body || typeof body !== 'object' || Array.isArray(body) || body.error ||
+        !Object.prototype.hasOwnProperty.call(body, 'result')) {
+      Logger.log('_kvCommand_: invalid command response');
+      return { available: false, result: null };
+    }
+    return { available: true, result: body.result };
+  } catch (e) {
+    Logger.log('_kvCommand_: ' + (e && e.message));
+    return { available: false, result: null };
+  }
+}
+
+function _kvSetNx_(key, value, ttlSeconds) {
+  var r = _kvCommand_(['SET', key, value, 'NX', 'EX', Math.max(1, Math.floor(ttlSeconds || 60))]);
+  if (r.available && r.result !== 'OK' && r.result !== null) {
+    return { available: false, acquired: false };
+  }
+  return { available: r.available, acquired: r.available && r.result === 'OK' };
+}
+
+function _kvCompareSet_(key, expected, value, ttlSeconds) {
+  var script = '#!lua flags=allow-key-locking\n' +
+    "if redis.call('GET', KEYS[1]) == ARGV[1] then " +
+    "redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3]); return 1 end; return 0";
+  var r = _kvCommand_(['EVAL', script, '1', key, expected, value, String(Math.max(1, Math.floor(ttlSeconds || 60)))]);
+  return r.available && Number(r.result) === 1;
+}
+
+function _kvCompareDelete_(key, expected) {
+  var script = '#!lua flags=allow-key-locking\n' +
+    "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end; return 0";
+  var r = _kvCommand_(['EVAL', script, '1', key, expected]);
+  return r.available && Number(r.result) === 1;
 }
 
 function kvDel(key) {
