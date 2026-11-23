@@ -52,6 +52,7 @@
      replaces these styles when it executes -- this is just a safety net. */
   html, body { background: #ffffff; color: #1e2638; margin: 0; padding: 0; min-height: 100vh; }
   body { font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+  .hidden { display: none !important; }
   /* Display font (Steven 2026-05-26): Rubik 900 for headings, Behance-style. */
   h1, h2, h3 {
     font-family: 'Rubik', 'Heebo', system-ui, sans-serif;
@@ -251,8 +252,8 @@
     <div class="relative flex items-start gap-3 sm:gap-4 min-w-0">
       <div id="banner-icon" class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl sm:text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors">👋</div>
       <div class="flex-1 min-w-0 overflow-hidden">
-        <h1 id="banner-title" class="text-base sm:text-xl font-black text-ink-900 break-words leading-snug">ברוך הבא! נסיים את ההגדרה ב-3 צעדים</h1>
-        <p id="banner-subtitle" class="mt-1 text-sm sm:text-base text-slate-700 break-words">פחות מדקה, ואתה מתחיל לעקוב אחרי הכסף שלך — ישר מתוך וואטסאפ.</p>
+        <h1 id="banner-title" class="text-base sm:text-xl font-black text-ink-900 break-words leading-snug">ברוך הבא! מכינים את האפליקציה שלך</h1>
+        <p id="banner-subtitle" class="mt-1 text-sm sm:text-base text-slate-700 break-words">אפשר להתחיל לעקוב אחרי הכסף באפליקציה; WhatsApp יופיע רק כשהוא זמין לחשבון.</p>
 
         <!-- Progress bar showing step completion -->
         <div class="mt-4 flex items-center gap-3">
@@ -344,16 +345,17 @@
                 </span>
               </div>
               <div id="step-3-description" class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
-              <div id="whatsapp-availability-note" class="mb-3 hidden rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+              <div id="whatsapp-availability-note" class="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900" role="status" aria-live="polite">
                 <strong class="block">WhatsApp עדיין נפתח בהדרגה לכל החשבונות.</strong>
                 אין צורך לחכות: אפשר <a href="/expense?from=whatsapp-pending" class="inline-flex min-h-[44px] items-center font-bold underline">להוסיף תנועה באפליקציה</a> ולחבר את המספר אחר כך.
               </div>
 
               <!-- Sub-state A: not yet linked — show phone input + Generate Code button -->
-              <div id="link-state-input">
+              <div id="link-state-input" class="hidden">
                 <div class="flex flex-wrap items-center gap-2">
                   <input
                     id="link-phone-input"
+                    disabled
                     type="tel"
                     inputmode="tel"
                     autocomplete="tel"
@@ -366,6 +368,8 @@
                     type="button"
                     onclick="kesefleLinkRequestCode()"
                     id="link-gen-btn"
+                    disabled
+                    aria-disabled="true"
                     class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
@@ -413,13 +417,14 @@
                   <div class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-white">✓</div>
                   <div class="min-w-0 flex-1">
                     <div class="font-bold text-emerald-900 dark:text-emerald-200">החיבור הושלם!</div>
-                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <span id="link-confirmed-phone" class="font-mono">+972...</span> מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.</div>
+                    <div class="text-sm text-emerald-800 dark:text-emerald-300">המספר <bdi id="link-confirmed-phone" dir="ltr" class="font-mono">+972...</bdi> <span id="link-success-instruction">מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.</span></div>
                     <div class="mt-3 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                      <a id="link-first-expense-wa" href="https://wa.me/972547760643?text=245%20%D7%A1%D7%95%D7%A4%D7%A8" target="_blank" rel="noopener" onclick="kesefleLogFirstExpense()" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
+                      <a id="link-first-expense-wa" href="#" target="_blank" rel="noopener" onclick="return kesefleLogFirstExpense(event)" class="hidden min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.5.1-.1.3-.3.4-.5.1-.1.2-.2.3-.4.1-.2 0-.4 0-.5l-.7-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2.2 0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.1-.2-.1-.5-.3M12 22a10 10 0 0 1-5-1.3L2 22l1.3-4.9A9.9 9.9 0 0 1 12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10z"/></svg>
                         שלח הוצאה ראשונה →
                       </a>
-                      <a href="/welcome" class="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">מדריך הפקודות ←</a>
+                      <a id="link-first-expense-web" href="/expense?from=linked-whatsapp-unavailable" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">הוסף תנועה באפליקציה →</a>
+                      <a href="/welcome" class="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-300">מדריך התחלה ←</a>
                     </div>
                   </div>
                 </div>
@@ -455,7 +460,7 @@
         <div class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-lg ring-1 ring-emerald-100">🟢</div>
       </div>
       <div id="service-status-title" class="mt-2 text-3xl font-black text-emerald-600">פעיל</div>
-      <div id="service-status-copy" class="mt-1 text-xs text-slate-500">האפליקציה והבוט מוכנים</div>
+      <div id="service-status-copy" class="mt-1 text-xs text-slate-500">הוספה באפליקציה זמינה</div>
     </div>
   </section>
 
@@ -713,12 +718,12 @@ async function kesefleLogout() {
 }
 
 // Progress + celebration helpers
-var kflWabaApproved = null;
+var kflWabaApproved = false;
+var kflOnboardingCelebrated = false;
 
 function kesefleApplyWhatsAppAvailability(approved) {
+  approved = approved === true;
   kflWabaApproved = approved;
-  if (approved !== false) return;
-
   var note = document.getElementById('whatsapp-availability-note');
   var phoneStep = document.getElementById('step-3');
   var title = document.getElementById('step-3-title');
@@ -727,8 +732,40 @@ function kesefleApplyWhatsAppAvailability(approved) {
   var codeState = document.getElementById('link-state-code');
   var phoneInput = document.getElementById('link-phone-input');
   var codeButton = document.getElementById('link-gen-btn');
+  var successState = document.getElementById('link-state-success');
+  var successInstruction = document.getElementById('link-success-instruction');
+  var whatsappAction = document.getElementById('link-first-expense-wa');
+  var webAction = document.getElementById('link-first-expense-web');
   var statusTitle = document.getElementById('service-status-title');
   var statusCopy = document.getElementById('service-status-copy');
+
+  if (whatsappAction) whatsappAction.classList.toggle('hidden', !approved);
+  if (whatsappAction) whatsappAction.classList.toggle('inline-flex', approved);
+  if (whatsappAction && !approved) whatsappAction.href = '#';
+  if (webAction) webAction.classList.toggle('hidden', approved);
+  if (webAction) webAction.classList.toggle('inline-flex', !approved);
+  if (successInstruction) successInstruction.textContent = approved
+    ? 'מקושר לחשבון שלך. הצעד האחרון — שלח הוצאה ראשונה לבוט.'
+    : 'מקושר לחשבון שלך. שירות WhatsApp בהשקה הדרגתית; אפשר להמשיך באפליקציה.';
+
+  if (approved) {
+    if (note) note.classList.add('hidden');
+    if (title) title.textContent = 'חבר את מספר הוואטסאפ שלך';
+    if (description) description.textContent = 'הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.';
+    if (phoneInput) phoneInput.disabled = false;
+    if (codeButton) {
+      codeButton.disabled = false;
+      codeButton.removeAttribute('aria-disabled');
+    }
+    var codeVisible = codeState && !codeState.classList.contains('hidden');
+    var successVisible = successState && !successState.classList.contains('hidden');
+    if (inputState && !codeVisible && !successVisible) inputState.classList.remove('hidden');
+    if (phoneStep && !successVisible) phoneStep.classList.add('is-current');
+    if (statusTitle) statusTitle.textContent = 'האפליקציה ו־WhatsApp פעילים';
+    if (statusCopy) statusCopy.textContent = 'אפשר להוסיף תנועות באפליקציה או דרך הבוט';
+    kesefleUpdateOnboardingProgress();
+    return;
+  }
 
   if (note) note.classList.remove('hidden');
   if (phoneStep) phoneStep.classList.remove('is-current');
@@ -774,8 +811,8 @@ function kesefleShowExistingSheetStep(sheet) {
   if (link) link.href = sheet.spreadsheetUrl;
   if (title) title.textContent = 'הגיליון שלך מוכן';
   if (next) {
-    if (kflWabaApproved === false) next.classList.remove('is-current');
-    else next.classList.add('is-current');
+    if (kflWabaApproved === true) next.classList.add('is-current');
+    else next.classList.remove('is-current');
   }
   if (bannerTitle) bannerTitle.textContent = 'הגיליון מוכן — אפשר להתחיל עכשיו';
   if (bannerSubtitle) bannerSubtitle.textContent = 'הוסף תנועה ראשונה באפליקציה. את WhatsApp אפשר לחבר גם בהמשך.';
@@ -787,7 +824,7 @@ function kesefleUpdateOnboardingProgress() {
   var sheet = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
   var step2Done = !!(sheet && sheet.spreadsheetUrl);
   var step3Done = localStorage.getItem('kesefle_whatsapp_linked') === '1';
-  var whatsappRequired = kflWabaApproved !== false;
+  var whatsappRequired = kflWabaApproved === true;
   var totalSteps = whatsappRequired ? 3 : 2;
 
   var done = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (whatsappRequired && step3Done ? 1 : 0);
@@ -803,6 +840,7 @@ function kesefleUpdateOnboardingProgress() {
   if (step3Done) kesefleMarkStepDone(3);
 
   if (done >= totalSteps) kesefleCelebrate();
+  else kesefleRenderOnboardingCompletion(false);
 }
 
 function kesefleMarkStepDone(n) {
@@ -816,19 +854,52 @@ function kesefleMarkStepDone(n) {
   }
 }
 
-function kesefleCelebrate() {
+function kesefleRenderOnboardingCompletion(complete) {
   var banner = document.getElementById('onboarding');
-  if (!banner || banner.classList.contains('is-complete')) return;
-  banner.classList.add('is-complete');
+  if (!banner) return;
+  banner.classList.toggle('is-complete', complete === true);
 
   var icon = document.getElementById('banner-icon');
-  if (icon) { icon.textContent = '🎉'; icon.className = 'grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl transition-colors'; }
   var t = document.getElementById('banner-title');
-  if (t) t.textContent = kflWabaApproved === false ? 'האפליקציה מוכנה — אפשר להתחיל' : 'הכל מוכן! כספ\'לה פעיל';
   var s = document.getElementById('banner-subtitle');
+  if (!complete) {
+    var userReady = false;
+    var sheetReady = false;
+    try { userReady = !!kesefleGetUser(); } catch (_userStateError) {}
+    try {
+      var storedSheet = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
+      sheetReady = !!(userReady && storedSheet && storedSheet.spreadsheetUrl);
+    } catch (_sheetStateError) {}
+    if (icon) { icon.textContent = '👋'; icon.className = 'grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl sm:text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors'; }
+    if (t) t.textContent = !userReady
+      ? 'מתחברים כדי להתחיל'
+      : sheetReady
+        ? (kflWabaApproved === true ? 'הגיליון מוכן — נשאר לחבר WhatsApp' : 'הגיליון מוכן — אפשר להתחיל')
+        : 'נשלים את הגיליון לפני התנועה הראשונה';
+    if (s) s.textContent = !userReady
+      ? 'עדיין לא זוהה חשבון פעיל. מתחברים עם Google לפני יצירת הגיליון והזנת נתונים.'
+      : sheetReady
+        ? (kflWabaApproved === true
+        ? 'אפשר להוסיף תנועה באפליקציה כבר עכשיו, או להשלים את חיבור המספר.'
+        : 'אפשר להתחיל לעקוב אחרי הכסף באפליקציה; WhatsApp יופיע רק כשהוא זמין לחשבון.')
+        : 'החשבון מחובר, אבל עדיין לא נמצא גיליון פעיל. משלימים את ההגדרה בלי לאבד נתונים.';
+    return;
+  }
+
+  if (icon) { icon.textContent = '🎉'; icon.className = 'grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl transition-colors'; }
+  if (t) t.textContent = kflWabaApproved === false ? 'האפליקציה מוכנה — אפשר להתחיל' : 'הכל מוכן! כספ\'לה פעיל';
   if (s) s.innerHTML = kflWabaApproved === false
     ? 'הוסף תנועה ראשונה באפליקציה — היא תישמר מיד בגיליון שלך. <a href="/expense?from=activation-complete" class="font-bold text-emerald-700 underline">להוספה מהירה ←</a>'
-    : 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/dashboard" class="font-bold text-emerald-700 underline">לדשבורד שלי ←</a>';
+    : 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/app" class="font-bold text-emerald-700 underline">לאפליקציה שלי ←</a>';
+}
+
+function kesefleCelebrate() {
+  var banner = document.getElementById('onboarding');
+  if (!banner) return;
+  // Repaint every time because capability can change after account hydration.
+  kesefleRenderOnboardingCompletion(true);
+  if (kflOnboardingCelebrated) return;
+  kflOnboardingCelebrated = true;
 
   // Confetti burst
   var host = document.getElementById('confetti-host');
@@ -876,14 +947,18 @@ var kflLinkRequestGeneration = 0;
   fetch('/api/config', { credentials: 'include', cache: 'no-store' })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(c) {
-      if (c && typeof c.waba_approved === 'boolean') kesefleApplyWhatsAppAvailability(c.waba_approved);
       var n = String(c && c.BOT_NUMBER || '').replace(/\D+/g, '');
-      if (!/^\d{7,15}$/.test(n)) return;
+      var available = !!(c && c.ok === true && c.waba_approved === true && /^[1-9]\d{6,14}$/.test(n));
+      if (!available) {
+        kesefleApplyWhatsAppAvailability(false);
+        return;
+      }
       KESEFLE_BOT_NUMBER = n;
       var first = document.getElementById('link-first-expense-wa');
       if (first) first.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent('245 סופר');
+      kesefleApplyWhatsAppAvailability(true);
     })
-    .catch(function() {});
+    .catch(function() { kesefleApplyWhatsAppAvailability(false); });
 })();
 
 function _kflNormalizeIsraelPhone(input) {
@@ -1093,6 +1168,10 @@ function _kflDisplayCode(code, ttlSec) {
 // if JS is disabled. The href is the universal https://wa.me/ form, set in
 // _kflDisplayCode. Polling continues from the bg tab when the user returns.
 function kesefleOpenWhatsAppLink(a, ev) {
+  if (kflWabaApproved !== true) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    return false;
+  }
   try {
     var url = (a && (a.getAttribute('data-wa-url') || a.href)) || '';
     if (!url || url.charAt(url.length - 1) === '#') return true; // nothing to open yet
@@ -1198,7 +1277,11 @@ function _kflShowLinkSuccess(phone) {
 
 // Fired when the user taps the post-link "send first expense" CTA. Logs the
 // funnel step (no PII) and lets the native wa.me navigation proceed.
-function kesefleLogFirstExpense() {
+function kesefleLogFirstExpense(ev) {
+  if (kflWabaApproved !== true) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    return false;
+  }
   try {
     fetch('/api/log/funnel-event', {
       method: 'POST', credentials: 'include',
@@ -1207,6 +1290,7 @@ function kesefleLogFirstExpense() {
       keepalive: true,
     }).catch(function () {});
   } catch (_e) {}
+  return true;
 }
 
 function kesefleLinkResetState() {
@@ -1940,7 +2024,7 @@ function kesefleShowSigninPrompt() {
   if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
 
   // RETURNING-USER FAST PATH (Steven 2026-05-25; gated 2026-05-31):
-  // Send a user straight to their dashboard ONLY when onboarding is fully
+  // Send a user straight to the mobile app ONLY when onboarding is fully
   // done — i.e. they have BOTH a provisioned sheet AND a linked WhatsApp
   // number. The old code redirected as soon as a sheet existed, which
   // dumped a half-onboarded user (sheet created, phone NOT yet connected)
@@ -1971,7 +2055,9 @@ function kesefleShowSigninPrompt() {
             }
           } catch (_) {}
           if (waLinked) {
-            window.location.href = '/dashboard';
+            // /app is the capability-aware surface. The legacy dashboard still
+            // contains WhatsApp-first copy and must not be the automatic path.
+            window.location.href = '/app';
             return;
           }
           // Sheet exists but WhatsApp not yet linked -> stay here and guide the
