@@ -175,8 +175,10 @@ async function main() {
   assert.match(account, /id="link-first-expense-web" href="\/expense\?from=linked-whatsapp-unavailable"/);
   assert.match(account, /onclick="return kesefleLogFirstExpense\(event\)"/);
   assert.match(account, /if \(ev && ev\.preventDefault\) ev\.preventDefault\(\);[\s\S]*return false;/);
-  assert.match(account, /window\.location\.href = '\/app';/,
-    'linked returning users land on the capability-aware app');
+  assert.match(account, /kesefleSyncVerifiedPhoneLink\(meJson\.sheet, u\.sub\);/,
+    'linked state is refreshed in the background for the verified account');
+  assert.doesNotMatch(account, /if \(waLinked[\s\S]{0,300}window\.location\.href = '\/app';/,
+    'a late capability response cannot interrupt account-page interaction');
   assert.doesNotMatch(welcome, /href="\/dashboard"/,
     'welcome cannot bypass capability gating through the legacy dashboard');
 
