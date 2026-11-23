@@ -1,6 +1,11 @@
 import crypto from 'node:crypto';
 
-const COOKIE_NAME = 'kefle_session';
+// The __Host- prefix is enforced by browsers: Secure, Path=/, and no Domain.
+// That prevents a compromised sibling subdomain from shadowing the auth cookie.
+// Read the legacy name during the migration window so existing users are not
+// signed out; every successful login mints only the hardened cookie.
+const COOKIE_NAME = '__Host-kefle_session';
+const LEGACY_COOKIE_NAME = 'kefle_session';
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const HEADER = { alg: 'HS256', typ: 'JWT' };
 const HEADER_B64 = Buffer.from(JSON.stringify(HEADER)).toString('base64url');
@@ -49,6 +54,37 @@ function parseCookies(req) {
   return out;
 }
 
+// Ambient cookie credentials may be used only by the exact origin that owns
+// them for state-changing requests. Keeping this guard in the session module
+// protects direct getUserId() consumers as well as requireAuth() endpoints.
+// Safe reads remain origin-agnostic; Bearer authentication is handled outside
+// this module and does not depend on browser-supplied cookies.
+export function isTrustedSessionMutation(req) {
+  const method = String(req?.method || 'GET').toUpperCase();
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return true;
+
+  const fetchSite = String(req?.headers?.['sec-fetch-site'] || '').toLowerCase();
+  if (fetchSite && fetchSite !== 'same-origin') return false;
+
+  const origin = String(req?.headers?.origin || '').trim();
+  const forwardedHost = String(req?.headers?.['x-forwarded-host'] || '')
+    .split(',')[0]
+    .trim();
+  const host = forwardedHost || String(req?.headers?.host || '').trim();
+  if (!origin || !host) return false;
+
+  try {
+    const parsed = new URL(origin);
+    if (parsed.host.toLowerCase() !== host.toLowerCase()) return false;
+    if (parsed.protocol === 'https:') return true;
+    return process.env.NODE_ENV !== 'production'
+      && parsed.protocol === 'http:'
+      && /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(parsed.host);
+  } catch (_e) {
+    return false;
+  }
+}
+
 function mintJwt(userId, secret) {
   const now = Math.floor(Date.now() / 1000);
   const payload = { userId: String(userId), iat: now, exp: now + MAX_AGE_SECONDS };
@@ -89,10 +125,11 @@ function appendSetCookie(res, value) {
 }
 
 export function getUserId(req) {
+  if (!isTrustedSessionMutation(req)) return null;
   let secret;
   try { secret = getSecret(); } catch { return null; }
   const cookies = parseCookies(req);
-  const token = cookies[COOKIE_NAME];
+  const token = cookies[COOKIE_NAME] || cookies[LEGACY_COOKIE_NAME];
   if (!token) return null;
   const payload = verifyJwt(token, secret);
   if (!payload) return null;
@@ -107,8 +144,10 @@ export function setSessionCookie(res, userId) {
 }
 
 export function clearSessionCookie(res) {
-  const cookie = `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
-  appendSetCookie(res, cookie);
+  appendSetCookie(res, `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
+  // Clear the pre-hardening cookie as well so logout remains complete for
+  // sessions created before the __Host- migration.
+  appendSetCookie(res, `${LEGACY_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
 }
 
 export function requireUser(req, res) {
