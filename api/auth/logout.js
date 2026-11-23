@@ -9,12 +9,15 @@
 
 import { withRequestId } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
-import { clearSessionCookie } from '../_lib/session.js';
+import { clearSessionCookie, isTrustedSessionMutation } from '../_lib/session.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+  }
+  if (!isTrustedSessionMutation(req)) {
+    return res.status(403).json({ ok: false, error: 'csrf_origin_rejected' });
   }
   try {
     clearSessionCookie(res);
