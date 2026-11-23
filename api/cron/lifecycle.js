@@ -416,7 +416,7 @@ async function handlerImpl(req, res) {
                     `היי ${firstName}, התגעגענו אליך 👋\n\n` +
                     `יש לנו הצעה מיוחדת: 50% הנחה לתמיד על כספ'לה.\n` +
                     `₪9.50 לחודש במקום ₪19, ולתמיד.\n\n` +
-                    `לחץ כאן להפעלת ההנחה: https://kesefle.com/win-back#token=${encodeURIComponent(winbackToken)}\n\n` +
+                    `לחץ כאן לרישום בקשת ההנחה: https://kesefle.com/win-back#token=${encodeURIComponent(winbackToken)}\n\n` +
                     `(תוקף ההצעה: 14 יום)`;
                   await fetch(waUrl, {
                     method: 'POST',

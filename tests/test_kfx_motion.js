@@ -1,7 +1,8 @@
 // Cinematic motion layer (kfx) guard. Pure static checks, no network.
 //
 // Locks in:
-//   - every public page carries the generated kfx block, exactly once, and
+//   - every public content page carries the generated kfx block, exactly once,
+//     while the bearer-token win-back claim page is deliberately isolated
 //     scripts/kfx/rollout.js --check would report it up to date
 //   - app / admin / account pages never get it
 //   - the libraries are self-hosted and versioned (no CDN in the block)
@@ -44,7 +45,7 @@ ok('3D bundle is an ES module exporting mount', /export\s*\{[^}]*\bmount\b/.test
 ok('three.js license kept in the bundle', /Three\.js Authors/.test(read('js/kfx-phone3d.mjs')));
 ok('GSAP license banner kept', /gsap\.com\/standard-license/.test(read('js/vendor/gsap.min.js')));
 
-// 2. every public page: one block, current, self-hosted
+// 2. every public content page: one block, current, self-hosted
 const pages = rollout.listPages();
 ok('rollout finds the public pages', pages.length >= 90, 'found ' + pages.length);
 const stale = [], dup = [], cdn = [];
@@ -63,8 +64,8 @@ ok('homepage profile is home and loads kfx-home.js', /<meta name="kfx-profile" c
 ok('blog posts use the article profile', /<meta name="kfx-profile" content="article">/.test(read('blog/budget-vs-cashflow.html')));
 ok('only the homepage arms the preloader', !/classList\.add\('kfx-preload'\)/.test(read('pricing.html').match(/<!-- kfx:begin[\s\S]*?<!-- kfx:end -->/)[0]) && /classList\.add\('kfx-preload'\)/.test(read('index.html')));
 
-// 3. private pages stay untouched
-['account.html', 'app.html', 'dashboard.html', 'admin.html', 'expense.html', 'offline.html', 'test.html'].forEach((rel) => {
+// 3. private/utility pages and the bearer-token claim page stay untouched
+['account.html', 'app.html', 'dashboard.html', 'admin.html', 'expense.html', 'offline.html', 'test.html', 'win-back.html'].forEach((rel) => {
   if (!fs.existsSync(path.join(ROOT, rel))) return;
   ok('no kfx on ' + rel, !/kfx:begin|kfx-motion/.test(read(rel)));
 });

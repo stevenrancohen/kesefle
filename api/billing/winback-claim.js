@@ -11,6 +11,7 @@ import { withRequestId, log, subHash } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { sendAlert } from '../../lib/alert.js';
 import { verifyWinbackToken, WinbackTokenError } from '../../lib/winback-token.js';
+import { randomUUID } from 'node:crypto';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -55,13 +56,49 @@ async function kvSetNxEx(key, value, ttlSec) {
   );
   if (!result.ok) return { ok: false, inserted: false, status: result.status };
   if (result.result === 'OK') return { ok: true, inserted: true };
-  if (result.result == null) return { ok: true, inserted: false };
+  // Upstash returns an explicit JSON null when NX loses. A missing result
+  // field can also mean a committed write whose response body was truncated,
+  // so it must enter claim_id reconciliation rather than skip the alert.
+  if (Object.prototype.hasOwnProperty.call(result, 'result') && result.result === null) {
+    return { ok: true, inserted: false };
+  }
   return { ok: false, inserted: false, ambiguous: true };
 }
 
 function cancellationMatches(record, expectedIso) {
   try { return new Date(record?.cancelled_at).toISOString() === expectedIso; }
   catch (_e) { return false; }
+}
+
+function isCurrentClaim(record, offer) {
+  return Boolean(record?.claimed_at)
+    && String(record.userSub || '') === offer.userSub
+    && cancellationMatches(record, offer.cancelledAt)
+    && Number(record.discount_pct) === 50;
+}
+
+function isLegacyClaim(record, offer) {
+  return Boolean(record?.claimed_at)
+    && !record.cancelled_at
+    && String(record.userSub || '') === offer.userSub
+    && Number(record.discount_pct) === 50;
+}
+
+function replayResponse(res, record) {
+  return res.status(200).json({
+    ok: true,
+    already_claimed: true,
+    claimed_at: record.claimed_at,
+    note: 'ההנחה כבר נרשמה. נציג יחזור אליך בקרוב.',
+  });
+}
+
+function alreadyUsedResponse(res) {
+  return res.status(409).json({
+    ok: false,
+    error: 'offer_already_used',
+    detail: 'ההצעה כבר נוצלה עבור ביטול קודם. אם לדעתך זו טעות, אפשר לפנות אלינו ב-info@kesefle.com.',
+  });
 }
 
 export async function handlerImpl(req, res, deps = {}) {
@@ -106,7 +143,11 @@ export async function handlerImpl(req, res, deps = {}) {
   }
 
   const claimedAt = new Date(deps.nowMs ?? Date.now()).toISOString();
+  // claim_id lets us distinguish our own committed write from an older claim
+  // if Upstash persists SET NX but its HTTP response is lost in transit.
+  const claimId = (deps.randomUUIDFn || randomUUID)();
   const record = {
+    claim_id: claimId,
     userSub: offer.userSub,
     cancelled_at: offer.cancelledAt,
     offer_issued_at: offer.issuedAt,
@@ -118,33 +159,34 @@ export async function handlerImpl(req, res, deps = {}) {
   };
   const claimKey = `winback:${offer.userSub}`;
   const write = await kvSetNxEx(claimKey, record, CLAIM_TTL_SEC);
+  let recoveredOwnWrite = false;
   if (!write.ok) {
-    log.error('winback.claim_write_failed', { reqId: req.reqId, sub: subHash(offer.userSub) });
-    return res.status(503).json({ ok: false, error: 'temporarily_unavailable' });
+    // A failed or unfamiliar HTTP response does not prove the write failed.
+    // Read the exact key back: only this request's random claim_id may be
+    // promoted to success and continue to the operator alert.
+    const reconciliation = await kvGetJson(claimKey);
+    if (reconciliation.ok
+      && reconciliation.value?.claim_id === claimId
+      && isCurrentClaim(reconciliation.value, offer)) {
+      recoveredOwnWrite = true;
+      log.warn('winback.claim_write_reconciled', { reqId: req.reqId, sub: subHash(offer.userSub) });
+    } else if (reconciliation.ok && (isCurrentClaim(reconciliation.value, offer) || isLegacyClaim(reconciliation.value, offer))) {
+      return replayResponse(res, reconciliation.value);
+    } else if (reconciliation.ok && reconciliation.value?.claimed_at) {
+      return alreadyUsedResponse(res);
+    } else {
+      log.error('winback.claim_write_failed', { reqId: req.reqId, sub: subHash(offer.userSub) });
+      return res.status(503).json({ ok: false, error: 'temporarily_unavailable' });
+    }
   }
 
-  if (!write.inserted) {
+  if (!write.inserted && !recoveredOwnWrite) {
     const existing = await kvGetJson(claimKey);
-    const strictCurrentClaim = existing.ok
-      && existing.value?.claimed_at
-      && String(existing.value.userSub || '') === offer.userSub
-      && cancellationMatches(existing.value, offer.cancelledAt)
-      && Number(existing.value.discount_pct) === 50;
-    const strictLegacyClaim = existing.ok
-      && existing.value?.claimed_at
-      && !existing.value.cancelled_at
-      && String(existing.value.userSub || '') === offer.userSub
-      && Number(existing.value.discount_pct) === 50;
-    if (strictCurrentClaim || strictLegacyClaim) {
-      return res.status(200).json({
-        ok: true,
-        already_claimed: true,
-        claimed_at: existing.value.claimed_at,
-        note: 'ההנחה כבר נרשמה. נציג יחזור אליך בקרוב.',
-      });
+    if (existing.ok && (isCurrentClaim(existing.value, offer) || isLegacyClaim(existing.value, offer))) {
+      return replayResponse(res, existing.value);
     }
     if (existing.ok && existing.value?.claimed_at) {
-      return res.status(409).json({ ok: false, error: 'offer_already_used' });
+      return alreadyUsedResponse(res);
     }
     return res.status(503).json({ ok: false, error: 'temporarily_unavailable' });
   }
@@ -154,12 +196,19 @@ export async function handlerImpl(req, res, deps = {}) {
   log.info('winback.claim_recorded', { reqId: req.reqId, sub: subHash(offer.userSub) });
 
   const alertFn = deps.sendAlertFn || sendAlert;
-  Promise.resolve().then(() => alertFn({
-    severity: 'info',
-    title: '🎁 WINBACK CLAIM',
-    body: `userSub ${offer.userSub} (${user?.email || 'unknown email'}) claimed the 50% lifetime winback discount.\n\nApply manually in PayPal admin: discount their subscription 50% on the NEXT renewal. Then send them a "ברוך השב" WhatsApp message.`,
-    tags: ['winback', 'revenue-recovery'],
-  })).catch(() => {});
+  try {
+    // Await the alert attempt so a serverless runtime cannot freeze first.
+    // The durable winback:* record remains the admin inbox source of truth if
+    // every alert channel is unavailable.
+    await alertFn({
+      severity: 'info',
+      title: `🎁 WINBACK CLAIM ${subHash(offer.userSub)}`,
+      body: `userSub ${offer.userSub} (${user?.email || 'unknown email'}) claimed the 50% lifetime winback discount.\n\nApply manually in PayPal admin: discount their subscription 50% on the NEXT renewal. Then send them a "ברוך השב" WhatsApp message.`,
+      tags: ['winback', 'revenue-recovery'],
+    });
+  } catch (error) {
+    log.warn('winback.claim_alert_failed', { reqId: req.reqId, sub: subHash(offer.userSub), error: error?.message });
+  }
 
   return res.status(200).json({
     ok: true,

@@ -77,6 +77,8 @@ async function expectTokenError(fn, code) {
   const calls = [];
   let failClaimWrites = false;
   let ambiguousClaimWrites = false;
+  let commitThenLoseClaimResponse = false;
+  let commitThenMalformedClaimResponse = false;
   global.fetch = async (rawUrl, options = {}) => {
     const url = new URL(rawUrl);
     calls.push({ url, options });
@@ -99,6 +101,12 @@ async function expectTokenError(fn, code) {
         return { ok: true, status: 200, json: async () => ({ result: null }) };
       }
       store.set(key, options.body);
+      if (commitThenLoseClaimResponse && key.startsWith('winback:')) {
+        throw new Error('response lost after commit');
+      }
+      if (commitThenMalformedClaimResponse && key.startsWith('winback:')) {
+        return { ok: true, status: 200, json: async () => ({}) };
+      }
       return { ok: true, status: 200, json: async () => ({ result: 'OK' }) };
     }
     throw new Error(`unexpected fetch: ${url}`);
@@ -147,6 +155,7 @@ async function expectTokenError(fn, code) {
   await handlerImpl({ method: 'POST', body: { token: reusedToken }, reqId: 'reused' }, reused, deps);
   assert.strictEqual(reused.statusCode, 409, 'an older cancellation claim cannot masquerade as this offer');
   assert.strictEqual(reused.payload.ok, false);
+  assert.match(reused.payload.detail, /כבר נוצלה/, 'already-used offer gets a truthful, final user-facing explanation');
 
   const legacySub = 'legacy-double-json-sub';
   const legacyToken = createWinbackToken({ userSub: legacySub, cancelledAt, nowMs });
@@ -190,6 +199,33 @@ async function expectTokenError(fn, code) {
   assert.strictEqual(ambiguous.statusCode, 503, 'unexpected KV SET result fails closed');
   ambiguousClaimWrites = false;
 
+  const committedSub = 'committed-response-lost-sub';
+  const committedToken = createWinbackToken({ userSub: committedSub, cancelledAt, nowMs });
+  store.set(`exit_survey:${committedSub}`, JSON.stringify({ userSub: committedSub, cancelled_at: cancelledAt }));
+  const alertsBeforeCommitLoss = alerts;
+  commitThenLoseClaimResponse = true;
+  const committed = response();
+  await handlerImpl({ method: 'POST', body: { token: committedToken }, reqId: 'commit-response-lost' }, committed, deps);
+  commitThenLoseClaimResponse = false;
+  assert.strictEqual(committed.statusCode, 200, 'a committed SET with a lost response is reconciled from its random claim id');
+  assert.strictEqual(alerts, alertsBeforeCommitLoss + 1, 'reconciled owner write still alerts the operator exactly once');
+  const committedReplay = response();
+  await handlerImpl({ method: 'POST', body: { token: committedToken }, reqId: 'commit-response-lost-replay' }, committedReplay, deps);
+  assert.strictEqual(committedReplay.statusCode, 200);
+  assert.strictEqual(committedReplay.payload.already_claimed, true);
+  assert.strictEqual(alerts, alertsBeforeCommitLoss + 1, 'retry after reconciled commit does not duplicate the alert');
+
+  const malformedSub = 'committed-malformed-response-sub';
+  const malformedToken = createWinbackToken({ userSub: malformedSub, cancelledAt, nowMs });
+  store.set(`exit_survey:${malformedSub}`, JSON.stringify({ userSub: malformedSub, cancelled_at: cancelledAt }));
+  const alertsBeforeMalformed = alerts;
+  commitThenMalformedClaimResponse = true;
+  const malformed = response();
+  await handlerImpl({ method: 'POST', body: { token: malformedToken }, reqId: 'commit-malformed-response' }, malformed, deps);
+  commitThenMalformedClaimResponse = false;
+  assert.strictEqual(malformed.statusCode, 200, 'a committed SET with a missing result field enters claim-id reconciliation');
+  assert.strictEqual(alerts, alertsBeforeMalformed + 1, 'malformed committed response still produces one operator alert');
+
   const raceSub = 'race-sub';
   const raceToken = createWinbackToken({ userSub: raceSub, cancelledAt, nowMs });
   store.set(`exit_survey:${raceSub}`, JSON.stringify({ userSub: raceSub, cancelled_at: cancelledAt }));
@@ -219,10 +255,15 @@ async function expectTokenError(fn, code) {
   assert(!/slice\(0,\s*24\)/.test(lifecycle), 'lifecycle no longer derives a token from identity');
   assert(/createWinbackToken/.test(lifecycle), 'lifecycle uses the shared encrypted-token helper');
   assert(/win-back#token=/.test(lifecycle) && /win-back#token=/.test(email), 'email and WhatsApp keep tokens out of request URLs');
-  assert(/fragment\.get\('token'\)[\s\S]*url\.searchParams\.get\('token'\)/.test(page), 'page prefers fragment tokens with query rollout fallback');
-  assert(/history\.replaceState\(null, document\.title, url\.pathname\)/.test(page), 'page strips token-bearing URLs from browser history');
+  assert(/fragment\.get\('token'\)[\s\S]*initialUrl\.searchParams\.get\('token'\)/.test(page), 'page prefers fragment tokens with query rollout fallback');
+  assert(/history\.replaceState\(null, document\.title, initialUrl\.pathname\)/.test(page), 'page strips token-bearing URLs from browser history');
+  assert(page.indexOf('history.replaceState') < page.indexOf('<link '), 'token is stripped before any stylesheet or subresource');
+  assert(!/<script\b[^>]*\bsrc=/i.test(page), 'bearer-link page executes no external JavaScript');
+  assert(!/funnel-event|serviceWorker|navigator\.sendBeacon|gtag\s*\(/.test(page), 'bearer-link page runs no analytics or service-worker updater');
+  assert(!/(?:local|session)Storage\.setItem\([^\n]*token|window\.[A-Za-z0-9_$]*token/i.test(page), 'token remains closure-only and is never stored globally');
   assert(!/controllerchange|location\.reload\(\)/.test(page), 'bearer-link page cannot auto-reload after stripping its token');
   assert(/הבקשה נרשמה/.test(page) && !/ההנחה הופעלה/.test(page), 'success copy states that the manual request was recorded');
+  assert(/לרישום בקשת ההנחה/.test(email) && /לרישום בקשת ההנחה/.test(lifecycle), 'email and WhatsApp CTAs promise request registration, not instant activation');
 
   console.log('Win-back claim hardening: PASS');
 })().catch((error) => {
