@@ -54,7 +54,7 @@ const ACQUISITION_PAGES = [
 ];
 const EXPECTED_MANIFEST = {
   'app.html': '/app.webmanifest',
-  'dashboard.html': '/manifest.webmanifest',
+  'dashboard.html': '/app.webmanifest',
   'index.html': '/app.webmanifest',
   'welcome.html': '/app.webmanifest',
 };
@@ -145,13 +145,11 @@ if (appManifest) {
   assert(appShortcuts.some((s) => /\/expense\b/.test(String(s.url))), 'app manifest shortcut opens direct expense entry');
 }
 
-console.log('\n-- acquisition surfaces: canonical app manifest with legacy dashboard preserved --');
+console.log('\n-- acquisition surfaces: one canonical app identity --');
 for (const page of ACQUISITION_PAGES) {
   assert(/<link\s+rel=["']manifest["']\s+href=["']\/app\.webmanifest["']/i.test(read(page)),
     page + ' installs the canonical /app identity');
 }
-assert(/<link\s+rel=["']manifest["']\s+href=["']\/manifest\.webmanifest["']/i.test(read('dashboard.html')),
-  'dashboard.html temporarily preserves the legacy manifest for existing installs');
 const manifestLinks = [];
 function collectManifestLinks(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -168,16 +166,24 @@ function collectManifestLinks(dir) {
 collectManifestLinks(ROOT);
 const legacyPages = manifestLinks.filter((entry) => entry.href === '/manifest.webmanifest').map((entry) => entry.page).sort();
 const unexpectedManifestPages = manifestLinks.filter((entry) => !['/manifest.webmanifest', '/app.webmanifest'].includes(entry.href));
-assert(JSON.stringify(legacyPages) === JSON.stringify(['dashboard.html']),
-  'dashboard.html is the explicit and only legacy-manifest allowlist entry');
+assert(legacyPages.length === 0,
+  'no active HTML surface installs the legacy /dashboard identity');
 assert(unexpectedManifestPages.length === 0,
-  'every linked manifest is either the canonical app identity or the one legacy dashboard identity');
+  'every linked manifest uses the canonical app identity');
+
+for (const page of ['install.html', 'ar/install.html', 'ru/install.html', 'fr/install.html', 'it/install.html']) {
+  const html = read(page);
+  const description = html.match(/<meta\s+property=["']og:description["']\s+content=(["'])(.*?)\1/i);
+  assert(!!description, page + ' has an Open Graph install description');
+  assert(description && !/3\s*(?:clicks?|clics?|клика)|bot|בוט|бот|بوت/i.test(description[2]),
+    page + ' describes the installed app without promising a bot');
+}
 
 // ---------------------------------------------------------------------------
 // 3. installed shell theme matches its corresponding manifest
 // ---------------------------------------------------------------------------
 console.log('\n-- theme_color: each installed shell agrees with its own manifest --');
-for (const [page, manifest] of [['dashboard.html', m], ['app.html', appManifest]]) {
+for (const [page, manifest] of [['dashboard.html', appManifest], ['app.html', appManifest]]) {
   const html = read(page);
   const mt = html.match(/<meta\s+name=["']theme-color["']\s+content=["'](#[0-9a-fA-F]{6})["']/i);
   assert(!!mt, page + ' has a <meta name="theme-color"> with a hex colour');
