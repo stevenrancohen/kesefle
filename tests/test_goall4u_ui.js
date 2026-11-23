@@ -41,6 +41,6 @@ for (const file of installPages) {
   assert.match(html, /kesefle\.com\/app/, `${file} must point to the installable app`);
 }
 assert.match(read('install.html'), /רענון נתונים והוספת תנועה דורשים חיבור לאינטרנט/);
-assert.match(read('sw.js'), /v18-2026-11-14-mobile-ux/);
+assert.match(read('sw.js'), /v19-2026-11-23-guest-first-run/);
 
 console.log('GOALL4U-inspired UI system: PASS');

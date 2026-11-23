@@ -87,6 +87,27 @@
   .tab.active:after { content:''; position:absolute; inset:auto 35% 3px; height:3px; border-radius:999px; background:#fddd48; }
   .global-search { display:none; }
   @media (min-width:640px) { .global-search { display:flex; } }
+  .guest-layout { display:grid; gap:14px; }
+  .guest-hero { position:relative; overflow:hidden; background:radial-gradient(circle at 14% 12%,rgba(63,111,245,.22),transparent 34%),radial-gradient(circle at 88% 80%,rgba(253,221,72,.14),transparent 34%),linear-gradient(145deg,#191b21,#090a0d 74%); color:#fff; border-color:#343741; }
+  .guest-hero:before { content:''; position:absolute; inset:0 0 auto; height:4px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+  .guest-hero > * { position:relative; z-index:1; }
+  .guest-preview { background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(247,247,245,.96)); }
+  html.dark .guest-preview { background:linear-gradient(145deg,#171920,#0f1116); }
+  .guest-feature { display:grid; grid-template-columns:42px minmax(0,1fr); align-items:center; gap:12px; border:1px solid #ececea; border-radius:16px; padding:12px; background:rgba(255,255,255,.74); }
+  html.dark .guest-feature { border-color:#292c33; background:rgba(9,10,13,.48); }
+  .guest-proof { display:flex; min-height:44px; align-items:center; gap:10px; border-top:1px solid #ececea; color:#50555b; }
+  html.dark .guest-proof { border-color:#292c33; color:#b4b6b4; }
+  .guest-step { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:10px; }
+  .guest-step-num { display:grid; width:34px; height:34px; place-items:center; border-radius:12px; background:#fff3c4; color:#5c4100; font-weight:900; }
+  html.dark .guest-step-num { background:rgba(253,221,72,.12); color:#fddd48; }
+  body.guest-mode .bottom-nav,
+  body.guest-mode #expenseFab,
+  body.guest-mode #refreshBtn,
+  body.guest-mode #syncTime,
+  body.guest-mode .global-search,
+  body.guest-mode #spaceSwitcher,
+  body.guest-mode .promo-strip a { display:none!important; }
+  body.guest-mode #view { padding-bottom:max(2rem,env(safe-area-inset-bottom)); }
   html.dark .bg-brand-700 { background-color:#fddd48!important; color:#090a0d!important; }
   html.dark .text-brand-700 { color:#fddd48!important; }
   html.dark .border-brand-300 { border-color:#fddd48!important; }
@@ -100,6 +121,8 @@
     #view { padding-bottom:60px; }
     nav.bottom-nav { left:50%; right:auto; bottom:22px; width:min(520px,calc(100% - 32px)); transform:translateX(-50%); border:1px solid #30333b; border-radius:22px; box-shadow:0 18px 45px rgba(0,0,0,.34); overflow:hidden; }
     .quick-rail { grid-auto-columns:minmax(122px,1fr); overflow:visible; }
+    .guest-layout { grid-template-columns:minmax(0,1.28fr) minmax(300px,.72fr); align-items:start; }
+    .guest-side { position:sticky; top:176px; }
   }
   @media (prefers-reduced-motion: reduce) { .kfl-spin{animation:none;} .skel{animation:none;} .card,.quick-card{transition:none;} }
 </style>
@@ -173,8 +196,39 @@ function thisMonthLabel(){ var d=new Date(); return HEB_MONTHS[d.getMonth()]+' '
 function daysLeftInMonth(){ var d=new Date(); return Math.max(0,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-d.getDate()); }
 function loadingHero(){ return '<div class="card p-5"><div class="skel h-3 w-24"></div><div class="skel mt-3 h-9 w-40"></div><div class="mt-5 grid grid-cols-2 gap-3"><div class="skel h-14"></div><div class="skel h-14"></div></div></div><div class="skel mt-4 h-40 w-full rounded-2xl"></div>'; }
 function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class="text-3xl">∅</div><div class="mt-2 text-sm font-semibold">'+esc(t||'אין נתונים עדיין')+'</div>'+(sub?'<div class="mt-1 text-xs text-ink-500">'+esc(sub)+'</div>':'')+'</div>'; }
-function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-500">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
-function errState(e){ if(e&&e.isAuth) return signInState(); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
+function setGuestMode(on){
+  document.body.classList.toggle('guest-mode',!!on);
+  ['.bottom-nav','#expenseFab','#refreshBtn','#syncTime','.global-search','#spaceSwitcher','.promo-strip a'].forEach(function(selector){
+    document.querySelectorAll(selector).forEach(function(node){ node.hidden=!!on; });
+  });
+  var who=$('#whoami');
+  if(who&&on) who.textContent='סיור באפליקציה';
+  if(who&&!on&&typeof paintSpaceSwitcher==='function') paintSpaceSwitcher();
+}
+function signInState(){
+  var uses=[
+    ['wallet','אישי ושכיר·ה','משכורת, הוצאות ומה נשאר'],
+    ['home','זוגי ומשפחתי','תמונה משותפת ומי הוסיף כל תנועה'],
+    ['chart','עצמאי·ת ועסק','תזרים, הפרדה עסקית ומס ומע״מ']
+  ];
+  return '<div class="guest-layout" data-guest-screen="true">'+
+    '<div><section class="card guest-hero p-5 sm:p-7" aria-labelledby="guestTitle">'+
+      '<div class="flex items-center justify-between gap-3"><span class="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-black text-brand-300">סיור של 20 שניות</span><span class="text-[11px] font-bold text-white/55">ללא נתונים אישיים</span></div>'+
+      '<h1 id="guestTitle" class="mt-5 font-display text-3xl font-black leading-tight sm:text-5xl">לדעת מה קורה עם הכסף — בלי לנחש</h1>'+
+      '<p class="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">כספ\'לה הופכת את התנועות שלך לתמונה חודשית ברורה, במרחב שמתאים לחיים שלך.</p>'+
+      '<div class="mt-5 grid gap-2" aria-label="למי כספלה מתאימה">'+uses.map(function(use,index){var tones=['bg-brand-300 text-ink-950','bg-blue-500/20 text-blue-200','bg-emerald-500/20 text-emerald-200'];return '<div class="guest-feature border-white/10 bg-white/5"><span class="quick-icon '+tones[index]+'">'+lineIcon(use[0])+'</span><span><strong class="block text-sm">'+esc(use[1])+'</strong><span class="mt-0.5 block text-[11px] leading-5 text-white/60">'+esc(use[2])+'</span></span></div>';}).join('')+'</div>'+
+      '<a href="/account?force_signin=1&amp;next=%2Fapp" class="mt-5 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-brand-300 px-5 text-sm font-black text-ink-950 shadow-lg shadow-brand-500/20"><span>מתחילים עם <bdi dir="ltr">Google</bdi></span><span aria-hidden="true">‹</span></a>'+
+      '<div class="mt-3 text-center"><a href="/privacy" class="text-xs font-bold text-white/70 underline decoration-white/20 underline-offset-4">איך שומרים על המידע</a></div>'+
+      '<p class="mt-3 text-[11px] leading-5 text-white/50">ההתחברות מאפשרת לכספ\'לה ליצור ולעדכן רק את הגיליון שלה ב־Google Drive שלך.</p>'+
+    '</section></div>'+
+    '<aside class="guest-side"><section class="card p-5"><div class="eyebrow">מתחילים פשוט</div><h2 class="mt-1 font-display text-xl font-black">שלושה צעדים לתמונה שלך</h2><div class="mt-5 space-y-4">'+
+      '<div class="guest-step"><span class="guest-step-num">1</span><span><strong class="block text-sm">מתחברים עם Google</strong><span class="mt-1 block text-xs leading-5 text-ink-500">בלי סיסמה חדשה ובלי להדביק פרטי בנק.</span></span></div>'+
+      '<div class="guest-step"><span class="guest-step-num">2</span><span><strong class="block text-sm">נוצר גיליון פרטי</strong><span class="mt-1 block text-xs leading-5 text-ink-500">הגיליון נשאר ב־Google Drive שלך.</span></span></div>'+
+      '<div class="guest-step"><span class="guest-step-num">3</span><span><strong class="block text-sm">מוסיפים תנועה ראשונה</strong><span class="mt-1 block text-xs leading-5 text-ink-500">ומיד מתחילה להיבנות תמונה חודשית ברורה.</span></span></div>'+
+    '</div></section><section class="card mt-4 px-5"><div class="guest-proof py-3"><span class="nav-icon text-emerald-600">'+lineIcon('user')+'</span><span class="text-xs font-bold">לא מוכרים מידע פיננסי למפרסמים</span></div><div class="guest-proof py-3"><span class="nav-icon text-blue-600">'+lineIcon('wallet')+'</span><span class="text-xs font-bold">הנתונים נגישים לך גם בגיליון שלך</span></div><div class="guest-proof py-3"><span class="nav-icon text-brand-700">'+lineIcon('home')+'</span><span class="text-xs font-bold">מותאם לאישי, לבית ולעסק</span></div></section></aside>'+
+  '</div>';
+}
+function errState(e){ if(e&&e.isAuth){ APP.me=null; setGuestMode(true); return signInState(); } setGuestMode(false); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
 function bar(label,val,max,tone){ var pct=max>0?Math.round(val/max*100):0; var c=tone||'bg-brand-500'; return '<div class="py-2"><div class="flex items-center justify-between text-sm"><span class="truncate">'+esc(label)+'</span><span class="font-semibold tabular-nums">'+money(val)+'</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full '+c+'" style="width:'+Math.max(3,pct)+'%"></div></div></div>'; }
 // Runtime config is the single source of truth. The fallback is the currently
 // deployed number, but /api/config can switch every app surface at cutover.
@@ -199,14 +253,22 @@ async function savePrefs(fields){
 }
 async function loadPersonalization(){
   try{ APP.prefs=Object.assign(APP.prefs,JSON.parse(localStorage.getItem('kfl_ui_prefs')||'{}')); }catch(_e){}
+  // Authenticate with one cheap request before loading any account-scoped UI
+  // or data. Guests therefore avoid five protected requests and never flash a
+  // stale locally-cached identity while the network is slow.
+  var me;
+  try{ me=await apiGet('/api/me'); }
+  catch(e){ if(e&&e.isAuth){ APP.me=null; APP.group=null; return false; } throw e; }
+  if(!me||!me.ok||!me.user){ APP.me=null; APP.group=null; return false; }
+  APP.me=me;
   var r=await Promise.all([
     apiGet('/api/ui-preferences').catch(function(){return null;}),
-    apiGet('/api/me').catch(function(){return null;}),
     apiGet('/api/group/mine').catch(function(){return null;})
   ]);
   if(r[0]&&r[0].ok){ APP.prefs=Object.assign(APP.prefs,r[0].preferences||{}); APP.onboarding=r[0].onboarding||{}; storePrefs(); }
-  APP.me=r[1]; APP.group=r[2]&&r[2].group||null;
+  APP.group=r[1]&&r[1].group||null;
   paintSpaceSwitcher();
+  return true;
 }
 function paintSpaceSwitcher(){
   var space=activeSpace();
@@ -289,6 +351,9 @@ function setActiveTab(id){ document.querySelectorAll('#tabs .tab').forEach(funct
 function currentId(){ return (location.hash||'').replace(/^#\/?/,''); }
 var __routing=false, __routeAgain=false;
 async function route(force){
+  // Hash shortcuts can fire while auth bootstrap is still running. A missing
+  // verified account is always a guest state and must not trigger sheet APIs.
+  if(!APP.me){ setGuestMode(true); $('#view').innerHTML=signInState(); return; }
   // Re-entrancy guard: rapid pull-to-refresh / refresh taps / hashchanges must
   // not run concurrent renders racing on view.innerHTML. Serialize them and let
   // the latest request win (re-run once if another came in mid-render).
@@ -302,6 +367,7 @@ async function route(force){
       var rb=$('#refreshBtn'); if(rb) rb.classList.add('kfl-spin');
       view.innerHTML=loadingHero();
       try { await sec.render(view); } catch(e){ view.innerHTML=errState(e); }
+      if(!view.querySelector('[data-guest-screen]')) setGuestMode(false);
       if(rb) rb.classList.remove('kfl-spin');
       var st=$('#syncTime'); if(st){ var n=new Date(); st.textContent='עודכן '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
     } while(__routeAgain);
@@ -379,7 +445,14 @@ async function renderTx(view){
     '<input id="txSearch" type="search" inputmode="search" aria-label="חיפוש תנועות" placeholder="חיפוש לפי תיאור או קטגוריה…" class="mb-1 w-full rounded-2xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500/40" />'+
     '<div id="txList" class="mt-2">'+loadingHero()+'</div>';
   var d;
-  try { d=await apiGet('/api/sheet/getExpenses'); } catch(e){ $('#txList').innerHTML=errState(e); return; }
+  try { d=await apiGet('/api/sheet/getExpenses'); } catch(e){
+    // A direct PWA shortcut can land here before auth. In that case replace
+    // the whole route, rather than leaving a dead search/header around the
+    // guest first-run screen.
+    if(e&&e.isAuth) view.innerHTML=errState(e);
+    else $('#txList').innerHTML=errState(e);
+    return;
+  }
   APP.expenses=d;
   var rows=filterRowsForSpace(((d&&d.rows)||[]),activeSpace()).sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
   var cnt=$('#txCount'); if(cnt) cnt.textContent=num(rows.length)+' תנועות';
@@ -414,7 +487,7 @@ async function renderInsights(view){
       apiPost('/api/budgets',{action:'list'}).catch(function(){return null;})
     ]);
     d=both[0]; ex=both[1]; bg=both[2];
-  } catch(e){ view.innerHTML=head+errState(e); return; }
+  } catch(e){ view.innerHTML=(e&&e.isAuth?'':head)+errState(e); return; }
   if(!d||!d.ok){ view.innerHTML=head+errState(new Error((d&&d.error)||'load_failed')); return; }
 
   // Recalculate the visible aggregates from the selected money space. This is
@@ -593,16 +666,20 @@ function toggleTheme(){ var t=document.documentElement.classList.contains('dark'
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__kflDeferredPrompt=e; var ib=$('#installBtn'); if(ib){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ e.prompt(); await e.userChoice; }catch(_){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; } });
 (async function(){
   applyTheme(localStorage.getItem('kfl_app_theme') || 'dark');
-  try { var u=JSON.parse(localStorage.getItem('kesefle_user')||'{}'); if(u&&(u.name||u.email)) $('#whoami').textContent=u.name||u.email; } catch(e){}
+  // Start private-by-default. Authenticated chrome is revealed only after the
+  // server confirms the current session; localStorage is never identity proof.
+  setGuestMode(true);
+  $('#view').innerHTML=signInState();
   buildTabs();
   bindSpaceSwitcher();
-  paintSpaceSwitcher();
   $('#themeBtn').onclick=toggleTheme;
   $('#refreshBtn').onclick=function(){ route(true); };
   window.addEventListener('hashchange', function(){ route(); });
   if(!location.hash) location.hash='#/';
-  await Promise.all([loadAppConfig(),loadPersonalization()]);
-  route();
+  var ready=false;
+  try { var boot=await Promise.all([loadAppConfig(),loadPersonalization()]); ready=boot[1]; }
+  catch(e){ $('#view').innerHTML='<div class="card p-6 text-center text-sm text-red-500">לא הצלחנו לבדוק את החיבור כרגע.<div class="mt-2 text-xs text-ink-500">בדקו את הרשת ונסו לרענן.</div></div>'; }
+  if(ready){ setGuestMode(false); route(); }
   if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('/sw.js'); } catch(e){} }
   // Pull-to-refresh: only when scrolled to the very top; passive listeners so it
   // never fights native scroll. Triggers a real re-fetch via route(true).
