@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<script src="/lib/browser-session.js"></script>
 <title>כספ'לה — הכסף שלך, על אוטומט</title>
 <meta name="description" content="שלח הודעה בוואטסאפ, וההוצאה כבר רשומה בגוגל שיטס שלך. בוט מעקב הוצאות בעברית — בלי אפליקציות, בלי טפסים, בלי לזכור." />
 <meta name="keywords" content="מעקב הוצאות, בוט וואטסאפ הוצאות, אפליקציה למעקב הוצאות, ניהול תקציב משפחתי, גוגל שיטס הוצאות, אקסל הוצאות חודשי, מעקב הוצאות עברית, ניהול הוצאות חינם, אלטרנטיבה לרייזאפ, בוט וואטסאפ תקציב, תזרים מזומנים פרילנסר" />
 <meta name="theme-color" content="#6366F1" />
-<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/app.webmanifest" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="כספ'לה" />
@@ -2018,11 +2019,14 @@ function kesefleShowAuthMsg(text, kind) {
 }
 
 function kesefleShowSuccess(user) {
-  window.KESEFLE_STATE.user = user;
-  try { localStorage.setItem('kesefle_user', JSON.stringify(user)); } catch (e) {}
+  var profile = window.KesefleSession
+    ? window.KesefleSession.sanitizeProfileObject(user)
+    : { version: 2, sub: user && user.sub, email: user && user.email, name: user && user.name, picture: user && user.picture, plan: user && user.plan };
+  window.KESEFLE_STATE.user = profile;
+  try { localStorage.setItem('kesefle_user', JSON.stringify(profile)); } catch (e) {}
   document.getElementById('auth-buttons').classList.add('hidden');
   document.getElementById('auth-success').classList.remove('hidden');
-  document.getElementById('auth-success-name').textContent = 'ברוך הבא, ' + (user.name || user.email || '') + '!';
+  document.getElementById('auth-success-name').textContent = 'ברוך הבא, ' + (profile.name || profile.email || '') + '!';
   document.getElementById('auth-success-detail').textContent = 'מעביר אותך לחשבון שלך…';
   setTimeout(function() { location.href = '/account'; }, 1400);
 }

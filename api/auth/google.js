@@ -1,121 +1,111 @@
-// Verifies Google ID tokens via JWKS (RS256). Production-grade per Google's docs.
-// Env: GOOGLE_CLIENT_ID (required audience), KV_REST_API_URL, KV_REST_API_TOKEN.
+// One-time/browser-session upgrade for a verified Google ID token.
+//
+// New users must use the PKCE flow in google-exchange.js so Kesefle receives
+// drive.file consent and stores an encrypted refresh-token envelope. This
+// endpoint exists for returning users and legacy cached PWAs: it verifies the
+// short-lived ID token, confirms a canonical user:{sub} record already exists,
+// and mints the HttpOnly session cookie without ever echoing the credential.
 
-import crypto from 'node:crypto';
 import { rateLimit } from '../_lib/rateLimit.js';
+import { setSessionCookie } from '../_lib/session.js';
+import { getGoogleClientId, verifyGoogleIdToken } from '../../lib/auth.js';
 import { log } from '../../lib/log.js';
 
-function b64urlToBuf(s) {
-  s = s.replace(/-/g, '+').replace(/_/g, '/');
-  while (s.length % 4) s += '=';
-  return Buffer.from(s, 'base64');
+function noStore(res) {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
 }
 
-let _jwksCache = null;
-let _jwksCacheTime = 0;
-async function fetchGoogleKeys() {
-  const now = Date.now();
-  if (_jwksCache && (now - _jwksCacheTime) < 3600_000) return _jwksCache;
-  const r = await fetch('https://www.googleapis.com/oauth2/v3/certs');
-  if (!r.ok) throw new Error('jwks fetch failed');
+async function kvGetUser(kvUrl, kvToken, userSub) {
+  const r = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, {
+    headers: { 'Authorization': `Bearer ${kvToken}` },
+  });
+  if (!r.ok) throw new Error('kv_get_user_status_' + r.status);
   const j = await r.json();
-  _jwksCache = j.keys || [];
-  _jwksCacheTime = now;
-  return _jwksCache;
+  return j?.result ? JSON.parse(j.result) : null;
 }
 
-async function verifyGoogleIdToken(idToken, expectedAudience) {
-  const parts = idToken.split('.');
-  if (parts.length !== 3) throw new Error('malformed jwt');
-  const [headerB64, payloadB64, signatureB64] = parts;
-  const header = JSON.parse(b64urlToBuf(headerB64).toString('utf8'));
-  const payload = JSON.parse(b64urlToBuf(payloadB64).toString('utf8'));
-
-  if (header.alg !== 'RS256') throw new Error('unsupported alg');
-
-  const keys = await fetchGoogleKeys();
-  const jwk = keys.find(k => k.kid === header.kid);
-  if (!jwk) throw new Error('signing key not found');
-
-  const pubKey = crypto.createPublicKey({ key: jwk, format: 'jwk' });
-  const data = Buffer.from(`${headerB64}.${payloadB64}`, 'utf8');
-  const sig = b64urlToBuf(signatureB64);
-  const verifier = crypto.createVerify('RSA-SHA256');
-  verifier.update(data);
-  if (!verifier.verify(pubKey, sig)) throw new Error('signature invalid');
-
-  if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
-    throw new Error('bad issuer');
-  }
-  if (expectedAudience && payload.aud !== expectedAudience) throw new Error('audience mismatch');
-  if (Number(payload.exp) * 1000 < Date.now()) throw new Error('token expired');
-  if (Number(payload.iat) * 1000 > Date.now() + 60_000) throw new Error('token in future');
-
-  return payload;
+async function kvSetUser(kvUrl, kvToken, userSub, record) {
+  const r = await fetch(`${kvUrl}/set/${encodeURIComponent('user:' + userSub)}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(record),
+  });
+  if (!r.ok) throw new Error('kv_set_user_status_' + r.status);
 }
 
 export default async function handler(req, res) {
+  noStore(res);
   if (await rateLimit(req, res)) return;
   if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'method not allowed' });
+    return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   }
-  if (!process.env.GOOGLE_CLIENT_ID) {
-    return res.status(500).json({ ok: false, error: 'server misconfigured: GOOGLE_CLIENT_ID required' });
-  }
+
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const idToken = String(body?.credential || body?.id_token || '').trim();
   if (!idToken || idToken.length < 20) {
-    return res.status(400).json({ ok: false, error: 'missing credential' });
+    return res.status(400).json({ ok: false, error: 'missing_credential' });
   }
 
   let payload;
   try {
-    payload = await verifyGoogleIdToken(idToken, process.env.GOOGLE_CLIENT_ID);
+    payload = await verifyGoogleIdToken(idToken, getGoogleClientId());
   } catch (e) {
-    return res.status(401).json({ ok: false, error: 'verification failed: ' + e.message });
+    log.warn('auth.session_upgrade_verify_failed', { reqId: req.reqId, error: e.message });
+    return res.status(401).json({ ok: false, error: 'verification_failed' });
   }
-
-  const user = {
-    sub: payload.sub,
-    email: payload.email,
-    emailVerified: payload.email_verified === true,
-    name: payload.name,
-    picture: payload.picture,
-    locale: payload.locale,
-    provider: 'google',
-    firstSeen: new Date().toISOString(),
-  };
+  if (payload.email_verified !== true) {
+    return res.status(403).json({ ok: false, error: 'email_not_verified' });
+  }
 
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
-  if (kvUrl && kvToken) {
-    try {
-      await fetch(`${kvUrl}/set/${encodeURIComponent('user:google:' + user.sub)}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(user),
-      });
-      await fetch(`${kvUrl}/sadd/users_all/${encodeURIComponent('google:' + user.sub)}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${kvToken}` },
-      });
-    } catch (e) {
-      log.error('auth.kv_write_failed', { error: e.message });
-    }
-  } else {
-    // KV not configured (local dev / mis-provisioned staging). Log a
-    // redacted record so we know a signup happened without dumping
-    // email/name/picture to the function logs (which Vercel retains).
-    console.log('USER_SIGNUP', JSON.stringify({
-      sub: user.sub,
-      provider: user.provider,
-      email_verified: !!user.email_verified,
-      hasEmail: !!user.email,
-      hasName: !!user.name,
-      firstSeen: user.firstSeen,
-    }));
+  if (!kvUrl || !kvToken) {
+    return res.status(503).json({ ok: false, error: 'identity_store_unavailable' });
   }
 
-  return res.status(200).json({ ok: true, user });
+  let existing;
+  try {
+    existing = await kvGetUser(kvUrl, kvToken, payload.sub);
+  } catch (e) {
+    log.error('auth.session_upgrade_lookup_failed', { reqId: req.reqId, userSub: payload.sub, error: e.message });
+    return res.status(502).json({ ok: false, error: 'identity_lookup_failed' });
+  }
+  if (!existing) {
+    return res.status(409).json({ ok: false, error: 'pkce_required' });
+  }
+
+  // Identity refresh is deliberately minimal and merge-only: paid plan,
+  // encrypted refresh-token envelope, sheet IDs, referral state, and every
+  // other server-owned field remain untouched. Remove a pre-migration
+  // plaintext refresh token if the account happens to carry one.
+  const record = {
+    ...existing,
+    userSub: payload.sub,
+    email: payload.email || existing.email || '',
+    name: payload.name || existing.name || '',
+    picture: payload.picture || existing.picture || '',
+    lastLoginAt: new Date().toISOString(),
+  };
+  delete record.refreshToken;
+
+  try {
+    await kvSetUser(kvUrl, kvToken, payload.sub, record);
+    setSessionCookie(res, payload.sub);
+  } catch (e) {
+    log.error('auth.session_upgrade_commit_failed', { reqId: req.reqId, userSub: payload.sub, error: e.message });
+    return res.status(502).json({ ok: false, error: 'session_upgrade_failed' });
+  }
+
+  return res.status(200).json({
+    ok: true,
+    user: {
+      sub: payload.sub,
+      email: record.email,
+      name: record.name,
+      picture: record.picture,
+      plan: record.plan || 'free',
+    },
+  });
 }

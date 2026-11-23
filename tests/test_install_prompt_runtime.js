@@ -12,6 +12,7 @@ function assert(condition, label) {
 }
 
 function boot(options = {}) {
+  const userAgent = options.userAgent || (options.ios ? 'Mozilla/5.0 (iPhone)' : 'Mozilla/5.0 (Linux; Android)');
   const windowListeners = {};
   const buttonListeners = {};
   const displayListeners = {};
@@ -46,10 +47,11 @@ function boot(options = {}) {
       querySelector(selector) { return selector === '[data-install-shell]' ? shell : null; },
       addEventListener() {},
     },
-    navigator: { userAgent: options.ios ? 'Mozilla/5.0 (iPhone)' : 'Mozilla/5.0 (Linux; Android)' },
+    navigator: { userAgent, maxTouchPoints: Number(options.maxTouchPoints || 0) },
     window: {
       navigator: {
-        userAgent: options.ios ? 'Mozilla/5.0 (iPhone)' : 'Mozilla/5.0 (Linux; Android)',
+        userAgent,
+        maxTouchPoints: Number(options.maxTouchPoints || 0),
         standalone: Boolean(options.iosStandalone),
       },
       matchMedia() { return displayMode; },
@@ -96,6 +98,17 @@ function boot(options = {}) {
   const ios = boot({ ios: true });
   assert(ios.button.hidden && ios.status.textContent === 'ios',
     'iPhone receives browser-neutral Add to Home Screen guidance');
+
+  const chromeIos = boot({ userAgent: 'Mozilla/5.0 (iPhone) CriOS/125.0 Mobile/15E148 Safari/604.1' });
+  assert(chromeIos.button.hidden && chromeIos.status.textContent === 'ios',
+    'Chrome on iPhone receives iOS Add to Home Screen guidance');
+
+  const ipadDesktop = boot({
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 Safari/605.1.15',
+    maxTouchPoints: 5,
+  });
+  assert(ipadDesktop.button.hidden && ipadDesktop.status.textContent === 'ios',
+    'iPadOS desktop user agent is detected as iOS rather than Mac');
 
   const installed = boot({ standalone: true });
   assert(installed.button.hidden && installed.status.textContent === 'installed',

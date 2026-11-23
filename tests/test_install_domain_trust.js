@@ -86,6 +86,8 @@ for (const spec of pages) {
     spec.file + ' does not promise a cached financial dashboard');
   assert(!staleInstructionClaims.some((pattern) => pattern.test(html)),
     spec.file + ' does not depend on an obsolete bottom install banner');
+  assert(/navigator\.maxTouchPoints/.test(html) && /Macintosh[\s\S]{0,120}touchPoints\s*>\s*1/.test(html),
+    spec.file + ' auto-selects iPadOS desktop user agents as iPhone/iPad instructions');
   assert(!unmeasuredStorageClaims.some((pattern) => pattern.test(html)),
     spec.file + ' does not invent exact PWA storage sizes');
   assert(!/30\s*%/.test(html) && !/100\s*%/.test(html),
@@ -132,9 +134,12 @@ assert(!/setOnline\(navigator\.onLine\)/.test(offline),
   'offline fallback does not trust the unreliable navigator online hint');
 
 const app = read('app.html');
-assert(/ב-Safari: תפריט העמוד ← שיתוף/.test(app) && /Open as Web App/.test(app) &&
+assert(/<strong>Safari:<\/strong>/.test(app) && /Open as Web App/.test(app) &&
+  /<strong>Chrome:<\/strong>/.test(app) && /Add to Home Screen/.test(app) &&
   !/כפתור השיתוף בתחתית הדפדפן/.test(app),
-  'in-app iPhone prompt follows the current page-menu/share/web-app path without assuming toolbar position');
+  'in-app iPhone prompt gives separate current Safari and Chrome install paths');
+assert(/Macintosh[\s\S]{0,100}navigator\.maxTouchPoints\s*>\s*1/.test(app),
+  'in-app install card detects iPadOS desktop user agents');
 
 const installScript = read('js/install-pwa.js');
 assert(/beforeinstallprompt/.test(installScript) && /event\.preventDefault\(\)/.test(installScript) &&
@@ -143,6 +148,8 @@ assert(/beforeinstallprompt/.test(installScript) && /event\.preventDefault\(\)/.
 assert(/window\.navigator\.standalone === true/.test(installScript) &&
   /display-mode: standalone/.test(installScript) && /appinstalled/.test(installScript),
   'install helper detects iOS and standards-based installed states');
+assert(/Macintosh[\s\S]{0,100}maxTouchPoints\s*>\s*1/.test(installScript),
+  'install helper detects iPadOS desktop user agents');
 
 if (failures.length) {
   console.error('\nFAIL: ' + failures.length + ' assertion(s) failed');

@@ -450,9 +450,10 @@ tailwind.config = {
   // Auto-select device by user agent
   (function autoSelect() {
     var ua = navigator.userAgent;
+    var touchPoints = navigator.maxTouchPoints || 0;
     var target = 'ios';
     if (/Android/i.test(ua)) target = 'android';
-    else if (/iPhone|iPad|iPod/i.test(ua)) target = 'ios';
+    else if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1)) target = 'ios';
     else if (/Macintosh|Mac OS X/i.test(ua)) target = 'mac';
     else if (/Win/i.test(ua)) target = 'windows';
     var btn = document.querySelector('.device-tab[data-device="' + target + '"]');

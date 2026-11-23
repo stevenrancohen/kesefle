@@ -14,7 +14,9 @@
   }
 
   function isIos() {
-    return /iPad|iPhone|iPod/.test(window.navigator.userAgent || '') && !window.MSStream;
+    var ua = window.navigator.userAgent || '';
+    return (/iPad|iPhone|iPod/.test(ua) ||
+      (/Macintosh/.test(ua) && window.navigator.maxTouchPoints > 1)) && !window.MSStream;
   }
 
   function setStatus(label) {
