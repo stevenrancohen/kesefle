@@ -64,7 +64,7 @@ ok('blog posts use the article profile', /<meta name="kfx-profile" content="arti
 ok('only the homepage arms the preloader', !/classList\.add\('kfx-preload'\)/.test(read('pricing.html').match(/<!-- kfx:begin[\s\S]*?<!-- kfx:end -->/)[0]) && /classList\.add\('kfx-preload'\)/.test(read('index.html')));
 
 // 3. private pages stay untouched
-['account.html', 'app.html', 'dashboard.html', 'admin.html', 'expense.html', 'offline.html', 'test.html'].forEach((rel) => {
+['account.html', 'app.html', 'dashboard.html', 'admin.html', 'expense.html', 'import-bank.html', 'offline.html', 'test.html'].forEach((rel) => {
   if (!fs.existsSync(path.join(ROOT, rel))) return;
   ok('no kfx on ' + rel, !/kfx:begin|kfx-motion/.test(read(rel)));
 });

@@ -238,6 +238,7 @@ function onboardingCard(){
       onbStep('3','חזור/י לכאן — היא תופיע אוטומטית')+
     '</div>'+
     '<a href="/expense?from=app-onboarding" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">הוספת תנועה ראשונה ←</a>'+
+    '<a href="/import-bank?from=app-onboarding" class="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-ink-200 py-3 text-sm font-bold text-ink-700 dark:border-ink-700 dark:text-ink-200">או ייבוא תנועות מהבנק</a>'+
     '<a href="'+WA_LINK+'?text='+encodeURIComponent('היי')+'" target="_blank" rel="noopener" class="mt-3 inline-flex text-xs font-semibold text-brand-600">מעדיפ/ה WhatsApp? פתיחת הבוט ←</a>'+
   '</div>';
 }
@@ -495,6 +496,7 @@ async function renderAccount(view){
     (sheet&&sheet.spreadsheetUrl?rowLink(sheet.spreadsheetUrl,'📊','הגיליון שלי','פתח/י את הגיליון ב-Google Sheets',true):rowLink('/account','📊','הגדרת גיליון','חבר/י את הגיליון שלך'))+
     (link.linked?rowLink(WA_LINK,'✅','WhatsApp מחובר','המספר המאומת: +'+String(link.phone||''),true):rowLink('/account#step-3','📱','חיבור WhatsApp','אמת/י את המספר ללא SMS בתשלום'))+
     rowLink(WA_LINK,'💬','הבוט בוואטסאפ','רשום/י הוצאה או בקש/י סיכום',true)+
+    rowLink('/import-bank','⇩','ייבוא מהבנק','CSV מהפועלים, לאומי, דיסקונט ומזרחי')+
     rowLink(WA_LINK+'?text='+encodeURIComponent('כספלה צור משפחה'),'👥','ניהול זוגי ומשפחתי','יצירת בית והזמנת בני משפחה',true)+
     rowLink('/tax-report','💼','כלים לעצמאים ולעסקים','דוח מס ומע״מ והפרדה עסקית')+
     rowLink('/account','⚙','הגדרות חשבון','תוכנית, קטגוריות, פרטיות')+

@@ -61,6 +61,8 @@ const UNIT_SUITES = [
   'bot/test_trace_instrumentation.js', 'bot/test_bot_robustness.js', 'bot/test_goal_commands.js',
   'bot/test_objective_commands.js', 'bot/test_objective_reminders_cron.js', 'tests/golden_set.js',
   'tests/recurring_detect.js', 'tests/test_bank_parsers.js', 'tests/test_sheet_writer_row_building.js',
+  'tests/test_bank_import_preview.js',          // authenticated bank CSV: read-only preview, fail-closed dedup, safe commit warning
+  'tests/test_bank_import_mobile_ui.js',        // mobile UI: two-step confirm, cookie-only auth, encoding/privacy/accessibility contract
   'tests/test_summary_column_schema.js', 'tests/test_gdpr_delete_key_completeness.js',
   'tests/test_billing_manual_audit_log.js', 'tests/test_weekly_question_cron.js',
   // 2026-06 QA-safety pass: register high-value suites that existed but were

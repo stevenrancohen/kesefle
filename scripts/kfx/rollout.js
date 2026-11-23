@@ -15,7 +15,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const V = 'kfx3';
 // app, admin, account and utility pages keep their own UI untouched
 const EXCLUDE = new Set([
-  'account.html', 'admin-os.html', 'admin.html', 'app.html', 'dashboard.html', 'expense.html',
+  'account.html', 'admin-os.html', 'admin.html', 'app.html', 'dashboard.html', 'expense.html', 'import-bank.html',
   'offline.html', 'statement.html', 'tax-report.html', 'test.html', 'unsubscribe.html', 'seo.html'
 ]);
 const ARTICLE = new Set(['privacy.html', 'terms.html', 'docs.html']);
