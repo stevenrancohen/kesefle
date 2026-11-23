@@ -90,7 +90,7 @@ const guardIndex = authSrc.indexOf('if (!isTrustedSessionMutation(req))');
 const sessionIndex = authSrc.indexOf('const userSub = getUserId(req);');
 const userLookupIndex = authSrc.indexOf("encodeURIComponent('user:' + userSub)", sessionIndex);
 check('requireAuth enforces CSRF guard on cookie path before user lookup/handler',
-  sessionIndex >= 0 && guardIndex > sessionIndex && userLookupIndex > guardIndex);
+  guardIndex >= 0 && sessionIndex > guardIndex && userLookupIndex > sessionIndex);
 check('cookie mutations return a stable 403 error',
   /status\(403\)\.json\(\{ ok: false, error: 'csrf_origin_rejected'/.test(authSrc));
 check('direct getUserId consumers fail closed on untrusted mutations',
@@ -108,5 +108,40 @@ check('__Host- cookie contract remains Secure, host-only and Path=/',
   /`\$\{COOKIE_NAME\}=\$\{jwt\}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=/.test(sessionSrc)
     && !/Domain=/.test(sessionSrc));
 
-console.log(`test_session_csrf: ${passed} passed, ${failed} failed`);
-process.exit(failed ? 1 : 0);
+(async function runtimeChecks() {
+  const { requireAuth } = await import('../lib/auth.js?csrf-test=' + Date.now());
+  function response() {
+    return {
+      statusCode: 200,
+      body: null,
+      status(code) { this.statusCode = code; return this; },
+      json(body) { this.body = body; return this; },
+    };
+  }
+
+  let handlerCalled = false;
+  const wrapped = requireAuth(async function () { handlerCalled = true; });
+  const rejected = response();
+  await wrapped(req('POST', {
+    origin: 'https://evil.example',
+    host: 'kesefle.com',
+    'sec-fetch-site': 'cross-site',
+  }), rejected);
+  check('runtime cross-origin mutation returns explicit 403 before auth lookup',
+    rejected.statusCode === 403 && rejected.body?.error === 'csrf_origin_rejected' && handlerCalled === false);
+
+  const unauthenticated = response();
+  await wrapped(req('POST', {
+    origin: 'https://kesefle.com',
+    host: 'kesefle.com',
+    'sec-fetch-site': 'same-origin',
+  }), unauthenticated);
+  check('runtime trusted mutation without a session remains 401',
+    unauthenticated.statusCode === 401 && unauthenticated.body?.error === 'missing_auth' && handlerCalled === false);
+
+  console.log(`test_session_csrf: ${passed} passed, ${failed} failed`);
+  process.exit(failed ? 1 : 0);
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
