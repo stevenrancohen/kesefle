@@ -15,6 +15,7 @@
 <link rel="alternate" hreflang="he-IL" href="https://kesefle.com/account" />
 <link rel="alternate" hreflang="x-default" href="https://kesefle.com/account" />
 <meta name="theme-color" content="#6366F1" />
+<script src="/lib/browser-session.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Rubik:wght@600;700;800;900&display=swap" />
@@ -559,7 +560,10 @@ function kesefleGetUser() {
   } catch { return null; }
 }
 function kesefleSetUser(u) {
-  localStorage.setItem('kesefle_user', JSON.stringify(u));
+  var profile = window.KesefleSession
+    ? window.KesefleSession.sanitizeProfileObject(u)
+    : { version: 2, sub: u && u.sub, email: u && u.email, name: u && u.name, picture: u && u.picture, plan: u && u.plan };
+  localStorage.setItem('kesefle_user', JSON.stringify(profile));
 }
 
 // ── PayPal subscribe (revenue: wires the upgrade button to the already-built
@@ -668,15 +672,16 @@ function _kflGetProgress() {
 function _kflClearProgress() {
   try { localStorage.removeItem('kesefle_signup_progress'); } catch (e) {}
 }
-function kesefleLogout() {
-  // Best-effort server-side clear of the HttpOnly session cookie, then
-  // local cleanup, then redirect. Fire-and-forget the POST -- the
-  // redirect happens whether or not the server reachable.
-  try {
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
-  } catch (e) {}
-  localStorage.removeItem('kesefle_user');
-  localStorage.removeItem('kesefle_sheet');
+async function kesefleLogout() {
+  // Await the cookie clear before navigating; keepalive also lets the request
+  // finish if the browser begins unloading during a slow mobile connection.
+  try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }); }
+  catch (e) {}
+  if (window.KesefleSession) window.KesefleSession.clearAllIdentityStorage();
+  else {
+    localStorage.removeItem('kesefle_user');
+    localStorage.removeItem('kesefle_sheet');
+  }
   window.location.href = '/';
 }
 
@@ -834,24 +839,12 @@ async function kesefleLinkRequestCode() {
   }
   if (btn) { btn.disabled = true; btn.textContent = '...יוצרת קוד'; }
 
-  // We need the user's access token. The provision flow stores it in window.kfl
-  // or we can grab it fresh via initTokenClient. Simpler path: trigger a fresh
-  // token client request (cached, won't show consent if already granted).
-  var accessToken = null;
-  try {
-    accessToken = await _kflGetFreshAccessToken();
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
-    _kflShowLinkError('שגיאת אימות: ' + (e.message || e));
-    return;
-  }
-
   try {
     var r = await fetch('/api/whatsapp/link', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: accessToken, phone: phone }),
+      body: JSON.stringify({ phone: phone }),
     });
     var j = await r.json();
     if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
@@ -888,35 +881,6 @@ async function kesefleLinkRequestCode() {
     if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     _kflShowLinkError('שגיאת רשת: ' + (e.message || e));
   }
-}
-
-async function _kflGetFreshAccessToken() {
-  // Prefer the access token captured during the redirect sign-in — avoids the
-  // GIS popup, which renders blank in incognito/Safari (3rd-party cookies). The
-  // popup below is only a fallback for older non-redirect sessions.
-  try {
-    var su = kesefleGetUser();
-    if (su && su.idToken && String(su.idToken).length > 20) return su.idToken;
-  } catch (e) {}
-  return new Promise(function(resolve, reject) {
-    var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
-    if (!cid || cid.indexOf('__') === 0) return reject(new Error('Google Client ID לא מוגדר'));
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      return reject(new Error('Google SDK טרם נטען. רענן את הדף.'));
-    }
-    var client = window.google.accounts.oauth2.initTokenClient({
-      client_id: cid,
-      scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
-      callback: function(tokenResponse) {
-        if (tokenResponse.error || !tokenResponse.access_token) {
-          return reject(new Error(tokenResponse.error || 'לא קיבלנו אישור'));
-        }
-        resolve(tokenResponse.access_token);
-      }
-    });
-    // No prompt: if user already authorized, returns silently; otherwise shows consent.
-    client.requestAccessToken({ prompt: '' });
-  });
 }
 
 function _kflDisplayCode(code, ttlSec) {
@@ -1140,7 +1104,7 @@ function kesefleLinkResetState() {
 
 // ============ REFERRAL CODE PICKUP ============
 // Read ?ref=<code> (or sessionStorage from /referral landing) and remember it.
-// On first successful signup (kesefle_user with idToken present), POST it to /api/referral?action=redeem.
+// After a successful signup, redeem through the verified HttpOnly session.
 
 function kesefleReadReferralCode() {
   try {
@@ -1180,6 +1144,36 @@ function kesefleCapturePlanSelection() {
 }
 try { kesefleCapturePlanSelection(); } catch (e) {}
 
+// Preserve an auth return target across the Google redirect without allowing
+// arbitrary/open redirects. Only exact same-origin application routes are
+// accepted; the value is consumed once after a successful session exchange.
+function _kflSafeAuthNext(raw) {
+  var allowed = {
+    '/admin': true,
+    '/admin-os': true,
+    '/admin/monitor': true,
+    '/admin/launch-monitor': true,
+    '/app': true,
+    '/dashboard': true,
+  };
+  var value = String(raw || '').trim();
+  return allowed[value] ? value : null;
+}
+function _kflCaptureAuthNext() {
+  try {
+    var value = _kflSafeAuthNext(new URLSearchParams(window.location.search).get('next'));
+    if (value) sessionStorage.setItem('kfl_auth_next', value);
+  } catch (_e) {}
+}
+function _kflConsumeAuthNext() {
+  try {
+    var value = _kflSafeAuthNext(sessionStorage.getItem('kfl_auth_next'));
+    sessionStorage.removeItem('kfl_auth_next');
+    return value;
+  } catch (_e) { return null; }
+}
+_kflCaptureAuthNext();
+
 function kesefleShowInvitedChip(ref) {
   if (!ref || !ref.code) return;
   var banner = document.getElementById('ref-banner');
@@ -1202,16 +1196,11 @@ async function kesefleRedeemReferralIfPending() {
   var ref = kesefleReadReferralCode();
   if (!ref.code) return;
 
-  var u = kesefleGetUser();
-  if (!u || !u.idToken) return;  // need fresh login
-
   try {
     var r = await fetch('/api/referral?action=redeem', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + u.idToken,
-        'Content-Type': 'application/json',
-      },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: ref.code }),
     });
     var j = await r.json();
@@ -1504,6 +1493,18 @@ async function _kflPkce() {
   var digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
   return { verifier: verifier, challenge: _kflB64Url(digest) };
 }
+var KFL_PKCE_MAX_AGE_MS = 10 * 60 * 1000;
+function _kflClearPkce(state) {
+  try {
+    if (state) {
+      sessionStorage.removeItem('kfl_pkce_verifier_' + state);
+      sessionStorage.removeItem('kfl_pkce_started_' + state);
+    }
+    sessionStorage.removeItem('kfl_pkce_verifier');
+    sessionStorage.removeItem('kfl_pkce_started_at');
+    sessionStorage.removeItem('kfl_oauth_state');
+  } catch (_e) {}
+}
 
 async function kesefleStartRedirectSignin() {
   try { _kflFunnel('google_clicked', { browser: kesefleIsInAppBrowser() ? 'inapp' : 'standard' }); } catch (e) {}
@@ -1519,7 +1520,9 @@ async function kesefleStartRedirectSignin() {
     // The single-key fallback is kept for the legacy in-flight redirect on
     // OLDER clients that completed the redirect before this code shipped.
     sessionStorage.setItem('kfl_pkce_verifier_' + state, pk.verifier);
+    sessionStorage.setItem('kfl_pkce_started_' + state, String(Date.now()));
     sessionStorage.setItem('kfl_pkce_verifier', pk.verifier);
+    sessionStorage.setItem('kfl_pkce_started_at', String(Date.now()));
     sessionStorage.setItem('kfl_oauth_state', state);
     var redirectUri = window.location.origin + '/account';
     var params = new URLSearchParams({
@@ -1550,22 +1553,30 @@ async function kesefleHandleOAuthReturn(code, state) {
   // provision calls will fight 3rd-party cookie + WebView fights. Surface
   // the "open in Safari" card instead of looping through the error path.
   if (kesefleIsInAppBrowser()) { _kflLogMissedInApp('oauth_return_in_app'); kesefleShowInAppBrowserHelp(); return; }
-  var savedState = null, verifier = null;
+  var savedState = null, verifier = null, startedAt = 0;
   try {
     // Prefer the state-namespaced verifier (per-tab) so two parallel sign-ins
     // don't poison each other. Fall back to the legacy single-key slot for
     // in-flight redirects from an older client build.
     verifier = sessionStorage.getItem('kfl_pkce_verifier_' + state)
             || sessionStorage.getItem('kfl_pkce_verifier');
+    startedAt = Number(sessionStorage.getItem('kfl_pkce_started_' + state)
+            || sessionStorage.getItem('kfl_pkce_started_at') || 0);
     savedState = sessionStorage.getItem('kfl_oauth_state');
   } catch (e) {}
   var cleanUrl = window.location.origin + '/account';
   // Strip the single-use code from the URL immediately (refresh-safe).
   try { window.history.replaceState({}, document.title, cleanUrl); } catch (e) {}
-  if (!verifier || !savedState || savedState !== state) {
+  var pkceAge = Date.now() - startedAt;
+  if (!verifier || !savedState || savedState !== state || !startedAt
+      || pkceAge < -60000 || pkceAge > KFL_PKCE_MAX_AGE_MS) {
+    _kflClearPkce(state);
     kesefleShowSigninError('פג תוקף בקשת ההתחברות. נסה שוב.');
     return;
   }
+  // The verifier is now in function memory only. Consume every persistent
+  // copy before the network request so refresh/replay cannot reuse it.
+  _kflClearPkce(state);
   kesefleShowConnecting();
   try {
     var r = await fetch('/api/auth/google-exchange', {
@@ -1574,12 +1585,6 @@ async function kesefleHandleOAuthReturn(code, state) {
     });
     var j = await r.json();
     if (!r.ok || !j.ok) throw new Error((j && (j.detail || j.error)) || ('HTTP ' + r.status));
-    try {
-      sessionStorage.removeItem('kfl_pkce_verifier_' + state);
-      sessionStorage.removeItem('kfl_pkce_verifier');
-      sessionStorage.removeItem('kfl_oauth_state');
-    } catch (e) {}
-
     // Provision the user's sheet -- with auto-retry on transient failure.
     // Paid-traffic launch context: every drop-off costs ~€2-5 in ad spend.
     // We retry up to 3 times with exponential backoff (0.5s, 1.5s, 3.5s)
@@ -1637,7 +1642,9 @@ async function kesefleHandleOAuthReturn(code, state) {
       kesefleShowProvisionError(provisionError);
       return;
     }
-    window.location.reload();
+    var authNext = _kflConsumeAuthNext();
+    if (authNext) window.location.href = authNext;
+    else window.location.reload();
   } catch (e) {
     kesefleShowSigninError(e.message || String(e));
   }
@@ -1690,7 +1697,9 @@ async function kesefleRetryProvision() {
     var pj = await pr.json().catch(function () { return {}; });
     if (pj && pj.ok) {
       try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: pj.spreadsheetId, spreadsheetUrl: pj.spreadsheetUrl })); } catch (e) {}
-      window.location.reload();
+      var authNext = _kflConsumeAuthNext();
+      if (authNext) window.location.href = authNext;
+      else window.location.reload();
     } else {
       kesefleShowProvisionError((pj && (pj.detail || pj.error)) || ('HTTP ' + pr.status));
     }
@@ -1773,15 +1782,15 @@ function kesefleShowSigninPrompt() {
   // expose link status, so we read the local flag. A user who cleared
   // storage simply falls through to the guided flow and re-links — never
   // trapped on the dashboard.
-  // Skipped when ?force=signin is on the URL (lets us re-link intentionally).
-  if (!_q.get('force')) {
+  // Skipped when ?force_signin=1 is on the URL (lets us re-link intentionally).
+  if (!_q.get('force') && _q.get('force_signin') !== '1') {
     try {
       var meResp = await fetch('/api/me', { credentials: 'include' });
       if (meResp.ok) {
         var meJson = await meResp.json();
         if (meJson && meJson.ok && meJson.user && meJson.sheet && meJson.sheet.spreadsheetUrl) {
           // Hydrate localStorage in case the dashboard reads it on first paint.
-          try { localStorage.setItem('kesefle_user', JSON.stringify(meJson.user)); } catch (_) {}
+          try { kesefleSetUser(meJson.user); } catch (_) {}
           try { localStorage.setItem('kesefle_sheet', JSON.stringify(meJson.sheet)); } catch (_) {}
           var waLinked = false;
           try {

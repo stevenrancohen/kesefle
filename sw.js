@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v17-2026-11-07-goall4u-ui';
+const VERSION = 'v18-2026-11-23-cookie-session';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -32,6 +32,7 @@ const PRECACHE_URLS = [
   '/app',
   '/app.html',
   '/app.webmanifest',
+  '/lib/browser-session.js',
   '/expense',
   '/expense.html',
   '/status',
