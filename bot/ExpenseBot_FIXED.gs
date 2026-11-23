@@ -1262,18 +1262,82 @@ function doGet(e) {
 // Returns { valid: bool, reason: string }. Callers log the reason but never
 // echo it to the response (so probers can't infer why they failed).
 // ============================================================
+function _unwrapVerifiedRelay_(e) {
+  var raw = e && e.postData && e.postData.contents;
+  if (!raw) return { relayed: false, valid: false, reason: 'no_body' };
+
+  var envelope;
+  try { envelope = JSON.parse(raw); }
+  catch (_parseErr) { return { relayed: false, valid: false, reason: 'not_relay_json' }; }
+  if (!envelope || envelope.kind !== 'kesefle.whatsapp.relay') {
+    return { relayed: false, valid: false, reason: 'not_relay' };
+  }
+
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var secret = String(props.getProperty('WHATSAPP_RELAY_SECRET') || '');
+    if (secret.length < 32) return { relayed: true, valid: false, reason: 'relay_secret_missing' };
+    if (envelope.v !== 1) return { relayed: true, valid: false, reason: 'relay_version_invalid' };
+
+    var ts = Number(envelope.ts);
+    if (!isFinite(ts) || Math.floor(ts) !== ts) {
+      return { relayed: true, valid: false, reason: 'relay_timestamp_invalid' };
+    }
+    if (Math.abs(Date.now() - ts) > 300000) {
+      return { relayed: true, valid: false, reason: 'relay_timestamp_expired' };
+    }
+
+    var bodyB64 = String(envelope.bodyB64 || '');
+    var suppliedMac = String(envelope.mac || '').toLowerCase();
+    if (!bodyB64 || bodyB64.length > 2000000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(bodyB64) || bodyB64.length % 4 !== 0) {
+      return { relayed: true, valid: false, reason: 'relay_body_invalid' };
+    }
+    if (!/^[a-f0-9]{64}$/.test(suppliedMac)) {
+      return { relayed: true, valid: false, reason: 'relay_mac_invalid' };
+    }
+
+    var canonical = 'kesefle-whatsapp-relay-v1\n' + ts + '\n' + bodyB64;
+    var macBytes = Utilities.computeHmacSha256Signature(canonical, secret);
+    var expectedMac = '';
+    for (var i = 0; i < macBytes.length; i++) {
+      var h = (macBytes[i] & 0xff).toString(16);
+      expectedMac += h.length < 2 ? '0' + h : h;
+    }
+    if (!_kfl_ctEq_(expectedMac, suppliedMac)) {
+      return { relayed: true, valid: false, reason: 'relay_mac_mismatch' };
+    }
+
+    var decodedBytes = Utilities.base64Decode(bodyB64);
+    var roundTrip = Utilities.base64Encode(decodedBytes);
+    if (roundTrip !== bodyB64) {
+      return { relayed: true, valid: false, reason: 'relay_base64_noncanonical' };
+    }
+    var decodedBody = Utilities.newBlob(decodedBytes).getDataAsString('UTF-8');
+    JSON.parse(decodedBody);
+    return { relayed: true, valid: true, body: decodedBody, reason: 'verified_relay' };
+  } catch (err) {
+    Logger.log('_unwrapVerifiedRelay_ rejected: ' + (err && err.message || err));
+    return { relayed: true, valid: false, reason: 'relay_validation_error' };
+  }
+}
+
 function _verifyMetaWebhook_(e, rawBody) {
   try {
     var props = PropertiesService.getScriptProperties();
+    var relayTrusted = !!(e && e.__kflVerifiedRelay === true);
+    var requireRelay = props.getProperty('KFL_REQUIRE_VERIFIED_RELAY') === '1';
+    if (requireRelay && !relayTrusted) {
+      return { valid: false, reason: 'verified_relay_required' };
+    }
 
     // -- 360dialog provider branch --
     // 360dialog is a Meta BSP: inbound payloads are Meta-Cloud-API format
     // (doPost parses them unchanged), but 360dialog does NOT send Meta's
     // X-Hub-Signature header, so the HMAC path below can never run for it.
     // 360dialog's security boundary is the SECRET inbound webhook URL (the
-    // bot's unguessable Apps Script /exec). Treat the request as authentic
-    // here and skip the Meta-only HMAC requirement. The full Meta HMAC + WABA
-    // path below is untouched for provider 'meta' (the default).
+    // bot's unguessable Apps Script /exec). When strict relay mode is OFF,
+    // preserve that legacy compatibility and skip the Meta-only HMAC check.
+    // Strict relay mode is evaluated above and blocks every unsigned provider.
     var provider = String(props.getProperty('WHATSAPP_PROVIDER') || 'meta').toLowerCase();
     if (provider === '360dialog') {
       return { valid: true, reason: '360dialog_secret_url' };
@@ -1283,9 +1347,9 @@ function _verifyMetaWebhook_(e, rawBody) {
     // Twilio posts form-urlencoded inbound params (not Meta JSON) and does NOT
     // send Meta's X-Hub-Signature header, so the HMAC path below can never run
     // for it. Twilio's security boundary is the SECRET Apps Script /exec
-    // webhook URL (same model as 360dialog). Treat the request as authentic and
-    // skip the Meta-only HMAC requirement. The Meta HMAC + WABA path below is
-    // untouched for provider 'meta' (the default).
+    // webhook URL (same model as 360dialog). When strict relay mode is OFF,
+    // preserve that legacy compatibility and skip the Meta-only HMAC check.
+    // Strict relay mode is evaluated above and blocks every unsigned provider.
     if (provider === 'twilio') {
       return { valid: true, reason: 'twilio_secret_url' };
     }
@@ -1318,8 +1382,8 @@ function _verifyMetaWebhook_(e, rawBody) {
       }
     }
 
-    var hmacRan = false;
-    if (appSecret && sigHeader && rawBody) {
+    var hmacRan = relayTrusted;
+    if (!relayTrusted && appSecret && sigHeader && rawBody) {
       var prefix = 'sha256=';
       var supplied = String(sigHeader).indexOf(prefix) === 0
                    ? String(sigHeader).substring(prefix.length).toLowerCase()
@@ -1347,7 +1411,7 @@ function _verifyMetaWebhook_(e, rawBody) {
       if (diff !== 0) {
         return { valid: false, reason: 'hmac_mismatch' };
       }
-    } else if (strict) {
+    } else if (!relayTrusted && strict) {
       // Strict mode demands HMAC; refuse if we couldn't run it.
       return { valid: false, reason: !appSecret
         ? 'strict_mode_secret_unset'
@@ -1373,11 +1437,11 @@ function _verifyMetaWebhook_(e, rawBody) {
       }
     }
 
-    return { valid: true, reason: hmacRan ? 'hmac_ok' : 'hmac_skipped' };
+    return { valid: true, reason: relayTrusted ? 'verified_relay' : (hmacRan ? 'hmac_ok' : 'hmac_skipped') };
   } catch (err) {
-    // Never block on our own bug — log + allow through to preserve uptime.
+    // Authentication failures must never turn into command execution.
     Logger.log('_verifyMetaWebhook_ err: ' + (err && err.stack || err));
-    return { valid: true, reason: 'verify_error_fail_open' };
+    return { valid: false, reason: 'verify_error_fail_closed' };
   }
 }
 
@@ -2268,6 +2332,28 @@ function _isRateLimited_(fromPhone) {
   }
 }
 
+function _clearInboundSeenForRetry_(e) {
+  try {
+    var raw = e && e.postData && e.postData.contents;
+    var parsed = raw ? JSON.parse(raw) : null;
+    var message = parsed && parsed.entry && parsed.entry[0]
+      && parsed.entry[0].changes && parsed.entry[0].changes[0]
+      && parsed.entry[0].changes[0].value
+      && parsed.entry[0].changes[0].value.messages
+      && parsed.entry[0].changes[0].value.messages[0];
+    var messageId = message && message.id;
+    if (messageId) CacheService.getScriptCache().remove('seenmsg:' + messageId);
+  } catch (err) {
+    Logger.log('_clearInboundSeenForRetry_ failed: ' + (err && err.message || err));
+  }
+}
+
+function _linkCodeNeedsRelayRetry_(outcome, delivery) {
+  if (outcome && outcome.retryable) return true;
+  if (!delivery || delivery.ok === false) return true;
+  return !!(delivery.skipped && delivery.reason === 'reply_in_flight');
+}
+
 // ============================================================
 // doPost -- webhook entrypoint. Provider-aware front door (2026-06-04).
 // Meta + 360dialog send Meta-Cloud-API JSON; Twilio sends form-urlencoded
@@ -2281,6 +2367,19 @@ function _isRateLimited_(fromPhone) {
 function doPost(e) {
   var __props = PropertiesService.getScriptProperties();
   var __provider = String(__props.getProperty('WHATSAPP_PROVIDER') || 'meta').toLowerCase();
+
+  // Vercel verifies Meta's raw-body HMAC, then signs a short-lived envelope
+  // with an independent relay secret. Only this local marker (never a body
+  // field or query parameter) can tell the router the relay was authenticated.
+  var __relay = _unwrapVerifiedRelay_(e);
+  if (__relay.relayed && !__relay.valid) {
+    Logger.log('doPost: relay rejected — ' + __relay.reason);
+    return ContentService.createTextOutput('RELAY_REJECTED').setMimeType(ContentService.MimeType.TEXT);
+  }
+  if (__relay.valid) {
+    e.postData.contents = __relay.body;
+    e.__kflVerifiedRelay = true;
+  }
 
   // Twilio inbound detection: either the provider is explicitly 'twilio', or
   // the request carries Twilio's form params (From value 'whatsapp:+<sender>').
@@ -2331,8 +2430,21 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.XML);
   }
 
-  // Meta + 360dialog: unchanged pass-through to the router.
-  return _doPostRouter_(e);
+  // Meta + 360dialog: unchanged pass-through to the router. A verified relay
+  // gets an explicit acknowledgement only after the router returns without its
+  // top-level error sentinel; Vercel converts every other response to a 5xx so
+  // Meta retries the same WAMID safely.
+  var __routerResult = _doPostRouter_(e);
+  if (__relay.valid) {
+    var __routerText = (__routerResult && typeof __routerResult.getContent === 'function')
+      ? String(__routerResult.getContent()) : '';
+    if (__routerText === 'err' || __routerText === 'RELAY_RETRY') {
+      _clearInboundSeenForRetry_(e);
+      return ContentService.createTextOutput('RELAY_ERROR').setMimeType(ContentService.MimeType.TEXT);
+    }
+    return ContentService.createTextOutput('RELAY_OK').setMimeType(ContentService.MimeType.TEXT);
+  }
+  return __routerResult;
 }
 
 // ============================================================
@@ -2413,9 +2525,13 @@ function _doPostRouter_(e) {
       if (__linkCodeM && typeof handleLinkCodeDetailed_ === 'function') {
         try {
           var __lcResult = handleLinkCodeDetailed_(__linkCodeM[1], __from_);
-          _deliverLinkCodeOutcome_(__msgId_, __from_, __lcResult, _gotLock);
+          var __lcDelivery = _deliverLinkCodeOutcome_(__msgId_, __from_, __lcResult, _gotLock);
+          if (_linkCodeNeedsRelayRetry_(__lcResult, __lcDelivery)) {
+            return ContentService.createTextOutput('RELAY_RETRY').setMimeType(ContentService.MimeType.TEXT);
+          }
         } catch (__lcErr) {
           Logger.log('doPost: link-code intercept err: ' + (__lcErr && __lcErr.message));
+          return ContentService.createTextOutput('RELAY_RETRY').setMimeType(ContentService.MimeType.TEXT);
         }
         return ContentService.createTextOutput("OK").setMimeType(ContentService.MimeType.TEXT);
       }
@@ -2423,7 +2539,10 @@ function _doPostRouter_(e) {
       // 🔁 IDEMPOTENCY — Meta retries webhook delivery when our response is
       // slow (>~20s) or on transient errors, sending the SAME message id
       // again. Without this guard the bot writes the expense twice. We
-      // mark each wamid in CacheService for 10 min; a repeat is dropped.
+      // mark each wamid in CacheService for 10 min; a repeat is dropped. The
+      // outer verified-relay wrapper clears this processing marker before it
+      // asks Meta to retry a top-level failure, so a failed first attempt is
+      // not falsely acknowledged as a duplicate on the second attempt.
       if (__msgId_) {
         try {
           var __dupCache = CacheService.getScriptCache();

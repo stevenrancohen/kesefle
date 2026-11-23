@@ -69,6 +69,7 @@ const UNIT_SUITES = [
   // to avoid bloating gate runtime; pure-compute, no secrets/network.
   'tests/test_sheet_ownership_guard_5_endpoints.js', // tenant-isolation: cross-sheet write guard on 5 endpoints
   'tests/test_whatsapp_webhook_signature.js',        // webhook HMAC fails closed when META_APP_SECRET unset
+  'tests/test_whatsapp_verified_relay.js',            // Meta ingress: signed Vercel -> Apps Script relay, strict cutover, provider compatibility
   'tests/test_oauth_rotation_capture.js',            // rotated refresh-token capture (auth / data-loss)
   'tests/test_log_redact_spreadsheet_id.js',         // PII redaction: no spreadsheetId leaks to logs
   'tests/test_crypto_webhook_no_silent_payment_drop.js', // billing: payment webhook never silently drops

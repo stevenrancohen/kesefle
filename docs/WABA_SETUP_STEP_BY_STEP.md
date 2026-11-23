@@ -5,22 +5,25 @@
 - It cannot scale to 1,000 customers — ever.
 - Real WhatsApp users see "this number isn't on WhatsApp" if they're not allow-listed.
 
-You need a **WABA-approved phone number**. Here are the 3 options, ranked by speed.
+You need a **WABA-approved phone number**. The free Meta-direct path is the
+default recommendation; a BSP is only a paid fallback when setup speed matters
+more than monthly cost.
 
 ---
 
-## Option 1 (FASTEST, recommended): Use a Business Solution Provider (BSP)
+## Option 1 (FASTEST, paid fallback): Use a Business Solution Provider (BSP)
 
 A BSP handles the WABA application paperwork FOR you. You get a number same-day in most cases.
 
 **Recommended BSPs for Israel:**
 
-### A. 360dialog (best for Israel, English support, no monthly minimum)
+### A. 360dialog (paid managed option)
 
 1. Go to **https://hub.360dialog.com/signup**
 2. Sign up with your email (`info@kesefle.com`).
 3. Click **"Connect a number"** → choose **"I want a NEW number"** (if you don't already own one) OR **"I have an existing number"** (if you have a SIM card you can dedicate).
-4. Pick a number — they offer Israeli, US, UK, German numbers. Israeli costs around €15/month.
+4. Choose an available number and review the current recurring and per-message
+   charges before confirming; provider pricing and country availability change.
 5. Submit the business verification form:
    - Business name: **Kesefle**
    - Business email: `info@kesefle.com`
@@ -31,27 +34,25 @@ A BSP handles the WABA application paperwork FOR you. You get a number same-day 
    - `D360-API-KEY` (your API key)
    - `PHONE_NUMBER_ID` (your number's internal ID)
    - `WABA_ID` (your business account ID)
-8. **Paste those 3 values to me here in chat** — one message, one per line:
-   ```
-   D360-API-KEY: <paste>
-   PHONE_NUMBER_ID: <paste>
-   WABA_ID: <paste>
-   ```
-9. I'll swap them into the bot + Vercel within 5 minutes, run `scripts/swap-bot-number.sh`, and push.
+8. Enter the credentials directly in Vercel and Apps Script Script Properties.
+   Never paste a permanent access token or API key into chat, an issue, a PR,
+   or a repository file.
 
 **Total time**: 30 min of your work + 24-48h waiting for Meta.
 
 ### B. Twilio (US-friendly, more expensive)
 
-Same idea, but their UI: **https://console.twilio.com/us1/develop/sms/services/whatsapp-senders**. Costs ~$5/month + per-message fees. Skip unless you already use Twilio.
+Same idea, but their UI: **https://console.twilio.com/us1/develop/sms/services/whatsapp-senders**.
+Review the current recurring and per-message charges before choosing it.
 
 ### C. Vonage / MessageBird / Infobip
 
-Similar to 360dialog. Pick whichever has the best price for Israeli numbers (~€10-20/month).
+Similar to 360dialog. Compare current Israeli-number availability, support, and
+total recurring/per-message cost before choosing one.
 
 ---
 
-## Option 2 (FREE but slow): Apply directly to Meta yourself
+## Option 2 (FREE, recommended): Apply directly to Meta yourself
 
 This avoids the BSP monthly fee but takes 1-3 days and requires you to handle the verification yourself.
 
@@ -71,7 +72,8 @@ This avoids the BSP monthly fee but takes 1-3 days and requires you to handle th
    - **Permanent Access Token** (this is your bot's `WHATSAPP_TOKEN`)
    - **Phone Number ID**
    - **WhatsApp Business Account ID**
-9. **Paste them to me here** (same format as Option 1 step 8).
+9. Store the permanent token directly in the approved secret stores. Do not
+   paste it into chat or commit it to Git.
 
 **Total time**: 1 hour of your work + 1-3 days waiting.
 
@@ -93,9 +95,46 @@ You mentioned earlier you have `+1 774 544 8053` from Numero. We never finished 
 
 ## My recommendation
 
-**Pick Option 1.A (360dialog)** unless cost is critical. It's the fastest reliable path.
+Choose **Option 2 (Meta direct)**. It has no BSP subscription and works with the
+existing Vercel + Apps Script stack. Use 360dialog only if Meta onboarding is
+blocked and the faster paid path is worth the recurring fee.
 
-If you go with Option 2, **start the application NOW** while we work on everything else — Meta's review queue is the actual bottleneck.
+Start the Meta application while the rest of the product work continues — the
+business/number review is the external bottleneck.
+
+---
+
+## Secure webhook cutover (Meta direct)
+
+Meta must call the HMAC-verifying Vercel endpoint, never the public Apps Script
+`/exec` URL directly. Vercel then sends Apps Script a short-lived signed relay
+envelope. This uses the current hosting and adds no provider cost.
+
+1. Generate one new random secret of at least 32 characters. Store the same
+   value as:
+   - Vercel: `WHATSAPP_RELAY_SECRET`
+   - Apps Script Script Property: `WHATSAPP_RELAY_SECRET`
+2. In Vercel, set:
+   - `WHATSAPP_RELAY_ENABLED=1`
+   - `WHATSAPP_RELAY_URL=<current Apps Script /exec URL>`
+   - `META_APP_SECRET=<Meta app secret>`
+   - `META_VERIFY_TOKEN=<a separate random webhook verify token>`
+3. Deploy the new Apps Script version with `KFL_REQUIRE_VERIFIED_RELAY` still
+   unset. This is the canary phase.
+4. In Meta → WhatsApp → Configuration, set the callback URL to:
+   `https://kesefle.com/api/whatsapp/webhook`
+5. Enter the same `META_VERIFY_TOKEN`, verify the callback, and subscribe to
+   `messages`.
+6. From a real phone, test `ping`, one expense, and one account-link code.
+7. Only after all three pass, set the Apps Script property
+   `KFL_REQUIRE_VERIFIED_RELAY=1`. Direct Meta-shaped posts to `/exec` will then
+   fail closed.
+
+Do not enable strict mode before the Vercel relay canary succeeds. For rollback,
+unset strict mode first; otherwise a direct emergency callback will be rejected.
+Strict mode also blocks direct Twilio/360dialog webhooks because Apps Script
+cannot verify their native request signatures. Leave it unset for those legacy
+providers until they are routed through a provider-specific verification gateway.
 
 ---
 

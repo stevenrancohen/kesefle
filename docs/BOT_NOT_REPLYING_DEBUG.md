@@ -2,11 +2,18 @@
 
 Steven, when you wake up: follow this in order. The bot can fail in 5 specific places — we'll check each.
 
-## TL;DR — most likely cause
+## TL;DR — check the secure relay first
 
-You pasted the new bot code into Apps Script, but you didn't **Deploy → New Version**. Just saving the code isn't enough. Apps Script only uses the deployed version when responding to webhooks.
+Production Meta traffic should follow this path:
 
-**Quick fix:** Apps Script editor → top right → **Deploy** → **Manage Deployments** → click ✏️ on the existing deployment → **Version: New version** → **Deploy**. Done.
+`Meta → https://kesefle.com/api/whatsapp/webhook → signed Apps Script relay`
+
+Do not point Meta directly at the public Apps Script `/exec` URL. Vercel verifies
+Meta's raw-body HMAC first; Apps Script accepts the independently signed relay.
+
+The two most common causes are an Apps Script edit that was saved but not
+deployed as a new version, or a mismatch between the Vercel and Apps Script
+`WHATSAPP_RELAY_SECRET` values.
 
 If that doesn't fix it, follow the full checklist below.
 
@@ -43,14 +50,31 @@ I added a master diagnostic function. Run it once to verify the bot is healthy:
 
 If ANY ❌ appears, fix that first. The most common issue is missing `WHATSAPP_TOKEN`.
 
-### Step 3 — Verify Meta webhook URL points at your Apps Script
+### Step 3 — Verify Meta points at the Vercel authenticity boundary
 
 1. Go to https://developers.facebook.com/apps
 2. Find your Kesefle/Expenses Bot app → **WhatsApp → Configuration → Webhooks**
-3. Verify the **Callback URL** is your Apps Script deployment URL (from Step 1)
-4. Verify the **Verify Token** matches `expense_bot_verify_2026` (line 27 of the bot code)
+3. Verify the **Callback URL** is exactly:
+   `https://kesefle.com/api/whatsapp/webhook`
+4. Verify the token matches the Vercel `META_VERIFY_TOKEN` value. It should be a
+   separate random value, not an access token or relay secret.
 5. Click **"Verify and Save"** — should say "Successfully verified"
 6. Make sure the **`messages` webhook field** is **subscribed** (toggle on, green)
+
+Then verify the relay configuration:
+
+- Vercel: `META_APP_SECRET`, `WHATSAPP_RELAY_ENABLED=1`,
+  `WHATSAPP_RELAY_URL=<Apps Script /exec URL>`, and
+  `WHATSAPP_RELAY_SECRET=<32+ character secret>`.
+- Apps Script Script Properties: the same `WHATSAPP_RELAY_SECRET`.
+- After a real-phone canary passes, Apps Script:
+  `KFL_REQUIRE_VERIFIED_RELAY=1`.
+
+`KFL_REQUIRE_VERIFIED_RELAY=1` is for the Meta-direct relay rollout. It also
+blocks direct Twilio/360dialog callbacks; those providers require their own
+signature-verifying gateway before strict mode can be used.
+
+Never paste any of these secrets into chat, logs, tickets, or Git.
 
 ### Step 4 — Run "echo" command from WhatsApp
 
@@ -65,7 +89,8 @@ If the bot is alive, it'll reply within 2 seconds:
 ```
 
 If you get no reply:
-- Apps Script isn't being called (Meta webhook config issue) — go back to Step 3
+- Vercel rejected Meta's signature or could not get an explicit `RELAY_OK` from
+  Apps Script — inspect the Vercel logs, then go back to Step 3
 - OR the WHATSAPP_TOKEN is invalid — re-generate at Meta and update Script Properties
 
 ### Step 5 — Send "סטטוס" command
@@ -119,11 +144,16 @@ If you sent a message but got no reply, check what Apps Script did:
 2. Look at the most recent `doPost` execution
 3. Click to expand
 4. Look at the log output:
-   - Did `doPost: from=...` appear? → Meta successfully called your webhook
+   - Did `doPost: from=...` appear? → the signed relay reached Apps Script
+   - Did `doPost: relay rejected` appear? → relay secret, timestamp, base64, or
+     envelope MAC validation failed; compare the two secret stores and redeploy
    - Did `sendWhatsAppMessage done` appear? → Bot tried to reply
    - Did an error appear? → Read the error message
 
 The most common errors:
+- Vercel `wa.relay.config_invalid` → missing/short secret or invalid Apps Script URL
+- Vercel `wa.relay.transport_failed` → Apps Script timed out or was unreachable
+- Vercel `wa.relay.rejected` → Apps Script did not return exact `RELAY_OK`
 - `"Cannot read property 'from' of undefined"` → Meta sent a status update (not a message). Ignore this.
 - `"WhatsApp token not configured"` → Set `WHATSAPP_TOKEN` in Script Properties
 - `"DEADLINE_EXCEEDED"` → Apps Script timed out. Should auto-recover.
@@ -172,8 +202,9 @@ To remove them: run `uninstallMotivationTriggers()`.
 ## TL;DR action list for tomorrow
 
 1. Run `installKesefleBot` in Apps Script
-2. Read the report — fix any ❌ errors
-3. Send `ping` from WhatsApp — verify the bot replies
-4. Send `245 סופר` — verify it writes to the sheet
-5. Run `installAllMotivationTriggers` to enable daily/weekly cron messages
-6. Done — bot is production-ready
+2. Deploy a new Apps Script version and copy its `/exec` URL
+3. Configure the matching relay secret + URL in Vercel and Apps Script
+4. Point Meta at `https://kesefle.com/api/whatsapp/webhook`
+5. Send `ping`, `245 סופר`, and one account-link code from a real phone
+6. Set `KFL_REQUIRE_VERIFIED_RELAY=1` only after the canary passes
+7. Run `installAllMotivationTriggers` to enable daily/weekly cron messages
