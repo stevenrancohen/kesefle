@@ -112,6 +112,9 @@ const sw = read('sw.js');
 for (const pathName of ['/app', '/app.html', '/app.webmanifest', '/offline.html']) {
   assert(sw.includes("'" + pathName + "'"), 'service worker precaches ' + pathName);
 }
+assert(/const REQUIRED_PRECACHE_URLS\s*=/.test(sw) &&
+  /precache_required_failed/.test(sw) && /caches\.delete\(STATIC_CACHE\)/.test(sw),
+  'service worker rejects and cleans up an incomplete required app shell');
 assert(/isApi\(url\)[\s\S]{0,500}event\.respondWith\(fetch\(request\)/.test(sw),
   'same-origin financial and identity APIs stay network-only');
 assert(/networkWithFallback\(request, OFFLINE_URL\)/.test(sw),

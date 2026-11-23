@@ -701,6 +701,18 @@ function applyTheme(t){ document.documentElement.classList.toggle('dark', t==='d
 function toggleTheme(){ var t=document.documentElement.classList.contains('dark')?'light':'dark'; localStorage.setItem('kfl_app_theme',t); applyTheme(t); }
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__kflDeferredPrompt=e; var ib=$('#installBtn'); if(ib){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ e.prompt(); await e.userChoice; }catch(_){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; } });
 (async function(){
+  // Bind synchronously before the first await. A navigation-triggered update
+  // may activate while /api/me is still bootstrapping; attaching afterwards
+  // would miss controllerchange and leave old page code under the new worker.
+  var swHadController=false, swReloaded=false;
+  if('serviceWorker' in navigator){
+    swHadController=!!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(swReloaded||!swHadController)return;
+      swReloaded=true;
+      location.reload();
+    });
+  }
   applyTheme(localStorage.getItem('kfl_app_theme') || 'dark');
   // Start private-by-default. Authenticated chrome is revealed only after the
   // server confirms the current session; localStorage is never identity proof.
@@ -713,7 +725,12 @@ window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); 
   window.addEventListener('hashchange', function(){ route(); });
   if(!location.hash) location.hash='#/';
   await bootstrapApp();
-  if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('/sw.js'); } catch(e){} }
+  if('serviceWorker' in navigator){
+    try {
+      var swReg=await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+      try{ await swReg.update(); }catch(_e){}
+    } catch(e){}
+  }
   // Pull-to-refresh: only when scrolled to the very top; passive listeners so it
   // never fights native scroll. Triggers a real re-fetch via route(true).
   (function ptr(){
