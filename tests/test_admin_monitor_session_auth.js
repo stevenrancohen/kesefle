@@ -38,7 +38,7 @@ check('monitor does not construct a Bearer authorization header',
 check('monitor sends the HttpOnly session cookie',
   /fetch\(['"]\/api\/admin\/stats['"][\s\S]{0,180}credentials:\s*['"]include['"]/.test(monitor));
 check('unauthenticated monitor offers verified account sign-in and retry',
-  /href="\/account\?force=signin"/.test(monitor)
+  /href="\/account\?force_signin=1&amp;next=%2Fadmin%2Fmonitor"/.test(monitor)
     && /id="gate-retry"/.test(monitor)
     && /res\.status === 401 \|\| res\.status === 403/.test(monitor));
 
