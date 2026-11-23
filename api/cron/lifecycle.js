@@ -19,6 +19,7 @@
 import { withRequestId, log, subHash } from '../../lib/log.js';
 import { sendTemplate } from '../../lib/email.js';
 import { buildUnsubscribeUrl } from '../../lib/email-unsub.js';
+import { createWinbackToken } from '../../lib/winback-token.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -377,10 +378,23 @@ async function handlerImpl(req, res) {
       if (exit?.cancelled_at) {
         const sinceCancel = daysBetween(new Date(exit.cancelled_at), now);
         if (sinceCancel === 30) {
-          // Generate a single-use winback token (just userSub + a short
-          // hash); the /win-back page will validate it server-side before
-          // applying the discount.
-          const winbackToken = u.userSub.slice(0, 24);
+          // The same opaque, 14-day token is used by both channels. Token
+          // creation fails closed if the existing crypto keyring is missing;
+          // never send an offer whose claim link cannot be verified.
+          let winbackToken;
+          try {
+            winbackToken = createWinbackToken({
+              userSub: u.userSub,
+              cancelledAt: exit.cancelled_at,
+              nowMs: now.getTime(),
+            });
+          } catch (tokenError) {
+            log.error('cron.lifecycle.winback_token_failed', {
+              sub: subHash(u.userSub),
+              error: tokenError.message,
+            });
+            continue;
+          }
           const winbackVars = { ...baseVars, winbackToken };
           const r = await maybeSend(u.userSub, 'winback_30_days', winbackVars, 365 * 24 * 3600);
           if (r.ok || r.skipped) { stats.winback = (stats.winback || 0) + 1; scheduled++; }
@@ -402,7 +416,7 @@ async function handlerImpl(req, res) {
                     `היי ${firstName}, התגעגענו אליך 👋\n\n` +
                     `יש לנו הצעה מיוחדת: 50% הנחה לתמיד על כספ'לה.\n` +
                     `₪9.50 לחודש במקום ₪19, ולתמיד.\n\n` +
-                    `לחץ כאן להפעלת ההנחה: https://kesefle.com/win-back?token=${winbackToken}\n\n` +
+                    `לחץ כאן לרישום בקשת ההנחה: https://kesefle.com/win-back#token=${encodeURIComponent(winbackToken)}\n\n` +
                     `(תוקף ההצעה: 14 יום)`;
                   await fetch(waUrl, {
                     method: 'POST',

@@ -13,13 +13,16 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
 const V = 'kfx3';
-// app, admin, account and utility pages keep their own UI untouched
+// App, admin, account, utility pages and the bearer-token win-back claim page
+// keep their own UI untouched. The claim page deliberately executes no shared
+// JavaScript so a future motion dependency cannot observe its short-lived token.
 const EXCLUDE = new Set([
   'account.html', 'admin-os.html', 'admin.html', 'app.html', 'dashboard.html', 'expense.html',
-  'offline.html', 'statement.html', 'tax-report.html', 'test.html', 'unsubscribe.html', 'seo.html'
+  'offline.html', 'statement.html', 'tax-report.html', 'test.html', 'unsubscribe.html', 'seo.html',
+  'win-back.html'
 ]);
 const ARTICLE = new Set(['privacy.html', 'terms.html', 'docs.html']);
-const LITE = new Set(['404.html', 'cancel.html', 'thanks.html', 'upgrade.html', 'welcome.html', 'win-back.html']);
+const LITE = new Set(['404.html', 'cancel.html', 'thanks.html', 'upgrade.html', 'welcome.html']);
 const LANG_DIRS = ['ar', 'fr', 'it', 'ru'];
 
 function listPages() {
