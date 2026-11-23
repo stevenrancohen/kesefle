@@ -19,7 +19,8 @@ assert.match(account, /\.catch\(function\(\) \{ kesefleApplyWhatsAppAvailability
 assert.match(account, /id="service-status-title"/);
 assert.match(account, /id="link-success-instruction"/);
 assert.match(account, /onclick="return kesefleLogFirstExpense\(event\)"/);
-assert.match(account, /window\.location\.href = '\/app'/);
+assert.doesNotMatch(account, /if \(waLinked[\s\S]{0,300}window\.location\.href = '\/app'/,
+  'an optional capability response must not navigate away after account UI is interactive');
 assert.match(account, /הוספה באפליקציה זמינה; WhatsApp בהשקה הדרגתית/);
 assert.match(account, /אין צורך ליצור גיליון נוסף/);
 assert.match(account, /var totalSteps = whatsappRequired \? 3 : 2/);

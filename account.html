@@ -222,12 +222,20 @@
     <div class="flex min-w-0 items-center gap-2 sm:gap-3">
       <img id="user-picture" class="hidden h-9 w-9 flex-shrink-0 rounded-full ring-2 ring-emerald-200" alt="" />
       <span id="user-name" class="hidden truncate text-sm font-semibold text-slate-700 sm:inline">טוען...</span>
-      <button onclick="kesefleLogout()" class="inline-flex min-h-[44px] flex-shrink-0 items-center rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">התנתק</button>
+      <button id="account-logout" onclick="kesefleLogout()" class="hidden min-h-[44px] flex-shrink-0 items-center rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 inline-flex">התנתק</button>
     </div>
   </nav>
 </header>
 
 <main class="mx-auto max-w-5xl px-4 py-6 sm:px-5 sm:py-10">
+
+  <section id="account-auth-pending" role="status" aria-live="polite" class="mx-auto flex min-h-[52vh] max-w-md items-center justify-center text-center">
+    <div>
+      <span aria-hidden="true" class="mx-auto block h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-brand-600"></span>
+      <h1 class="mt-5 text-xl font-black text-ink-900">מאמתים את החשבון</h1>
+      <p class="mt-2 text-sm leading-6 text-slate-600">פרטי החשבון ופעולות השמירה יוצגו רק לאחר אימות מאובטח.</p>
+    </div>
+  </section>
 
   <!-- referral chip + confirmation (shown only when ?ref=<code> is present) -->
   <section id="ref-banner" class="mb-6 hidden">
@@ -247,7 +255,7 @@
   </section>
 
   <!-- onboarding banner — matches the white stat cards below (Steven's request 2026-05-24) -->
-  <section id="onboarding" class="relative mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-[0_24px_60px_-32px_rgba(15,20,34,0.25)]">
+  <section id="onboarding" class="relative mb-8 hidden overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 shadow-[0_24px_60px_-32px_rgba(15,20,34,0.25)]">
     <div id="confetti-host" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
     <div class="relative flex items-start gap-3 sm:gap-4 min-w-0">
       <div id="banner-icon" class="grid h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl sm:text-2xl shadow-sm ring-1 ring-brand-200/70 transition-colors">👋</div>
@@ -265,10 +273,10 @@
 
         <ol class="mt-5 space-y-3">
           <li class="flex items-start gap-3" id="step-1">
-            <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white">✓</span>
+            <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">1</span>
             <div class="flex-1 min-w-0">
-              <div class="font-bold">התחברת עם Google</div>
-              <div class="text-sm text-slate-600">החשבון מקושר.</div>
+              <div id="step-1-title" class="font-bold">התחבר עם Google</div>
+              <div id="step-1-copy" class="text-sm text-slate-600">החיבור יאומת מול החשבון לפני יצירת הגיליון.</div>
             </div>
           </li>
           <li class="flex items-start gap-3" id="step-2">
@@ -437,7 +445,7 @@
   </section>
 
   <!-- summary cards -->
-  <section class="grid gap-4 md:grid-cols-3">
+  <section id="account-summary" class="grid hidden gap-4 md:grid-cols-3">
     <div class="rounded-3xl border border-slate-200 bg-white p-6 transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-30px_rgba(15,20,34,0.25)]">
       <div class="flex items-center justify-between">
         <div class="text-sm font-semibold text-slate-500">החודש</div>
@@ -1303,30 +1311,6 @@ function kesefleLinkResetState() {
   _kflSetLinkState('input');
 }
 
-// On page load, trust the server's two-way mapping check. localStorage is only
-// a resilience fallback when the network is unavailable, never the authority.
-(function checkExistingLink() {
-  setTimeout(function() {
-    fetch('/api/whatsapp/link?check=1', { credentials: 'include' })
-      .then(function(r) { return r.json(); })
-      .then(function(j) {
-        if (j && j.ok && j.linked && j.phone) {
-          _kflShowLinkSuccess(j.phone);
-        } else {
-          try {
-            localStorage.removeItem('kesefle_whatsapp_linked');
-            localStorage.removeItem('kesefle_whatsapp_phone');
-          } catch (_e) {}
-        }
-      })
-      .catch(function() {
-        var cached = null;
-        try { cached = localStorage.getItem('kesefle_whatsapp_phone'); } catch (_e) {}
-        if (cached) _kflShowLinkSuccess(cached);
-      });
-  }, 600);
-})();
-
 // Live-feedback on phone input: auto-strip duplicate +972 country codes as user types/pastes.
 // Shows a soft hint with the canonical form so the user can visually confirm.
 (function wirePhoneLiveFeedback(){
@@ -1839,6 +1823,13 @@ async function kesefleHandleOAuthReturn(code, state) {
     });
     var j = await r.json();
     if (!r.ok || !j.ok) throw new Error((j && (j.detail || j.error)) || ('HTTP ' + r.status));
+    var user = j.user || {};
+    var nextProfile = {
+      sub: user.sub, email: user.email || '',
+      name: user.name || (user.email ? user.email.split('@')[0] : 'משתמש'),
+      picture: user.picture || '', plan: 'free',
+    };
+    await keseflePrepareAccountSwitch(nextProfile);
     // Provision the user's sheet -- with auto-retry on transient failure.
     // Paid-traffic launch context: every drop-off costs ~€2-5 in ad spend.
     // We retry up to 3 times with exponential backoff (0.5s, 1.5s, 3.5s)
@@ -1869,17 +1860,12 @@ async function kesefleHandleOAuthReturn(code, state) {
       provisionError = 'no_access_token';
     }
 
-    var user = j.user || {};
     // SECURITY: do NOT persist the access token to localStorage. It expires
     // in ~1h but localStorage is readable by any same-origin script (XSS) for
     // weeks. The session cookie (HttpOnly) plus the encrypted refresh token
     // on the server are the durable identity; the access token lives only in
     // window memory for the brief provisioning window above.
-    kesefleSetUser({
-      sub: user.sub, email: user.email || '',
-      name: user.name || (user.email ? user.email.split('@')[0] : 'משתמש'),
-      picture: user.picture || '', plan: 'free',
-    });
+    kesefleSetUser(nextProfile);
     _kflSetProgress(1, 'oauth_complete'); // step 1 reached: user is signed in
     try { _kflFunnel('oauth_completed'); } catch (e) {}
     if (sheetId) {
@@ -1900,7 +1886,8 @@ async function kesefleHandleOAuthReturn(code, state) {
     if (authNext) window.location.href = authNext;
     else window.location.reload();
   } catch (e) {
-    kesefleShowSigninError(e.message || String(e));
+    if (e && e.code === 'push_detach_failed') kesefleShowPushIsolationRecovery();
+    else kesefleShowSigninError(e.message || String(e));
   }
 }
 
@@ -1977,7 +1964,235 @@ function _kflOAuthErrorMessage(code) {
   }
 }
 
+function kesefleSetSignedOutChrome() {
+  var logout = document.getElementById('account-logout');
+  var name = document.getElementById('user-name');
+  var picture = document.getElementById('user-picture');
+  var onboarding = document.getElementById('onboarding');
+  var summary = document.getElementById('account-summary');
+  var pending = document.getElementById('account-auth-pending');
+  if (logout) logout.classList.add('hidden');
+  if (name) name.classList.add('hidden');
+  if (picture) { picture.classList.add('hidden'); picture.removeAttribute('src'); }
+  if (onboarding) onboarding.classList.add('hidden');
+  if (summary) summary.classList.add('hidden');
+  if (pending) pending.classList.add('hidden');
+}
+
+function kesefleRevealAuthenticatedAccount(user) {
+  var logout = document.getElementById('account-logout');
+  var name = document.getElementById('user-name');
+  var picture = document.getElementById('user-picture');
+  var onboarding = document.getElementById('onboarding');
+  var summary = document.getElementById('account-summary');
+  var pending = document.getElementById('account-auth-pending');
+  var stepTitle = document.getElementById('step-1-title');
+  var stepCopy = document.getElementById('step-1-copy');
+  if (logout) logout.classList.remove('hidden');
+  if (onboarding) onboarding.classList.remove('hidden');
+  if (summary) summary.classList.remove('hidden');
+  if (pending) pending.classList.add('hidden');
+  if (name) { name.textContent = user.name || user.email || 'משתמש'; name.classList.remove('hidden'); }
+  if (picture && user.picture) { picture.src = user.picture; picture.classList.remove('hidden'); }
+  if (stepTitle) stepTitle.textContent = 'התחברת עם Google';
+  if (stepCopy) stepCopy.textContent = 'החשבון אומת מול השרת.';
+  kesefleMarkStepDone(1);
+}
+
+async function kesefleProbeAccountSession() {
+  try {
+    var response = await fetch('/api/me', { credentials: 'include', cache: 'no-store' });
+    if (response.status === 401 || response.status === 403) return { state: 'signed_out' };
+    if (!response.ok) return { state: 'unavailable' };
+    var payload = await response.json();
+    if (payload && payload.ok === false && /unauthorized|not_signed_in|session_expired/i.test(payload.error || '')) {
+      return { state: 'signed_out' };
+    }
+    if (!payload || payload.ok !== true || !payload.user || typeof payload.user.sub !== 'string' || !payload.user.sub) {
+      return { state: 'unavailable' };
+    }
+    return { state: 'authenticated', payload: payload };
+  } catch (_e) {
+    return { state: 'unavailable' };
+  }
+}
+
+function kesefleWithDeadline(promise, timeoutMs, fallback, onTimeout) {
+  return new Promise(function(resolve) {
+    var settled = false;
+    var timer = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      try { if (typeof onTimeout === 'function') onTimeout(); } catch (_e) {}
+      resolve(fallback);
+    }, timeoutMs);
+    Promise.resolve(promise).then(function(value) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    }, function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(fallback);
+    });
+  });
+}
+
+async function kesefleDetachBrowserPush() {
+  var nav = window.navigator;
+  if (!nav || !nav.serviceWorker || typeof nav.serviceWorker.getRegistration !== 'function') {
+    return { hadSubscription: false, detached: true };
+  }
+  var operation = (async function() {
+    var registration = await nav.serviceWorker.getRegistration('/');
+    if (!registration || !registration.pushManager) return { hadSubscription: false, detached: true };
+    var subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return { hadSubscription: false, detached: true };
+    if (typeof subscription.unsubscribe !== 'function') return { hadSubscription: true, detached: false };
+    return { hadSubscription: true, detached: await subscription.unsubscribe() === true };
+  })();
+  // Browser Push APIs occasionally stall on mobile after an OS/app update.
+  // Treat an unknown timeout like a live old subscription and enter the same
+  // safe recovery path instead of leaving account switching blocked forever.
+  return kesefleWithDeadline(operation, 5000, { hadSubscription: true, detached: false });
+}
+
+async function kesefleClearAccountPresentation() {
+  if (window.KesefleSession) {
+    try { window.KesefleSession.clearIdentityStorage(localStorage); } catch (_e) {}
+    try { window.KesefleSession.clearIdentityStorage(sessionStorage); } catch (_e) {}
+  } else {
+    ['kesefle_user', 'kesefle_sheet', 'kesefle_whatsapp_linked', 'kesefle_whatsapp_phone', 'kesefle_signup_progress', 'kfl_push_subscribed'].forEach(function(key) {
+      try { localStorage.removeItem(key); } catch (_e) {}
+      try { sessionStorage.removeItem(key); } catch (_e) {}
+    });
+  }
+  try {
+    if (window.caches && window.caches.keys) {
+      var keys = await window.caches.keys();
+      await Promise.all(keys.filter(function(key) { return /kesefle-api/.test(key); }).map(function(key) { return window.caches.delete(key); }));
+    }
+  } catch (_cacheError) {}
+}
+
+function keseflePushIsolationError() {
+  var error = new Error('לא הצלחנו לנתק את ההתראות של החשבון הקודם. רענן ונסה שוב.');
+  error.code = 'push_detach_failed';
+  return error;
+}
+
+async function keseflePrepareAccountSwitch(nextUser) {
+  var previous = kesefleGetUser();
+  if (!nextUser || typeof nextUser.sub !== 'string' || !nextUser.sub) {
+    throw new Error('לא הצלחנו לאמת את זהות החשבון החדש. נסה להתחבר שוב.');
+  }
+  var pendingIsolation = false;
+  try { pendingIsolation = localStorage.getItem('kfl_push_isolation_pending') === '1'; } catch (_e) {}
+  var changedAccount = !!(previous && previous.sub !== nextUser.sub);
+  if (previous && !changedAccount && !pendingIsolation) return false;
+
+  // google-exchange has already replaced the cookie, so a server DELETE here
+  // would target the new account. Invalidate the old browser endpoint directly;
+  // its old server record can then deliver only to a dead subscription.
+  var pushState = await kesefleDetachBrowserPush();
+  if (!previous && !pendingIsolation && !pushState.hadSubscription) return false;
+
+  // The new cookie may already be active. Clear the old identity even when the
+  // browser refuses unsubscribe; retaining its PII would create a mixed-account
+  // screen. A non-identifying marker makes the isolation retryable on reload.
+  await kesefleClearAccountPresentation();
+  if (!pushState.detached) {
+    try { localStorage.setItem('kfl_push_isolation_pending', '1'); } catch (_e) {}
+    throw keseflePushIsolationError();
+  }
+  try { localStorage.removeItem('kfl_push_isolation_pending'); } catch (_e) {}
+  return true;
+}
+
+async function kesefleHydrateVerifiedAccount(payload) {
+  await keseflePrepareAccountSwitch(payload.user);
+  kesefleSetUser(payload.user);
+  if (payload.sheet && payload.sheet.spreadsheetUrl) {
+    localStorage.setItem('kesefle_sheet', JSON.stringify(payload.sheet));
+  } else {
+    localStorage.removeItem('kesefle_sheet');
+  }
+  // Phone-link presentation is also account-bound. Rebuild it from the
+  // authenticated link-status endpoint below instead of trusting old storage.
+  localStorage.removeItem('kesefle_whatsapp_linked');
+  localStorage.removeItem('kesefle_whatsapp_phone');
+  return kesefleGetUser();
+}
+
+async function kesefleSyncVerifiedPhoneLink(sheet, expectedSub) {
+  if (!sheet || !sheet.spreadsheetUrl || !expectedSub) return false;
+  var controller = typeof AbortController === 'function' ? new AbortController() : null;
+  var operation = (async function() {
+    var options = { credentials: 'include', cache: 'no-store' };
+    if (controller) options.signal = controller.signal;
+    var response = await fetch('/api/whatsapp/link?check=1', options);
+    var payload = response.ok ? await response.json() : null;
+    var linked = !!(payload && payload.ok === true && payload.linked === true && payload.phone);
+    return { linked: linked, phone: linked ? String(payload.phone) : '' };
+  })();
+  var result = await kesefleWithDeadline(operation, 5000, { linked: false, phone: '' }, function() {
+    try { if (controller) controller.abort(); } catch (_e) {}
+  });
+  if (!result || result.linked !== true || !result.phone) return false;
+
+  // The response belongs to the account that started it. Logout/account switch
+  // may happen while it is in flight; never restore old phone PII afterward.
+  var current = kesefleGetUser();
+  if (!current || current.sub !== expectedSub) return false;
+  try {
+    localStorage.setItem('kesefle_whatsapp_linked', '1');
+    localStorage.setItem('kesefle_whatsapp_phone', result.phone);
+    var phone = document.getElementById('link-confirmed-phone');
+    if (phone) phone.textContent = '+' + result.phone;
+    if (typeof _kflSetLinkState === 'function') _kflSetLinkState('success');
+    if (typeof _kflSetProgress === 'function') _kflSetProgress(3, 'whatsapp_linked');
+    if (typeof kesefleUpdateOnboardingProgress === 'function') kesefleUpdateOnboardingProgress();
+  } catch (_presentationError) {}
+  return true;
+}
+
+function kesefleShowSessionUnavailable() {
+  kesefleSetSignedOutChrome();
+  var main = document.querySelector('main') || document.body;
+  var card = document.createElement('div');
+  card.style.cssText = 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;';
+  card.innerHTML =
+    '<div role="status" style="border-radius:24px;border:1px solid #bcc4d6;background:#ffffff;padding:32px;text-align:center;max-width:28rem;width:100%;">' +
+      '<div aria-hidden="true" style="font-size:36px;line-height:1;">⌁</div>' +
+      '<h1 style="font-size:22px;font-weight:900;color:#0f1422;margin:16px 0 0;">לא הצלחנו לאמת את ההתחברות</h1>' +
+      '<p style="margin-top:10px;font-size:14px;line-height:1.6;color:#41506f;">לא נציג פרטי חשבון או פעולות שמירה עד שהחיבור לשרת יחזור.</p>' +
+      '<button type="button" onclick="window.location.reload()" style="margin-top:22px;min-height:48px;width:100%;border:0;border-radius:14px;background:#1d4ed8;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">נסה שוב</button>' +
+      '<a href="/offline" style="display:inline-flex;min-height:44px;align-items:center;margin-top:8px;color:#1d4ed8;font-size:13px;font-weight:700;">עזרה במצב לא מקוון</a>' +
+    '</div>';
+  while (main.firstChild) main.removeChild(main.firstChild);
+  main.appendChild(card);
+}
+
+function kesefleShowPushIsolationRecovery() {
+  kesefleSetSignedOutChrome();
+  var main = document.querySelector('main') || document.body;
+  var card = document.createElement('div');
+  card.style.cssText = 'min-height:60vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;';
+  card.innerHTML =
+    '<div role="alert" style="border-radius:24px;border:1px solid #f59e0b;background:#fffbeb;padding:32px;text-align:center;max-width:28rem;width:100%;">' +
+      '<div aria-hidden="true" style="font-size:36px;line-height:1;">🔔</div>' +
+      '<h1 style="font-size:22px;font-weight:900;color:#78350f;margin:16px 0 0;">מנתקים התראות מהחשבון הקודם</h1>' +
+      '<p style="margin-top:10px;font-size:14px;line-height:1.6;color:#92400e;">פרטי החשבון הישן כבר נוקו. כדי למנוע ממנו לשלוח התראות למכשיר הזה, רענן וננסה שוב.</p>' +
+      '<button type="button" onclick="window.location.reload()" style="margin-top:22px;min-height:48px;width:100%;border:0;border-radius:14px;background:#b45309;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">נסה שוב בבטחה</button>' +
+    '</div>';
+  while (main.firstChild) main.removeChild(main.firstChild);
+  main.appendChild(card);
+}
+
 function kesefleShowSigninPrompt() {
+  kesefleSetSignedOutChrome();
   // If we're inside an in-app browser (WhatsApp etc.), Google OAuth will fail —
   // show the "open in Safari/Chrome" guidance instead of a doomed sign-in button.
   if (kesefleIsInAppBrowser()) { kesefleShowInAppBrowserHelp(); return; }
@@ -2003,7 +2218,7 @@ function kesefleShowSigninPrompt() {
     '<div style="border-radius:24px;border:1px solid ' + border + ';background:' + bg + ';padding:32px;box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);text-align:center;max-width:28rem;width:100%;">' +
       '<div style="display:grid;place-items:center;height:56px;width:56px;border-radius:16px;background:linear-gradient(135deg,#2563eb,#1e40af);color:#ffffff;font-size:24px;font-weight:900;margin:0 auto 20px;">₪</div>' +
       '<h2 style="font-size:24px;font-weight:900;letter-spacing:-0.025em;color:' + title + ';margin:0;">התחברות לחשבון</h2>' +
-      '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">התחבר עם Google כדי ליצור את הגיליון שלך ולהתחיל לעקוב אחרי הוצאות בוואטסאפ.</p>' +
+      '<p style="margin-top:12px;font-size:14px;color:' + body + ';line-height:1.6;">התחבר עם Google כדי ליצור את הגיליון שלך ולהתחיל לעקוב באפליקציה. את WhatsApp אפשר לחבר כשהשירות זמין.</p>' +
       '<button id="account-signin-btn" type="button" onclick="kesefleAccountStartSignin()" style="margin-top:24px;display:inline-flex;align-items:center;justify-content:center;gap:12px;width:100%;border-radius:16px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';padding:14px 24px;font-size:16px;font-weight:700;color:' + btnText + ';box-shadow:0 8px 30px -10px rgba(15,20,34,0.15);cursor:pointer;transition:background 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">' +
         '<svg style="height:20px;width:20px;" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>' +
         '<span>התחבר עם Google</span>' +
@@ -2025,51 +2240,6 @@ function kesefleShowSigninPrompt() {
   // Returning from the Google redirect? Finish the exchange + provisioning.
   if (_q.get('code') && _q.get('state')) { kesefleHandleOAuthReturn(_q.get('code'), _q.get('state')); return; }
 
-  // RETURNING-USER FAST PATH (Steven 2026-05-25; gated 2026-05-31):
-  // Send a user straight to the mobile app ONLY when onboarding is fully
-  // done — i.e. they have BOTH a provisioned sheet AND a linked WhatsApp
-  // number. The old code redirected as soon as a sheet existed, which
-  // dumped a half-onboarded user (sheet created, phone NOT yet connected)
-  // on the transactions view and stranded them before STEP B/C — the exact
-  // bug Steven reported. WhatsApp-linked state lives in localStorage
-  // (kesefle_whatsapp_linked, set by _kflShowLinkSuccess); /api/me does not
-  // expose link status, so we read the local flag. A user who cleared
-  // storage simply falls through to the guided flow and re-links — never
-  // trapped on the dashboard.
-  // Skipped when ?force_signin=1 is on the URL (lets us re-link intentionally).
-  if (!_q.get('force') && _q.get('force_signin') !== '1') {
-    try {
-      var meResp = await fetch('/api/me', { credentials: 'include' });
-      if (meResp.ok) {
-        var meJson = await meResp.json();
-        if (meJson && meJson.ok && meJson.user && meJson.sheet && meJson.sheet.spreadsheetUrl) {
-          // Hydrate localStorage in case the dashboard reads it on first paint.
-          try { kesefleSetUser(meJson.user); } catch (_) {}
-          try { localStorage.setItem('kesefle_sheet', JSON.stringify(meJson.sheet)); } catch (_) {}
-          var waLinked = false;
-          try {
-            var linkResp = await fetch('/api/whatsapp/link?check=1', { credentials: 'include' });
-            var linkJson = linkResp.ok ? await linkResp.json() : null;
-            waLinked = !!(linkJson && linkJson.ok && linkJson.linked && linkJson.phone);
-            if (waLinked) {
-              localStorage.setItem('kesefle_whatsapp_linked', '1');
-              localStorage.setItem('kesefle_whatsapp_phone', linkJson.phone);
-            }
-          } catch (_) {}
-          if (waLinked) {
-            // /app is the capability-aware surface. The legacy dashboard still
-            // contains WhatsApp-first copy and must not be the automatic path.
-            window.location.href = '/app';
-            return;
-          }
-          // Sheet exists but WhatsApp not yet linked -> stay here and guide the
-          // user through the phone-connect step (STEP B/C) instead of bouncing
-          // them to a dashboard they can't feed yet. Fall through to render the
-          // onboarding flow (init continues below).
-        }
-      }
-    } catch (_meErr) { /* network blip -> fall through to normal flow */ }
-  }
   if (_q.get('error')) {
     var errCode = _q.get('error');
     try { _kflFunnel('oauth_failed', { error_kind: errCode }); } catch (e) {}
@@ -2079,18 +2249,48 @@ function kesefleShowSigninPrompt() {
     try { kesefleShowSigninError(_kflOAuthErrorMessage(errCode)); } catch (e) { kesefleShowSigninPrompt(); }
     return;
   }
-  var u = kesefleGetUser();
-  if (!u) { kesefleShowSigninPrompt(); return; }
+
+  // The HttpOnly cookie-backed /api/me response is the sole authentication
+  // authority. Web Storage is presentation/offline metadata and must never
+  // unlock provisioning, account details, or logout chrome on its own.
+  var session = await kesefleProbeAccountSession();
+  if (session.state === 'signed_out') {
+    var signedOutPush = await kesefleDetachBrowserPush();
+    await kesefleClearAccountPresentation();
+    if (!signedOutPush.detached) {
+      try { localStorage.setItem('kfl_push_isolation_pending', '1'); } catch (_e) {}
+      kesefleShowPushIsolationRecovery();
+      return;
+    }
+    try { localStorage.removeItem('kfl_push_isolation_pending'); } catch (_e) {}
+    kesefleShowSigninPrompt();
+    return;
+  }
+  if (session.state !== 'authenticated') {
+    kesefleShowSessionUnavailable();
+    return;
+  }
+
+  var meJson = session.payload;
+  var u;
+  try { u = await kesefleHydrateVerifiedAccount(meJson); }
+  catch (_hydrateError) {
+    if (_hydrateError && _hydrateError.code === 'push_detach_failed') kesefleShowPushIsolationRecovery();
+    else kesefleShowSessionUnavailable();
+    return;
+  }
+  if (!u) { kesefleShowSessionUnavailable(); return; }
+
+  // Core session + sheet authority is already known. Make the account usable
+  // before the optional WhatsApp capability probe, which may be slow on mobile.
+  kesefleRevealAuthenticatedAccount(u);
+  // Resolve the optional capability in the background. Do not delay the rest
+  // of account setup or navigate away after the user has begun interacting.
+  kesefleSyncVerifiedPhoneLink(meJson.sheet, u.sub);
   // Everything below is best-effort + null-guarded: a single missing element or
   // bad localStorage value must NEVER throw out of init() (the static
   // onboarding UI must remain usable rather than the page going blank).
   try {
-    var nameEl = document.getElementById('user-name');
-    if (nameEl) nameEl.textContent = u.name || u.email || 'משתמש';
-    if (u.picture) {
-      var img = document.getElementById('user-picture');
-      if (img) { img.src = u.picture; img.classList.remove('hidden'); }
-    }
     // Fire signup_complete once (dedup via localStorage).
     try {
       if (!localStorage.getItem('kfl_signup_complete_fired')) {
