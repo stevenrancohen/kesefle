@@ -918,15 +918,15 @@
       <div class="flex items-start gap-3">
         <div class="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-white text-2xl shadow-soft dark:bg-ink-800">🔔</div>
         <div>
-          <div id="kfl-push-title" class="font-bold text-ink-900 dark:text-white">הפעל התראות לדפדפן</div>
+          <div id="kfl-push-title" class="font-bold text-ink-900 dark:text-white">הפעל התראות תקציב</div>
           <div id="kfl-push-copy" class="mt-1 text-xs text-ink-600 dark:text-ink-300">
-            התראות מיידיות על חריגות תקציב, סיכומים שבועיים ועדכונים — ישירות למכשיר, גם בלי וואטסאפ.
+            התראה כשהוצאה בקטגוריה עוברת את הסף שהגדרת — גם בלי וואטסאפ. כרגע אפשר לחבר מכשיר אחד לכל חשבון.
           </div>
         </div>
       </div>
       <div class="flex flex-shrink-0 gap-2">
         <button id="kfl-push-enable" type="button" class="min-h-[44px] rounded-2xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-soft hover:bg-brand-700">
-          הפעל התראות
+          הפעל התראות תקציב
         </button>
         <button id="kfl-push-dismiss" type="button" class="min-h-[44px] rounded-2xl border border-ink-300 px-3 py-2 text-sm text-ink-600 hover:bg-white dark:border-ink-600 dark:text-ink-300 dark:hover:bg-white dark:hover:text-ink-900">
           לא עכשיו
@@ -1644,7 +1644,11 @@ function kesefleGetSheet() {
 async function kesefleLogout() {
   // Best-effort server-side clear of the HttpOnly session cookie, then
   // local cleanup, then redirect.
-  try { if (window.KesefleSession && window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout(); }
+  window.__kflPushLogout = true;
+  try {
+    if (window.KesefleSession && window.KesefleSession.cancelPushBeforeLogout) await window.KesefleSession.cancelPushBeforeLogout();
+    else if (window.KesefleSession && window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout();
+  }
   catch (e) {}
   try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }); }
   catch (e) {}
@@ -4380,6 +4384,7 @@ function generatePseudoSeries(target, n, intLike) {
 
   var CARD_DISMISSED = 'kfl_push_dismissed';
   var SUBSCRIBED_FLAG = 'kfl_push_subscribed';
+  var EXPECTED_USER_SUB = '';
 
   function getCard()  { return document.getElementById('kfl-push-card'); }
   function getBtn()   { return document.getElementById('kfl-push-enable'); }
@@ -4390,6 +4395,10 @@ function generatePseudoSeries(target, n, intLike) {
     var s = getStatus(); if (!s) return;
     s.textContent = msg; s.classList.remove('hidden');
     s.style.color = isError ? '#b91c1c' : '#1e40af';
+  }
+
+  function pushEnableCurrent(expectedSub) {
+    return !!(!window.__kflPushLogout && expectedSub && EXPECTED_USER_SUB === expectedSub);
   }
 
   function hideCardForever() {
@@ -4449,9 +4458,12 @@ function generatePseudoSeries(target, n, intLike) {
       var setup = await Promise.all([
         fetch('/api/config', { credentials: 'same-origin' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
         navigator.serviceWorker.ready.then(function(reg){ return reg.pushManager.getSubscription(); }).catch(function(){ return null; }),
+        fetch('/api/me', { credentials: 'include', cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
       ]);
       if (setup[0] && setup[0].vapid_public_key) vapidPub = setup[0].vapid_public_key;
       localSubscription = setup[1] || null;
+      EXPECTED_USER_SUB = setup[2] && setup[2].ok && setup[2].user && setup[2].user.sub || '';
+      if (!EXPECTED_USER_SUB) return;
       var fingerprint = await fingerprintPushEndpoint(localSubscription && localSubscription.endpoint);
       status = await fetch('/api/push/subscribe', {
         credentials: 'same-origin',
@@ -4477,7 +4489,7 @@ function generatePseudoSeries(target, n, intLike) {
       var copy = document.getElementById('kfl-push-copy');
       var button = getBtn();
       if (title) title.textContent = 'חבר התראות לחשבון הזה';
-      if (copy) copy.textContent = 'ההרשאה קיימת במכשיר, אבל ההתראות עדיין לא משויכות לחשבון הנוכחי.';
+      if (copy) copy.textContent = 'ההרשאה קיימת, אבל אינה משויכת לחשבון הנוכחי. החיבור יחליף מכשיר אחר שמחובר לחשבון.';
       if (button) button.textContent = 'חבר התראות';
     }
     card.classList.remove('hidden');
@@ -4486,25 +4498,43 @@ function generatePseudoSeries(target, n, intLike) {
   async function onEnableClick() {
     var card = getCard(); var btn = getBtn();
     var vapidPub = card && card.dataset.vapid;
-    if (!vapidPub || !btn) return;
+    var expectedSub = EXPECTED_USER_SUB;
+    if (!vapidPub || !btn || !pushEnableCurrent(expectedSub)) return;
     btn.disabled = true; btn.textContent = 'מבקש הרשאה…';
     try {
       var perm = Notification.permission;
       if (perm === 'default') perm = await Notification.requestPermission();
+      if (!pushEnableCurrent(expectedSub)) return;
       if (perm !== 'granted') {
         setStatus(perm === 'denied' ? 'ההרשאה נדחתה. ניתן לשנות בהגדרות הדפדפן.' : 'ההרשאה לא ניתנה.', true);
-        btn.disabled = false; btn.textContent = 'הפעל התראות';
+        btn.disabled = false; btn.textContent = 'הפעל התראות תקציב';
         return;
       }
       btn.textContent = 'נרשם…';
+      var verifiedAccount = null;
+      try {
+        var meResponse = await fetch('/api/me', { credentials: 'include', cache: 'no-store' });
+        verifiedAccount = meResponse.ok ? await meResponse.json() : null;
+      } catch (_e) {}
+      if (!verifiedAccount || !verifiedAccount.user || verifiedAccount.user.sub !== expectedSub) {
+        setStatus('החשבון השתנה. רענן את העמוד לפני חיבור ההתראות.', true);
+        btn.disabled = false; btn.textContent = 'נסה שוב';
+        return;
+      }
+      if (!pushEnableCurrent(expectedSub)) return;
+      window.__kflPushEnableStage = 'mutating';
       var reg = await navigator.serviceWorker.ready;
+      if (!pushEnableCurrent(expectedSub)) return;
       var sub = await reg.pushManager.getSubscription();
+      if (!pushEnableCurrent(expectedSub)) return;
       var previousEndpoint = sub && sub.endpoint || '';
+      var createdNewSubscription = false;
       if (sub) {
         // Recheck ownership at click time. The card can remain open while
         // another tab creates a subscription, so its render-time snapshot is
         // not authoritative enough to decide whether this endpoint is reusable.
         var fingerprint = await fingerprintPushEndpoint(sub.endpoint);
+        if (!pushEnableCurrent(expectedSub)) return;
         if (!fingerprint) {
           setStatus('לא הצלחנו לאמת את מינוי ההתראות במכשיר. נסה שוב.', true);
           btn.disabled = false; btn.textContent = 'נסה שוב';
@@ -4519,6 +4549,7 @@ function generatePseudoSeries(target, n, intLike) {
           });
           ownershipStatus = ownershipResponse.ok ? await ownershipResponse.json() : null;
         } catch (_e) { ownershipStatus = null; }
+        if (!pushEnableCurrent(expectedSub)) return;
         if (!ownershipStatus || ownershipStatus.ok !== true ||
             typeof ownershipStatus.subscribed !== 'boolean' || typeof ownershipStatus.matchesDevice !== 'boolean') {
           setStatus('לא הצלחנו לאמת למי שייכות ההתראות. נסה שוב כשהחיבור יציב.', true);
@@ -4536,6 +4567,7 @@ function generatePseudoSeries(target, n, intLike) {
         // until its server record is eventually cleaned up.
         var unsubscribed = false;
         try { unsubscribed = await sub.unsubscribe(); } catch (_e) {}
+        if (!pushEnableCurrent(expectedSub)) return;
         if (unsubscribed !== true) {
           setStatus('לא הצלחנו לנתק את ההתראות מהחשבון הקודם. נסה שוב.', true);
           btn.disabled = false; btn.textContent = 'נסה שוב';
@@ -4548,6 +4580,11 @@ function generatePseudoSeries(target, n, intLike) {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8(vapidPub),
         });
+        createdNewSubscription = true;
+        if (!pushEnableCurrent(expectedSub)) {
+          try { await sub.unsubscribe(); } catch (_e) {}
+          return;
+        }
       }
       if (previousEndpoint && sub.endpoint === previousEndpoint) {
         try { await sub.unsubscribe(); } catch (_e) {}
@@ -4557,6 +4594,7 @@ function generatePseudoSeries(target, n, intLike) {
       }
       var payload = {
         subscription: sub.toJSON(),
+        expectedUserSub: expectedSub,
         deviceInfo: {
           ua: (navigator.userAgent || '').slice(0, 200),
           lang: navigator.language || '',
@@ -4570,9 +4608,16 @@ function generatePseudoSeries(target, n, intLike) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      if (!pushEnableCurrent(expectedSub)) {
+        // Coordinated logout waits for this task, then removes the exact
+        // endpoint from server and browser while the cookie is still valid.
+        if (!window.__kflPushLogout && createdNewSubscription) { try { await sub.unsubscribe(); } catch (_e) {} }
+        return;
+      }
       if (!r.ok) {
+        if (createdNewSubscription) { try { await sub.unsubscribe(); } catch (_e) {} }
         setStatus('שמירה נכשלה (' + r.status + '). נסה שוב מאוחר יותר.', true);
-        btn.disabled = false; btn.textContent = 'הפעל התראות';
+        btn.disabled = false; btn.textContent = 'הפעל התראות תקציב';
         return;
       }
       setStatus('יופי! ההתראות הופעלו.', false);
@@ -4585,13 +4630,24 @@ function generatePseudoSeries(target, n, intLike) {
       } catch(_e){}
     } catch (e) {
       setStatus('לא הצלחנו להפעיל התראות: ' + (e && e.message || 'unknown'), true);
-      btn.disabled = false; btn.textContent = 'הפעל התראות';
+      btn.disabled = false; btn.textContent = 'הפעל התראות תקציב';
     }
+  }
+
+  function startEnable() {
+    if (window.__kflPushLogout) return;
+    window.__kflPushEnableStage = 'permission';
+    var task = onEnableClick();
+    window.__kflPushEnableTask = task;
+    task.then(function(){
+      if (window.__kflPushEnableTask === task) window.__kflPushEnableTask = null;
+      if (window.__kflPushEnableTask == null) window.__kflPushEnableStage = '';
+    });
   }
 
   function bind() {
     var btn = getBtn(), x = getX();
-    if (btn) btn.addEventListener('click', onEnableClick);
+    if (btn) btn.addEventListener('click', startEnable);
     if (x) x.addEventListener('click', dismissCard);
     // Defer the show check until after first paint so we don't compete with
     // the dashboard's data fetch.

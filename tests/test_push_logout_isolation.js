@@ -35,12 +35,20 @@ function extractFunction(source, name) {
   throw new Error('unterminated function ' + name);
 }
 
-async function browserDetachFixture({ fetchOk, unsubscribeOk, removed = fetchOk }) {
+async function browserDetachFixture({
+  fetchOk,
+  unsubscribeOk,
+  removed = fetchOk,
+  localProfile = true,
+  localSub = 'user-1',
+  serverSub = 'user-1',
+  authoritativeSub = '',
+}) {
   const events = [];
-  const local = storage({
-    kesefle_user: JSON.stringify({ version: 2, sub: 'user-1' }),
-    kfl_push_subscribed: '1',
-  });
+  const deleteBodies = [];
+  const localSeed = { kfl_push_subscribed: '1' };
+  if (localProfile) localSeed.kesefle_user = JSON.stringify({ version: 2, sub: localSub });
+  const local = storage(localSeed);
   const session = storage({ kfl_push_subscribed: '1' });
   const subscription = {
     endpoint: 'https://fcm.googleapis.com/fcm/send/device-token',
@@ -62,14 +70,139 @@ async function browserDetachFixture({ fetchOk, unsubscribeOk, removed = fetchOk 
     setTimeout,
     clearTimeout,
     async fetch(url, options) {
+      if (url === '/api/me') {
+        events.push('server:me');
+        return { ok: true, async json() { return { ok: true, user: { sub: serverSub } }; } };
+      }
       events.push('server:delete');
+      deleteBodies.push(JSON.parse(options.body));
       return { ok: fetchOk, url, options, async json() { return { ok: fetchOk, removed }; } };
     },
   };
   const context = { window, AbortController, setTimeout, clearTimeout, Promise };
   vm.runInNewContext(read('lib/browser-session.js'), context, { filename: 'browser-session.js' });
-  const result = await window.KesefleSession.detachPushBeforeLogout();
-  return { result, events, local, session };
+  const result = await window.KesefleSession.detachPushBeforeLogout(authoritativeSub);
+  return { result, events, local, session, deleteBodies };
+}
+
+async function pushCancellationTimeoutFixture() {
+  const local = storage();
+  const session = storage();
+  const never = new Promise(() => {});
+  const window = {
+    localStorage: local,
+    sessionStorage: session,
+    navigator: {},
+    __kflPushEnableTask: never,
+    __kflPushEnableStage: 'mutating',
+    setTimeout(callback) { return setTimeout(callback, 0); },
+    clearTimeout(timer) { clearTimeout(timer); },
+  };
+  vm.runInNewContext(read('lib/browser-session.js'), { window, Promise }, { filename: 'browser-session-timeout.js' });
+  const result = await window.KesefleSession.cancelPushBeforeLogout('user-1');
+  return { result, marker: window.__kflPushLogout };
+}
+
+async function boundedBrowserCleanupFixture(stalledStep) {
+  const never = new Promise(() => {});
+  const subscription = {
+    endpoint: 'https://fcm.googleapis.com/fcm/send/device-token',
+    unsubscribe() { return stalledStep === 'unsubscribe' ? never : Promise.resolve(true); },
+  };
+  const registration = {
+    pushManager: {
+      getSubscription() {
+        return stalledStep === 'subscription' ? never : Promise.resolve(subscription);
+      },
+    },
+  };
+  const window = {
+    localStorage: storage(),
+    sessionStorage: storage(),
+    navigator: { serviceWorker: {
+      getRegistration() {
+        return stalledStep === 'registration' ? never : Promise.resolve(registration);
+      },
+    } },
+    AbortController,
+    setTimeout(callback) { return setTimeout(callback, 0); },
+    clearTimeout(timer) { clearTimeout(timer); },
+    async fetch(url) {
+      if (url === '/api/me') return { ok: true, async json() { return { user: { sub: 'user-1' } }; } };
+      return { ok: true, async json() { return { ok: true, removed: true }; } };
+    },
+  };
+  vm.runInNewContext(read('lib/browser-session.js'), { window, AbortController, Promise }, { filename: 'browser-session-bounded-cleanup.js' });
+  return window.KesefleSession.detachPushBeforeLogout('user-1');
+}
+
+async function lateBrowserCleanupFixture(stalledStep, currentSub = 'user-1') {
+  const events = [];
+  let resolveRegistration;
+  let resolveSubscription;
+  const subscription = {
+    endpoint: 'https://fcm.googleapis.com/fcm/send/late-device',
+    async unsubscribe() { events.push('browser:unsubscribe'); return true; },
+  };
+  const registration = { pushManager: {
+    getSubscription() {
+      if (stalledStep === 'subscription') {
+        return new Promise((resolve) => { resolveSubscription = resolve; });
+      }
+      return Promise.resolve(subscription);
+    },
+  } };
+  const window = {
+    localStorage: storage(),
+    sessionStorage: storage(),
+    navigator: { serviceWorker: {
+      getRegistration() {
+        if (stalledStep === 'registration') {
+          return new Promise((resolve) => { resolveRegistration = resolve; });
+        }
+        return Promise.resolve(registration);
+      },
+    } },
+    AbortController,
+    setTimeout(callback) { return setTimeout(callback, 0); },
+    clearTimeout(timer) { clearTimeout(timer); },
+    async fetch(url, options) {
+      if (url === '/api/push/subscribe') {
+        events.push('server:delete:' + JSON.parse(options.body).endpoint);
+        return { ok: true, async json() { return { ok: true, removed: true }; } };
+      }
+      return { ok: true, status: 200, async json() { return { user: { sub: currentSub } }; } };
+    },
+  };
+  vm.runInNewContext(read('lib/browser-session.js'), { window, AbortController, Promise }, { filename: 'browser-session-late-cleanup.js' });
+  const initial = await window.KesefleSession.detachPushBeforeLogout('user-1');
+  if (stalledStep === 'registration') resolveRegistration(registration);
+  else resolveSubscription(subscription);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return { initial, events };
+}
+
+async function dashboardLogoutFixture() {
+  const source = read('dashboard.html');
+  const events = [];
+  const args = [];
+  const window = {
+    __kflPushLogout: false,
+    location: { href: '' },
+    KesefleSession: {
+      async cancelPushBeforeLogout(...values) { events.push('push:cancel'); args.push(...values); },
+      clearAllIdentityStorage() { events.push('storage:clear'); },
+    },
+  };
+  const context = {
+    window,
+    fetch: async (url) => { events.push(url); return { ok: true }; },
+  };
+  const code = [extractFunction(source, 'kesefleLogout'), 'globalThis.run = kesefleLogout;'].join('\n');
+  vm.runInNewContext(code, context, { filename: 'dashboard-logout.js' });
+  await context.run();
+  return { events, args, href: window.location.href };
 }
 
 function responseRecorder() {
@@ -81,7 +214,7 @@ function responseRecorder() {
   };
 }
 
-async function apiDeleteFixture({ requestedEndpoint, storedEndpoint, evalOk = true, replaceBeforeEval = '' }) {
+async function apiDeleteFixture({ requestedEndpoint, storedEndpoint, evalOk = true, replaceBeforeEval = '', expectedUserSub = 'user-1' }) {
   const source = read('api/push/subscribe.js');
   const calls = [];
   const code = [
@@ -111,11 +244,14 @@ async function apiDeleteFixture({ requestedEndpoint, storedEndpoint, evalOk = tr
   };
   vm.runInNewContext(code, context, { filename: 'push-subscribe-delete.js' });
   const res = responseRecorder();
-  await context.handleDelete({ body: requestedEndpoint == null ? {} : { endpoint: requestedEndpoint }, reqId: 'test' }, res, 'user-1');
+  await context.handleDelete({
+    body: { endpoint: requestedEndpoint == null ? undefined : requestedEndpoint, expectedUserSub },
+    reqId: 'test',
+  }, res, 'user-1');
   return { ...res.state, calls };
 }
 
-async function apiGetFixture({ storedEndpoint, suppliedFingerprint, kvOk = true }) {
+async function apiGetFixture({ storedEndpoint, suppliedFingerprint, kvOk = true, malformed = false }) {
   const source = read('api/push/subscribe.js');
   const code = [
     "const KV_URL = 'https://kv.test';",
@@ -132,6 +268,7 @@ async function apiGetFixture({ storedEndpoint, suppliedFingerprint, kvOk = true 
     fetch: async () => ({
       ok: kvOk,
       async json() {
+        if (malformed) return {};
         return {
           result: storedEndpoint ? JSON.stringify({ subscription: { endpoint: storedEndpoint } }) : null,
         };
@@ -144,7 +281,55 @@ async function apiGetFixture({ storedEndpoint, suppliedFingerprint, kvOk = true 
   return res.state;
 }
 
-async function dashboardEnableFixture({ oldUnsubscribe, newEndpoint, probeOk = true, matchesDevice = false }) {
+async function apiPostFixture({ expectedUserSub = 'user-1' } = {}) {
+  const source = read('api/push/subscribe.js');
+  let writes = 0;
+  const code = [
+    "const KV_URL = 'https://kv.test';",
+    "const KV_TOKEN = 'token';",
+    'const log = { info() {} };',
+    "function validateSubscription(){ return null; }",
+    "function sanitizeDeviceInfo(){ return {}; }",
+    "async function kvSet(){ globalThis.writes++; return true; }",
+    extractFunction(source, 'subscriptionKey'),
+    extractFunction(source, 'handlePost'),
+    'globalThis.handlePost = handlePost;',
+  ].join('\n');
+  const context = { writes };
+  vm.runInNewContext(code, context, { filename: 'push-subscribe-post.js' });
+  const res = responseRecorder();
+  await context.handlePost({
+    reqId: 'test',
+    body: {
+      expectedUserSub,
+      subscription: {
+        endpoint: 'https://fcm.googleapis.com/fcm/send/device-a',
+        keys: { p256dh: 'x'.repeat(88), auth: 'y'.repeat(22) },
+      },
+    },
+  }, res, 'user-1');
+  return { ...res.state, writes: context.writes };
+}
+
+async function apiKvSetFixture(payload, responseOk = true) {
+  const source = read('api/push/subscribe.js');
+  const code = [
+    "const KV_URL = 'https://kv.test';",
+    "const KV_TOKEN = 'token';",
+    extractFunction(source, 'kvSet'),
+    'globalThis.run = kvSet;',
+  ].join('\n');
+  const context = {
+    fetch: async () => ({
+      ok: responseOk,
+      async json() { return payload; },
+    }),
+  };
+  vm.runInNewContext(code, context, { filename: 'push-subscribe-kv-set.js' });
+  return context.run('push_sub:user-1', { value: true });
+}
+
+async function dashboardEnableFixture({ oldUnsubscribe, newEndpoint, probeOk = true, matchesDevice = false, postOk = true, verifiedSub = 'user-1' }) {
   const source = read('dashboard.html');
   const events = [];
   const fetches = [];
@@ -168,9 +353,11 @@ async function dashboardEnableFixture({ oldUnsubscribe, newEndpoint, probeOk = t
     },
   };
   const code = [
+    "let EXPECTED_USER_SUB = 'user-1';",
     'function getCard(){ return globalThis.card; }',
     'function getBtn(){ return globalThis.button; }',
     'function setStatus(message, isError){ globalThis.statuses.push({ message, isError }); }',
+    'function pushEnableCurrent(expectedSub){ return expectedSub === EXPECTED_USER_SUB; }',
     'function urlBase64ToUint8(){ return new Uint8Array([1]); }',
     "async function fingerprintPushEndpoint(){ return 'a'.repeat(64); }",
     'function hideCardForever(){}',
@@ -178,6 +365,7 @@ async function dashboardEnableFixture({ oldUnsubscribe, newEndpoint, probeOk = t
     'globalThis.run = onEnableClick;',
   ].join('\n');
   const context = {
+    window: {},
     card,
     button,
     statuses,
@@ -192,10 +380,13 @@ async function dashboardEnableFixture({ oldUnsubscribe, newEndpoint, probeOk = t
     setTimeout() { return 1; },
     fetch: async (url, options) => {
       fetches.push({ url, options });
+      if (url === '/api/me') {
+        return { ok: true, async json() { return { ok: true, user: { sub: verifiedSub } }; } };
+      }
       if (!options || options.method !== 'POST') {
         return { ok: probeOk, status: probeOk ? 200 : 503, async json() { return { ok: true, subscribed: matchesDevice, matchesDevice }; } };
       }
-      return { ok: true, status: 200 };
+      return { ok: postOk, status: postOk ? 200 : 502 };
     },
   };
   vm.runInNewContext(code, context, { filename: 'dashboard-push-enable.js' });
@@ -223,6 +414,7 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
   };
   const localSubscription = localEndpoint ? { endpoint: localEndpoint } : null;
   const code = [
+    "let EXPECTED_USER_SUB = '';",
     "const CARD_DISMISSED = 'kfl_push_dismissed';",
     "const SUBSCRIBED_FLAG = 'kfl_push_subscribed';",
     'function getCard(){ return document.getElementById(\'kfl-push-card\'); }',
@@ -247,6 +439,7 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
     fetch: async (url, options = {}) => {
       calls.push({ url, options });
       if (url === '/api/config') return { ok: true, async json() { return { vapid_public_key: 'key' }; } };
+      if (url === '/api/me') return { ok: true, async json() { return { ok: true, user: { sub: 'user-1' } }; } };
       return { ok: statusOk, async json() { return { ok: true, subscribed, matchesDevice }; } };
     },
   };
@@ -275,6 +468,61 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
   assert.strictEqual(preservedNewerDevice.result.serverRemoved, false,
     'HTTP 200 with removed:false is not reported as a successful server deletion');
 
+  const cleanCookieSession = await browserDetachFixture({
+    fetchOk: true,
+    unsubscribeOk: false,
+    localProfile: false,
+  });
+  assert.ok(cleanCookieSession.events.includes('server:me'),
+    'logout resolves an authoritative account for clean cookie sessions');
+  assert.strictEqual(cleanCookieSession.result.serverRemoved, true,
+    'server cleanup still succeeds when no local profile exists and browser unsubscribe fails');
+
+  const staleLocalProfile = await browserDetachFixture({
+    fetchOk: true,
+    unsubscribeOk: false,
+    localProfile: true,
+    localSub: 'user-a',
+    serverSub: 'user-b',
+  });
+  assert.ok(staleLocalProfile.events.includes('server:me'));
+  assert.strictEqual(staleLocalProfile.deleteBodies[0].expectedUserSub, 'user-b',
+    'presentation-only local identity never overrides the authenticated cookie account');
+  assert.strictEqual(staleLocalProfile.result.serverRemoved, true);
+
+  const boundedCancellation = await pushCancellationTimeoutFixture();
+  assert.strictEqual(boundedCancellation.marker, true,
+    'Push cancellation marks logout synchronously');
+  assert.strictEqual(boundedCancellation.result.skipped, true,
+    'a never-resolving Push task reaches endpoint cleanup after the bounded wait');
+
+  for (const stalledStep of ['registration', 'subscription', 'unsubscribe']) {
+    const boundedCleanup = await boundedBrowserCleanupFixture(stalledStep);
+    assert.ok(boundedCleanup && typeof boundedCleanup === 'object',
+      stalledStep + ' cannot block logout cleanup forever');
+  }
+
+  for (const stalledStep of ['registration', 'subscription']) {
+    const lateCleanup = await lateBrowserCleanupFixture(stalledStep);
+    assert.strictEqual(lateCleanup.initial.skipped, true,
+      stalledStep + ' timeout releases logout immediately');
+    assert.ok(lateCleanup.events.includes('browser:unsubscribe'),
+      stalledStep + ' late resolution still unsubscribes the hidden browser endpoint');
+    assert.ok(lateCleanup.events.some((event) => event.startsWith('server:delete:')),
+      stalledStep + ' late resolution attempts endpoint-exact server cleanup');
+  }
+
+  const switchedBeforeLateRegistration = await lateBrowserCleanupFixture('registration', 'user-2');
+  assert.deepStrictEqual(switchedBeforeLateRegistration.events, [],
+    'account B subscription remains untouched when account A registration resolves after the switch');
+
+  const dashboardLogout = await dashboardLogoutFixture();
+  assert.deepStrictEqual(dashboardLogout.args, [],
+    'dashboard never promotes stale local presentation identity to logout authority');
+  assert.ok(dashboardLogout.events.indexOf('push:cancel') < dashboardLogout.events.indexOf('/api/auth/logout'),
+    'dashboard completes bounded Push cleanup before cookie logout');
+  assert.strictEqual(dashboardLogout.href, '/');
+
   const endpointA = 'https://fcm.googleapis.com/fcm/send/device-a';
   const endpointB = 'https://fcm.googleapis.com/fcm/send/device-b';
   const endpointAFingerprint = crypto.createHash('sha256').update(endpointA).digest('hex');
@@ -291,6 +539,11 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
   assert.strictEqual(failedRead.body.error, 'kv_read_failed',
     'unknown KV state is not misreported as an absent subscription');
 
+  const malformedRead = await apiGetFixture({ storedEndpoint: null, malformed: true });
+  assert.strictEqual(malformedRead.status, 502);
+  assert.strictEqual(malformedRead.body.error, 'kv_read_failed',
+    'malformed KV HTTP-200 is not treated as a missing subscription');
+
   const differentDevice = await apiDeleteFixture({ requestedEndpoint: endpointA, storedEndpoint: endpointB });
   assert.strictEqual(differentDevice.status, 200);
   assert.strictEqual(differentDevice.body.reason, 'different_device');
@@ -302,6 +555,15 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
   assert.strictEqual(removed.status, 200);
   assert.strictEqual(removed.body.removed, true,
     'the matching device endpoint is deleted');
+
+  const legacyEndpointDelete = await apiDeleteFixture({
+    requestedEndpoint: endpointA,
+    storedEndpoint: endpointA,
+    expectedUserSub: null,
+  });
+  assert.strictEqual(legacyEndpointDelete.status, 200);
+  assert.strictEqual(legacyEndpointDelete.body.removed, true,
+    'an already-open v25 tab retains endpoint-exact authenticated logout cleanup');
 
   const racedReplacement = await apiDeleteFixture({
     requestedEndpoint: endpointA,
@@ -317,6 +579,31 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
   assert.strictEqual(failedDelete.body.error, 'kv_delete_failed',
     'KV deletion failure is reported truthfully');
 
+  const staleAccountDelete = await apiDeleteFixture({
+    requestedEndpoint: endpointA,
+    storedEndpoint: endpointA,
+    expectedUserSub: 'user-2',
+  });
+  assert.strictEqual(staleAccountDelete.status, 409);
+  assert.strictEqual(staleAccountDelete.calls.length, 0,
+    'a stale tab cannot delete under a newly-switched cookie');
+
+  const staleAccountPost = await apiPostFixture({ expectedUserSub: 'user-2' });
+  assert.strictEqual(staleAccountPost.status, 409);
+  assert.strictEqual(staleAccountPost.writes, 0,
+    'a stale tab cannot overwrite the new cookie account subscription');
+
+  const boundPost = await apiPostFixture();
+  assert.strictEqual(boundPost.status, 200);
+  assert.strictEqual(boundPost.writes, 1);
+
+  assert.strictEqual(await apiKvSetFixture({}), false,
+    'KV HTTP-200 without a result never claims a stored subscription');
+  assert.strictEqual(await apiKvSetFixture({ error: 'write_failed' }), false,
+    'KV HTTP-200 error payload never claims a stored subscription');
+  assert.strictEqual(await apiKvSetFixture({ result: 'OK' }), true,
+    'only an explicit KV OK result confirms storage');
+
   const refusedRotation = await dashboardEnableFixture({ oldUnsubscribe: false, newEndpoint: endpointB });
   assert.ok(refusedRotation.events.includes('old:unsubscribe'));
   assert.ok(!refusedRotation.events.includes('push:subscribe'));
@@ -329,8 +616,28 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
     'a provider that reuses the old endpoint is rejected before server storage');
 
   const rotated = await dashboardEnableFixture({ oldUnsubscribe: true, newEndpoint: endpointB });
-  assert.strictEqual(rotated.fetches.filter((call) => call.url === '/api/push/subscribe' && call.options.method === 'POST').length, 1,
+  const rotatedPosts = rotated.fetches.filter((call) => call.url === '/api/push/subscribe' && call.options.method === 'POST');
+  assert.strictEqual(rotatedPosts.length, 1,
     'a genuinely rotated endpoint is stored for the current account');
+  assert.strictEqual(JSON.parse(rotatedPosts[0].options.body).expectedUserSub, 'user-1',
+    'dashboard mutations are bound to the account that rendered the page');
+
+  const dashboardPostFailure = await dashboardEnableFixture({
+    oldUnsubscribe: true,
+    newEndpoint: endpointB,
+    postOk: false,
+  });
+  assert.ok(dashboardPostFailure.events.includes('new:unsubscribe'),
+    'dashboard cleans up a newly-created subscription after an explicit POST failure');
+
+  const dashboardSwitchedCookie = await dashboardEnableFixture({
+    oldUnsubscribe: true,
+    newEndpoint: endpointB,
+    verifiedSub: 'user-2',
+  });
+  assert.ok(!dashboardSwitchedCookie.events.includes('old:unsubscribe'));
+  assert.strictEqual(dashboardSwitchedCookie.fetches.filter((call) => call.options && call.options.method === 'POST').length, 0,
+    'dashboard revalidates the server session before destructive endpoint rotation');
 
   const clickProbeFailure = await dashboardEnableFixture({
     oldUnsubscribe: true,
@@ -404,6 +711,10 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
   }
 
   const dashboard = read('dashboard.html');
+  assert.ok(dashboard.indexOf('window.__kflPushLogout = true') < dashboard.indexOf('cancelPushBeforeLogout()'),
+    'dashboard logout cancels Push synchronously before waiting for enable work');
+  assert.match(dashboard, /pushEnableCurrent\(expectedSub\)[\s\S]*pushManager\.subscribe[\s\S]*pushEnableCurrent\(expectedSub\)/,
+    'dashboard enable checks the logout marker around subscription creation');
   assert.match(dashboard, /Notification\.permission === ['"]denied['"]/,
     'denied permission remains fail-closed');
   assert.doesNotMatch(dashboard, /Notification\.permission !== ['"]default['"]/,
@@ -426,8 +737,8 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
     'read probes allow normal dashboard reloads without weakening mutation limits');
   assert.match(api, /key: isRead \? ['"]push_subscribe_read['"] : ['"]push_subscribe['"]/,
     'read probes have a separate non-mutating rate-limit budget');
-  assert.match(read('sw.js'), /v25-2026-11-24-push-logout/,
-    'service-worker version rolls the updated logout helper to installed PWAs');
+  assert.match(read('sw.js'), /v26-2026-11-24-app-push/,
+    'service-worker version rolls account Push settings and logout isolation to installed PWAs');
 
   console.log('Push logout isolation: PASS');
 })().catch((error) => {

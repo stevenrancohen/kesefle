@@ -642,6 +642,248 @@ function personaChooser(){
     Object.keys(PERSONAS).map(function(k){var p=PERSONAS[k],on=APP.prefs.persona===k;return '<button data-persona="'+k+'" class="rounded-2xl border p-3 text-right '+(on?'border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/20':'border-ink-100 dark:border-ink-800')+'"><span class="flex items-center justify-between"><strong class="text-sm">'+esc(p.label)+'</strong>'+(on?'<span class="text-brand-700">✓</span>':'')+'</span><span class="mt-1 block text-[11px] leading-5 text-ink-500">'+esc(p.desc)+'</span></button>';}).join('')+
   '</div></div>';
 }
+
+// ───────── account-scoped Web Push ─────────
+// Permission is requested only from the explicit account-screen button. Every
+// ownership decision is checked against the cookie-backed account and the
+// browser endpoint fingerprint; an endpoint left by another account is rotated
+// rather than reassigned.
+var __appPushRun=0;
+var __appPushState=null;
+function appPushWithDeadline(promise,timeoutMs,fallback,onLate){
+  return new Promise(function(resolve){
+    var settled=false;
+    var timer=setTimeout(function(){ if(settled)return; settled=true; resolve(fallback); },timeoutMs);
+    Promise.resolve(promise).then(function(value){
+      if(settled){ try{ if(typeof onLate==='function') onLate(value); }catch(_e){} return; }
+      settled=true; clearTimeout(timer); resolve(value);
+    },function(){ if(settled)return; settled=true; clearTimeout(timer); resolve(fallback); });
+  });
+}
+function appPushCurrent(expectedSub,run){
+  var user=APP.me&&APP.me.user;
+  return !!(!window.__kflPushLogout&&user&&user.sub===expectedSub&&run===__appPushRun&&document.getElementById('app-push-card'));
+}
+function appPushStart(expectedSub){
+  appPushInit(expectedSub).catch(function(){
+    var run=__appPushRun;
+    appPushUi('unavailable',expectedSub,run,'לא בוצע שינוי במינוי ההתראות.');
+  });
+}
+function appPushActivate(expectedSub,run){
+  if(window.__kflPushLogout)return;
+  window.__kflPushEnableStage='permission';
+  var task=appPushEnable(expectedSub,run).catch(function(){
+    appPushUi('unavailable',expectedSub,run,'לא בוצע שינוי במינוי ההתראות.');
+  });
+  window.__kflPushEnableTask=task;
+  task.then(function(){
+    if(window.__kflPushEnableTask===task)window.__kflPushEnableTask=null;
+    if(window.__kflPushEnableTask==null)window.__kflPushEnableStage='';
+  });
+}
+function appPushUi(state,expectedSub,run,message){
+  if(!appPushCurrent(expectedSub,run))return;
+  var title=$('#app-push-title'),copy=$('#app-push-copy'),badge=$('#app-push-badge');
+  var btn=$('#app-push-enable'),status=$('#app-push-status');
+  var data={
+    loading:['בודקים את מצב ההתראות','מוודאים שהמכשיר מחובר לחשבון הנכון.','…'],
+    ready:['התראות תקציב במכשיר','קבלו התראה כשהוצאה בקטגוריה עוברת את הסף שהגדרתם — גם בלי WhatsApp. כרגע אפשר לחבר מכשיר אחד לכל חשבון.','כבוי'],
+    repair:['חברו התראות לחשבון הזה','ההרשאה קיימת במכשיר, אבל ההתראות אינן משויכות לחשבון הנוכחי. החיבור יחליף מכשיר אחר שמחובר לחשבון.','נדרש חיבור'],
+    enabled:['התראות התקציב פעילות','המכשיר הזה מחובר לחשבון הנוכחי. כרגע ההתראות פעילות במכשיר אחד בכל פעם.','פעיל'],
+    denied:['ההתראות חסומות בדפדפן','אפשר לאפשר אותן בהגדרות האתר או הדפדפן ואז לחזור לכאן.','חסום'],
+    ios_install:['התקינו כדי לקבל התראות ב-iPhone','ב-iPhone ההתראות זמינות לאחר הוספת כספ\'לה למסך הבית ופתיחתה כאפליקציה.','דורש התקנה'],
+    unsupported:['התראות אינן זמינות בדפדפן הזה','אפשר להמשיך להשתמש באפליקציה כרגיל או לפתוח אותה בדפדפן תומך.','לא נתמך'],
+    unavailable:['לא הצלחנו לבדוק את ההתראות','המידע הפיננסי נשאר מוגן. אפשר לנסות שוב כשהחיבור יציב.','לא ידוע']
+  }[state]||[];
+  if(title)title.textContent=data[0]||'';
+  if(copy)copy.textContent=data[1]||'';
+  if(badge){ badge.textContent=data[2]||''; badge.className='shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black '+(state==='enabled'?'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300':state==='denied'?'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300':'bg-ink-50 text-ink-500 dark:bg-ink-800'); }
+  if(status){ status.textContent=message||''; status.classList.toggle('hidden',!message); status.className=(message?'mt-3 text-xs leading-5 ':'hidden ')+(state==='unavailable'||state==='denied'?'text-red-600 dark:text-red-300':'text-emerald-700 dark:text-emerald-300'); }
+  if(!btn)return;
+  btn.classList.add('hidden'); btn.disabled=false; btn.onclick=null;
+  if(state==='ready'||state==='repair'){
+    btn.textContent=state==='repair'?'חיבור ההתראות לחשבון':'הפעלת התראות תקציב';
+    btn.classList.remove('hidden');
+    btn.onclick=function(){ appPushActivate(expectedSub,run); };
+  }else if(state==='enabled'){
+    btn.textContent='כיבוי במכשיר הזה'; btn.classList.remove('hidden');
+    btn.onclick=function(){ appPushDisable(expectedSub,run).catch(function(){ appPushUi('unavailable',expectedSub,run); }); };
+  }else if(state==='unavailable'){
+    btn.textContent='בדיקה מחדש'; btn.classList.remove('hidden');
+    btn.onclick=function(){ appPushStart(expectedSub); };
+  }
+}
+function appPushStatus(expectedSub,run,message,isError){
+  if(!appPushCurrent(expectedSub,run))return;
+  var status=$('#app-push-status'); if(!status)return;
+  status.textContent=message||'';
+  status.className='mt-3 text-xs leading-5 '+(isError?'text-red-600 dark:text-red-300':'text-emerald-700 dark:text-emerald-300');
+}
+async function appPushFetchJson(path,options){
+  var response=await appPushWithDeadline(fetch(path,options||{credentials:'same-origin'}),6000,null);
+  if(!response||!response.ok)return null;
+  return appPushWithDeadline(response.json(),3000,null);
+}
+function appPushVapidKey(base64String){
+  var pad='='.repeat((4-base64String.length%4)%4);
+  var raw=atob((base64String+pad).replace(/-/g,'+').replace(/_/g,'/'));
+  var out=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+  return out;
+}
+async function appPushFingerprint(endpoint){
+  if(!endpoint||!window.crypto||!window.crypto.subtle||typeof TextEncoder!=='function')return '';
+  var digest=await appPushWithDeadline(window.crypto.subtle.digest('SHA-256',new TextEncoder().encode(endpoint)),4000,null);
+  if(!digest)return '';
+  return Array.from(new Uint8Array(digest)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+async function appPushInit(expectedSub){
+  var run=++__appPushRun; __appPushState=null;
+  if(!appPushCurrent(expectedSub,run))return;
+  if(isIOS()&&!isStandalone()){ appPushUi('ios_install',expectedSub,run); return; }
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){ appPushUi('unsupported',expectedSub,run); return; }
+  if(Notification.permission==='denied'){ appPushUi('denied',expectedSub,run); return; }
+  appPushUi('loading',expectedSub,run);
+  var pair=await Promise.all([
+    appPushFetchJson('/api/config',{credentials:'same-origin'}),
+    appPushWithDeadline(navigator.serviceWorker.ready,7000,null)
+  ]);
+  if(!appPushCurrent(expectedSub,run))return;
+  var vapid=pair[0]&&pair[0].vapid_public_key;
+  var registration=pair[1];
+  if(!vapid||!registration||!registration.pushManager){ appPushUi('unavailable',expectedSub,run); return; }
+  var subscription=await appPushWithDeadline(registration.pushManager.getSubscription(),5000,null);
+  if(!appPushCurrent(expectedSub,run))return;
+  var fingerprint=await appPushFingerprint(subscription&&subscription.endpoint);
+  if(subscription&&!fingerprint){ appPushUi('unavailable',expectedSub,run); return; }
+  var status=await appPushFetchJson('/api/push/subscribe',{
+    credentials:'same-origin',
+    headers:fingerprint?{'X-Push-Endpoint-Fingerprint':fingerprint}:{}
+  });
+  if(!appPushCurrent(expectedSub,run))return;
+  if(!status||status.ok!==true||typeof status.subscribed!=='boolean'||typeof status.matchesDevice!=='boolean'){
+    appPushUi('unavailable',expectedSub,run); return;
+  }
+  __appPushState={expectedSub:expectedSub,run:run,vapid:vapid,registration:registration};
+  if(status.subscribed&&subscription&&status.matchesDevice){
+    try{localStorage.setItem('kfl_push_subscribed','1');}catch(_e){}
+    appPushUi('enabled',expectedSub,run); return;
+  }
+  appPushUi(Notification.permission==='granted'&&subscription?'repair':'ready',expectedSub,run);
+}
+async function appPushEnable(expectedSub,run){
+  var state=__appPushState;
+  if(!state||state.expectedSub!==expectedSub||state.run!==run||!appPushCurrent(expectedSub,run))return;
+  var btn=$('#app-push-enable');
+  if(btn){btn.disabled=true;btn.textContent='מבקש הרשאה…';}
+  var permission=Notification.permission;
+  if(permission==='default')permission=await Notification.requestPermission();
+  if(!appPushCurrent(expectedSub,run))return;
+  if(permission!=='granted'){
+    appPushUi(permission==='denied'?'denied':'ready',expectedSub,run,permission==='denied'?'ההרשאה נדחתה. לא בוצע שום שינוי.':'ההרשאה לא ניתנה. אפשר לנסות שוב כשתרצו.');
+    return;
+  }
+  // Revalidate the HttpOnly-cookie session immediately before any destructive
+  // endpoint rotation. expectedUserSub on the mutation closes the remaining
+  // cookie-switch race between this check and the POST.
+  var verified=await appPushFetchJson('/api/me',{credentials:'include',cache:'no-store'});
+  if(!verified||!verified.user||verified.user.sub!==expectedSub){
+    appPushUi('unavailable',expectedSub,run,'החשבון השתנה. רעננו את האפליקציה לפני חיבור ההתראות.'); return;
+  }
+  if(!appPushCurrent(expectedSub,run))return;
+  window.__kflPushEnableStage='mutating';
+  var registration=state.registration;
+  var sub=await appPushWithDeadline(registration.pushManager.getSubscription(),5000,null);
+  if(!appPushCurrent(expectedSub,run))return;
+  var previousEndpoint=sub&&sub.endpoint||'';
+  if(sub){
+    var fingerprint=await appPushFingerprint(sub.endpoint);
+    if(!fingerprint){appPushUi('unavailable',expectedSub,run);return;}
+    var ownership=await appPushFetchJson('/api/push/subscribe',{
+      credentials:'same-origin',headers:{'X-Push-Endpoint-Fingerprint':fingerprint}
+    });
+    if(!appPushCurrent(expectedSub,run))return;
+    if(!ownership||ownership.ok!==true||typeof ownership.subscribed!=='boolean'||typeof ownership.matchesDevice!=='boolean'){
+      appPushUi('unavailable',expectedSub,run,'לא ניתקנו או החלפנו דבר עד שניתן יהיה לאמת בעלות.'); return;
+    }
+    if(ownership.subscribed&&ownership.matchesDevice){
+      try{localStorage.setItem('kfl_push_subscribed','1');}catch(_e){}
+      appPushUi('enabled',expectedSub,run,'ההתראות כבר היו מחוברות לחשבון הזה.'); return;
+    }
+    var detached=await appPushWithDeadline(sub.unsubscribe(),6000,false);
+    if(!appPushCurrent(expectedSub,run))return;
+    if(detached!==true){appPushUi('unavailable',expectedSub,run,'לא הצלחנו לנתק את ההתראות מהחשבון הקודם. נסו שוב.');return;}
+    sub=null;
+  }
+  var createdHere=false;
+  if(!sub){
+    var subscribePromise=registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:appPushVapidKey(state.vapid)});
+    sub=await appPushWithDeadline(subscribePromise,10000,null,function(lateSub){try{if(lateSub&&lateSub.unsubscribe)lateSub.unsubscribe();}catch(_e){}});
+    if(!sub){appPushUi('unavailable',expectedSub,run,'יצירת מינוי ההתראות ארכה זמן רב מדי. נסו שוב.');return;}
+    createdHere=true;
+  }
+  if(!appPushCurrent(expectedSub,run)){
+    if(createdHere)try{await sub.unsubscribe();}catch(_e){}
+    return;
+  }
+  if(previousEndpoint&&sub.endpoint===previousEndpoint){
+    try{await sub.unsubscribe();}catch(_e){}
+    appPushUi('unavailable',expectedSub,run,'הדפדפן החזיר את המינוי הישן. לא חיברנו אותו לחשבון החדש.'); return;
+  }
+  var response=null;
+  try{response=await fetch('/api/push/subscribe',{
+      method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({subscription:sub.toJSON(),expectedUserSub:expectedSub,deviceInfo:{
+        ua:(navigator.userAgent||'').slice(0,200),lang:navigator.language||'',
+        tz:(Intl.DateTimeFormat().resolvedOptions()||{}).timeZone||'',addedFrom:'app-account'
+      }})
+    });}catch(_e){}
+  if(!appPushCurrent(expectedSub,run)){
+    // Logout waits for this task and then performs endpoint-exact server and
+    // browser cleanup while the cookie is still valid. Leave the endpoint in
+    // place for that coordinated cleanup if POST may already have committed.
+    if(!window.__kflPushLogout&&createdHere)try{await sub.unsubscribe();}catch(_e){}
+    return;
+  }
+  if(!response){appPushUi('unavailable',expectedSub,run,'השמירה עדיין לא אושרה. בדיקה מחדש תוודא אם החיבור הושלם.');return;}
+  if(!response.ok){
+    if(createdHere)try{await sub.unsubscribe();}catch(_e){}
+    appPushUi('unavailable',expectedSub,run,'שמירת ההתראות נכשלה. נסו שוב מאוחר יותר.'); return;
+  }
+  try{localStorage.setItem('kfl_push_subscribed','1');}catch(_e){}
+  appPushUi('enabled',expectedSub,run,'ההתראות חוברו בהצלחה למכשיר הזה.');
+  try{fetch('/api/log/funnel-event',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({event:'push_enabled',meta:{page:'app-account'}})}).catch(function(){});}catch(_e){}
+}
+async function appPushDisable(expectedSub,run){
+  var state=__appPushState;
+  if(!state||state.expectedSub!==expectedSub||state.run!==run||!appPushCurrent(expectedSub,run))return;
+  var verified=await appPushFetchJson('/api/me',{credentials:'include',cache:'no-store'});
+  if(!verified||!verified.user||verified.user.sub!==expectedSub){
+    appPushUi('unavailable',expectedSub,run,'החשבון השתנה. לא כיבינו דבר.'); return;
+  }
+  var sub=await appPushWithDeadline(state.registration.pushManager.getSubscription(),5000,null);
+  if(!appPushCurrent(expectedSub,run))return;
+  if(!sub){try{localStorage.removeItem('kfl_push_subscribed');}catch(_e){}appPushStart(expectedSub);return;}
+  var fingerprint=await appPushFingerprint(sub.endpoint);
+  var ownership=fingerprint?await appPushFetchJson('/api/push/subscribe',{
+    credentials:'same-origin',headers:{'X-Push-Endpoint-Fingerprint':fingerprint}
+  }):null;
+  if(!ownership||ownership.ok!==true||ownership.matchesDevice!==true){
+    appPushUi('unavailable',expectedSub,run,'לא הצלחנו לאמת שהמינוי שייך לחשבון הזה. לא כיבינו דבר.'); return;
+  }
+  var response=await appPushWithDeadline(fetch('/api/push/subscribe',{
+    method:'DELETE',credentials:'include',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({endpoint:sub.endpoint,expectedUserSub:expectedSub})
+  }),6000,null);
+  if(!response||!response.ok){appPushUi('unavailable',expectedSub,run,'כיבוי ההתראות לא אושר. נסו שוב.');return;}
+  var payload=await appPushWithDeadline(response.json(),3000,null);
+  if(!payload||payload.ok!==true){appPushUi('unavailable',expectedSub,run,'כיבוי ההתראות לא אושר. נסו שוב.');return;}
+  var unsubscribed=await appPushWithDeadline(sub.unsubscribe(),6000,false);
+  if(unsubscribed!==true){appPushUi('unavailable',expectedSub,run,'השרת נותק, אך הדפדפן לא השלים את הכיבוי. נסו שוב.');return;}
+  try{localStorage.removeItem('kfl_push_subscribed');}catch(_e){}
+  appPushStart(expectedSub);
+}
 async function renderAccount(view){
   var d, link={ok:true,linked:false};
   try { d=await apiGet('/api/me'); } catch(e){ view.innerHTML=errState(e); return; }
@@ -676,6 +918,11 @@ async function renderAccount(view){
     rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
   '</div>';
   var invite='<button id="inviteBtn" class="card mt-4 flex w-full items-center gap-3 p-4 text-right active:scale-[.99]"><span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-base">🎁</span><span class="min-w-0 flex-1"><span class="block text-sm font-medium">הזמן חברים לכספ\'לה</span><span id="inviteSub" class="block text-[11px] text-ink-500">שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף</span></span><span class="text-ink-300">‹</span></button>';
+  var pushCard='<section id="app-push-card" class="card mt-4 p-4" aria-labelledby="app-push-title">'+
+    '<div class="flex items-start gap-3"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand-50 text-xl dark:bg-brand-900/20" aria-hidden="true">🔔</span><span class="min-w-0 flex-1"><span id="app-push-title" class="block text-sm font-bold">בודקים את מצב ההתראות</span><span id="app-push-copy" class="mt-1 block text-[11px] leading-5 text-ink-500">מוודאים שהמכשיר מחובר לחשבון הנכון.</span></span><span id="app-push-badge" class="shrink-0 rounded-full bg-ink-50 px-2.5 py-1 text-[10px] font-black text-ink-500 dark:bg-ink-800">…</span></div>'+
+    '<button id="app-push-enable" type="button" class="mt-4 hidden min-h-[48px] w-full rounded-2xl bg-brand-300 px-4 text-sm font-black text-ink-950">הפעלת התראות תקציב</button>'+
+    '<div id="app-push-status" class="hidden" role="status" aria-live="polite"></div>'+
+  '</section>';
   // Install: native prompt where supported; browser-specific manual steps on
   // iPhone/iPad; nothing once already installed (standalone).
   var install;
@@ -683,7 +930,8 @@ async function renderAccount(view){
   else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-2 space-y-2 text-xs leading-5 text-ink-500"><p><strong>Safari:</strong> תפריט העמוד או שיתוף ← &rdquo;הוסף למסך הבית&ldquo; ← ודא/י ש-&rdquo;Open as Web App&ldquo; פעיל/ה ← &rdquo;הוסף&ldquo;.</p><p><strong>Chrome:</strong> כפתור השיתוף מימין לשורת הכתובת ← &rdquo;Add to Home Screen&ldquo; ← &rdquo;Add&ldquo;.</p></div></div>'; }
   else { install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>'; }
   var logout='<button onclick="kflLogout()" class="mt-4 w-full rounded-2xl border border-ink-100 dark:border-ink-700 py-3 text-sm font-semibold text-ink-500">התנתקות</button>';
-  view.innerHTML=head+'<div class="desktop-grid"><div>'+prof+personaChooser()+'</div><aside>'+links+invite+install+logout+'</aside></div>';
+  view.innerHTML=head+'<div class="desktop-grid"><div>'+prof+personaChooser()+'</div><aside>'+pushCard+links+invite+install+logout+'</aside></div>';
+  appPushStart(u.sub);
   document.querySelectorAll('[data-persona]').forEach(function(b){ b.onclick=async function(){
     var persona=b.getAttribute('data-persona');
     var space=(persona==='couple'||persona==='family')?'household':((persona==='freelancer'||persona==='business')?'business':'personal');
@@ -708,7 +956,14 @@ async function renderAccount(view){
   }; }
 }
 async function kflLogout(){
-  try{ if(window.KesefleSession&&window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout(); }catch(e){}
+  var logoutSub=APP.me&&APP.me.user&&APP.me.user.sub||'';
+  // Cancel Push synchronously before the first await. Then let any in-flight
+  // enable operation observe the marker and settle before endpoint cleanup.
+  window.__kflPushLogout=true; __appPushRun++; __appPushState=null;
+  try{
+    if(window.KesefleSession&&window.KesefleSession.cancelPushBeforeLogout) await window.KesefleSession.cancelPushBeforeLogout(logoutSub);
+    else if(window.KesefleSession&&window.KesefleSession.detachPushBeforeLogout) await window.KesefleSession.detachPushBeforeLogout(logoutSub);
+  }catch(e){}
   try{ await fetch('/api/auth/logout',{method:'POST',credentials:'include',keepalive:true}); }catch(e){}
   try{ if(window.KesefleSession) window.KesefleSession.clearAllIdentityStorage(); else localStorage.removeItem('kesefle_user'); }catch(e){}
   // Purge cached per-user API responses so a different account on the same device

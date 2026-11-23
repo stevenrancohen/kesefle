@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v25-2026-11-24-push-logout';
+const VERSION = 'v26-2026-11-24-app-push';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
