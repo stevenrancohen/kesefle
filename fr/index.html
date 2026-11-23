@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<script src="/lib/browser-session.js"></script>
 <title>כספ'לה — votre argent, en pilote automatique</title>
 <meta name="description" content="Envoyez un message sur WhatsApp, et la dépense est déjà inscrite dans votre Google Sheets. Un bot de suivi des dépenses pour Israël — sans appli, sans formulaire, sans rien à retenir." />
 <meta name="keywords" content="suivi des dépenses, bot WhatsApp dépenses, appli de suivi des dépenses, gestion du budget familial, Google Sheets dépenses, Excel dépenses mensuelles, suivi des dépenses Israël, gestion des dépenses gratuite, alternative à Riseup, bot WhatsApp budget, trésorerie freelance" />
@@ -1905,11 +1906,14 @@ function kesefleShowAuthMsg(text, kind) {
 }
 
 function kesefleShowSuccess(user) {
-  window.KESEFLE_STATE.user = user;
-  try { localStorage.setItem('kesefle_user', JSON.stringify(user)); } catch (e) {}
+  var profile = window.KesefleSession
+    ? window.KesefleSession.sanitizeProfileObject(user)
+    : { version: 2, sub: user && user.sub, email: user && user.email, name: user && user.name, picture: user && user.picture, plan: user && user.plan };
+  window.KESEFLE_STATE.user = profile;
+  try { localStorage.setItem('kesefle_user', JSON.stringify(profile)); } catch (e) {}
   document.getElementById('auth-buttons').classList.add('hidden');
   document.getElementById('auth-success').classList.remove('hidden');
-  document.getElementById('auth-success-name').textContent = 'Bienvenue, ' + (user.name || user.email || '') + ' !';
+  document.getElementById('auth-success-name').textContent = 'Bienvenue, ' + (profile.name || profile.email || '') + ' !';
   document.getElementById('auth-success-detail').textContent = 'Redirection vers votre compte…';
   setTimeout(function() { location.href = '/account'; }, 1400);
 }
