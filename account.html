@@ -15,6 +15,7 @@
 <link rel="alternate" hreflang="he-IL" href="https://kesefle.com/account" />
 <link rel="alternate" hreflang="x-default" href="https://kesefle.com/account" />
 <meta name="theme-color" content="#6366F1" />
+<script src="/lib/browser-session.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Rubik:wght@600;700;800;900&display=swap" />
@@ -203,7 +204,7 @@
   }
 </style>
 <script src="/lib/analytics.js" defer></script>
-  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="manifest" href="/app.webmanifest">
   <meta name="theme-color" content="#6366F1">
   <link rel="icon" href="/icon-192.png" /><link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/js/analytics-loader.js" defer></script>
@@ -336,13 +337,13 @@
             <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-slate-300 text-sm font-bold text-white">3</span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 font-bold">
-                <span>חבר את מספר הוואטסאפ שלך</span>
+                <span id="step-3-title">חבר את מספר הוואטסאפ שלך</span>
                 <span class="why-tip">
                   <button type="button" aria-label="למה צריך את המספר?">?</button>
                   <span class="why-body">למה צריך את המספר? כדי שכשתשלח הודעה בוואטסאפ, נדע איזה גיליון לעדכן. המספר נשמר אצלנו מוצפן ולא משותף עם אף אחד.</span>
                 </span>
               </div>
-              <div class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
+              <div id="step-3-description" class="text-sm text-slate-600 mb-3">הזן את מספר הוואטסאפ שלך, ושלח קוד חד-פעמי לבוט. כך נדע איזה גיליון משויך אליך.</div>
               <div id="whatsapp-availability-note" class="mb-3 hidden rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
                 <strong class="block">WhatsApp עדיין נפתח בהדרגה לכל החשבונות.</strong>
                 אין צורך לחכות: אפשר <a href="/expense?from=whatsapp-pending" class="inline-flex min-h-[44px] items-center font-bold underline">להוסיף תנועה באפליקציה</a> ולחבר את המספר אחר כך.
@@ -586,7 +587,10 @@ function kesefleGetUser() {
   } catch { return null; }
 }
 function kesefleSetUser(u) {
-  localStorage.setItem('kesefle_user', JSON.stringify(u));
+  var profile = window.KesefleSession
+    ? window.KesefleSession.sanitizeProfileObject(u)
+    : { version: 2, sub: u && u.sub, email: u && u.email, name: u && u.name, picture: u && u.picture, plan: u && u.plan };
+  localStorage.setItem('kesefle_user', JSON.stringify(profile));
 }
 
 // ── PayPal subscribe (revenue: wires the upgrade button to the already-built
@@ -695,20 +699,66 @@ function _kflGetProgress() {
 function _kflClearProgress() {
   try { localStorage.removeItem('kesefle_signup_progress'); } catch (e) {}
 }
-function kesefleLogout() {
-  // Best-effort server-side clear of the HttpOnly session cookie, then
-  // local cleanup, then redirect. Fire-and-forget the POST -- the
-  // redirect happens whether or not the server reachable.
-  try {
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () {});
-  } catch (e) {}
-  localStorage.removeItem('kesefle_user');
-  localStorage.removeItem('kesefle_sheet');
+async function kesefleLogout() {
+  // Await the cookie clear before navigating; keepalive also lets the request
+  // finish if the browser begins unloading during a slow mobile connection.
+  try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', keepalive: true }); }
+  catch (e) {}
+  if (window.KesefleSession) window.KesefleSession.clearAllIdentityStorage();
+  else {
+    localStorage.removeItem('kesefle_user');
+    localStorage.removeItem('kesefle_sheet');
+  }
   window.location.href = '/';
 }
 
 // Progress + celebration helpers
 var kflWabaApproved = null;
+
+function kesefleApplyWhatsAppAvailability(approved) {
+  kflWabaApproved = approved;
+  if (approved !== false) return;
+
+  var note = document.getElementById('whatsapp-availability-note');
+  var phoneStep = document.getElementById('step-3');
+  var title = document.getElementById('step-3-title');
+  var description = document.getElementById('step-3-description');
+  var inputState = document.getElementById('link-state-input');
+  var codeState = document.getElementById('link-state-code');
+  var phoneInput = document.getElementById('link-phone-input');
+  var codeButton = document.getElementById('link-gen-btn');
+  var statusTitle = document.getElementById('service-status-title');
+  var statusCopy = document.getElementById('service-status-copy');
+
+  if (note) note.classList.remove('hidden');
+  if (phoneStep) phoneStep.classList.remove('is-current');
+  if (title) title.textContent = 'WhatsApp — אופציונלי';
+  if (description) description.textContent = 'החיבור ייפתח בהדרגה ואינו נדרש להפעלת החשבון.';
+  if (inputState) inputState.classList.add('hidden');
+  if (codeState) codeState.classList.add('hidden');
+  if (phoneInput) phoneInput.disabled = true;
+  if (codeButton) {
+    codeButton.disabled = true;
+    codeButton.setAttribute('aria-disabled', 'true');
+  }
+  if (statusTitle) statusTitle.textContent = 'האפליקציה פעילה';
+  if (statusCopy) statusCopy.textContent = 'הוספה באפליקציה זמינה; WhatsApp בהשקה הדרגתית';
+
+  // Invalidate a request that may have started while config was still loading.
+  // Also stop an already-visible code from resurfacing through its TTL/poller.
+  kflLinkRequestGeneration += 1;
+  kflLinkCode = null;
+  kflLinkPhone = null;
+  _kflStopPolling();
+  if (kflLinkTtlTimer) {
+    clearInterval(kflLinkTtlTimer);
+    kflLinkTtlTimer = null;
+  }
+
+  // The config request may resolve before or after account/sheet hydration.
+  // Recompute here so either ordering produces an honest 2-step activation.
+  kesefleUpdateOnboardingProgress();
+}
 
 function kesefleShowExistingSheetStep(sheet) {
   if (!sheet || !sheet.spreadsheetUrl) return false;
@@ -737,20 +787,22 @@ function kesefleUpdateOnboardingProgress() {
   var sheet = JSON.parse(localStorage.getItem('kesefle_sheet') || 'null');
   var step2Done = !!(sheet && sheet.spreadsheetUrl);
   var step3Done = localStorage.getItem('kesefle_whatsapp_linked') === '1';
+  var whatsappRequired = kflWabaApproved !== false;
+  var totalSteps = whatsappRequired ? 3 : 2;
 
-  var done = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
-  var pct = Math.round((done / 3) * 100);
+  var done = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (whatsappRequired && step3Done ? 1 : 0);
+  var pct = Math.round((done / totalSteps) * 100);
   var bar = document.getElementById('onboarding-progress');
   var label = document.getElementById('progress-label');
   if (bar) bar.style.width = pct + '%';
-  if (label) label.innerHTML = (done >= 3)
+  if (label) label.innerHTML = (done >= totalSteps)
     ? 'הושלם ✓'
-    : '<span class="num">' + done + '</span> מתוך <span class="num">3</span> הושלמו';
+    : '<span class="num">' + done + '</span> מתוך <span class="num">' + totalSteps + '</span> הושלמו';
 
   if (step2Done) kesefleMarkStepDone(2);
   if (step3Done) kesefleMarkStepDone(3);
 
-  if (done === 3) kesefleCelebrate();
+  if (done >= totalSteps) kesefleCelebrate();
 }
 
 function kesefleMarkStepDone(n) {
@@ -772,9 +824,11 @@ function kesefleCelebrate() {
   var icon = document.getElementById('banner-icon');
   if (icon) { icon.textContent = '🎉'; icon.className = 'grid h-12 w-12 flex-shrink-0 place-items-center rounded-full bg-emerald-100 text-2xl transition-colors'; }
   var t = document.getElementById('banner-title');
-  if (t) t.textContent = 'הכל מוכן! כספ\'לה פעיל';
+  if (t) t.textContent = kflWabaApproved === false ? 'האפליקציה מוכנה — אפשר להתחיל' : 'הכל מוכן! כספ\'לה פעיל';
   var s = document.getElementById('banner-subtitle');
-  if (s) s.innerHTML = 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/dashboard" class="font-bold text-emerald-700 underline">לדשבורד שלי ←</a>';
+  if (s) s.innerHTML = kflWabaApproved === false
+    ? 'הוסף תנועה ראשונה באפליקציה — היא תישמר מיד בגיליון שלך. <a href="/expense?from=activation-complete" class="font-bold text-emerald-700 underline">להוספה מהירה ←</a>'
+    : 'שלח עוד הוצאה בוואטסאפ — היא תופיע בגיליון שלך תוך <span class="num">2</span> שניות. <a href="/dashboard" class="font-bold text-emerald-700 underline">לדשבורד שלי ←</a>';
 
   // Confetti burst
   var host = document.getElementById('confetti-host');
@@ -813,6 +867,7 @@ var kflLinkPollTimer = null;
 var kflLinkTtlTimer = null;
 var kflLinkPhone = null;
 var kflLinkCode = null;
+var kflLinkRequestGeneration = 0;
 
 // Keep every WhatsApp deep link aligned with the backend configuration. This
 // removes the old split-brain state where the app and the bot used different
@@ -821,17 +876,7 @@ var kflLinkCode = null;
   fetch('/api/config', { credentials: 'include', cache: 'no-store' })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(c) {
-      if (c && typeof c.waba_approved === 'boolean') kflWabaApproved = c.waba_approved;
-      if (c && c.waba_approved === false) {
-        var note = document.getElementById('whatsapp-availability-note');
-        var phoneStep = document.getElementById('step-3');
-        var statusTitle = document.getElementById('service-status-title');
-        var statusCopy = document.getElementById('service-status-copy');
-        if (note) note.classList.remove('hidden');
-        if (phoneStep) phoneStep.classList.remove('is-current');
-        if (statusTitle) statusTitle.textContent = 'האפליקציה פעילה';
-        if (statusCopy) statusCopy.textContent = 'הוספה באפליקציה זמינה; WhatsApp בהשקה הדרגתית';
-      }
+      if (c && typeof c.waba_approved === 'boolean') kesefleApplyWhatsAppAvailability(c.waba_approved);
       var n = String(c && c.BOT_NUMBER || '').replace(/\D+/g, '');
       if (!/^\d{7,15}$/.test(n)) return;
       KESEFLE_BOT_NUMBER = n;
@@ -876,6 +921,13 @@ function _kflShowLinkError(msg) {
 }
 
 function _kflSetLinkState(state) {
+  if (kflWabaApproved === false && (state === 'input' || state === 'code')) {
+    ['input', 'code'].forEach(function(s) {
+      var blocked = document.getElementById('link-state-' + s);
+      if (blocked) blocked.classList.add('hidden');
+    });
+    return;
+  }
   ['input', 'code', 'success'].forEach(function(s) {
     var el = document.getElementById('link-state-' + s);
     if (el) {
@@ -886,8 +938,13 @@ function _kflSetLinkState(state) {
 }
 
 async function kesefleLinkRequestCode() {
+  if (kflWabaApproved === false) {
+    _kflShowLinkError('חיבור WhatsApp עדיין אינו זמין. אפשר להמשיך להשתמש באפליקציה.');
+    return;
+  }
   var input = document.getElementById('link-phone-input');
   var btn = document.getElementById('link-gen-btn');
+  var requestGeneration = ++kflLinkRequestGeneration;
   if (!input) return;
   var phone = _kflNormalizeIsraelPhone(input.value);
   if (!phone) {
@@ -896,26 +953,15 @@ async function kesefleLinkRequestCode() {
   }
   if (btn) { btn.disabled = true; btn.textContent = '...יוצרת קוד'; }
 
-  // We need the user's access token. The provision flow stores it in window.kfl
-  // or we can grab it fresh via initTokenClient. Simpler path: trigger a fresh
-  // token client request (cached, won't show consent if already granted).
-  var accessToken = null;
-  try {
-    accessToken = await _kflGetFreshAccessToken();
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
-    _kflShowLinkError('שגיאת אימות: ' + (e.message || e));
-    return;
-  }
-
   try {
     var r = await fetch('/api/whatsapp/link', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: accessToken, phone: phone }),
+      body: JSON.stringify({ phone: phone }),
     });
     var j = await r.json();
+    if (kflWabaApproved === false || requestGeneration !== kflLinkRequestGeneration) return;
     if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     if (!j.ok) {
       // Auth expired (the link step no longer relies on the ~1h access token,
@@ -947,41 +993,14 @@ async function kesefleLinkRequestCode() {
     _kflDisplayCode(j.code, j.expiresIn || 600);
     _kflStartPolling(phone);
   } catch (e) {
+    if (kflWabaApproved === false || requestGeneration !== kflLinkRequestGeneration) return;
     if (btn) { btn.disabled = false; btn.textContent = 'צור קוד חיבור'; }
     _kflShowLinkError('שגיאת רשת: ' + (e.message || e));
   }
 }
 
-async function _kflGetFreshAccessToken() {
-  // Prefer the access token captured during the redirect sign-in — avoids the
-  // GIS popup, which renders blank in incognito/Safari (3rd-party cookies). The
-  // popup below is only a fallback for older non-redirect sessions.
-  try {
-    var su = kesefleGetUser();
-    if (su && su.idToken && String(su.idToken).length > 20) return su.idToken;
-  } catch (e) {}
-  return new Promise(function(resolve, reject) {
-    var cid = window.KESEFLE_CONFIG && window.KESEFLE_CONFIG.GOOGLE_CLIENT_ID;
-    if (!cid || cid.indexOf('__') === 0) return reject(new Error('Google Client ID לא מוגדר'));
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      return reject(new Error('Google SDK טרם נטען. רענן את הדף.'));
-    }
-    var client = window.google.accounts.oauth2.initTokenClient({
-      client_id: cid,
-      scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
-      callback: function(tokenResponse) {
-        if (tokenResponse.error || !tokenResponse.access_token) {
-          return reject(new Error(tokenResponse.error || 'לא קיבלנו אישור'));
-        }
-        resolve(tokenResponse.access_token);
-      }
-    });
-    // No prompt: if user already authorized, returns silently; otherwise shows consent.
-    client.requestAccessToken({ prompt: '' });
-  });
-}
-
 function _kflDisplayCode(code, ttlSec) {
+  if (kflWabaApproved === false) return;
   var display = document.getElementById('link-code-display');
   var inline = document.getElementById('link-code-inline');
   var waLink = document.getElementById('link-wa-deeplink');
@@ -1002,6 +1021,12 @@ function _kflDisplayCode(code, ttlSec) {
   // TTL countdown
   var remaining = ttlSec;
   function tickTtl() {
+    if (kflWabaApproved === false) {
+      if (kflLinkTtlTimer) clearInterval(kflLinkTtlTimer);
+      kflLinkTtlTimer = null;
+      _kflStopPolling();
+      return;
+    }
     if (remaining <= 0) {
       if (ttlEl) ttlEl.textContent = '00:00';
       _kflShowLinkError('הקוד פג תוקף — צור קוד חדש');
@@ -1048,18 +1073,21 @@ function kesefleOpenWhatsAppLink(a, ev) {
 // have to count every KV command this week.
 function _kflStartPolling(phone) {
   _kflStopPolling();
+  if (kflWabaApproved === false) return;
   var startedAt = Date.now();
   var POLL_FAST_MS = 6000;   // 6s for the first 30s (was 4s -> ~50% fewer commands)
   var POLL_SLOW_MS = 15000;  // 15s after that
   var POLL_MAX_MS = 10 * 60 * 1000; // poll the full code TTL (link.js EX=600s); the visibility guard pauses when the tab is hidden, so this stays KV-cheap
 
   function tick() {
+    if (kflWabaApproved === false) { _kflStopPolling(); return; }
     var elapsed = Date.now() - startedAt;
     if (elapsed > POLL_MAX_MS) { _kflStopPolling(); var _ws = document.getElementById('link-waiting-status'); if (_ws) _ws.textContent = 'אם שלחת ולא קרה כלום — רענן את הדף או צור קוד חדש.'; return; }
     var nextDelay = elapsed < 30000 ? POLL_FAST_MS : POLL_SLOW_MS;
     fetch('/api/whatsapp/link?check=1', { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (j) {
+        if (kflWabaApproved === false) { _kflStopPolling(); return; }
         if (j && j.ok && j.linked) {
           _kflStopPolling();
           if (kflLinkTtlTimer) { clearInterval(kflLinkTtlTimer); kflLinkTtlTimer = null; }
@@ -1069,6 +1097,7 @@ function _kflStartPolling(phone) {
         kflLinkPollTimer = setTimeout(tick, nextDelay);
       })
       .catch(function () {
+        if (kflWabaApproved === false) { _kflStopPolling(); return; }
         // Network blip -- keep polling at the slow cadence so we don't hammer.
         kflLinkPollTimer = setTimeout(tick, POLL_SLOW_MS);
       });
@@ -1202,7 +1231,7 @@ function kesefleLinkResetState() {
 
 // ============ REFERRAL CODE PICKUP ============
 // Read ?ref=<code> (or sessionStorage from /referral landing) and remember it.
-// On first successful signup (kesefle_user with idToken present), POST it to /api/referral?action=redeem.
+// After a successful signup, redeem through the verified HttpOnly session.
 
 function kesefleReadReferralCode() {
   try {
@@ -1242,6 +1271,36 @@ function kesefleCapturePlanSelection() {
 }
 try { kesefleCapturePlanSelection(); } catch (e) {}
 
+// Preserve an auth return target across the Google redirect without allowing
+// arbitrary/open redirects. Only exact same-origin application routes are
+// accepted; the value is consumed once after a successful session exchange.
+function _kflSafeAuthNext(raw) {
+  var allowed = {
+    '/admin': true,
+    '/admin-os': true,
+    '/admin/monitor': true,
+    '/admin/launch-monitor': true,
+    '/app': true,
+    '/dashboard': true,
+  };
+  var value = String(raw || '').trim();
+  return allowed[value] ? value : null;
+}
+function _kflCaptureAuthNext() {
+  try {
+    var value = _kflSafeAuthNext(new URLSearchParams(window.location.search).get('next'));
+    if (value) sessionStorage.setItem('kfl_auth_next', value);
+  } catch (_e) {}
+}
+function _kflConsumeAuthNext() {
+  try {
+    var value = _kflSafeAuthNext(sessionStorage.getItem('kfl_auth_next'));
+    sessionStorage.removeItem('kfl_auth_next');
+    return value;
+  } catch (_e) { return null; }
+}
+_kflCaptureAuthNext();
+
 function kesefleShowInvitedChip(ref) {
   if (!ref || !ref.code) return;
   var banner = document.getElementById('ref-banner');
@@ -1264,16 +1323,11 @@ async function kesefleRedeemReferralIfPending() {
   var ref = kesefleReadReferralCode();
   if (!ref.code) return;
 
-  var u = kesefleGetUser();
-  if (!u || !u.idToken) return;  // need fresh login
-
   try {
     var r = await fetch('/api/referral?action=redeem', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + u.idToken,
-        'Content-Type': 'application/json',
-      },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: ref.code }),
     });
     var j = await r.json();
@@ -1566,6 +1620,18 @@ async function _kflPkce() {
   var digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
   return { verifier: verifier, challenge: _kflB64Url(digest) };
 }
+var KFL_PKCE_MAX_AGE_MS = 10 * 60 * 1000;
+function _kflClearPkce(state) {
+  try {
+    if (state) {
+      sessionStorage.removeItem('kfl_pkce_verifier_' + state);
+      sessionStorage.removeItem('kfl_pkce_started_' + state);
+    }
+    sessionStorage.removeItem('kfl_pkce_verifier');
+    sessionStorage.removeItem('kfl_pkce_started_at');
+    sessionStorage.removeItem('kfl_oauth_state');
+  } catch (_e) {}
+}
 
 async function kesefleStartRedirectSignin() {
   try { _kflFunnel('google_clicked', { browser: kesefleIsInAppBrowser() ? 'inapp' : 'standard' }); } catch (e) {}
@@ -1581,7 +1647,9 @@ async function kesefleStartRedirectSignin() {
     // The single-key fallback is kept for the legacy in-flight redirect on
     // OLDER clients that completed the redirect before this code shipped.
     sessionStorage.setItem('kfl_pkce_verifier_' + state, pk.verifier);
+    sessionStorage.setItem('kfl_pkce_started_' + state, String(Date.now()));
     sessionStorage.setItem('kfl_pkce_verifier', pk.verifier);
+    sessionStorage.setItem('kfl_pkce_started_at', String(Date.now()));
     sessionStorage.setItem('kfl_oauth_state', state);
     var redirectUri = window.location.origin + '/account';
     var params = new URLSearchParams({
@@ -1612,22 +1680,30 @@ async function kesefleHandleOAuthReturn(code, state) {
   // provision calls will fight 3rd-party cookie + WebView fights. Surface
   // the "open in Safari" card instead of looping through the error path.
   if (kesefleIsInAppBrowser()) { _kflLogMissedInApp('oauth_return_in_app'); kesefleShowInAppBrowserHelp(); return; }
-  var savedState = null, verifier = null;
+  var savedState = null, verifier = null, startedAt = 0;
   try {
     // Prefer the state-namespaced verifier (per-tab) so two parallel sign-ins
     // don't poison each other. Fall back to the legacy single-key slot for
     // in-flight redirects from an older client build.
     verifier = sessionStorage.getItem('kfl_pkce_verifier_' + state)
             || sessionStorage.getItem('kfl_pkce_verifier');
+    startedAt = Number(sessionStorage.getItem('kfl_pkce_started_' + state)
+            || sessionStorage.getItem('kfl_pkce_started_at') || 0);
     savedState = sessionStorage.getItem('kfl_oauth_state');
   } catch (e) {}
   var cleanUrl = window.location.origin + '/account';
   // Strip the single-use code from the URL immediately (refresh-safe).
   try { window.history.replaceState({}, document.title, cleanUrl); } catch (e) {}
-  if (!verifier || !savedState || savedState !== state) {
+  var pkceAge = Date.now() - startedAt;
+  if (!verifier || !savedState || savedState !== state || !startedAt
+      || pkceAge < -60000 || pkceAge > KFL_PKCE_MAX_AGE_MS) {
+    _kflClearPkce(state);
     kesefleShowSigninError('פג תוקף בקשת ההתחברות. נסה שוב.');
     return;
   }
+  // The verifier is now in function memory only. Consume every persistent
+  // copy before the network request so refresh/replay cannot reuse it.
+  _kflClearPkce(state);
   kesefleShowConnecting();
   try {
     var r = await fetch('/api/auth/google-exchange', {
@@ -1636,12 +1712,6 @@ async function kesefleHandleOAuthReturn(code, state) {
     });
     var j = await r.json();
     if (!r.ok || !j.ok) throw new Error((j && (j.detail || j.error)) || ('HTTP ' + r.status));
-    try {
-      sessionStorage.removeItem('kfl_pkce_verifier_' + state);
-      sessionStorage.removeItem('kfl_pkce_verifier');
-      sessionStorage.removeItem('kfl_oauth_state');
-    } catch (e) {}
-
     // Provision the user's sheet -- with auto-retry on transient failure.
     // Paid-traffic launch context: every drop-off costs ~€2-5 in ad spend.
     // We retry up to 3 times with exponential backoff (0.5s, 1.5s, 3.5s)
@@ -1699,7 +1769,9 @@ async function kesefleHandleOAuthReturn(code, state) {
       kesefleShowProvisionError(provisionError);
       return;
     }
-    window.location.reload();
+    var authNext = _kflConsumeAuthNext();
+    if (authNext) window.location.href = authNext;
+    else window.location.reload();
   } catch (e) {
     kesefleShowSigninError(e.message || String(e));
   }
@@ -1752,7 +1824,9 @@ async function kesefleRetryProvision() {
     var pj = await pr.json().catch(function () { return {}; });
     if (pj && pj.ok) {
       try { localStorage.setItem('kesefle_sheet', JSON.stringify({ spreadsheetId: pj.spreadsheetId, spreadsheetUrl: pj.spreadsheetUrl })); } catch (e) {}
-      window.location.reload();
+      var authNext = _kflConsumeAuthNext();
+      if (authNext) window.location.href = authNext;
+      else window.location.reload();
     } else {
       kesefleShowProvisionError((pj && (pj.detail || pj.error)) || ('HTTP ' + pr.status));
     }
@@ -1835,15 +1909,15 @@ function kesefleShowSigninPrompt() {
   // expose link status, so we read the local flag. A user who cleared
   // storage simply falls through to the guided flow and re-links — never
   // trapped on the dashboard.
-  // Skipped when ?force=signin is on the URL (lets us re-link intentionally).
-  if (!_q.get('force')) {
+  // Skipped when ?force_signin=1 is on the URL (lets us re-link intentionally).
+  if (!_q.get('force') && _q.get('force_signin') !== '1') {
     try {
       var meResp = await fetch('/api/me', { credentials: 'include' });
       if (meResp.ok) {
         var meJson = await meResp.json();
         if (meJson && meJson.ok && meJson.user && meJson.sheet && meJson.sheet.spreadsheetUrl) {
           // Hydrate localStorage in case the dashboard reads it on first paint.
-          try { localStorage.setItem('kesefle_user', JSON.stringify(meJson.user)); } catch (_) {}
+          try { kesefleSetUser(meJson.user); } catch (_) {}
           try { localStorage.setItem('kesefle_sheet', JSON.stringify(meJson.sheet)); } catch (_) {}
           var waLinked = false;
           try {

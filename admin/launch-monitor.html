@@ -7,6 +7,7 @@
 <meta name="robots" content="noindex,nofollow" />
 <meta name="theme-color" content="#1E293B" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%82%AA%3C/text%3E%3C/svg%3E" />
+<script src="/lib/browser-session.js"></script>
 
 <style>
   :root {
@@ -411,7 +412,7 @@
 
   <div id="access-denied" class="access-denied" style="display:none">
     <h2>הגישה נדחתה</h2>
-    <p>צריך להיות מחובר כאדמין (<code>stevenrancohen@gmail.com</code> או <code>info@kesefle.com</code>) ב-<a href="/account" style="color:var(--accent)">/account</a> ואז לחזור לכאן.</p>
+    <p>צריך להיות מחובר כאדמין (<code>stevenrancohen@gmail.com</code> או <code>info@kesefle.com</code>) ב-<a href="/account?force_signin=1&amp;next=%2Fadmin%2Flaunch-monitor" style="color:var(--accent)">/account</a>.</p>
   </div>
 
   <div class="footer-note">
@@ -427,15 +428,6 @@ window.kfl = (function () {
   var refreshPill = document.getElementById('refresh-pill');
   var refreshStatus = document.getElementById('refresh-status');
   var autoBtn = document.getElementById('auto-btn');
-
-  function isLoggedIn() {
-    try { var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}'); return !!(u && u.sub); }
-    catch (e) { return false; }
-  }
-  function token() {
-    try { return (JSON.parse(localStorage.getItem('kesefle_user') || '{}')).idToken || ''; }
-    catch (e) { return ''; }
-  }
 
   function setStatus(text, kind) {
     refreshPill.className = 'pill' + (kind ? ' ' + kind : '');
@@ -463,18 +455,9 @@ window.kfl = (function () {
   }
 
   async function fetchMonitor() {
-    if (!isLoggedIn()) {
-      document.getElementById('content').style.display = 'none';
-      document.getElementById('access-denied').style.display = 'block';
-      setStatus('Not signed in', 'crit');
-      return;
-    }
     setStatus('Refreshing…');
     try {
-      var t = token();
-      var headers = {};
-      if (t) headers['Authorization'] = 'Bearer ' + t;
-      var r = await fetch('/api/admin/launch-monitor', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/launch-monitor', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) {
         document.getElementById('content').style.display = 'none';
         document.getElementById('access-denied').style.display = 'block';
@@ -634,9 +617,7 @@ window.kfl = (function () {
     var tbody = document.getElementById('funnel-tbody');
     var errBox = document.getElementById('funnel-errors');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/funnel-summary', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/funnel-summary', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { line.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { line.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -714,9 +695,7 @@ window.kfl = (function () {
     var card = document.getElementById('card-bot-version');
     var fix = document.getElementById('bot-version-fix');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/bot-version', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/bot-version', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { detail.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { detail.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -746,9 +725,7 @@ window.kfl = (function () {
     var card = document.getElementById('card-drift');
     var fix = document.getElementById('drift-fix');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/config-drift', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/config-drift', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) {
         detail.textContent = 'Not authorized to check drift.'; return;
       }
@@ -783,9 +760,7 @@ window.kfl = (function () {
   async function loadReports() {
     var host = document.getElementById('user-reports-list');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/user-reports?limit=20', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/user-reports?limit=20', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { host.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { host.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -816,9 +791,7 @@ window.kfl = (function () {
     var table = document.getElementById('recent-table');
     var empty = document.getElementById('recent-empty');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/recent-signups?limit=20&hours=6', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/recent-signups?limit=20&hours=6', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -874,9 +847,7 @@ window.kfl = (function () {
     if (!phone) { status.textContent = '✗ Enter a phone number first.'; status.style.color = 'var(--danger)'; return; }
     status.textContent = 'Sending…'; status.style.color = 'var(--muted)';
     try {
-      var t = token();
       var headers = { 'Content-Type': 'application/json' };
-      if (t) headers['Authorization'] = 'Bearer ' + t;
       var r = await fetch('/api/admin/resend-welcome', {
         method: 'POST', credentials: 'include', headers: headers,
         body: JSON.stringify({ phone: phone })
@@ -900,9 +871,7 @@ window.kfl = (function () {
     var summary = document.getElementById('waitlist-summary');
     var list = document.getElementById('waitlist-list');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/waitlist', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/waitlist', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -953,9 +922,7 @@ window.kfl = (function () {
   async function waitlistUpdate(id, status) {
     if (!status) return;
     try {
-      var t = token();
       var headers = { 'Content-Type': 'application/json' };
-      if (t) headers['Authorization'] = 'Bearer ' + t;
       await fetch('/api/waitlist', {
         method: 'POST', credentials: 'include', headers: headers,
         body: JSON.stringify({ adminAction: 'update', id: id, status: status }),
@@ -973,9 +940,7 @@ window.kfl = (function () {
     if (!title || !body) { status.textContent = '✗ Title + body required.'; status.style.color = 'var(--danger)'; return; }
     status.textContent = 'Publishing...'; status.style.color = 'var(--muted)';
     try {
-      var t = token();
       var headers = { 'Content-Type': 'application/json' };
-      if (t) headers['Authorization'] = 'Bearer ' + t;
       var r = await fetch('/api/announcements', {
         method: 'POST', credentials: 'include', headers: headers,
         body: JSON.stringify({ action: 'create', title: title, body: body, ctaUrl: ctaUrl, ctaLabel: ctaLabel }),
@@ -1002,9 +967,7 @@ window.kfl = (function () {
   async function loadAnnouncementList() {
     var list = document.getElementById('ann-list');
     try {
-      var t = token();
       var headers = { 'Content-Type': 'application/json' };
-      if (t) headers['Authorization'] = 'Bearer ' + t;
       var r = await fetch('/api/announcements', {
         method: 'POST', credentials: 'include', headers: headers,
         body: JSON.stringify({ action: 'list_all' }),
@@ -1026,9 +989,7 @@ window.kfl = (function () {
   async function archiveAnnouncement(id) {
     if (!confirm('Archive this announcement?')) return;
     try {
-      var t = token();
       var headers = { 'Content-Type': 'application/json' };
-      if (t) headers['Authorization'] = 'Bearer ' + t;
       await fetch('/api/announcements', {
         method: 'POST', credentials: 'include', headers: headers,
         body: JSON.stringify({ action: 'archive', id: id }),
@@ -1041,9 +1002,7 @@ window.kfl = (function () {
     var summary = document.getElementById('revenue-summary');
     var grid = document.getElementById('revenue-grid');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/revenue', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/revenue', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -1078,9 +1037,7 @@ window.kfl = (function () {
     var countsEl = document.getElementById('inbox-counts');
     var listEl = document.getElementById('inbox-list');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/inbox?limit=50', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/inbox?limit=50', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { countsEl.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { countsEl.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -1134,9 +1091,7 @@ window.kfl = (function () {
     var summary = document.getElementById('testimonials-summary');
     var list = document.getElementById('testimonials-list');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/testimonials?list_all=1', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/testimonials?list_all=1', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -1178,9 +1133,7 @@ window.kfl = (function () {
 
   async function testimonialAction(userSub, action) {
     try {
-      var t = token();
       var headers = { 'Content-Type': 'application/json' };
-      if (t) headers['Authorization'] = 'Bearer ' + t;
       await fetch('/api/testimonials', {
         method: 'POST', credentials: 'include', headers: headers,
         body: JSON.stringify({ adminAction: action, userSub: userSub }),
@@ -1194,9 +1147,7 @@ window.kfl = (function () {
     var tbody = document.getElementById('help-queries-tbody');
     var table = document.getElementById('help-queries-table');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/help-queries?limit=20', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/help-queries?limit=20', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -1228,9 +1179,7 @@ window.kfl = (function () {
     var tbody = document.getElementById('referrers-tbody');
     var table = document.getElementById('referrers-table');
     try {
-      var t = token();
-      var headers = t ? { 'Authorization': 'Bearer ' + t } : {};
-      var r = await fetch('/api/admin/referral-leaderboard', { credentials: 'include', headers: headers });
+      var r = await fetch('/api/admin/referral-leaderboard', { credentials: 'include' });
       if (r.status === 401 || r.status === 403) { summary.textContent = 'Not authorized.'; return; }
       var j = await r.json();
       if (!j.ok) { summary.textContent = 'Error: ' + (j.error || r.status); return; }
@@ -1273,9 +1222,7 @@ window.kfl = (function () {
     status.textContent = 'Creating sheet in your Drive… (3-8s)'; status.style.color = 'var(--muted)';
     result.style.display = 'none';
     try {
-      var t = token();
       var headers = { 'Content-Type': 'application/json' };
-      if (t) headers['Authorization'] = 'Bearer ' + t;
       var r = await fetch('/api/admin/create-sample-sheet', {
         method: 'POST', credentials: 'include', headers: headers,
         body: JSON.stringify({})

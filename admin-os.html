@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>מערכת ניהול — כספ'לה</title>
+  <script src="/lib/browser-session.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rubik:wght@600;700;800;900&family=Heebo:wght@400;500;600;700;800;900&display=swap" />
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
@@ -87,9 +88,8 @@
 
   <script>
   'use strict';
-  // ───────── auth + fetch (identical pattern to admin.html) ─────────
-  function token(){ try { return (JSON.parse(localStorage.getItem('kesefle_user')||'{}')).idToken || ''; } catch(e){ return ''; } }
-  function authHeaders(extra){ var t=token(); var h=Object.assign({},extra||{}); if(t) h['Authorization']='Bearer '+t; return h; }
+  // ───────── auth + fetch (verified HttpOnly admin session only) ─────────
+  function authHeaders(extra){ return Object.assign({},extra||{}); }
   function AuthError(){ var e=new Error('auth'); e.isAuth=true; return e; }
   async function adminGet(path){
     var r=await fetch(path,{credentials:'include',headers:authHeaders()});
@@ -134,7 +134,7 @@
   }
   function loading(){ return '<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">'+Array(4).fill('<div class="card p-4"><div class="skel h-3 w-20"></div><div class="skel mt-3 h-8 w-24"></div></div>').join('')+'</div>'; }
   function emptyState(t){ return card('<div class="py-8 text-center text-ink-400"><div class="text-2xl">∅</div><div class="mt-2 text-sm">'+esc(t||'אין נתונים עדיין')+'</div></div>'); }
-  function errState(e){ if(e&&e.isAuth) return card('<div class="py-8 text-center"><div class="text-sm font-semibold">צריך להתחבר כמנהל</div><div class="mt-1 text-xs text-ink-400">התחבר/י עם חשבון אדמין מאושר ב-<a class="text-brand-600 underline" href="/account?next='+encodeURIComponent(location.pathname+location.hash)+'">/account</a> (באותו דפדפן), ואז רענן/י.</div></div>'); return card('<div class="py-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'</div>'); }
+  function errState(e){ if(e&&e.isAuth) return card('<div class="py-8 text-center"><div class="text-sm font-semibold">צריך להתחבר כמנהל</div><div class="mt-1 text-xs text-ink-400">התחבר/י עם חשבון אדמין מאושר ב-<a class="text-brand-600 underline" href="/account?force_signin=1&next=%2Fadmin-os">/account</a> (באותו דפדפן), ואז רענן/י.</div></div>'); return card('<div class="py-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'</div>'); }
   function sectionTitle(t,sub){ return '<div class="mb-4"><h2 class="font-display text-2xl">'+esc(t)+'</h2>'+(sub?'<p class="mt-1 text-sm text-ink-400">'+esc(sub)+'</p>':'')+'</div>'; }
 
   // ───────── sections registry (groups mirror the SRC admin) ─────────

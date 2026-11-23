@@ -46,9 +46,9 @@ ok('adminHandler wrapped with withRateLimit',
 ok('user-flow handler still rate-limited (unchanged)',
   /const requestHandler\s*=\s*withRateLimit\(/.test(MANUAL));
 
-// ── M2: single canonical constantTimeEqual, no local copies ──────────────────
-console.log('\n=== M2: no duplicated constant-time compare ===');
-for (const [label, src] of [['bot-heartbeat', HEARTB], ['whatsapp/link', LINK], ['admin/stats', STATS]]) {
+// ── M2: canonical crypto compare + session-only admin stats auth ─────────────
+console.log('\n=== M2: canonical secret compare and admin session auth ===');
+for (const [label, src] of [['bot-heartbeat', HEARTB], ['whatsapp/link', LINK]]) {
   ok(`${label} imports constantTimeEqual from lib/crypto.js`,
     /import\s*\{\s*constantTimeEqual\s*\}\s*from\s*['"][^'"]*lib\/crypto\.js['"]/.test(src));
   ok(`${label} has no local function constantTimeEqual`,
@@ -57,8 +57,11 @@ for (const [label, src] of [['bot-heartbeat', HEARTB], ['whatsapp/link', LINK], 
 }
 ok('admin/stats has no local ctEq helper',
   !/function\s+ctEq\s*\(/.test(STATS));
-ok('admin/stats legacy compare uses canonical constantTimeEqual',
-  /constantTimeEqual\(bearer,\s*ADMIN_TOKEN\)/.test(STATS) && !/ctEq\(/.test(STATS));
+ok('admin/stats uses verified requireAdmin session auth',
+  /requireAdmin\(/.test(STATS) && /withRateLimit\(/.test(STATS));
+ok('admin/stats has no parallel shared-secret auth path',
+  !/ADMIN_TOKEN|constantTimeEqual|legacy_auth/.test(STATS),
+  'admin stats must not accept a reusable shared bearer secret');
 ok('whatsapp/link has no redundant dynamic crypto import',
   !/await import\(['"][^'"]*lib\/crypto\.js['"]\)/.test(LINK),
   'top-level static import replaces the per-call dynamic import');
