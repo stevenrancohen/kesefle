@@ -199,11 +199,11 @@ tailwind.config = {
   <!-- Hero -->
   <section class="text-center mb-12">
     <div class="inline-flex items-center gap-2 rounded-full bg-brand-100 dark:bg-brand-900/30 px-4 py-1.5 text-xs font-bold text-brand-700 dark:text-brand-300 mb-5">
-      <span class="num">⚡</span> אין חנות אפליקציות · ללא הורדה
+      <span class="num">⚡</span> בלי חנות אפליקציות · בלי הורדה מהחנות
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">הוסף את כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">למסך הבית של הטלפון</span></h1>
     <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — מעטפת האפליקציה נפתחת גם בלי רשת ומתעדכנת בלי חנות. צפייה בנתונים עדכניים והוספת תנועה דורשות חיבור לאינטרנט.</p>
-    <div data-install-shell data-ready-label="המכשיר מוכן להתקנה — הקש/י על הכפתור הצהוב." data-installed-label="כספ'לה כבר מותקנת במכשיר הזה." data-ios-label="ב־iPhone: פתח/י ב־Safari, הקש/י שיתוף ואז „הוסף למסך הבית”." data-manual-label="לא מופיע כפתור התקנה? פתח/י את האפליקציה והשתמש/י בתפריט הדפדפן ← התקנת אפליקציה." data-accepted-label="ההתקנה אושרה — כספ'לה תופיע במסך הבית בעוד רגע." data-declined-label="ההתקנה לא בוצעה. אפשר לנסות שוב מתפריט הדפדפן." class="mx-auto mt-5 grid max-w-md gap-3">
+    <div data-install-shell data-ready-label="המכשיר מוכן להתקנה — הקש/י על הכפתור הצהוב." data-installed-label="כספ'לה כבר מותקנת במכשיר הזה." data-ios-label="ב־iPhone: ב־Safari או Chrome, הקש/י שיתוף ואז „הוסף למסך הבית”." data-manual-label="לא מופיע כפתור התקנה? פתח/י את האפליקציה והשתמש/י בתפריט הדפדפן ← התקנת אפליקציה." data-accepted-label="ההתקנה אושרה — כספ'לה תופיע במסך הבית בעוד רגע." data-declined-label="ההתקנה לא בוצעה. אפשר לנסות שוב מתפריט הדפדפן." class="mx-auto mt-5 grid max-w-md gap-3">
       <button data-install-button type="button" hidden aria-describedby="install-status" class="min-h-[48px] w-full rounded-xl bg-brand-300 px-6 py-3 text-base font-black text-ink-950 shadow-lg shadow-brand-500/20 transition hover:bg-brand-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500">התקן/י עכשיו במסך הבית</button>
       <a data-app-link href="https://kesefle.com/app" class="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-ink-300 bg-white px-6 py-3 text-sm font-bold text-ink-900 shadow-sm transition hover:border-brand-400 dark:border-ink-600 dark:bg-ink-800 dark:text-white">פתח/י את האפליקציה ב־kesefle.com/app</a>
       <p id="install-status" data-install-status role="status" aria-live="polite" class="min-h-[2.5rem] text-sm leading-5 text-ink-600 dark:text-ink-300">לא מופיע כפתור התקנה? פתח/י את האפליקציה והשתמש/י בתפריט הדפדפן ← התקנת אפליקציה.</p>
@@ -221,21 +221,21 @@ tailwind.config = {
 
     <!-- iOS -->
     <div id="device-ios" class="device-content active rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-8">
-      <h2 class="text-2xl font-black mb-6">iPhone / iPad — דרך Safari</h2>
+      <h2 class="text-2xl font-black mb-6">iPhone / iPad — דרך Safari או Chrome</h2>
       <ol class="space-y-6">
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">1</span>
           <div>
-            <p class="font-bold text-lg">פתח Safari</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">חשוב: <b>חייב להיות Safari</b>, לא Chrome ב-iPhone. iOS לא מאפשר התקנה דרך דפדפנים אחרים.</p>
+            <p class="font-bold text-lg">פתח Safari או Chrome</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">שני הדפדפנים תומכים בהוספה למסך הבית. ב-Safari אפשר גם להפעיל <b>"פתח כיישום אינטרנט"</b> כשהאפשרות מופיעה.</p>
             <p class="text-sm mt-2">גש לכתובת: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.com/app</code></p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">פתח את תפריט העמוד ובחר שיתוף</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">ב-Safari הקש על כפתור תפריט העמוד ואז על "שתף". אם אייקון השיתוף (ריבוע עם חץ למעלה <span class="num">↑</span>) מוצג ישירות, אפשר להקיש עליו.</p>
+            <p class="font-bold text-lg">פתח את תפריט השיתוף</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">חפש את אייקון השיתוף — ריבוע עם חץ למעלה <span class="num">↑</span>. המיקום משתנה לפי הדפדפן וגרסת iOS.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -261,7 +261,7 @@ tailwind.config = {
         </li>
       </ol>
       <div class="mt-6 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-4 text-sm text-amber-900 dark:text-amber-200">
-        <b>⚠ הערה:</b> אם מתקין דרך Chrome ב-iPhone, האייקון מוסיף קישור לדפדפן ולא PWA אמיתי. Safari = PWA אמיתי.
+        <b>💡 טיפ:</b> ב-Safari או Chrome: פתח את תפריט השיתוף ובחר "הוסף למסך הבית". כשהאתר מזוהה כאפליקציית ווב, האייקון פותח את כספ'לה כאפליקציה.
       </div>
     </div>
 
@@ -387,9 +387,9 @@ tailwind.config = {
     <ul class="space-y-3">
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>אין אישור אפל/גוגל</b> — אנחנו לא צריכים לחכות שבועות לאישור עדכון.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>עדכונים אוטומטיים</b> — אין צורך להוריד גרסה חדשה. תשתמש ב-PWA → תקבל את הגרסה החדשה ביותר.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>פחות נפח אחסון</b> — האפליקציה תופסת ~1MB במקום 50-100MB.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>פחות נפח אחסון</b> — בדרך כלל נדרש פחות מקום מאפליקציה מקומית מלאה; הכמות בפועל תלויה בדפדפן ובמטמון.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>מעטפת זמינה גם בלי רשת</b> — האפליקציה נפתחת ומציגה חיווי offline. מטעמי פרטיות, נתונים פיננסיים אינם נשמרים במטמון משותף.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>לא משלמים עמלות</b> — אפל לוקחת 30%. עם PWA, 100% מהתשלום של Pro/Family הולך אלינו ולא ל-Apple.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>בלי תהליך רכישה של חנות</b> — אין בדיקת App Store או עמלת חנות על ההתקנה; עמלות סליקה ומסים רגילים עדיין עשויים לחול.</div></li>
     </ul>
   </section>
 
@@ -400,7 +400,7 @@ tailwind.config = {
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
         <summary class="font-bold cursor-pointer">לא רואה אפשרות "הוסף למסך הבית" / "התקן אפליקציה"</summary>
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">בדוק:
-          <br/>• אתה משתמש בדפדפן הנכון (Safari ב-iPhone, Chrome/Edge במחשב, Chrome ב-Android)
+          <br/>• אתה משתמש בדפדפן נתמך (Safari או Chrome ב-iPhone, Chrome/Edge במחשב, Chrome ב-Android)
           <br/>• אתה גולש דרך HTTPS (kesefle.com/app, לא http://)
           <br/>• הדפדפן מעודכן לגרסה האחרונה
           <br/>• ביקרת בכמה דפים באתר (חלק מהדפדפנים מבקשים זאת לפני ההצעה)

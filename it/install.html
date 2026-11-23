@@ -203,11 +203,11 @@ tailwind.config = {
   <!-- Hero -->
   <section class="text-center mb-12">
     <div class="inline-flex items-center gap-2 rounded-full bg-brand-100 dark:bg-brand-900/30 px-4 py-1.5 text-xs font-bold text-brand-700 dark:text-brand-300 mb-5">
-      <span class="num">⚡</span> Nessun app store · senza download
+      <span class="num">⚡</span> Nessun app store · nessun download dallo store
     </div>
     <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Aggiungi כספ'לה<br/><span class="bg-gradient-to-l from-brand-500 to-brand-700 bg-clip-text text-transparent">alla schermata Home del telefono</span></h1>
     <p class="text-lg text-ink-600 dark:text-ink-300 max-w-2xl mx-auto">PWA = Progressive Web App — l'involucro dell'app si apre senza rete e si aggiorna senza store. I dati aggiornati e l'aggiunta di un movimento richiedono Internet.</p>
-    <div data-install-shell data-ready-label="Il dispositivo è pronto — tocca il pulsante giallo per installare." data-installed-label="כספ'לה è già installata su questo dispositivo." data-ios-label="Su iPhone: apri Safari, tocca Condividi, quindi «Aggiungi alla schermata Home»." data-manual-label="Il pulsante non compare? Apri l’app e usa il menu del browser → Installa app." data-accepted-label="Installazione confermata — כספ'לה comparirà a breve nella schermata Home." data-declined-label="Installazione non completata. Puoi riprovare dal menu del browser." class="mx-auto mt-5 grid max-w-md gap-3">
+    <div data-install-shell data-ready-label="Il dispositivo è pronto — tocca il pulsante giallo per installare." data-installed-label="כספ'לה è già installata su questo dispositivo." data-ios-label="Su iPhone: in Safari o Chrome, tocca Condividi e poi «Aggiungi alla schermata Home»." data-manual-label="Il pulsante non compare? Apri l’app e usa il menu del browser → Installa app." data-accepted-label="Installazione confermata — כספ'לה comparirà a breve nella schermata Home." data-declined-label="Installazione non completata. Puoi riprovare dal menu del browser." class="mx-auto mt-5 grid max-w-md gap-3">
       <button data-install-button type="button" hidden aria-describedby="install-status" class="min-h-[48px] w-full rounded-xl bg-brand-300 px-6 py-3 text-base font-black text-ink-950 shadow-lg shadow-brand-500/20 transition hover:bg-brand-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500">Installa nella schermata Home</button>
       <a data-app-link href="https://kesefle.com/app" class="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-ink-300 bg-white px-6 py-3 text-sm font-bold text-ink-900 shadow-sm transition hover:border-brand-400 dark:border-ink-600 dark:bg-ink-800 dark:text-white">Apri כספ'לה su kesefle.com/app</a>
       <p id="install-status" data-install-status role="status" aria-live="polite" class="min-h-[2.5rem] text-sm leading-5 text-ink-600 dark:text-ink-300">Il pulsante non compare? Apri l’app e usa il menu del browser → Installa app.</p>
@@ -225,21 +225,21 @@ tailwind.config = {
 
     <!-- iOS -->
     <div id="device-ios" class="device-content active rounded-3xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-8">
-      <h2 class="text-2xl font-black mb-6">iPhone / iPad — tramite Safari</h2>
+      <h2 class="text-2xl font-black mb-6">iPhone / iPad — tramite Safari o Chrome</h2>
       <ol class="space-y-6">
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">1</span>
           <div>
-            <p class="font-bold text-lg">Apri Safari</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Importante: <b>dev'essere Safari</b>, non Chrome su iPhone. iOS non consente l'installazione tramite altri browser.</p>
+            <p class="font-bold text-lg">Apri Safari o Chrome</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Entrambi i browser consentono di aggiungere il sito alla schermata Home. In Safari, attiva <b>"Apri come app web"</b> se l'opzione è disponibile.</p>
             <p class="text-sm mt-2">Vai all'indirizzo: <code class="bg-ink-100 dark:bg-ink-700 px-2 py-0.5 rounded text-brand-700 dark:text-brand-300">kesefle.com/app</code></p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
           <span class="step-num shrink-0">2</span>
           <div>
-            <p class="font-bold text-lg">Apri il menu della pagina e scegli Condividi</p>
-            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">In Safari tocca il pulsante del menu della pagina, poi « Condividi ». Se l'icona Condividi (quadrato con freccia verso l'alto <span class="num">↑</span>) è visibile direttamente, toccala.</p>
+            <p class="font-bold text-lg">Apri il menu Condividi</p>
+            <p class="text-sm text-ink-600 dark:text-ink-300 mt-1">Cerca l'icona Condividi — un quadrato con una freccia verso l'alto <span class="num">↑</span>. La posizione varia in base al browser e alla versione di iOS.</p>
           </div>
         </li>
         <li class="flex gap-4 items-start">
@@ -265,7 +265,7 @@ tailwind.config = {
         </li>
       </ol>
       <div class="mt-6 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 p-4 text-sm text-amber-900 dark:text-amber-200">
-        <b>⚠ Nota:</b> se installi tramite Chrome su iPhone, l'icona aggiunge un collegamento al browser e non una vera PWA. Safari = vera PWA.
+        <b>💡 Suggerimento:</b> in Safari o Chrome, apri il menu Condividi e scegli "Aggiungi alla schermata Home". Se l'app web è disponibile, l'icona apre כספ'לה come un'app.
       </div>
     </div>
 
@@ -391,9 +391,9 @@ tailwind.config = {
     <ul class="space-y-3">
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Nessuna approvazione di Apple/Google</b> — non dobbiamo aspettare settimane per l'approvazione di un aggiornamento.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Aggiornamenti automatici</b> — non serve scaricare una nuova versione. Usi la PWA → ricevi la versione più recente.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Meno spazio di archiviazione</b> — l'app occupa ~1MB invece di 50-100MB.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Meno spazio di archiviazione</b> — in genere meno di un'app nativa completa; lo spazio effettivo dipende dal browser e dalla cache.</div></li>
       <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Involucro disponibile offline</b> — l'app si apre e segnala l'assenza di rete. Per la privacy, i dati finanziari non vengono salvati in una cache condivisa.</div></li>
-      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Niente commissioni</b> — Apple prende il 30%. Con la PWA, il 100% del pagamento di Pro/Family va a noi e non ad Apple.</div></li>
+      <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><div><b>Nessun acquisto tramite store</b> — nessuna revisione App Store o commissione del negozio sull'installazione; possono applicarsi le normali commissioni di pagamento e imposte.</div></li>
     </ul>
   </section>
 
@@ -404,7 +404,7 @@ tailwind.config = {
       <details class="rounded-2xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 p-4">
         <summary class="font-bold cursor-pointer">Non vedo l'opzione "Aggiungi alla schermata Home" / "Installa app"</summary>
         <p class="mt-3 text-sm text-ink-600 dark:text-ink-300">Controlla:
-          <br/>• Stai usando il browser giusto (Safari su iPhone, Chrome/Edge su computer, Chrome su Android)
+          <br/>• Stai usando un browser supportato (Safari o Chrome su iPhone, Chrome/Edge su computer, Chrome su Android)
           <br/>• Stai navigando tramite HTTPS (kesefle.com/app, non http://)
           <br/>• Il browser è aggiornato all'ultima versione
           <br/>• Hai visitato qualche pagina del sito (alcuni browser lo richiedono prima di proporre l'installazione)

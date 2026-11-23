@@ -95,7 +95,7 @@ function boot(options = {}) {
 
   const ios = boot({ ios: true });
   assert(ios.button.hidden && ios.status.textContent === 'ios',
-    'iPhone receives Safari-specific Add to Home Screen guidance');
+    'iPhone receives browser-neutral Add to Home Screen guidance');
 
   const installed = boot({ standalone: true });
   assert(installed.button.hidden && installed.status.textContent === 'installed',

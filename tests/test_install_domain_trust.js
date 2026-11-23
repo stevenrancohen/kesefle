@@ -17,11 +17,11 @@ function assert(condition, label) {
 console.log('\ntests/test_install_domain_trust.js\n');
 
 const pages = [
-  { file: 'install.html', lang: 'he', dir: 'rtl', privacy: /נתונים פיננסיים אינם נשמרים/ },
-  { file: 'ar/install.html', lang: 'ar', dir: 'rtl', privacy: /البيانات المالية/ },
-  { file: 'ru/install.html', lang: 'ru', dir: 'ltr', privacy: /финансовые данные/ },
-  { file: 'fr/install.html', lang: 'fr', dir: 'ltr', privacy: /données financières/ },
-  { file: 'it/install.html', lang: 'it', dir: 'ltr', privacy: /dati finanziari/ },
+  { file: 'install.html', lang: 'he', dir: 'rtl', privacy: /נתונים פיננסיים אינם נשמרים/, store: /בלי הורדה מהחנות/, fees: /עמלות סליקה ומסים/ },
+  { file: 'ar/install.html', lang: 'ar', dir: 'rtl', privacy: /البيانات المالية/, store: /بلا تنزيل من المتجر/, fees: /رسوم معالجة الدفع والضرائب/ },
+  { file: 'ru/install.html', lang: 'ru', dir: 'ltr', privacy: /финансовые данные/, store: /без загрузки из магазина/i, fees: /комиссии платёжной системы и налоги/i },
+  { file: 'fr/install.html', lang: 'fr', dir: 'ltr', privacy: /données financières/, store: /Aucun téléchargement depuis le store/i, fees: /frais de paiement et taxes/i },
+  { file: 'it/install.html', lang: 'it', dir: 'ltr', privacy: /dati finanziari/, store: /nessun download dallo store/i, fees: /commissioni di pagamento e imposte/i },
 ];
 
 const staleOfflineClaims = [
@@ -37,6 +37,18 @@ const staleInstructionClaims = [
   /баннер внизу/,
   /bannière en bas/,
   /banner in basso/,
+];
+const staleSafariOnlyClaims = [
+  /חייב להיות Safari/i,
+  /يجب أن يكون Safari/i,
+  /обязательно Safari/i,
+  /ce doit être Safari/i,
+  /dev'essere Safari/i,
+  /Safari\s*=\s*(?:PWA|настоящее|vraie|vera|تطبيق)/i,
+];
+const unmeasuredStorageClaims = [
+  /~?1\s*(?:MB|МБ|Mo|ميغابايت)/i,
+  /50\s*[-–]\s*100/i,
 ];
 
 for (const spec of pages) {
@@ -61,6 +73,11 @@ for (const spec of pages) {
     spec.file + ' includes separate iPhone and Android instructions');
   assert(/Open as Web App/.test(html),
     spec.file + ' preserves the iPhone web-app mode during Add to Home Screen');
+  assert(/iPhone \/ iPad[^<]*Safari[^<]*Chrome/i.test(html) &&
+    /data-ios-label="[^"]*Safari[^"]*Chrome/i.test(html),
+    spec.file + ' documents both current iOS browser install paths');
+  assert(!staleSafariOnlyClaims.some((pattern) => pattern.test(html)),
+    spec.file + ' does not falsely claim that only Safari can install the web app');
   assert(/\.device-tab\s*\{[^}]*min-height:\s*44px/.test(html) && /min-h-\[48px\]/.test(html),
     spec.file + ' keeps mobile tabs and install actions at accessible touch sizes');
   assert(spec.privacy.test(html),
@@ -69,6 +86,14 @@ for (const spec of pages) {
     spec.file + ' does not promise a cached financial dashboard');
   assert(!staleInstructionClaims.some((pattern) => pattern.test(html)),
     spec.file + ' does not depend on an obsolete bottom install banner');
+  assert(!unmeasuredStorageClaims.some((pattern) => pattern.test(html)),
+    spec.file + ' does not invent exact PWA storage sizes');
+  assert(!/30\s*%/.test(html) && !/100\s*%/.test(html),
+    spec.file + ' does not overstate store commissions or retained revenue');
+  assert(spec.store.test(html),
+    spec.file + ' says no app-store download rather than no download at all');
+  assert(spec.fees.test(html),
+    spec.file + ' discloses that ordinary payment fees and taxes may still apply');
 }
 
 const appManifest = JSON.parse(read('app.webmanifest'));
