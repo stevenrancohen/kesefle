@@ -33,8 +33,9 @@
   body { font-family:'Heebo',system-ui,sans-serif; background:radial-gradient(circle at 12% -8%,rgba(63,111,245,.10),transparent 29%),radial-gradient(circle at 88% 0%,rgba(253,221,72,.10),transparent 26%),#f7f7f5; -webkit-tap-highlight-color:transparent; }
   html.dark body { background:radial-gradient(circle at 12% -8%,rgba(63,111,245,.15),transparent 28%),radial-gradient(circle at 88% 0%,rgba(253,221,72,.09),transparent 24%),#090a0d; }
   .font-display { font-family:'Rubik','Heebo',sans-serif; letter-spacing:-0.02em; }
-  .card { background:rgba(255,255,255,.97); border:1px solid #dedfdd; border-radius:1.5rem; box-shadow:0 18px 55px rgba(9,10,13,.08); }
+  .card { background:rgba(255,255,255,.97); border:1px solid #dedfdd; border-radius:1.5rem; box-shadow:0 18px 55px rgba(9,10,13,.08); transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease; }
   html.dark .card { background:linear-gradient(145deg,rgba(23,25,31,.98),rgba(14,15,19,.98)); border-color:#30333b; box-shadow:0 22px 60px rgba(0,0,0,.32); }
+  @media (hover:hover) { .card-interactive:hover { transform:translateY(-2px); border-color:#c9c9c5; box-shadow:0 22px 60px rgba(9,10,13,.12); } html.dark .card-interactive:hover { border-color:#474b55; box-shadow:0 26px 70px rgba(0,0,0,.42); } }
   .tab { color:#8a95b3; }
   .tab.active { color:#8a6200; }
   html.dark .tab.active { color:#fddd48; }
@@ -69,6 +70,45 @@
   .promo-strip { background:#050506; color:#d7d8d5; border-bottom:1px solid #23252b; }
   .promo-strip a { color:#fddd48; }
   .spectrum { height:3px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+  .quick-rail { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(112px,1fr); gap:10px; overflow-x:auto; padding:2px 2px 10px; scroll-snap-type:x proximity; scrollbar-width:none; }
+  .quick-rail::-webkit-scrollbar { display:none; }
+  .quick-card { min-height:112px; scroll-snap-align:start; display:flex; flex-direction:column; justify-content:space-between; border:1px solid #dedfdd; border-radius:1.25rem; padding:14px; background:rgba(255,255,255,.96); box-shadow:0 10px 30px rgba(9,10,13,.06); transition:.18s ease; }
+  .quick-card:active { transform:scale(.98); }
+  @media (hover:hover) { .quick-card:hover { transform:translateY(-2px); border-color:#bfc0bd; box-shadow:0 16px 36px rgba(9,10,13,.10); } }
+  html.dark .quick-card { background:#14161b; border-color:#30333b; box-shadow:0 14px 38px rgba(0,0,0,.22); }
+  .quick-icon { display:grid; width:38px; height:38px; place-items:center; border-radius:13px; }
+  .quick-icon svg, .nav-icon svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-add { display:flex; min-height:56px; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:#090a0d; }
+  .nav-add-bubble { display:grid; width:50px; height:50px; margin-top:-22px; place-items:center; border:5px solid #fff; border-radius:18px; background:#fddd48; box-shadow:0 10px 24px rgba(185,135,0,.32); }
+  html.dark .nav-add-bubble { border-color:#111318; }
+  .nav-add-label { color:#5c4100; }
+  html.dark .nav-add-label { color:#fddd48; }
+  .nav-add-bubble svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; }
+  .tab { position:relative; }
+  .tab.active:after { content:''; position:absolute; inset:auto 35% 3px; height:3px; border-radius:999px; background:#fddd48; }
+  .global-search { display:none; }
+  @media (min-width:640px) { .global-search { display:flex; } }
+  .guest-layout { display:grid; gap:14px; }
+  .guest-hero { position:relative; overflow:hidden; background:radial-gradient(circle at 14% 12%,rgba(63,111,245,.22),transparent 34%),radial-gradient(circle at 88% 80%,rgba(253,221,72,.14),transparent 34%),linear-gradient(145deg,#191b21,#090a0d 74%); color:#fff; border-color:#343741; }
+  .guest-hero:before { content:''; position:absolute; inset:0 0 auto; height:4px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+  .guest-hero > * { position:relative; z-index:1; }
+  .guest-preview { background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(247,247,245,.96)); }
+  html.dark .guest-preview { background:linear-gradient(145deg,#171920,#0f1116); }
+  .guest-feature { display:grid; grid-template-columns:42px minmax(0,1fr); align-items:center; gap:12px; border:1px solid #ececea; border-radius:16px; padding:12px; background:rgba(255,255,255,.74); }
+  html.dark .guest-feature { border-color:#292c33; background:rgba(9,10,13,.48); }
+  .guest-proof { display:flex; min-height:44px; align-items:center; gap:10px; border-top:1px solid #ececea; color:#50555b; }
+  html.dark .guest-proof { border-color:#292c33; color:#b4b6b4; }
+  .guest-step { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:10px; }
+  .guest-step-num { display:grid; width:34px; height:34px; place-items:center; border-radius:12px; background:#fff3c4; color:#5c4100; font-weight:900; }
+  html.dark .guest-step-num { background:rgba(253,221,72,.12); color:#fddd48; }
+  body.guest-mode .bottom-nav,
+  body.guest-mode #expenseFab,
+  body.guest-mode #refreshBtn,
+  body.guest-mode #syncTime,
+  body.guest-mode .global-search,
+  body.guest-mode #spaceSwitcher,
+  body.guest-mode .promo-strip a { display:none!important; }
+  body.guest-mode #view { padding-bottom:max(2rem,env(safe-area-inset-bottom)); }
   html.dark .bg-brand-700 { background-color:#fddd48!important; color:#090a0d!important; }
   html.dark .text-brand-700 { color:#fddd48!important; }
   html.dark .border-brand-300 { border-color:#fddd48!important; }
@@ -81,9 +121,11 @@
     .desktop-sticky { position:sticky; top:176px; }
     #view { padding-bottom:60px; }
     nav.bottom-nav { left:50%; right:auto; bottom:22px; width:min(520px,calc(100% - 32px)); transform:translateX(-50%); border:1px solid #30333b; border-radius:22px; box-shadow:0 18px 45px rgba(0,0,0,.34); overflow:hidden; }
-    #expenseFab { bottom:88px; }
+    .quick-rail { grid-auto-columns:minmax(122px,1fr); overflow:visible; }
+    .guest-layout { grid-template-columns:minmax(0,1.28fr) minmax(300px,.72fr); align-items:start; }
+    .guest-side { position:sticky; top:176px; }
   }
-  @media (prefers-reduced-motion: reduce) { .kfl-spin{animation:none;} .skel{animation:none;} }
+  @media (prefers-reduced-motion: reduce) { .kfl-spin{animation:none;} .skel{animation:none;} .card,.quick-card{transition:none;} }
 </style>
 </head>
 <body class="text-ink-900 dark:text-ink-50">
@@ -100,6 +142,10 @@
         <div class="font-display text-lg font-black leading-none">כספ'לה</div>
         <div id="whoami" class="text-[11px] text-ink-500">האפליקציה שלך</div>
       </div>
+      <a href="#/tx" class="global-search items-center gap-2 rounded-2xl border border-ink-100 bg-ink-50 px-3 text-xs font-bold text-ink-500 dark:border-ink-700 dark:bg-ink-900" aria-label="חיפוש בתנועות">
+        <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></span>
+        חיפוש בתנועות
+      </a>
       <span id="syncTime" class="self-center text-[10px] tabular-nums text-ink-500"></span>
       <button id="refreshBtn" aria-label="רענון נתונים" class="grid h-11 w-11 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">⟳</button>
       <button id="themeBtn" aria-label="מצב כהה או בהיר" class="grid h-11 w-11 place-items-center rounded-2xl border border-ink-100 dark:border-ink-700 text-ink-500">◐</button>
@@ -116,31 +162,33 @@
 
   <main id="view" class="mx-auto max-w-6xl px-4 pb-28 pt-44 sm:px-6"></main>
 
-  <!-- Always-available in-app entry. WhatsApp remains an optional channel. -->
-  <a id="expenseFab" href="/expense?from=app"
-     class="fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-brand-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-brand-800/30 active:scale-95">
-    <span>＋</span> הוסף תנועה
-  </a>
-
   <!-- Bottom tab nav -->
   <nav aria-label="ניווט ראשי" class="bottom-nav safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 dark:border-[#30333b] bg-white/95 dark:bg-[#111318]/95 backdrop-blur">
-    <div id="tabs" class="mx-auto grid max-w-lg grid-cols-4"></div>
+    <div id="tabs" class="mx-auto grid max-w-lg grid-cols-5"></div>
   </nav>
 
 <script>
 'use strict';
 // ───────── auth + fetch (HttpOnly session cookie only) ─────────
 function AuthError(){ var e=new Error('auth'); e.isAuth=true; return e; }
+function OfflineError(){ var e=new Error('offline'); e.isOffline=true; return e; }
+async function throwResponseError(r){
+  if(r.status===503){
+    var payload=await r.clone().json().catch(function(){return null;});
+    if((payload&&payload.error==='offline') || navigator.onLine===false) throw OfflineError();
+  }
+  throw new Error('HTTP '+r.status);
+}
 async function apiGet(path){
   var r=await fetch(path,{credentials:'include'});
   if(r.status===401||r.status===403) throw AuthError();
-  if(!r.ok) throw new Error('HTTP '+r.status);
+  if(!r.ok) await throwResponseError(r);
   return r.json();
 }
 async function apiPost(path,body){
   var r=await fetch(path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
   if(r.status===401||r.status===403) throw AuthError();
-  if(!r.ok) throw new Error('HTTP '+r.status);
+  if(!r.ok) await throwResponseError(r);
   return r.json();
 }
 // ───────── helpers ─────────
@@ -154,8 +202,47 @@ function thisMonthLabel(){ var d=new Date(); return HEB_MONTHS[d.getMonth()]+' '
 function daysLeftInMonth(){ var d=new Date(); return Math.max(0,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-d.getDate()); }
 function loadingHero(){ return '<div class="card p-5"><div class="skel h-3 w-24"></div><div class="skel mt-3 h-9 w-40"></div><div class="mt-5 grid grid-cols-2 gap-3"><div class="skel h-14"></div><div class="skel h-14"></div></div></div><div class="skel mt-4 h-40 w-full rounded-2xl"></div>'; }
 function emptyState(t,sub){ return '<div class="card p-8 text-center"><div class="text-3xl">∅</div><div class="mt-2 text-sm font-semibold">'+esc(t||'אין נתונים עדיין')+'</div>'+(sub?'<div class="mt-1 text-xs text-ink-500">'+esc(sub)+'</div>':'')+'</div>'; }
-function signInState(){ return '<div class="card p-8 text-center"><div class="text-3xl">🔒</div><div class="mt-2 text-sm font-semibold">צריך להתחבר</div><div class="mt-1 text-xs text-ink-500">התחבר/י עם חשבון Google כדי לראות את הנתונים שלך.</div><a href="/account?force_signin=1&next=%2Fapp" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white">התחברות</a></div>'; }
-function errState(e){ if(e&&e.isAuth) return signInState(); return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>'; }
+function setGuestMode(on){
+  document.body.classList.toggle('guest-mode',!!on);
+  ['.bottom-nav','#expenseFab','#refreshBtn','#syncTime','.global-search','#spaceSwitcher','.promo-strip a'].forEach(function(selector){
+    document.querySelectorAll(selector).forEach(function(node){ node.hidden=!!on; });
+  });
+  var who=$('#whoami');
+  if(who&&on) who.textContent='סיור באפליקציה';
+  if(who&&!on&&typeof paintSpaceSwitcher==='function') paintSpaceSwitcher();
+}
+function signInState(){
+  var uses=[
+    ['wallet','אישי ושכיר·ה','משכורת, הוצאות ומה נשאר'],
+    ['home','זוגי ומשפחתי','תמונה משותפת ומי הוסיף כל תנועה'],
+    ['chart','עצמאי·ת ועסק','תזרים, הפרדה עסקית ומס ומע״מ']
+  ];
+  return '<div class="guest-layout" data-guest-screen="true">'+
+    '<div><section class="card guest-hero p-5 sm:p-7" aria-labelledby="guestTitle">'+
+      '<div class="flex items-center justify-between gap-3"><span class="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-black text-brand-300">סיור של 20 שניות</span><span class="text-[11px] font-bold text-white/55">ללא נתונים אישיים</span></div>'+
+      '<h1 id="guestTitle" class="mt-5 font-display text-3xl font-black leading-tight sm:text-5xl">לדעת מה קורה עם הכסף — בלי לנחש</h1>'+
+      '<p class="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">כספ\'לה הופכת את התנועות שלך לתמונה חודשית ברורה, במרחב שמתאים לחיים שלך.</p>'+
+      '<div class="mt-5 grid gap-2" aria-label="למי כספלה מתאימה">'+uses.map(function(use,index){var tones=['bg-brand-300 text-ink-950','bg-blue-500/20 text-blue-200','bg-emerald-500/20 text-emerald-200'];return '<div class="guest-feature border-white/10 bg-white/5"><span class="quick-icon '+tones[index]+'">'+lineIcon(use[0])+'</span><span><strong class="block text-sm">'+esc(use[1])+'</strong><span class="mt-0.5 block text-[11px] leading-5 text-white/60">'+esc(use[2])+'</span></span></div>';}).join('')+'</div>'+
+      '<a href="/account?force_signin=1&amp;next=%2Fapp" class="mt-5 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-brand-300 px-5 text-sm font-black text-ink-950 shadow-lg shadow-brand-500/20"><span>מתחילים עם <bdi dir="ltr">Google</bdi></span><span aria-hidden="true">‹</span></a>'+
+      '<div class="mt-3 text-center"><a href="/privacy" class="text-xs font-bold text-white/70 underline decoration-white/20 underline-offset-4">איך שומרים על המידע</a></div>'+
+      '<p class="mt-3 text-[11px] leading-5 text-white/50">ההתחברות מאפשרת לכספ\'לה ליצור ולעדכן רק את הגיליון שלה ב־Google Drive שלך.</p>'+
+    '</section></div>'+
+    '<aside class="guest-side"><section class="card p-5"><div class="eyebrow">מתחילים פשוט</div><h2 class="mt-1 font-display text-xl font-black">שלושה צעדים לתמונה שלך</h2><div class="mt-5 space-y-4">'+
+      '<div class="guest-step"><span class="guest-step-num">1</span><span><strong class="block text-sm">מתחברים עם Google</strong><span class="mt-1 block text-xs leading-5 text-ink-500">בלי סיסמה חדשה ובלי להדביק פרטי בנק.</span></span></div>'+
+      '<div class="guest-step"><span class="guest-step-num">2</span><span><strong class="block text-sm">נוצר גיליון פרטי</strong><span class="mt-1 block text-xs leading-5 text-ink-500">הגיליון נשאר ב־Google Drive שלך.</span></span></div>'+
+      '<div class="guest-step"><span class="guest-step-num">3</span><span><strong class="block text-sm">מוסיפים תנועה ראשונה</strong><span class="mt-1 block text-xs leading-5 text-ink-500">ומיד מתחילה להיבנות תמונה חודשית ברורה.</span></span></div>'+
+    '</div></section><section class="card mt-4 px-5"><div class="guest-proof py-3"><span class="nav-icon text-emerald-600">'+lineIcon('user')+'</span><span class="text-xs font-bold">לא מוכרים מידע פיננסי למפרסמים</span></div><div class="guest-proof py-3"><span class="nav-icon text-blue-600">'+lineIcon('wallet')+'</span><span class="text-xs font-bold">הנתונים נגישים לך גם בגיליון שלך</span></div><div class="guest-proof py-3"><span class="nav-icon text-brand-700">'+lineIcon('home')+'</span><span class="text-xs font-bold">מותאם לאישי, לבית ולעסק</span></div></section></aside>'+
+  '</div>';
+}
+function errState(e){
+  if(e&&e.isAuth){ APP.me=null; setGuestMode(true); return signInState(); }
+  if(e&&e.isOffline){
+    setGuestMode(true);
+    return '<div class="card mx-auto max-w-lg p-7 text-center" role="status"><div class="text-4xl" aria-hidden="true">⌁</div><h1 class="mt-3 font-display text-2xl font-black">אין חיבור לאינטרנט</h1><p class="mt-2 text-sm leading-6 text-ink-500">כדי להגן על הפרטיות שלך, נתונים פיננסיים לא נשמרים במטמון במכשיר. כשהחיבור יחזור, אפשר לטעון מיד את התמונה המעודכנת.</p><div class="mt-4 flex flex-wrap justify-center gap-2"><button onclick="bootstrapApp()" class="inline-flex min-h-[44px] items-center rounded-xl bg-brand-300 px-4 py-2 text-xs font-black text-ink-950">לנסות שוב</button><a href="/offline" class="inline-flex min-h-[44px] items-center rounded-xl border border-ink-200 px-4 py-2 text-xs font-bold text-ink-500 dark:border-ink-700">עזרה במצב לא מקוון</a></div></div>';
+  }
+  setGuestMode(false);
+  return '<div class="card p-6 text-center text-sm text-red-500">שגיאה בטעינה: '+esc(e&&e.message||e)+'<div class="mt-3"><button onclick="route(true)" class="rounded-xl border border-ink-100 dark:border-ink-700 px-4 py-2 text-xs text-ink-500">נסה שוב</button></div></div>';
+}
 function bar(label,val,max,tone){ var pct=max>0?Math.round(val/max*100):0; var c=tone||'bg-brand-500'; return '<div class="py-2"><div class="flex items-center justify-between text-sm"><span class="truncate">'+esc(label)+'</span><span class="font-semibold tabular-nums">'+money(val)+'</span></div><div class="mt-1 h-2 overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full '+c+'" style="width:'+Math.max(3,pct)+'%"></div></div></div>'; }
 // Runtime config is the single source of truth. The fallback is the currently
 // deployed number, but /api/config can switch every app surface at cutover.
@@ -180,18 +267,48 @@ async function savePrefs(fields){
 }
 async function loadPersonalization(){
   try{ APP.prefs=Object.assign(APP.prefs,JSON.parse(localStorage.getItem('kfl_ui_prefs')||'{}')); }catch(_e){}
+  // Authenticate with one cheap request before loading any account-scoped UI
+  // or data. Guests therefore avoid five protected requests and never flash a
+  // stale locally-cached identity while the network is slow.
+  var me;
+  try{ me=await apiGet('/api/me'); }
+  catch(e){ if(e&&e.isAuth){ APP.me=null; APP.group=null; return false; } throw e; }
+  if(!me||!me.ok||!me.user){ APP.me=null; APP.group=null; return false; }
+  APP.me=me;
   var r=await Promise.all([
     apiGet('/api/ui-preferences').catch(function(){return null;}),
-    apiGet('/api/me').catch(function(){return null;}),
     apiGet('/api/group/mine').catch(function(){return null;})
   ]);
   if(r[0]&&r[0].ok){ APP.prefs=Object.assign(APP.prefs,r[0].preferences||{}); APP.onboarding=r[0].onboarding||{}; storePrefs(); }
-  APP.me=r[1]; APP.group=r[2]&&r[2].group||null;
+  APP.group=r[1]&&r[1].group||null;
   paintSpaceSwitcher();
+  return true;
+}
+var __bootstrapping=false;
+async function bootstrapApp(){
+  if(__bootstrapping) return false;
+  __bootstrapping=true;
+  var view=$('#view');
+  setGuestMode(true);
+  view.innerHTML=loadingHero();
+  try{
+    var boot=await Promise.all([loadAppConfig(),loadPersonalization()]);
+    var ready=boot[1];
+    if(!ready){ APP.me=null; APP.group=null; view.innerHTML=signInState(); return false; }
+    setGuestMode(false);
+    await route(true);
+    return true;
+  }catch(e){
+    APP.me=null; APP.group=null;
+    view.innerHTML=errState(e);
+    return false;
+  }finally{
+    __bootstrapping=false;
+  }
 }
 function paintSpaceSwitcher(){
   var space=activeSpace();
-  document.querySelectorAll('[data-space]').forEach(function(b){ b.classList.toggle('active',b.getAttribute('data-space')===space); });
+  document.querySelectorAll('[data-space]').forEach(function(b){ var on=b.getAttribute('data-space')===space; b.classList.toggle('active',on); b.setAttribute('aria-pressed',on?'true':'false'); });
   var fab=$('#expenseFab'); if(fab) fab.href='/expense?from=app&space='+encodeURIComponent(space);
   var who=$('#whoami'); if(who){ var u=APP.me&&APP.me.user, name=u&&(u.name||u.email); who.textContent=(name?name+' · ':'')+currentPersona().short; }
 }
@@ -242,16 +359,37 @@ function onboardingCard(){
 
 // ───────── tabs / routes ─────────
 var TABS=[
-  {id:'',label:'בית',icon:'⌂',render:renderHome},
-  {id:'tx',label:'תנועות',icon:'≣',render:renderTx},
-  {id:'insights',label:'תובנות',icon:'◑',render:renderInsights},
-  {id:'account',label:'חשבון',icon:'☺',render:renderAccount},
+  {id:'',label:'בית',icon:'home',render:renderHome},
+  {id:'tx',label:'תנועות',icon:'list',render:renderTx},
+  {id:'insights',label:'תובנות',icon:'chart',render:renderInsights},
+  {id:'account',label:'חשבון',icon:'user',render:renderAccount},
 ];
-function buildTabs(){ $('#tabs').innerHTML=TABS.map(function(t){ return '<a class="tab flex flex-col items-center gap-0.5 py-2.5" data-id="'+t.id+'" href="#/'+t.id+'"><span class="text-xl leading-none">'+t.icon+'</span><span class="text-[10px] font-semibold">'+esc(t.label)+'</span></a>'; }).join(''); }
+function lineIcon(name){
+  var p={
+    home:'<path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10v10h13V10"></path><path d="M9.5 20v-6h5v6"></path>',
+    list:'<path d="M8 6h13M8 12h13M8 18h13"></path><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path>',
+    chart:'<path d="M4 19V9M10 19V5M16 19v-7M22 19V8"></path><path d="M2 19h22"></path>',
+    user:'<circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path>',
+    plus:'<path d="M12 5v14M5 12h14"></path>',
+    search:'<circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path>',
+    wallet:'<path d="M4 6.5h14a2 2 0 0 1 2 2v10H4a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2h12"></path><path d="M16 11h6v4h-6a2 2 0 0 1 0-4Z"></path>',
+    income:'<path d="M12 20V5M6 11l6-6 6 6"></path>',
+    budget:'<circle cx="12" cy="12" r="9"></circle><path d="M12 7v10M15 9.5c-.6-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.1 1.7 3 2c1.9.3 3 1 3 2s-1.3 2-3 2c-1.4 0-2.4-.5-3-1.5"></path>'
+  };
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(p[name]||p.wallet)+'</svg>';
+}
+function buildTabs(){
+  var links=TABS.map(function(t){ return '<a class="tab flex flex-col items-center gap-0.5 py-2.5" data-id="'+t.id+'" href="#/'+t.id+'"><span class="nav-icon">'+lineIcon(t.icon)+'</span><span class="text-[10px] font-semibold">'+esc(t.label)+'</span></a>'; });
+  links.splice(2,0,'<a id="expenseFab" href="/expense?from=app" class="nav-add" aria-label="הוספת תנועה"><span class="nav-add-bubble">'+lineIcon('plus')+'</span><span class="nav-add-label text-[10px] font-black">הוספה</span></a>');
+  $('#tabs').innerHTML=links.join('');
+}
 function setActiveTab(id){ document.querySelectorAll('#tabs .tab').forEach(function(a){ var on=a.getAttribute('data-id')===id; a.classList.toggle('active', on); if(on){ a.setAttribute('aria-current','page'); } else { a.removeAttribute('aria-current'); } }); }
 function currentId(){ return (location.hash||'').replace(/^#\/?/,''); }
 var __routing=false, __routeAgain=false;
 async function route(force){
+  // Hash shortcuts can fire while auth bootstrap is still running. A missing
+  // verified account is always a guest state and must not trigger sheet APIs.
+  if(!APP.me){ setGuestMode(true); $('#view').innerHTML=signInState(); return; }
   // Re-entrancy guard: rapid pull-to-refresh / refresh taps / hashchanges must
   // not run concurrent renders racing on view.innerHTML. Serialize them and let
   // the latest request win (re-run once if another came in mid-render).
@@ -265,6 +403,7 @@ async function route(force){
       var rb=$('#refreshBtn'); if(rb) rb.classList.add('kfl-spin');
       view.innerHTML=loadingHero();
       try { await sec.render(view); } catch(e){ view.innerHTML=errState(e); }
+      if(!view.querySelector('[data-guest-screen]')) setGuestMode(false);
       if(rb) rb.classList.remove('kfl-spin');
       var st=$('#syncTime'); if(st){ var n=new Date(); st.textContent='עודכן '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
     } while(__routeAgain);
@@ -293,7 +432,18 @@ async function renderHome(view){
   var cats=tc.length?'<section class="card mt-4 p-5"><div class="flex items-center justify-between"><h2 class="font-display text-lg font-black">לאן הכסף הלך</h2><a href="#/insights" class="text-xs font-bold text-brand-700">פירוט מלא</a></div><div class="mt-2">'+tc.slice(0,5).map(function(c){return bar(c.name,c.total,maxC);}).join('')+'</div></section>':'';
   var side=space==='household'?familyHomeCard(rows):space==='business'?businessHomeCard(total):personalHomeCard(total);
   var recent=rows.length?'<section class="card mt-4 p-2"><div class="flex items-center justify-between px-2 py-2"><h2 class="font-display text-lg font-black">תנועות אחרונות</h2><a href="#/tx" class="text-xs font-bold text-brand-700">הצגת הכל</a></div><div class="divide-y divide-ink-100 dark:divide-ink-800">'+rows.slice(0,7).map(txRow).join('')+'</div></section>':emptyState('עוד אין תנועות במרחב הזה','ברגע שתתווסף תנועה היא תופיע כאן.');
-  view.innerHTML='<div class="desktop-grid"><div>'+hero+action+cats+'</div><aside class="desktop-sticky">'+side+recent+'</aside></div>';
+  view.innerHTML='<div class="desktop-grid"><div>'+hero+quickActions()+action+cats+'</div><aside class="desktop-sticky">'+side+recent+'</aside></div>';
+}
+function quickActions(){
+  var space=activeSpace();
+  var actions=[
+    {label:'הוצאה',sub:'קליטה מהירה',href:'/expense?from=app-quick&space='+space,icon:'wallet',tone:'bg-red-50 text-red-500 dark:bg-red-900/30'},
+    {label:'הכנסה',sub:'משכורת או לקוח',href:'/expense?from=app-quick&type=income&space='+space,icon:'income',tone:'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30'},
+    {label:'חיפוש',sub:'בכל התנועות',href:'#/tx',icon:'search',tone:'bg-blue-50 text-blue-600 dark:bg-blue-900/30'},
+    {label:'תובנות',sub:'מגמות ותקציב',href:'#/insights',icon:'chart',tone:'bg-brand-50 text-brand-700 dark:bg-brand-900/30'},
+    {label:'תקציב',sub:'הגדרות ושליטה',href:'/dashboard#/budgets',icon:'budget',tone:'bg-violet-50 text-violet-600 dark:bg-violet-900/30'}
+  ];
+  return '<section class="mt-4" aria-labelledby="quickTitle"><div class="mb-2 flex items-center justify-between px-1"><h2 id="quickTitle" class="font-display text-lg font-black">פעולות מהירות</h2><span class="text-[11px] text-ink-500">הכול במקום אחד</span></div><div class="quick-rail">'+actions.map(function(a){return '<a class="quick-card" href="'+esc(a.href)+'"><span class="quick-icon '+a.tone+'">'+lineIcon(a.icon)+'</span><span><strong class="block text-sm">'+esc(a.label)+'</strong><span class="block text-[11px] text-ink-500">'+esc(a.sub)+'</span></span></a>';}).join('')+'</div></section>';
 }
 function nextMove(total,rows){
   var space=activeSpace(), net=total.income-total.expense;
@@ -331,7 +481,14 @@ async function renderTx(view){
     '<input id="txSearch" type="search" inputmode="search" aria-label="חיפוש תנועות" placeholder="חיפוש לפי תיאור או קטגוריה…" class="mb-1 w-full rounded-2xl border border-ink-100 dark:border-ink-700 bg-white dark:bg-ink-900 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500/40" />'+
     '<div id="txList" class="mt-2">'+loadingHero()+'</div>';
   var d;
-  try { d=await apiGet('/api/sheet/getExpenses'); } catch(e){ $('#txList').innerHTML=errState(e); return; }
+  try { d=await apiGet('/api/sheet/getExpenses'); } catch(e){
+    // A direct PWA shortcut can land here before auth. In that case replace
+    // the whole route, rather than leaving a dead search/header around the
+    // guest first-run screen.
+    if(e&&e.isAuth) view.innerHTML=errState(e);
+    else $('#txList').innerHTML=errState(e);
+    return;
+  }
   APP.expenses=d;
   var rows=filterRowsForSpace(((d&&d.rows)||[]),activeSpace()).sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
   var cnt=$('#txCount'); if(cnt) cnt.textContent=num(rows.length)+' תנועות';
@@ -366,7 +523,7 @@ async function renderInsights(view){
       apiPost('/api/budgets',{action:'list'}).catch(function(){return null;})
     ]);
     d=both[0]; ex=both[1]; bg=both[2];
-  } catch(e){ view.innerHTML=head+errState(e); return; }
+  } catch(e){ view.innerHTML=(e&&e.isAuth?'':head)+errState(e); return; }
   if(!d||!d.ok){ view.innerHTML=head+errState(new Error((d&&d.error)||'load_failed')); return; }
 
   // Recalculate the visible aggregates from the selected money space. This is
@@ -545,16 +702,17 @@ function toggleTheme(){ var t=document.documentElement.classList.contains('dark'
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__kflDeferredPrompt=e; var ib=$('#installBtn'); if(ib){ ib.classList.remove('hidden'); ib.onclick=async function(){ try{ e.prompt(); await e.userChoice; }catch(_){} window.__kflDeferredPrompt=null; ib.classList.add('hidden'); }; } });
 (async function(){
   applyTheme(localStorage.getItem('kfl_app_theme') || 'dark');
-  try { var u=JSON.parse(localStorage.getItem('kesefle_user')||'{}'); if(u&&(u.name||u.email)) $('#whoami').textContent=u.name||u.email; } catch(e){}
+  // Start private-by-default. Authenticated chrome is revealed only after the
+  // server confirms the current session; localStorage is never identity proof.
+  setGuestMode(true);
+  $('#view').innerHTML=signInState();
   buildTabs();
   bindSpaceSwitcher();
-  paintSpaceSwitcher();
   $('#themeBtn').onclick=toggleTheme;
   $('#refreshBtn').onclick=function(){ route(true); };
   window.addEventListener('hashchange', function(){ route(); });
   if(!location.hash) location.hash='#/';
-  await Promise.all([loadAppConfig(),loadPersonalization()]);
-  route();
+  await bootstrapApp();
   if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('/sw.js'); } catch(e){} }
   // Pull-to-refresh: only when scrolled to the very top; passive listeners so it
   // never fights native scroll. Triggers a real re-fetch via route(true).

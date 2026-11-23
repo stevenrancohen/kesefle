@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v18-2026-11-23-cookie-session';
+const VERSION = 'v21-2026-11-23-unified-app';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;

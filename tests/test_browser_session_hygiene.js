@@ -140,7 +140,7 @@ check('admin monitor contains no reusable shared secret or secret storage',
   !/kesefle2026|kefle_admin_token|ADMIN_TOKEN/.test(monitor)
     && /\/account\?force_signin=1&amp;next=%2Fadmin%2Fmonitor/.test(monitor));
 check('expired app and admin sessions force PKCE and preserve safe destinations',
-  /\/account\?force_signin=1&next=%2Fapp/.test(app)
+  /\/account\?force_signin=1&amp;next=%2Fapp/.test(app)
     && /\/account\?force_signin=1&next=%2Fadmin-os/.test(adminOs)
     && !/\/account\?next=/.test([app, adminOs].join('\n')));
 check('logout waits for a keepalive cookie clear and purges both browser stores',
@@ -186,7 +186,7 @@ check('every browser profile write passes through the presentation sanitizer',
 
 const sw = read('sw.js');
 check('service worker version is bumped for the credential migration',
-  /v18-2026-11-23-cookie-session/.test(sw));
+  /v21-2026-11-23-unified-app/.test(sw));
 check('offline shell precaches the browser-session scrubber',
   /['"]\/lib\/browser-session\.js['"]/.test(sw));
 check('API requests remain network-only',

@@ -13,14 +13,13 @@
 //   Run: node tests/pwa.js
 //
 // Invariants:
-//   1.  manifest.webmanifest parses as JSON and has the installability fields
-//       (name, short_name, start_url, display:standalone, icons,
-//       theme_color, background_color).
+//   1.  New acquisition surfaces install the /app identity while the dashboard
+//       temporarily retains the legacy /dashboard identity for existing installs.
+//       Both manifests keep the required installability fields.
 //   2.  At least one 192px AND one 512px icon, plus a maskable icon; every
 //       icon src in the manifest exists on disk and is square-named.
-//   3.  manifest.theme_color matches the <meta name="theme-color"> the app
-//       shell pages actually ship (so the install splash / OS chrome colour
-//       does not disagree with the in-page chrome).
+//   3.  Each installed app shell matches its own manifest theme. Marketing and
+//       acquisition pages may keep their branded browser chrome colour.
 //   4.  Shortcuts point at LIVE destinations -- not a path that vercel.json
 //       redirects away (the old /status shortcut 308'd to / -> dead shortcut).
 //   5.  sw.js versions its caches, calls skipWaiting + clients.claim, deletes
@@ -48,38 +47,60 @@ function assert(cond, label) {
 // The standalone app-shell pages (start_url + the two places a cold user lands
 // then installs from). These carry the iOS meta + SW auto-update wiring.
 const SHELL_PAGES = ['dashboard.html', 'index.html', 'welcome.html'];
+const ACQUISITION_PAGES = [
+  'app.html', 'index.html', 'ar/index.html', 'ru/index.html', 'fr/index.html',
+  'it/index.html', 'welcome.html', 'account.html', 'install.html',
+  'ar/install.html', 'ru/install.html', 'fr/install.html', 'it/install.html',
+];
+const EXPECTED_MANIFEST = {
+  'dashboard.html': '/manifest.webmanifest',
+  'index.html': '/app.webmanifest',
+  'welcome.html': '/app.webmanifest',
+};
 
 // ---------------------------------------------------------------------------
 // 1. manifest parses + required installability fields
 // ---------------------------------------------------------------------------
-console.log('\n-- manifest.webmanifest: valid JSON + installability fields --');
+console.log('\n-- manifests: safe legacy migration + valid installability fields --');
 const manifestRaw = read('manifest.webmanifest');
+const appManifestRaw = read('app.webmanifest');
 let m = null;
+let appManifest = null;
 try { m = JSON.parse(manifestRaw); assert(true, 'manifest.webmanifest is valid JSON'); }
 catch (e) { assert(false, 'manifest.webmanifest is valid JSON (' + e.message + ')'); }
+try { appManifest = JSON.parse(appManifestRaw); assert(true, 'app.webmanifest is valid JSON'); }
+catch (e) { assert(false, 'app.webmanifest is valid JSON (' + e.message + ')'); }
 
-if (m) {
-  assert(typeof m.name === 'string' && m.name.length > 0, 'manifest has a non-empty name');
-  assert(typeof m.short_name === 'string' && m.short_name.length > 0, 'manifest has a non-empty short_name');
-  assert(typeof m.short_name === 'string' && m.short_name.length <= 12,
-    'short_name <= 12 chars (home-screen label does not truncate)');
-  assert(typeof m.start_url === 'string' && m.start_url.startsWith('/'), 'manifest start_url is a same-origin path');
-  assert(m.display === 'standalone', 'manifest display is "standalone"');
-  assert(typeof m.theme_color === 'string' && /^#[0-9a-fA-F]{6}$/.test(m.theme_color), 'manifest theme_color is a hex colour');
-  assert(typeof m.background_color === 'string' && /^#[0-9a-fA-F]{6}$/.test(m.background_color), 'manifest background_color is a hex colour');
-  assert(Array.isArray(m.icons) && m.icons.length > 0, 'manifest has at least one icon');
-  assert(m.dir === 'rtl' && m.lang === 'he', 'manifest declares RTL + Hebrew (lang/dir preserved)');
+if (m && appManifest) {
+  assert(m.id === '/dashboard' && m.start_url === '/dashboard',
+    'legacy manifest preserves the /dashboard identity for existing installs');
+  assert(appManifest.id === '/app' && appManifest.start_url === '/app',
+    'app manifest installs and launches the canonical /app experience');
+}
+
+for (const [label, manifest] of [['legacy manifest', m], ['app manifest', appManifest]]) {
+  if (!manifest) continue;
+  assert(typeof manifest.name === 'string' && manifest.name.length > 0, label + ' has a non-empty name');
+  assert(typeof manifest.short_name === 'string' && manifest.short_name.length > 0, label + ' has a non-empty short_name');
+  assert(typeof manifest.short_name === 'string' && manifest.short_name.length <= 12,
+    label + ' short_name <= 12 chars (home-screen label does not truncate)');
+  assert(typeof manifest.start_url === 'string' && manifest.start_url.startsWith('/'), label + ' start_url is a same-origin path');
+  assert(manifest.display === 'standalone', label + ' display is "standalone"');
+  assert(typeof manifest.theme_color === 'string' && /^#[0-9a-fA-F]{6}$/.test(manifest.theme_color), label + ' theme_color is a hex colour');
+  assert(typeof manifest.background_color === 'string' && /^#[0-9a-fA-F]{6}$/.test(manifest.background_color), label + ' background_color is a hex colour');
+  assert(Array.isArray(manifest.icons) && manifest.icons.length > 0, label + ' has at least one icon');
+  assert(manifest.dir === 'rtl' && manifest.lang === 'he', label + ' declares RTL + Hebrew (lang/dir preserved)');
 
   // ------------------------------------------------------------------------
   // 2. icon coverage + every src exists on disk + square
   // ------------------------------------------------------------------------
   console.log('\n-- manifest icons: 192 + 512 + maskable, all present on disk --');
-  const icons = m.icons || [];
+  const icons = manifest.icons || [];
   const has = (size) => icons.some((i) => String(i.sizes || '').split(/\s+/).includes(size));
-  assert(has('192x192'), 'manifest declares a 192x192 icon');
-  assert(has('512x512'), 'manifest declares a 512x512 icon');
+  assert(has('192x192'), label + ' declares a 192x192 icon');
+  assert(has('512x512'), label + ' declares a 512x512 icon');
   assert(icons.some((i) => String(i.purpose || '').split(/\s+/).includes('maskable')),
-    'manifest declares a maskable icon (Android adaptive-icon safe-zone)');
+    label + ' declares a maskable icon (Android adaptive-icon safe-zone)');
   for (const ic of icons) {
     assert(exists(ic.src), 'icon file exists on disk: ' + ic.src);
     // App icons must be square -- a WxH where W !== H (e.g. a 1200x630 og-image)
@@ -92,30 +113,15 @@ if (m) {
   }
 
   // ------------------------------------------------------------------------
-  // 3. theme_color agrees with the app shell <meta name="theme-color">
-  // ------------------------------------------------------------------------
-  console.log('\n-- theme_color: manifest agrees with the app shell pages --');
-  for (const page of SHELL_PAGES) {
-    const html = read(page);
-    const mt = html.match(/<meta\s+name=["']theme-color["']\s+content=["'](#[0-9a-fA-F]{6})["']/i);
-    assert(!!mt, page + ' has a <meta name="theme-color"> with a hex colour');
-    if (mt) {
-      assert(mt[1].toLowerCase() === m.theme_color.toLowerCase(),
-        page + ' theme-color (' + mt[1] + ') matches manifest theme_color (' + m.theme_color + ')');
-    }
-  }
-
-  // ------------------------------------------------------------------------
   // 4. shortcuts point at LIVE destinations (not a redirected path)
   // ------------------------------------------------------------------------
-  console.log('\n-- manifest shortcuts: at least /dashboard + a log-expense action, no dead links --');
-  const shortcuts = Array.isArray(m.shortcuts) ? m.shortcuts : [];
-  assert(shortcuts.length >= 2, 'manifest declares at least two shortcuts');
-  assert(shortcuts.some((s) => s.url === '/dashboard'), 'a shortcut opens /dashboard');
+  console.log('\n-- ' + label + ' shortcuts: live destinations + a log-expense action --');
+  const shortcuts = Array.isArray(manifest.shortcuts) ? manifest.shortcuts : [];
+  assert(shortcuts.length >= 2, label + ' declares at least two shortcuts');
   // log-expense action: in this product, logging an expense IS sending the bot
   // a WhatsApp message. Accept either a wa.me deep-link or an on-site /expense.
   assert(shortcuts.some((s) => /wa\.me\//.test(String(s.url)) || /\/expense\b/.test(String(s.url))),
-    'a shortcut is a log-expense action (wa.me deep-link or /expense)');
+    label + ' has a log-expense action (wa.me deep-link or /expense)');
 
   // No shortcut may target a path that vercel.json redirects away from -- that
   // turns the shortcut into a one-way trip to the homepage. We only need to
@@ -130,6 +136,58 @@ if (m) {
         'shortcut ' + JSON.stringify(u) + ' is not a redirected (dead) path');
     }
   }
+}
+
+if (appManifest) {
+  const appShortcuts = Array.isArray(appManifest.shortcuts) ? appManifest.shortcuts : [];
+  assert(appShortcuts.some((s) => s.url === '/app#/tx'), 'app manifest shortcut opens recent transactions');
+  assert(appShortcuts.some((s) => /\/expense\b/.test(String(s.url))), 'app manifest shortcut opens direct expense entry');
+}
+
+console.log('\n-- acquisition surfaces: canonical app manifest with legacy dashboard preserved --');
+for (const page of ACQUISITION_PAGES) {
+  assert(/<link\s+rel=["']manifest["']\s+href=["']\/app\.webmanifest["']/i.test(read(page)),
+    page + ' installs the canonical /app identity');
+}
+assert(/<link\s+rel=["']manifest["']\s+href=["']\/manifest\.webmanifest["']/i.test(read('dashboard.html')),
+  'dashboard.html temporarily preserves the legacy manifest for existing installs');
+const manifestLinks = [];
+function collectManifestLinks(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === '.git' || entry.name === 'node_modules') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectManifestLinks(full);
+    else if (entry.isFile() && entry.name.endsWith('.html')) {
+      const html = fs.readFileSync(full, 'utf8');
+      const match = html.match(/<link\s+rel=["']manifest["']\s+href=["']([^"']+)["']/i);
+      if (match) manifestLinks.push({ page: path.relative(ROOT, full), href: match[1] });
+    }
+  }
+}
+collectManifestLinks(ROOT);
+const legacyPages = manifestLinks.filter((entry) => entry.href === '/manifest.webmanifest').map((entry) => entry.page).sort();
+const unexpectedManifestPages = manifestLinks.filter((entry) => !['/manifest.webmanifest', '/app.webmanifest'].includes(entry.href));
+assert(JSON.stringify(legacyPages) === JSON.stringify(['dashboard.html']),
+  'dashboard.html is the explicit and only legacy-manifest allowlist entry');
+assert(unexpectedManifestPages.length === 0,
+  'every linked manifest is either the canonical app identity or the one legacy dashboard identity');
+
+// ---------------------------------------------------------------------------
+// 3. installed shell theme matches its corresponding manifest
+// ---------------------------------------------------------------------------
+console.log('\n-- theme_color: each installed shell agrees with its own manifest --');
+for (const [page, manifest] of [['dashboard.html', m], ['app.html', appManifest]]) {
+  const html = read(page);
+  const mt = html.match(/<meta\s+name=["']theme-color["']\s+content=["'](#[0-9a-fA-F]{6})["']/i);
+  assert(!!mt, page + ' has a <meta name="theme-color"> with a hex colour');
+  if (mt && manifest) {
+    assert(mt[1].toLowerCase() === manifest.theme_color.toLowerCase(),
+      page + ' theme-color matches its manifest theme_color');
+  }
+}
+for (const page of ['index.html', 'welcome.html']) {
+  assert(/<meta\s+name=["']theme-color["']\s+content=["']#[0-9a-fA-F]{6}["']/i.test(read(page)),
+    page + ' keeps a valid branded browser theme colour');
 }
 
 // ---------------------------------------------------------------------------
@@ -165,6 +223,13 @@ const offline = read('offline.html');
 assert(/dir=["']rtl["']/.test(offline), 'offline.html is RTL');
 assert(/navigator\.onLine|window\.addEventListener\(\s*['"]online['"]/.test(offline),
   'offline.html reacts to coming back online');
+assert(/נתונים פיננסיים עדכניים אינם נשמרים/.test(offline) && /WhatsApp דורשת חיבור/.test(offline),
+  'offline.html describes privacy and connectivity limits honestly');
+assert(/fetch\(['"]\/api\/health['"]/.test(offline) && /cache:\s*['"]no-store['"]/.test(offline)
+    && /health\.ok !== true/.test(offline),
+  'offline.html verifies Kesefle health before returning to the app');
+assert(!/kesefle_last_summary|summary-body|location\.replace\(['"]\/dashboard['"]\)/.test(offline),
+  'offline.html never exposes a stale financial summary or legacy dashboard redirect');
 
 // ---------------------------------------------------------------------------
 // 6. app shell pages: SW registration + controllerchange auto-update
@@ -196,8 +261,9 @@ for (const page of SHELL_PAGES) {
     page + ' has apple-mobile-web-app-title');
   assert(/<link\s+rel=["']apple-touch-icon["']/i.test(html),
     page + ' has an apple-touch-icon');
-  assert(/<link\s+rel=["']manifest["']\s+href=["']\/manifest\.webmanifest["']/i.test(html),
-    page + ' links the manifest');
+  const expectedManifest = EXPECTED_MANIFEST[page].replace('.', '\\.');
+  assert(new RegExp('<link\\s+rel=["\\\']manifest["\\\']\\s+href=["\\\']' + expectedManifest + '["\\\']', 'i').test(html),
+    page + ' links ' + EXPECTED_MANIFEST[page]);
 }
 
 // ---------------------------------------------------------------------------
