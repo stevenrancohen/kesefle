@@ -19,11 +19,11 @@ Severity legend used below:
 | Phase | Data | Class | Notes |
 |---|---|---|---|
 | In | none | — | |
-| Out | build SHA, region, dep checks, **env_configured flags** | INTERNAL | Names of present env vars only — values never printed. |
+| Out | build SHA, region, dep checks, coarse product capability groups | PUBLIC | No individual secret names or values are returned. |
 | Storage | none | — | |
 | Logged | nothing | — | |
 
-**Verdict: OK.** Env flag map is intentional for ops health. Worth restricting in production to authenticated callers (MINOR) so we don't advertise which integrations are wired.
+**Verdict: OK.** Public output is limited to liveness and product-level readiness. Field-level environment diagnostics are admin-only.
 
 ---
 
