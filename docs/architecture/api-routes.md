@@ -57,8 +57,8 @@ Convention: all routes return `{ ok: boolean, ...data, error?: string }`. Errors
 | POST | `/api/admin/jobs/:id/retry` | admin | Force-retry a dead job. |
 | GET | `/api/admin/metrics` | admin | DAU / MAU / signups / write-success-rate. |
 | **HEALTH** ||||
-| GET | `/api/health` | public | Liveness — returns `200 ok` always (used by uptime monitor). |
-| GET | `/api/health/deep` | cron | Probes DB, KV, Sheets API, Meta API, Stripe API. Returns per-dep status. Called every 5 min. |
+| GET | `/api/health` | public | Core liveness — `200` when KV, Google identity and Sheets are reachable; `503` on a core failure. |
+| GET | `/api/health/detailed` | public | Detailed provider probes. Always `200` for monitor compatibility; read `overall`, `readiness`, and per-dependency status. |
 | **CRON** ||||
 | POST | `/api/cron/refresh-tokens` | cron | Refresh OAuth tokens expiring in next 24 h. |
 | POST | `/api/cron/process-jobs` | cron | Drain `jobs` table. Runs every minute. |

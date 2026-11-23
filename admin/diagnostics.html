@@ -251,7 +251,7 @@
         </div>
         <div>
           <div class="font-bold text-brand-500">8. DNS / SSL</div>
-          <p>בודק שאפשר להגיע ל-<span class="mono">kesefle.vercel.app</span> ושה-HTTPS תקין. אם נופל — או DNS שבור או Vercel down.</p>
+          <p>בודק שאפשר להגיע ל-<span class="mono">kesefle.com</span> ושה-HTTPS תקין. אם נופל — או DNS שבור או Vercel down.</p>
         </div>
         <div>
           <div class="font-bold text-brand-500">9. מונה שגיאות 24 שעות</div>
@@ -349,7 +349,7 @@
     {
       id: 'vercel-health',
       title: 'בריאות Vercel & תשתית',
-      desc: 'בודק /api/health: KV, Google OAuth, Sheets API ומשתני סביבה.',
+      desc: 'בודק /api/health: ליבת האפליקציה, Google Sheets ויכולות מוצר.',
       run: async () => {
         try {
           const r = await fetch('/api/health', { cache: 'no-store' });
@@ -359,6 +359,8 @@
             if (!j.deps?.kv?.ok) failing.push('KV');
             if (!j.deps?.google_oauth?.ok) failing.push('Google OAuth');
             if (!j.deps?.sheets_api?.ok) failing.push('Sheets API');
+            if (j.capabilities?.web_app?.status === 'not_configured') failing.push('הגדרת ליבה');
+            if (j.capabilities?.google_sheets?.status === 'not_configured') failing.push('הגדרת Google Sheets');
             return {
               status: 'fail',
               message: 'תלות קריטית נפלה: ' + (failing.join(', ') || 'unknown'),
@@ -366,19 +368,23 @@
               fix: { href: 'https://vercel.com/dashboard', label: 'פתח Vercel Dashboard' },
             };
           }
-          const env = j.env_configured || {};
-          const missing = Object.entries(env).filter(([k,v]) => !v).map(([k]) => k);
-          if (missing.length > 3) {
+          const labels = {
+            whatsapp: 'WhatsApp', payments: 'תשלומים', email: 'אימייל', push: 'Push',
+          };
+          const limited = Object.entries(j.capabilities || {})
+            .filter(([name, value]) => labels[name] && !['available', 'configured'].includes(value?.status))
+            .map(([name]) => labels[name]);
+          if (limited.length) {
             return {
               status: 'warn',
-              message: 'תלות בריאה, אבל ' + missing.length + ' משתני סביבה חסרים: ' + missing.slice(0,5).join(', ') + (missing.length>5?'…':''),
+              message: 'הליבה בריאה, אבל היכולות הבאות עדיין לא זמינות: ' + limited.join(', '),
               details: j,
               fix: { href: 'https://vercel.com/dashboard', label: 'הגדר משתני סביבה' },
             };
           }
           return {
             status: 'pass',
-            message: 'הכול בריא. response_ms=' + j.response_ms + ', region=' + (j.region || 'unknown'),
+            message: 'הליבה וכל יכולות המוצר מוכנות. response_ms=' + j.response_ms + ', region=' + (j.region || 'unknown'),
             details: j,
           };
         } catch (e) {
@@ -488,7 +494,7 @@
     },
     {
       id: 'dns-ssl',
-      title: 'DNS & SSL של kesefle.vercel.app',
+      title: 'DNS & SSL של kesefle.com',
       desc: 'בודק שהדומיין נגיש עם SSL תקין.',
       run: async () => {
         try {

@@ -3,10 +3,21 @@
 // Reports:
 //   - basic: build version, deploy time, uptime
 //   - deps: KV reachable, Google OAuth endpoint reachable, Sheets API reachable
-//   - secrets: which env vars are configured (NEVER prints values)
+//   - capabilities: coarse product readiness without exposing secret names
 //
 // Returns 200 if all critical deps are up, 503 otherwise.
 // Set Cache-Control: no-store so it's never cached.
+
+import {
+  buildPublicCapabilities,
+  createProbeCache,
+  getCapabilityConfiguration,
+  publicConfigurationSummary,
+  readinessFromCapabilities,
+} from '../lib/health-capabilities.js';
+
+const PROBE_TIMEOUT_MS = 5_000;
+const getCoreProbes = createProbeCache(30_000);
 
 async function checkKv() {
   const url = process.env.KV_REST_API_URL;
@@ -15,66 +26,75 @@ async function checkKv() {
   try {
     const r = await fetch(`${url}/get/${encodeURIComponent('_health_probe')}`, {
       headers: { 'Authorization': `Bearer ${token}` },
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     });
     return { ok: r.ok, status: r.status };
-  } catch (e) { return { ok: false, error: e.message }; }
+  } catch (_e) { return { ok: false, error: 'unreachable' }; }
 }
 
 async function checkGoogleOAuth() {
   try {
-    const r = await fetch('https://oauth2.googleapis.com/tokeninfo', { method: 'HEAD' });
-    return { ok: r.status < 500, status: r.status };
-  } catch (e) { return { ok: false, error: e.message }; }
+    // This is the endpoint the login verifier actually consumes. Unlike a
+    // tokeninfo HEAD (which returns 404), it gives a real 200 + key set.
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/certs', {
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    const body = r.ok ? await r.json().catch(() => null) : null;
+    return { ok: r.ok && Array.isArray(body?.keys), status: r.status };
+  } catch (_e) { return { ok: false, error: 'unreachable' }; }
 }
 
 async function checkSheetsApi() {
   try {
-    // OPTIONS request — checks reachability without an access token.
-    const r = await fetch('https://sheets.googleapis.com/$discovery/rest?version=v4', { method: 'HEAD' });
-    return { ok: r.status < 500, status: r.status };
-  } catch (e) { return { ok: false, error: e.message }; }
-}
-
-function envFlags() {
-  return {
-    google_client_id: !!process.env.GOOGLE_CLIENT_ID,
-    google_client_secret: !!process.env.GOOGLE_CLIENT_SECRET,
-    kv: !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN),
-    meta_verify_token: !!process.env.META_VERIFY_TOKEN,
-    meta_app_secret: !!process.env.META_APP_SECRET,
-    meta_phone_number_id: !!process.env.META_PHONE_NUMBER_ID,
-    meta_access_token: !!process.env.META_ACCESS_TOKEN,
-    template_sheet_id: !!process.env.KESEFLE_TEMPLATE_SHEET_ID,
-    // Payments: PayPal + crypto (auto) and Bit/bank (manual). Stripe was removed.
-    paypal_client_id: !!process.env.PAYPAL_CLIENT_ID,
-    coinbase_commerce_api_key: !!process.env.COINBASE_COMMERCE_API_KEY,
-    bit_payee_phone: !!process.env.BIT_PAYEE_PHONE,
-    bank_transfer_details: !!process.env.BANK_TRANSFER_DETAILS,
-  };
+    // HEAD returns 400 even when Sheets is healthy. GET is the documented
+    // discovery path; cancel the ~390 KB body after validating the headers.
+    const r = await fetch('https://sheets.googleapis.com/$discovery/rest?version=v4', {
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    const contentType = r.headers.get('content-type') || '';
+    const ok = r.status === 200 && /json/i.test(contentType);
+    await r.body?.cancel().catch(() => {});
+    return { ok, status: r.status };
+  } catch (_e) { return { ok: false, error: 'unreachable' }; }
 }
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+  }
 
   const started = Date.now();
-  const [kv, googleOauth, sheetsApi] = await Promise.all([
-    checkKv(),
-    checkGoogleOAuth(),
-    checkSheetsApi(),
-  ]);
-  const env = envFlags();
+  const { value: probes, cached: probeCached } = await getCoreProbes(() => Promise.all([
+    checkKv(), checkGoogleOAuth(), checkSheetsApi(),
+  ]));
+  const [kv, googleOauth, sheetsApi] = probes;
+  const config = getCapabilityConfiguration();
 
-  // Critical = KV + Google OAuth (without these, nothing works)
-  const critical_ok = kv.ok && googleOauth.ok;
+  // Sheets is part of the core product path. The probe requires a real 200 JSON
+  // discovery response, so provider errors and local misconfiguration fail shut.
+  const critical_ok = config.core && config.googleSheets
+    && kv.ok && googleOauth.ok && sheetsApi.ok;
+  const capabilities = buildPublicCapabilities(config, {
+    kv,
+    googleOauth,
+    sheets: sheetsApi,
+  });
 
   const body = {
+    schema_version: 2,
     ok: critical_ok,
+    status: critical_ok ? 'ok' : 'degraded',
+    readiness: readinessFromCapabilities(capabilities),
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'dev',
     deployed_at: process.env.VERCEL_GIT_COMMIT_DATE || null,
     region: process.env.VERCEL_REGION || null,
     response_ms: Date.now() - started,
+    probe_cached: probeCached,
     deps: { kv, google_oauth: googleOauth, sheets_api: sheetsApi },
-    env_configured: env,
+    capabilities,
+    env_configured: publicConfigurationSummary(config),
   };
 
   return res.status(critical_ok ? 200 : 503).json(body);

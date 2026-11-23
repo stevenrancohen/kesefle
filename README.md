@@ -69,7 +69,7 @@ Convenience aliases pointing to the canonical pages:
 | `POST /api/account/delete` | Self-serve account deletion (Israeli Amendment 13 / GDPR Art. 17) |
 | `GET /api/account/export` | Self-serve data export (GDPR Art. 20) |
 | `GET/POST /api/admin?action=...` | Consolidated admin router (users, jobs, metrics, audit, feature-flags) |
-| `GET /api/health` | Uptime + dep health probe (KV, Google OAuth, Sheets, env vars) |
+| `GET /api/health` | Core uptime + dependency probes and secret-safe product capability status |
 
 ## Security posture
 
@@ -116,7 +116,7 @@ The repo auto-deploys to Vercel on push to `main`. Required env vars:
 - `KESEFLE_DB_KEY` (raw 32-byte base64) + `KESEFLE_DB_KEY_ACTIVE_KID` — encryption key for refresh tokens
 - `ADMIN_EMAILS` (comma-separated) — who can access `/admin`
 
-`/api/health` reports which env vars are configured (without printing values).
+`/api/health` reports coarse product capabilities without exposing individual secret names. Field-level setup diagnostics remain admin-only.
 
 ## Pricing
 

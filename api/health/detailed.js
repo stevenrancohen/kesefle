@@ -10,6 +10,16 @@
 // contains the actual status.
 
 import { withRequestId, log } from '../../lib/log.js';
+import {
+  buildPublicCapabilities,
+  createProbeCache,
+  getCapabilityConfiguration,
+  publicConfigurationSummary,
+  readinessFromCapabilities,
+} from '../../lib/health-capabilities.js';
+
+const PROBE_TIMEOUT_MS = 5_000;
+const getDetailedProbes = createProbeCache(30_000);
 
 async function probeKV() {
   const url = process.env.KV_REST_API_URL;
@@ -19,10 +29,28 @@ async function probeKV() {
   try {
     const r = await fetch(`${url}/get/_healthprobe`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     });
     return { ok: r.ok, status: r.status, latencyMs: Date.now() - start };
-  } catch (e) {
-    return { ok: false, error: e.message, latencyMs: Date.now() - start };
+  } catch (_e) {
+    return { ok: false, error: 'unreachable', latencyMs: Date.now() - start };
+  }
+}
+
+async function probeGoogleOAuth() {
+  const start = Date.now();
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/certs', {
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    const body = r.ok ? await r.json().catch(() => null) : null;
+    return {
+      ok: r.ok && Array.isArray(body?.keys),
+      status: r.status,
+      latencyMs: Date.now() - start,
+    };
+  } catch (_e) {
+    return { ok: false, error: 'unreachable', latencyMs: Date.now() - start };
   }
 }
 
@@ -32,24 +60,30 @@ async function probeSheets() {
   const start = Date.now();
   try {
     const r = await fetch('https://sheets.googleapis.com/$discovery/rest?version=v4', {
-      method: 'HEAD',
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     });
-    return { ok: r.ok || r.status === 200, status: r.status, latencyMs: Date.now() - start };
-  } catch (e) {
-    return { ok: false, error: e.message, latencyMs: Date.now() - start };
+    const contentType = r.headers.get('content-type') || '';
+    const ok = r.status === 200 && /json/i.test(contentType);
+    await r.body?.cancel().catch(() => {});
+    return { ok, status: r.status, latencyMs: Date.now() - start };
+  } catch (_e) {
+    return { ok: false, error: 'unreachable', latencyMs: Date.now() - start };
   }
 }
 
 async function probeMeta() {
-  // Public Facebook Graph health — no auth needed.
+  const phoneId = process.env.META_PHONE_NUMBER_ID;
+  const token = process.env.META_ACCESS_TOKEN;
+  if (!phoneId || !token) return { ok: 'skipped', reason: 'not_configured' };
   const start = Date.now();
   try {
-    const r = await fetch('https://graph.facebook.com/v21.0/', { method: 'HEAD' });
-    // Meta returns 400 on naked GET but the host is reachable; treat any
-    // sub-500 as "Meta is up". 500+ means Meta itself is broken.
-    return { ok: r.status < 500, status: r.status, latencyMs: Date.now() - start };
-  } catch (e) {
-    return { ok: false, error: e.message, latencyMs: Date.now() - start };
+    const r = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(phoneId)}?fields=id`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    return { ok: r.ok, status: r.status, latencyMs: Date.now() - start };
+  } catch (_e) {
+    return { ok: false, error: 'unreachable', latencyMs: Date.now() - start };
   }
 }
 
@@ -57,10 +91,13 @@ async function probeAnthropic() {
   if (!process.env.ANTHROPIC_API_KEY) return { ok: 'skipped', reason: 'no_key_configured' };
   const start = Date.now();
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'HEAD' });
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
     return { ok: r.status < 500, status: r.status, latencyMs: Date.now() - start };
-  } catch (e) {
-    return { ok: false, error: e.message, latencyMs: Date.now() - start };
+  } catch (_e) {
+    return { ok: false, error: 'unreachable', latencyMs: Date.now() - start };
   }
 }
 
@@ -80,54 +117,78 @@ async function probePaypal() {
       method: 'POST',
       headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'grant_type=client_credentials',
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     });
     return { ok: r.ok, status: r.status, latencyMs: Date.now() - start };
-  } catch (e) {
-    return { ok: false, error: e.message, latencyMs: Date.now() - start };
+  } catch (_e) {
+    return { ok: false, error: 'unreachable', latencyMs: Date.now() - start };
   }
 }
 
 async function probeCoinbase() {
-  if (!process.env.COINBASE_COMMERCE_API_KEY) return { ok: 'skipped', reason: 'no_key_configured' };
+  if (!process.env.COINBASE_COMMERCE_API_KEY || !process.env.COINBASE_WEBHOOK_SECRET) {
+    return { ok: 'skipped', reason: 'not_configured' };
+  }
   const start = Date.now();
   try {
     const r = await fetch('https://api.commerce.coinbase.com/checkouts', {
       headers: { 'X-CC-Api-Key': process.env.COINBASE_COMMERCE_API_KEY, 'X-CC-Version': '2018-03-22' },
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     });
     return { ok: r.ok, status: r.status, latencyMs: Date.now() - start };
-  } catch (e) {
-    return { ok: false, error: e.message, latencyMs: Date.now() - start };
+  } catch (_e) {
+    return { ok: false, error: 'unreachable', latencyMs: Date.now() - start };
   }
 }
 
 async function handlerImpl(req, res) {
-  const results = await Promise.all([
-    probeKV(),
-    probeSheets(),
-    probeMeta(),
-    probeAnthropic(),
-    probePaypal(),
-    probeCoinbase(),
-  ]);
-  const [kv, sheets, meta, anthropic, paypal, coinbase] = results;
-  // Overall = "ok" only if every CRITICAL dep is up. Anthropic/payments
-  // are not critical for the personal-tracker happy path; Meta + KV
-  // + Sheets are.
-  const critical = [kv, sheets, meta];
-  const overall = critical.every(c => c.ok === true) ? 'ok' : 'degraded';
   res.setHeader('Cache-Control', 'no-store');
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ overall: 'error', error: 'method_not_allowed' });
+  }
+  const config = getCapabilityConfiguration();
+  const { value: results, cached: probeCached } = await getDetailedProbes(() => Promise.all([
+    probeKV(),
+    probeGoogleOAuth(),
+    probeSheets(),
+    config.whatsapp ? probeMeta() : Promise.resolve({ ok: 'skipped', reason: 'not_configured' }),
+    probeAnthropic(),
+    config.paypal ? probePaypal() : Promise.resolve({ ok: 'skipped', reason: 'not_configured' }),
+    config.coinbase ? probeCoinbase() : Promise.resolve({ ok: 'skipped', reason: 'not_configured' }),
+  ]));
+  const [kv, googleOauth, sheets, meta, anthropic, paypal, coinbase] = results;
+  // WhatsApp, AI and payments are optional product capabilities. Their state
+  // must be visible, but they must not turn the app liveness red.
+  const critical = config.core && config.googleSheets ? [kv, googleOauth, sheets] : [];
+  const overall = critical.length === 3 && critical.every(c => c.ok === true) ? 'ok' : 'degraded';
+  const capabilities = buildPublicCapabilities(config, {
+    detailed: true,
+    kv,
+    googleOauth,
+    sheets,
+    meta: config.whatsapp ? meta : null,
+    paypal,
+    coinbase,
+  });
   res.status(200).json({
+    schema_version: 2,
     overall,
+    readiness: readinessFromCapabilities(capabilities),
     timestamp: new Date().toISOString(),
     region: process.env.VERCEL_REGION || 'unknown',
+    probe_cached: probeCached,
     dependencies: {
       kv,
+      google_oauth: googleOauth,
       sheets,
       meta,
       anthropic,
       paypal,
       coinbase,
     },
+    capabilities,
+    env_configured: publicConfigurationSummary(config),
   });
 }
 

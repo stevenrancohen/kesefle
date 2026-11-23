@@ -434,7 +434,7 @@
         Kesefle is a Hebrew WhatsApp-to-Google-Sheets expense tracker. The API powers our web dashboard, the WhatsApp webhook, and any third-party tool that wants to integrate. The base URL is:
       </p>
       <div class="code-wrap mt-3">
-        <pre class="code-block"><code><span class="tok-key">https</span>://kesefle.vercel.app</code></pre>
+        <pre class="code-block"><code><span class="tok-key">https</span>://kesefle.com</code></pre>
         <button class="copy-btn" data-copy="https://kesefle.com">copy</button>
       </div>
       <p class="mt-4 text-ink-600 dark:text-ink-300">Conventions:</p>
@@ -462,7 +462,7 @@
       <h3 class="mt-6 text-lg font-bold">Sending the token</h3>
       <div class="code-wrap mt-2">
         <pre class="code-block"><code><span class="tok-kw">GET</span> /api/sheet/summary <span class="tok-kw">HTTP</span>/1.1
-<span class="tok-key">Host</span>: kesefle.vercel.app
+<span class="tok-key">Host</span>: kesefle.com
 <span class="tok-key">Authorization</span>: <span class="tok-str">Bearer eyJhbGciOiJSUzI1NiIs…</span>
 <span class="tok-key">Accept</span>: <span class="tok-str">application/json</span></code></pre>
         <button class="copy-btn" data-copy-target="prev">copy</button>
@@ -1259,14 +1259,17 @@
       </header>
       <h3 class="mt-3 text-xl font-bold"><a href="#ep-health">Health probe</a></h3>
       <p class="mt-2 text-sm text-ink-600 dark:text-ink-300">
-        Liveness + dependency reachability. Returns <code>200</code> if all critical dependencies (KV + Google OAuth) are up, else <code>503</code>. Always sets <code>Cache-Control: no-store</code>. Safe to point an external uptime monitor at this URL.
+        Core liveness + product readiness. Returns <code>200</code> when KV, Google identity and Sheets are reachable, else <code>503</code>. Optional capabilities such as WhatsApp or payments are reported separately and never take core liveness down. Always sets <code>Cache-Control: no-store</code>.
       </p>
 
       <h4 class="mt-4 font-bold">Response</h4>
       <div class="code-wrap mt-2">
         <pre class="code-block"><code><span class="tok-com">// 200 OK</span>
 <span class="tok-punct">{</span>
+  <span class="tok-key">"schema_version"</span><span class="tok-punct">:</span> <span class="tok-num">2</span><span class="tok-punct">,</span>
   <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+  <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-str">"ok"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"readiness"</span><span class="tok-punct">:</span> <span class="tok-str">"limited"</span><span class="tok-punct">,</span>
   <span class="tok-key">"version"</span><span class="tok-punct">:</span> <span class="tok-str">"1bbd640"</span><span class="tok-punct">,</span>
   <span class="tok-key">"deployed_at"</span><span class="tok-punct">:</span> <span class="tok-str">"2026-05-16T07:55:00Z"</span><span class="tok-punct">,</span>
   <span class="tok-key">"region"</span><span class="tok-punct">:</span> <span class="tok-str">"fra1"</span><span class="tok-punct">,</span>
@@ -1276,24 +1279,29 @@
     <span class="tok-key">"google_oauth"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-num">200</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
     <span class="tok-key">"sheets_api"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"ok"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-num">200</span> <span class="tok-punct">}</span>
   <span class="tok-punct">}</span><span class="tok-punct">,</span>
+  <span class="tok-key">"capabilities"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
+    <span class="tok-key">"web_app"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-str">"available"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"google_sheets"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-str">"available"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"whatsapp"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-str">"not_configured"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"payments"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-str">"not_configured"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"email"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-str">"not_configured"</span> <span class="tok-punct">}</span><span class="tok-punct">,</span>
+    <span class="tok-key">"push"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span> <span class="tok-key">"status"</span><span class="tok-punct">:</span> <span class="tok-str">"not_configured"</span> <span class="tok-punct">}</span>
+  <span class="tok-punct">}</span><span class="tok-punct">,</span>
   <span class="tok-key">"env_configured"</span><span class="tok-punct">:</span> <span class="tok-punct">{</span>
-    <span class="tok-key">"google_client_id"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"google_client_secret"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"kv"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"meta_verify_token"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"meta_app_secret"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"paypal_client_id"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"coinbase_commerce_api_key"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"bit_payee_phone"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
-    <span class="tok-key">"bank_transfer_details"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span>
+    <span class="tok-key">"core"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"google_sheets"</span><span class="tok-punct">:</span> <span class="tok-bool">true</span><span class="tok-punct">,</span>
+    <span class="tok-key">"whatsapp"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span><span class="tok-punct">,</span>
+    <span class="tok-key">"payments"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span><span class="tok-punct">,</span>
+    <span class="tok-key">"email"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span><span class="tok-punct">,</span>
+    <span class="tok-key">"push"</span><span class="tok-punct">:</span> <span class="tok-bool">false</span>
   <span class="tok-punct">}</span>
 <span class="tok-punct">}</span>
 
-<span class="tok-com">// 503 — same body, ok: false, when KV or Google OAuth is down</span></code></pre>
+<span class="tok-com">// 503 — same body, ok: false, when a required core dependency fails</span></code></pre>
         <button class="copy-btn" data-copy-target="prev">copy</button>
       </div>
       <p class="mt-2 text-xs text-ink-500 dark:text-ink-400">
-        <code>env_configured</code> flags only report <em>presence</em> of env vars — never values.
+        <code>env_configured</code> is a compatibility summary of product-level groups only. Individual secret names and values are never exposed publicly; field-level setup diagnostics are admin-only.
       </p>
     </article>
 
