@@ -50,13 +50,19 @@ for (const spec of pages) {
     spec.file + ' installs the /app manifest, not the legacy dashboard manifest');
   assert(/href="https:\/\/kesefle\.com\/app"/.test(html),
     spec.file + ' exposes a tappable canonical app link');
+  assert(/src="\/js\/install-pwa\.js" defer/.test(html) &&
+    /data-install-shell/.test(html) && /data-install-button/.test(html) &&
+    /data-install-status role="status" aria-live="polite"/.test(html),
+    spec.file + ' exposes an accessible browser-native install action');
   assert(!/kesefle\.vercel\.app/i.test(html),
     spec.file + ' contains no obsolete Vercel hostname');
   assert(/id="device-ios"/.test(html) && /id="device-android"/.test(html) &&
     /data-device="ios"/.test(html) && /data-device="android"/.test(html),
     spec.file + ' includes separate iPhone and Android instructions');
-  assert(/\.device-tab\s*\{[^}]*min-height:\s*44px/.test(html) && /min-h-\[44px\]/.test(html),
-    spec.file + ' keeps mobile tabs and canonical CTA at 44px touch targets');
+  assert(/Open as Web App/.test(html),
+    spec.file + ' preserves the iPhone web-app mode during Add to Home Screen');
+  assert(/\.device-tab\s*\{[^}]*min-height:\s*44px/.test(html) && /min-h-\[48px\]/.test(html),
+    spec.file + ' keeps mobile tabs and install actions at accessible touch sizes');
   assert(spec.privacy.test(html),
     spec.file + ' explains that financial data is not stored in a shared cache');
   assert(!staleOfflineClaims.some((pattern) => pattern.test(html)),
@@ -85,8 +91,17 @@ assert(/networkWithFallback\(request, OFFLINE_URL\)/.test(sw),
   'offline navigation falls back to the offline shell');
 
 const app = read('app.html');
-assert(/ב-Safari: תפריט העמוד ← שיתוף/.test(app) && !/כפתור השיתוף בתחתית הדפדפן/.test(app),
-  'in-app iPhone prompt follows the current page-menu/share path without assuming toolbar position');
+assert(/ב-Safari: תפריט העמוד ← שיתוף/.test(app) && /Open as Web App/.test(app) &&
+  !/כפתור השיתוף בתחתית הדפדפן/.test(app),
+  'in-app iPhone prompt follows the current page-menu/share/web-app path without assuming toolbar position');
+
+const installScript = read('js/install-pwa.js');
+assert(/beforeinstallprompt/.test(installScript) && /event\.preventDefault\(\)/.test(installScript) &&
+  /await prompt\.prompt\(\)/.test(installScript) && /await prompt\.userChoice/.test(installScript),
+  'install helper captures and completes the native browser install prompt');
+assert(/window\.navigator\.standalone === true/.test(installScript) &&
+  /display-mode: standalone/.test(installScript) && /appinstalled/.test(installScript),
+  'install helper detects iOS and standards-based installed states');
 
 if (failures.length) {
   console.error('\nFAIL: ' + failures.length + ' assertion(s) failed');
