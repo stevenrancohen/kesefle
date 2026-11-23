@@ -17,6 +17,7 @@ import { withRateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { requireAuth } from '../../lib/auth.js';
 import { appendRowToUserSheet, buildExpenseRow } from '../../lib/sheet-writer.js';
 import { recordExpenseActivity } from '../../lib/user-activity.js';
+import { classifyTransactionDescription } from '../../lib/transaction-classifier.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -33,7 +34,46 @@ async function kvGet(key) {
   } catch (_e) { return null; }
 }
 
-async function handlerImpl(req, res) {
+function clip(value, maxLength) {
+  return String(value == null ? '' : value).slice(0, maxLength).trim();
+}
+
+// Manual category selection is authoritative. When it is omitted, use the
+// local deterministic matcher; when there is no high-confidence hit, write a
+// visible dashboard catch-all instead of leaving col E blank.
+export function resolveWebClassification(body = {}) {
+  const isIncome = body.isIncome === true;
+  const manualCategory = clip(body.category, 60);
+  const manualSubcategory = clip(body.subcategory, 60);
+
+  if (manualCategory) {
+    return {
+      category: manualCategory,
+      subcategory: manualSubcategory || manualCategory,
+      source: 'manual',
+      confidence: 'user',
+    };
+  }
+
+  const automatic = classifyTransactionDescription(clip(body.rawText, 200), { isIncome });
+  if (automatic) return automatic;
+
+  return isIncome
+    ? {
+        category: 'הכנסות שונות',
+        subcategory: 'הכנסות שונות - כללי',
+        source: 'fallback',
+        confidence: 'none',
+      }
+    : {
+        category: 'אישי',
+        subcategory: 'שונות',
+        source: 'fallback',
+        confidence: 'none',
+      };
+}
+
+export async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -74,13 +114,13 @@ async function handlerImpl(req, res) {
 
   // Sanitize all string inputs (max 200 chars; sheet-writer also runs its
   // own sanitizeCell pass on the rawText slot).
-  function clip(s, n) { return String(s == null ? '' : s).slice(0, n); }
+  const classification = resolveWebClassification(body);
 
   const row = buildExpenseRow({
     amount,
-    isIncome: !!body.isIncome,
-    category: clip(body.category || 'שונות', 60),
-    subcategory: clip(body.subcategory || '', 60),
+    isIncome: body.isIncome === true,
+    category: classification.category,
+    subcategory: classification.dashboardSubcategory || classification.subcategory,
     rawText: clip(body.rawText || (body.category || ''), 200),
     date: body.date,
     vatDeductible: !!body.vatDeductible,
@@ -106,6 +146,11 @@ async function handlerImpl(req, res) {
     ok: true,
     rowIndex: result.rowIndex,
     spreadsheetUrl: sheetRec?.spreadsheetUrl || null,
+    // Return the sanitized values that were actually written, not a parallel
+    // client-side guess. This keeps the instant confirmation honest.
+    category: row[3],
+    subcategory: row[4],
+    classificationSource: classification.source,
   });
 }
 

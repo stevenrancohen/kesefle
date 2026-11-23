@@ -297,7 +297,7 @@ tailwind.config = {
   };
 
   // Category picker: "__custom__" reveals the free-text field; any other
-  // pick hides it. The chosen value is the col-D string the dashboard sums.
+  // pick hides it. A manual choice always overrides automatic classification.
   var catSelect = document.getElementById('kfl-cat-select');
   var catCustom = document.getElementById('kfl-cat');
   catSelect.addEventListener('change', function () {
@@ -384,7 +384,10 @@ tailwind.config = {
         body: JSON.stringify({
           amount: amount,
           isIncome: isIncome,
-          category: category || (isIncome ? 'הכנסות' : 'שונות'),
+          // Keep this blank when the user did not choose a category. The
+          // authenticated write endpoint classifies the description locally
+          // and returns the category that was actually stored.
+          category: category,
           rawText: rawText,
           date: date,
           vatDeductible: vatDeductible,
@@ -392,12 +395,17 @@ tailwind.config = {
       });
       var j = await r.json().catch(function () { return { ok: false }; });
       if (j.ok) {
-        status.innerHTML = '<span style="color:#1d4ed8;font-weight:bold">✓ נשמר בגיליון!</span>';
+        var savedCategory = j.subcategory || j.category || (isIncome ? 'הכנסות שונות' : 'שונות');
+        status.textContent = j.classificationSource === 'keyword'
+          ? '✓ נשמר בגיליון · סווג אוטומטית: ' + savedCategory
+          : '✓ נשמר בגיליון!';
+        status.style.color = '#1d4ed8';
+        status.style.fontWeight = '700';
         // Show it in the "saved now" list for instant confirmation.
         kflAddRecent({
           amount: amount,
           isIncome: isIncome,
-          category: category || (isIncome ? 'הכנסות' : 'שונות'),
+          category: savedCategory,
           rawText: rawText,
           sheetUrl: j.spreadsheetUrl || null,
         });
