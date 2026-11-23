@@ -8,6 +8,7 @@ const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const swSource = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+const budgetCronSource = fs.readFileSync(path.join(ROOT, 'api/cron/budget-check.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'app.webmanifest'), 'utf8'));
 const screenshotFixture = JSON.parse(fs.readFileSync(
   path.join(ROOT, 'tests/fixtures/pwa-screenshot-preview.json'),
@@ -42,6 +43,8 @@ assert.match(screenshotServer, /pwa-screenshot-preview\.json/,
   'the reproducible preview server reads the checked-in synthetic fixture');
 assert.doesNotMatch(screenshotServer, /oauth|googleapis|KV_REST|accessToken|refreshToken/i,
   'the screenshot server cannot read a real account, sheet or credential');
+assert.match(budgetCronSource, /url:\s*['"]\/app#\/insights['"]/,
+  'budget alerts deep-link to the canonical app insights route');
 
 for (const shot of manifest.screenshots) {
   assert.match(shot.src, /^\/pwa-screenshots\/[a-z0-9-]+\.png$/,
@@ -146,8 +149,8 @@ async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], 
       open: async (name) => ({
         match: async (request) => {
           const value = typeof request === 'string' ? request : new URL(request.url).pathname;
-          if (/kesefle-static-v23/.test(name) && staticPaths.includes(value)) return staticHit;
-          if (/kesefle-runtime-v23/.test(name) && runtimePaths.includes(value)) return runtimeHit;
+          if (/kesefle-static-v24/.test(name) && staticPaths.includes(value)) return staticHit;
+          if (/kesefle-runtime-v24/.test(name) && runtimePaths.includes(value)) return runtimeHit;
           return null;
         },
         put: async () => {},
@@ -175,17 +178,93 @@ async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], 
   return pending;
 }
 
+function createNotificationRuntime(clientUrls = []) {
+  const listeners = {};
+  const notifications = [];
+  const navigations = [];
+  const opened = [];
+  let focused = 0;
+  const clients = clientUrls.map((url) => ({
+    url,
+    async focus() { focused++; return this; },
+    async navigate(target) {
+      navigations.push(target);
+      this.url = new URL(target, 'https://kesefle.com').href;
+      return this;
+    },
+  }));
+  const context = {
+    console,
+    URL,
+    Response,
+    fetch: async () => makeResponse('/app'),
+    caches: {
+      open: async () => ({ match: async () => null, put: async () => {} }),
+      delete: async () => true,
+      keys: async () => [],
+      match: async () => null,
+    },
+    self: {
+      location: { origin: 'https://kesefle.com' },
+      clients: {
+        claim: async () => {},
+        matchAll: async () => clients,
+        openWindow: async (target) => { opened.push(target); },
+      },
+      registration: {
+        showNotification: async (title, options) => { notifications.push({ title, options }); },
+      },
+      skipWaiting: async () => {},
+      addEventListener: (type, handler) => { listeners[type] = handler; },
+    },
+  };
+  vm.runInNewContext(swSource, context, { filename: 'sw.js' });
+  return {
+    listeners,
+    notifications,
+    navigations,
+    opened,
+    focused: () => focused,
+  };
+}
+
+async function runPushTarget(rawUrl) {
+  const runtime = createNotificationRuntime();
+  let pending;
+  runtime.listeners.push({
+    data: { json: () => ({ title: 'בדיקה', body: 'עדכון', url: rawUrl }) },
+    waitUntil(promise) { pending = promise; },
+  });
+  await pending;
+  return runtime.notifications[0].options.data.url;
+}
+
+async function runNotificationClick(rawUrl, clientUrls = []) {
+  const runtime = createNotificationRuntime(clientUrls);
+  let pending;
+  let closed = 0;
+  runtime.listeners.notificationclick({
+    notification: {
+      data: { url: rawUrl },
+      close() { closed++; },
+    },
+    waitUntil(promise) { pending = promise; },
+  });
+  await pending;
+  return { ...runtime, closed };
+}
+
 (async () => {
   const missingRequired = await runInstall({ failedFetch: '/offline.html' });
   assert.ok(missingRequired.error, 'missing required offline shell rejects installation');
   assert.strictEqual(missingRequired.skipped, 0, 'failed required shell never calls skipWaiting');
-  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v23/.test(name)),
+  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v24/.test(name)),
     'failed required shell removes the incomplete versioned cache');
 
   const failedRequiredWrite = await runInstall({ failedPut: '/app.webmanifest' });
   assert.ok(failedRequiredWrite.error, 'failed required cache write rejects installation');
   assert.strictEqual(failedRequiredWrite.skipped, 0, 'failed required cache write never activates');
-  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v23/.test(name)),
+  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v24/.test(name)),
     'failed required cache write cleans up the incomplete cache');
 
   const badRequiredStatus = await runInstall({ failedStatus: '/offline.html' });
@@ -221,6 +300,30 @@ async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], 
   });
   assert.strictEqual(navigationFallback.source, 'current-static',
     'offline navigation fallback is restricted to the active worker cache');
+
+  assert.strictEqual(await runPushTarget(undefined), '/app',
+    'pushes without a target open the canonical app');
+  assert.strictEqual(await runPushTarget('/app#/insights'), '/app#/insights',
+    'a same-origin app deep link preserves its hash route');
+  assert.strictEqual(await runPushTarget('https://kesefle.com/admin?tab=reports'), '/admin?tab=reports',
+    'an explicit same-origin admin target remains available to owner alerts');
+  assert.strictEqual(await runPushTarget('https://evil.example/phish'), '/app',
+    'a cross-origin push target is rejected');
+  assert.strictEqual(await runPushTarget('/api/account/delete'), '/app',
+    'an API push target is rejected');
+  assert.strictEqual(await runPushTarget('/app.evil'), '/app',
+    'a lookalike route outside the allowlist is rejected');
+
+  const hostileClick = await runNotificationClick('javascript:alert(1)');
+  assert.strictEqual(hostileClick.closed, 1, 'notification clicks close the notification');
+  assert.deepStrictEqual(hostileClick.opened, ['/app'],
+    'notification click re-validates a hostile stored target before opening a window');
+
+  const matchingClick = await runNotificationClick('/app#/insights', ['https://kesefle.com/app#/insights']);
+  assert.strictEqual(matchingClick.focused(), 1,
+    'an existing tab on the exact app hash route is focused');
+  assert.deepStrictEqual(matchingClick.navigations, [],
+    'an exact notification target is not needlessly navigated');
   console.log('PWA install quality: PASS');
 })().catch((error) => {
   console.error(error);

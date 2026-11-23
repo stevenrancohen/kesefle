@@ -273,7 +273,7 @@ async function handlerImpl(req, res) {
           title: 'התראת תקציב',
           body: text,
           tag: `budget-${category}`,
-          url: '/dashboard',
+          url: '/app#/insights',
         });
       } catch (_pushErr) { /* push must never abort the cron */ }
 

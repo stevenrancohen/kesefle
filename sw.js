@@ -12,11 +12,36 @@
  */
 'use strict';
 
-const VERSION = 'v23-2026-11-23-install-quality';
+const VERSION = 'v24-2026-11-23-app-identity';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
+const DEFAULT_NOTIFICATION_URL = '/app';
+const NOTIFICATION_ROUTE_ROOTS = ['/app', '/expense', '/account', '/admin'];
+
+// Push payloads cross a third-party delivery service before they reach this
+// worker. Treat their target as untrusted input: notifications may only open a
+// small set of same-origin product routes, never an API, external host or
+// executable URL. Existing legacy /dashboard targets safely fall back to /app.
+function normalizeNotificationTarget(rawUrl) {
+  if (typeof rawUrl !== 'string') return DEFAULT_NOTIFICATION_URL;
+  const candidate = rawUrl.trim();
+  if (!candidate || candidate.startsWith('//') || candidate.startsWith('\\')) {
+    return DEFAULT_NOTIFICATION_URL;
+  }
+  try {
+    const resolved = new URL(candidate, self.location.origin);
+    if (resolved.origin !== self.location.origin) return DEFAULT_NOTIFICATION_URL;
+    const allowed = NOTIFICATION_ROUTE_ROOTS.some((root) => (
+      resolved.pathname === root || resolved.pathname.startsWith(root + '/')
+    ));
+    if (!allowed) return DEFAULT_NOTIFICATION_URL;
+    return resolved.pathname + resolved.search + resolved.hash;
+  } catch (_) {
+    return DEFAULT_NOTIFICATION_URL;
+  }
+}
 
 // A PWA update must not activate unless its minimum offline contract is complete.
 // If any required response is missing, the old working service worker stays in
@@ -299,7 +324,7 @@ self.addEventListener('push', (event) => {
     dir: 'rtl',
     lang: 'he',
     // url is read by the notificationclick handler below.
-    data: { url: (data && data.url) || '/dashboard' },
+    data: { url: normalizeNotificationTarget(data && data.url) },
   };
   event.waitUntil(self.registration.showNotification(title, opts));
 });
@@ -309,14 +334,15 @@ self.addEventListener('push', (event) => {
 // ---------------------------------------------------------------------------
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/dashboard';
+  const targetUrl = normalizeNotificationTarget(event.notification.data && event.notification.data.url);
   event.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     // If an existing tab is already on the target URL, just focus it.
     for (const client of all) {
       try {
         const u = new URL(client.url);
-        if (u.pathname === targetUrl || client.url === targetUrl) {
+        const currentTarget = u.pathname + u.search + u.hash;
+        if (u.origin === self.location.origin && currentTarget === targetUrl) {
           return client.focus();
         }
       } catch (_) { /* ignore */ }
