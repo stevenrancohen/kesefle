@@ -12,32 +12,52 @@
  */
 'use strict';
 
-const VERSION = 'v22-2026-11-23-install-journey';
+const VERSION = 'v23-2026-11-23-install-quality';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
-// Precache the critical app shell.
-// Keep this list small — only HTML the user is likely to hit cold while offline.
-const PRECACHE_URLS = [
+// A PWA update must not activate unless its minimum offline contract is complete.
+// If any required response is missing, the old working service worker stays in
+// control instead of replacing it with a half-installed cache.
+const REQUIRED_PRECACHE_URLS = [
+  '/app',
+  '/app.html',
+  '/app.webmanifest',
+  '/lib/browser-session.js',
+  '/css/brand.css',
+  '/expense',
+  '/expense.html',
+  '/offline.html',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-512-maskable.png',
+];
+
+const REQUIRED_PRECACHE_TYPES = new Map([
+  ['/app', ['text/html']],
+  ['/app.html', ['text/html']],
+  ['/app.webmanifest', ['application/manifest+json']],
+  ['/lib/browser-session.js', ['application/javascript', 'text/javascript']],
+  ['/css/brand.css', ['text/css']],
+  ['/expense', ['text/html']],
+  ['/expense.html', ['text/html']],
+  ['/offline.html', ['text/html']],
+  ['/icon-192.png', ['image/png']],
+  ['/icon-512.png', ['image/png']],
+  ['/icon-512-maskable.png', ['image/png']],
+]);
+
+// These improve repeat visits but are not allowed to break installation when a
+// marketing route is temporarily unavailable. Each one remains best-effort.
+const OPTIONAL_PRECACHE_URLS = [
   '/',
   '/index.html',
   '/welcome',
   '/welcome.html',
   '/dashboard',
   '/dashboard.html',
-  // The installable user app is the main standalone surface (manifest start_url
-  // = /app). Precache its shell + manifest so an installed PWA opens offline.
-  '/app',
-  '/app.html',
-  '/app.webmanifest',
-  '/lib/browser-session.js',
-  '/expense',
-  '/expense.html',
-  '/status',
-  '/status.html',
-  '/offline.html',
   '/manifest.webmanifest',
   '/og-image.png',
 ];
@@ -57,10 +77,33 @@ const RUNTIME_CACHEABLE_HOSTS = [
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(STATIC_CACHE);
-    // addAll fails atomically; use individual put so a single 404 doesn't kill install.
-    await Promise.all(PRECACHE_URLS.map(async (url) => {
+
+    try {
+      // Fetch every required response before writing any of them. If a fetch or
+      // cache write fails, remove the new version and reject this installation.
+      const required = await Promise.all(REQUIRED_PRECACHE_URLS.map(async (url) => {
+        const resp = await fetch(url, { credentials: 'same-origin', cache: 'reload' });
+        if (!resp || !resp.ok) throw new Error(`precache_required_failed:${url}`);
+        const allowed = REQUIRED_PRECACHE_TYPES.get(url);
+        // Compare the parsed MIME token exactly. A substring check would accept
+        // a disguised HTML response such as text/html; profile="javascript".
+        const actual = String(resp.headers && resp.headers.get
+          ? resp.headers.get('content-type') || ''
+          : '').split(';', 1)[0].trim().toLowerCase();
+        if (!allowed || !allowed.includes(actual)) {
+          throw new Error(`precache_required_invalid_type:${url}`);
+        }
+        return [url, resp];
+      }));
+      await Promise.all(required.map(([url, resp]) => cache.put(url, resp.clone())));
+    } catch (error) {
+      await caches.delete(STATIC_CACHE);
+      throw error;
+    }
+
+    await Promise.all(OPTIONAL_PRECACHE_URLS.map(async (url) => {
       try {
-        const resp = await fetch(url, { credentials: 'same-origin' });
+        const resp = await fetch(url, { credentials: 'same-origin', cache: 'reload' });
         if (resp && resp.ok) {
           await cache.put(url, resp.clone());
         }
@@ -114,10 +157,13 @@ async function networkWithFallback(request, fallbackUrl) {
     // DON'T cache HTML responses — fresh content beats stale layout
     return resp;
   } catch (_) {
-    const cached = await caches.match(request);
+    // Only the active worker's static cache is eligible. A global caches.match
+    // can see a newer worker's staging cache and create a mixed-version shell.
+    const cache = await caches.open(STATIC_CACHE);
+    const cached = await cache.match(request);
     if (cached) return cached;
     if (fallbackUrl) {
-      const fb = await caches.match(fallbackUrl);
+      const fb = await cache.match(fallbackUrl);
       if (fb) return fb;
     }
     return new Response('Offline', { status: 503, statusText: 'Offline' });
@@ -136,10 +182,17 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || (await fetchPromise) || new Response('Offline', { status: 503 });
 }
 
-async function cacheFirst(request, cacheName) {
+async function cacheFirst(request, cacheName, fallbackCacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
   if (cached) return cached;
+  // Required JS/CSS/icons live in the current version's static cache. Check it
+  // before the network so the exact shell version remains available offline.
+  if (fallbackCacheName) {
+    const fallbackCache = await caches.open(fallbackCacheName);
+    const fallback = await fallbackCache.match(request);
+    if (fallback) return fallback;
+  }
   try {
     const resp = await fetch(request);
     if (resp && resp.ok) {
@@ -192,7 +245,7 @@ self.addEventListener('fetch', (event) => {
     const dest = request.destination;
     if (['style', 'script', 'image', 'font'].includes(dest) ||
         /\.(?:css|js|mjs|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|json)$/i.test(url.pathname)) {
-      event.respondWith(cacheFirst(request, RUNTIME_CACHE));
+      event.respondWith(cacheFirst(request, RUNTIME_CACHE, STATIC_CACHE));
       return;
     }
   }

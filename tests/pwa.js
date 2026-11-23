@@ -46,13 +46,14 @@ function assert(cond, label) {
 
 // The standalone app-shell pages (start_url + the two places a cold user lands
 // then installs from). These carry the iOS meta + SW auto-update wiring.
-const SHELL_PAGES = ['dashboard.html', 'index.html', 'welcome.html'];
+const SHELL_PAGES = ['app.html', 'dashboard.html', 'index.html', 'welcome.html'];
 const ACQUISITION_PAGES = [
   'app.html', 'index.html', 'ar/index.html', 'ru/index.html', 'fr/index.html',
   'it/index.html', 'welcome.html', 'account.html', 'install.html',
   'ar/install.html', 'ru/install.html', 'fr/install.html', 'it/install.html',
 ];
 const EXPECTED_MANIFEST = {
+  'app.html': '/app.webmanifest',
   'dashboard.html': '/manifest.webmanifest',
   'index.html': '/app.webmanifest',
   'welcome.html': '/app.webmanifest',
@@ -246,6 +247,9 @@ for (const page of SHELL_PAGES) {
   assert(/controller\b/.test(html) && /location\.reload\(\)/.test(html),
     page + ' reloads on controllerchange but guards the first-install case');
 }
+const appBoot = read('app.html');
+assert(appBoot.indexOf("addEventListener('controllerchange'") < appBoot.indexOf('await bootstrapApp()'),
+  'app.html binds controllerchange before the first network bootstrap await');
 
 // ---------------------------------------------------------------------------
 // 7. iOS meta on the app shell pages
