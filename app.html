@@ -625,7 +625,7 @@ async function renderInsights(view){
 
 // ───────── ACCOUNT ─────────
 function isStandalone(){ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true; }
-function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent||'') && !window.MSStream; }
+function isIOS(){ var ua=navigator.userAgent||''; return (/iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1)) && !window.MSStream; }
 function personaChooser(){
   return '<div class="card mt-4 p-5"><div class="flex items-start justify-between gap-3"><div><div class="eyebrow">התאמה אישית</div><div class="mt-1 font-display text-xl font-black">איך הכסף שלך מתנהל?</div><div class="mt-1 text-xs leading-5 text-ink-500">נשנה את סדר העדיפויות והתובנות. הנתונים עצמם לא יימחקו ולא ישתנו.</div></div><span class="rounded-full border border-brand-300/40 bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">'+esc(currentPersona().short)+'</span></div><div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">'+
     Object.keys(PERSONAS).map(function(k){var p=PERSONAS[k],on=APP.prefs.persona===k;return '<button data-persona="'+k+'" class="rounded-2xl border p-3 text-right '+(on?'border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/20':'border-ink-100 dark:border-ink-800')+'"><span class="flex items-center justify-between"><strong class="text-sm">'+esc(p.label)+'</strong>'+(on?'<span class="text-brand-700">✓</span>':'')+'</span><span class="mt-1 block text-[11px] leading-5 text-ink-500">'+esc(p.desc)+'</span></button>';}).join('')+
@@ -656,11 +656,11 @@ async function renderAccount(view){
     rowLink('/pricing','★','שדרוג ל-Pro','הוצאות ללא הגבלה וניתוחים')+
   '</div>';
   var invite='<button id="inviteBtn" class="card mt-4 flex w-full items-center gap-3 p-4 text-right active:scale-[.99]"><span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-base">🎁</span><span class="min-w-0 flex-1"><span class="block text-sm font-medium">הזמן חברים לכספ\'לה</span><span id="inviteSub" class="block text-[11px] text-ink-500">שתף/י קישור — ועזור/י לחברים לעקוב אחרי הכסף</span></span><span class="text-ink-300">‹</span></button>';
-  // Install: native prompt on Android/Chrome; manual steps on iOS Safari (which
-  // never fires beforeinstallprompt); nothing once already installed (standalone).
+  // Install: native prompt where supported; browser-specific manual steps on
+  // iPhone/iPad; nothing once already installed (standalone).
   var install;
   if(isStandalone()){ install=''; }
-  else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-1 text-xs text-ink-500">הקש/י על כפתור השיתוף בתחתית הדפדפן (הריבוע עם החץ ↑), ואז על &rdquo;הוסף למסך הבית&ldquo; / Add to Home Screen.</div></div>'; }
+  else if(isIOS()){ install='<div class="card mt-4 p-4"><div class="text-sm font-semibold">📲 התקנה במסך הבית</div><div class="mt-2 space-y-2 text-xs leading-5 text-ink-500"><p><strong>Safari:</strong> תפריט העמוד או שיתוף ← &rdquo;הוסף למסך הבית&ldquo; ← ודא/י ש-&rdquo;Open as Web App&ldquo; פעיל/ה ← &rdquo;הוסף&ldquo;.</p><p><strong>Chrome:</strong> כפתור השיתוף מימין לשורת הכתובת ← &rdquo;Add to Home Screen&ldquo; ← &rdquo;Add&ldquo;.</p></div></div>'; }
   else { install='<button id="installBtn" class="mt-4 hidden w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white">📲 התקן/י את האפליקציה במסך הבית</button>'; }
   var logout='<button onclick="kflLogout()" class="mt-4 w-full rounded-2xl border border-ink-100 dark:border-ink-700 py-3 text-sm font-semibold text-ink-500">התנתקות</button>';
   view.innerHTML=head+'<div class="desktop-grid"><div>'+prof+personaChooser()+'</div><aside>'+links+invite+install+logout+'</aside></div>';

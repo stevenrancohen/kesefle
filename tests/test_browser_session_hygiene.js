@@ -186,7 +186,7 @@ check('every browser profile write passes through the presentation sanitizer',
 
 const sw = read('sw.js');
 check('service worker version is bumped for the credential migration',
-  /v21-2026-11-23-unified-app/.test(sw));
+  /v22-2026-11-23-install-journey/.test(sw));
 check('offline shell precaches the browser-session scrubber',
   /['"]\/lib\/browser-session\.js['"]/.test(sw));
 check('API requests remain network-only',

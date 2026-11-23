@@ -12,7 +12,7 @@
  */
 'use strict';
 
-const VERSION = 'v21-2026-11-23-unified-app';
+const VERSION = 'v22-2026-11-23-install-journey';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
