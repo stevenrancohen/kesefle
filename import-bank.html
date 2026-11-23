@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>ייבוא מהבנק — כספ'לה</title>
+  <meta name="description" content="תצוגה מקדימה וייבוא מאובטח של תנועות בנק לכספ'לה.">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#090a0d">
+  <link rel="manifest" href="/app.webmanifest">
+  <link rel="icon" type="image/png" href="/favicon-32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/brand.css">
+  <style>
+    :root { color-scheme: dark; --bg:#090a0d; --panel:#14161b; --panel2:#1b1e24; --line:#2b2f37; --muted:#9ca1aa; --text:#f7f7f5; --yellow:#fddd48; --blue:#5f82ff; --green:#4fd88a; --red:#ff6b70; }
+    * { box-sizing:border-box; }
+    html { background:var(--bg); }
+    body { min-height:100vh; margin:0; background:radial-gradient(circle at 10% -5%,rgba(95,130,255,.17),transparent 30%),radial-gradient(circle at 92% 1%,rgba(253,221,72,.12),transparent 25%),var(--bg); color:var(--text); font-family:Heebo,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button,input,select,a { font:inherit; }
+    button,a,select,.file-label { min-height:44px; }
+    button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,.file-label:focus-within { outline:3px solid rgba(253,221,72,.6); outline-offset:3px; }
+    .spectrum { height:3px; background:linear-gradient(90deg,#ff4a43 0 25%,#3f6ff5 25% 52%,#fddd48 52% 76%,#4fd88a 76%); }
+    .shell { width:min(100%,680px); margin:auto; padding:0 16px calc(40px + env(safe-area-inset-bottom)); }
+    header { position:sticky; top:0; z-index:10; border-bottom:1px solid rgba(255,255,255,.07); background:rgba(9,10,13,.91); backdrop-filter:blur(16px); }
+    .nav { width:min(100%,680px); min-height:64px; margin:auto; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand,.back { color:var(--text); text-decoration:none; display:inline-flex; align-items:center; gap:10px; font-weight:850; }
+    .mark { width:36px; height:36px; display:grid; place-items:center; border-radius:12px; background:var(--yellow); color:#090a0d; font-weight:950; }
+    .back { color:#c8cbd1; font-size:14px; padding:0 4px; }
+    .hero { padding:32px 2px 20px; }
+    .eyebrow { margin:0; color:var(--yellow); font-size:12px; font-weight:850; letter-spacing:.08em; }
+    h1 { margin:8px 0 10px; font-size:clamp(30px,9vw,48px); line-height:1.03; letter-spacing:-.045em; }
+    .lead { margin:0; color:#bdc1c9; font-size:15px; line-height:1.65; max-width:540px; }
+    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:22px; }
+    .step { display:flex; align-items:center; gap:7px; color:#858b95; font-size:11px; font-weight:750; }
+    .step span { width:24px; height:24px; display:grid; place-items:center; border-radius:50%; background:#252932; color:#aeb2ba; }
+    .step.active { color:var(--text); }.step.active span { background:var(--yellow); color:#090a0d; }
+    .offline { display:none; margin:0 0 14px; padding:12px 14px; border:1px solid rgba(255,113,48,.45); border-radius:14px; background:rgba(255,113,48,.1); color:#ffd4c1; font-size:13px; }
+    .card { overflow:hidden; border:1px solid var(--line); border-radius:24px; background:linear-gradient(145deg,rgba(27,30,36,.98),rgba(16,18,23,.98)); box-shadow:0 24px 70px rgba(0,0,0,.28); }
+    .card-head { padding:20px 20px 0; display:flex; align-items:flex-start; gap:12px; }
+    .card-icon { width:42px; height:42px; flex:0 0 auto; display:grid; place-items:center; border-radius:14px; background:rgba(95,130,255,.14); color:#aebdff; font-size:20px; }
+    .card h2 { margin:1px 0 3px; font-size:18px; letter-spacing:-.02em; }.card-head p { margin:0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .form { padding:20px; display:grid; gap:18px; }
+    label.legend { display:block; margin-bottom:8px; color:#d7d9dd; font-size:13px; font-weight:800; }
+    select { width:100%; padding:0 14px; border:1px solid #3a3f49; border-radius:14px; background:#101216; color:var(--text); }
+    .file-label { min-height:132px; padding:18px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:1.5px dashed #525866; border-radius:18px; background:rgba(255,255,255,.025); cursor:pointer; transition:.16s ease; }
+    .file-label:hover { border-color:var(--yellow); background:rgba(253,221,72,.04); }.file-label input { position:absolute; inline-size:1px; block-size:1px; opacity:0; }
+    .file-main { font-weight:850; }.file-sub { margin-top:5px; color:var(--muted); font-size:12px; }.file-meta { margin-top:9px; color:#dfe2e7; font-size:12px; }
+    .privacy { display:flex; gap:10px; padding:12px; border:1px solid rgba(79,216,138,.22); border-radius:14px; background:rgba(79,216,138,.06); color:#b9c2bd; font-size:12px; line-height:1.55; }
+    .privacy strong { color:#dff6e9; }
+    .primary,.secondary { width:100%; border:0; border-radius:15px; padding:12px 16px; cursor:pointer; font-weight:900; transition:transform .14s ease,opacity .14s ease; }
+    .primary { background:linear-gradient(135deg,#fddd48,#f6bd18); color:#111; box-shadow:0 8px 26px rgba(253,221,72,.18); }
+    .primary:hover:not(:disabled),.secondary:hover:not(:disabled) { transform:translateY(-1px); }.primary:active:not(:disabled),.secondary:active:not(:disabled) { transform:scale(.99); }
+    button:disabled { cursor:not-allowed; opacity:.42; box-shadow:none; }
+    .secondary { border:1px solid rgba(95,130,255,.55); background:linear-gradient(135deg,#456cf2,#6d56db); color:white; }
+    .status { min-height:22px; margin:0; color:#cfd2d8; font-size:13px; text-align:center; }.status.error { color:#ff9a9e; }.status.success { color:#82e7ac; }.account-action { display:none; align-items:center; justify-content:center; margin-top:-8px; color:#c6d0ff; font-size:13px; font-weight:800; text-decoration:none; }.account-action.visible { display:flex; }
+    .preview { display:none; margin-top:16px; }.preview.visible { display:block; }
+    .summary { padding:18px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .metric { min-width:0; padding:13px 8px; border:1px solid var(--line); border-radius:16px; background:#101216; text-align:center; }
+    .metric-value { display:block; direction:ltr; font-size:20px; font-weight:950; }.metric-label { display:block; margin-top:3px; color:var(--muted); font-size:10px; }
+    .totals { margin:0 18px; padding:14px 0; display:flex; justify-content:space-between; gap:16px; border-block:1px solid var(--line); color:#b9bdc5; font-size:12px; }.total strong { display:block; margin-top:2px; color:var(--text); direction:ltr; font-size:18px; }
+    .sample-wrap { padding:18px; }.sample-title { margin:0 0 10px; font-size:13px; color:#c7cad0; }
+    .sample-list { display:grid; gap:8px; }.sample-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:12px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.022); }
+    .sample-desc { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:750; }.sample-meta { margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:10px; }.sample-amount { align-self:center; direction:ltr; font-weight:900; }.sample-amount.income { color:var(--green); }.sample-amount.expense { color:#ff9b9e; }
+    .skips { margin:0 18px 18px; color:#c8a98d; font-size:11px; line-height:1.6; }
+    .commit { padding:0 18px 18px; }.commit-note { margin:9px 0 0; color:var(--muted); font-size:11px; text-align:center; }
+    .result { display:none; margin-top:16px; padding:24px; text-align:center; }.result.visible { display:block; }.result-icon { width:56px; height:56px; margin:auto; display:grid; place-items:center; border-radius:18px; background:rgba(79,216,138,.12); color:var(--green); font-size:28px; }.result h2 { margin:14px 0 7px; }.result p { margin:0; color:#b9bdc5; font-size:14px; line-height:1.6; }.result #resultWarning:not(:empty) { margin-top:10px; color:#ffc4a8; }.result a { margin-top:18px; display:flex; align-items:center; justify-content:center; border-radius:15px; background:var(--yellow); color:#111; text-decoration:none; font-weight:900; }
+    .screen-reader { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (min-width:560px) { .shell { padding-inline:24px; }.form,.card-head { padding-inline:26px; }.summary { padding:22px 26px; }.sample-wrap { padding-inline:26px; }.commit { padding-inline:26px; }.steps { max-width:450px; } }
+    @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="ניווט ראשי">
+      <a class="brand" href="/app#/"><span class="mark" aria-hidden="true">כ</span><span>כספ'לה</span></a>
+      <a class="back" href="/app#/account">חזרה לאפליקציה ←</a>
+    </nav>
+    <div class="spectrum" aria-hidden="true"></div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">התחלה מהירה · ללא חיבור לחשבון הבנק</p>
+      <h1>מעלים. בודקים. ורק אז מייבאים.</h1>
+      <p class="lead">בחרו קובץ CSV מהבנק, ראו בדיוק אילו תנועות יתווספו, ואשרו רק כשהכול נראה נכון.</p>
+      <div class="steps" aria-label="שלבי הייבוא">
+        <div class="step active" id="step1"><span>1</span>בחירת קובץ</div>
+        <div class="step" id="step2"><span>2</span>בדיקה</div>
+        <div class="step" id="step3"><span>3</span>ייבוא</div>
+      </div>
+    </section>
+
+    <p class="offline" id="offlineNotice" role="status">אין כרגע חיבור לרשת. אפשר לבחור קובץ, אבל התצוגה המקדימה דורשת אינטרנט.</p>
+
+    <section class="card" id="uploadCard" aria-labelledby="uploadTitle">
+      <div class="card-head">
+        <span class="card-icon" aria-hidden="true">⇩</span>
+        <div><h2 id="uploadTitle">קובץ תנועות מהבנק</h2><p>תומך בהפועלים, לאומי, דיסקונט ומזרחי־טפחות.</p></div>
+      </div>
+      <div class="form">
+        <div>
+          <label class="legend" for="bank">מאיזה בנק הקובץ?</label>
+          <select id="bank" autocomplete="off">
+            <option value="">בחירת בנק</option>
+            <option value="hapoalim">בנק הפועלים</option>
+            <option value="leumi">בנק לאומי</option>
+            <option value="discount">בנק דיסקונט</option>
+            <option value="mizrahi">מזרחי־טפחות</option>
+          </select>
+        </div>
+
+        <label class="file-label" for="bankFile">
+          <input id="bankFile" type="file" accept=".csv,.txt,text/csv,text/plain">
+          <span class="file-main">בחירת קובץ CSV</span>
+          <span class="file-sub">עד 2MB · הקובץ לא נשמר בשרת</span>
+          <span class="file-meta" id="fileMeta">עדיין לא נבחר קובץ</span>
+        </label>
+
+        <div class="privacy"><span aria-hidden="true">🔒</span><span><strong>הפרטיות נשארת בשליטתכם.</strong> תוכן הקובץ נשלח בהצפנת HTTPS רק לצורך בדיקה וייבוא, אינו נשמר כקובץ, ולא נכתב ללוגים.</span></div>
+        <button class="primary" id="previewButton" type="button" disabled>הצגת תצוגה מקדימה</button>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+        <a class="account-action" id="accountAction" href="/account?next=/import-bank">מעבר להגדרות החשבון ←</a>
+      </div>
+    </section>
+
+    <section class="card preview" id="previewCard" aria-labelledby="previewTitle">
+      <div class="card-head">
+        <span class="card-icon" aria-hidden="true">✓</span>
+        <div><h2 id="previewTitle">זה מה שייכנס לגיליון</h2><p>לא כתבנו דבר עדיין. עברו על הסיכום לפני האישור.</p></div>
+      </div>
+      <div class="summary">
+        <div class="metric"><span class="metric-value" id="readyCount">0</span><span class="metric-label">מוכנות לייבוא</span></div>
+        <div class="metric"><span class="metric-value" id="duplicateCount">0</span><span class="metric-label">כפילויות שנעצרו</span></div>
+        <div class="metric"><span class="metric-value" id="skippedCount">0</span><span class="metric-label">שורות שדולגו</span></div>
+      </div>
+      <div class="totals">
+        <div class="total">סה״כ הכנסות<strong id="incomeTotal">₪0</strong></div>
+        <div class="total">סה״כ הוצאות<strong id="expenseTotal">₪0</strong></div>
+      </div>
+      <div class="sample-wrap">
+        <h3 class="sample-title">דוגמה מהקובץ</h3>
+        <div class="sample-list" id="sampleList"></div>
+      </div>
+      <p class="skips" id="skipDetails"></p>
+      <div class="commit">
+        <button class="secondary" id="importButton" type="button" disabled>ייבוא התנועות</button>
+        <p class="commit-note">האישור הבא יוסיף את התנועות לגיליון כספ'לה שלך.</p>
+      </div>
+    </section>
+
+    <section class="card result" id="resultCard" aria-labelledby="resultTitle">
+      <div class="result-icon" aria-hidden="true">✓</div>
+      <h2 id="resultTitle">הייבוא הושלם</h2>
+      <p id="resultText"></p>
+      <p id="resultWarning"></p>
+      <a href="/app#/tx">לצפייה בתנועות באפליקציה ←</a>
+    </section>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+    var MAX_FILE_BYTES = 2 * 1024 * 1024;
+    var state = { csvBase64: '', fileName: '', preview: null, busy: false };
+    var el = function (id) { return document.getElementById(id); };
+    var bank = el('bank'), file = el('bankFile'), previewButton = el('previewButton');
+    var importButton = el('importButton'), status = el('status');
+
+    function money(value) {
+      return new Intl.NumberFormat('he-IL', { style:'currency', currency:'ILS', maximumFractionDigits:2 }).format(Number(value) || 0);
+    }
+    function shortDate(value) {
+      var parts = String(value || '').split('-');
+      return parts.length === 3 ? parts[2] + '.' + parts[1] + '.' + parts[0].slice(2) : String(value || '');
+    }
+    function setStatus(message, type) {
+      status.textContent = message || '';
+      status.className = 'status' + (type ? ' ' + type : '');
+      el('accountAction').classList.remove('visible');
+    }
+    function setStep(number) {
+      [1,2,3].forEach(function (n) { el('step' + n).classList.toggle('active', n <= number); });
+    }
+    function syncPreviewButton() {
+      previewButton.disabled = state.busy || !state.csvBase64 || !bank.value || !navigator.onLine;
+    }
+    function resetPreview() {
+      state.preview = null;
+      el('previewCard').classList.remove('visible');
+      el('resultCard').classList.remove('visible');
+      importButton.disabled = true;
+      setStep(1);
+    }
+    function bytesToBase64(arrayBuffer) {
+      var bytes = new Uint8Array(arrayBuffer), chunks = [], size = 0x8000;
+      for (var i = 0; i < bytes.length; i += size) {
+        chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + size, bytes.length))));
+      }
+      return window.btoa(chunks.join(''));
+    }
+    function validFile(selected) {
+      var name = String(selected.name || '').toLowerCase();
+      var allowedType = !selected.type || ['text/csv','text/plain','application/csv','application/vnd.ms-excel','application/octet-stream'].indexOf(selected.type) !== -1;
+      return allowedType && (/\.(csv|txt)$/.test(name));
+    }
+    async function onFileChange() {
+      resetPreview(); state.csvBase64 = ''; state.fileName = ''; setStatus('');
+      var selected = file.files && file.files[0];
+      if (!selected) { el('fileMeta').textContent = 'עדיין לא נבחר קובץ'; syncPreviewButton(); return; }
+      if (!validFile(selected)) { el('fileMeta').textContent = 'הקובץ לא מתאים'; setStatus('יש לבחור קובץ CSV או TXT שיצא מאתר הבנק.', 'error'); syncPreviewButton(); return; }
+      if (selected.size > MAX_FILE_BYTES) { el('fileMeta').textContent = selected.name; setStatus('הקובץ גדול מ־2MB. נסו לייצא תקופה קצרה יותר.', 'error'); syncPreviewButton(); return; }
+      try {
+        if (!selected.size) throw new Error('empty_file');
+        state.csvBase64 = bytesToBase64(await selected.arrayBuffer()); state.fileName = selected.name;
+        el('fileMeta').textContent = selected.name + ' · ' + Math.max(1, Math.round(selected.size / 1024)) + 'KB';
+        setStatus('הקובץ מוכן לבדיקה. עדיין לא נשלח דבר.', 'success');
+      } catch (error) {
+        el('fileMeta').textContent = selected.name;
+        setStatus(error.message === 'empty_file' ? 'הקובץ ריק.' : 'לא הצלחנו לקרוא את הקובץ. נסו לייצא CSV חדש מהבנק.', 'error');
+      }
+      syncPreviewButton();
+    }
+    async function api(body) {
+      var response;
+      try {
+        response = await fetch('/api/import/bank-csv', {
+          method:'POST', credentials:'include',
+          headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+          body:JSON.stringify(body),
+        });
+      } catch (_networkError) { throw { status:0, code:'network_error' }; }
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok || !payload.ok) throw { status:response.status, code:payload.error || 'request_failed' };
+      return payload;
+    }
+    function errorMessage(error) {
+      if (error.status === 401 || error.status === 403) return 'צריך להתחבר מחדש. מעבירים אותך למסך הכניסה…';
+      if (error.status === 409 && error.code === 'no_sheet_provisioned') return 'עוד אין גיליון מחובר לחשבון. השלימו את הגדרת החשבון ונסו שוב.';
+      if (error.status === 409 && error.code === 'import_in_progress') return 'ייבוא אחר כבר מתבצע בחשבון. המתינו רגע ונסו שוב.';
+      if (error.status === 409 && error.code === 'preview_token_expired') return 'התצוגה המקדימה פגה. הציגו אותה שוב כדי לאשר את הקובץ מחדש.';
+      if (error.status === 409 && (error.code === 'preview_token_invalid' || error.code === 'preview_token_mismatch')) return 'האישור כבר לא תואם לקובץ. הציגו תצוגה מקדימה חדשה.';
+      if (error.status === 409 && error.code === 'import_status_unknown') return 'החיבור נותק בזמן הכתיבה. ייתכן שהייבוא הצליח — כדי למנוע כפילויות, אל תעלו שוב את הקובץ לפני שבודקים את התנועות.';
+      if (error.status === 409) return 'נדרש חיבור מחדש ל־Google Sheets דרך הגדרות החשבון.';
+      if (error.status === 429) return 'בוצעו יותר מדי ניסיונות בשעה האחרונה. נסו שוב מאוחר יותר.';
+      if (error.status === 503 && error.code === 'dedup_unavailable') return 'בדיקת הכפילויות אינה זמינה כרגע, ולכן עצרנו את הייבוא כדי להגן על הנתונים. נסו שוב בעוד כמה דקות.';
+      if (error.status === 503) return 'השירות אינו זמין כרגע. הנתונים לא יובאו; נסו שוב בעוד כמה דקות.';
+      if (error.code === 'parse_failed') return 'לא הצלחנו לזהות את מבנה הקובץ. ודאו שבחרתם את הבנק הנכון וייצאו CSV חדש.';
+      if (error.code === 'network_error') return 'אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.';
+      return 'משהו השתבש, ולא בוצע ייבוא. אפשר לנסות שוב.';
+    }
+    function handleError(error) {
+      setStatus(errorMessage(error), 'error');
+      var action = el('accountAction');
+      if (error.code === 'import_status_unknown') {
+        action.href = '/app#/tx'; action.textContent = 'בדיקת התנועות באפליקציה ←'; action.classList.add('visible');
+      } else if (error.status === 409 && ['no_sheet_provisioned','reauth_required','refresh_token_decrypt_failed'].indexOf(error.code) !== -1) {
+        action.href = '/account?next=/import-bank'; action.textContent = 'מעבר להגדרות החשבון ←'; action.classList.add('visible');
+      }
+      if (error.status === 401 || error.status === 403) {
+        window.setTimeout(function () { window.location.assign('/account?next=/import-bank'); }, 900);
+      }
+    }
+    function renderPreview(data) {
+      el('readyCount').textContent = String(data.ready || 0);
+      el('duplicateCount').textContent = String(data.duplicates || 0);
+      el('skippedCount').textContent = String(data.skipped || 0);
+      el('incomeTotal').textContent = money(data.totals && data.totals.income);
+      el('expenseTotal').textContent = money(data.totals && data.totals.expense);
+      var list = el('sampleList'); list.replaceChildren();
+      (data.sample || []).forEach(function (row) {
+        var item = document.createElement('div'); item.className = 'sample-row';
+        var info = document.createElement('div');
+        var desc = document.createElement('div'); desc.className = 'sample-desc'; desc.textContent = row.description || 'ללא פירוט';
+        var meta = document.createElement('div'); meta.className = 'sample-meta'; meta.textContent = shortDate(row.date) + ' · ' + (row.subcategory || row.category || 'ללא קטגוריה') + (row.classificationSource === 'fallback' ? ' · לבדיקה' : '');
+        var amount = document.createElement('div'); amount.className = 'sample-amount ' + (row.isIncome ? 'income' : 'expense'); amount.textContent = (row.isIncome ? '+' : '−') + money(row.amount);
+        info.append(desc, meta); item.append(info, amount); list.appendChild(item);
+      });
+      if (!(data.sample || []).length) {
+        var empty = document.createElement('p'); empty.className = 'status'; empty.textContent = 'לא נמצאו תנועות חדשות בקובץ.'; list.appendChild(empty);
+      }
+      var reasons = (data.skippedReasons || []).map(function (item) {
+        var labels = { header_not_found:'כותרת לא זוהתה', no_date_column:'חסרה עמודת תאריך', invalid_date:'תאריך לא תקין', invalid_amount:'סכום לא תקין', missing_description:'חסר פירוט', invalid_row:'שורה לא תקינה' };
+        return (item.rowNumber ? 'שורה ' + item.rowNumber + ': ' : '') + (labels[item.reason] || labels.invalid_row);
+      });
+      el('skipDetails').textContent = reasons.length ? 'דולגו בבטחה: ' + reasons.join(' · ') : '';
+      importButton.textContent = 'ייבוא ' + String(data.ready || 0) + ' תנועות';
+      importButton.disabled = !(data.ready > 0);
+      el('previewCard').classList.add('visible'); setStep(2);
+      el('previewCard').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+    async function preview() {
+      if (state.busy || !state.csvBase64 || !bank.value || !navigator.onLine) return;
+      state.busy = true; syncPreviewButton(); setStatus('בודקים מבנה, קטגוריות וכפילויות…');
+      try {
+        var data = await api({ bank:bank.value, csvBase64:state.csvBase64, dryRun:true });
+        state.preview = data; renderPreview(data);
+        setStatus(data.ready ? 'התצוגה מוכנה. עדיין לא נכתב דבר לגיליון.' : 'לא נמצאו תנועות חדשות לייבוא.', data.ready ? 'success' : '');
+      } catch (error) { resetPreview(); handleError(error); }
+      finally { state.busy = false; syncPreviewButton(); }
+    }
+    async function commit() {
+      if (state.busy || !navigator.onLine || !state.preview || !(state.preview.ready > 0)) return;
+      state.busy = true; importButton.disabled = true; previewButton.disabled = true; setStatus('מייבאים לגיליון שלך…');
+      try {
+        var data = await api({ bank:bank.value, csvBase64:state.csvBase64, dryRun:false, previewToken:state.preview.previewToken });
+        el('resultText').textContent = data.imported
+          ? 'נוספו ' + data.imported + ' תנועות. ' + (data.duplicates ? data.duplicates + ' כפילויות נעצרו אוטומטית.' : '')
+          : 'לא נוספו תנועות חדשות. ' + (data.duplicates ? 'כל התנועות כבר היו בגיליון.' : '');
+        el('resultWarning').textContent = (data.dedupWarning || data.commitStateWarning) ? 'הייבוא הצליח, אבל שמירת הגנת הכפילויות נכשלה. אין להעלות שוב את אותו קובץ כרגע.' : '';
+        el('resultCard').classList.add('visible'); el('uploadCard').style.display = 'none'; el('previewCard').classList.remove('visible');
+        setStatus(''); setStep(3); el('resultCard').scrollIntoView({ behavior:'smooth', block:'center' });
+      } catch (error) {
+        handleError(error);
+        if (['preview_token_expired','preview_token_invalid','preview_token_mismatch'].indexOf(error.code) !== -1) resetPreview();
+        else importButton.disabled = error.code === 'import_status_unknown';
+      }
+      finally { state.busy = false; syncPreviewButton(); }
+    }
+    function networkState() {
+      el('offlineNotice').style.display = navigator.onLine ? 'none' : 'block';
+      if (!navigator.onLine) setStatus('אין חיבור לרשת. הקובץ נשאר בדפדפן ולא נשלח.', 'error');
+      else if (status.textContent.indexOf('אין חיבור לרשת') === 0) setStatus('החיבור חזר. אפשר להציג תצוגה מקדימה.', 'success');
+      if (state.preview) importButton.disabled = !navigator.onLine || !(state.preview.ready > 0) || state.busy;
+      syncPreviewButton();
+    }
+    file.addEventListener('change', onFileChange);
+    bank.addEventListener('change', function () { resetPreview(); syncPreviewButton(); });
+    previewButton.addEventListener('click', preview); importButton.addEventListener('click', commit);
+    window.addEventListener('online', networkState); window.addEventListener('offline', networkState);
+    networkState();
+  }());
+  </script>
+</body>
+</html>
