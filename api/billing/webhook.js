@@ -14,6 +14,7 @@
 // Stripe sends signed POST. Verify HMAC before trusting.
 
 import crypto from 'node:crypto';
+import { atomicMergeUserRecord } from '../../lib/user-record.js';
 
 // CRITICAL: capture raw body bytes for HMAC verification (Stripe pattern same as Meta).
 export const config = { api: { bodyParser: false } };
@@ -73,9 +74,8 @@ async function kvSet(key, value) {
 
 async function updateUserPlan(userSub, planFields) {
   if (!userSub) return false;
-  const userRec = await kvGet('user:' + userSub) || { userSub };
-  Object.assign(userRec, planFields);
-  return await kvSet('user:' + userSub, userRec);
+  const merged = await atomicMergeUserRecord(userSub, { set: planFields }, { requireExisting: true });
+  return merged.ok;
 }
 
 export default async function handler(req, res) {

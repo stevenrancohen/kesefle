@@ -66,8 +66,14 @@ function fakeKv(initial = {}) {
   const controls = { getReply: null, evalReply: null, loseEvalReply: false, getCalls: 0, evalCalls: 0 };
 
   function codeEval(command) {
-    const [codeKey, candidateKey, oldKey] = command.slice(3, 6);
-    const [sub, candidate, forceRaw, expected] = command.slice(6);
+    const [codeKey, candidateKey, oldKey, userKey, tombstoneKey] = command.slice(3, 8);
+    const [sub, candidate, forceRaw, expected] = command.slice(8);
+    if (store.has(tombstoneKey)) return { status: 'account_deleted' };
+    if (!store.has(userKey)) return { status: 'account_missing' };
+    let account;
+    try { account = JSON.parse(store.get(userKey)); } catch { return { status: 'invalid_state' }; }
+    if (!account || typeof account !== 'object' || Array.isArray(account) ||
+        (account.userSub != null && String(account.userSub) !== sub)) return { status: 'invalid_state' };
     const force = forceRaw === '1';
     const current = store.has(codeKey) ? scalar(store.get(codeKey)) : null;
     if (!force && current) {
@@ -92,8 +98,12 @@ function fakeKv(initial = {}) {
 
   function redeemEval(command) {
     const [receiptKey, reverseKey, countKey, listKey, userKey, referrerKey,
-      userCreditKey, referrerCreditKey, auditKey] = command.slice(3, 12);
-    const [sub, code, referrerSub, initial, now, until, userSource, referrerSource, maxRaw] = command.slice(12);
+      userCreditKey, referrerCreditKey, auditKey, userTombstoneKey,
+      referrerTombstoneKey] = command.slice(3, 14);
+    const [sub, code, referrerSub, initial, now, until, userSource, referrerSource, maxRaw] = command.slice(14);
+    if (store.has(userTombstoneKey) || store.has(referrerTombstoneKey)) {
+      return { status: 'account_deleted' };
+    }
     if (store.has(receiptKey)) {
       let receipt;
       try { receipt = JSON.parse(store.get(receiptKey)); } catch { return { status: 'invalid_state' }; }
@@ -189,6 +199,7 @@ function fakeKv(initial = {}) {
 
 function runtime(kv) {
   const context = { fetch: kv.fetch, URL, JSON, Object, Number, String, Date, encodeURIComponent,
+    userDeletionKey: (sub) => 'deletedUser:' + sub,
     log: { info() {} }, process: { env: { KV_REST_API_URL: 'https://kv.test', KV_REST_API_TOKEN: 'token' } } };
   const functions = [
     'normalizeCode', 'hasOwn', 'validObject', 'validCode', 'validUserSub', 'validCount',
@@ -298,7 +309,7 @@ function base() {
   readKv.controls.getReply = http(true, { result: 'BAD' });
   assert.strictEqual((await readApi.kvReadValue('code', readApi.validCode)).state, 'invalid_state');
 
-  const codeKv = fakeKv();
+  const codeKv = fakeKv({ 'user:a': { userSub: 'a' } });
   const codeApi = runtime(codeKv);
   assert.strictEqual((await codeApi.kvEvalReferralCode('a', 'AAA234', false, '')).status, 'generated');
   codeKv.store.delete('referral:reverse:AAA234');
@@ -310,6 +321,10 @@ function base() {
   codeKv.store.set('referral:reverse:CCC234', JSON.stringify('b'));
   assert.strictEqual((await codeApi.kvEvalReferralCode('a', 'CCC234', true, 'AAA234')).status, 'collision');
   assert.strictEqual((await codeApi.kvEvalReferralCode('a', 'DDD234', true, 'AAA234')).status, 'regenerated');
+  codeKv.store.set('deletedUser:a', 'deleting');
+  assert.strictEqual((await codeApi.kvEvalReferralCode('a', 'EEE234', false, 'DDD234')).status, 'account_deleted');
+  assert.strictEqual(scalar(codeKv.store.get('referral:code:a')), 'DDD234');
+  codeKv.store.delete('deletedUser:a');
 
   const args = { userSub: 'redeemer', code: 'ABC234', referrerSub: 'referrer', emailInitial: 'r',
     nowIso: '2026-11-24T00:00:00.000Z', grantedUntil: '2026-12-24T00:00:00.000Z' };
@@ -337,6 +352,14 @@ function base() {
   const missingKv = fakeKv(base());
   assert.strictEqual((await runtime(missingKv).kvEvalReferralRedeem({ ...args, userSub: 'gone' })).status, 'invalid_state');
   assert.ok(!missingKv.store.has('referral:credit:gone'));
+
+  for (const deletedSub of ['redeemer', 'referrer']) {
+    const deletedKv = fakeKv({ ...base(), 'user:redeemer': { email: 'r@example.com' },
+      ['deletedUser:' + deletedSub]: 'deleting' });
+    const before = [...deletedKv.store.entries()];
+    assert.strictEqual((await runtime(deletedKv).kvEvalReferralRedeem(args)).status, 'account_deleted');
+    assert.deepStrictEqual([...deletedKv.store.entries()], before, deletedSub + ' tombstone commits nothing');
+  }
 
   for (const [name, extra] of [
     ['bad list', { 'referral:redeemers:referrer': [{ email: 7, at: args.nowIso }] }],

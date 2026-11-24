@@ -97,6 +97,8 @@ assert(/const GRACE_DAYS = 3;/.test(PP), 'paypal.js GRACE_DAYS is 3 (anchored)')
 const GRACE_DAYS = 3;
 assert(/SEEN_EVENT_TTL_SEC = 90 \* 24 \* 3600/.test(PP), 'paypal.js seen-event TTL is 90 days (anchored)');
 const SEEN_EVENT_TTL_SEC = 90 * 24 * 3600;
+assert(/ACTIVATION_TTL_SEC = 400 \* 24 \* 3600/.test(PP), 'paypal.js activation-marker TTL is 400 days (anchored)');
+const ACTIVATION_TTL_SEC = 400 * 24 * 3600;
 const DAY_MS = DAY; // lib/subscription.js closes over DAY_MS
 
 // Real pricing chain (priceILS -> normalizePlan -> PRICES), like the sibling suite.
@@ -175,11 +177,19 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
   let invoices = [];
   let subById = {};
   let verifyResult = true;
+  let activationErrorForUser = null;
+  const kvSetFailures = new Set();
   async function getAccessToken() { return 'TOK'; }                       // eslint-disable-line no-unused-vars
   async function verifyWebhook() { return verifyResult; }                 // eslint-disable-line no-unused-vars
   async function billingKvGet(k) { return Object.prototype.hasOwnProperty.call(kv, k) ? kv[k] : null; }
-  async function billingKvSet(k, v, opts) { kv[k] = v; kvSetOpts[k] = opts || null; return true; }
-  async function activatePremium(userSub, opts) { activations.push({ userSub, opts }); return { userSub }; }
+  async function billingKvSet(k, v, opts) {
+    if (kvSetFailures.has(k)) throw new Error('billing_kv_write_failed');
+    kv[k] = v; kvSetOpts[k] = opts || null; return true;
+  }
+  async function activatePremium(userSub, opts) {
+    if (activationErrorForUser === userSub) throw new Error('billing_account_deleted');
+    activations.push({ userSub, opts }); return { userSub };
+  }
   async function deactivatePremium(userSub, status) { deactivations.push({ userSub, status }); return {}; }
   async function getSubscription(_t, id) { return subById[id] || null; }  // eslint-disable-line no-unused-vars
   async function maybeIssueInvoiceForPayment(args) { invoices.push(args); } // eslint-disable-line no-unused-vars
@@ -267,6 +277,38 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
     eq(invoices[0].amountILS, 19, 'invoice amount = 19 ILS (Pro monthly)');
     eq(invoices[0].externalId, 'SALE-1', 'invoice keyed by the SALE id (per-renewal)');
     assert(!!kv['paypal_event:WH-2'], 'handled sale marked seen');
+  }
+
+  // A late paid event for a deleted account must be durably queued before ACK.
+  {
+    activationErrorForUser = 'deleted-user';
+    subById['I-DELETED'] = {
+      id: 'I-DELETED', custom_id: 'deleted-user', status: 'ACTIVE', plan_id: 'P-PRO-M',
+      billing_info: { next_billing_time: iso(Date.now() + 30 * DAY) },
+    };
+    const beforeAlerts = ownerAlerts.length;
+    let r = await hook({
+      id: 'WH-DELETED', event_type: 'PAYMENT.SALE.COMPLETED',
+      resource: { id: 'SALE-DELETED', billing_agreement_id: 'I-DELETED', custom: 'deleted-user', amount: { total: '19.00' } },
+    });
+    eq(r.statusCode, 200, 'paid event for deleted account -> 200 only after reconciliation is durable');
+    assert(kv['billing_reconcile:paypal:WH-DELETED']?.reason === 'paid_account_gone',
+      'paid account-gone event is persisted in the reconciliation queue');
+    eq(kvSetOpts['billing_reconcile:paypal:WH-DELETED']?.ttlSec, ACTIVATION_TTL_SEC,
+      'reconciliation receipt retains through provider dispute/replay window');
+    assert(ownerAlerts.length === beforeAlerts + 1, 'paid account-gone event alerts the owner');
+    assert(kv['paypal_event:WH-DELETED']?.accountGone === true, 'queued paid event is marked seen only after durable enqueue');
+
+    delete kv['paypal_event:WH-DELETED-RETRY'];
+    kvSetFailures.add('billing_reconcile:paypal:WH-DELETED-RETRY');
+    r = await hook({
+      id: 'WH-DELETED-RETRY', event_type: 'PAYMENT.SALE.COMPLETED',
+      resource: { id: 'SALE-DELETED-RETRY', billing_agreement_id: 'I-DELETED', custom: 'deleted-user', amount: { total: '19.00' } },
+    });
+    eq(r.statusCode, 500, 'reconciliation KV failure -> 500 so PayPal retries');
+    assert(!kv['paypal_event:WH-DELETED-RETRY'], 'failed reconciliation is never marked seen');
+    kvSetFailures.delete('billing_reconcile:paypal:WH-DELETED-RETRY');
+    activationErrorForUser = null;
   }
 
   // ── 8. Unmappable sale: owner alerted, NOT marked seen ────────────────────
@@ -395,37 +437,17 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
     if (savedEnv === undefined) delete process.env.PAYPAL_ENV; else process.env.PAYPAL_ENV = savedEnv;
   }
 
-  // ── 12+13. lib/billing.js: activatePremium billingPeriod + kvSet TTL ──────
-  console.log('\nlib/billing.js activatePremium persists billingPeriod:');
+  // ── 12+13. lib/billing.js: atomic activation contract + kvSet TTL ─────────
+  // Behavioral concurrency/replay coverage lives in
+  // test_billing_entitlement_atomic.js. Keep these source-level assertions here
+  // because this suite also documents PayPal's required billing fields.
+  console.log('\nlib/billing.js atomic activation persists billingPeriod:');
   {
-    const store = {};
-    async function kvGet(k) { return store[k] || null; }   // eslint-disable-line no-unused-vars
-    async function kvSet(k, v) { store[k] = v; return true; }
-    async function getUserPhone() { return null; }         // eslint-disable-line no-unused-vars
-    async function sendWhatsApp() { return false; }        // eslint-disable-line no-unused-vars
-    const PLAN_LABELS = { pro: 'Pro', family: 'Family' };  // eslint-disable-line no-unused-vars
-    eval(fnSrc(SUBSCRIPTION, 'extendAccess'));
-    eval(fnSrc(BILLING, 'activatePremium'));
-
-    await activatePremium('u-year', {
-      plan: 'family', period: 'year', method: 'paypal', recurring: true,
-      externalId: 'I-Y1', accessUntil: iso(Date.now() + 368 * DAY),
-    });
-    const recY = store['user:u-year'];
-    eq(recY && recY.billingPeriod, 'year', "period:'year' -> billingPeriod 'year' (revenue.js MRR /12 + change-plan proration)");
-    eq(recY && recY.plan, 'family', 'plan stored');
-    eq(recY && recY.subscriptionStatus, 'active', 'subscriptionStatus active');
-    eq(recY && recY.subscriptionId, 'I-Y1', 'recurring externalId -> subscriptionId');
-    eq(recY && recY.lastPaymentRef, 'I-Y1', 'externalId -> lastPaymentRef (revenue isTrial reads this)');
-
-    await activatePremium('u-month', { plan: 'pro', period: 'month', method: 'paypal', recurring: true, externalId: 'I-M1', accessUntil: iso(Date.now() + 33 * DAY) });
-    eq(store['user:u-month'] && store['user:u-month'].billingPeriod, 'month', "period:'month' -> billingPeriod 'month'");
-
-    await activatePremium('u-crypto12', { plan: 'pro', method: 'crypto', months: 12, externalId: 'CH-1' });
-    eq(store['user:u-crypto12'] && store['user:u-crypto12'].billingPeriod, 'year', 'no period + months:12 -> derived billingPeriod year');
-
-    await activatePremium('u-manual1', { plan: 'pro', method: 'bit', months: 1, externalId: 'CODE-1' });
-    eq(store['user:u-manual1'] && store['user:u-manual1'].billingPeriod, 'month', 'no period + months:1 -> derived billingPeriod month');
+    assert(/KESEFLE_BILLING_ACTIVATE_V1/.test(BILLING), 'activation uses the versioned atomic Lua mutation');
+    assert(/record\['billingPeriod'\]\s*=\s*ARGV\[5\]/.test(BILLING), 'atomic mutation persists billingPeriod');
+    assert(/record\['subscriptionId'\]\s*=\s*ARGV\[10\]/.test(BILLING), 'recurring activation persists subscriptionId');
+    assert(/record\['lastPaymentRef'\]\s*=\s*ARGV\[10\]/.test(BILLING), 'activation persists lastPaymentRef');
+    assert(/billingActivation:/.test(BILLING) && /activationReplayed/.test(BILLING), 'stable payment marker suppresses retry side effects');
   }
 
   console.log('\nlib/billing.js kvSet TTL (?EX= for paypal_event keys):');
@@ -497,7 +519,8 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
   // ── 15. cancel-flow really cancels (textual contract) ─────────────────────
   console.log('\ncancel-flow.js cancel action (contract):');
   assert(/cancelPaypalSubscription\(/.test(CANCELFLOW), "cancel-flow imports+calls cancelPaypalSubscription (the TODO is gone)");
-  assert(/deactivatePremium\(userSub,\s*'canceled'\)/.test(CANCELFLOW), 'cancel-flow deactivates the entitlement');
+  assert(/deactivatePremium\(userSub,\s*'canceled',\s*\{\s*expectedSubscriptionId:\s*subscriptionId\s*\}\)/.test(CANCELFLOW),
+    'cancel-flow deactivates only the subscription it actually cancelled');
   assert(!/TODO\(steven\)[\s\S]{0,120}cancel/i.test(CANCELFLOW), 'no more TODO-instead-of-cancel');
   assert(/paypalCancelled/.test(CANCELFLOW), 'cancel result surfaces in the response + owner alert');
 

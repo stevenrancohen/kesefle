@@ -86,9 +86,9 @@ ok('strict shared user purge calls the multi-key purge',
   /async function _purgeUserRecords_[\s\S]*?_purgeMultiKeyUserRecords_\(userSub/.test(ACCOUNT),
   'both delete routes must reach goals + stats through the strict shared purge');
 ok('deleteAccount (web path) calls the strict shared purge',
-  /async function deleteAccount[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(ACCOUNT));
+  /async function deleteAccount[\s\S]*?_purgeUserRecords_\(userSub, phone, userRec\.subscriptionId, deleted\)/.test(ACCOUNT));
 ok('deleteByPhone (bot path) calls the strict shared purge',
-  /async function deleteByPhone[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(ACCOUNT));
+  /async function deleteByPhone[\s\S]*?_purgeUserRecords_\(userSub, phone, userRec\?\.subscriptionId, deleted\)/.test(ACCOUNT));
 
 if (failed > 0) {
   console.error('\nFAIL: ' + failed + ' assertion(s) failed');

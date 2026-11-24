@@ -9,7 +9,7 @@
 import { requireAuth } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
-import { priceUSD, priceILS, normalizePlan, PLAN_LABELS } from '../../lib/billing.js';
+import { priceUSD, priceILS, normalizePlan, PLAN_LABELS, assertBillingAccount } from '../../lib/billing.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
@@ -32,6 +32,13 @@ async function handlerImpl(req, res) {
 
   // Identity comes from the verified token, never the body.
   const userSub = req.user.sub;
+  try { await assertBillingAccount(userSub); }
+  catch (e) {
+    if (e.message === 'billing_account_deleted') return res.status(410).json({ ok: false, error: 'account_deleted' });
+    if (e.message === 'billing_account_missing') return res.status(409).json({ ok: false, error: 'account_missing' });
+    log.error('coinbase_account_check_failed', { reqId: req.reqId, error: e.message });
+    return res.status(503).json({ ok: false, error: 'billing_temporarily_unavailable' });
+  }
   const usd = priceUSD(plan, period);
 
   const payload = {

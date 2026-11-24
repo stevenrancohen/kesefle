@@ -99,13 +99,12 @@ console.log('\nAPI endpoint api/account/unsubscribe.js:');
 assert(exists('api/account/unsubscribe.js'), 'endpoint file exists');
 const API = read('api/account/unsubscribe.js');
 assert(/verifyUnsubscribeToken/.test(API), 'verifies the signed token');
-assert(/emailUnsubscribed\s*=\s*true/.test(API), 'sets emailUnsubscribed = true (the flag the cron honors)');
+assert(/emailUnsubscribed:\s*true/.test(API), 'sets emailUnsubscribed = true (the flag the cron honors)');
 assert(/withRateLimit\(/.test(API), 'is rate limited (enumeration defense)');
 assert(/invalid_or_expired_link/.test(API), 'POST fails closed on bad/absent token');
 assert(/auditLog\(/.test(API), 'writes an audit-log entry');
-// Read-merge-write: must GET the existing record before SET so plan/tokens survive.
-assert(/kvGet\(['"`]user:['"`]\s*\+\s*sub\)/.test(API) || /kvGet\('user:' \+ sub\)/.test(API),
-  'reads the existing user record before writing (merge, not clobber)');
+assert(/atomicMergeUserRecord\(sub,/.test(API),
+  'writes only suppression fields through the atomic user-record merge');
 
 // ── B. Structural: page ───────────────────────────────────────────────────
 console.log('\nPage unsubscribe.html:');

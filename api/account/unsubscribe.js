@@ -28,6 +28,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { verifyUnsubscribeToken } from '../../lib/email-unsub.js';
 import { auditLog } from '../../lib/secure-kv.js';
+import { atomicMergeUserRecord } from '../../lib/user-record.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -43,20 +44,6 @@ async function kvGet(key) {
     return j?.result ? JSON.parse(j.result) : null;
   } catch (_e) {
     return null;
-  }
-}
-
-async function kvSet(key, value) {
-  if (!KV_URL || !KV_TOKEN) return false;
-  try {
-    const r = await fetch(`${KV_URL}/set/${encodeURIComponent(key)}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(value),
-    });
-    return r.ok;
-  } catch (_e) {
-    return false;
   }
 }
 
@@ -120,14 +107,18 @@ async function handlerImpl(req, res) {
     return res.status(200).json({ ok: true, unsubscribed: true, alreadyUnsubscribed: true });
   }
 
-  // Read-merge-write so we preserve plan / tokens / referral / trial fields.
-  userRec.emailUnsubscribed = true;
-  userRec.emailUnsubscribedAt = new Date().toISOString();
-  const saved = await kvSet('user:' + sub, userRec);
-  if (!saved) {
+  // Apply only the suppression fields while user:<sub> is locked. A payment or
+  // login racing this click must not be replaced by the earlier GET snapshot.
+  let saved;
+  try {
+    saved = await atomicMergeUserRecord(sub, {
+      set: { emailUnsubscribed: true, emailUnsubscribedAt: new Date().toISOString() },
+    }, { requireExisting: true });
+  } catch (_error) {
     log.error('unsubscribe.kv_save_failed', { reqId: req.reqId });
     return res.status(502).json({ ok: false, error: 'save_failed', detail: 'נסו שוב בעוד רגע.' });
   }
+  if (!saved.ok) return res.status(200).json({ ok: true, unsubscribed: true, note: 'no_active_record' });
 
   // 730-day audit trail (hashed sub, no PII) so the suppression is forensically
   // accountable — symmetric with the GDPR/billing actions already audited.

@@ -17,6 +17,7 @@
 import { requireAuth } from '../lib/auth.js';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
+import { userDeletionKey } from '../lib/user-record.js';
 
 function hasOwn(value, key) {
   return !!value && Object.prototype.hasOwnProperty.call(value, key);
@@ -139,6 +140,16 @@ local function scalar(raw)
   if ok and (type(decoded) == 'string' or type(decoded) == 'number') then return tostring(decoded) end
   return raw
 end
+if redis.call('EXISTS', KEYS[5]) == 1 then
+  return cjson.encode({ status = 'account_deleted' })
+end
+local user_raw = redis.call('GET', KEYS[4])
+if not user_raw then return cjson.encode({ status = 'account_missing' }) end
+local user_ok, user = pcall(cjson.decode, user_raw)
+if not user_ok or type(user) ~= 'table' then return cjson.encode({ status = 'invalid_state' }) end
+if user['userSub'] ~= nil and tostring(user['userSub']) ~= ARGV[1] then
+  return cjson.encode({ status = 'invalid_state' })
+end
 local current = scalar(redis.call('GET', KEYS[1]))
 if ARGV[3] ~= '1' and current then
   if current ~= ARGV[4] then return cjson.encode({ status = 'conflict', code = current }) end
@@ -164,6 +175,8 @@ return cjson.encode({ status = current and 'regenerated' or 'generated', code = 
     'referral:code:' + userSub,
     'referral:reverse:' + candidate,
     oldReverseKey,
+    'user:' + userSub,
+    userDeletionKey(userSub),
   ], [userSub, candidate, force ? '1' : '0', expectedExisting || '']);
 }
 
@@ -234,6 +247,9 @@ local function prepare_credit(raw, user, source)
   return credit, true, true, true
 end
 
+if redis.call('EXISTS', KEYS[10]) == 1 or redis.call('EXISTS', KEYS[11]) == 1 then
+  return cjson.encode({ status = 'account_deleted' })
+end
 local receipt_raw = redis.call('GET', KEYS[1])
 if receipt_raw then
   local receipt = object_required(receipt_raw)
@@ -321,6 +337,8 @@ return cjson.encode({
     'referral:credit:' + userSub,
     'referral:credit:' + referrerSub,
     'audit:referral_redeem:' + userSub,
+    userDeletionKey(userSub),
+    userDeletionKey(referrerSub),
   ], [
     userSub, code, referrerSub, String(emailInitial || '?').slice(0, 8), nowIso, grantedUntil,
     'redeemed:' + code, 'referrer_reward', 200,
@@ -358,6 +376,12 @@ async function generateAction(req, res) {
     }
     if (mutation.status === 'invalid_state') {
       return res.status(500).json({ ok: false, error: 'referral_state_invalid' });
+    }
+    if (mutation.status === 'account_deleted') {
+      return res.status(410).json({ ok: false, error: 'account_deleted' });
+    }
+    if (mutation.status === 'account_missing') {
+      return res.status(409).json({ ok: false, error: 'account_missing' });
     }
     if (!['generated', 'regenerated', 'reused'].includes(mutation.status) || !validCode(mutation.code)) {
       return res.status(502).json({ ok: false, error: 'kv_write_failed' });
@@ -497,6 +521,9 @@ async function redeemAction(req, res) {
   }
   if (mutation.status === 'invalid_state') {
     return res.status(500).json({ ok: false, error: 'referral_state_invalid' });
+  }
+  if (mutation.status === 'account_deleted') {
+    return res.status(410).json({ ok: false, error: 'account_deleted' });
   }
   if (!['redeemed', 'replayed'].includes(mutation.status) ||
       !validIsoTimestamp(mutation.grantedUntil) ||

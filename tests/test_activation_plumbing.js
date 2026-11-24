@@ -13,7 +13,7 @@
 // Two layers:
 //   1. BEHAVIORAL — run the real lib/user-activity.js recordExpenseActivity()
 //      against a mocked Upstash KV (global.fetch) and assert the increment,
-//      timestamp, no-clobber, single-SET cost, and env-fail-soft semantics.
+//      timestamp, no-clobber, single-command cost, and env-fail-soft semantics.
 //   2. WIRING — string-assert the four expense handlers import + call
 //      recordExpenseActivity, and that google-exchange.js sends the welcome.
 //
@@ -41,6 +41,38 @@ function installKvMock() {
   process.env.KV_REST_API_TOKEN = 'kvtok';
   global.fetch = async (url, opts = {}) => {
     const u = new URL(String(url));
+    if (u.origin === 'http://kv.local' && u.pathname === '/' && opts.method === 'POST') {
+      const command = JSON.parse(opts.body || '[]');
+      if (command[0] === 'EVAL' && String(command[1]).includes('KESEFLE_USER_RECORD_MERGE_V1')) {
+        ops.set++;
+        const keyCount = Number(command[2]);
+        const keys = command.slice(3, 3 + keyCount);
+        const args = command.slice(3 + keyCount);
+        const key = keys[0];
+        const userSub = args[0];
+        const changes = JSON.parse(args[1]);
+        const created = !store.has(key);
+        if (created && args[2] === '1') {
+          return { ok: true, status: 200, json: async () => ({ result: JSON.stringify({ status: 'missing' }) }) };
+        }
+        const record = created ? { userSub } : JSON.parse(store.get(key));
+        if (created) Object.assign(record, changes.setOnCreate || {});
+        for (const [field, value] of Object.entries(changes.setIfMissing || {})) {
+          if (record[field] == null) record[field] = value;
+        }
+        Object.assign(record, changes.set || {});
+        for (const [field, amount] of Object.entries(changes.increments || {})) {
+          record[field] = (Number(record[field]) || 0) + Number(amount || 0);
+        }
+        for (const field of changes.deleteFields || []) delete record[field];
+        record.userSub = userSub;
+        store.set(key, JSON.stringify(record));
+        return {
+          ok: true, status: 200,
+          json: async () => ({ result: JSON.stringify({ status: 'merged', created, record }) }),
+        };
+      }
+    }
     const parts = u.pathname.split('/').filter(Boolean);
     const op = parts[0];
     const key = decodeURIComponent(parts.slice(1).join('/'));
@@ -79,12 +111,13 @@ async function main() {
     };
     const { store, ops } = installKvMock();
     const mod = await import('../lib/user-activity.js?one'); // fresh import: re-bind KV env
+    store.set('user:sub_alice', JSON.stringify(before));
     ops.get = 0; ops.set = 0;
     const r = await mod.recordExpenseActivity({ userSub: 'sub_alice', currentRecord: before });
     assert(r.ok === true, 'returns ok:true on success');
     assert(r.expensesCount === 1, 'first expense -> expensesCount = 1');
     assert(ops.get === 0, 'does NOT issue its own GET (uses in-hand record)');
-    assert(ops.set === 1, 'issues exactly ONE KV SET (no KV balloon)');
+    assert(ops.set === 1, 'issues exactly ONE atomic KV command (no KV balloon)');
     const saved = JSON.parse(store.get('user:sub_alice'));
     assert(saved.expensesCount === 1, 'persisted expensesCount = 1');
     assert(typeof saved.lastActive === 'string' && saved.lastActive.includes('T'),
@@ -101,6 +134,7 @@ async function main() {
     const before = { userSub: 'sub_bob', expensesCount: 6, firstExpenseAt: '2020-01-01T00:00:00.000Z' };
     const { store } = installKvMock();
     const mod = await import('../lib/user-activity.js?two');
+    store.set('user:sub_bob', JSON.stringify(before));
     const r = await mod.recordExpenseActivity({ userSub: 'sub_bob', currentRecord: before, at: new Date('2026-06-03T10:00:00Z') });
     assert(r.expensesCount === 7, 'existing count 6 -> 7');
     const saved = JSON.parse(store.get('user:sub_bob'));

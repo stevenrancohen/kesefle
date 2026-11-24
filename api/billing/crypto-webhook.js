@@ -9,6 +9,8 @@ import crypto from 'node:crypto';
 import { activatePremium, periodMonths, billingKvGet, billingKvSet } from '../../lib/billing.js';
 import { withRequestId, log } from '../../lib/log.js';
 
+const CRYPTO_EVENT_TTL_SEC = 400 * 24 * 3600;
+
 export const config = { api: { bodyParser: false } };
 
 async function readRawBody(req) {
@@ -39,6 +41,20 @@ async function alertUnmappablePayment({ reqId, eventId, chargeId, type, metaKeys
         + `metadata keys present: ${(metaKeys && metaKeys.length) ? metaKeys.join(', ') : '(none)'}\n\n`
         + `The customer PAID but premium was NOT granted. Reconcile manually in the Coinbase dashboard + /api/billing/manual.`,
       tags: ['billing', 'payment-lost'],
+    }).catch(() => {});
+  } catch (_e) { /* alert must never break the ack */ }
+}
+
+async function alertPaidAccountGone({ reqId, eventId, chargeId, type }) {
+  log.error('crypto_webhook.paid_account_gone', { reqId, eventId, chargeId, type });
+  try {
+    const { sendAlert } = await import('../../lib/alert.js');
+    await sendAlert({
+      severity: 'critical',
+      title: 'Crypto payment confirmed after account deletion',
+      body: `Coinbase confirmed charge ${chargeId || 'unknown'} after its Kesefle account was deleted. `
+        + `Event ${eventId || 'unknown'} was acknowledged without recreating the account. Review/refund in Coinbase.`,
+      tags: ['billing', 'refund-review', 'account-deletion'],
     }).catch(() => {});
   } catch (_e) { /* alert must never break the ack */ }
 }
@@ -103,11 +119,19 @@ async function handlerImpl(req, res) {
           method: 'crypto',
           months: periodMonths(period),
           externalId: chargeId,
+          activationKey: `crypto:${chargeId || eventId}`,
           recurring: false,
         });
-        await billingKvSet(seenKey, { type, ts: new Date().toISOString() });
+        await billingKvSet(seenKey, { type, ts: new Date().toISOString() }, { ttlSec: CRYPTO_EVENT_TTL_SEC });
         log.info('crypto_webhook.activated', { reqId: req.reqId, userSub, plan, period, chargeId, type });
       } catch (e) {
+        if (e.message === 'billing_account_deleted' || e.message === 'billing_account_missing') {
+          await alertPaidAccountGone({ reqId: req.reqId, eventId, chargeId, type });
+          await billingKvSet(seenKey, {
+            type, ts: new Date().toISOString(), accountGone: true,
+          }, { ttlSec: CRYPTO_EVENT_TTL_SEC });
+          return res.status(200).json({ ok: true, warning: 'account_gone' });
+        }
         log.error('crypto_webhook.activate_failed', { reqId: req.reqId, userSub, chargeId, error: e.message });
         // Return 500 so Coinbase retries rather than dropping a real payment.
         return res.status(500).json({ ok: false, error: 'activation_failed' });
@@ -118,7 +142,7 @@ async function handlerImpl(req, res) {
         reqId: req.reqId, eventId, chargeId, type, metaKeys: Object.keys(meta || {}),
       });
       // Mark seen so the retries of this same un-fixable event don't re-page.
-      await billingKvSet(seenKey, { type, ts: new Date().toISOString(), unmapped: true });
+      await billingKvSet(seenKey, { type, ts: new Date().toISOString(), unmapped: true }, { ttlSec: CRYPTO_EVENT_TTL_SEC });
       return res.status(200).json({ ok: true, warning: 'no_user_in_metadata' });
     }
   } else if (type) {

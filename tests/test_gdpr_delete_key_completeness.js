@@ -68,10 +68,10 @@ ok('referral reverse is deleted with a compare-owner EVAL',
   'a plain DEL could remove a code that has been reassigned to another user');
 
 ok('deleteAccount uses compare-owner reverse deletion',
-  /async function deleteAccount[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC));
+  /async function deleteAccount[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_purgeUserRecords_\(userSub, phone, userRec\.subscriptionId, deleted\)/.test(SRC));
 
 ok('deleteByPhone uses compare-owner reverse deletion',
-  /async function deleteByPhone[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC));
+  /async function deleteByPhone[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_purgeUserRecords_\(userSub, phone, userRec\?\.subscriptionId, deleted\)/.test(SRC));
 
 ok('legacy redeemer emails are scrubbed with a key-locked EVAL',
   /KESEFLE_REFERRAL_PRIVACY_SCRUB_V2[\s\S]*?redis\.call\(['"]SET['"], KEYS\[1\]/.test(PRIVACY_SRC));
@@ -91,15 +91,15 @@ ok('pending privacy cleanup is explicitly retryable and non-2xx',
 console.log('\n=== both delete paths call the strict unified purge ===');
 
 ok('deleteAccount calls _purgeUserRecords_',
-  /async function deleteAccount[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC),
+  /async function deleteAccount[\s\S]*?_purgeUserRecords_\(userSub, phone, userRec\.subscriptionId, deleted\)/.test(SRC),
   'web auth path must use strict unified purge');
 
 ok('deleteByPhone calls _purgeUserRecords_',
-  /async function deleteByPhone[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC),
+  /async function deleteByPhone[\s\S]*?_purgeUserRecords_\(userSub, phone, userRec\?\.subscriptionId, deleted\)/.test(SRC),
   'bot-secret path must use strict unified purge');
 
 ok('strict unified purge is the only caller of _keysForUser_',
-  /async function _purgeUserRecords_[\s\S]*?_keysForUser_\(userSub, phone\)/.test(SRC));
+  /async function _purgeUserRecords_[\s\S]*?_keysForUser_\(userSub, phone, subscriptionId\)/.test(SRC));
 
 ok('strict purge preserves user, phone, and reverse anchors until atomic finalization',
   /async function _purgeUserRecords_[\s\S]*?key !== identityKey && key !== phoneKey && key !== reversePhoneKey[\s\S]*?_finalizeUserAnchors_\(userSub, phone\)/.test(SRC));

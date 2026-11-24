@@ -29,6 +29,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import { requireAdmin } from '../../lib/auth.js';
 import { createUserSheetWithRefresh } from '../../lib/sheet-writer.js';
+import { atomicMergeUserRecord } from '../../lib/user-record.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -229,13 +230,13 @@ async function handlerImpl(req, res) {
 
   // Update the user record's spreadsheet pointer so existing code (web
   // dashboard, "פתח גיליון" command) finds it without a separate KV read.
-  const updatedUserRec = {
-    ...userRec,
-    spreadsheetId: created.spreadsheetId,
-    spreadsheetUrl: created.spreadsheetUrl,
-    lastUpdated: now,
-  };
-  await kvSet(`user:${userSub}`, updatedUserRec);
+  await atomicMergeUserRecord(userSub, {
+    set: {
+      spreadsheetId: created.spreadsheetId,
+      spreadsheetUrl: created.spreadsheetUrl,
+      lastUpdated: now,
+    },
+  }, { requireExisting: true });
 
   // Best-effort welcome via WhatsApp, only if user has a linked phone.
   let welcome = { sent: false, reason: 'no_linked_phone' };

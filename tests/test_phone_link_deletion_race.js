@@ -60,6 +60,7 @@ function redisWorld() {
       if (!user) return result({ status: 'user_missing' });
       if (typeof user !== 'object' || Array.isArray(user)) return result({ status: 'user_malformed' });
       store.set(keys[1], args[0]);
+      store.set(keys[2], 'deleting');
       return result({ status: 'marked' });
     }
 
@@ -105,15 +106,17 @@ function redisWorld() {
     }
 
     if (script.includes('foreign_phone_anchor')) {
-      const [identityKey, phoneKey, reverseKey, guardKey, userReceiptKey, phoneReceiptKey] = keys;
-      const [userSub, receipt, receiptTtl, completedGuard, guardTtl] = args;
+      const [identityKey, phoneKey, reverseKey, guardKey, userReceiptKey, phoneReceiptKey, tombstoneKey] = keys;
+      const [userSub, receipt, receiptTtl, completedGuard, guardTtl, tombstoneTtl] = args;
       const phone = json(phoneKey);
       if (phone && phone.userSub !== userSub) return result({ status: 'foreign_phone_anchor' });
       assert.equal(receiptTtl, String(7 * 86400));
       assert.equal(guardTtl, String(10 * 60));
+      assert.equal(tombstoneTtl, String(400 * 86400));
       store.set(userReceiptKey, receipt);
       store.set(phoneReceiptKey, receipt);
       store.set(guardKey, completedGuard);
+      store.set(tombstoneKey, 'deleted');
       return result({
         status: 'complete',
         phoneDeleted: del(phoneKey),
@@ -132,8 +135,10 @@ function runtimes(world) {
   const env = { KV_REST_API_URL: 'https://kv.invalid', KV_REST_API_TOKEN: 'race-secret' };
   const accountContext = {
     process: { env }, createHmac,
+    userDeletionKey: (subject) => `deleted:${createHmac('sha256', 'test').update(subject).digest('hex')}`,
     DELETION_RECEIPT_TTL_SEC: 7 * 86400,
     DELETION_GUARD_COOLDOWN_SEC: 10 * 60,
+    DELETION_TOMBSTONE_TTL_SEC: 400 * 86400,
     _fetchJsonWithDeadline_: async (_url, init) => world.evalCommand(JSON.parse(init.body)),
   };
   vm.runInNewContext([

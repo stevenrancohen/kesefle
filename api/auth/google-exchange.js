@@ -28,6 +28,7 @@ import { encryptRefreshToken } from '../../lib/crypto.js';
 import { setSessionCookie } from '../_lib/session.js';
 import { getGoogleClientId } from '../../lib/auth.js';
 import { newUserTrialFields } from '../../lib/subscription.js';
+import { atomicMergeUserRecord } from '../../lib/user-record.js';
 
 async function kvSetTokenRecord(kvUrl, kvToken, userSub, record) {
   await fetch(`${kvUrl}/set/${encodeURIComponent('token:' + userSub)}`, {
@@ -49,24 +50,6 @@ async function kvGetSheetId(kvUrl, kvToken, userSub) {
     }
   } catch (e) {
     log.warn('token_record.sheet_lookup_failed', { error: e.message });
-  }
-  return null;
-}
-
-// Fetch the existing canonical user record so we can MERGE into it rather than
-// clobber it. Critical because the OAuth flow uses prompt=consent, so Google
-// hands us a refresh_token on every login — and the old code rebuilt the record
-// from scratch each time, wiping plan / stripeCustomerId / subscriptionStatus /
-// trial fields for any returning (especially paying) user.
-async function kvGetUser(kvUrl, kvToken, userSub) {
-  try {
-    const r = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, {
-      headers: { 'Authorization': `Bearer ${kvToken}` },
-    });
-    const j = await r.json();
-    if (j?.result) return JSON.parse(j.result);
-  } catch (e) {
-    log.warn('user_record.lookup_failed', { error: e.message });
   }
   return null;
 }
@@ -174,46 +157,28 @@ async function handlerImpl(req, res) {
         // Fail closed if encryption is misconfigured — refusing to store plaintext.
         return res.status(500).json({ ok: false, error: 'token_encryption_unavailable' });
       }
-      // MERGE into the existing record (don't clobber). Preserves plan,
-      // stripeCustomerId, subscriptionStatus, referral data, etc. on re-login.
-      const existing = await kvGetUser(kvUrl, kvToken, identity.sub);
-      isNewUser = !existing;
       const nowIso = new Date().toISOString();
-      const record = {
-        ...(existing || {}),
-        userSub: identity.sub,
-        email: identity.email,
-        name: identity.name,
-        picture: identity.picture,
-        // NOTE: refreshToken (plaintext) is NEVER stored anymore. Only the encrypted envelope.
-        refreshTokenEnvelope,
-        scopes: tokens.scope,
-        connectedAt: existing?.connectedAt || nowIso,
-        lastLoginAt: nowIso,
-      };
-      // 2026-05-31 audit fix (docs/AUDIT_OAUTH_DRIVE_2026_05_31.md M1):
-      // The `...existing` spread above silently preserves any pre-migration
-      // plaintext refreshToken field. Strip it here so re-login on a legacy
-      // record converts to envelope-only storage. KV write below replaces the
-      // whole record, so this delete is sufficient.
-      delete record.refreshToken;
-      // Start a 14-day Pro trial exactly once, at first signup. Guarded on
-      // trialEndsAt absence so we never reset a trial or override a paid plan.
-      if (isNewUser && !record.trialEndsAt && !record.stripeSubscriptionId) {
-        Object.assign(record, newUserTrialFields(Date.now()));
+      // Apply only identity/token fields while Upstash holds user:<sub>.
+      // A concurrent payment or expense write can no longer be erased by the
+      // OAuth flow's earlier snapshot. Creation-only defaults start one trial;
+      // returning users never have their trial or paid plan reset.
+      const merged = await atomicMergeUserRecord(identity.sub, {
+        set: {
+          email: identity.email,
+          name: identity.name,
+          picture: identity.picture,
+          refreshTokenEnvelope,
+          scopes: tokens.scope,
+          lastLoginAt: nowIso,
+        },
+        setIfMissing: { connectedAt: nowIso },
+        setOnCreate: newUserTrialFields(Date.now()),
+        deleteFields: ['refreshToken'],
+      }, { allowDeletedRecreate: true });
+      if (!merged.ok) throw new Error(`user_record_${merged.reason || 'merge_failed'}`);
+      isNewUser = merged.created;
+      if (isNewUser) {
         log.info('user.trial_started', { reqId: req.reqId, userSub: identity.sub });
-      }
-      // FAIL CLOSED: if KV refuses the write or the network drops, we must
-      // NOT return 200 with a session cookie -- the user would sign in but
-      // their refresh token would be lost and the bot could never write.
-      // Throw out of the inner try so the caller returns 502.
-      const r = await fetch(`${kvUrl}/set/${encodeURIComponent('user:' + identity.sub)}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(record),
-      });
-      if (!r.ok) {
-        throw new Error('kv_set_user_status_' + r.status);
       }
     } catch (e) {
       log.error('user_record_kv_save_failed', { reqId: req.reqId, userSub: identity.sub, error: e.message });

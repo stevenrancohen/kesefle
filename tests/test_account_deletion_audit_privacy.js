@@ -93,7 +93,7 @@ assert.match(webDelete, /userRec === null[\s\S]*?_hasDeletionReceipt_\(['"]user[
   'web retries replay success from the durable completion receipt');
 assert.match(botDelete, /phoneRec === null[\s\S]*?_hasDeletionReceipt_\(['"]phone['"], phone\)[\s\S]*?replayed: true/,
   'WhatsApp retries replay success from the durable completion receipt');
-assert.match(webDelete, /prepared\.status === ['"]foreign['"][\s\S]*?phone = null[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/,
+assert.match(webDelete, /prepared\.status === ['"]foreign['"][\s\S]*?phone = null[\s\S]*?_purgeUserRecords_\(userSub, phone, userRec\.subscriptionId, deleted\)/,
   'stale userPhone pointers detach instead of deleting a foreign tenant phone namespace');
 
 assert.match(purge, /filter\(\(key\) => key !== identityKey && key !== phoneKey && key !== reversePhoneKey\)/,
@@ -143,6 +143,7 @@ async function runPurge({ failKey = null, phone = '972500000000' } = {}) {
       'token:subject',
     ],
     kvDel: async (key) => { calls.push('del:' + key); return key !== failKey; },
+    _purgeManualPaymentsStrict_: async () => ({ failed: 0 }),
     _purgeMultiKeyUserRecords_: async () => ({ failed: 0 }),
     kvSetRemove: async () => { calls.push('srem:users_all'); return true; },
     _finalizeUserAnchors_: async () => {
@@ -152,7 +153,7 @@ async function runPurge({ failKey = null, phone = '972500000000' } = {}) {
   };
   vm.runInNewContext(`${purge}\nglobalThis.run = _purgeUserRecords_;`, context);
   const deleted = [];
-  const result = await context.run('subject', phone, deleted);
+  const result = await context.run('subject', phone, null, deleted);
   return { calls, deleted, result };
 }
 
@@ -176,6 +177,55 @@ const foreignSafe = await runPurge({ phone: null });
 assert.equal(foreignSafe.calls.some((call) => call.includes('phone:') || call.includes('profile:')), false,
   'foreign phone ownership path performs zero phone-scoped deletes');
 
+// Pending manual payments must remain discoverable until every child delete is
+// acknowledged. Exercise malformed inventory and mid-purge response loss.
+async function runManualPurge({ index, records = {}, failKey = null, throwKey = null }) {
+  const calls = [];
+  const indexKey = 'manual:index';
+  const context = {
+    MANUAL_PAYMENT_CODE_RE: /^KFL-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/,
+    MANUAL_PAYMENT_INDEX_MAX: 1000,
+    manualPaymentIndexKey: () => indexKey,
+    kvGet: async (key) => key === indexKey ? index : (records[key] ?? null),
+    kvDel: async (key) => {
+      calls.push(key);
+      if (key === throwKey) throw new Error('lost_response');
+      return key !== failKey;
+    },
+    log: { warn() {} }, Set, String, Array,
+  };
+  vm.runInNewContext([
+    functionSource('_manualPaymentsForUserStrict_'),
+    functionSource('_purgeManualPaymentsStrict_'),
+    'globalThis.run = _purgeManualPaymentsStrict_;',
+  ].join('\n'), context);
+  const deleted = [];
+  const result = await context.run('subject', deleted);
+  return { calls, deleted, result };
+}
+
+const malformedManual = await runManualPurge({ index: ['BAD-CODE'] });
+assert.equal(malformedManual.result.failed, 1, 'malformed manual-payment index fails closed');
+assert.deepEqual(malformedManual.calls, [], 'malformed index deletes nothing');
+
+const manualRecords = {
+  'pendingPayment:KFL-ABC234': { code: 'KFL-ABC234', status: 'pending', userSub: 'subject' },
+  'pendingPayment:KFL-DEF234': { code: 'KFL-DEF234', status: 'pending', userSub: 'subject' },
+};
+const partialManual = await runManualPurge({
+  index: ['KFL-ABC234', 'KFL-DEF234'], records: manualRecords,
+  throwKey: 'pendingPayment:KFL-DEF234',
+});
+assert.equal(partialManual.result.failed, 1, 'lost child DEL response makes deletion retryable');
+assert.equal(partialManual.calls.includes('manual:index'), false,
+  'manual-payment index survives every child failure as the retry inventory');
+
+const completeManual = await runManualPurge({
+  index: ['KFL-ABC234', 'KFL-DEF234'], records: manualRecords,
+});
+assert.equal(completeManual.result.failed, 0, 'all acknowledged child deletes complete');
+assert.equal(completeManual.calls.at(-1), 'manual:index', 'manual-payment index is deleted last');
+
 const prepareContext = {
   process: { env: { KV_REST_API_URL: 'https://kv.invalid', KV_REST_API_TOKEN: 'test' } },
   _fetchJsonWithDeadline_: async () => ({
@@ -195,8 +245,10 @@ let finalizerCommand;
 const receiptContext = {
   process: { env: { KV_REST_API_URL: 'https://kv.invalid', KV_REST_API_TOKEN: 'hmac-secret' } },
   createHmac,
+  userDeletionKey: (subject) => `deleted:${createHmac('sha256', 'test').update(subject).digest('hex')}`,
   DELETION_RECEIPT_TTL_SEC: 7 * 86400,
   DELETION_GUARD_COOLDOWN_SEC: 10 * 60,
+  DELETION_TOMBSTONE_TTL_SEC: 400 * 86400,
   _fetchJsonWithDeadline_: async (_url, init) => {
     finalizerCommand = JSON.parse(init.body);
     const keyCount = Number(finalizerCommand[2]);
@@ -219,7 +271,7 @@ vm.runInNewContext([
 ].join('\n'), receiptContext);
 const ambiguousFinal = await receiptContext.finalize('google-subject-a', '972500000000');
 assert.equal(ambiguousFinal.complete, false, 'lost finalizer response remains retryable in the first request');
-assert.equal(finalizerCommand[2], '6', 'atomic finalizer declares user, phone, reverse, guard, and both receipts as keys');
+assert.equal(finalizerCommand[2], '7', 'atomic finalizer declares user, phone, reverse, guard, both receipts, and billing tombstone as keys');
 assert.doesNotMatch(finalizerCommand[6], /google-subject-a|972500000000/,
   'deletion guard key does not expose the Google subject');
 assert.doesNotMatch(finalizerCommand[7], /google-subject-a|972500000000/,

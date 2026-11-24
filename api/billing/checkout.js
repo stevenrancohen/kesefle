@@ -34,21 +34,11 @@ async function kvGet(key) {
   return j?.result ? JSON.parse(j.result) : null;
 }
 
-async function kvSet(key, value) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return false;
-  const r = await fetch(`${url}/set/${encodeURIComponent(key)}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(value),
-  });
-  return r.ok;
-}
-
 import { requireAuth } from '../../lib/auth.js';
 import { withRequestId } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
+import { atomicMergeUserRecord } from '../../lib/user-record.js';
+import { assertBillingAccount } from '../../lib/billing.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
@@ -72,6 +62,12 @@ async function handlerImpl(req, res) {
 
   if (!PLAN_PRICES[plan]) {
     return res.status(400).json({ ok: false, error: 'invalid plan', allowed: Object.keys(PLAN_PRICES) });
+  }
+  try { await assertBillingAccount(userSub); }
+  catch (e) {
+    if (e.message === 'billing_account_deleted') return res.status(410).json({ ok: false, error: 'account_deleted' });
+    if (e.message === 'billing_account_missing') return res.status(409).json({ ok: false, error: 'account_missing' });
+    return res.status(503).json({ ok: false, error: 'billing_temporarily_unavailable' });
   }
 
   const priceId = process.env[PLAN_PRICES[plan]];
@@ -102,8 +98,7 @@ async function handlerImpl(req, res) {
       customerId = j.id;
       // Persist
       if (userRec) {
-        userRec.stripeCustomerId = customerId;
-        await kvSet('user:' + userSub, userRec);
+        await atomicMergeUserRecord(userSub, { set: { stripeCustomerId: customerId } }, { requireExisting: true });
       }
     } catch (e) {
       return res.status(502).json({ ok: false, error: 'stripe_unreachable', detail: e.message });

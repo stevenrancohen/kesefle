@@ -22,6 +22,10 @@ import { exchangeRefreshForAccess } from '../lib/oauth.js';
 import { TX_TAB } from '../lib/sheet-tabs.js';
 import { migrateLegacyReferralPii } from '../lib/referral-privacy.js';
 import { auditLog } from '../lib/secure-kv.js';
+import {
+  userDeletionKey, manualPaymentIndexKey, DELETION_TOMBSTONE_TTL_SEC,
+} from '../lib/user-record.js';
+import { cancelPaypalSubscription } from '../lib/billing.js';
 // GDPR completeness (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md): goals are
 // stored as one key per goal under an index, so a flat key list can't reach
 // them. purgeGoals() walks the goals:{userSub} index and deletes each
@@ -31,6 +35,8 @@ import { purgeGoals } from '../lib/goals.js';
 const ACCOUNT_IO_TIMEOUT_MS = 3000;
 const DELETION_RECEIPT_TTL_SEC = 7 * 86400;
 const DELETION_GUARD_COOLDOWN_SEC = 10 * 60;
+const MANUAL_PAYMENT_CODE_RE = /^KFL-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
+const MANUAL_PAYMENT_INDEX_MAX = 1000;
 
 // Destructive account operations must not wait forever after earlier steps
 // have already succeeded. Abort the underlying request and also race it so a
@@ -162,7 +168,7 @@ async function kvSetRemove(setKey, member) {
 // (29 distinct prefixes across the codebase). Phone-keyed entries are only
 // included when `phone` is provided; userSub-keyed entries are always included.
 // Referral-reverse is removed separately with a compare-owner EVAL.
-async function _keysForUser_(userSub, phone) {
+async function _keysForUser_(userSub, phone, subscriptionId) {
   const keys = [
     // Identity / auth core (both flows already had these)
     'user:' + userSub,
@@ -222,6 +228,7 @@ async function _keysForUser_(userSub, phone) {
     keys.push('phoneGroups:' + phone);      // 2026-05-31 audit addition: family/group list
     keys.push('optout:' + phone);           // 2026-05-31 audit addition: WhatsApp STOP record
   }
+  if (subscriptionId) keys.push('paypalSub:' + subscriptionId);
   return keys;
 }
 
@@ -283,6 +290,81 @@ async function _purgeMultiKeyUserRecords_(userSub, deleted) {
     } catch { failed += 1; }
   }
   return { failed };
+}
+
+// The per-user manual-payment index is the only safe way to discover pending
+// Bit/bank references without a global SCAN. Treat malformed or foreign index
+// state as a hard failure: silently skipping a child would leave PII behind
+// while the deletion endpoint claimed completion.
+async function _manualPaymentsForUserStrict_(userSub) {
+  const indexKey = manualPaymentIndexKey(userSub);
+  const index = await kvGet(indexKey);
+  if (index === null) return { indexKey, indexPresent: false, codes: [], payments: [] };
+  if (!Array.isArray(index) || index.length > MANUAL_PAYMENT_INDEX_MAX) {
+    throw new Error('manual_payment_index_malformed');
+  }
+  const codes = [];
+  const seen = new Set();
+  const payments = [];
+  for (const rawCode of index) {
+    const code = String(rawCode || '');
+    if (!MANUAL_PAYMENT_CODE_RE.test(code) || seen.has(code)) {
+      throw new Error('manual_payment_index_malformed');
+    }
+    seen.add(code);
+    codes.push(code);
+    const payment = await kvGet('pendingPayment:' + code);
+    if (payment === null) continue; // stale index member: deletion remains safe
+    if (!payment || typeof payment !== 'object' || Array.isArray(payment) ||
+        payment.code !== code || !['pending', 'confirmed', 'rejected'].includes(payment.status)) {
+      throw new Error('manual_payment_record_malformed');
+    }
+    // Pending records retain their owner so an operator can confirm them.
+    // Terminal receipts are deliberately redacted and therefore have no sub.
+    if (payment.status === 'pending' && payment.userSub !== userSub) {
+      throw new Error('manual_payment_owner_mismatch');
+    }
+    if (payment.status !== 'pending' && payment.userSub && payment.userSub !== userSub) {
+      throw new Error('manual_payment_owner_mismatch');
+    }
+    payments.push(payment);
+  }
+  return { indexKey, indexPresent: true, codes, payments };
+}
+
+async function _purgeManualPaymentsStrict_(userSub, deleted) {
+  let indexed;
+  try { indexed = await _manualPaymentsForUserStrict_(userSub); }
+  catch (error) {
+    log.warn('account.manual_payment_inventory_failed', { error: error?.message });
+    return { failed: 1 };
+  }
+  for (const code of indexed.codes) {
+    const key = 'pendingPayment:' + code;
+    try {
+      if (!(await kvDel(key))) return { failed: 1 };
+      deleted.push(key);
+    } catch { return { failed: 1 }; }
+  }
+  // Keep the index as a retry anchor until every child deletion was
+  // acknowledged. A lost/failed DEL therefore cannot orphan an undiscoverable
+  // pending payment.
+  if (!indexed.indexPresent) return { failed: 0 };
+  try {
+    if (!(await kvDel(indexed.indexKey))) return { failed: 1 };
+    deleted.push(indexed.indexKey);
+    return { failed: 0 };
+  } catch { return { failed: 1 }; }
+}
+
+async function cancelRecurringBillingForDeletion(userRec) {
+  const subscriptionId = String(userRec?.subscriptionId || '').trim();
+  const isPaypal = userRec?.paymentMethod === 'paypal' || /^I-[A-Za-z0-9_-]+$/.test(subscriptionId);
+  // Historical records can carry a PayPal subscription id without the newer
+  // recurring flag. A valid provider id is sufficient evidence to cancel;
+  // otherwise deletion could erase the mapping while charges continue.
+  if (!subscriptionId || !isPaypal) return true;
+  return cancelPaypalSubscription(subscriptionId, 'account deleted by customer');
 }
 
 // Keep a durable deletion receipt without recreating the personal data that
@@ -356,6 +438,7 @@ async function _beginDeletion_(userSub) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
   const guardKey = _deletionGuardKey_(userSub);
+  const tombstoneKey = userDeletionKey(userSub);
   if (!url || !token || !guardKey) return { status: 'unavailable' };
   const script = `#!lua flags=allow-key-locking
 local userRaw = redis.call('GET', KEYS[1])
@@ -365,14 +448,16 @@ if not ok or type(decoded) ~= 'table' then
   return cjson.encode({ status = 'user_malformed' })
 end
 redis.call('SET', KEYS[2], ARGV[1])
+redis.call('SET', KEYS[3], 'deleting', 'EX', ARGV[2])
 return cjson.encode({ status = 'marked' })`;
   try {
     const { response, payload } = await _fetchJsonWithDeadline_(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify([
-        'EVAL', script, '2', 'user:' + userSub, guardKey,
+        'EVAL', script, '3', 'user:' + userSub, guardKey, tombstoneKey,
         JSON.stringify({ v: 1, status: 'deleting' }),
+        String(DELETION_TOMBSTONE_TTL_SEC),
       ]),
     });
     if (!response.ok || typeof payload?.result !== 'string') return { status: 'unavailable' };
@@ -448,6 +533,7 @@ async function _finalizeUserAnchors_(userSub, phone) {
   if (!url || !token) return { complete: false, deletedKeys: [] };
   const userReceiptKey = _deletionReceiptKey_('user', userSub);
   const guardKey = _deletionGuardKey_(userSub);
+  const tombstoneKey = userDeletionKey(userSub);
   if (!userReceiptKey || !guardKey) return { complete: false, deletedKeys: [] };
   const receipt = JSON.stringify({ v: 1, status: 'complete', completedAt: new Date().toISOString() });
   const completedGuard = JSON.stringify({ v: 1, status: 'deleted' });
@@ -458,7 +544,7 @@ async function _finalizeUserAnchors_(userSub, phone) {
     const phoneKey = 'phone:' + phone;
     const phoneReceiptKey = _deletionReceiptKey_('phone', phone);
     if (!phoneReceiptKey) return { complete: false, deletedKeys: [] };
-    keys = [identityKey, phoneKey, reversePhoneKey, guardKey, userReceiptKey, phoneReceiptKey];
+    keys = [identityKey, phoneKey, reversePhoneKey, guardKey, userReceiptKey, phoneReceiptKey, tombstoneKey];
     script = `#!lua flags=allow-key-locking
 local phoneRaw = redis.call('GET', KEYS[2])
 if phoneRaw then
@@ -473,15 +559,17 @@ end
 redis.call('SET', KEYS[5], ARGV[2], 'EX', ARGV[3])
 redis.call('SET', KEYS[6], ARGV[2], 'EX', ARGV[3])
 redis.call('SET', KEYS[4], ARGV[4], 'EX', ARGV[5])
+redis.call('SET', KEYS[7], 'deleted', 'EX', ARGV[6])
 local phoneDeleted = redis.call('DEL', KEYS[2])
 local reverseDeleted = redis.call('DEL', KEYS[3])
 local userDeleted = redis.call('DEL', KEYS[1])
 return cjson.encode({ status = 'complete', userDeleted = userDeleted, phoneDeleted = phoneDeleted, reverseDeleted = reverseDeleted })`;
   } else {
-    keys = [identityKey, reversePhoneKey, guardKey, userReceiptKey];
+    keys = [identityKey, reversePhoneKey, guardKey, userReceiptKey, tombstoneKey];
     script = `#!lua flags=allow-key-locking
 redis.call('SET', KEYS[4], ARGV[2], 'EX', ARGV[3])
 redis.call('SET', KEYS[3], ARGV[4], 'EX', ARGV[5])
+redis.call('SET', KEYS[5], 'deleted', 'EX', ARGV[6])
 local reverseDeleted = redis.call('DEL', KEYS[2])
 local userDeleted = redis.call('DEL', KEYS[1])
 return cjson.encode({ status = 'complete', userDeleted = userDeleted, phoneDeleted = 0, reverseDeleted = reverseDeleted })`;
@@ -495,6 +583,7 @@ return cjson.encode({ status = 'complete', userDeleted = userDeleted, phoneDelet
         'EVAL', script, String(keys.length), ...keys,
         userSub, receipt, String(DELETION_RECEIPT_TTL_SEC),
         completedGuard, String(DELETION_GUARD_COOLDOWN_SEC),
+        String(DELETION_TOMBSTONE_TTL_SEC),
       ]),
     });
     if (!response.ok || typeof payload?.result !== 'string') {
@@ -516,13 +605,19 @@ return cjson.encode({ status = 'complete', userDeleted = userDeleted, phoneDelet
 // any step fails, both the identity and phone mapping remain as retry anchors.
 // Earlier successful deletes are idempotent, so retrying safely finishes the
 // purge from either web or WhatsApp.
-async function _purgeUserRecords_(userSub, phone, deleted) {
+async function _purgeUserRecords_(userSub, phone, subscriptionId, deleted) {
   const identityKey = 'user:' + userSub;
   const phoneKey = phone ? 'phone:' + phone : null;
   const reversePhoneKey = 'userPhone:' + userSub;
-  const keys = (await _keysForUser_(userSub, phone))
+  const keys = (await _keysForUser_(userSub, phone, subscriptionId))
     .filter((key) => key !== identityKey && key !== phoneKey && key !== reversePhoneKey);
   let failed = 0;
+
+  // Delete manual-payment children before their discoverability index. If any
+  // child DEL fails or its response is lost, retain the index and account
+  // anchors so the exact inventory is retryable.
+  const manual = await _purgeManualPaymentsStrict_(userSub, deleted);
+  failed += manual.failed;
 
   for (const key of keys) {
     try {
@@ -668,6 +763,12 @@ async function deleteAccount(req, res) {
     }
   }
 
+  if (!(await cancelRecurringBillingForDeletion(userRec))) {
+    log.error('account.delete_subscription_cancel_failed', { reqId: req.reqId });
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+
   // Revoke the Google grant on delete. Handle BOTH the encrypted envelope
   // (current users) AND the legacy plaintext token — otherwise envelope users'
   // Google access survives account deletion (GDPR). Mirrors deleteByPhone.
@@ -686,7 +787,7 @@ async function deleteAccount(req, res) {
     return _deletionRetryRequiredResponse_(res);
   }
 
-  const purge = await _purgeUserRecords_(userSub, phone, deleted);
+  const purge = await _purgeUserRecords_(userSub, phone, userRec.subscriptionId, deleted);
   if (!purge.complete) {
     await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
     return _deletionRetryRequiredResponse_(res);
@@ -777,6 +878,17 @@ async function exportAccount(req, res) {
     kvGet('referral:count:' + userSub),
     kvGet('audit:referral_redeem:' + userSub),
   ]);
+  const manualPayments = (await _manualPaymentsForUserStrict_(userSub)).payments.map((payment) => ({
+    code: payment.code,
+    status: payment.status,
+    plan: payment.plan,
+    period: payment.period,
+    months: payment.months,
+    amountILS: payment.amountILS,
+    method: payment.method,
+    createdAt: payment.createdAt,
+    resolvedAt: payment.confirmedAt || payment.rejectedAt || null,
+  }));
 
   const exportDoc = {
     export_meta: {
@@ -801,6 +913,7 @@ async function exportAccount(req, res) {
       redemption_audit: referralAudit || null,
       note: 'Your personal referral code, earned credit, redemption receipt, and referral count.',
     },
+    manual_payments: manualPayments,
     not_stored_by_kesefle: [
       'Original raw WhatsApp message bodies (only the parsed amount + category are persisted)',
       'Your bank/credit card data (we never receive it)',
@@ -935,6 +1048,11 @@ async function deleteByPhone(req, res) {
       return _deletionRetryRequiredResponse_(res);
     }
   }
+  if (userRec && !(await cancelRecurringBillingForDeletion(userRec))) {
+    log.error('account.delete_by_phone_subscription_cancel_failed', { reqId: req.reqId });
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
   let refreshToken = null;
   let refreshTokenReadable = true;
   if (userRec) {
@@ -952,7 +1070,7 @@ async function deleteByPhone(req, res) {
     return _deletionRetryRequiredResponse_(res);
   }
 
-  const purge = await _purgeUserRecords_(userSub, phone, deleted);
+  const purge = await _purgeUserRecords_(userSub, phone, userRec?.subscriptionId, deleted);
   if (!purge.complete) {
     await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
     return _deletionRetryRequiredResponse_(res);

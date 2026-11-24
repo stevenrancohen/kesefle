@@ -26,6 +26,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import {
   activatePremium, deactivatePremium, priceILS,
+  assertBillingAccount,
   billingKvGet, billingKvSet, notifyOwner,
 } from '../../lib/billing.js';
 import { createInvoice } from '../../lib/invoice.js';
@@ -50,6 +51,10 @@ const GRACE_DAYS = 3;
 // paypal_event:* idempotency keys expire after 90 days — comfortably past
 // PayPal's ~3-day webhook retry window, without growing the KV store forever.
 const SEEN_EVENT_TTL_SEC = 90 * 24 * 3600;
+// Activation markers only suppress duplicate side effects; accessUntil itself is
+// an absolute, monotonic clock. Keep markers past chargeback/webhook replay
+// windows without retaining one key forever for every monthly renewal.
+const ACTIVATION_TTL_SEC = 400 * 24 * 3600;
 const SITE = process.env.PUBLIC_SITE_URL || 'https://kesefle.com';
 
 function paypalEnvName() {
@@ -215,6 +220,18 @@ async function subscribeImpl(req, res) {
     return res.status(500).json({ ok: false, error: 'paypal_plan_not_configured', detail: `${plan}/${period}` });
   }
 
+  // A browser session may outlive account deletion. Refuse before minting a
+  // PayPal token or checkout so nobody can pay for an account that activation
+  // is required to reject.
+  const userSub = req.user.sub;
+  try { await assertBillingAccount(userSub); }
+  catch (e) {
+    if (e.message === 'billing_account_deleted') return res.status(410).json({ ok: false, error: 'account_deleted' });
+    if (e.message === 'billing_account_missing') return res.status(409).json({ ok: false, error: 'account_missing' });
+    log.error('paypal_account_check_failed', { reqId: req.reqId, error: e.message });
+    return res.status(503).json({ ok: false, error: 'billing_temporarily_unavailable' });
+  }
+
   let token;
   try { token = await getAccessToken(); }
   catch (e) {
@@ -227,7 +244,6 @@ async function subscribeImpl(req, res) {
   }
 
   // custom_id binds the subscription to the verified user identity (NOT body).
-  const userSub = req.user.sub;
   try {
     const r = await fetch(`${paypalBase()}/v1/billing/subscriptions`, {
       method: 'POST',
@@ -329,14 +345,16 @@ async function webhookImpl(req, res) {
       const { plan, period } = planFromPlanId(resource.plan_id);
       const nextBilling = resource.billing_info?.next_billing_time;
       if (userSub && subId) {
-        // Persist BOTH plan + period so renewal webhooks + change-plan flow
-        // know which billing cycle the user is on. activatePremium also gets
-        // the period so it can set the correct accessUntil window.
-        await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
+        const accessUntil = accessUntilFromNextBilling(nextBilling, period);
         await activatePremium(userSub, {
           plan, period, method: 'paypal', recurring: true, externalId: subId,
-          accessUntil: accessUntilFromNextBilling(nextBilling, period),
+          accessUntil,
+          activationKey: `paypal:${subId}:${accessUntil}`,
+          activationTtlSec: ACTIVATION_TTL_SEC,
         });
+        // Persist the reverse mapping only after the tombstone-aware account
+        // activation succeeds; a late webhook must not recreate deleted PII.
+        await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
       } else {
         // Activation we cannot map to a user — a paying customer would get
         // NOTHING. Alert the owner instead of no-op'ing silently.
@@ -365,17 +383,20 @@ async function webhookImpl(req, res) {
             const fromPlan = planFromPlanId(sub?.plan_id);
             plan = fromPlan.plan;
             period = fromPlan.period;
-            await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
           }
         }
         if (userSub) {
           plan = plan || 'pro';
           period = period === 'year' ? 'year' : 'month';
           const nextBilling = sub?.billing_info?.next_billing_time;
+          const accessUntil = accessUntilFromNextBilling(nextBilling, period);
           await activatePremium(userSub, {
             plan, period, method: 'paypal', recurring: true, externalId: subId,
-            accessUntil: accessUntilFromNextBilling(nextBilling, period),
+            accessUntil,
+            activationKey: `paypal:${subId}:${accessUntil}`,
+            activationTtlSec: ACTIVATION_TTL_SEC,
           });
+          await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
           // Fire-and-forget Israeli VAT invoice. Use the SALE's resource.id as
           // the paymentReference (not the subscription id) so each renewal
           // gets a distinct invoice keyed in KV. Failure here is logged
@@ -408,7 +429,9 @@ async function webhookImpl(req, res) {
       const subId = resource.id;
       const map = subId ? await billingKvGet(`paypalSub:${subId}`) : null;
       const userSub = map?.userSub || resource.custom_id;
-      if (userSub) await deactivatePremium(userSub, 'canceled');
+      if (userSub) {
+        await deactivatePremium(userSub, 'canceled', { expectedSubscriptionId: subId || null });
+      }
     } else if (
       type === 'PAYMENT.SALE.DENIED' ||
       type === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED'
@@ -420,7 +443,13 @@ async function webhookImpl(req, res) {
       const map = subId ? await billingKvGet(`paypalSub:${subId}`) : null;
       const userSub = map?.userSub || resource.custom_id;
       if (userSub) {
-        await billingKvSet(`payment_failed:${userSub}`, {
+        let eligible = true;
+        try { await assertBillingAccount(userSub); }
+        catch (e) {
+          if (e.message === 'billing_account_deleted' || e.message === 'billing_account_missing') eligible = false;
+          else throw e;
+        }
+        if (eligible) await billingKvSet(`payment_failed:${userSub}`, {
           subId,
           plan: map?.plan || 'pro',
           firstFailureAt: new Date().toISOString(),
@@ -429,6 +458,7 @@ async function webhookImpl(req, res) {
         });
         // Fire Day-0 email immediately (best-effort, env-fail-soft).
         try {
+          if (!eligible) throw new Error('account_gone');
           const { sendTemplate } = await import('../../lib/email.js');
           const { buildUnsubscribeUrl } = await import('../../lib/email-unsub.js');
           const u = await billingKvGet(`user:${userSub}`);
@@ -457,6 +487,41 @@ async function webhookImpl(req, res) {
       await billingKvSet(seenKey, { type, ts: new Date().toISOString() }, { ttlSec: SEEN_EVENT_TTL_SEC });
     }
   } catch (e) {
+    if (e.message === 'billing_account_deleted' || e.message === 'billing_account_missing') {
+      log.info('paypal_webhook.account_gone', { reqId: req.reqId, type, eventId: event.id });
+      if (type === 'PAYMENT.SALE.COMPLETED') {
+        // Money arrived after the local account disappeared. ACK only after a
+        // durable reconciliation item exists; if KV is down, return 500 so
+        // PayPal retries instead of silently losing a paid event.
+        const reconciliationId = event.id || resource.id || resource.billing_agreement_id;
+        if (!reconciliationId) {
+          log.error('paypal_sale_account_gone_unidentified', { reqId: req.reqId });
+          return res.status(500).json({ ok: false, error: 'handler_failed' });
+        }
+        try {
+          await billingKvSet(`billing_reconcile:paypal:${reconciliationId}`, {
+            provider: 'paypal',
+            reason: 'paid_account_gone',
+            eventId: event.id || null,
+            saleId: resource.id || null,
+            subscriptionId: resource.billing_agreement_id || null,
+            ts: new Date().toISOString(),
+          }, { ttlSec: ACTIVATION_TTL_SEC });
+        } catch (queueError) {
+          log.error('paypal_sale_reconciliation_queue_failed', {
+            reqId: req.reqId, eventId: event.id, error: queueError.message,
+          });
+          return res.status(500).json({ ok: false, error: 'handler_failed' });
+        }
+        await notifyOwner(
+          `PayPal CRITICAL: payment ${resource.id || event.id || ''} arrived for a deleted/missing account. Reconcile subscription ${resource.billing_agreement_id || 'unknown'} from the durable billing queue.`,
+        ).catch(() => {});
+      }
+      if (event.id) {
+        await billingKvSet(seenKey, { type, ts: new Date().toISOString(), accountGone: true }, { ttlSec: SEEN_EVENT_TTL_SEC });
+      }
+      return res.status(200).json({ ok: true, ignored: 'account_gone' });
+    }
     log.error('paypal_webhook_handler_failed', { reqId: req.reqId, type, error: e.message });
     return res.status(500).json({ ok: false, error: 'handler_failed' });
   }
@@ -510,10 +575,12 @@ async function confirmImpl(req, res) {
     return res.status(200).json({ ok: true, alreadyActive: true, plan: existing.plan, period, accessUntil: existing.accessUntil });
   }
 
-  await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
   await activatePremium(userSub, {
     plan, period, method: 'paypal', recurring: true, externalId: subId, accessUntil,
+    activationKey: `paypal:${subId}:${accessUntil}`,
+    activationTtlSec: ACTIVATION_TTL_SEC,
   });
+  await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
   log.info('paypal.confirm_activated', { reqId: req.reqId, userSub, plan, period });
   return res.status(200).json({ ok: true, plan, period, accessUntil });
 }

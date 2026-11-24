@@ -16,6 +16,7 @@ import { rateLimit, rateLimitId } from '../../lib/ratelimit.js';
 import { getGoogleClientId } from '../../lib/auth.js';
 import { createUserSheetWithToken, exchangeRefreshForAccess } from '../../lib/sheet-writer.js';
 import { decryptRefreshToken } from '../../lib/crypto.js';
+import { atomicMergeUserRecord } from '../../lib/user-record.js';
 import { getUserId } from '../_lib/session.js';
 
 // Server-side verification of a Google OAuth access token.
@@ -269,15 +270,9 @@ async function handlerImpl(req, res) {
       } catch (_e) { return false; }
     }
     try {
-      const userRes = await fetch(`${kvUrl}/get/${encodeURIComponent('user:' + userSub)}`, { headers: { 'Authorization': `Bearer ${kvToken}` } });
-      const userJson = await userRes.json();
-      const userRec = userJson?.result ? JSON.parse(userJson.result) : null;
-      if (userRec) {
-        userRec.spreadsheetId = spreadsheetId;
-        userRec.spreadsheetUrl = spreadsheetUrl;
-        userRec.provisioned = record.provisioned;
-        await kvSetSimple('user:' + userSub, userRec);
-      }
+      await atomicMergeUserRecord(userSub, {
+        set: { spreadsheetId, spreadsheetUrl, provisioned: record.provisioned },
+      }, { requireExisting: true });
     } catch (e) { log.warn('provision.user_record_merge_failed', { reqId: req.reqId, error: e.message }); }
 
     try {

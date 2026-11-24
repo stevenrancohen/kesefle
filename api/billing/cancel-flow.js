@@ -130,7 +130,9 @@ async function handlerImpl(req, res) {
       // Flip the entitlement off. deactivatePremium keeps accessUntil, so the
       // customer rides out the period they already paid for and
       // computeEntitlement lapses them automatically afterwards.
-      try { await deactivatePremium(userSub, 'canceled'); } catch (eDeact) {
+      try {
+        await deactivatePremium(userSub, 'canceled', { expectedSubscriptionId: subscriptionId });
+      } catch (eDeact) {
         log.error('cancel_flow.deactivate_failed', { reqId: req.reqId, userSub, error: eDeact.message });
       }
 

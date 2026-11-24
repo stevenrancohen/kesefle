@@ -33,6 +33,33 @@ const kv = new Map();
 global.fetch = async (url, opts) => {
   opts = opts || {};
   const u = String(url);
+  if (u === 'https://kv.test' && opts.method === 'POST') {
+    const cmd = JSON.parse(opts.body || '[]');
+    if (cmd[0] === 'EVAL' && String(cmd[1]).includes('KESEFLE_BILLING_ACTIVATE_V1')) {
+      const keyCount = Number(cmd[2]);
+      const keys = cmd.slice(3, 3 + keyCount);
+      const args = cmd.slice(3 + keyCount);
+      if (keys[1] && kv.has(keys[1])) {
+        const record = kv.has(keys[0]) ? JSON.parse(kv.get(keys[0])) : { userSub: args[0] };
+        return new Response(JSON.stringify({ result: JSON.stringify({ status: 'replayed', record }) }), { status: 200 });
+      }
+      const record = kv.has(keys[0]) ? JSON.parse(kv.get(keys[0])) : { userSub: args[0] };
+      const current = Date.parse(record.accessUntil || '') || 0;
+      const next = args[5] === 'absolute'
+        ? Math.max(current, Number(args[6]))
+        : Math.max(current, Number(args[7])) + Number(args[6]) * 30 * 86400000;
+      Object.assign(record, {
+        plan: args[1], subscriptionStatus: 'active', paymentMethod: args[2],
+        recurring: args[3] === '1', billingPeriod: args[4],
+        accessUntil: new Date(next).toISOString(), lastPaymentAt: args[8],
+      });
+      if (args[9]) record.lastPaymentRef = args[9];
+      if (record.recurring && args[9]) record.subscriptionId = args[9];
+      kv.set(keys[0], JSON.stringify(record));
+      if (keys[1]) kv.set(keys[1], '1');
+      return new Response(JSON.stringify({ result: JSON.stringify({ status: 'applied', record }) }), { status: 200 });
+    }
+  }
   const m = u.match(/\/(get|set)\/([^?]+)/);
   if (m) {
     const key = decodeURIComponent(m[2]);

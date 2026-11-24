@@ -50,6 +50,33 @@ global.fetch = async (url, opts = {}) => {
     return new Response(JSON.stringify(nextTokenResponse), { status: 200 });
   }
 
+  // Atomic canonical-user partial merge (lib/user-record.js). Model the
+  // Upstash EVAL command so this regression test follows the production write
+  // boundary instead of expecting the removed GET/mutate/SET sequence.
+  if (u === 'https://kv.test' && method === 'POST') {
+    const command = JSON.parse(opts.body || '[]');
+    const script = String(command[1] || '');
+    if (command[0] === 'EVAL' && script.includes('KESEFLE_USER_RECORD_MERGE_V1')) {
+      counters.set++;
+      const keyCount = Number(command[2]);
+      const keys = command.slice(3, 3 + keyCount);
+      const args = command.slice(3 + keyCount);
+      const raw = kv.get(keys[0]);
+      if (!raw && args[2] === '1') {
+        return new Response(JSON.stringify({ result: JSON.stringify({ status: 'missing' }) }), { status: 200 });
+      }
+      const record = raw ? JSON.parse(raw) : { userSub: args[0] };
+      const changes = JSON.parse(args[1]);
+      Object.assign(record, changes.set || {});
+      for (const field of changes.deleteFields || []) delete record[field];
+      record.userSub = args[0];
+      setKv(keys[0], record);
+      return new Response(JSON.stringify({
+        result: JSON.stringify({ status: 'merged', created: !raw, record }),
+      }), { status: 200 });
+    }
+  }
+
   // KV SETNX lock: /set/{key}?nx=true&ex=...
   const setNxM = u.match(/\/set\/([^?]+)\?.*nx=true/i);
   if (setNxM && method === 'POST') {

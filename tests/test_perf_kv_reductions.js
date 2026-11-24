@@ -135,6 +135,27 @@ console.log('\n=== oauth: access-token cache (skips repeat Google exchanges) ===
       tokenExchanges++;
       return new Response(JSON.stringify(nextToken), { status: 200 });
     }
+    if (u === 'https://kv.test' && (opts.method || '').toUpperCase() === 'POST') {
+      const command = JSON.parse(opts.body || '[]');
+      if (command[0] === 'EVAL' && String(command[1]).includes('KESEFLE_USER_RECORD_MERGE_V1')) {
+        const keyCount = Number(command[2]);
+        const keys = command.slice(3, 3 + keyCount);
+        const args = command.slice(3 + keyCount);
+        const raw = kv.get(keys[0]);
+        if (!raw && args[2] === '1') {
+          return new Response(JSON.stringify({ result: JSON.stringify({ status: 'missing' }) }), { status: 200 });
+        }
+        const record = raw ? JSON.parse(raw) : { userSub: args[0] };
+        const changes = JSON.parse(args[1]);
+        Object.assign(record, changes.set || {});
+        for (const field of changes.deleteFields || []) delete record[field];
+        record.userSub = args[0];
+        kv.set(keys[0], JSON.stringify(record));
+        return new Response(JSON.stringify({
+          result: JSON.stringify({ status: 'merged', created: !raw, record }),
+        }), { status: 200 });
+      }
+    }
     // KV (used only by the rotation-persist branch)
     const setNx = u.match(/\/set\/([^?]+)\?.*nx=true/i);
     if (setNx && (opts.method || '').toUpperCase() === 'POST') {
