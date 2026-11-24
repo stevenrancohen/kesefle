@@ -3,8 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  # Stacked Codex PRs target review branches before they are retargeted to
+  # main. Run the same secret-free gates on every pull-request base so build
+  # integrity is enforced during the actual review, not only at the final hop.
+  pull_request: {}
 
 jobs:
   # The headline gate: the comprehensive regression gauntlet. This is the SAME
@@ -24,6 +26,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+      - name: Install pinned build dependencies
+        run: npm ci --ignore-scripts
       - name: Run the full gauntlet
         run: npm run gauntlet
 
@@ -38,6 +43,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+
+      - name: Install pinned build dependencies
+        run: npm ci --ignore-scripts
 
       # The offline gate. tests/full_qa.js loads the real source (bot + lib +
       # api) and registers the isolation / billing-signature / classifier

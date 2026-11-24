@@ -737,7 +737,7 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
     'read probes allow normal dashboard reloads without weakening mutation limits');
   assert.match(api, /key: isRead \? ['"]push_subscribe_read['"] : ['"]push_subscribe['"]/,
     'read probes have a separate non-mutating rate-limit budget');
-  assert.match(read('sw.js'), /v26-2026-11-24-app-push/,
+  assert.match(read('sw.js'), /v27-2026-11-24-static-app-css-[a-f0-9]{12}/,
     'service-worker version rolls account Push settings and logout isolation to installed PWAs');
 
   console.log('Push logout isolation: PASS');
