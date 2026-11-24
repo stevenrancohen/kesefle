@@ -15,7 +15,7 @@
 // The suffix is the first 12 chars of css/app-tailwind.css SHA-256. The
 // deterministic build test enforces this link so installed PWAs never retain
 // an older cache-first stylesheet after the source utilities change.
-const VERSION = 'v27-2026-11-24-static-app-css-886bd38745c2';
+const VERSION = 'v28-2026-11-24-welcome-session-static-app-css-886bd38745c2';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -54,6 +54,7 @@ const REQUIRED_PRECACHE_URLS = [
   '/app.html',
   '/app.webmanifest',
   '/lib/browser-session.js',
+  '/lib/browser-session.js?v=welcome-session-v28',
   '/css/brand.css',
   '/css/app-tailwind.css?v=886bd38745c2',
   '/expense',
@@ -69,6 +70,7 @@ const REQUIRED_PRECACHE_TYPES = new Map([
   ['/app.html', ['text/html']],
   ['/app.webmanifest', ['application/manifest+json']],
   ['/lib/browser-session.js', ['application/javascript', 'text/javascript']],
+  ['/lib/browser-session.js?v=welcome-session-v28', ['application/javascript', 'text/javascript']],
   ['/css/brand.css', ['text/css']],
   ['/css/app-tailwind.css?v=886bd38745c2', ['text/css']],
   ['/expense', ['text/html']],

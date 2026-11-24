@@ -136,7 +136,7 @@ function createWelcomeRuntime(configHandler, meHandler, linkStatusHandler) {
   };
 }
 
-async function flush(times = 12) {
+async function flush(times = 30) {
   for (let i = 0; i < times; i++) await Promise.resolve();
 }
 
@@ -264,8 +264,8 @@ async function main() {
   assert.strictEqual(timers.intervals.size, 0, 'capability false clears all active timers');
   assert.ok(timers.cleared.length >= 2);
 
-  // A linked hint survives ambiguous status failures; only an authoritative
-  // `{ok:true, linked:false}` may clear it and return to phase A.
+  // A device-wide linked hint may belong to another account. It must never
+  // render success; only an authoritative session-bound true may do that.
   const status500 = createWelcomeRuntime(
     async () => response({ ok: true, waba_approved: true, BOT_NUMBER: '972547760643' }),
     readyMe,
@@ -273,7 +273,8 @@ async function main() {
   );
   status500.storage.set('kesefle_whatsapp_linked', '1');
   await flush();
-  assert.ok(!status500.elements['kfl-link-phase-C'].classList.contains('hidden'), '500 preserves linked status');
+  assert.ok(status500.elements['kfl-link-phase-C'].classList.contains('hidden'), '500 never renders a stale linked hint');
+  assert.ok(!status500.elements['kfl-link-phase-A'].classList.contains('hidden'), '500 keeps the verified-sheet phone flow neutral');
   assert.strictEqual(status500.storage.get('kesefle_whatsapp_linked'), '1');
 
   const malformedStatus = createWelcomeRuntime(
@@ -283,7 +284,17 @@ async function main() {
   );
   malformedStatus.storage.set('kesefle_whatsapp_linked', '1');
   await flush();
-  assert.ok(!malformedStatus.elements['kfl-link-phase-C'].classList.contains('hidden'), 'malformed status preserves linked status');
+  assert.ok(malformedStatus.elements['kfl-link-phase-C'].classList.contains('hidden'), 'malformed status never renders a stale linked hint');
+
+  const confirmedLinked = createWelcomeRuntime(
+    async () => response({ ok: true, waba_approved: true, BOT_NUMBER: '972547760643' }),
+    readyMe,
+    async () => response({ ok: true, linked: true }),
+  );
+  confirmedLinked.storage.set('kesefle_whatsapp_linked', '1');
+  await flush(30);
+  assert.ok(!confirmedLinked.elements['kfl-link-phase-C'].classList.contains('hidden'), 'session-bound linked true renders success');
+  assert.strictEqual(confirmedLinked.storage.has('kesefle_whatsapp_linked'), false, 'legacy device-wide hint is retired');
 
   const confirmedUnlinked = createWelcomeRuntime(
     async () => response({ ok: true, waba_approved: true, BOT_NUMBER: '972547760643' }),

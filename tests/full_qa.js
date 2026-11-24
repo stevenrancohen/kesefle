@@ -117,6 +117,7 @@ const UNIT_SUITES = [
   'tests/test_browser_session_hygiene.js',            // browser auth: presentation-only storage, cookie-only API calls, safe PKCE return, PWA cache rollout
   'tests/test_account_session_truth.js',              // account UI/provisioning stays private until /api/me verifies the HttpOnly session
   'tests/test_dashboard_session_truth.js',            // dashboard UI/data stays private until /api/me verifies the HttpOnly session
+  'tests/test_welcome_session_truth.js',              // welcome identity/referral/progress stays neutral until /api/me verifies this account
   'tests/test_legacy_session_upgrade.js',             // browser auth rollout: verified legacy ID token upgrades only an existing canonical user to HttpOnly session
 ];
 // Dedup defensively so an accidental duplicate entry can't double-count.

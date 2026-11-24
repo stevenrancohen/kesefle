@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<script src="/lib/browser-session.js"></script>
+<script src="/lib/browser-session.js?v=welcome-session-v28"></script>
 <title>ברוך הבא — כספ'לה</title>
 <meta name="description" content="ברוך הבא לכספ'לה. מתחילים לנהל תנועות באפליקציה ומחברים ערוצים נוספים כשהם זמינים." />
 <meta name="robots" content="noindex,nofollow" />
@@ -130,7 +130,6 @@
     <span class="flex-shrink-0 text-xs opacity-80">פתח ←</span>
   </a>
 </div>
-<script>(function(){try{var raw=localStorage.getItem('kesefle_user');if(!raw)return;var u=JSON.parse(raw);if(!u||(!u.sub&&!u.email))return;var b=document.getElementById('referral-banner');if(b)b.classList.remove('hidden');}catch(e){}})();</script>
 
 <main class="mx-auto max-w-5xl px-4 py-8 sm:px-5 sm:py-10 md:py-14">
 
@@ -148,12 +147,12 @@
       <span id="welcome-ready-badge" class="font-mono">WELCOME • START</span>
     </div>
     <h1 class="mt-4 text-3xl font-black sm:text-4xl md:text-5xl">
-      ברוך הבא ל<span class="holo-text">כספ'לה</span>
+      <span id="welcome-heading-prefix">ברוך הבא ל</span><span id="welcome-heading-value" class="holo-text">כספ'לה</span><span id="welcome-heading-suffix"></span>
     </h1>
     <p class="mt-3 text-lg text-ink-600 dark:text-ink-300">
       מכאן מתחילים לעקוב אחרי הכסף — באפליקציה, בקצב שלך.
     </p>
-    <button onclick="confettiBurst(event)" class="mt-6 inline-flex items-center gap-2 rounded-2xl border border-ink-200 bg-white px-6 py-3 text-ink-900 font-bold shadow-sm hover:bg-ink-50 dark:border-ink-700 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
+    <button id="welcome-celebrate-button" onclick="confettiBurst(event)" class="hidden mt-6 inline-flex items-center gap-2 rounded-2xl border border-ink-200 bg-white px-6 py-3 text-ink-900 font-bold shadow-sm hover:bg-ink-50 dark:border-ink-700 dark:bg-white dark:text-ink-900 dark:hover:bg-ink-100">
       🎊 תחגוג איתי
     </button>
   </section>
@@ -262,11 +261,34 @@
     var BOT_NUMBER = '';
     var WHATSAPP_AVAILABLE = false;
     var WELCOME_SHEET_READY = false;
+    var WELCOME_USER_SUB = '';
     var capabilityGeneration = 0;
     var pollTimer = null;
     var countdownTimer = null;
     var linkedAlreadyChecked = false;
     window.__kflWhatsAppAvailable = false;
+
+    function welcomeDeadline(promise, timeoutMs) {
+      return new Promise(function (resolve) {
+        var finished = false;
+        var timer = setTimeout(function () {
+          if (finished) return;
+          finished = true;
+          resolve(null);
+        }, timeoutMs);
+        Promise.resolve(promise).then(function (value) {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          resolve(value);
+        }, function () {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          resolve(null);
+        });
+      });
+    }
 
     function canUseWhatsAppLinking() {
       return WHATSAPP_AVAILABLE === true && WELCOME_SHEET_READY === true;
@@ -297,11 +319,46 @@
       checkExistingLink();
     }
 
-    function applyWelcomeAccountState(me) {
-      var userReady = !!(me && me.ok === true && me.user);
+    function paintVerifiedIdentity(user, sheetReady) {
+      var first = String(user && (user.given_name || user.name) || '').trim().split(/\s+/)[0];
+      var prefix = document.getElementById('welcome-heading-prefix');
+      var value = document.getElementById('welcome-heading-value');
+      var suffix = document.getElementById('welcome-heading-suffix');
+      var referral = document.getElementById('referral-banner');
+      var celebrate = document.getElementById('welcome-celebrate-button');
+      if (first) {
+        if (prefix) prefix.textContent = 'ברוך הבא, ';
+        if (value) value.textContent = first;
+        if (suffix) suffix.textContent = '! 👋';
+      }
+      if (referral) referral.classList.remove('hidden');
+      if (celebrate) celebrate.classList.toggle('hidden', !sheetReady);
+    }
+
+    function clearWelcomeIdentity() {
+      var prefix = document.getElementById('welcome-heading-prefix');
+      var value = document.getElementById('welcome-heading-value');
+      var suffix = document.getElementById('welcome-heading-suffix');
+      var referral = document.getElementById('referral-banner');
+      var celebrate = document.getElementById('welcome-celebrate-button');
+      if (prefix) prefix.textContent = 'ברוך הבא ל';
+      if (value) value.textContent = "כספ'לה";
+      if (suffix) suffix.textContent = '';
+      if (referral) referral.classList.add('hidden');
+      if (celebrate) celebrate.classList.add('hidden');
+    }
+
+    function applyWelcomeAccountState(me, authorityState) {
+      var userReady = !!(me && me.ok === true && me.user && typeof me.user.sub === 'string' && me.user.sub.trim());
       var sheetReady = !!(userReady && me.sheet && me.sheet.spreadsheetUrl);
+      authorityState = userReady ? 'authenticated' : authorityState === 'signed_out' ? 'signed_out' : 'unknown';
+      WELCOME_USER_SUB = userReady ? me.user.sub.trim() : '';
       WELCOME_SHEET_READY = sheetReady;
+      window.__kflWelcomeAuthorityState = authorityState;
+      window.__kflWelcomeUserSub = WELCOME_USER_SUB;
       window.__kflWelcomeSheetReady = sheetReady;
+      clearWelcomeIdentity();
+      if (userReady) paintVerifiedIdentity(me.user, sheetReady);
       var pct = document.getElementById('setup-pct');
       var bar = document.getElementById('setup-progress');
       var status = document.getElementById('setup-status-label');
@@ -332,12 +389,21 @@
         if (copy) copy.textContent = 'החשבון מחובר, אבל עדיין לא נמצא גיליון פעיל. משלימים את ההגדרה בלי לאבד נתונים.';
         if (primary) { primary.href = '/account'; primary.textContent = 'השלמת ההגדרה →'; }
         if (secondary) { secondary.href = '/app'; secondary.textContent = 'חזרה לאפליקציה'; }
-      } else {
+      } else if (authorityState === 'signed_out') {
         if (badge) badge.textContent = 'WELCOME • START';
         if (title) title.textContent = 'מתחילים בכספ\'לה';
         if (copy) copy.textContent = 'עדיין לא זוהה חשבון עם גיליון פעיל. פותחים את האפליקציה ומתחברים לפני הזנת נתונים.';
         if (primary) { primary.href = '/app'; primary.textContent = 'פתיחת האפליקציה →'; }
         if (secondary) { secondary.href = '/account?force_signin=1&next=%2Fapp'; secondary.textContent = 'התחברות עם Google'; }
+      } else {
+        if (badge) badge.textContent = 'ACCOUNT • CHECKING';
+        if (title) title.textContent = 'המידע האישי נשאר מוגן';
+        if (copy) copy.textContent = 'לא הצלחנו לאמת כרגע את החשבון מול השרת, ולכן לא הצגנו שם, הפניה או נתונים אישיים. אפשר לנסות שוב מהאפליקציה.';
+        if (primary) { primary.href = '/app'; primary.textContent = 'ניסיון נוסף באפליקציה →'; }
+        if (secondary) { secondary.href = '/account'; secondary.textContent = 'בדיקת החשבון'; }
+      }
+      if (sheetReady && typeof window.__kflRestoreWelcomeMilestone === 'function') {
+        window.__kflRestoreWelcomeMilestone();
       }
       paintWelcomeEntry();
     }
@@ -398,11 +464,38 @@
             .catch(function () { setWhatsAppAvailability(false, ''); });
         } catch (_e) { setWhatsAppAvailability(false, ''); }
         try {
-          fetch('/api/me', { credentials: 'include', cache: 'no-store' })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (me) { applyWelcomeAccountState(me); })
-            .catch(function () { applyWelcomeAccountState(null); });
-        } catch (_meError) { applyWelcomeAccountState(null); }
+          var authTimeout = Number(window.__kflWelcomeAuthTimeoutMs);
+          if (!Number.isFinite(authTimeout) || authTimeout < 1) authTimeout = 1800;
+          window.__kflWelcomeSessionPromise = welcomeDeadline(
+            fetch('/api/me', { credentials: 'include', cache: 'no-store' }),
+            authTimeout
+          )
+            .then(function (r) {
+              if (r && (r.status === 401 || r.status === 403)) {
+                if (window.KesefleSession && typeof window.KesefleSession.clearAllIdentityStorage === 'function') {
+                  window.KesefleSession.clearAllIdentityStorage();
+                }
+                applyWelcomeAccountState(null, 'signed_out');
+                return null;
+              }
+              if (!r || !r.ok || typeof r.json !== 'function') {
+                applyWelcomeAccountState(null, 'unknown');
+                return null;
+              }
+              return welcomeDeadline(r.json(), Math.min(authTimeout, 800)).then(function (me) {
+                if (!me || me.ok !== true || !me.user || typeof me.user.sub !== 'string' || !me.user.sub.trim()) {
+                  applyWelcomeAccountState(null, 'unknown');
+                  return null;
+                }
+                applyWelcomeAccountState(me, 'authenticated');
+                return me;
+              });
+            })
+            .catch(function () { applyWelcomeAccountState(null, 'unknown'); return null; });
+        } catch (_meError) {
+          applyWelcomeAccountState(null, 'unknown');
+          window.__kflWelcomeSessionPromise = Promise.resolve(null);
+        }
       }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
     })();
@@ -554,7 +647,6 @@
     window.kflLinkFirstExpense = function (e) {
       if (!canUseWhatsAppLinking()) { if (e && e.preventDefault) e.preventDefault(); return false; }
       try {
-        localStorage.setItem('kfl_first_msg_clicked', '1');
         fetch('/api/log/funnel-event', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -568,21 +660,18 @@
       return true;
     };
 
-    // Local storage is only a visual hint; the session-bound GET remains the
-    // authority. This check runs once and only after capability approval.
+    // Only the session-bound GET may render success. Device-wide hints can
+    // belong to a previous account on a shared phone.
     function checkExistingLink() {
       if (!canUseWhatsAppLinking() || linkedAlreadyChecked) return;
       linkedAlreadyChecked = true;
       var requestGeneration = capabilityGeneration;
-      try {
-        if (localStorage.getItem('kesefle_whatsapp_linked') === '1') show('C');
-      } catch (_e) {}
       fetch('/api/whatsapp/link?check=1', { credentials: 'include', cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error('link_status_unavailable'); return r.json(); })
         .then(function (j) {
           if (!canUseWhatsAppLinking() || requestGeneration !== capabilityGeneration) return;
           if (j && j.ok === true && j.linked === true) {
-            try { localStorage.setItem('kesefle_whatsapp_linked', '1'); } catch (_e) {}
+            try { localStorage.removeItem('kesefle_whatsapp_linked'); } catch (_e) {}
             show('C');
           } else if (j && j.ok === true && j.linked === false) {
             try { localStorage.removeItem('kesefle_whatsapp_linked'); } catch (_e) {}
@@ -826,22 +915,18 @@ function confettiBurst(e) {
   }
 }
 
-// Auto-burst confetti once on first arrival
-if (!sessionStorage.getItem('kfl_welcome_seen')) {
-  sessionStorage.setItem('kfl_welcome_seen', '1');
-  setTimeout(function() { confettiBurst(); }, 500);
+function firstMessageMilestoneKey() {
+  var sub = typeof window.__kflWelcomeUserSub === 'string' ? window.__kflWelcomeUserSub.trim() : '';
+  return sub ? 'kfl_first_msg_clicked:' + sub : '';
 }
 
-// Mark setup complete once user clicks the WhatsApp CTA (autonomy: feedback loop)
-function onFirstClick() {
-  if (window.__kflWhatsAppAvailable !== true) return;
-  try {
-    localStorage.setItem('kfl_first_msg_clicked', '1');
-    if (window.kfl) window.kfl.track('cta_click', { source: 'welcome_whatsapp_v2' });
-  } catch (e) {}
-  // Soft PWA install prompt — only if we captured the event and user hasn't dismissed.
-  try { maybeShowPwaInstall(); } catch (e) {}
-  // Update visual progress to 100%
+function hasFirstMessageMilestone() {
+  var key = firstMessageMilestoneKey();
+  if (!key) return false;
+  try { return localStorage.getItem(key) === '1'; } catch (_e) { return false; }
+}
+
+function paintFirstMessageMilestone(celebrate) {
   var bar = document.getElementById('setup-progress');
   var pct = document.getElementById('setup-pct');
   var cp = document.getElementById('checkpoint-bot');
@@ -854,12 +939,30 @@ function onFirstClick() {
     var lbl = cp.querySelector('div:last-child');
     if (lbl) { lbl.textContent = 'נשלחה הודעה'; lbl.classList.remove('text-accent-600','dark:text-accent-500'); lbl.classList.add('text-brand-700','dark:text-brand-300'); }
   }
-  setTimeout(function() { confettiBurst(); }, 400);
+  if (celebrate) setTimeout(function() { confettiBurst(); }, 400);
 }
 
-// On page load: if user previously clicked the CTA, show 100% state
-if (localStorage.getItem('kfl_first_msg_clicked') === '1') {
-  setTimeout(onFirstClick, 100);
+window.__kflRestoreWelcomeMilestone = function () {
+  if (window.__kflWelcomeSheetReady === true && hasFirstMessageMilestone()) {
+    paintFirstMessageMilestone(false);
+    try { maybeShowPwaInstall(); } catch (_e) {}
+  }
+};
+window.__kflRestoreWelcomeMilestone();
+
+// Mark setup complete only for the server-verified account that performed the
+// WhatsApp action. A device-wide marker could expose another user's progress.
+function onFirstClick() {
+  if (window.__kflWhatsAppAvailable !== true || window.__kflWelcomeSheetReady !== true) return;
+  var key = firstMessageMilestoneKey();
+  if (!key) return;
+  try {
+    localStorage.setItem(key, '1');
+    localStorage.removeItem('kfl_first_msg_clicked');
+    if (window.kfl) window.kfl.track('cta_click', { source: 'welcome_whatsapp_v2' });
+  } catch (e) {}
+  try { maybeShowPwaInstall(); } catch (e) {}
+  paintFirstMessageMilestone(true);
 }
 
 // PWA install prompt — capture the event so we can re-show it after the
@@ -871,7 +974,7 @@ window.addEventListener('beforeinstallprompt', function(e) {
   // Covers click-before-event: Chrome may deliver beforeinstallprompt after
   // the user has already completed the meaningful first-message milestone.
   try {
-    if (localStorage.getItem('kfl_first_msg_clicked') === '1') maybeShowPwaInstall();
+    if (window.__kflWelcomeSheetReady === true && hasFirstMessageMilestone()) maybeShowPwaInstall();
   } catch (_e) {}
 });
 function kflIsIosInstallCandidate() {
@@ -949,21 +1052,6 @@ window.addEventListener('appinstalled', function() {
   });
 })();
 
-// Personalize the welcome with the user's first name (if signed in) — makes the
-// post-signup moment feel made-for-them, not generic.
-(function personalizeWelcome(){
-  try {
-    var u = JSON.parse(localStorage.getItem('kesefle_user') || '{}');
-    var first = String(u.name || u.given_name || '').trim().split(/\s+/)[0];
-    if (!first) return;
-    // Strip <,>,&,",' so the name is safe in both attribute and innerHTML
-    // contexts. Single-quote escape added to harden against future markup
-    // changes that might switch the surrounding quote style.
-    var safe = first.replace(/[<>&"']/g, '');
-    var h1 = document.querySelector('main h1');
-    if (h1) h1.innerHTML = 'ברוך הבא, <span class="holo-text">' + safe + '</span>! 👋';
-  } catch (e) {}
-})();
 </script>
 
 <script>

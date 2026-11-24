@@ -159,8 +159,8 @@ async function runOfflineFetch({
         match: async (request) => {
           const parsed = typeof request === 'string' ? null : new URL(request.url);
           const value = parsed ? parsed.pathname + parsed.search : request;
-          if (/kesefle-static-v27/.test(name) && staticPaths.includes(value)) return staticHit;
-          if (/kesefle-runtime-v27/.test(name) && runtimePaths.includes(value)) return runtimeHit;
+          if (/kesefle-static-v28/.test(name) && staticPaths.includes(value)) return staticHit;
+          if (/kesefle-runtime-v28/.test(name) && runtimePaths.includes(value)) return runtimeHit;
           return null;
         },
         put: async () => {},
@@ -268,13 +268,13 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   const missingRequired = await runInstall({ failedFetch: '/offline.html' });
   assert.ok(missingRequired.error, 'missing required offline shell rejects installation');
   assert.strictEqual(missingRequired.skipped, 0, 'failed required shell never calls skipWaiting');
-  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v27/.test(name)),
+  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v28/.test(name)),
     'failed required shell removes the incomplete versioned cache');
 
   const failedRequiredWrite = await runInstall({ failedPut: '/app.webmanifest' });
   assert.ok(failedRequiredWrite.error, 'failed required cache write rejects installation');
   assert.strictEqual(failedRequiredWrite.skipped, 0, 'failed required cache write never activates');
-  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v27/.test(name)),
+  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v28/.test(name)),
     'failed required cache write cleans up the incomplete cache');
 
   const badRequiredStatus = await runInstall({ failedStatus: '/offline.html' });
@@ -290,6 +290,7 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   assert.strictEqual(missingOptional.skipped, 1, 'an optional marketing miss still activates the complete app shell');
   for (const required of [
     '/app', '/app.html', '/app.webmanifest', '/lib/browser-session.js',
+    '/lib/browser-session.js?v=welcome-session-v28',
     '/css/brand.css', APP_CSS_PATH, '/expense', '/expense.html', '/offline.html',
     '/icon-192.png', '/icon-512.png', '/icon-512-maskable.png',
   ]) {
@@ -322,6 +323,16 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   });
   assert.strictEqual(sessionScript.source, 'current-static',
     'offline browser-session.js resolves from the active worker static cache');
+
+  const networkSession = { source: 'network-new-session', ok: true, clone() { return this; } };
+  const mixedVersionSession = await runOfflineFetch({
+    pathname: '/lib/browser-session.js?v=welcome-session-v28', destination: 'script', mode: 'same-origin',
+    staticPaths: ['/lib/browser-session.js'],
+    runtimePaths: ['/lib/browser-session.js'],
+    networkResponse: networkSession,
+  });
+  assert.strictEqual(mixedVersionSession.source, 'network-new-session',
+    'an old controller cannot serve the stale identity scrubber to the new welcome shell');
 
   const navigationFallback = await runOfflineFetch({
     pathname: '/uncached-route', destination: 'document', mode: 'navigate',

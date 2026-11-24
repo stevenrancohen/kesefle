@@ -57,7 +57,7 @@ assert(/kflLinkFirstExpense[\s\S]*onFirstClick\(\)/.test(welcome), 'real first-m
 assert(/if \(!canUseWhatsAppLinking\(\)\) return;[\s\S]*var requestGeneration = capabilityGeneration/.test(welcome), 'welcome blocks link mutation before capability and verified-sheet approval');
 assert(/whatsapp_linking_unavailable[\s\S]*setWhatsAppAvailability\(false/.test(welcome), 'welcome maps backend rollout rejection to the web fallback');
 assert(/id="kfl-web-first"/.test(welcome) && /\/expense\?from=welcome-fallback/.test(welcome), 'welcome exposes a free app-first activation path');
-assert(/beforeinstallprompt[\s\S]*kfl_first_msg_clicked[\s\S]*maybeShowPwaInstall/.test(welcome), 'late install events re-check the completed milestone');
+assert(/beforeinstallprompt[\s\S]*__kflWelcomeSheetReady === true && hasFirstMessageMilestone\(\)[\s\S]*maybeShowPwaInstall/.test(welcome), 'late install events re-check the verified account milestone');
 assert(/id="pwa-ios-install-link" href="\/install"/.test(welcome), 'iOS gets a manual install-guide fallback');
 assert(/__kflExpenseDirty/.test(expense) && /__kflExpenseUpdatePending/.test(expense), 'service-worker updates defer reload while the expense form is dirty');
 assert(/id="kfl-whatsapp-option" class="[^"]*hidden/.test(expense) && /c\.waba_approved === true/.test(expense), 'expense form hides WhatsApp until strict capability approval');
