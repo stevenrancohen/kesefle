@@ -25,7 +25,9 @@ import { auditLog } from '../lib/secure-kv.js';
 import {
   userDeletionKey, manualPaymentIndexKey, DELETION_TOMBSTONE_TTL_SEC,
 } from '../lib/user-record.js';
-import { cancelPaypalSubscription } from '../lib/billing.js';
+import {
+  cancelPaypalSubscription, pendingBillingCheckoutKey, queueBillingReconciliation,
+} from '../lib/billing.js';
 // GDPR completeness (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md): goals are
 // stored as one key per goal under an index, so a flat key list can't reach
 // them. purgeGoals() walks the goals:{userSub} index and deletes each
@@ -37,6 +39,10 @@ const DELETION_RECEIPT_TTL_SEC = 7 * 86400;
 const DELETION_GUARD_COOLDOWN_SEC = 10 * 60;
 const MANUAL_PAYMENT_CODE_RE = /^KFL-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
 const MANUAL_PAYMENT_INDEX_MAX = 1000;
+// Legacy Coinbase Commerce can still detect a late payment for up to seven
+// days after charge creation. An EXPIRED/FAILED state is therefore not enough
+// on its own to prove that deleting the account cannot orphan a payment.
+const COINBASE_LATE_PAYMENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Destructive account operations must not wait forever after earlier steps
 // have already succeeded. Abort the underlying request and also race it so a
@@ -209,6 +215,7 @@ async function _keysForUser_(userSub, phone, subscriptionId) {
     'referral:count:' + userSub,         // aggregate referral count
     'referral:redeemers:' + userSub,     // redacted referral event list
     'audit:referral_redeem:' + userSub,  // account-bound redemption audit marker
+    pendingBillingCheckoutKey(userSub),  // provider checkout cancellation manifest
     // TODO (deferred — needs SCAN, not DEL):
     //   goal:{userSub}:{goalId}   — multi-key, but lib/goals.js keeps a
     //                               goals:{userSub} index; purgeGoals() walks it
@@ -365,6 +372,76 @@ async function cancelRecurringBillingForDeletion(userRec) {
   // otherwise deletion could erase the mapping while charges continue.
   if (!subscriptionId || !isPaypal) return true;
   return cancelPaypalSubscription(subscriptionId, 'account deleted by customer');
+}
+
+async function getCoinbaseChargeStatusForDeletion(chargeId) {
+  const apiKey = process.env.COINBASE_COMMERCE_API_KEY;
+  if (!apiKey || !chargeId) return null;
+  try {
+    const { response, payload } = await _fetchJsonWithDeadline_(
+      `https://api.commerce.coinbase.com/charges/${encodeURIComponent(chargeId)}`,
+      {
+        headers: {
+          'X-CC-Api-Key': apiKey,
+          'X-CC-Version': '2018-03-22',
+        },
+      },
+    );
+    if (!response.ok || !payload?.data) return null;
+    const timeline = Array.isArray(payload.data.timeline) ? payload.data.timeline : [];
+    const latest = timeline.length ? timeline[timeline.length - 1]?.status : payload.data.status;
+    if (!latest) return null;
+    return {
+      status: String(latest).toUpperCase(),
+      createdAt: payload.data.created_at || null,
+      expiresAt: payload.data.expires_at || null,
+    };
+  } catch { return null; }
+}
+
+async function cancelPendingBillingCheckoutsForDeletion(userSub) {
+  const manifestKey = pendingBillingCheckoutKey(userSub);
+  let checkouts;
+  try { checkouts = await kvGet(manifestKey); }
+  catch { return false; }
+  if (checkouts === null) return true;
+  if (!Array.isArray(checkouts) || checkouts.length > 100) return false;
+  for (const checkout of checkouts) {
+    const provider = String(checkout?.provider || '').toLowerCase();
+    const externalId = String(checkout?.externalId || '').trim();
+    if (!externalId || !['paypal', 'coinbase'].includes(provider)) return false;
+    if (provider === 'paypal') {
+      const cancelled = await cancelPaypalSubscription(
+        externalId, 'account deleted while checkout was pending',
+      );
+      if (!cancelled) return false;
+    } else {
+      // Never infer expiry from a local TTL: keep deletion retryable while the
+      // hosted charge is payable or its state cannot be proven. Coinbase can
+      // detect late payment after EXPIRED/FAILED, so those states are safe only
+      // after the documented seven-day late-payment window has elapsed.
+      const charge = await getCoinbaseChargeStatusForDeletion(externalId);
+      const status = charge?.status;
+      if (!status || ['NEW', 'PENDING', 'UNRESOLVED'].includes(status)) return false;
+      if (['EXPIRED', 'FAILED'].includes(status)) {
+        const latePaymentAnchor = Date.parse(charge.expiresAt || charge.createdAt || '');
+        if (!Number.isFinite(latePaymentAnchor)
+          || Date.now() < latePaymentAnchor + COINBASE_LATE_PAYMENT_WINDOW_MS) return false;
+      } else if (!['CANCELED', 'CANCELLED', 'COMPLETED', 'RESOLVED'].includes(status)) {
+        return false;
+      }
+      if (['COMPLETED', 'RESOLVED'].includes(status)) {
+        try {
+          await queueBillingReconciliation({
+            provider: 'coinbase', kind: 'paid_checkout_deleted', externalId,
+            details: { chargeId: externalId, reason: 'account_deleted_after_payment' },
+          });
+        } catch { return false; }
+      }
+    }
+  }
+  try { return await kvDel(manifestKey); }
+  catch { return false; }
 }
 
 // Keep a durable deletion receipt without recreating the personal data that
@@ -724,6 +801,19 @@ async function deleteAccount(req, res) {
     return _deletionRetryRequiredResponse_(res);
   }
 
+  // Re-read after publishing the tombstone. Provider activation and deletion
+  // lock the same canonical user+tombstone pair: if activation won first, this
+  // snapshot contains its subscription id; if deletion won, activation stops.
+  try { userRec = await kvGet('user:' + userSub); }
+  catch {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  if (!userRec || typeof userRec !== 'object') {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+
   // Resolve every new throwing KV precondition before revoking the external
   // Google grant. A transient reverse-map failure must leave the account and
   // its Drive access untouched so the user can retry safely.
@@ -761,6 +851,12 @@ async function deleteAccount(req, res) {
       await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
       return _deletionRetryRequiredResponse_(res);
     }
+  }
+
+  if (!(await cancelPendingBillingCheckoutsForDeletion(userSub))) {
+    log.error('account.delete_pending_checkout_cancel_failed', { reqId: req.reqId });
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
   }
 
   if (!(await cancelRecurringBillingForDeletion(userRec))) {
@@ -1047,6 +1143,11 @@ async function deleteByPhone(req, res) {
       await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
       return _deletionRetryRequiredResponse_(res);
     }
+  }
+  if (!(await cancelPendingBillingCheckoutsForDeletion(userSub))) {
+    log.error('account.delete_by_phone_pending_checkout_cancel_failed', { reqId: req.reqId });
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
   }
   if (userRec && !(await cancelRecurringBillingForDeletion(userRec))) {
     log.error('account.delete_by_phone_subscription_cancel_failed', { reqId: req.reqId });

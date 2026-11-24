@@ -8,6 +8,8 @@
 //      event seen (so retries don't re-page), and still ACK 200.
 //   3. A bad HMAC signature is rejected 401.
 //   4. A duplicate (already-seen) event is acked 200 without re-activating.
+//   5. An expired charge keeps its deletion manifest because Coinbase can
+//      still detect a late payment during the provider's grace window.
 //
 // The handler uses `config.api.bodyParser=false` and reads the raw request via
 // req.on('data'/'end'), so we hand it a tiny readable-stream stub of the exact
@@ -35,6 +37,21 @@ global.fetch = async (url, opts) => {
   const u = String(url);
   if (u === 'https://kv.test' && opts.method === 'POST') {
     const cmd = JSON.parse(opts.body || '[]');
+    if (cmd[0] === 'EVAL' && String(cmd[1]).includes('KESEFLE_PENDING_BILLING_CHECKOUT_REMOVE_V1')) {
+      const key = cmd[3];
+      const provider = cmd[4];
+      const externalId = cmd[5];
+      if (!kv.has(key)) {
+        return new Response(JSON.stringify({ result: JSON.stringify({ status: 'missing' }) }), { status: 200 });
+      }
+      const current = JSON.parse(kv.get(key));
+      const kept = current.filter((item) => item.provider !== provider || item.externalId !== externalId);
+      if (kept.length) kv.set(key, JSON.stringify(kept));
+      else kv.delete(key);
+      return new Response(JSON.stringify({
+        result: JSON.stringify({ status: 'removed', removed: current.length - kept.length }),
+      }), { status: 200 });
+    }
     if (cmd[0] === 'EVAL' && String(cmd[1]).includes('KESEFLE_BILLING_ACTIVATE_V1')) {
       const keyCount = Number(cmd[2]);
       const keys = cmd.slice(3, 3 + keyCount);
@@ -229,6 +246,31 @@ console.log('\n=== duplicate event ===\n');
   await handler(streamReq(payload), r);
   check('acks 200 duplicate', r.statusCode === 200 && r.body && r.body.duplicate === evId, JSON.stringify(r.body));
   check('did NOT re-activate (no user:sub-dupe)', !kv.has('user:sub-dupe'));
+}
+
+// ── 5. Expired charge retains late-payment protection ───────────────────────
+console.log('\n=== expired charge late-payment guard ===\n');
+{
+  kv.clear();
+  const userSub = 'sub-expired';
+  const manifestKey = 'billingCheckout:' + crypto.createHash('sha256').update(userSub).digest('hex');
+  kv.set(manifestKey, JSON.stringify([
+    { provider: 'coinbase', externalId: 'charge-expired', createdAt: new Date().toISOString() },
+  ]));
+  const payload = JSON.stringify({
+    event: {
+      id: 'evt_expired_1',
+      type: 'charge:expired',
+      data: {
+        id: 'charge-expired',
+        metadata: { userSub },
+      },
+    },
+  });
+  const r = res();
+  await handler(streamReq(payload), r);
+  check('acks expired event', r.statusCode === 200, 'got ' + r.statusCode);
+  check('does not remove any pending-checkout manifest on expiry', kv.has(manifestKey));
 }
 
 process.stdout.write = origWrite;

@@ -212,6 +212,29 @@ function applyEval(command) {
     return { status: 'resolved' };
   }
 
+  if (script.includes('KESEFLE_PENDING_BILLING_CHECKOUT_REGISTER_V1')) {
+    if (store.has(keys[1])) return { status: 'account_deleted' };
+    const account = readJson(keys[0]);
+    if (!account) return { status: 'account_missing' };
+    if (account.userSub !== args[0]) return { status: 'user_identity_mismatch' };
+    const checkouts = readJson(keys[2], []);
+    if (!Array.isArray(checkouts)) return { status: 'malformed_index' };
+    if (checkouts.some((item) => item.provider === args[1] && item.externalId === args[2])) {
+      return { status: 'registered', replayed: true };
+    }
+    checkouts.push({ provider: args[1], externalId: args[2], createdAt: args[3] });
+    writeJson(keys[2], checkouts);
+    return { status: 'registered', replayed: false };
+  }
+
+  if (script.includes('KESEFLE_PENDING_BILLING_CHECKOUT_REMOVE_V1')) {
+    const checkouts = readJson(keys[0], null);
+    if (checkouts === null) return { status: 'missing' };
+    const kept = checkouts.filter((item) => !(item.provider === args[0] && item.externalId === args[1]));
+    if (kept.length) writeJson(keys[0], kept); else store.delete(keys[0]);
+    return { status: 'removed', removed: checkouts.length - kept.length };
+  }
+
   throw new Error('unexpected Lua script');
 }
 
@@ -247,6 +270,8 @@ const { createPendingPayment, confirmPendingPayment, rejectPendingPayment } = ma
 const {
   activatePremium, deactivatePremium, billingKvGet, assertBillingAccount,
   queueBillingReconciliation, resolveBillingReconciliation, billingReconciliationKey,
+  registerPendingBillingCheckout, pendingBillingCheckoutKey,
+  removePendingBillingCheckout,
 } = billing;
 const { recordExpenseActivity } = await import('../lib/user-activity.js?atomic=' + Date.now());
 const {
@@ -349,6 +374,22 @@ check(await resolveBillingReconciliation({ provider: 'paypal', kind: 'paid_accou
 check(!store.has(queueKey) && !sets.get('billingReconcile:pending')?.has(queueKey),
   'resolution removes both record and index member atomically');
 
+console.log('\nPending provider checkout deletion manifest:');
+writeJson('user:checkout-user', { userSub: 'checkout-user', plan: 'free' });
+await registerPendingBillingCheckout('checkout-user', { provider: 'paypal', externalId: 'I-PENDING-1' });
+const checkoutManifestKey = pendingBillingCheckoutKey('checkout-user');
+check(!checkoutManifestKey.includes('checkout-user') && readJson(checkoutManifestKey)?.[0]?.externalId === 'I-PENDING-1',
+  'checkout is discoverable for deletion without exposing the user id in its key');
+store.set(userDeletionKey('checkout-user'), 'deleting');
+let checkoutAfterDeletionBlocked = false;
+try {
+  await registerPendingBillingCheckout('checkout-user', { provider: 'coinbase', externalId: 'CH-PENDING-2' });
+} catch (error) { checkoutAfterDeletionBlocked = error.message === 'billing_account_deleted'; }
+check(checkoutAfterDeletionBlocked && readJson(checkoutManifestKey).length === 1,
+  'deletion tombstone and checkout registration are serialized atomically');
+await removePendingBillingCheckout('checkout-user', { provider: 'paypal', externalId: 'I-PENDING-1' });
+check(!store.has(checkoutManifestKey), 'terminal provider event removes the manifest entry without a stale index');
+
 console.log('\nCanonical user partial merge:');
 writeJson('user:login-user', {
   userSub: 'login-user', plan: 'pro', accessUntil: new Date(Date.now() + 30 * DAY).toISOString(),
@@ -444,6 +485,8 @@ check(/activationKey:\s*`paypal:/.test(paypalSource) && /expectedSubscriptionId:
 check(/activationKey:\s*`crypto:/.test(cryptoSource), 'Coinbase activation carries a stable payment key');
 check(/assertBillingAccount/.test(paypalSource) && /assertBillingAccount/.test(cryptoCreateSource),
   'PayPal and Coinbase checkout creation reject deleted or missing accounts');
+check(/registerPendingBillingCheckout/.test(paypalSource) && /registerPendingBillingCheckout/.test(cryptoCreateSource),
+  'PayPal and Coinbase provider objects are registered for deletion-time cleanup before URL return');
 check(/requireExisting:\s*true/.test(stripeWebhookSource), 'legacy Stripe webhook cannot recreate a missing account');
 check(/atomicMergeUserRecord/.test(activitySource) && !/\/set\/\$\{encodeURIComponent\('user:'/.test(activitySource),
   'expense activity uses a key-locked partial merge');
@@ -457,6 +500,8 @@ check(/manualPaymentIndexKey/.test(accountSource) && /manual_payments:\s*manualP
   'pending manual payments are discoverable for account export and deletion');
 check(/cancelRecurringBillingForDeletion/.test(accountSource) && /paypalSub:/.test(accountSource),
   'account deletion cancels recurring PayPal billing and removes its reverse mapping');
+check(/cancelPendingBillingCheckoutsForDeletion/.test(accountSource) && /paid_checkout_deleted/.test(accountSource),
+  'account deletion cancels PayPal and blocks active Coinbase checkout until provider-terminal proof');
 
 console.log(`\n${failures ? '❌' : '✅'} ${passes} passed, ${failures} failed`);
 process.exit(failures ? 1 : 0);

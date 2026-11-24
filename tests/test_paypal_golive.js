@@ -176,6 +176,7 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
   let deactivations = [];
   let ownerAlerts = [];
   let invoices = [];
+  let removedPendingCheckouts = [];
   let subById = {};
   let verifyResult = true;
   let activationErrorForUser = null;
@@ -202,6 +203,10 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
     queuedReconciliations.push(item);
     kv['billingReconcile:' + item.externalId] = item;
     return { ok: true };
+  }
+  async function removePendingBillingCheckout(userSub, item) { // eslint-disable-line no-unused-vars
+    removedPendingCheckouts.push({ userSub, ...item });
+    return { ok: true, removed: 1 };
   }
   async function notifyOwner(msg) { ownerAlerts.push(msg); return notifyOwnerResult; } // eslint-disable-line no-unused-vars
   const log = { info() {}, warn() {}, error() {} };                       // eslint-disable-line no-unused-vars
@@ -252,6 +257,8 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
     const seen = kv['paypal_event:WH-1'];
     assert(!!seen, 'event marked seen after successful handling');
     eq(kvSetOpts['paypal_event:WH-1'] && kvSetOpts['paypal_event:WH-1'].ttlSec, SEEN_EVENT_TTL_SEC, 'seen key carries the 90d TTL');
+    assert(removedPendingCheckouts.some((item) => item.userSub === 'user-1' && item.externalId === 'I-SUB1'),
+      'successful activation removes its pending-checkout manifest entry');
   }
 
   // ── 6. Idempotency: replayed event id -> duplicate, no double-activate ────

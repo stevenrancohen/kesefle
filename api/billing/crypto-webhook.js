@@ -6,7 +6,10 @@
 // Env: COINBASE_WEBHOOK_SECRET
 
 import crypto from 'node:crypto';
-import { activatePremium, periodMonths, billingKvGet, billingKvSet } from '../../lib/billing.js';
+import {
+  activatePremium, periodMonths, billingKvGet, billingKvSet,
+  queueBillingReconciliation, removePendingBillingCheckout,
+} from '../../lib/billing.js';
 import { withRequestId, log } from '../../lib/log.js';
 
 const CRYPTO_EVENT_TTL_SEC = 400 * 24 * 3600;
@@ -123,13 +126,23 @@ async function handlerImpl(req, res) {
           recurring: false,
         });
         await billingKvSet(seenKey, { type, ts: new Date().toISOString() }, { ttlSec: CRYPTO_EVENT_TTL_SEC });
+        if (chargeId) await removePendingBillingCheckout(userSub, {
+          provider: 'coinbase', externalId: chargeId,
+        }).catch(() => null);
         log.info('crypto_webhook.activated', { reqId: req.reqId, userSub, plan, period, chargeId, type });
       } catch (e) {
         if (e.message === 'billing_account_deleted' || e.message === 'billing_account_missing') {
+          await queueBillingReconciliation({
+            provider: 'coinbase', kind: 'paid_account_gone', externalId: chargeId || eventId,
+            details: { eventId, chargeId, reason: 'paid_account_gone' },
+          });
           await alertPaidAccountGone({ reqId: req.reqId, eventId, chargeId, type });
           await billingKvSet(seenKey, {
             type, ts: new Date().toISOString(), accountGone: true,
           }, { ttlSec: CRYPTO_EVENT_TTL_SEC });
+          if (chargeId) await removePendingBillingCheckout(userSub, {
+            provider: 'coinbase', externalId: chargeId,
+          }).catch(() => null);
           return res.status(200).json({ ok: true, warning: 'account_gone' });
         }
         log.error('crypto_webhook.activate_failed', { reqId: req.reqId, userSub, chargeId, error: e.message });
@@ -149,6 +162,16 @@ async function handlerImpl(req, res) {
     // Non-activation events (charge:created / charge:pending / charge:failed /
     // charge:delayed). Log for visibility instead of swallowing entirely.
     log.info('crypto_webhook.event_ignored', { reqId: req.reqId, eventId, type });
+    // FAILED/EXPIRED charges can still receive a late payment, so retain their
+    // manifest until deletion can verify that the provider's late-payment
+    // window elapsed. A provider cancellation is terminal immediately.
+    if (type === 'charge:canceled') {
+      const userSub = data?.metadata?.userSub || data?.metadata?.userId;
+      const chargeId = data?.id;
+      if (userSub && chargeId) await removePendingBillingCheckout(userSub, {
+        provider: 'coinbase', externalId: chargeId,
+      }).catch(() => null);
+    }
   }
 
   return res.status(200).json({ ok: true });

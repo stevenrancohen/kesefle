@@ -31,6 +31,7 @@ import {
   billingKvGet, billingKvSet, billingKvEval, notifyOwner,
   cancelPaypalSubscription,
   queueBillingReconciliation, resolveBillingReconciliation,
+  registerPendingBillingCheckout, removePendingBillingCheckout,
 } from '../../lib/billing.js';
 import { createInvoice } from '../../lib/invoice.js';
 
@@ -199,6 +200,46 @@ async function getSubscription(token, subId) {
   } catch { return null; }
 }
 
+function paypalInvoiceReceiptKey(userSub, paymentReference) {
+  return `invoice:${userSub}:${paymentReference}`;
+}
+
+async function deliverPaypalInvoiceReceipt({ reqId, userSub, paymentReference, receipt, customerEmail }) {
+  await queueBillingReconciliation({
+    provider: 'paypal', kind: 'invoice_delivery_pending', externalId: paymentReference,
+    details: { saleId: paymentReference, reason: 'invoice_delivery_pending' },
+  });
+  const storedReceipt = receipt || await billingKvGet(
+    paypalInvoiceReceiptKey(userSub, paymentReference),
+  ).catch(() => null);
+  if (!storedReceipt?.invoiceId) return { delivered: false, queued: true };
+
+  let resolvedEmail = customerEmail || null;
+  if (!resolvedEmail) {
+    const userRec = await billingKvGet('user:' + userSub).catch(() => null);
+    resolvedEmail = userRec?.email || null;
+  }
+  if (!storedReceipt.pdfUrl || !resolvedEmail) return { delivered: false, queued: true };
+
+  try {
+    const mod = await import('../../lib/email.js').catch(() => null);
+    if (!mod?.sendEmail) return { delivered: false, queued: true };
+    const sent = await mod.sendEmail({
+      to: resolvedEmail,
+      subject: 'חשבונית מס/קבלה מכספלה',
+      html: `<p dir="rtl">תודה על התשלום!</p><p dir="rtl">לקבלת החשבונית: <a href="${storedReceipt.pdfUrl}">${storedReceipt.pdfUrl}</a></p>`,
+    }).catch(() => null);
+    if (!sent?.ok) return { delivered: false, queued: true };
+    await resolveBillingReconciliation({
+      provider: 'paypal', kind: 'invoice_delivery_pending', externalId: paymentReference,
+    });
+    return { delivered: true, queued: false };
+  } catch (error) {
+    log.warn('paypal.invoice_delivery_failed', { reqId, error: error.message });
+    return { delivered: false, queued: true };
+  }
+}
+
 // Exactly-once coordinator for the Israeli VAT invoice (חשבונית מס/קבלה).
 // The upstream document API has no idempotency key. We therefore claim a
 // durable per-sale lease before POSTing, never automatically retry an
@@ -213,7 +254,12 @@ async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, ex
   const claim = await billingKvEval(CLAIM_INVOICE_JOB_LUA, [jobKey], [
     String(now.getTime()), now.toISOString(), String(INVOICE_JOB_LEASE_MS), String(INVOICE_JOB_TTL_SEC),
   ]);
-  if (claim?.status === 'complete') return { ok: true, replayed: true };
+  if (claim?.status === 'complete') {
+    const delivery = await deliverPaypalInvoiceReceipt({
+      reqId, userSub, paymentReference, customerEmail,
+    });
+    return { ok: true, replayed: true, deliveryPending: !delivery.delivered };
+  }
   if (claim?.status === 'busy') return { ok: false, busy: true };
   if (claim?.status === 'reconciliation') {
     await queueBillingReconciliation({
@@ -282,9 +328,38 @@ async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, ex
     return { ok: false, queued: true };
   }
 
-  // Commit the receipt before any non-essential KV/email side effect. If the
-  // Redis response is lost after the commit, read back the authoritative job
-  // rather than issuing a second legal tax document.
+  const invoiceReceipt = {
+    invoiceId: result.invoiceId,
+    pdfUrl: result.pdfUrl,
+    ts: result.ts,
+    paymentMethod: 'paypal',
+    amount: amountILS,
+    currency: 'ILS',
+  };
+
+  // Persist both the customer/admin retrieval receipt and the monitored
+  // delivery task BEFORE the job may become complete. A crash after complete
+  // therefore cannot strand the legal document without a durable way to find
+  // and deliver it; incomplete pre-commit states remain fail-safe.
+  try {
+    await billingKvSet(paypalInvoiceReceiptKey(userSub, paymentReference), invoiceReceipt);
+    await queueBillingReconciliation({
+      provider: 'paypal', kind: 'invoice_delivery_pending', externalId: paymentReference,
+      details: { saleId: paymentReference, reason: 'invoice_delivery_pending' },
+    });
+  } catch (anchorError) {
+    await billingKvEval(RECONCILE_INVOICE_JOB_LUA, [jobKey], [
+      'invoice_delivery_anchor_failed', new Date().toISOString(), String(INVOICE_JOB_TTL_SEC),
+    ]).catch(() => null);
+    await queueBillingReconciliation({
+      provider: 'paypal', kind: 'invoice_ambiguous', externalId: paymentReference,
+      details: { saleId: paymentReference, reason: 'invoice_delivery_anchor_failed', invoiceJobKey: jobKey },
+    }).catch(() => null);
+    throw anchorError;
+  }
+
+  // Commit complete last. If the Redis response is lost, read back the
+  // authoritative job rather than issuing a second legal tax document.
   try {
     const completed = await billingKvEval(COMPLETE_INVOICE_JOB_LUA, [jobKey], [
       String(result.invoiceId), String(result.ts || new Date().toISOString()), String(INVOICE_JOB_TTL_SEC),
@@ -317,34 +392,10 @@ async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, ex
     provider: 'paypal', kind: 'invoice_ambiguous', externalId: paymentReference,
   }).catch(() => false);
 
-  // Persist (idempotent key) for later lookup / re-send.
-  try {
-    await billingKvSet(`invoice:${userSub}:${paymentReference}`, {
-      invoiceId: result.invoiceId,
-      pdfUrl: result.pdfUrl,
-      ts: result.ts,
-      paymentMethod: 'paypal',
-      amount: amountILS,
-      currency: 'ILS',
-    });
-  } catch (_e) { /* best effort */ }
-
-  // Best-effort email of the PDF link. lib/email.js doesn't exist yet —
-  // we dynamic-import to avoid a hard dependency. ANY failure here is
-  // swallowed; the customer can still pull the PDF from /account.
-  if (result.pdfUrl && resolvedEmail) {
-    try {
-      const mod = await import('../../lib/email.js').catch(() => null);
-      if (mod?.sendEmail) {
-        await mod.sendEmail({
-          to: resolvedEmail,
-          subject: 'חשבונית מס/קבלה מכספלה',
-          html: `<p dir="rtl">תודה על התשלום!</p><p dir="rtl">לקבלת החשבונית: <a href="${result.pdfUrl}">${result.pdfUrl}</a></p>`,
-        }).catch(() => {});
-      }
-    } catch (_e) { /* best effort */ }
-  }
-  return { ok: true, invoiceId: result.invoiceId };
+  const delivery = await deliverPaypalInvoiceReceipt({
+    reqId, userSub, paymentReference, receipt: invoiceReceipt, customerEmail: resolvedEmail,
+  });
+  return { ok: true, invoiceId: result.invoiceId, deliveryPending: !delivery.delivered };
 }
 
 // ── action=subscribe ─────────────────────────────────────────────────────────
@@ -408,13 +459,12 @@ async function subscribeImpl(req, res) {
     const approve = (j.links || []).find((l) => l.rel === 'approve');
     if (!approve || !j.id) return res.status(502).json({ ok: false, error: 'no_approval_link' });
 
-    // Account deletion can race the provider call. Re-check after PayPal has
-    // created the subscription and never expose the approval URL when the
-    // canonical account is now gone or cannot be verified. Try to cancel the
-    // orphan; if PayPal will not cancel an approval-pending subscription, put
-    // it in the indexed, hourly-monitored reconciliation queue.
+    // Account deletion can race the provider call. Atomically register the
+    // provider id while locking the canonical account + tombstone before the
+    // approval URL escapes. Deletion drains this manifest even after return.
+    // If registration loses the race, cancel or durably queue the orphan.
     try {
-      await assertBillingAccount(userSub);
+      await registerPendingBillingCheckout(userSub, { provider: 'paypal', externalId: j.id });
     } catch (accountError) {
       const cancelled = await cancelPaypalSubscription(
         j.id, 'Kesefle account unavailable during checkout creation',
@@ -528,6 +578,9 @@ async function webhookImpl(req, res) {
         // Persist the reverse mapping only after the tombstone-aware account
         // activation succeeds; a late webhook must not recreate deleted PII.
         await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
+        await removePendingBillingCheckout(userSub, {
+          provider: 'paypal', externalId: subId,
+        }).catch(() => null);
       } else {
         // Activation we cannot map to a user — a paying customer would get
         // NOTHING. Alert the owner instead of no-op'ing silently.
@@ -570,6 +623,9 @@ async function webhookImpl(req, res) {
             activationTtlSec: ACTIVATION_TTL_SEC,
           });
           await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
+          await removePendingBillingCheckout(userSub, {
+            provider: 'paypal', externalId: subId,
+          }).catch(() => null);
           // Use the SALE id (not the subscription id) so every renewal gets one
           // distinct invoice. The coordinator is awaited: concurrent delivery
           // is held behind its atomic lease, while ambiguous provider outcomes
@@ -627,6 +683,9 @@ async function webhookImpl(req, res) {
       const userSub = map?.userSub || resource.custom_id;
       if (userSub) {
         await deactivatePremium(userSub, 'canceled', { expectedSubscriptionId: subId || null });
+        if (subId) await removePendingBillingCheckout(userSub, {
+          provider: 'paypal', externalId: subId,
+        }).catch(() => null);
       }
     } else if (
       type === 'PAYMENT.SALE.DENIED' ||
@@ -778,6 +837,9 @@ async function confirmImpl(req, res) {
     activationTtlSec: ACTIVATION_TTL_SEC,
   });
   await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
+  await removePendingBillingCheckout(userSub, {
+    provider: 'paypal', externalId: subId,
+  }).catch(() => null);
   log.info('paypal.confirm_activated', { reqId: req.reqId, userSub, plan, period });
   return res.status(200).json({ ok: true, plan, period, accessUntil });
 }

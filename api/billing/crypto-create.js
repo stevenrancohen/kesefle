@@ -11,7 +11,7 @@ import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import {
   priceUSD, priceILS, normalizePlan, PLAN_LABELS, assertBillingAccount,
-  queueBillingReconciliation,
+  queueBillingReconciliation, registerPendingBillingCheckout,
 } from '../../lib/billing.js';
 
 async function handlerImpl(req, res) {
@@ -76,12 +76,12 @@ async function handlerImpl(req, res) {
       return res.status(502).json({ ok: false, error: 'charge_create_failed' });
     }
 
-    // Close the deletion race between the first account check and Coinbase's
-    // response. The legacy Commerce API offers no documented cancel operation
-    // for this charge flow, so never expose its URL and durably queue the
-    // orphan for operator review.
+    // Atomically register the provider id against the canonical account and
+    // deletion tombstone before its hosted URL escapes. Deletion later drains
+    // this manifest. The legacy Commerce API has no documented cancel call, so
+    // a registration race loser is durably queued for operator review.
     try {
-      await assertBillingAccount(userSub);
+      await registerPendingBillingCheckout(userSub, { provider: 'coinbase', externalId: chargeId });
     } catch (accountError) {
       try {
         await queueBillingReconciliation({

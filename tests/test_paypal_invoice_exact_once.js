@@ -103,6 +103,8 @@ async function resolveBillingReconciliation() { return true; }
 async function createInvoice(options) { return createInvoiceImpl(options); }
 
 eval(fnSrc(PAYPAL, 'invoiceJobKey')); // eslint-disable-line no-eval
+eval(fnSrc(PAYPAL, 'paypalInvoiceReceiptKey')); // eslint-disable-line no-eval
+eval(fnSrc(PAYPAL, 'deliverPaypalInvoiceReceipt')); // eslint-disable-line no-eval
 const maybeIssueInvoiceForPayment = eval('(' + fnSrc(PAYPAL, 'maybeIssueInvoiceForPayment') + ')'); // eslint-disable-line no-eval
 
 const failures = [];
@@ -162,6 +164,10 @@ const args = (externalId) => ({
   const lostReplay = await maybeIssueInvoiceForPayment(args('SALE-LOST-COMMIT-RESPONSE'));
   check(lost.ok && lostReplay.replayed, 'lost Redis response is reconciled by reading the committed receipt');
   check(creates === 1, 'lost Redis response never creates a second invoice');
+  check(receipts.get('invoice:user-1:SALE-LOST-COMMIT-RESPONSE')?.invoiceId === 'INV-LOST-RESPONSE',
+    'invoice retrieval receipt is durable before the job can become complete');
+  check(queued.some((item) => item.externalId === 'SALE-LOST-COMMIT-RESPONSE' && item.kind === 'invoice_delivery_pending'),
+    'lost response leaves a monitored delivery task instead of stranding the invoice');
 
   creates = 0;
   createInvoiceImpl = async () => {
