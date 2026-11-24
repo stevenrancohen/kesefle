@@ -3385,7 +3385,7 @@ function _doPost_orig(e) {
       Logger.log('_doPost_orig: calling processExpense');
       var result = null;
       try {
-        result = processExpense(text, from);
+        result = processExpense(text, from, message.id || '');
       } catch (_peErr) {
         Logger.log('_doPost_orig: processExpense THREW ' + (_peErr && _peErr.stack || _peErr));
         try { if (typeof _logBotError_ === 'function') _logBotError_('processExpense', _peErr); } catch (__) {}
@@ -4028,7 +4028,7 @@ function deleteLastOrder() {
 //   כספלה מחק                  Undo the last expense (payer/creator only)
 //   כספלה עזרה                 This help
 // ─────────────────────────────────────────────────────────────────────
-function _handleGroupCommand_(fromPhone, text) {
+function _handleGroupCommand_(fromPhone, text, messageId) {
   if (!text) return { handled: false };
   // Strip the trigger word + optional separator.
   var body = String(text).replace(/^\s*כספלה\s*[:\-]?\s*/i, '').trim();
@@ -4084,7 +4084,7 @@ function _handleGroupCommand_(fromPhone, text) {
 
   // Recurring expense management.
   var mRecur = body.match(/^(?:קבוע|recurring|חוזר)\s+(.+)$/i);
-  if (mRecur) return _groupAddRecurring_(fromPhone, mRecur[1]);
+  if (mRecur) return _groupAddRecurring_(fromPhone, mRecur[1], messageId);
   if (/^(?:קבועים|recurring list|רשימת חוזרים)$/i.test(body)) return _groupListRecurring_(fromPhone);
 
   // Export — email a CSV of the group's expenses.
@@ -4104,10 +4104,10 @@ function _handleGroupCommand_(fromPhone, text) {
   if (mRm) return _groupRemoveMember_(fromPhone, mRm[1]);
 
   // Undo
-  if (/^(?:מחק|undo|בטל)$/i.test(body)) return _groupUndo_(fromPhone);
+  if (/^(?:מחק|undo|בטל)$/i.test(body)) return _groupUndo_(fromPhone, messageId);
 
   // Otherwise: treat as expense entry — must start with an amount.
-  if (/^\d/.test(body)) return _groupRecordExpense_(fromPhone, body);
+  if (/^\d/.test(body)) return _groupRecordExpense_(fromPhone, body, messageId);
 
   return { handled: true, replyText: '😬 לא הבנתי. שלח "כספלה עזרה" לרשימת הפקודות.' };
 }
@@ -4178,6 +4178,38 @@ function _groupAPI_(action, payload) {
 }
 
 // ============ command implementations ============
+
+// Keep the same mutation token after an ambiguous API failure. Meta webhook
+// retries reuse the same wamid, but a human retry arrives with a NEW wamid;
+// caching the pending token is what lets the backend replay the committed
+// undo/recurring mutation instead of applying it twice. Success clears it so
+// an intentional second command gets a fresh token.
+function _groupMutationTicket_(fromPhone, kind, messageId) {
+  var cleanPhone = String(fromPhone || '').replace(/[^0-9]/g, '');
+  var kindHash = '';
+  try {
+    var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(kind || ''), Utilities.Charset.UTF_8);
+    kindHash = digest.slice(0, 10).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+  } catch (_digestErr) {
+    kindHash = String(kind || '').replace(/[^0-9A-Za-z_-]/g, '').slice(0, 32) || 'mutation';
+  }
+  var key = 'groupMutation:' + cleanPhone + ':' + kindHash;
+  var cache = null;
+  try { cache = CacheService.getScriptCache(); } catch (_cacheErr) {}
+  var token = '';
+  try { if (cache) token = String(cache.get(key) || ''); } catch (_getErr) {}
+  if (!token) {
+    token = messageId ? 'wa:' + String(messageId) : 'bot:' + new Date().getTime() + ':' + Math.random();
+    try { if (cache) cache.put(key, token, 600); } catch (_putErr) {}
+  }
+  return { key: key, token: token };
+}
+
+function _groupMutationDone_(ticket) {
+  try {
+    if (ticket && ticket.key) CacheService.getScriptCache().remove(ticket.key);
+  } catch (_e) {}
+}
 
 function _groupCreate_(fromPhone, name) {
   var groupName = name && name.length > 0 ? name : 'הקבוצה שלי';
@@ -4271,7 +4303,7 @@ function _groupResync_(fromPhone) {
   return { handled: true, replyText: '✅ נוצר גיליון משותף ב-Google Drive של יוצר הקבוצה.\n📄 ' + r.sheetUrl + '\n\n' + (r.mirrored || 0) + ' הוצאות סונכרנו לגיליון.' };
 }
 
-function _groupAddRecurring_(fromPhone, rest) {
+function _groupAddRecurring_(fromPhone, rest, messageId) {
   var a = _groupAPI_('getactive', { phone: fromPhone });
   if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה. שלח "כספלה הצטרף <קוד>" קודם.' };
   // Parse "<amount> <description> [interval]"
@@ -4284,10 +4316,14 @@ function _groupAddRecurring_(fromPhone, rest) {
   if (/שבועי|weekly/i.test(ilabel)) interval = 'weekly';
   if (/דו-שבועי|biweekly/i.test(ilabel)) interval = 'biweekly';
   if (/יומי|daily/i.test(ilabel)) interval = 'daily';
+  var recurKey = String(rest || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  var ticket = _groupMutationTicket_(fromPhone, 'addrecurring:' + recurKey, messageId);
   var r = _groupAPI_('addrecurring', {
     code: a.active, payerPhone: fromPhone, amount: amount, description: description, interval: interval,
+    mutationId: ticket.token,
   });
   if (!r || !r.ok) return { handled: true, replyText: '😬 שגיאה: ' + (r && r.error || 'unknown') };
+  _groupMutationDone_(ticket);
   // HONESTY (2026-05-24): cronGroupRecurring runs only on the bot owner's
   // Apps Script project, so the "auto-reminders" line only applies to
   // owner-installed setups. For everyone else the recurring item is stored
@@ -4425,6 +4461,10 @@ function cronGroupRecurring() {
         description: '[קבוע] ' + rec.description,
         category: 'הוצאות קבועות',
         splitMode: 'equal',
+        // Stable until markrecurringfired advances lastFiredAt. If the API
+        // response is lost after commit, the retry replays instead of adding
+        // the same scheduled expense twice.
+        expenseId: 'recurring:' + g.code + ':' + rec.id + ':' + String(rec.lastFiredAt || rec.createdAt || ''),
       });
       if (fireRes && fireRes.ok) {
         // Persist lastFiredAt SERVER-SIDE so the recurring item doesn't
@@ -7209,7 +7249,7 @@ function _groupInfo_(fromPhone) {
   return { handled: true, replyText: lines.join('\n') };
 }
 
-function _groupRecordExpense_(fromPhone, body) {
+function _groupRecordExpense_(fromPhone, body, messageId) {
   var a = _groupAPI_('getactive', { phone: fromPhone });
   if (!a || !a.ok || !a.active) {
     return { handled: true, replyText: 'אתה לא בקבוצה כרגע. שלח "כספלה צור <שם>" או "כספלה הצטרף <קוד>".' };
@@ -7243,6 +7283,7 @@ function _groupRecordExpense_(fromPhone, body) {
     category: category,
     subcategory: subcategory,
     splitMode: 'equal',
+    expenseId: messageId ? 'wa:' + String(messageId) : '',
   });
   if (!r || !r.ok) {
     if (r && r.error === 'not_a_member') {
@@ -7334,16 +7375,22 @@ function _groupRemoveMember_(fromPhone, rest) {
   return { handled: true, replyText: '🗑 הוסר מהקבוצה (' + r.members + ' חברים נותרו).' };
 }
 
-function _groupUndo_(fromPhone) {
+function _groupUndo_(fromPhone, messageId) {
   var a = _groupAPI_('getactive', { phone: fromPhone });
   if (!a || !a.ok || !a.active) return { handled: true, replyText: 'אתה לא בקבוצה.' };
-  var r = _groupAPI_('undo', { code: a.active, requesterPhone: fromPhone });
+  var ticket = _groupMutationTicket_(fromPhone, 'undo', messageId);
+  var r = _groupAPI_('undo', {
+    code: a.active,
+    requesterPhone: fromPhone,
+    mutationId: ticket.token,
+  });
   if (!r || !r.ok) {
     if (r && r.error === 'only_payer_or_creator_can_undo') {
       return { handled: true, replyText: '😬 רק מי ששילם או מי שיצר את הקבוצה יכול לבטל את ההוצאה האחרונה.' };
     }
     return { handled: true, replyText: '😬 ביטול נכשל.' };
   }
+  _groupMutationDone_(ticket);
   if (!r.removed) return { handled: true, replyText: 'אין הוצאות לביטול.' };
   var e = r.removed;
   return { handled: true, replyText: '🗑 בוטלה: ₪' + Number(e.amount).toLocaleString('he-IL') + ' · ' + (e.description || '') };
@@ -9051,7 +9098,7 @@ function _budgetSet_(fromPhone, category, amount) {
     'לרשימת התקציבים שלך: *תקציב*';
 }
 
-function processExpense(text, fromPhone) {
+function processExpense(text, fromPhone, messageId) {
   if (!text || !text.trim()) {
     return { reply: 'שלח בפורמט: סכום פירוט\nלמשל:\n85 סופר רמי לוי\n1200 ארנונה\n300 דלק\n\nאפשר גם:\n352 אוכל לבית+165 (שתי הוצאות באותה קטגוריה)' };
   }
@@ -9131,7 +9178,7 @@ function processExpense(text, fromPhone) {
     var __famReport = text.match(/^\s*(?:דו(?:["׳']*?)ח\s+משפחת(?:י|ה)|family\s+report)\s*$/i);
     if (__famReport) __aliased = 'כספלה יתרות';
     if (/^\s*כספלה(?=\s|$)/i.test(__aliased) && typeof _handleGroupCommand_ === 'function') {
-      var __groupRes = _handleGroupCommand_(fromPhone, __aliased);
+      var __groupRes = _handleGroupCommand_(fromPhone, __aliased, messageId);
       if (__groupRes && __groupRes.handled) {
         return { reply: __groupRes.replyText || '' };
       }
