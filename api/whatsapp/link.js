@@ -20,7 +20,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { rateLimit } from '../../lib/ratelimit.js';
-import { computeEntitlement } from '../../lib/subscription.js';
+import { computeEntitlement, withReferralCredit } from '../../lib/subscription.js';
 import { getUserId } from '../_lib/session.js';
 // Canonical constant-time compare (audit M2,
 // docs/AUDIT_API_ENDPOINT_SECURITY_2026_05_31.md): shared lib/crypto.js helper
@@ -304,8 +304,11 @@ async function handlerImpl(req, res) {
     let entitlement = computeEntitlement(rec);
     if (rec.userSub) {
       try {
-        const userRec = await kvGet(`user:${rec.userSub}`);
-        if (userRec) entitlement = computeEntitlement(userRec);
+        const [userRec, referralCredit] = await Promise.all([
+          kvGet(`user:${rec.userSub}`),
+          kvGet(`referral:credit:${rec.userSub}`),
+        ]);
+        if (userRec) entitlement = computeEntitlement(withReferralCredit(userRec, referralCredit));
       } catch (_e) {}
     }
     return res.status(200).json({

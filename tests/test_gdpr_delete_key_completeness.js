@@ -36,6 +36,11 @@ const REQUIRED_USERSUB_KEYS = [
   'nps:',
   'testimonial:',
   'exit_survey:',
+  'referral:redeemed:',
+  'referral:credit:',
+  'referral:count:',
+  'referral:redeemers:',
+  'audit:referral_redeem:',
 ];
 REQUIRED_USERSUB_KEYS.forEach((prefix) => {
   ok(`helper covers '${prefix}{userSub}'`,
@@ -55,8 +60,26 @@ REQUIRED_PHONE_KEYS.forEach((prefix) => {
     new RegExp(`['"]${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]\\s*\\+\\s*phone`).test(SRC));
 });
 
-ok("helper covers 'referral:reverse:{code}'",
-  /['"]referral:reverse:['"]\s*\+\s*referralCode/.test(SRC));
+console.log('\n=== referral reverse ownership + legacy PII cleanup ===');
+
+ok('referral reverse is deleted with a compare-owner EVAL',
+  /async function kvDeleteReferralReverseIfOwned[\s\S]*?#!lua flags=allow-key-locking[\s\S]*?owner ~= ARGV\[1\][\s\S]*?redis\.call\(['"]DEL['"], KEYS\[1\]\)/.test(SRC),
+  'a plain DEL could remove a code that has been reassigned to another user');
+
+ok('deleteAccount uses compare-owner reverse deletion',
+  /async function deleteAccount[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_keysForUser_\(userSub, phone\)/.test(SRC));
+
+ok('deleteByPhone uses compare-owner reverse deletion',
+  /async function deleteByPhone[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_keysForUser_\(userSub, phone\)/.test(SRC));
+
+ok('legacy redeemer emails are scrubbed with a key-locked EVAL',
+  /async function kvScrubLegacyReferralList[\s\S]*?#!lua flags=allow-key-locking[\s\S]*?redis\.call\(['"]SET['"], KEYS\[1\]/.test(SRC));
+
+ok('legacy referral scan fails before deleteAccount revokes or deletes',
+  /async function deleteAccount[\s\S]*?_purgeLegacyReferralEmail_[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
+
+ok('legacy referral scan fails before deleteByPhone revokes or deletes',
+  /async function deleteByPhone[\s\S]*?_purgeLegacyReferralEmail_[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
 
 console.log('\n=== both delete paths call the unified helper ===');
 

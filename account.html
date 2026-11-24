@@ -1140,7 +1140,8 @@ function kesefleLinkResetState() {
 
 // ============ REFERRAL CODE PICKUP ============
 // Read ?ref=<code> (or sessionStorage from /referral landing) and remember it.
-// On first successful signup (kesefle_user with idToken present), POST it to /api/referral?action=redeem.
+// On first successful signup, bind the pending code to the verified HttpOnly
+// cookie session and POST it to /api/referral?action=redeem.
 
 function kesefleReadReferralCode() {
   try {
@@ -1196,23 +1197,26 @@ function kesefleShowInvitedChip(ref) {
 }
 
 async function kesefleRedeemReferralIfPending() {
-  var redeemedKey = 'kfl_referral_redeemed';
-  if (localStorage.getItem(redeemedKey)) return;  // already redeemed once on this device
-
   var ref = kesefleReadReferralCode();
   if (!ref.code) return;
 
-  var u = kesefleGetUser();
-  if (!u || !u.idToken) return;  // need fresh login
-
   try {
+    // The HttpOnly session is the identity authority. Never let a stale local
+    // Bearer from account A override the current cookie session for account B.
+    var meResponse = await fetch('/api/me', { credentials: 'include' });
+    var me = meResponse.ok ? await meResponse.json() : null;
+    var verifiedSub = me && me.ok && me.user && me.user.sub ? String(me.user.sub) : '';
+    if (!verifiedSub) return;
+    var redeemedKey = 'kfl_referral_redeemed:' + verifiedSub;
+    if (localStorage.getItem(redeemedKey)) return;
+
     var r = await fetch('/api/referral?action=redeem', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': 'Bearer ' + u.idToken,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ code: ref.code }),
+      body: JSON.stringify({ code: ref.code, expectedUserSub: verifiedSub }),
     });
     var j = await r.json();
     var banner = document.getElementById('ref-banner');
@@ -1224,7 +1228,11 @@ async function kesefleRedeemReferralIfPending() {
       if (success) {
         success.classList.remove('hidden');
         var name = j.referrer_first_name || ref.name || 'חבר';
-        document.getElementById('ref-success-text').textContent = '✓ קיבלת חודש Pro חינם (הוזמנת ע"י ' + name + ')';
+        var truth = j.note_he || (j.credit_granted_to_redeemer
+          ? 'קיבלת חודש Pro חינם.'
+          : 'קוד ההפניה נקלט; קרדיט קודם נשמר.');
+        document.getElementById('ref-success-text').textContent =
+          '✓ ' + truth + ' (' + name + ' הזמינ.ה אותך)';
       }
       // Hide the "invited by" pre-redeem chip — we now show the success chip instead.
       var inv = document.getElementById('ref-invited-chip');
@@ -1240,6 +1248,7 @@ async function kesefleRedeemReferralIfPending() {
         err.classList.remove('hidden');
         var msg = j.error === 'code_not_found' ? 'קוד ההזמנה לא נמצא.' :
                   j.error === 'cannot_redeem_own_code' ? 'לא ניתן להשתמש בקוד שלך.' :
+                  j.error === 'account_changed_retry' ? 'החשבון השתנה. יש לרענן ולנסות שוב.' :
                   'לא הצלחנו להחיל את ההזמנה כעת.';
         document.getElementById('ref-error-text').textContent = msg;
       }
