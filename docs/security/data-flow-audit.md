@@ -222,16 +222,14 @@ Trusts `userSub` from request body/header. An attacker can mint a checkout for a
 
 | Phase | Data | Class | Notes |
 |---|---|---|---|
-| In | `confirmation: 'DELETE-MY-ACCOUNT'`, `X-User-Sub` | CONFIDENTIAL | `userSub` trusted from header |
+| In | `confirmation: 'DELETE-MY-ACCOUNT'`, authenticated session | CONFIDENTIAL | `userSub` comes from `requireAuth`, not a caller-supplied identity header |
 | Storage read | `user:<sub>` (gets refresh token) | RESTRICTED | |
 | Google revoke | `oauth2.googleapis.com/revoke?token=<refresh>` | — | Token in URL query string — best practice would be POST body but Google's docs accept either. OK. |
-| Storage delete | `user:<sub>`, `sheet:<sub>` | — | **`phone:<E.164>` NOT deleted** — left in KV pointing to a now-deleted user. |
-| Audit | `audit:delete:<ts>:<sub8>` entry with IP | CONFIDENTIAL | |
+| Storage delete | Unified per-user inventory, phone-keyed state, goals/stats, and `users_all` membership | — | An opaque deletion guard is published before destructive work and checked by the atomic WhatsApp confirmation transaction. Phone ownership is pinned before phone-scoped deletion. Secondary records are attempted first; `user:<sub>`, `userPhone:<sub>`, and its owned `phone:<E.164>` mapping remain anchors until every required operation is acknowledged, then finalize atomically with opaque 7-day replay markers and a 10-minute guard cooldown. The link transaction retains its code as a confirmed 10-minute tombstone so a lost response can replay truthfully, but guard/user checks run before that replay. Partial failure returns retryable 503; a lost final response replays success from the marker. |
+| Audit | `audit:account_deletion:<ts>:<sub8>` outcome-neutral receipt with one-way subject hash and aggregate outcome only; no email, phone, IP, request headers, or key names; TTL 730 d | CONFIDENTIAL | |
 | Out | summary + ack | — | OK |
 
-**Verdict: MAJOR.**
-1. Trusts `X-User-Sub` from header. Anyone can delete anyone's account with just their `sub` (which leaks naturally — it appears in pages the user shares, etc.). Fix: require verified JWT. The `confirmation` string helps with CSRF but not with impersonation.
-2. `phone:<E.164>` pointer is not cleaned up. After deletion, an inbound WhatsApp from that number resolves to a missing user, and the webhook (correctly) replies "no account linked" — but the stale pointer means re-onboarding the same phone to a different account collides. Fix: in `secure-kv.deleteUser`, look up the existing user's `phoneE164` and delete its pointer too. (The new lib does this.)
+**Current verdict: RESOLVED.** Session-authenticated identity, unified phone/user deletion, strict retry semantics, bounded outbound calls, and a privacy-minimized receipt are now enforced. Live-environment deletion still requires the manual end-to-end verification listed in the launch checklist.
 
 ---
 

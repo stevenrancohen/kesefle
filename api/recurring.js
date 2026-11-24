@@ -34,7 +34,7 @@ import { withRateLimit, rateLimitId } from '../lib/ratelimit.js';
 import { requireAuth } from '../lib/auth.js';
 import { appendRowToUserSheet, buildExpenseRow } from '../lib/sheet-writer.js';
 import { sendWhatsApp } from '../lib/billing.js';
-import { computeEntitlement } from '../lib/subscription.js';
+import { computeEntitlement, withReferralCredit } from '../lib/subscription.js';
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -123,16 +123,22 @@ async function isPremiumByPhone(phone) {
   try {
     const phoneRec = await kvGet('phone:' + phone);
     if (!phoneRec || !phoneRec.userSub) return false;
-    const userRec = await kvGet('user:' + phoneRec.userSub);
-    return computeEntitlement(userRec || {}).premium;
+    const [userRec, referralCredit] = await Promise.all([
+      kvGet('user:' + phoneRec.userSub),
+      kvGet('referral:credit:' + phoneRec.userSub),
+    ]);
+    return computeEntitlement(withReferralCredit(userRec, referralCredit)).premium;
   } catch { return false; }
 }
 
 // Premium check by userSub (website/session path): user record → entitlement.
 async function isPremiumBySub(sub) {
   try {
-    const userRec = await kvGet('user:' + sub);
-    return computeEntitlement(userRec || {}).premium;
+    const [userRec, referralCredit] = await Promise.all([
+      kvGet('user:' + sub),
+      kvGet('referral:credit:' + sub),
+    ]);
+    return computeEntitlement(withReferralCredit(userRec, referralCredit)).premium;
   } catch { return false; }
 }
 
