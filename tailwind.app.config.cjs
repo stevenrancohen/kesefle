@@ -1,12 +1,14 @@
 /**
- * Static Tailwind build for the canonical /app PWA shell.
+ * Static Tailwind build for the canonical /app PWA shell and its required
+ * quick-entry /expense route.
  *
  * Keep this palette in lock-step with the former inline CDN configuration.
  * The generated css/app-tailwind.css is committed so Vercel and the service
- * worker never need a runtime compiler or a third-party CDN to render /app.
+ * worker never need a runtime compiler or a third-party CDN to render either
+ * installed surface.
  */
 module.exports = {
-  content: ['./app.html'],
+  content: ['./app.html', './expense.html'],
   darkMode: 'class',
   theme: {
     extend: {
