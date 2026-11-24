@@ -14,6 +14,7 @@
 import fs from 'node:fs';
 
 const SRC = fs.readFileSync(new URL('../api/account.js', import.meta.url), 'utf8');
+const PRIVACY_SRC = fs.readFileSync(new URL('../lib/referral-privacy.js', import.meta.url), 'utf8');
 
 let failed = 0;
 function ok(name, cond, hint) {
@@ -73,13 +74,19 @@ ok('deleteByPhone uses compare-owner reverse deletion',
   /async function deleteByPhone[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_keysForUser_\(userSub, phone\)/.test(SRC));
 
 ok('legacy redeemer emails are scrubbed with a key-locked EVAL',
-  /async function kvScrubLegacyReferralList[\s\S]*?#!lua flags=allow-key-locking[\s\S]*?redis\.call\(['"]SET['"], KEYS\[1\]/.test(SRC));
+  /KESEFLE_REFERRAL_PRIVACY_SCRUB_V2[\s\S]*?redis\.call\(['"]SET['"], KEYS\[1\]/.test(PRIVACY_SRC));
 
-ok('legacy referral scan fails before deleteAccount revokes or deletes',
-  /async function deleteAccount[\s\S]*?_purgeLegacyReferralEmail_[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
+ok('resumable migration has no historical 5,000-key or 60-page hard stop',
+  !/maxKeys\s*=\s*5000|page\s*<\s*60|kv_scan_limit|kv_scan_incomplete/.test(PRIVACY_SRC));
 
-ok('legacy referral scan fails before deleteByPhone revokes or deletes',
-  /async function deleteByPhone[\s\S]*?_purgeLegacyReferralEmail_[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
+ok('legacy referral migration gates deleteAccount before lookup, revoke or delete',
+  /async function deleteAccount[\s\S]*?_ensureLegacyReferralPrivacy_[\s\S]*?kvGet\(['"]user:['"] \+ userSub\)[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
+
+ok('legacy referral migration gates deleteByPhone before no-link delete, revoke or delete',
+  /async function deleteByPhone[\s\S]*?_ensureLegacyReferralPrivacy_[\s\S]*?kvGet\(['"]phone:['"] \+ phone\)[\s\S]*?kvDel\(['"]phone:['"] \+ phone\)[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
+
+ok('pending privacy cleanup is explicitly retryable and non-2xx',
+  /function _privacyCleanupPendingResponse_[\s\S]*?Retry-After[\s\S]*?status\(503\)[\s\S]*?privacy_cleanup_pending/.test(SRC));
 
 console.log('\n=== both delete paths call the unified helper ===');
 

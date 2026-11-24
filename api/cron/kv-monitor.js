@@ -9,6 +9,7 @@
 
 import { withRequestId, log } from '../../lib/log.js';
 import { sendAlert } from '../../lib/alert.js';
+import { migrateLegacyReferralPii } from '../../lib/referral-privacy.js';
 
 async function verifyCronAuth(req) {
   const cronSecret = process.env.CRON_SECRET;
@@ -63,6 +64,40 @@ async function handlerImpl(req, res) {
     }
   } catch (_) {}
 
+  // Reuse this existing hourly function as the bounded, no-new-service engine
+  // for the one-time referral privacy migration. One page per hour caps normal
+  // background work at 25 list transforms; pause when measured usage is high.
+  let referralPrivacy = { complete: false, status: 'skipped_capacity' };
+  if (!(usage.ok && usage.pct != null && usage.pct >= 80)) {
+    try {
+      referralPrivacy = await migrateLegacyReferralPii({
+        worker: true,
+        maxPages: 1,
+        pageSize: 25,
+        concurrency: 25,
+      });
+      log.info('cron.kv_monitor.referral_privacy', {
+        reqId: req.reqId,
+        complete: referralPrivacy.complete,
+        phase: referralPrivacy.phase,
+        status: referralPrivacy.status,
+        processed: referralPrivacy.processed,
+        changed: referralPrivacy.changed,
+        quarantined: referralPrivacy.quarantined,
+      });
+    } catch (error) {
+      referralPrivacy = {
+        complete: false,
+        status: 'error',
+        error: String(error?.code || 'migration_failed').slice(0, 80),
+      };
+      log.warn('cron.kv_monitor.referral_privacy_failed', {
+        reqId: req.reqId,
+        code: referralPrivacy.error,
+      });
+    }
+  }
+
   // Threshold alert. Two tiers:
   //   >= 95% -> critical (also fires Web Push to admins via lib/alert.js)
   //   >= 80% ->  warning (Slack + email only)
@@ -82,7 +117,7 @@ async function handlerImpl(req, res) {
     });
   }
 
-  return res.status(200).json({ ok: true, ...usage });
+  return res.status(200).json({ ok: true, ...usage, referralPrivacy });
 }
 
 export default withRequestId(handlerImpl);

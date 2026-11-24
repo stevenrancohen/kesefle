@@ -19,6 +19,7 @@ import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken, constantTimeEqual } from '../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../lib/oauth.js';
 import { TX_TAB } from '../lib/sheet-tabs.js';
+import { migrateLegacyReferralPii } from '../lib/referral-privacy.js';
 // GDPR completeness (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md): goals are
 // stored as one key per goal under an index, so a flat key list can't reach
 // them. purgeGoals() walks the goals:{userSub} index and deletes each
@@ -44,93 +45,6 @@ async function kvDel(key) {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` },
   });
   return r.ok;
-}
-
-async function kvScan(pattern, maxKeys = 5000) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) throw new Error('kv_unavailable');
-  let cursor = '0';
-  const keys = [];
-  for (let page = 0; page < 60; page++) {
-    const response = await fetch(
-      `${url}/scan/${cursor}/match/${encodeURIComponent(pattern)}/count/200`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-    if (!response.ok) throw new Error('kv_scan_failed');
-    const payload = await response.json().catch(() => null);
-    if (!Array.isArray(payload?.result) || !Array.isArray(payload.result[1])) {
-      throw new Error('kv_scan_malformed');
-    }
-    const [next, batch] = payload.result;
-    for (const key of batch) {
-      if (keys.length >= maxKeys) throw new Error('kv_scan_limit');
-      keys.push(String(key));
-    }
-    cursor = String(next || '0');
-    if (cursor === '0') return keys;
-  }
-  throw new Error('kv_scan_incomplete');
-}
-
-async function kvScrubLegacyReferralList(key, targetEmail) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) throw new Error('kv_unavailable');
-  const script = `#!lua flags=allow-key-locking
-local raw = redis.call('GET', KEYS[1])
-if not raw then return cjson.encode({ status = 'missing' }) end
-local ok, decoded = pcall(cjson.decode, raw)
-if not ok or type(decoded) ~= 'table' then return cjson.encode({ status = 'invalid_state' }) end
-local output = {}
-local changed = false
-local entries = 0
-for key, value in pairs(decoded) do
-  if type(key) ~= 'number' or key < 1 or key % 1 ~= 0 or type(value) ~= 'table' then
-    return cjson.encode({ status = 'invalid_state' })
-  end
-  entries = entries + 1
-end
-for index = 1, entries do
-  local value = decoded[index]
-  if not value then return cjson.encode({ status = 'invalid_state' }) end
-  if type(value) ~= 'table' or type(value.at) ~= 'string' then
-    return cjson.encode({ status = 'invalid_state' })
-  end
-  if type(value.email) == 'string' then
-    changed = true
-    local normalized = string.lower(string.gsub(value.email, '^%s*(.-)%s*$', '%1'))
-    if normalized ~= ARGV[1] then table.insert(output, { emailInitial = '?', at = value.at }) end
-  else
-    local initial = value.emailInitial
-    if type(initial) ~= 'string' or not string.match(initial, '^[A-Za-z0-9?]$') then
-      initial = '?'
-      changed = true
-    end
-    table.insert(output, { emailInitial = initial, at = value.at })
-  end
-end
-if #output ~= entries then changed = true end
-if changed then redis.call('SET', KEYS[1], cjson.encode(output)) end
-return cjson.encode({ status = 'ok', changed = changed })`;
-  let response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(['EVAL', script, '1', key, targetEmail]),
-    });
-  } catch {
-    throw new Error('referral_pii_scrub_unavailable');
-  }
-  if (!response.ok) throw new Error('referral_pii_scrub_failed');
-  const payload = await response.json().catch(() => null);
-  if (typeof payload?.result !== 'string') throw new Error('referral_pii_scrub_malformed');
-  let result;
-  try { result = JSON.parse(payload.result); } catch { throw new Error('referral_pii_scrub_malformed'); }
-  if (result?.status === 'invalid_state') throw new Error('referral_pii_state_invalid');
-  if (!['ok', 'missing'].includes(result?.status)) throw new Error('referral_pii_scrub_malformed');
-  return result;
 }
 
 async function kvDeleteReferralReverseIfOwned(code, userSub) {
@@ -250,25 +164,32 @@ async function _keysForUser_(userSub, phone) {
   return keys;
 }
 
-// Historical lists stored full redeemer emails. New writes never do. Before
-// deleting any account, complete a bounded namespace scan and atomically
-// remove the target address while redacting every other legacy address. Any
-// partial scan or failed transform aborts before destructive account work.
-async function _purgeLegacyReferralEmail_(email, deleted) {
-  const target = String(email || '').trim().toLowerCase();
-  if (!target) return;
-  const keys = await kvScan('referral:redeemers:*', 5000);
-  let redactedLists = 0;
-  for (let start = 0; start < keys.length; start += 20) {
-    const batch = keys.slice(start, start + 20);
-    const results = await Promise.all(batch.map((key) => kvScrubLegacyReferralList(key, target)));
-    results.forEach((result) => { if (result.changed) redactedLists += 1; });
+// Historical lists stored full redeemer emails. Writer v2 never does. Account
+// deletion is gated on a durable drain -> redact -> verify -> ready migration;
+// until `ready`, no OAuth grant or customer key is destructively changed.
+async function _ensureLegacyReferralPrivacy_(deleted) {
+  // Read-only here: only the authenticated production cron may scan/transform
+  // the global namespace, so customer requests cannot amplify KV usage.
+  const result = await migrateLegacyReferralPii();
+  if (result.changed > 0) deleted.push('referral:legacy-email-redactions:' + result.changed);
+  if (result.quarantined > 0) deleted.push('referral:invalid-lists-removed:' + result.quarantined);
+  if (!result.complete) {
+    const error = new Error('privacy_cleanup_pending');
+    error.code = 'privacy_cleanup_pending';
+    error.retryAfter = result.retryAfter || 5;
+    throw error;
   }
-  // Never expose globally-scanned key names: they contain other customers'
-  // Google subject IDs. The caller only needs a truthful, opaque summary.
-  if (redactedLists > 0) {
-    deleted.push('referral:legacy-email-redactions:' + redactedLists);
-  }
+}
+
+function _privacyCleanupPendingResponse_(res, error) {
+  const retryAfter = Math.max(1, Number(error?.retryAfter) || 60);
+  res.setHeader('Retry-After', String(retryAfter));
+  return res.status(503).json({
+    ok: false,
+    completed: false,
+    error: 'privacy_cleanup_pending',
+    retry_after: retryAfter,
+  });
 }
 
 // Purge the per-user records that a flat key list in _keysForUser_ can't reach
@@ -323,13 +244,21 @@ async function deleteAccount(req, res) {
     return res.status(400).json({ ok: false, error: 'missing or invalid confirmation' });
   }
 
+  const deleted = [];
+  try {
+    await _ensureLegacyReferralPrivacy_(deleted);
+  } catch (error) {
+    log.warn('account.referral_privacy_pending', {
+      reqId: req.reqId,
+      code: error?.code || 'migration_failed',
+    });
+    return _privacyCleanupPendingResponse_(res, error);
+  }
+
   const userRec = await kvGet('user:' + userSub);
   if (!userRec) {
     return res.status(404).json({ ok: false, error: 'user not found' });
   }
-
-  const deleted = [];
-  await _purgeLegacyReferralEmail_(userRec.email, deleted);
 
   // Resolve every new throwing KV precondition before revoking the external
   // Google grant. A transient reverse-map failure must leave the account and
@@ -569,16 +498,26 @@ async function deleteByPhone(req, res) {
   const phone = String(body?.phone || '').replace(/[^0-9]/g, '');
   if (!phone) return res.status(400).json({ ok: false, error: 'invalid_phone' });
 
+  const deleted = [];
+  try {
+    await _ensureLegacyReferralPrivacy_(deleted);
+  } catch (error) {
+    log.warn('account.referral_privacy_pending', {
+      reqId: req.reqId,
+      code: error?.code || 'migration_failed',
+    });
+    return _privacyCleanupPendingResponse_(res, error);
+  }
+
   const phoneRec = await kvGet('phone:' + phone);
   if (!phoneRec || !phoneRec.userSub) {
     // Nothing linked — still drop any phone-keyed state and report ok.
     await kvDel('phone:' + phone);
-    return res.status(200).json({ ok: true, deleted: ['phone:' + phone], note: 'no_linked_user' });
+    deleted.push('phone:' + phone);
+    return res.status(200).json({ ok: true, deleted, note: 'no_linked_user' });
   }
   const userSub = phoneRec.userSub;
   const userRec = await kvGet('user:' + userSub);
-  const deleted = [];
-  await _purgeLegacyReferralEmail_(userRec?.email, deleted);
   // Complete the throwing reverse-map precondition before external OAuth
   // revocation, so a KV outage cannot strand a still-present account.
   const referralCode = await kvGet('referral:code:' + userSub);
