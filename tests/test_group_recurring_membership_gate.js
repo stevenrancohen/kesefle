@@ -94,6 +94,31 @@ function installKvMock() {
       // Rate limiter: [["INCR", key], ["EXPIRE", key, sec, "NX"]] -> count 1.
       return { ok: true, status: 200, json: async () => ([{ result: 1 }, { result: 1 }]) };
     }
+    if (!op) {
+      const command = JSON.parse(String(opts.body || '[]'));
+      if (command[0] !== 'EVAL' || command[4] !== 'addrecurring') {
+        return { ok: false, status: 400, json: async () => ({ error: 'unexpected_eval' }) };
+      }
+      const groupKey = command[3];
+      const group = store.has(groupKey) ? JSON.parse(store.get(groupKey)) : null;
+      let result;
+      if (!group) {
+        result = { status: 'group_missing' };
+      } else {
+        const payload = JSON.parse(command[5]);
+        const allowed = group.createdBy === payload.requesterPhone
+          || group.members.some(member => member.phone === payload.requesterPhone);
+        if (!allowed) {
+          result = { status: 'not_member' };
+        } else {
+          group.recurring = group.recurring || [];
+          group.recurring.push(payload.recurring);
+          store.set(groupKey, JSON.stringify(group));
+          result = { status: 'committed', recurring: group.recurring };
+        }
+      }
+      return { ok: true, status: 200, json: async () => ({ result: JSON.stringify(result) }) };
+    }
     const key = decodeURIComponent(parts.slice(1).join('/'));
     if (op === 'get') {
       const has = store.has(key);
@@ -260,12 +285,14 @@ async function main() {
   assert(/listrecurring/.test(SRC) && /group\.listrecurring\.not_member/.test(SRC),
     'listrecurring emits log.warn("group.listrecurring.not_member", ...)');
 
-  // The addrecurring gate must reference isMemberOrCreator with a payerPhone
-  // fallback (so it can never become a hard requesterPhone-only requirement
-  // that would 403 the live bot).
+  // The addrecurring action keeps the payerPhone fallback for live-bot
+  // compatibility, then delegates to the key-locked mutation whose gate runs
+  // against the latest group document.
   const addrecBlock = SRC.slice(SRC.indexOf("case 'addrecurring'"), SRC.indexOf("case 'listrecurring'"));
-  assert(/isMemberOrCreator\(\s*group\s*,\s*recReqPhone\s*\)/.test(addrecBlock),
-    'addrecurring calls isMemberOrCreator(group, recReqPhone)');
+  assert(/mutateGroupAtomic\(code, 'addrecurring'/.test(addrecBlock),
+    'addrecurring uses the atomic group mutation dispatcher');
+  assert(/operation == 'addrecurring'[\s\S]*?isMemberOrCreator\(payload\.requesterPhone\)/.test(SRC),
+    'atomic addrecurring checks membership inside the key lock');
   assert(/normalizeE164\(body\.requesterPhone\)\s*\|\|\s*payerPhone/.test(addrecBlock),
     'addrecurring reqPhone falls back to payerPhone (keeps live bot working)');
 
