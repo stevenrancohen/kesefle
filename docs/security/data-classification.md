@@ -80,10 +80,15 @@ The 2024 amendment requires:
 
 | Field | Class | Storage | Encrypted at rest | TLS in transit | Retention | Access control |
 |---|---|---|---|---|---|---|
-| `audit:<action>:<ts>:<sub8>` entries | CONFIDENTIAL (contain `subHash`, IP) | Vercel KV | No (entries already mask secrets via `maskFields`) | Yes | 730 d (Israeli Amendment 13 minimum) | Server only; restricted-tier admin endpoint required to read |
+| `audit:<action>:<ts>:<sub8>` entries | CONFIDENTIAL (contain a one-way `subHash` plus aggregate action metadata; deletion receipts contain no email, phone, IP, request headers, or key names) | Vercel KV | No (direct identifiers are excluded by the caller; `maskFields` is defence in depth) | Yes | 730 d (Kesefle audit policy, aligned with the 24-month retention period in Regulation 10(d) where that regulation applies; legal scope requires counsel confirmation) | Server only; restricted-tier admin endpoint required to read |
+| `deletion:complete:<kind>:<HMAC>` replay marker | INTERNAL (opaque HMAC key; value contains only schema version, `complete`, and completion timestamp) | Vercel KV | No direct identifier stored | Yes | 7 d TTL | Server only; used solely to reconcile a lost response after atomic account deletion |
+| `deletion:guard:<HMAC>` link-race guard | INTERNAL (opaque HMAC key; value contains only schema version and deletion state) | Vercel KV | No direct identifier stored | Yes | Durable while deletion is retryable; 10 min cooldown after completion | Server only; serializes deletion against pending WhatsApp link confirmation |
+| `linkCode:<6 digits>` pending/confirmed link record | CONFIDENTIAL (short-lived user subject + phone binding; after commit, status and original link timestamp enable truthful replay) | Vercel KV | No | Yes | 10 min TTL, including after confirmation | Bot-secret confirmation endpoint only; deletion guard and canonical-user checks take precedence over replay |
 | Vercel function logs (stdout) | CONFIDENTIAL | Vercel platform | Vercel-managed | Yes | Vercel default retention (30 d on Hobby, 90 d on Pro) | Vercel team members; production should ship to Sentry/Datadog with redaction proven via `lib/log.js` |
-| `req.ip` (in audit entries) | CONFIDENTIAL | Vercel KV | No | Yes | 730 d in audit; ephemeral in app logs | Server only |
-| `req.headers.user-agent` | INTERNAL | Same | No | Yes | Same | Same |
+| Request IP (rate-limit / waitlist telemetry; excluded from account-deletion receipts) | CONFIDENTIAL | Short-lived KV counters, waitlist records, and Vercel logs | No / platform-managed | Yes | Per-record TTL or platform log schedule; not the 730 d deletion receipt | Server only |
+| `req.headers.user-agent` (waitlist telemetry; excluded from account-deletion receipts) | INTERNAL | Waitlist record / Vercel logs | No / platform-managed | Yes | Same as the parent record or platform log schedule | Server only |
+
+Retention reference: the Israeli Privacy Protection Authority's official [Regulation 10 implementation guide](https://www.gov.il/he/pages/data_security_guide?chapterIndex=12) states that Regulation 10 applies to databases at medium or high security levels and that its access-control documentation is retained for at least 24 months. Kesefle's classification and the regulation's applicability should be confirmed by qualified counsel.
 
 ### Rate-limit & dedup state
 
@@ -134,11 +139,10 @@ Refresh tokens are also bound to an AAD of `kfl:v1:oauth.refresh` so a stolen ac
 When a user invokes `/api/account/delete`:
 
 1. **Google OAuth grant revoked** at `oauth2.googleapis.com/revoke` (kills access tokens immediately, refresh token universe-wide).
-2. **KV keys deleted**: `user:<sub>`, `sheet:<sub>`, `phone:<E.164>` (if present).
-3. **Audit entry written** to `audit:account_deleted:...` with TTL 730 d — required for Amendment 13 compliance to prove the deletion happened.
+2. **KV keys deleted with retry and race safety**: strict reads distinguish explicit absence from an outage or malformed value; deletion first publishes an opaque guard that the WhatsApp link-confirmation transaction must check; phone ownership is pinned before phone-scoped deletion; secondary records are removed first; `user:<sub>`, `userPhone:<sub>`, and the owned `phone:<E.164>` mapping remain anchors and are finalized together with opaque 7-day replay markers in one key-locked operation. The guard becomes a 10-minute opaque cooldown marker so a stale link code cannot revive a rapidly re-created account. A partial failure returns retryable 503, while a lost final response can be replayed truthfully from the marker.
+3. **Privacy-minimized audit receipt written** to the outcome-neutral `audit:account_deletion:...` namespace with TTL 730 d. It retains only a one-way subject hash, channel, outcome (`deleted`, `retry_required`, or `no_linked_user`), and aggregate deleted-key count—never email, phone, IP, request headers, or deleted key names.
 4. **NOT deleted (intentional):**
    - The user's Google Sheet — it's in their Drive, under their control. Stated explicitly in the response.
-   - `optout:<phone>` — kept so a re-onboard requires explicit START.
    - Vercel function logs — they roll off on Vercel's schedule; we cannot delete on demand. Logs use `lib/log.js` redaction so the `sub` was never written in clear in the first place.
 5. **Transactions table (future Postgres):** cascade `delete on users id` removes per-row data; audit log retains `subHash` only.
 

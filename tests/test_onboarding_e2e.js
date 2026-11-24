@@ -18,10 +18,10 @@
 // tests/test_morning_nudge_cron.js + bot/test_isolation.js): we read the REAL
 // source files as text, balanced-brace-extract the handler + its file-local
 // helpers, and materialise them with `new Function`, injecting their free
-// identifiers as mocks. The REAL `kvGet/kvSet/kvSetNX/kvDel` helpers run
-// UNMODIFIED against a shared in-memory KV via a mocked global.fetch (exactly
-// how the cron suites emulate Upstash) -- so the atomic-claim (SETNX), TTL, and
-// delete semantics are the production ones, not re-implementations. The only
+// identifiers as mocks. The REAL `kvGet/kvSet` helpers and atomic confirmation
+// EVAL run against a shared in-memory KV via a mocked global.fetch (exactly how
+// the cron suites emulate Upstash) -- so the transaction's key declaration,
+// result handling, TTL, and delete semantics are exercised. The only
 // things stubbed are the genuine EXTERNAL boundaries that a unit test cannot
 // reach: the session-cookie verifier (getUserId/requireUser), the rate-limit
 // wrappers (always-allow), the Sheets writer, token decrypt/refresh, and the
@@ -31,6 +31,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { createHmac } = require('crypto');
 
 const ROOT = path.join(__dirname, '..');
 const LINK_SRC = fs.readFileSync(path.join(ROOT, 'api/whatsapp/link.js'), 'utf8');
@@ -112,6 +113,77 @@ function makeWorld() {
     const parts = u.pathname.split('/').filter(Boolean);
     const op = parts[0];
     const key = decodeURIComponent(parts.slice(1).join('/'));
+    if (!op && opts.method === 'POST') {
+      const command = JSON.parse(opts.body || '[]');
+      const script = command[1] || '';
+      if (command[0] !== 'EVAL' || !script.includes('KESEFLE_PHONE_LINK_CONFIRM_V2')) {
+        throw new Error('unmocked KV command');
+      }
+      const keyCount = Number(command[2]);
+      const keys = command.slice(3, 3 + keyCount);
+      const args = command.slice(3 + keyCount);
+      const [userKey, sheetKey, phoneKey, reverseKey, codeKey, guardKey] = keys;
+      const [expectedSub, expectedPhone, linkedAt] = args;
+      const result = (value) => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ result: JSON.stringify(value) }),
+      });
+      let pending;
+      try { pending = store.has(codeKey) ? JSON.parse(store.get(codeKey)) : null; }
+      catch { return result({ status: 'code_invalid' }); }
+      if (!pending) return result({ status: 'code_missing' });
+      if (!pending.userSub || String(pending.userSub) !== expectedSub ||
+          (pending.phone != null && String(pending.phone) !== expectedPhone)) {
+        return result({ status: 'code_invalid' });
+      }
+      if (store.has(guardKey)) {
+        store.delete(codeKey);
+        return result({ status: 'account_deleting' });
+      }
+      let user;
+      try { user = store.has(userKey) ? JSON.parse(store.get(userKey)) : null; }
+      catch { return result({ status: 'user_malformed' }); }
+      if (!user || typeof user !== 'object' || Array.isArray(user)) {
+        store.delete(codeKey);
+        return result({ status: 'user_missing' });
+      }
+      let existing;
+      try { existing = store.has(phoneKey) ? JSON.parse(store.get(phoneKey)) : null; }
+      catch { return result({ status: 'phone_malformed' }); }
+      if (existing && (!existing.userSub || existing.userSub !== expectedSub)) {
+        store.delete(codeKey);
+        return result({ status: 'foreign_phone' });
+      }
+      let existingReverse;
+      try { existingReverse = store.has(reverseKey) ? JSON.parse(store.get(reverseKey)) : null; }
+      catch { return result({ status: 'reverse_malformed' }); }
+      if (existingReverse && existingReverse.phone !== expectedPhone) {
+        return result({ status: 'different_phone_linked' });
+      }
+      if (pending.status === 'confirmed') {
+        if (!existing || !existingReverse) return result({ status: 'replay_incomplete' });
+        return result({ status: 'linked', record: existing, replayed: true });
+      }
+      if (pending.status != null) return result({ status: 'code_invalid' });
+      let sheet = null;
+      try { sheet = store.has(sheetKey) ? JSON.parse(store.get(sheetKey)) : null; }
+      catch { sheet = null; }
+      const record = {
+        userSub: expectedSub,
+        email: user.email || '',
+        plan: user.plan || 'free',
+        spreadsheetId: (sheet && sheet.spreadsheetId) || user.spreadsheetId || null,
+        spreadsheetUrl: (sheet && sheet.spreadsheetUrl) || user.spreadsheetUrl || null,
+        linkedAt,
+      };
+      store.set(phoneKey, JSON.stringify(record));
+      store.set(reverseKey, JSON.stringify({ phone: expectedPhone, linkedAt }));
+      store.set(codeKey, JSON.stringify({
+        status: 'confirmed', userSub: expectedSub, phone: expectedPhone, linkedAt,
+      }));
+      return result({ status: 'linked', record });
+    }
     if (op === 'get') {
       const v = store.has(key) ? store.get(key) : null;
       return { ok: true, status: 200, json: async () => ({ result: v }) };
@@ -213,17 +285,18 @@ function buildLinkHandler(stubs) {
     extractFn(src, 'verifyAccessToken') + '\n' +
     extractFn(src, 'kvGet') + '\n' +
     extractFn(src, 'kvSet') + '\n' +
-    extractFn(src, 'kvSetNX') + '\n' +
-    extractFn(src, 'kvDel') + '\n' +
+    extractFn(src, '_linkJsonWithDeadline_') + '\n' +
+    extractFn(src, '_deletionGuardKey_') + '\n' +
+    extractFn(src, '_confirmPhoneLinkAtomically_') + '\n' +
     extractFn(src, 'normalizeE164') + '\n' +
     extractFn(src, 'getVerifiedPhoneForUser') + '\n' +
     extractFn(src, 'gen6DigitCode') + '\n' +
     extractFn(src, 'handlerImpl') + '\n' +
     'return handlerImpl;';
   return new Function(
-    'log', 'rateLimit', 'computeEntitlement', 'getUserId', 'constantTimeEqual', '__mi', 'crypto',
+    'log', 'rateLimit', 'computeEntitlement', 'getUserId', 'constantTimeEqual', '__mi', 'crypto', 'createHmac',
     body
-  )(stubs.log, stubs.rateLimit, stubs.computeEntitlement, stubs.getUserId, stubs.constantTimeEqual, stubs.__mi, globalThis.crypto);
+  )(stubs.log, stubs.rateLimit, stubs.computeEntitlement, stubs.getUserId, stubs.constantTimeEqual, stubs.__mi, globalThis.crypto, createHmac);
 }
 
 function buildAppendHandler(stubs) {
@@ -296,6 +369,13 @@ function seedUser(world, sub, { email, sheetId } = {}) {
   }));
 }
 
+function deletionGuardKey(sub) {
+  const digest = createHmac('sha256', process.env.KV_REST_API_TOKEN)
+    .update(`kesefle:account-deletion:v1:guard:${sub}`)
+    .digest('hex');
+  return 'deletion:guard:' + digest;
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // 1. HAPPY PATH — full new-user chain, end to end.
 // ════════════════════════════════════════════════════════════════════════════
@@ -333,7 +413,11 @@ async function happyPath() {
   ok('confirm: writes phone:<E164> -> userSub permanently', (world.kvObj('phone:' + PHONE) || {}).userSub === SUB);
   ok('confirm: phone record carries the canonical sheet id', (world.kvObj('phone:' + PHONE) || {}).spreadsheetId === SHEET);
   ok('confirm: reverse userPhone:<sub> mapping written', (world.kvObj('userPhone:' + SUB) || {}).phone === PHONE);
-  ok('confirm: linkCode consumed (single-use)', world.kvObj('linkCode:' + code) === null);
+  ok('confirm: linkCode becomes a bounded confirmed replay tombstone', (world.kvObj('linkCode:' + code) || {}).status === 'confirmed');
+  const replayRes = mkRes();
+  await confirmHandler(reqConfirmPOST({ code, phone: PHONE }, BOT_SECRET), replayRes);
+  ok('confirm: committed code retry returns 200', replayRes._status === 200, replayRes._status);
+  ok('confirm: committed code retry is explicitly replayed', replayRes._json && replayRes._json.replayed === true);
   // The browser's signed-in status check must verify the reverse and forward
   // records together and return the canonical phone to this same customer.
   const statusHandler = buildLinkHandler(makeStubs(world, { sessionSub: SUB }));
@@ -343,7 +427,7 @@ async function happyPath() {
   ok('status: returns the canonical verified phone', statusRes._json && statusRes._json.phone === PHONE);
   // Drain microtasks/timers so the un-awaited welcome send completes.
   await new Promise(r => setImmediate(r));
-  ok('confirm: welcome WhatsApp sent to the new phone', world.sentWhatsApp.some(m => m.to === PHONE), JSON.stringify(world.sentWhatsApp));
+  ok('confirm: welcome WhatsApp sent once despite replay', world.sentWhatsApp.filter(m => m.to === PHONE).length === 1, JSON.stringify(world.sentWhatsApp));
 
   // (c) Bot appends a tenant expense row.
   const appendHandler = buildAppendHandler(makeStubs(world));
@@ -446,7 +530,41 @@ async function failurePaths() {
     ok('confirm: no phone mapping for the wrong handset', world.kvObj('phone:972509998888') === null);
   }
 
-  // 2f. APPEND for a phone that was never linked -> 404 no_user_for_phone.
+  // 2f. DELETION GUARD wins before confirmation: the pending code is consumed
+  // and neither side of the phone mapping may be created.
+  {
+    const world = makeWorld();
+    const SUB = 'google:deleting-user';
+    const PHONE = '972504440001';
+    seedUser(world, SUB, { sheetId: 'SHEET_DELETING' });
+    world.store.set('linkCode:135790', JSON.stringify({ userSub: SUB, phone: PHONE }));
+    world.store.set(deletionGuardKey(SUB), JSON.stringify({ v: 1, status: 'deleting' }));
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '135790', phone: PHONE }, BOT_SECRET), res);
+    ok('confirm: deletion guard -> 409', res._status === 409, res._status);
+    ok('confirm: deletion guard reports account_deletion_in_progress', res._json && res._json.error === 'account_deletion_in_progress');
+    ok('confirm: deletion guard prevents forward mapping recreation', world.kvObj('phone:' + PHONE) === null);
+    ok('confirm: deletion guard prevents reverse mapping recreation', world.kvObj('userPhone:' + SUB) === null);
+    ok('confirm: deletion guard consumes the stale one-time code', world.kvObj('linkCode:135790') === null);
+  }
+
+  // 2g. FINALIZER already removed the user and both mappings. Even after the
+  // cooldown guard eventually expires, an old pending code cannot resurrect
+  // them because the atomic transaction requires the canonical user record.
+  {
+    const world = makeWorld();
+    const SUB = 'google:already-deleted';
+    const PHONE = '972504440002';
+    world.store.set('linkCode:135791', JSON.stringify({ userSub: SUB, phone: PHONE }));
+    const res = mkRes();
+    await buildLinkHandler(makeStubs(world))(reqConfirmPOST({ code: '135791', phone: PHONE }, BOT_SECRET), res);
+    ok('confirm: missing finalized user -> 409', res._status === 409, res._status);
+    ok('confirm: missing finalized user reports deletion in progress', res._json && res._json.error === 'account_deletion_in_progress');
+    ok('confirm: finalized account cannot recreate forward mapping', world.kvObj('phone:' + PHONE) === null);
+    ok('confirm: finalized account cannot recreate reverse mapping', world.kvObj('userPhone:' + SUB) === null);
+  }
+
+  // 2h. APPEND for a phone that was never linked -> 404 no_user_for_phone.
   {
     const world = makeWorld();
     const res = mkRes();
@@ -455,7 +573,7 @@ async function failurePaths() {
     ok('append: nothing written to any sheet for an unlinked phone', world.sheetWrites.length === 0);
   }
 
-  // 2g. getExpenses while NOT signed in -> 401 (requireUser).
+  // 2i. getExpenses while NOT signed in -> 401 (requireUser).
   {
     const world = makeWorld();
     const res = mkRes();

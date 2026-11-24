@@ -14,34 +14,95 @@
 // Per Israeli Privacy Protection Law Amendment 13 + GDPR Articles 17 & 20.
 
 import { requireAuth } from '../lib/auth.js';
+import { createHmac } from 'node:crypto';
 import { withRequestId, log } from '../lib/log.js';
 import { withRateLimit } from '../lib/ratelimit.js';
 import { decryptRefreshToken, constantTimeEqual } from '../lib/crypto.js';
 import { exchangeRefreshForAccess } from '../lib/oauth.js';
 import { TX_TAB } from '../lib/sheet-tabs.js';
 import { migrateLegacyReferralPii } from '../lib/referral-privacy.js';
+import { auditLog } from '../lib/secure-kv.js';
 // GDPR completeness (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md): goals are
 // stored as one key per goal under an index, so a flat key list can't reach
 // them. purgeGoals() walks the goals:{userSub} index and deletes each
 // goal:{userSub}:{id} plus the index itself.
 import { purgeGoals } from '../lib/goals.js';
 
-async function kvGet(key) {
+const ACCOUNT_IO_TIMEOUT_MS = 3000;
+const DELETION_RECEIPT_TTL_SEC = 7 * 86400;
+const DELETION_GUARD_COOLDOWN_SEC = 10 * 60;
+
+// Destructive account operations must not wait forever after earlier steps
+// have already succeeded. Abort the underlying request and also race it so a
+// test double (or non-compliant fetch implementation) that ignores AbortSignal
+// still cannot strand the HTTP response.
+async function _withDeadline_(operation, timeoutMs = ACCOUNT_IO_TIMEOUT_MS) {
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('account_io_timeout'));
+    }, Math.max(10, Number(timeoutMs) || ACCOUNT_IO_TIMEOUT_MS));
+  });
+  try {
+    return await Promise.race([
+      Promise.resolve().then(() => operation(controller.signal)),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function _fetchWithDeadline_(url, init = {}, timeoutMs = ACCOUNT_IO_TIMEOUT_MS) {
+  return _withDeadline_(
+    (signal) => fetch(url, { ...init, signal }),
+    timeoutMs,
+  );
+}
+
+// Keep the deadline active through response-body parsing. A server can send
+// headers and then stall forever; destructive flows must treat that as an
+// outage, not as a missing record or a completed command.
+async function _fetchJsonWithDeadline_(url, init = {}, timeoutMs = ACCOUNT_IO_TIMEOUT_MS) {
+  return _withDeadline_(async (signal) => {
+    const response = await fetch(url, { ...init, signal });
+    let payload;
+    try { payload = await response.json(); }
+    catch { throw new Error('account_io_malformed_json'); }
+    return { response, payload };
+  }, timeoutMs);
+}
+
+async function kvGet(key, { allowRawString = false } = {}) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return null;
-  const r = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
+  if (!url || !token) throw new Error('kv_unavailable');
+  const { response, payload } = await _fetchJsonWithDeadline_(`${url}/get/${encodeURIComponent(key)}`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
-  const j = await r.json();
-  return j?.result ? JSON.parse(j.result) : null;
+  if (!response.ok) throw new Error('kv_read_failed');
+  if (!payload || !Object.prototype.hasOwnProperty.call(payload, 'result')) {
+    throw new Error('kv_read_malformed');
+  }
+  if (payload.result === null) return null;
+  if (typeof payload.result !== 'string') throw new Error('kv_read_malformed');
+  let parsed;
+  try { parsed = JSON.parse(payload.result); }
+  catch {
+    if (allowRawString && payload.result.length > 0) return payload.result;
+    throw new Error('kv_read_malformed');
+  }
+  if (parsed === null) throw new Error('kv_read_malformed');
+  return parsed;
 }
 
 async function kvDel(key) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
   if (!url || !token) return false;
-  const r = await fetch(`${url}/del/${encodeURIComponent(key)}`, {
+  const r = await _fetchWithDeadline_(`${url}/del/${encodeURIComponent(key)}`, {
     method: 'POST', headers: { 'Authorization': `Bearer ${token}` },
   });
   return r.ok;
@@ -60,13 +121,13 @@ if owner ~= ARGV[1] then return cjson.encode({ status = 'foreign' }) end
 redis.call('DEL', KEYS[1])
 return cjson.encode({ status = 'deleted' })`;
   try {
-    const response = await fetch(url, {
+    const transport = await _fetchJsonWithDeadline_(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(['EVAL', script, '1', 'referral:reverse:' + code, userSub]),
     });
+    const { response, payload } = transport;
     if (!response.ok) throw new Error('reverse_delete_failed');
-    const payload = await response.json().catch(() => null);
     if (typeof payload?.result !== 'string') throw new Error('reverse_delete_malformed');
     const result = JSON.parse(payload.result);
     if (!['deleted', 'missing', 'foreign'].includes(result?.status)) throw new Error('reverse_delete_malformed');
@@ -84,7 +145,7 @@ async function kvSetRemove(setKey, member) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
   if (!url || !token) return false;
-  const r = await fetch(
+  const r = await _fetchWithDeadline_(
     `${url}/srem/${encodeURIComponent(setKey)}/${encodeURIComponent(member)}`,
     { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } },
   );
@@ -195,34 +256,317 @@ function _privacyCleanupPendingResponse_(res, error) {
 // Purge the per-user records that a flat key list in _keysForUser_ can't reach
 // because they are multi-key (one KV entry per goal, indexed) or windowed
 // (one entry per stats window). Called from BOTH delete paths so bot-driven
-// and web-driven deletes leave identical (zero) residue. Best-effort: every
-// op tolerates a missing key, so a partial state never throws.
+// and web-driven deletes leave identical residue. Every transport failure is
+// counted so a caller cannot emit a false completion receipt.
 // (docs/AUDIT_KV_TENANT_ISOLATION_2026_05_31.md GDPR completeness, items 5 + 7.)
 async function _purgeMultiKeyUserRecords_(userSub, deleted) {
+  let failed = 0;
   try {
     const r = await purgeGoals(userSub);   // walks goals:{userSub} index → goal:{userSub}:{id} + index
-    if (r && r.purged) deleted.push('goal:' + userSub + ':* (' + r.purged + ')');
-    deleted.push('goals:' + userSub);
+    if (r?.ok) {
+      if (r.purged) deleted.push('goal:' + userSub + ':* (' + r.purged + ')');
+      deleted.push('goals:' + userSub);
+    } else {
+      failed += 1;
+    }
   } catch (e) {
+    failed += 1;
     log.warn('account.purge_goals_failed', { err: e && e.message });
   }
   // Cached stats aggregates (amounts → PII). Two known windows; TTL'd anyway,
   // but the user asked for deletion, so honor it immediately.
   for (const window of ['7d', '30d']) {
-    if (await kvDel('stats:' + userSub + ':' + window)) {
-      deleted.push('stats:' + userSub + ':' + window);
-    }
+    try {
+      if (await kvDel('stats:' + userSub + ':' + window)) {
+        deleted.push('stats:' + userSub + ':' + window);
+      } else failed += 1;
+    } catch { failed += 1; }
+  }
+  return { failed };
+}
+
+// Keep a durable deletion receipt without recreating the personal data that
+// was just erased. auditLog() hashes the subject, applies a 730-day TTL, and
+// keeps the raw identifier out of both the KV key and value. Metadata is a
+// deliberately closed, aggregate-only schema: never pass email, phone, IP,
+// request headers, or the deleted key names here.
+async function _writeDeletionAudit_(subject, channel, outcome, deletedKeyCount) {
+  try {
+    const ok = await auditLog('account_deletion', subject || null, {
+      channel,
+      outcome,
+      deletedKeyCount: Math.max(0, Number(deletedKeyCount) || 0),
+    });
+    if (!ok) log.warn('account.deletion_audit_unavailable', { channel, outcome });
+  } catch (error) {
+    // Account deletion must not fail because its privacy-minimized receipt is
+    // temporarily unavailable. The warning itself contains no user identity.
+    log.warn('account.deletion_audit_failed', { channel, outcome, error: error?.message });
   }
 }
 
-async function revokeGoogleToken(refreshToken) {
-  if (!refreshToken) return;
+function _deletionRetryRequiredResponse_(res) {
+  const retryAfter = 5;
+  res.setHeader('Retry-After', String(retryAfter));
+  return res.status(503).json({
+    ok: false,
+    completed: false,
+    error: 'account_deletion_retry_required',
+    retry_after: retryAfter,
+  });
+}
+
+function _webDeletionSuccessResponse_(res, deleted, replayed = false) {
+  return res.status(200).json({
+    ok: true,
+    deleted,
+    ...(replayed ? { replayed: true } : {}),
+    note: 'Your account, OAuth tokens, and our connection to your sheet have been removed. The Google Sheet itself remains in your Drive under your control — delete it manually if you wish.',
+    note_he: 'החשבון שלך, אסימוני ההזדהות והקישור שלנו לגיליון הוסרו. הגיליון עצמו נשאר ב-Drive שלך בשליטתך — מחק אותו ידנית אם תרצה.',
+  });
+}
+
+function _deletionReceiptKey_(kind, value) {
+  const secret = process.env.KV_REST_API_TOKEN;
+  if (!secret || !value || !['user', 'phone'].includes(kind)) return null;
+  const digest = createHmac('sha256', secret)
+    .update(`kesefle:account-deletion:v1:${kind}:${String(value)}`)
+    .digest('hex');
+  return `deletion:complete:${kind}:${digest}`;
+}
+
+// The deletion/link race guard is opaque for the same reason as completion
+// receipts: a raw Google subject must not survive in a new KV key after the
+// account is gone. api/whatsapp/link.js derives this exact key before its
+// atomic confirmation transaction.
+function _deletionGuardKey_(userSub) {
+  const secret = process.env.KV_REST_API_TOKEN;
+  if (!secret || !userSub) return null;
+  const digest = createHmac('sha256', secret)
+    .update(`kesefle:account-deletion:v1:guard:${String(userSub)}`)
+    .digest('hex');
+  return `deletion:guard:${digest}`;
+}
+
+// Publish deletion intent before any secondary purge. This transaction and
+// phone-link confirmation both lock the canonical user + opaque guard keys,
+// so Redis serializes the two operations: a confirmation that wins first is
+// purged below, while one that runs afterwards observes the guard and stops.
+async function _beginDeletion_(userSub) {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  const guardKey = _deletionGuardKey_(userSub);
+  if (!url || !token || !guardKey) return { status: 'unavailable' };
+  const script = `#!lua flags=allow-key-locking
+local userRaw = redis.call('GET', KEYS[1])
+if not userRaw then return cjson.encode({ status = 'user_missing' }) end
+local ok, decoded = pcall(cjson.decode, userRaw)
+if not ok or type(decoded) ~= 'table' then
+  return cjson.encode({ status = 'user_malformed' })
+end
+redis.call('SET', KEYS[2], ARGV[1])
+return cjson.encode({ status = 'marked' })`;
   try {
-    await fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(refreshToken), {
+    const { response, payload } = await _fetchJsonWithDeadline_(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([
+        'EVAL', script, '2', 'user:' + userSub, guardKey,
+        JSON.stringify({ v: 1, status: 'deleting' }),
+      ]),
+    });
+    if (!response.ok || typeof payload?.result !== 'string') return { status: 'unavailable' };
+    const result = JSON.parse(payload.result);
+    return ['marked', 'user_missing', 'user_malformed'].includes(result?.status)
+      ? { status: result.status }
+      : { status: 'unavailable' };
+  } catch {
+    return { status: 'unavailable' };
+  }
+}
+
+async function _hasDeletionReceipt_(kind, value) {
+  const key = _deletionReceiptKey_(kind, value);
+  if (!key) throw new Error('deletion_receipt_unavailable');
+  const receipt = await kvGet(key);
+  if (receipt === null) return false;
+  if (typeof receipt !== 'object' || receipt.v !== 1 || receipt.status !== 'complete') {
+    throw new Error('deletion_receipt_malformed');
+  }
+  return true;
+}
+
+// Pin the phone namespace before deleting any phone-scoped data. An existing
+// foreign owner is never touched; a missing mapping is reserved atomically for
+// this deletion so a concurrent signup cannot claim it mid-purge.
+async function _preparePhoneAnchor_(userSub, phone) {
+  if (!phone) return { status: 'none' };
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return { status: 'unavailable' };
+  const phoneKey = 'phone:' + phone;
+  const reservedValue = JSON.stringify({ userSub, deletionReserved: true });
+  const script = `#!lua flags=allow-key-locking
+local raw = redis.call('GET', KEYS[1])
+if raw then
+  local ok, decoded = pcall(cjson.decode, raw)
+  if not ok or type(decoded) ~= 'table' or decoded['userSub'] == nil then
+    return cjson.encode({ status = 'malformed' })
+  end
+  if tostring(decoded['userSub']) ~= ARGV[1] then
+    return cjson.encode({ status = 'foreign' })
+  end
+  return cjson.encode({ status = 'owned' })
+end
+redis.call('SET', KEYS[1], ARGV[2])
+return cjson.encode({ status = 'reserved' })`;
+  try {
+    const { response, payload } = await _fetchJsonWithDeadline_(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['EVAL', script, '1', phoneKey, userSub, reservedValue]),
+    });
+    if (!response.ok || typeof payload?.result !== 'string') return { status: 'unavailable' };
+    const result = JSON.parse(payload.result);
+    return ['owned', 'reserved', 'foreign', 'malformed'].includes(result?.status)
+      ? { status: result.status }
+      : { status: 'unavailable' };
+  } catch {
+    return { status: 'unavailable' };
+  }
+}
+
+// Finalize the two records that make a partially deleted account retryable.
+// With a phone, delete both anchors in one key-locked script and only if the
+// phone mapping is still absent or still belongs to this user. A reassigned or
+// malformed mapping is never deleted.
+async function _finalizeUserAnchors_(userSub, phone) {
+  const identityKey = 'user:' + userSub;
+  const reversePhoneKey = 'userPhone:' + userSub;
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return { complete: false, deletedKeys: [] };
+  const userReceiptKey = _deletionReceiptKey_('user', userSub);
+  const guardKey = _deletionGuardKey_(userSub);
+  if (!userReceiptKey || !guardKey) return { complete: false, deletedKeys: [] };
+  const receipt = JSON.stringify({ v: 1, status: 'complete', completedAt: new Date().toISOString() });
+  const completedGuard = JSON.stringify({ v: 1, status: 'deleted' });
+
+  let keys;
+  let script;
+  if (phone) {
+    const phoneKey = 'phone:' + phone;
+    const phoneReceiptKey = _deletionReceiptKey_('phone', phone);
+    if (!phoneReceiptKey) return { complete: false, deletedKeys: [] };
+    keys = [identityKey, phoneKey, reversePhoneKey, guardKey, userReceiptKey, phoneReceiptKey];
+    script = `#!lua flags=allow-key-locking
+local phoneRaw = redis.call('GET', KEYS[2])
+if phoneRaw then
+  local ok, decoded = pcall(cjson.decode, phoneRaw)
+  if not ok or type(decoded) ~= 'table' or decoded['userSub'] == nil then
+    return cjson.encode({ status = 'malformed_phone_anchor' })
+  end
+  if tostring(decoded['userSub']) ~= ARGV[1] then
+    return cjson.encode({ status = 'foreign_phone_anchor' })
+  end
+end
+redis.call('SET', KEYS[5], ARGV[2], 'EX', ARGV[3])
+redis.call('SET', KEYS[6], ARGV[2], 'EX', ARGV[3])
+redis.call('SET', KEYS[4], ARGV[4], 'EX', ARGV[5])
+local phoneDeleted = redis.call('DEL', KEYS[2])
+local reverseDeleted = redis.call('DEL', KEYS[3])
+local userDeleted = redis.call('DEL', KEYS[1])
+return cjson.encode({ status = 'complete', userDeleted = userDeleted, phoneDeleted = phoneDeleted, reverseDeleted = reverseDeleted })`;
+  } else {
+    keys = [identityKey, reversePhoneKey, guardKey, userReceiptKey];
+    script = `#!lua flags=allow-key-locking
+redis.call('SET', KEYS[4], ARGV[2], 'EX', ARGV[3])
+redis.call('SET', KEYS[3], ARGV[4], 'EX', ARGV[5])
+local reverseDeleted = redis.call('DEL', KEYS[2])
+local userDeleted = redis.call('DEL', KEYS[1])
+return cjson.encode({ status = 'complete', userDeleted = userDeleted, phoneDeleted = 0, reverseDeleted = reverseDeleted })`;
+  }
+
+  try {
+    const { response, payload } = await _fetchJsonWithDeadline_(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([
+        'EVAL', script, String(keys.length), ...keys,
+        userSub, receipt, String(DELETION_RECEIPT_TTL_SEC),
+        completedGuard, String(DELETION_GUARD_COOLDOWN_SEC),
+      ]),
+    });
+    if (!response.ok || typeof payload?.result !== 'string') {
+      return { complete: false, deletedKeys: [] };
+    }
+    const result = JSON.parse(payload.result);
+    if (result?.status !== 'complete') return { complete: false, deletedKeys: [] };
+    const deletedKeys = [];
+    if (phone && Number(result.phoneDeleted) > 0) deletedKeys.push('phone:' + phone);
+    if (Number(result.reverseDeleted) > 0) deletedKeys.push(reversePhoneKey);
+    if (Number(result.userDeleted) > 0) deletedKeys.push(identityKey);
+    return { complete: true, deletedKeys };
+  } catch {
+    return { complete: false, deletedKeys: [] };
+  }
+}
+
+// Delete every secondary record first and the canonical user record last. If
+// any step fails, both the identity and phone mapping remain as retry anchors.
+// Earlier successful deletes are idempotent, so retrying safely finishes the
+// purge from either web or WhatsApp.
+async function _purgeUserRecords_(userSub, phone, deleted) {
+  const identityKey = 'user:' + userSub;
+  const phoneKey = phone ? 'phone:' + phone : null;
+  const reversePhoneKey = 'userPhone:' + userSub;
+  const keys = (await _keysForUser_(userSub, phone))
+    .filter((key) => key !== identityKey && key !== phoneKey && key !== reversePhoneKey);
+  let failed = 0;
+
+  for (const key of keys) {
+    try {
+      if (await kvDel(key)) deleted.push(key);
+      else failed += 1;
+    } catch { failed += 1; }
+  }
+
+  const multi = await _purgeMultiKeyUserRecords_(userSub, deleted);
+  failed += multi.failed;
+
+  try {
+    if (await kvSetRemove('users_all', 'google:' + userSub)) {
+      deleted.push('users_all[google:' + userSub + ']');
+    } else failed += 1;
+  } catch { failed += 1; }
+
+  // Never erase a retry/race anchor until every secondary operation has been
+  // acknowledged. The finalizer removes user + phone + reverse mapping in one
+  // transaction and converts the guard into a short opaque cooldown marker.
+  if (failed === 0) {
+    const finalized = await _finalizeUserAnchors_(userSub, phone);
+    if (finalized.complete) deleted.push(...finalized.deletedKeys);
+    else failed += 1;
+  }
+
+  return { complete: failed === 0, failed };
+}
+
+async function revokeGoogleToken(refreshToken) {
+  if (!refreshToken) return true;
+  try {
+    const response = await _fetchWithDeadline_('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(refreshToken), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
-  } catch (e) { console.warn('google_revoke_failed', e.message); }
+    // Google documents 200 for a successful revocation and 400 when the token
+    // is invalid (including already expired/revoked). Both mean the stored
+    // credential cannot retain an active grant; transient/5xx failures retry.
+    return response.ok || response.status === 400;
+  } catch (e) {
+    log.warn('account.google_revoke_failed', { error: e?.message });
+    return false;
+  }
 }
 
 // exchangeRefreshForAccess now lives in lib/oauth.js (audit H1): it captures a
@@ -255,82 +599,102 @@ async function deleteAccount(req, res) {
     return _privacyCleanupPendingResponse_(res, error);
   }
 
-  const userRec = await kvGet('user:' + userSub);
-  if (!userRec) {
+  let userRec;
+  try { userRec = await kvGet('user:' + userSub); }
+  catch {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  if (userRec === null) {
+    let replayed = false;
+    try { replayed = await _hasDeletionReceipt_('user', userSub); }
+    catch {
+      await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+      return _deletionRetryRequiredResponse_(res);
+    }
+    if (replayed) {
+      await _writeDeletionAudit_(userSub, 'web', 'deleted', deleted.length);
+      return _webDeletionSuccessResponse_(res, deleted, true);
+    }
     return res.status(404).json({ ok: false, error: 'user not found' });
+  }
+  if (typeof userRec !== 'object') {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+
+  const deletionGuard = await _beginDeletion_(userSub);
+  if (deletionGuard.status !== 'marked') {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
   }
 
   // Resolve every new throwing KV precondition before revoking the external
   // Google grant. A transient reverse-map failure must leave the account and
   // its Drive access untouched so the user can retry safely.
-  const userPhoneRec = await kvGet('userPhone:' + userSub);
-  const referralCode = await kvGet('referral:code:' + userSub);
-  const phone = (userPhoneRec && userPhoneRec.phone) ? userPhoneRec.phone : null;
+  let userPhoneRec;
+  let referralCode;
+  try {
+    userPhoneRec = await kvGet('userPhone:' + userSub);
+    referralCode = await kvGet('referral:code:' + userSub, { allowRawString: true });
+  } catch {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  if ((userPhoneRec !== null && (typeof userPhoneRec !== 'object' || typeof userPhoneRec.phone !== 'string')) ||
+      (referralCode !== null && typeof referralCode !== 'string')) {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  let phone = (userPhoneRec && userPhoneRec.phone) ? userPhoneRec.phone : null;
+  if (phone) {
+    const prepared = await _preparePhoneAnchor_(userSub, phone);
+    if (prepared.status === 'foreign') {
+      // A stale userPhone pointer must never delete the current owner's
+      // phone-scoped profile. Continue with user-scoped deletion only.
+      phone = null;
+    } else if (!['owned', 'reserved'].includes(prepared.status)) {
+      await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+      return _deletionRetryRequiredResponse_(res);
+    }
+  }
   if (referralCode) {
-    const reverseStatus = await kvDeleteReferralReverseIfOwned(referralCode, userSub);
-    if (reverseStatus === 'deleted') deleted.push('referral:reverse:' + referralCode);
+    try {
+      const reverseStatus = await kvDeleteReferralReverseIfOwned(referralCode, userSub);
+      if (reverseStatus === 'deleted') deleted.push('referral:reverse:' + referralCode);
+    } catch {
+      await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+      return _deletionRetryRequiredResponse_(res);
+    }
   }
 
   // Revoke the Google grant on delete. Handle BOTH the encrypted envelope
   // (current users) AND the legacy plaintext token — otherwise envelope users'
   // Google access survives account deletion (GDPR). Mirrors deleteByPhone.
-  {
-    let _refresh = null;
-    try {
-      _refresh = userRec.refreshTokenEnvelope
-        ? decryptRefreshToken(userRec.refreshTokenEnvelope, userSub)
-        : userRec.refreshToken;
-    } catch (_e) { _refresh = userRec.refreshToken || null; }
-    if (_refresh) await revokeGoogleToken(_refresh);
+  let refreshToken = null;
+  let refreshTokenReadable = true;
+  try {
+    refreshToken = userRec.refreshTokenEnvelope
+      ? decryptRefreshToken(userRec.refreshTokenEnvelope, userSub)
+      : userRec.refreshToken;
+  } catch {
+    refreshToken = userRec.refreshToken || null;
+    refreshTokenReadable = Boolean(refreshToken);
+  }
+  if (!refreshTokenReadable || !(await revokeGoogleToken(refreshToken))) {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
   }
 
-  // Build the full per-user key list (R1 unified delete — see helper above).
-  const keysToDelete = await _keysForUser_(userSub, phone);
-
-  for (const k of keysToDelete) {
-    if (await kvDel(k)) deleted.push(k);
+  const purge = await _purgeUserRecords_(userSub, phone, deleted);
+  if (!purge.complete) {
+    await _writeDeletionAudit_(userSub, 'web', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
   }
 
-  // Multi-key / windowed per-user records (goals index, cached stats) that the
-  // flat key list above can't reach.
-  await _purgeMultiKeyUserRecords_(userSub, deleted);
+  await _writeDeletionAudit_(userSub, 'web', 'deleted', deleted.length);
 
-  // Evict from the `users_all` index SET (SADD'd as 'google:'+sub at signup in
-  // api/auth/google.js). A DEL can't remove a set member — without this SREM the
-  // deleted user lingers in the set forever and the morning-nudge /
-  // customer-weekly-digest crons keep iterating a ghost on every run.
-  if (await kvSetRemove('users_all', 'google:' + userSub)) {
-    deleted.push('users_all[google:' + userSub + ']');
-  }
-
-  // Audit log (non-fatal)
-  const kvUrl = process.env.KV_REST_API_URL;
-  const kvToken = process.env.KV_REST_API_TOKEN;
-  if (kvUrl && kvToken) {
-    try {
-      const auditEntry = {
-        ts: new Date().toISOString(),
-        action: 'account_deleted',
-        userSub,
-        email: userRec.email,
-        deletedKeys: deleted,
-        ip: String(req.headers['x-forwarded-for'] || '').split(',')[0].trim().slice(0, 64),
-      };
-      const auditKey = `audit:delete:${Date.now()}:${userSub.slice(0, 8)}`;
-      await fetch(`${kvUrl}/set/${encodeURIComponent(auditKey)}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(auditEntry),
-      });
-    } catch (e) { /* non-fatal */ }
-  }
-
-  return res.status(200).json({
-    ok: true,
-    deleted,
-    note: 'Your account, OAuth tokens, and our connection to your sheet have been removed. The Google Sheet itself remains in your Drive under your control — delete it manually if you wish.',
-    note_he: 'החשבון שלך, אסימוני ההזדהות והקישור שלנו לגיליון הוסרו. הגיליון עצמו נשאר ב-Drive שלך בשליטתך — מחק אותו ידנית אם תרצה.',
-  });
+  return _webDeletionSuccessResponse_(res, deleted);
 }
 
 // =============================================================
@@ -407,7 +771,7 @@ async function exportAccount(req, res) {
   // Referral data stored outside the canonical user record must be included in
   // a portability export. Other redeemers' email data is never exported.
   const [referralCode, referralCredit, referralRedemption, referralCount, referralAudit] = await Promise.all([
-    kvGet('referral:code:' + userSub),
+    kvGet('referral:code:' + userSub, { allowRawString: true }),
     kvGet('referral:credit:' + userSub),
     kvGet('referral:redeemed:' + userSub),
     kvGet('referral:count:' + userSub),
@@ -509,41 +873,91 @@ async function deleteByPhone(req, res) {
     return _privacyCleanupPendingResponse_(res, error);
   }
 
-  const phoneRec = await kvGet('phone:' + phone);
-  if (!phoneRec || !phoneRec.userSub) {
-    // Nothing linked — still drop any phone-keyed state and report ok.
-    await kvDel('phone:' + phone);
-    deleted.push('phone:' + phone);
+  let phoneRec;
+  try { phoneRec = await kvGet('phone:' + phone); }
+  catch {
+    await _writeDeletionAudit_(null, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  if (phoneRec === null) {
+    let replayed = false;
+    try { replayed = await _hasDeletionReceipt_('phone', phone); }
+    catch {
+      await _writeDeletionAudit_(null, 'whatsapp', 'retry_required', deleted.length);
+      return _deletionRetryRequiredResponse_(res);
+    }
+    if (replayed) {
+      await _writeDeletionAudit_(null, 'whatsapp', 'deleted', deleted.length);
+      return res.status(200).json({ ok: true, deleted, replayed: true });
+    }
+    // Explicit KV `result:null` is the only no-link state. Do not issue a DEL:
+    // a concurrent link could appear between GET and DEL and be lost.
+    await _writeDeletionAudit_(null, 'whatsapp', 'no_linked_user', deleted.length);
     return res.status(200).json({ ok: true, deleted, note: 'no_linked_user' });
   }
+  if (typeof phoneRec !== 'object' || typeof phoneRec.userSub !== 'string' || !phoneRec.userSub) {
+    await _writeDeletionAudit_(null, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
   const userSub = phoneRec.userSub;
-  const userRec = await kvGet('user:' + userSub);
+  const deletionGuard = await _beginDeletion_(userSub);
+  if (deletionGuard.status !== 'marked') {
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  const prepared = await _preparePhoneAnchor_(userSub, phone);
+  if (!['owned', 'reserved'].includes(prepared.status)) {
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  let userRec;
+  let referralCode;
+  try {
+    userRec = await kvGet('user:' + userSub);
+    referralCode = await kvGet('referral:code:' + userSub, { allowRawString: true });
+  } catch {
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
+  if ((userRec !== null && typeof userRec !== 'object') ||
+      (referralCode !== null && typeof referralCode !== 'string')) {
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
+  }
   // Complete the throwing reverse-map precondition before external OAuth
   // revocation, so a KV outage cannot strand a still-present account.
-  const referralCode = await kvGet('referral:code:' + userSub);
   if (referralCode) {
-    const reverseStatus = await kvDeleteReferralReverseIfOwned(referralCode, userSub);
-    if (reverseStatus === 'deleted') deleted.push('referral:reverse:' + referralCode);
+    try {
+      const reverseStatus = await kvDeleteReferralReverseIfOwned(referralCode, userSub);
+      if (reverseStatus === 'deleted') deleted.push('referral:reverse:' + referralCode);
+    } catch {
+      await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+      return _deletionRetryRequiredResponse_(res);
+    }
   }
+  let refreshToken = null;
+  let refreshTokenReadable = true;
   if (userRec) {
-    const refresh = userRec.refreshTokenEnvelope
-      ? (() => { try { return decryptRefreshToken(userRec.refreshTokenEnvelope, userSub); } catch { return null; } })()
-      : userRec.refreshToken;
-    if (refresh) await revokeGoogleToken(refresh);
+    try {
+      refreshToken = userRec.refreshTokenEnvelope
+        ? decryptRefreshToken(userRec.refreshTokenEnvelope, userSub)
+        : userRec.refreshToken;
+    } catch {
+      refreshToken = userRec.refreshToken || null;
+      refreshTokenReadable = Boolean(refreshToken);
+    }
   }
-  // R1 unified delete: same key inventory the cookie-auth path uses, so
-  // bot-driven and web-driven deletes leave identical residue (none).
-  const keysToDelete = await _keysForUser_(userSub, phone);
-  for (const k of keysToDelete) {
-    if (await kvDel(k)) deleted.push(k);
+  if (!refreshTokenReadable || !(await revokeGoogleToken(refreshToken))) {
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
   }
-  // Same multi-key / windowed purge as the web deleteAccount path.
-  await _purgeMultiKeyUserRecords_(userSub, deleted);
-  // Same `users_all` index eviction as the web deleteAccount path, so a
-  // bot-driven delete leaves no ghost in the cron set either.
-  if (await kvSetRemove('users_all', 'google:' + userSub)) {
-    deleted.push('users_all[google:' + userSub + ']');
+
+  const purge = await _purgeUserRecords_(userSub, phone, deleted);
+  if (!purge.complete) {
+    await _writeDeletionAudit_(userSub, 'whatsapp', 'retry_required', deleted.length);
+    return _deletionRetryRequiredResponse_(res);
   }
+  await _writeDeletionAudit_(userSub, 'whatsapp', 'deleted', deleted.length);
   log.info('account.delete_by_phone', { reqId: req.reqId, phone: phone.replace(/\d(?=\d{4})/g, '*') });
   return res.status(200).json({ ok: true, deleted });
 }

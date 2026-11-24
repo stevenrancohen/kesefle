@@ -19,6 +19,7 @@
 // Env: KV_REST_API_URL, KV_REST_API_TOKEN, GOOGLE_CLIENT_ID
 
 import { withRequestId, log } from '../../lib/log.js';
+import { createHmac } from 'node:crypto';
 import { rateLimit } from '../../lib/ratelimit.js';
 import { computeEntitlement, withReferralCredit } from '../../lib/subscription.js';
 import { getUserId } from '../_lib/session.js';
@@ -97,34 +98,171 @@ async function kvSet(key, value, ttlSec) {
   return r.ok;
 }
 
-// Atomic set-if-not-exists via Upstash's `NX=true` modifier. Returns true if
-// the key was set (claim won), false if the key already existed (claim lost).
-// Used to atomically claim a phone -> user mapping so two confirm requests
-// for the same E.164 can never both succeed.
-async function kvSetNX(key, value) {
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return false;
-  const r = await fetch(`${url}/set/${encodeURIComponent(key)}?NX=true`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(value),
+async function _linkJsonWithDeadline_(url, init = {}, timeoutMs = 3000) {
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('link_io_timeout'));
+    }, Math.max(10, Number(timeoutMs) || 3000));
   });
-  if (!r.ok) return false;
-  // Upstash returns { result: "OK" } on set, { result: null } on key-exists.
-  const j = await r.json().catch(() => ({}));
-  return j?.result === 'OK' || j?.result === 1;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(async () => {
+        const response = await fetch(url, { ...init, signal: controller.signal });
+        const payload = await response.json();
+        return { response, payload };
+      }),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-async function kvDel(key) {
+function _deletionGuardKey_(userSub) {
+  const secret = process.env.KV_REST_API_TOKEN;
+  if (!secret || !userSub) return null;
+  const digest = createHmac('sha256', secret)
+    .update(`kesefle:account-deletion:v1:guard:${String(userSub)}`)
+    .digest('hex');
+  return `deletion:guard:${digest}`;
+}
+
+// Commit the forward mapping, reverse mapping, and one-time-code consumption
+// in one Redis transaction. The canonical user and deletion guard are part of
+// the same declared key set used by account deletion, so a pending confirmation
+// cannot recreate either mapping after deletion has begun or completed.
+async function _confirmPhoneLinkAtomically_(code, phone, userSub, linkedAt) {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return false;
-  const r = await fetch(`${url}/del/${encodeURIComponent(key)}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  return r.ok;
+  const guardKey = _deletionGuardKey_(userSub);
+  if (!url || !token || !guardKey) return { status: 'unavailable' };
+
+  const script = `#!lua flags=allow-key-locking
+-- KESEFLE_PHONE_LINK_CONFIRM_V2
+local pendingRaw = redis.call('GET', KEYS[5])
+if not pendingRaw then return cjson.encode({ status = 'code_missing' }) end
+local pendingOk, pending = pcall(cjson.decode, pendingRaw)
+if not pendingOk or type(pending) ~= 'table' or pending['userSub'] == nil then
+  return cjson.encode({ status = 'code_invalid' })
+end
+if tostring(pending['userSub']) ~= ARGV[1] then
+  return cjson.encode({ status = 'code_invalid' })
+end
+if pending['phone'] ~= nil and tostring(pending['phone']) ~= ARGV[2] then
+  return cjson.encode({ status = 'code_invalid' })
+end
+
+if redis.call('GET', KEYS[6]) then
+  redis.call('DEL', KEYS[5])
+  return cjson.encode({ status = 'account_deleting' })
+end
+
+local userRaw = redis.call('GET', KEYS[1])
+if not userRaw then
+  redis.call('DEL', KEYS[5])
+  return cjson.encode({ status = 'user_missing' })
+end
+local userOk, user = pcall(cjson.decode, userRaw)
+if not userOk or type(user) ~= 'table' then
+  return cjson.encode({ status = 'user_malformed' })
+end
+
+local phoneRaw = redis.call('GET', KEYS[3])
+local existing = nil
+if phoneRaw then
+  local phoneOk
+  phoneOk, existing = pcall(cjson.decode, phoneRaw)
+  if not phoneOk or type(existing) ~= 'table' or existing['userSub'] == nil then
+    return cjson.encode({ status = 'phone_malformed' })
+  end
+  if tostring(existing['userSub']) ~= ARGV[1] then
+    redis.call('DEL', KEYS[5])
+    return cjson.encode({ status = 'foreign_phone' })
+  end
+end
+
+local reverseRaw = redis.call('GET', KEYS[4])
+local existingReverse = nil
+if reverseRaw then
+  local reverseOk
+  reverseOk, existingReverse = pcall(cjson.decode, reverseRaw)
+  if not reverseOk or type(existingReverse) ~= 'table' or existingReverse['phone'] == nil then
+    return cjson.encode({ status = 'reverse_malformed' })
+  end
+  if tostring(existingReverse['phone']) ~= ARGV[2] then
+    return cjson.encode({ status = 'different_phone_linked' })
+  end
+end
+
+-- A successful first EVAL may lose its HTTP response. Keep the original
+-- one-time-code record as a short confirmed tombstone instead of deleting it;
+-- retries can then prove that both mappings committed. Guard/user checks above
+-- intentionally run first, so deletion between commit and retry never replays
+-- a stale linked result.
+if pending['status'] == 'confirmed' then
+  if existing == nil or existingReverse == nil then
+    return cjson.encode({ status = 'replay_incomplete' })
+  end
+  return cjson.encode({ status = 'linked', record = existing, replayed = true })
+end
+if pending['status'] ~= nil then
+  return cjson.encode({ status = 'code_invalid' })
+end
+
+local spreadsheetId = user['spreadsheetId']
+local spreadsheetUrl = user['spreadsheetUrl']
+local sheetRaw = redis.call('GET', KEYS[2])
+if sheetRaw then
+  local sheetOk, sheet = pcall(cjson.decode, sheetRaw)
+  if sheetOk and type(sheet) == 'table' then
+    if sheet['spreadsheetId'] ~= nil then spreadsheetId = sheet['spreadsheetId'] end
+    if sheet['spreadsheetUrl'] ~= nil then spreadsheetUrl = sheet['spreadsheetUrl'] end
+  end
+end
+local record = {
+  userSub = ARGV[1],
+  email = user['email'] or '',
+  plan = user['plan'] or 'free',
+  spreadsheetId = spreadsheetId or cjson.null,
+  spreadsheetUrl = spreadsheetUrl or cjson.null,
+  linkedAt = ARGV[3]
+}
+local reverse = { phone = ARGV[2], linkedAt = ARGV[3] }
+redis.call('SET', KEYS[3], cjson.encode(record))
+redis.call('SET', KEYS[4], cjson.encode(reverse))
+local confirmed = { status = 'confirmed', userSub = ARGV[1], phone = ARGV[2], linkedAt = ARGV[3] }
+redis.call('SET', KEYS[5], cjson.encode(confirmed), 'EX', ARGV[4])
+return cjson.encode({ status = 'linked', record = record })`;
+
+  try {
+    const { response, payload } = await _linkJsonWithDeadline_(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([
+        'EVAL', script, '6',
+        `user:${userSub}`,
+        `sheet:${userSub}`,
+        `phone:${phone}`,
+        `userPhone:${userSub}`,
+        `linkCode:${code}`,
+        guardKey,
+        userSub, phone, linkedAt, '600',
+      ]),
+    });
+    if (!response.ok || typeof payload?.result !== 'string') return { status: 'unavailable' };
+    const result = JSON.parse(payload.result);
+    const allowed = new Set([
+      'linked', 'code_missing', 'code_invalid', 'account_deleting',
+      'user_missing', 'user_malformed', 'phone_malformed', 'reverse_malformed',
+      'foreign_phone', 'different_phone_linked', 'replay_incomplete',
+    ]);
+    return allowed.has(result?.status) ? result : { status: 'unavailable' };
+  } catch {
+    return { status: 'unavailable' };
+  }
 }
 
 // E.164 normalization — strip everything except digits, add country code if missing.
@@ -377,55 +515,40 @@ async function handlerImpl(req, res) {
       }
     }
 
-    // Look up the user's sheet to attach to the phone mapping.
-    const sheetRec = await kvGet(`sheet:${userSub}`);
-    const userRec = await kvGet(`user:${userSub}`) || {};
-
-    // Permanent mapping: phone → user record (with sheet info for fast bot lookup)
-    const permRec = {
-      userSub,
-      email: userRec.email || '',
-      plan: userRec.plan || 'free',
-      spreadsheetId: sheetRec?.spreadsheetId || userRec.spreadsheetId || null,
-      spreadsheetUrl: sheetRec?.spreadsheetUrl || userRec.spreadsheetUrl || null,
-      linkedAt: new Date().toISOString(),
-    };
-
-    // ATOMIC claim: SETNX (set-if-not-exists) eliminates the TOCTOU race where
-    // two confirm calls for the same phone within the same second both pass
-    // the "is it free?" check and the later write silently overwrites the
-    // earlier one. If SETNX fails, the key already exists -- either the same
-    // user is re-linking (idempotent, OK) or a different user beat us to it
-    // (409). We re-read after the failed claim to decide.
-    const claimed = await kvSetNX(`phone:${phone}`, permRec);
-    if (!claimed) {
-      const existingPhone = await kvGet(`phone:${phone}`);
-      if (existingPhone && existingPhone.userSub && existingPhone.userSub !== userSub) {
-        log.warn('link.confirm.phone_race_lost', {
-          reqId: req.reqId, phone, existingUserSub: existingPhone.userSub, attemptedUserSub: userSub,
-        });
-        // Cleanup the pending code so the loser cannot brute-force a re-claim
-        // by repeatedly hitting confirm with the same code.
-        await kvDel(`linkCode:${code}`).catch(() => {});
-        return res.status(409).json({ ok: false, error: 'phone_already_linked_to_another_account' });
-      }
-      // Same-user re-link: refresh the record (linkedAt + plan may have changed).
-      await kvSet(`phone:${phone}`, permRec);
+    const linkedAt = new Date().toISOString();
+    const confirmation = await _confirmPhoneLinkAtomically_(code, phone, userSub, linkedAt);
+    if (confirmation.status === 'foreign_phone') {
+      log.warn('link.confirm.phone_race_lost', {
+        reqId: req.reqId, phone, attemptedUserSub: userSub,
+      });
+      return res.status(409).json({ ok: false, error: 'phone_already_linked_to_another_account' });
+    }
+    if (confirmation.status === 'different_phone_linked') {
+      return res.status(409).json({ ok: false, error: 'account_already_linked_to_different_phone' });
+    }
+    if (confirmation.status === 'account_deleting' || confirmation.status === 'user_missing') {
+      return res.status(409).json({ ok: false, error: 'account_deletion_in_progress' });
+    }
+    if (confirmation.status === 'code_missing' || confirmation.status === 'code_invalid') {
+      return res.status(404).json({ ok: false, error: 'code_expired_or_invalid' });
+    }
+    if (confirmation.status !== 'linked' || !confirmation.record) {
+      return res.status(503).json({ ok: false, error: 'link_confirmation_unavailable' });
     }
 
-    // Reverse mapping: user → phone (so /account can detect "linked" state)
-    await kvSet(`userPhone:${userSub}`, { phone, linkedAt: permRec.linkedAt });
-
-    // Cleanup the pending code
-    await kvDel(`linkCode:${code}`);
+    const permRec = confirmation.record;
+    const userRec = permRec;
+    const sheetRec = permRec;
 
     // Welcome the freshly-linked user so they see the bot work immediately
     // (instead of having to send their first expense to discover it does).
     // Non-fatal: if the send fails (token issue, etc.) the link itself
     // still succeeds — the user will simply not see the welcome.
-    sendWelcomeWhatsApp(phone, userRec, sheetRec).catch(err => {
-      log.warn('link.confirm.welcome_send_failed', { reqId: req.reqId, error: err.message });
-    });
+    if (!confirmation.replayed) {
+      sendWelcomeWhatsApp(phone, userRec, sheetRec).catch(err => {
+        log.warn('link.confirm.welcome_send_failed', { reqId: req.reqId, error: err.message });
+      });
+    }
 
     return res.status(200).json({
       ok: true,
@@ -433,6 +556,7 @@ async function handlerImpl(req, res) {
       email: permRec.email,
       sheetId: permRec.spreadsheetId,
       sheetUrl: permRec.spreadsheetUrl,
+      ...(confirmation.replayed ? { replayed: true } : {}),
     });
   }
 
@@ -465,6 +589,9 @@ async function handlerImpl(req, res) {
   const existing = await getVerifiedPhoneForUser(userSub);
   if (existing.linked && existing.phone === phone) {
     return res.status(200).json({ ok: true, alreadyLinked: true, phone });
+  }
+  if (existing.linked) {
+    return res.status(409).json({ ok: false, error: 'account_already_linked_to_different_phone' });
   }
 
   // Reject up-front if this phone already belongs to a different account.

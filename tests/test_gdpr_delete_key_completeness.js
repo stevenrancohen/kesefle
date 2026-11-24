@@ -68,10 +68,10 @@ ok('referral reverse is deleted with a compare-owner EVAL',
   'a plain DEL could remove a code that has been reassigned to another user');
 
 ok('deleteAccount uses compare-owner reverse deletion',
-  /async function deleteAccount[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_keysForUser_\(userSub, phone\)/.test(SRC));
+  /async function deleteAccount[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC));
 
 ok('deleteByPhone uses compare-owner reverse deletion',
-  /async function deleteByPhone[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_keysForUser_\(userSub, phone\)/.test(SRC));
+  /async function deleteByPhone[\s\S]*?kvDeleteReferralReverseIfOwned\(referralCode, userSub\)[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC));
 
 ok('legacy redeemer emails are scrubbed with a key-locked EVAL',
   /KESEFLE_REFERRAL_PRIVACY_SCRUB_V2[\s\S]*?redis\.call\(['"]SET['"], KEYS\[1\]/.test(PRIVACY_SRC));
@@ -80,23 +80,33 @@ ok('resumable migration has no historical 5,000-key or 60-page hard stop',
   !/maxKeys\s*=\s*5000|page\s*<\s*60|kv_scan_limit|kv_scan_incomplete/.test(PRIVACY_SRC));
 
 ok('legacy referral migration gates deleteAccount before lookup, revoke or delete',
-  /async function deleteAccount[\s\S]*?_ensureLegacyReferralPrivacy_[\s\S]*?kvGet\(['"]user:['"] \+ userSub\)[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
+  /async function deleteAccount[\s\S]*?_ensureLegacyReferralPrivacy_[\s\S]*?kvGet\(['"]user:['"] \+ userSub\)[\s\S]*?revokeGoogleToken[\s\S]*?_purgeUserRecords_/.test(SRC));
 
 ok('legacy referral migration gates deleteByPhone before no-link delete, revoke or delete',
-  /async function deleteByPhone[\s\S]*?_ensureLegacyReferralPrivacy_[\s\S]*?kvGet\(['"]phone:['"] \+ phone\)[\s\S]*?kvDel\(['"]phone:['"] \+ phone\)[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC));
+  /async function deleteByPhone[\s\S]*?_ensureLegacyReferralPrivacy_[\s\S]*?kvGet\(['"]phone:['"] \+ phone\)[\s\S]*?phoneRec === null[\s\S]*?revokeGoogleToken[\s\S]*?_purgeUserRecords_/.test(SRC));
 
 ok('pending privacy cleanup is explicitly retryable and non-2xx',
   /function _privacyCleanupPendingResponse_[\s\S]*?Retry-After[\s\S]*?status\(503\)[\s\S]*?privacy_cleanup_pending/.test(SRC));
 
-console.log('\n=== both delete paths call the unified helper ===');
+console.log('\n=== both delete paths call the strict unified purge ===');
 
-ok('deleteAccount calls _keysForUser_',
-  /async function deleteAccount[\s\S]*?_keysForUser_\(/.test(SRC),
-  'web auth path must use unified helper');
+ok('deleteAccount calls _purgeUserRecords_',
+  /async function deleteAccount[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC),
+  'web auth path must use strict unified purge');
 
-ok('deleteByPhone calls _keysForUser_',
-  /async function deleteByPhone[\s\S]*?_keysForUser_\(/.test(SRC),
-  'bot-secret path must use unified helper');
+ok('deleteByPhone calls _purgeUserRecords_',
+  /async function deleteByPhone[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(SRC),
+  'bot-secret path must use strict unified purge');
+
+ok('strict unified purge is the only caller of _keysForUser_',
+  /async function _purgeUserRecords_[\s\S]*?_keysForUser_\(userSub, phone\)/.test(SRC));
+
+ok('strict purge preserves user, phone, and reverse anchors until atomic finalization',
+  /async function _purgeUserRecords_[\s\S]*?key !== identityKey && key !== phoneKey && key !== reversePhoneKey[\s\S]*?_finalizeUserAnchors_\(userSub, phone\)/.test(SRC));
+
+ok('both deletion routes publish the shared phone-link race guard',
+  /async function deleteAccount[\s\S]*?_beginDeletion_\(userSub\)[\s\S]*?_purgeUserRecords_/.test(SRC) &&
+  /async function deleteByPhone[\s\S]*?_beginDeletion_\(userSub\)[\s\S]*?_purgeUserRecords_/.test(SRC));
 
 console.log('\n=== no drifted inline key lists remain ===');
 
@@ -117,11 +127,11 @@ ok('no stranded keysToDelete inline literal in deleteAccount',
 console.log('\n=== revocation still happens before deletion ===');
 
 ok('deleteAccount still revokes Google grant before deleting',
-  /async function deleteAccount[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC),
+  /async function deleteAccount[\s\S]*?revokeGoogleToken[\s\S]*?_purgeUserRecords_/.test(SRC),
   'must revoke OAuth BEFORE wiping the user record (else we lose the refresh token)');
 
 ok('deleteByPhone still revokes Google grant before deleting',
-  /async function deleteByPhone[\s\S]*?revokeGoogleToken[\s\S]*?_keysForUser_/.test(SRC),
+  /async function deleteByPhone[\s\S]*?revokeGoogleToken[\s\S]*?_purgeUserRecords_/.test(SRC),
   'same: revoke before delete');
 
 console.log('\n=== users_all index SET eviction (SREM, not DEL) ===');
@@ -135,13 +145,9 @@ ok('has a set-member removal helper (SREM)',
   /\/srem\//.test(SRC),
   'need a kvSetRemove()-style helper that hits Upstash /srem/');
 
-ok('deleteAccount removes the user from users_all',
-  /async function deleteAccount[\s\S]*?kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub/.test(SRC),
-  "web delete path must SREM 'google:'+userSub from users_all");
-
-ok('deleteByPhone removes the user from users_all',
-  /async function deleteByPhone[\s\S]*?kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub/.test(SRC),
-  "bot delete path must SREM 'google:'+userSub from users_all");
+ok('strict unified purge removes the user from users_all',
+  /async function _purgeUserRecords_[\s\S]*?kvSetRemove\(\s*['"]users_all['"]\s*,\s*['"]google:['"]\s*\+\s*userSub/.test(SRC),
+  "both delete paths share SREM 'google:'+userSub from users_all");
 
 // The member format must match the SADD in api/auth/google.js exactly
 // ('google:' + raw sub) or the SREM silently removes nothing.

@@ -82,12 +82,13 @@ ok('multi-key purge calls purgeGoals (walks goals index)',
   /_purgeMultiKeyUserRecords_[\s\S]*?purgeGoals\(userSub\)/.test(ACCOUNT));
 ok('multi-key purge deletes cached stats windows',
   /_purgeMultiKeyUserRecords_[\s\S]*?stats:'\s*\+\s*userSub\s*\+\s*':'\s*\+\s*window/.test(ACCOUNT));
-ok('deleteAccount (web path) calls the multi-key purge',
-  /async function deleteAccount[\s\S]*?_purgeMultiKeyUserRecords_\(userSub/.test(ACCOUNT),
-  'cookie-auth delete must purge goals + stats');
-ok('deleteByPhone (bot path) calls the multi-key purge',
-  /async function deleteByPhone[\s\S]*?_purgeMultiKeyUserRecords_\(userSub/.test(ACCOUNT),
-  'bot-secret delete must purge goals + stats too');
+ok('strict shared user purge calls the multi-key purge',
+  /async function _purgeUserRecords_[\s\S]*?_purgeMultiKeyUserRecords_\(userSub/.test(ACCOUNT),
+  'both delete routes must reach goals + stats through the strict shared purge');
+ok('deleteAccount (web path) calls the strict shared purge',
+  /async function deleteAccount[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(ACCOUNT));
+ok('deleteByPhone (bot path) calls the strict shared purge',
+  /async function deleteByPhone[\s\S]*?_purgeUserRecords_\(userSub, phone, deleted\)/.test(ACCOUNT));
 
 if (failed > 0) {
   console.error('\nFAIL: ' + failed + ' assertion(s) failed');

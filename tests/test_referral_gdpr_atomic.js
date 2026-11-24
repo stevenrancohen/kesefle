@@ -41,10 +41,13 @@ function extractFunction(name) {
 function response(ok, body) { return { ok, async json() { return body; } }; }
 function reverseRuntime(fetch) {
   const context = {
-    fetch, JSON, Error,
+    fetch, JSON, Error, AbortController, setTimeout, clearTimeout,
     process: { env: { KV_REST_API_URL: 'https://kv.test', KV_REST_API_TOKEN: 'token' } },
   };
   vm.runInNewContext([
+    'const ACCOUNT_IO_TIMEOUT_MS=3000;',
+    extractFunction('_withDeadline_'),
+    extractFunction('_fetchJsonWithDeadline_'),
     extractFunction('kvDeleteReferralReverseIfOwned'),
     'globalThis.reverse=kvDeleteReferralReverseIfOwned;',
   ].join('\n'), context, { filename: 'referral-reverse-runtime.js' });
