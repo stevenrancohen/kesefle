@@ -21,13 +21,16 @@
 //      instead of silently billing monthly),
 //      PAYPAL_WEBHOOK_ID
 
+import crypto from 'node:crypto';
 import { requireAuth, requireAdmin } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
 import {
   activatePremium, deactivatePremium, priceILS,
   assertBillingAccount,
-  billingKvGet, billingKvSet, notifyOwner,
+  billingKvGet, billingKvSet, billingKvEval, notifyOwner,
+  cancelPaypalSubscription,
+  queueBillingReconciliation, resolveBillingReconciliation,
 } from '../../lib/billing.js';
 import { createInvoice } from '../../lib/invoice.js';
 
@@ -55,7 +58,74 @@ const SEEN_EVENT_TTL_SEC = 90 * 24 * 3600;
 // an absolute, monotonic clock. Keep markers past chargeback/webhook replay
 // windows without retaining one key forever for every monthly renewal.
 const ACTIVATION_TTL_SEC = 400 * 24 * 3600;
+const INVOICE_JOB_TTL_SEC = 400 * 24 * 3600;
+const INVOICE_JOB_LEASE_MS = 2 * 60 * 1000;
 const SITE = process.env.PUBLIC_SITE_URL || 'https://kesefle.com';
+
+const CLAIM_INVOICE_JOB_LUA = `#!lua flags=allow-key-locking
+-- KESEFLE_PAYPAL_INVOICE_CLAIM_V1
+local raw = redis.call('GET', KEYS[1])
+if not raw then
+  local record = { state = 'processing', startedAtMs = tonumber(ARGV[1]), updatedAt = ARGV[2] }
+  redis.call('SET', KEYS[1], cjson.encode(record), 'EX', tonumber(ARGV[4]))
+  return cjson.encode({ status = 'claimed' })
+end
+local ok, record = pcall(cjson.decode, raw)
+if not ok or type(record) ~= 'table' then
+  return cjson.encode({ status = 'malformed' })
+end
+if record.state == 'complete' then return cjson.encode({ status = 'complete' }) end
+if record.state == 'reconciliation' then return cjson.encode({ status = 'reconciliation' }) end
+local started = tonumber(record.startedAtMs) or 0
+if record.state == 'processing' and tonumber(ARGV[1]) - started < tonumber(ARGV[3]) then
+  return cjson.encode({ status = 'busy' })
+end
+record.state = 'reconciliation'
+record.reason = 'invoice_lease_expired'
+record.updatedAt = ARGV[2]
+redis.call('SET', KEYS[1], cjson.encode(record), 'EX', tonumber(ARGV[4]))
+return cjson.encode({ status = 'reconciliation' })`;
+
+const COMPLETE_INVOICE_JOB_LUA = `#!lua flags=allow-key-locking
+-- KESEFLE_PAYPAL_INVOICE_COMPLETE_V1
+local raw = redis.call('GET', KEYS[1])
+if not raw then return cjson.encode({ status = 'missing' }) end
+local ok, record = pcall(cjson.decode, raw)
+if not ok or type(record) ~= 'table' then return cjson.encode({ status = 'malformed' }) end
+if record.state == 'complete' then return cjson.encode({ status = 'complete' }) end
+if record.state ~= 'processing' then return cjson.encode({ status = record.state or 'invalid' }) end
+record.state = 'complete'
+record.invoiceId = ARGV[1]
+record.completedAt = ARGV[2]
+record.updatedAt = ARGV[2]
+redis.call('SET', KEYS[1], cjson.encode(record), 'EX', tonumber(ARGV[3]))
+return cjson.encode({ status = 'completed' })`;
+
+const RECONCILE_INVOICE_JOB_LUA = `#!lua flags=allow-key-locking
+-- KESEFLE_PAYPAL_INVOICE_RECONCILE_V1
+local raw = redis.call('GET', KEYS[1])
+if not raw then
+  local missing = { state = 'reconciliation', reason = string.sub(ARGV[1], 1, 120), updatedAt = ARGV[2] }
+  redis.call('SET', KEYS[1], cjson.encode(missing), 'EX', tonumber(ARGV[3]))
+  return cjson.encode({ status = 'reconciliation' })
+end
+local ok, record = pcall(cjson.decode, raw)
+if not ok or type(record) ~= 'table' then
+  local malformed = { state = 'reconciliation', reason = 'invoice_job_malformed', updatedAt = ARGV[2] }
+  redis.call('SET', KEYS[1], cjson.encode(malformed), 'EX', tonumber(ARGV[3]))
+  return cjson.encode({ status = 'reconciliation' })
+end
+if record.state == 'complete' then return cjson.encode({ status = 'complete' }) end
+record.state = 'reconciliation'
+record.reason = string.sub(ARGV[1], 1, 120)
+record.updatedAt = ARGV[2]
+redis.call('SET', KEYS[1], cjson.encode(record), 'EX', tonumber(ARGV[3]))
+return cjson.encode({ status = 'reconciliation' })`;
+
+function invoiceJobKey(externalId) {
+  const digest = crypto.createHash('sha256').update(String(externalId || '')).digest('hex');
+  return `paypalInvoiceJob:${digest}`;
+}
 
 function paypalEnvName() {
   // DEFAULT SANDBOX. Real charges require the owner to explicitly set
@@ -129,12 +199,37 @@ async function getSubscription(token, subId) {
   } catch { return null; }
 }
 
-// Fire-and-forget Israeli VAT invoice (חשבונית מס/קבלה) for a completed
-// PayPal payment. Never throws — invoicing failure must not block the
-// webhook (PayPal would retry the event and we'd risk double-activation).
-// All customer info is looked up from KV by lib/invoice's caller; we just
-// pass userSub + amount + reference here.
+// Exactly-once coordinator for the Israeli VAT invoice (חשבונית מס/קבלה).
+// The upstream document API has no idempotency key. We therefore claim a
+// durable per-sale lease before POSTing, never automatically retry an
+// ambiguous create, and move uncertain work to the monitored reconciliation
+// queue. A PayPal retry while a live lease exists receives 500; after a worker
+// crash the expired lease becomes reconciliation instead of creating again.
 async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, externalId, customerEmail, customerName }) {
+  const paymentReference = String(externalId || '').trim();
+  if (!paymentReference) throw new Error('paypal_invoice_reference_required');
+  const jobKey = invoiceJobKey(paymentReference);
+  const now = new Date();
+  const claim = await billingKvEval(CLAIM_INVOICE_JOB_LUA, [jobKey], [
+    String(now.getTime()), now.toISOString(), String(INVOICE_JOB_LEASE_MS), String(INVOICE_JOB_TTL_SEC),
+  ]);
+  if (claim?.status === 'complete') return { ok: true, replayed: true };
+  if (claim?.status === 'busy') return { ok: false, busy: true };
+  if (claim?.status === 'reconciliation') {
+    await queueBillingReconciliation({
+      provider: 'paypal', kind: 'invoice_ambiguous', externalId: paymentReference,
+      details: { saleId: paymentReference, reason: 'invoice_lease_expired', invoiceJobKey: jobKey },
+    });
+    return { ok: false, queued: true };
+  }
+  if (claim?.status !== 'claimed') {
+    await queueBillingReconciliation({
+      provider: 'paypal', kind: 'invoice_ambiguous', externalId: paymentReference,
+      details: { saleId: paymentReference, reason: 'invoice_job_' + String(claim?.status || 'invalid'), invoiceJobKey: jobKey },
+    });
+    return { ok: false, queued: true };
+  }
+
   // Look up profile (taxId / companyName) from KV via the user's phone.
   let customerTaxId = null;
   let companyName = null;
@@ -155,7 +250,7 @@ async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, ex
     }
   } catch (_e) { /* best effort */ }
 
-  let result = null;
+  let result;
   try {
     result = await createInvoice({
       userSub,
@@ -167,21 +262,64 @@ async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, ex
       currency: 'ILS',
       description: `מנוי כספלה ${plan === 'family' ? 'משפחה' : 'פרו'}`,
       paymentMethod: 'paypal',
-      paymentReference: externalId,
+      paymentReference,
     });
   } catch (e) {
-    log.warn('paypal.invoice_threw', { reqId, userSub, error: e.message });
-    return;
+    result = { ok: false, error: 'invoice_threw', errorDetail: e.message, ambiguous: true };
   }
 
   if (!result?.ok) {
     log.warn('paypal.invoice_failed', { reqId, userSub, error: result?.error });
-    return;
+    const reconciled = await billingKvEval(RECONCILE_INVOICE_JOB_LUA, [jobKey], [
+      String(result?.error || 'invoice_failed'), new Date().toISOString(), String(INVOICE_JOB_TTL_SEC),
+    ]);
+    if (reconciled?.status === 'complete') return { ok: true, replayed: true };
+    if (reconciled?.status !== 'reconciliation') throw new Error('paypal_invoice_reconciliation_state_failed');
+    await queueBillingReconciliation({
+      provider: 'paypal', kind: 'invoice_ambiguous', externalId: paymentReference,
+      details: { saleId: paymentReference, reason: result?.error || 'invoice_failed', invoiceJobKey: jobKey },
+    });
+    return { ok: false, queued: true };
   }
+
+  // Commit the receipt before any non-essential KV/email side effect. If the
+  // Redis response is lost after the commit, read back the authoritative job
+  // rather than issuing a second legal tax document.
+  try {
+    const completed = await billingKvEval(COMPLETE_INVOICE_JOB_LUA, [jobKey], [
+      String(result.invoiceId), String(result.ts || new Date().toISOString()), String(INVOICE_JOB_TTL_SEC),
+    ]);
+    if (!['completed', 'complete'].includes(completed?.status)) {
+      throw new Error('paypal_invoice_completion_state_failed');
+    }
+  } catch (commitError) {
+    const stored = await billingKvGet(jobKey).catch(() => null);
+    if (stored?.state !== 'complete') {
+      try {
+        await billingKvEval(RECONCILE_INVOICE_JOB_LUA, [jobKey], [
+          'invoice_completion_uncertain', new Date().toISOString(), String(INVOICE_JOB_TTL_SEC),
+        ]);
+        await queueBillingReconciliation({
+          provider: 'paypal', kind: 'invoice_ambiguous', externalId: paymentReference,
+          details: { saleId: paymentReference, reason: 'invoice_completion_uncertain', invoiceJobKey: jobKey },
+        });
+        return { ok: false, queued: true };
+      } catch (queueError) {
+        log.error('paypal.invoice_completion_unrecoverable', {
+          reqId, error: queueError.message, commitError: commitError.message,
+        });
+        throw queueError;
+      }
+    }
+  }
+
+  await resolveBillingReconciliation({
+    provider: 'paypal', kind: 'invoice_ambiguous', externalId: paymentReference,
+  }).catch(() => false);
 
   // Persist (idempotent key) for later lookup / re-send.
   try {
-    await billingKvSet(`invoice:${userSub}:${externalId}`, {
+    await billingKvSet(`invoice:${userSub}:${paymentReference}`, {
       invoiceId: result.invoiceId,
       pdfUrl: result.pdfUrl,
       ts: result.ts,
@@ -206,6 +344,7 @@ async function maybeIssueInvoiceForPayment({ reqId, userSub, plan, amountILS, ex
       }
     } catch (_e) { /* best effort */ }
   }
+  return { ok: true, invoiceId: result.invoiceId };
 }
 
 // ── action=subscribe ─────────────────────────────────────────────────────────
@@ -267,7 +406,41 @@ async function subscribeImpl(req, res) {
       return res.status(502).json({ ok: false, error: 'paypal_subscribe_failed' });
     }
     const approve = (j.links || []).find((l) => l.rel === 'approve');
-    if (!approve) return res.status(502).json({ ok: false, error: 'no_approval_link' });
+    if (!approve || !j.id) return res.status(502).json({ ok: false, error: 'no_approval_link' });
+
+    // Account deletion can race the provider call. Re-check after PayPal has
+    // created the subscription and never expose the approval URL when the
+    // canonical account is now gone or cannot be verified. Try to cancel the
+    // orphan; if PayPal will not cancel an approval-pending subscription, put
+    // it in the indexed, hourly-monitored reconciliation queue.
+    try {
+      await assertBillingAccount(userSub);
+    } catch (accountError) {
+      const cancelled = await cancelPaypalSubscription(
+        j.id, 'Kesefle account unavailable during checkout creation',
+      ).catch(() => false);
+      if (!cancelled) {
+        try {
+          await queueBillingReconciliation({
+            provider: 'paypal', kind: 'provider_checkout_orphaned', externalId: j.id,
+            details: { subscriptionId: j.id, reason: accountError.message || 'account_recheck_failed' },
+          });
+        } catch (queueError) {
+          log.error('paypal_orphan_reconciliation_queue_failed', {
+            reqId: req.reqId, error: queueError.message,
+          });
+          return res.status(503).json({ ok: false, error: 'billing_temporarily_unavailable' });
+        }
+      }
+      if (accountError.message === 'billing_account_deleted') {
+        return res.status(410).json({ ok: false, error: 'account_deleted' });
+      }
+      if (accountError.message === 'billing_account_missing') {
+        return res.status(409).json({ ok: false, error: 'account_missing' });
+      }
+      log.error('paypal_account_recheck_failed', { reqId: req.reqId, error: accountError.message });
+      return res.status(503).json({ ok: false, error: 'billing_temporarily_unavailable' });
+    }
     return res.status(200).json({ ok: true, url: approve.href, subscriptionId: j.id });
   } catch (e) {
     log.error('paypal_unreachable', { reqId: req.reqId, error: e.message });
@@ -397,26 +570,49 @@ async function webhookImpl(req, res) {
             activationTtlSec: ACTIVATION_TTL_SEC,
           });
           await billingKvSet(`paypalSub:${subId}`, { userSub, plan, period });
-          // Fire-and-forget Israeli VAT invoice. Use the SALE's resource.id as
-          // the paymentReference (not the subscription id) so each renewal
-          // gets a distinct invoice keyed in KV. Failure here is logged
-          // but never blocks the webhook ack (PayPal would otherwise retry
-          // and we'd double-activate the subscription).
+          // Use the SALE id (not the subscription id) so every renewal gets one
+          // distinct invoice. The coordinator is awaited: concurrent delivery
+          // is held behind its atomic lease, while ambiguous provider outcomes
+          // are durably queued before this webhook is acknowledged.
           const amountILS = Number(resource.amount?.total) || priceILS(plan, period);
-          maybeIssueInvoiceForPayment({
-            reqId: req.reqId,
-            userSub,
-            plan,
-            amountILS,
-            externalId: resource.id || subId,
-          }).catch((e) => {
-            log.warn('paypal.invoice_unhandled', { reqId: req.reqId, error: e.message });
-          });
+          const saleId = String(resource.id || '').trim();
+          if (!saleId) {
+            const missingSaleReference = event.id || subId;
+            await queueBillingReconciliation({
+              provider: 'paypal', kind: 'sale_missing_reference', externalId: missingSaleReference,
+              details: {
+                eventId: event.id || null,
+                subscriptionId: subId,
+                reason: 'sale_missing_reference',
+              },
+            });
+          } else {
+            const invoiceResult = await maybeIssueInvoiceForPayment({
+              reqId: req.reqId,
+              userSub,
+              plan,
+              amountILS,
+              externalId: saleId,
+            });
+            if (invoiceResult?.busy) {
+              return res.status(500).json({ ok: false, error: 'invoice_in_progress' });
+            }
+          }
         } else {
           // Real money arrived and we cannot attribute it. Don't mark seen
           // (a dashboard resend after the ACTIVATED mapping lands will work)
-          // and alert the owner.
+          // and alert the owner. The durable queue is primary; the direct
+          // alert is only a fast-path and may itself be unavailable.
           unhandled = true;
+          await queueBillingReconciliation({
+            provider: 'paypal', kind: 'sale_unmappable', externalId: event.id || resource.id || subId,
+            details: {
+              eventId: event.id || null,
+              saleId: resource.id || null,
+              subscriptionId: subId,
+              reason: 'sale_unmappable',
+            },
+          });
           log.error('paypal_sale_unmappable', { reqId: req.reqId, eventId: event.id, subId });
           notifyOwner(`PayPal ALERT: payment received for subscription ${subId} but no user mapping/custom_id found (event ${event.id || ''}). Activate + invoice manually, then resend the webhook from the PayPal dashboard.`).catch(() => {});
         }
@@ -499,14 +695,15 @@ async function webhookImpl(req, res) {
           return res.status(500).json({ ok: false, error: 'handler_failed' });
         }
         try {
-          await billingKvSet(`billing_reconcile:paypal:${reconciliationId}`, {
-            provider: 'paypal',
-            reason: 'paid_account_gone',
-            eventId: event.id || null,
-            saleId: resource.id || null,
-            subscriptionId: resource.billing_agreement_id || null,
-            ts: new Date().toISOString(),
-          }, { ttlSec: ACTIVATION_TTL_SEC });
+          await queueBillingReconciliation({
+            provider: 'paypal', kind: 'paid_account_gone', externalId: reconciliationId,
+            details: {
+              eventId: event.id || null,
+              saleId: resource.id || null,
+              subscriptionId: resource.billing_agreement_id || null,
+              reason: 'paid_account_gone',
+            },
+          });
         } catch (queueError) {
           log.error('paypal_sale_reconciliation_queue_failed', {
             reqId: req.reqId, eventId: event.id, error: queueError.message,

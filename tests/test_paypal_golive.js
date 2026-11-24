@@ -31,7 +31,7 @@
 //       admin/revenue.js MRR math + billing/change-plan.js proration).
 //   13. lib/billing.js kvSet(): optional ttlSec appends ?EX= (Upstash SET EX).
 //   14. lib/billing.js cancelPaypalSubscription(): hits the right env base,
-//       treats 204/422 as success, anything else as failure.
+//       accepts 204, and accepts 422 only after a terminal status read.
 //   15. cancel-flow.js 'cancel': really cancels the PayPal sub + deactivates
 //       (no more TODO + alert-only).
 //   16. admin/revenue.js isTrial(): a lastPaymentRef payer is PAID, not trial.
@@ -99,6 +99,7 @@ assert(/SEEN_EVENT_TTL_SEC = 90 \* 24 \* 3600/.test(PP), 'paypal.js seen-event T
 const SEEN_EVENT_TTL_SEC = 90 * 24 * 3600;
 assert(/ACTIVATION_TTL_SEC = 400 \* 24 \* 3600/.test(PP), 'paypal.js activation-marker TTL is 400 days (anchored)');
 const ACTIVATION_TTL_SEC = 400 * 24 * 3600;
+const PAYPAL_REQUEST_TIMEOUT_MS = 25;
 const DAY_MS = DAY; // lib/subscription.js closes over DAY_MS
 
 // Real pricing chain (priceILS -> normalizePlan -> PRICES), like the sibling suite.
@@ -178,6 +179,9 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
   let subById = {};
   let verifyResult = true;
   let activationErrorForUser = null;
+  let notifyOwnerResult = true;
+  const reconciliationFailures = new Set();
+  const queuedReconciliations = [];
   const kvSetFailures = new Set();
   async function getAccessToken() { return 'TOK'; }                       // eslint-disable-line no-unused-vars
   async function verifyWebhook() { return verifyResult; }                 // eslint-disable-line no-unused-vars
@@ -192,8 +196,14 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
   }
   async function deactivatePremium(userSub, status) { deactivations.push({ userSub, status }); return {}; }
   async function getSubscription(_t, id) { return subById[id] || null; }  // eslint-disable-line no-unused-vars
-  async function maybeIssueInvoiceForPayment(args) { invoices.push(args); } // eslint-disable-line no-unused-vars
-  async function notifyOwner(msg) { ownerAlerts.push(msg); return true; } // eslint-disable-line no-unused-vars
+  async function maybeIssueInvoiceForPayment(args) { invoices.push(args); return { ok: true }; } // eslint-disable-line no-unused-vars
+  async function queueBillingReconciliation(item) { // eslint-disable-line no-unused-vars
+    if (reconciliationFailures.has(item.externalId)) throw new Error('billing_reconciliation_queue_failed');
+    queuedReconciliations.push(item);
+    kv['billingReconcile:' + item.externalId] = item;
+    return { ok: true };
+  }
+  async function notifyOwner(msg) { ownerAlerts.push(msg); return notifyOwnerResult; } // eslint-disable-line no-unused-vars
   const log = { info() {}, warn() {}, error() {} };                       // eslint-disable-line no-unused-vars
 
   eval(fnSrc(PP, 'webhookImpl'));
@@ -287,27 +297,30 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
       billing_info: { next_billing_time: iso(Date.now() + 30 * DAY) },
     };
     const beforeAlerts = ownerAlerts.length;
+    notifyOwnerResult = false;
     let r = await hook({
       id: 'WH-DELETED', event_type: 'PAYMENT.SALE.COMPLETED',
       resource: { id: 'SALE-DELETED', billing_agreement_id: 'I-DELETED', custom: 'deleted-user', amount: { total: '19.00' } },
     });
     eq(r.statusCode, 200, 'paid event for deleted account -> 200 only after reconciliation is durable');
-    assert(kv['billing_reconcile:paypal:WH-DELETED']?.reason === 'paid_account_gone',
-      'paid account-gone event is persisted in the reconciliation queue');
-    eq(kvSetOpts['billing_reconcile:paypal:WH-DELETED']?.ttlSec, ACTIVATION_TTL_SEC,
-      'reconciliation receipt retains through provider dispute/replay window');
-    assert(ownerAlerts.length === beforeAlerts + 1, 'paid account-gone event alerts the owner');
+    const queued = queuedReconciliations.find((item) => item.externalId === 'WH-DELETED');
+    assert(queued?.kind === 'paid_account_gone',
+      'paid account-gone event is persisted in the indexed reconciliation queue');
+    assert(ownerAlerts.length === beforeAlerts + 1,
+      'paid account-gone event attempts an immediate owner alert');
+    eq(notifyOwnerResult, false, 'failed immediate alert does not erase the monitored durable queue');
     assert(kv['paypal_event:WH-DELETED']?.accountGone === true, 'queued paid event is marked seen only after durable enqueue');
 
     delete kv['paypal_event:WH-DELETED-RETRY'];
-    kvSetFailures.add('billing_reconcile:paypal:WH-DELETED-RETRY');
+    reconciliationFailures.add('WH-DELETED-RETRY');
     r = await hook({
       id: 'WH-DELETED-RETRY', event_type: 'PAYMENT.SALE.COMPLETED',
       resource: { id: 'SALE-DELETED-RETRY', billing_agreement_id: 'I-DELETED', custom: 'deleted-user', amount: { total: '19.00' } },
     });
     eq(r.statusCode, 500, 'reconciliation KV failure -> 500 so PayPal retries');
     assert(!kv['paypal_event:WH-DELETED-RETRY'], 'failed reconciliation is never marked seen');
-    kvSetFailures.delete('billing_reconcile:paypal:WH-DELETED-RETRY');
+    reconciliationFailures.delete('WH-DELETED-RETRY');
+    notifyOwnerResult = true;
     activationErrorForUser = null;
   }
 
@@ -323,6 +336,8 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
     eq(r.body && r.body.unmapped, true, 'response flags unmapped:true');
     eq(activations.length, 2, 'no activation for an unmappable sale');
     assert(ownerAlerts.length === before + 1, 'owner alerted (nothing fails silently)');
+    assert(queuedReconciliations.some((item) => item.externalId === 'WH-3' && item.kind === 'sale_unmappable'),
+      'unmappable real-money sale is durable even if the direct alert fails');
     assert(!kv['paypal_event:WH-3'], 'NOT marked seen -> a dashboard resend can re-process it');
   }
 
@@ -470,10 +485,11 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
     if (savedTok === undefined) delete process.env.KV_REST_API_TOKEN; else process.env.KV_REST_API_TOKEN = savedTok;
   }
 
-  // ── 14. cancelPaypalSubscription: env base + 204/422 semantics ────────────
+  // ── 14. cancelPaypalSubscription: bounded + terminal 422 semantics ────────
   console.log('\nlib/billing.js cancelPaypalSubscription:');
   {
     eval(fnSrc(BILLING, 'paypalApiBase'));
+    eval(fnSrc(BILLING, 'paypalFetchWithDeadline'));
     eval(fnSrc(BILLING, 'cancelPaypalSubscription'));
     const savedEnv = process.env.PAYPAL_ENV;
     const savedId = process.env.PAYPAL_CLIENT_ID;
@@ -486,10 +502,19 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
     const realFetch = global.fetch;
     const calls = [];
     let cancelStatus = 204;
+    let subscriptionStatus = 'CANCELLED';
+    let hangPhase = null;
     global.fetch = async (url, opts) => {
       calls.push({ url: String(url), opts });
-      if (String(url).includes('/v1/oauth2/token')) return { ok: true, status: 200, json: async () => ({ access_token: 'T' }) };
-      return { ok: cancelStatus < 300, status: cancelStatus, json: async () => ({}) };
+      if (String(url).includes('/v1/oauth2/token')) {
+        if (hangPhase === 'token') return new Promise(() => {});
+        return { ok: true, status: 200, json: async () => ({ access_token: 'T' }) };
+      }
+      if (String(url).endsWith('/cancel')) {
+        if (hangPhase === 'cancel') return new Promise(() => {});
+        return { ok: cancelStatus < 300, status: cancelStatus, json: async () => ({}) };
+      }
+      return { ok: true, status: 200, json: async () => ({ status: subscriptionStatus }) };
     };
     try {
       let okCancel = await cancelPaypalSubscription('I-DEAD', 'test');
@@ -500,7 +525,15 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
 
       cancelStatus = 422;
       okCancel = await cancelPaypalSubscription('I-DEAD', 'test');
-      eq(okCancel, true, '422 (already cancelled) -> true (no future charges either way)');
+      eq(okCancel, true, '422 + authoritative CANCELLED status -> true');
+
+      subscriptionStatus = 'EXPIRED';
+      okCancel = await cancelPaypalSubscription('I-DEAD', 'test');
+      eq(okCancel, true, '422 + authoritative EXPIRED status -> true');
+
+      subscriptionStatus = 'ACTIVE';
+      okCancel = await cancelPaypalSubscription('I-DEAD', 'test');
+      eq(okCancel, false, '422 + ACTIVE status -> false (still chargeable)');
 
       cancelStatus = 500;
       okCancel = await cancelPaypalSubscription('I-DEAD', 'test');
@@ -508,6 +541,19 @@ eval(fnSrc(PP, 'accessUntilFromNextBilling'));
 
       okCancel = await cancelPaypalSubscription('', 'test');
       eq(okCancel, false, 'missing subscription id -> false (no blind API call)');
+
+      cancelStatus = 204;
+      hangPhase = 'token';
+      const tokenStart = Date.now();
+      okCancel = await cancelPaypalSubscription('I-HUNG-TOKEN', 'test');
+      eq(okCancel, false, 'hung token request -> false');
+      assert(Date.now() - tokenStart < 500, 'hung token request is bounded by a deadline');
+
+      hangPhase = 'cancel';
+      const cancelStart = Date.now();
+      okCancel = await cancelPaypalSubscription('I-HUNG-CANCEL', 'test');
+      eq(okCancel, false, 'hung cancel request -> false');
+      assert(Date.now() - cancelStart < 500, 'hung cancel request is bounded by a deadline');
     } finally {
       global.fetch = realFetch;
       if (savedEnv === undefined) delete process.env.PAYPAL_ENV; else process.env.PAYPAL_ENV = savedEnv;

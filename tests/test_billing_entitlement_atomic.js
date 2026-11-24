@@ -10,6 +10,7 @@ process.env.KV_REST_API_TOKEN = 'test-token';
 
 const DAY = 86400000;
 const store = new Map();
+const sets = new Map();
 let failNextEval = false;
 let loseNextConfirmResponse = false;
 let malformedNextRead = false;
@@ -195,6 +196,22 @@ function applyEval(command) {
     return { status: 'applied', record };
   }
 
+  if (script.includes('KESEFLE_BILLING_RECONCILIATION_QUEUE_V1')) {
+    store.set(keys[1], args[0]);
+    const members = sets.get(keys[0]) || new Set();
+    members.add(keys[1]);
+    sets.set(keys[0], members);
+    return { status: 'queued' };
+  }
+
+  if (script.includes('KESEFLE_BILLING_RECONCILIATION_RESOLVE_V1')) {
+    store.delete(keys[1]);
+    const members = sets.get(keys[0]) || new Set();
+    members.delete(keys[1]);
+    sets.set(keys[0], members);
+    return { status: 'resolved' };
+  }
+
   throw new Error('unexpected Lua script');
 }
 
@@ -227,7 +244,10 @@ global.fetch = async (url, options = {}) => {
 const manual = await import('../api/billing/manual.js?atomic=' + Date.now());
 const billing = await import('../lib/billing.js?atomic=' + Date.now());
 const { createPendingPayment, confirmPendingPayment, rejectPendingPayment } = manual;
-const { activatePremium, deactivatePremium, billingKvGet, assertBillingAccount } = billing;
+const {
+  activatePremium, deactivatePremium, billingKvGet, assertBillingAccount,
+  queueBillingReconciliation, resolveBillingReconciliation, billingReconciliationKey,
+} = billing;
 const { recordExpenseActivity } = await import('../lib/user-activity.js?atomic=' + Date.now());
 const {
   atomicMergeUserRecord, userDeletionKey, markUserDeleted, finalizeUserDeletion,
@@ -312,6 +332,22 @@ malformedNextRead = true;
 let readFailed = false;
 try { await billingKvGet('pendingPayment:any'); } catch { readFailed = true; }
 check(readFailed, 'malformed KV reads throw instead of masquerading as missing data');
+
+console.log('\nDurable billing reconciliation queue:');
+const queueResult = await queueBillingReconciliation({
+  provider: 'paypal', kind: 'paid_account_gone', externalId: 'SALE-QUEUE-1',
+  details: { saleId: 'SALE-QUEUE-1', reason: 'paid_account_gone', email: 'must-not-persist@example.test' },
+});
+const queueKey = billingReconciliationKey('paypal', 'paid_account_gone', 'SALE-QUEUE-1');
+const queueRecord = readJson(queueKey);
+check(queueResult.key === queueKey && sets.get('billingReconcile:pending')?.has(queueKey),
+  'queue item and discoverability index are committed together');
+check(!queueKey.includes('SALE-QUEUE-1') && !JSON.stringify(queueRecord).includes('must-not-persist@example.test'),
+  'queue key is hashed and non-allowlisted contact PII is discarded');
+check(await resolveBillingReconciliation({ provider: 'paypal', kind: 'paid_account_gone', externalId: 'SALE-QUEUE-1' }),
+  'operator resolution succeeds');
+check(!store.has(queueKey) && !sets.get('billingReconcile:pending')?.has(queueKey),
+  'resolution removes both record and index member atomically');
 
 console.log('\nCanonical user partial merge:');
 writeJson('user:login-user', {

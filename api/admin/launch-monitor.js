@@ -138,6 +138,18 @@ async function handlerImpl(req, res) {
     ? null
     : Math.min(100, Math.round((kvUsageToday / KV_FREE_TIER_DAILY) * 100));
 
+  // Real-money events that could not be completed automatically. The set is
+  // written atomically with each privacy-minimized record and is also paged by
+  // the hourly KV monitor, so these cannot disappear behind a failed WhatsApp.
+  const reconciliationCountRaw = await kvFetch('/scard/' + encodeURIComponent('billingReconcile:pending'));
+  const reconciliationPending = Number(reconciliationCountRaw?.result) || 0;
+  let reconciliationItems = [];
+  if (reconciliationPending > 0) {
+    const membersRaw = await kvFetch('/smembers/' + encodeURIComponent('billingReconcile:pending'));
+    const members = Array.isArray(membersRaw?.result) ? membersRaw.result.slice(0, 20) : [];
+    reconciliationItems = (await Promise.all(members.map((key) => kvGet(key)))).filter(Boolean);
+  }
+
   return res.status(200).json({
     ok: true,
     at: new Date().toISOString(),
@@ -177,6 +189,11 @@ async function handlerImpl(req, res) {
       warning: kvUsagePct != null && kvUsagePct >= 80,
       critical: kvUsagePct != null && kvUsagePct >= 95,
       tracked: kvUsageToday != null,
+    },
+    billingReconciliation: {
+      pending: reconciliationPending,
+      critical: reconciliationPending > 0,
+      items: reconciliationItems,
     },
     notes: {
       sample_warning: sampleSize < totalUsers

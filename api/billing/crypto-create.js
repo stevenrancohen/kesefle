@@ -9,7 +9,10 @@
 import { requireAuth } from '../../lib/auth.js';
 import { withRequestId, log } from '../../lib/log.js';
 import { withRateLimit } from '../../lib/ratelimit.js';
-import { priceUSD, priceILS, normalizePlan, PLAN_LABELS, assertBillingAccount } from '../../lib/billing.js';
+import {
+  priceUSD, priceILS, normalizePlan, PLAN_LABELS, assertBillingAccount,
+  queueBillingReconciliation,
+} from '../../lib/billing.js';
 
 async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
@@ -67,9 +70,38 @@ async function handlerImpl(req, res) {
       return res.status(502).json({ ok: false, error: 'charge_create_failed' });
     }
     const hostedUrl = j?.data?.hosted_url;
-    if (!hostedUrl) {
+    const chargeId = j?.data?.id;
+    if (!hostedUrl || !chargeId) {
       log.error('coinbase_no_hosted_url', { reqId: req.reqId });
       return res.status(502).json({ ok: false, error: 'charge_create_failed' });
+    }
+
+    // Close the deletion race between the first account check and Coinbase's
+    // response. The legacy Commerce API offers no documented cancel operation
+    // for this charge flow, so never expose its URL and durably queue the
+    // orphan for operator review.
+    try {
+      await assertBillingAccount(userSub);
+    } catch (accountError) {
+      try {
+        await queueBillingReconciliation({
+          provider: 'coinbase', kind: 'provider_checkout_orphaned', externalId: chargeId,
+          details: { chargeId, reason: accountError.message || 'account_recheck_failed' },
+        });
+      } catch (queueError) {
+        log.error('coinbase_orphan_reconciliation_queue_failed', {
+          reqId: req.reqId, error: queueError.message,
+        });
+        return res.status(503).json({ ok: false, error: 'billing_temporarily_unavailable' });
+      }
+      if (accountError.message === 'billing_account_deleted') {
+        return res.status(410).json({ ok: false, error: 'account_deleted' });
+      }
+      if (accountError.message === 'billing_account_missing') {
+        return res.status(409).json({ ok: false, error: 'account_missing' });
+      }
+      log.error('coinbase_account_recheck_failed', { reqId: req.reqId, error: accountError.message });
+      return res.status(503).json({ ok: false, error: 'billing_temporarily_unavailable' });
     }
     return res.status(200).json({ ok: true, url: hostedUrl, hosted_url: hostedUrl });
   } catch (e) {

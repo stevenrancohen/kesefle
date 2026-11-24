@@ -44,12 +44,28 @@ async function readUpstashUsage() {
   }
 }
 
+async function readBillingReconciliationCount() {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const response = await fetch(`${url}/scard/${encodeURIComponent('billingReconcile:pending')}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.result == null) return null;
+    const count = Number(payload.result);
+    return Number.isInteger(count) && count >= 0 ? count : null;
+  } catch { return null; }
+}
+
 async function handlerImpl(req, res) {
   const authCheck = await verifyCronAuth(req);
   if (!authCheck.ok) return res.status(authCheck.code).json({ ok: false, error: authCheck.error });
 
   const usage = await readUpstashUsage();
   log.info('cron.kv_monitor.usage', { reqId: req.reqId, ...usage });
+  const billingReconciliationPending = await readBillingReconciliationCount();
 
   // Persist the latest reading for /admin/launch-monitor consumption.
   try {
@@ -117,7 +133,20 @@ async function handlerImpl(req, res) {
     });
   }
 
-  return res.status(200).json({ ok: true, ...usage, referralPrivacy });
+  if (billingReconciliationPending > 0) {
+    await sendAlert({
+      severity: 'critical',
+      title: 'Billing reconciliation required',
+      body: `${billingReconciliationPending} paid or provider-created event(s) require review. Open the launch monitor billing reconciliation panel before resolving/removing queue items.`,
+      tags: ['billing', 'reconciliation'],
+      dedupeWindowSec: 55 * 60,
+    });
+  }
+
+  return res.status(200).json({
+    ok: true, ...usage, referralPrivacy,
+    billingReconciliationPending,
+  });
 }
 
 export default withRequestId(handlerImpl);

@@ -77,6 +77,9 @@ const UNIT_SUITES = [
   'tests/test_log_redact_spreadsheet_id.js',         // PII redaction: no spreadsheetId leaks to logs
   'tests/test_crypto_webhook_no_silent_payment_drop.js', // billing: payment webhook never silently drops
   'tests/test_billing_entitlement_atomic.js',        // billing: atomic + exact-once entitlement transitions
+  'tests/test_paypal_golive.js',                     // billing: PayPal lifecycle, bounded cancellation, durable paid-event handling
+  'tests/test_billing_provider_races.js',             // billing: checkout URLs never escape when deletion races provider creation
+  'tests/test_paypal_invoice_exact_once.js',          // billing: concurrent/replayed/ambiguous PayPal sales create at most one tax document
   'tests/test_winback_token_exact_match.js',         // billing/auth token exact-match (no prefix bypass)
   'tests/test_taxonomy_normalize.js',                // classifier: category taxonomy normalization
   'tests/test_currency_hardcoded_ils_contract.js',   // currency contract (ILS) stays intact
