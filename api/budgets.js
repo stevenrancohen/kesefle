@@ -41,39 +41,135 @@ const DEFAULT_THRESHOLD = 80;
 const VALID_LABELS = new Set(EXPENSE_GROUPS.map(g => g.label));
 
 // ── KV helpers ──────────────────────────────────────────────────────────────
-async function kvGet(key) {
-  if (!KV_URL || !KV_TOKEN) return null;
+function hasOwn(value, key) {
+  return !!value && Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function validBudgetRecord(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (!value.categories || typeof value.categories !== 'object' || Array.isArray(value.categories)) return false;
+  const entries = Object.entries(value.categories);
+  if (entries.length > MAX_CATEGORIES) return false;
+  for (const [category, conf] of entries) {
+    if (!category || !conf || typeof conf !== 'object' || Array.isArray(conf)) return false;
+    const cap = Number(conf.cap);
+    const threshold = Number(conf.threshold);
+    if (!Number.isInteger(cap) || cap < 1 || cap > MAX_CAP_NIS) return false;
+    if (!Number.isInteger(threshold) || threshold < 1 || threshold > 99) return false;
+  }
+  return value.updatedAt == null || typeof value.updatedAt === 'string';
+}
+
+function validPhoneRecord(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value) &&
+    typeof value.userSub === 'string' && value.userSub.length > 0;
+}
+
+// Tri-state read: only an explicit Upstash `result:null` is missing. Transport,
+// protocol and schema failures remain distinct so no mutation can mistake an
+// outage for an empty budget and overwrite the user's existing categories.
+async function kvReadJson(key, validator) {
+  if (!KV_URL || !KV_TOKEN) return { state: 'unavailable' };
   try {
     const r = await fetch(`${KV_URL}/get/${encodeURIComponent(key)}`, {
       headers: { Authorization: `Bearer ${KV_TOKEN}` },
     });
-    if (!r.ok) return null;
-    const j = await r.json();
-    return j?.result ? JSON.parse(j.result) : null;
-  } catch (_e) { return null; }
-}
-
-async function kvSet(key, value) {
-  if (!KV_URL || !KV_TOKEN) return false;
-  try {
-    const r = await fetch(`${KV_URL}/set/${encodeURIComponent(key)}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(value),
-    });
-    return r.ok;
-  } catch (_e) { return false; }
+    if (!r.ok) return { state: 'unavailable' };
+    const j = await r.json().catch(() => null);
+    if (!j || hasOwn(j, 'error') || !hasOwn(j, 'result')) return { state: 'unavailable' };
+    if (j.result === null) return { state: 'missing' };
+    let value;
+    try { value = typeof j.result === 'string' ? JSON.parse(j.result) : j.result; }
+    catch (_e) { return { state: 'invalid_state' }; }
+    if (typeof validator === 'function' && !validator(value)) return { state: 'invalid_state' };
+    return { state: 'found', value };
+  } catch (_e) { return { state: 'unavailable' }; }
 }
 
 async function kvDel(key) {
-  if (!KV_URL || !KV_TOKEN) return false;
+  if (!KV_URL || !KV_TOKEN) return { ok: false };
   try {
     const r = await fetch(`${KV_URL}/del/${encodeURIComponent(key)}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${KV_TOKEN}` },
     });
-    return r.ok;
-  } catch (_e) { return false; }
+    if (!r.ok) return { ok: false };
+    const j = await r.json().catch(() => null);
+    const scalarResult = j && j.result;
+    const numericResult = typeof scalarResult === 'number' ||
+      (typeof scalarResult === 'string' && /^\d+$/.test(scalarResult));
+    if (!j || hasOwn(j, 'error') || !hasOwn(j, 'result') || !numericResult ||
+        !Number.isInteger(Number(scalarResult))) {
+      return { ok: false };
+    }
+    return { ok: true, deleted: Number(scalarResult) };
+  } catch (_e) { return { ok: false }; }
+}
+
+async function kvEvalBudgetMutation(key, action, category, cap, threshold, updatedAt) {
+  if (!KV_URL || !KV_TOKEN) return { ok: false };
+  const script = `#!lua flags=allow-key-locking
+-- KESEFLE_ATOMIC_BUDGET_MUTATION_V1
+local raw = redis.call('GET', KEYS[1])
+local current = { categories = {}, updatedAt = cjson.null }
+local count = 0
+if raw then
+  local decoded_ok, decoded = pcall(cjson.decode, raw)
+  if not decoded_ok or type(decoded) ~= 'table' or type(decoded.categories) ~= 'table' then
+    return cjson.encode({ status = 'invalid_state' })
+  end
+  for name, conf in pairs(decoded.categories) do
+    local conf_cap = type(conf) == 'table' and tonumber(conf.cap) or nil
+    local conf_threshold = type(conf) == 'table' and tonumber(conf.threshold) or nil
+    if type(name) ~= 'string' or name == '' or not conf_cap or conf_cap < 1 or
+       conf_cap > tonumber(ARGV[6]) or conf_cap % 1 ~= 0 or not conf_threshold or
+       conf_threshold < 1 or conf_threshold > 99 or conf_threshold % 1 ~= 0 then
+      return cjson.encode({ status = 'invalid_state' })
+    end
+    count = count + 1
+  end
+  if count > tonumber(ARGV[5]) then return cjson.encode({ status = 'invalid_state' }) end
+  current = decoded
+end
+
+if ARGV[1] == 'set' then
+  if current.categories[ARGV[2]] == nil and count >= tonumber(ARGV[5]) then
+    return cjson.encode({ status = 'too_many' })
+  end
+  current.categories[ARGV[2]] = { cap = tonumber(ARGV[3]), threshold = tonumber(ARGV[4]) }
+  current.updatedAt = ARGV[7]
+  redis.call('SET', KEYS[1], cjson.encode(current))
+  return cjson.encode({ status = 'stored', budget = current })
+end
+
+if ARGV[1] == 'remove' then
+  if current.categories[ARGV[2]] == nil then
+    return cjson.encode({ status = 'not_found', budget = current })
+  end
+  current.categories[ARGV[2]] = nil
+  current.updatedAt = ARGV[7]
+  redis.call('SET', KEYS[1], cjson.encode(current))
+  return cjson.encode({ status = 'removed', budget = current })
+end
+
+return cjson.encode({ status = 'invalid_action' })`;
+  const command = ['EVAL', script, '1', key, action, category, cap, threshold,
+    MAX_CATEGORIES, MAX_CAP_NIS, updatedAt];
+  try {
+    const r = await fetch(KV_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(command),
+    });
+    if (!r.ok) return { ok: false };
+    const j = await r.json().catch(() => null);
+    if (!j || hasOwn(j, 'error') || typeof j.result !== 'string') return { ok: false };
+    let result;
+    try { result = JSON.parse(j.result); } catch (_e) { return { ok: false }; }
+    if (!result || typeof result.status !== 'string') return { ok: false };
+    if (result.budget && !validBudgetRecord(result.budget)) return { ok: false };
+    return { ok: true, ...result };
+  } catch (_e) { return { ok: false }; }
 }
 
 function normalizeE164(input) {
@@ -120,44 +216,55 @@ async function actSet(userSub, body) {
   }
 
   const key = `usr_budget:${userSub}`;
-  const current = (await kvGet(key)) || emptyBudget();
-  const existing = current.categories[category];
-  const nextCats = { ...current.categories, [category]: { cap, threshold } };
-  if (!existing && Object.keys(nextCats).length > MAX_CATEGORIES) {
+  const mutation = await kvEvalBudgetMutation(
+    key, 'set', category, cap, threshold, new Date().toISOString(),
+  );
+  if (!mutation.ok) return { code: 502, json: { ok: false, error: 'kv_write_failed' } };
+  if (mutation.status === 'too_many') {
     return { code: 400, json: { ok: false, error: 'too_many_categories', max: MAX_CATEGORIES } };
   }
-  const next = { categories: nextCats, updatedAt: new Date().toISOString() };
-  const ok = await kvSet(key, next);
-  if (!ok) return { code: 502, json: { ok: false, error: 'kv_write_failed' } };
-  return { code: 200, json: { ok: true, budget: next } };
+  if (mutation.status === 'invalid_state') {
+    return { code: 500, json: { ok: false, error: 'budget_state_invalid' } };
+  }
+  if (mutation.status !== 'stored' || !mutation.budget) {
+    return { code: 502, json: { ok: false, error: 'kv_write_failed' } };
+  }
+  return { code: 200, json: { ok: true, budget: mutation.budget } };
 }
 
 async function actList(userSub) {
   const key = `usr_budget:${userSub}`;
-  const b = (await kvGet(key)) || emptyBudget();
-  return { code: 200, json: { ok: true, budget: b } };
+  const read = await kvReadJson(key, validBudgetRecord);
+  if (read.state === 'unavailable') return { code: 503, json: { ok: false, error: 'kv_unavailable' } };
+  if (read.state === 'invalid_state') return { code: 500, json: { ok: false, error: 'budget_state_invalid' } };
+  return { code: 200, json: { ok: true, budget: read.state === 'found' ? read.value : emptyBudget() } };
 }
 
 async function actRemove(userSub, body) {
   const category = String(body.category || '').trim();
   if (!category) return { code: 400, json: { ok: false, error: 'missing_category' } };
   const key = `usr_budget:${userSub}`;
-  const current = (await kvGet(key)) || emptyBudget();
-  if (!current.categories || !(category in current.categories)) {
-    return { code: 200, json: { ok: true, budget: current, removed: false } };
+  const mutation = await kvEvalBudgetMutation(
+    key, 'remove', category, 0, 0, new Date().toISOString(),
+  );
+  if (!mutation.ok) return { code: 502, json: { ok: false, error: 'kv_write_failed' } };
+  if (mutation.status === 'invalid_state') {
+    return { code: 500, json: { ok: false, error: 'budget_state_invalid' } };
   }
-  const nextCats = { ...current.categories };
-  delete nextCats[category];
-  const next = { categories: nextCats, updatedAt: new Date().toISOString() };
-  const ok = await kvSet(key, next);
-  if (!ok) return { code: 502, json: { ok: false, error: 'kv_write_failed' } };
-  return { code: 200, json: { ok: true, budget: next, removed: true } };
+  if ((mutation.status !== 'removed' && mutation.status !== 'not_found') || !mutation.budget) {
+    return { code: 502, json: { ok: false, error: 'kv_write_failed' } };
+  }
+  return { code: 200, json: {
+    ok: true,
+    budget: mutation.budget,
+    removed: mutation.status === 'removed',
+  } };
 }
 
 async function actClear(userSub) {
   const key = `usr_budget:${userSub}`;
-  const ok = await kvDel(key);
-  if (!ok) return { code: 502, json: { ok: false, error: 'kv_delete_failed' } };
+  const result = await kvDel(key);
+  if (!result.ok) return { code: 502, json: { ok: false, error: 'kv_delete_failed' } };
   return { code: 200, json: { ok: true, budget: emptyBudget(), cleared: true } };
 }
 
@@ -225,10 +332,12 @@ async function handlerImpl(req, res) {
       return res.status(429).json({ ok: false, error: 'rate_limit_exceeded', retry_after: rl.retryAfter || 3600 });
     }
 
-    const phoneRec = await kvGet(`phone:${phone}`);
-    if (!phoneRec || !phoneRec.userSub) return res.status(404).json({ ok: false, error: 'no_user_for_phone' });
+    const phoneRead = await kvReadJson(`phone:${phone}`, validPhoneRecord);
+    if (phoneRead.state === 'missing') return res.status(404).json({ ok: false, error: 'no_user_for_phone' });
+    if (phoneRead.state === 'unavailable') return res.status(503).json({ ok: false, error: 'kv_unavailable' });
+    if (phoneRead.state === 'invalid_state') return res.status(500).json({ ok: false, error: 'phone_mapping_invalid' });
 
-    const r = await dispatch(phoneRec.userSub, body);
+    const r = await dispatch(phoneRead.value.userSub, body);
     log.info('budgets.bot', { reqId: req.reqId, phone, action: body.action, code: r.code });
     return res.status(r.code).json(r.json);
   }

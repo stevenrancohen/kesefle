@@ -924,6 +924,15 @@
           </a>
           <p data-app-only class="mt-3 text-xs text-ink-500">הגדרת תקציב דרך WhatsApp תופיע כאן כשהשירות זמין.</p>
         </div>
+        <!-- Error state: an outage must never look like a genuinely empty budget. -->
+        <div id="budget-error" class="mt-4 hidden rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center dark:border-amber-500/30 dark:bg-amber-500/10" role="status" aria-live="polite">
+          <div class="text-3xl" aria-hidden="true">↻</div>
+          <div class="mt-2 text-sm font-bold text-ink-700 dark:text-ink-100">לא הצלחנו לטעון את התקציבים</div>
+          <p class="mt-1 text-xs leading-5 text-ink-500 dark:text-ink-400">שאר הנתונים עדיין זמינים. אפשר לנסות שוב בלי לרענן את כל העמוד.</p>
+          <button id="budget-retry" type="button" class="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-amber-300 bg-white px-4 py-2 text-sm font-bold text-ink-700 shadow-sm hover:bg-amber-100 dark:border-amber-500/40 dark:bg-ink-800 dark:text-ink-100">
+            ניסיון חוזר
+          </button>
+        </div>
         <!-- List of budget bars -->
         <ul id="budget-list" class="mt-4 hidden space-y-3"></ul>
       </div>
@@ -3678,28 +3687,48 @@ function generatePseudoSeries(target, n, intLike) {
     if (pct >= 60) return '#f59e0b';
     return '#2563eb';
   }
+  var _budgetRenderRequestId = 0;
   function renderBudgets(rows){
+    var requestId = ++_budgetRenderRequestId;
     var listEl = safeEl('budget-list');
     var emptyEl = safeEl('budget-empty');
     var loadingEl = safeEl('budget-loading');
+    var errorEl = safeEl('budget-error');
+    var retryEl = safeEl('budget-retry');
     var countEl = safeEl('budget-active-count');
-    if (!listEl || !emptyEl || !loadingEl) return;
-    function showLoading(){ loadingEl.classList.remove('hidden'); listEl.classList.add('hidden'); emptyEl.classList.add('hidden'); }
-    function showEmpty(){ loadingEl.classList.add('hidden'); listEl.classList.add('hidden'); emptyEl.classList.remove('hidden'); }
-    function showList(){ loadingEl.classList.add('hidden'); emptyEl.classList.add('hidden'); listEl.classList.remove('hidden'); }
+    if (!listEl || !emptyEl || !loadingEl || !errorEl) return Promise.resolve(null);
+    function hideAll(){ loadingEl.classList.add('hidden'); listEl.classList.add('hidden'); emptyEl.classList.add('hidden'); errorEl.classList.add('hidden'); }
+    function showLoading(){ hideAll(); loadingEl.classList.remove('hidden'); if (countEl) countEl.textContent = '…'; }
+    function showEmpty(){ hideAll(); emptyEl.classList.remove('hidden'); }
+    function showList(){ hideAll(); listEl.classList.remove('hidden'); }
+    function showError(){ hideAll(); errorEl.classList.remove('hidden'); if (countEl) countEl.textContent = '—'; }
+
+    if (retryEl) retryEl.onclick = function(){
+      var latestRows = (typeof window.__kflLastRows !== 'undefined' && window.__kflLastRows) || rows || [];
+      return renderBudgets(latestRows);
+    };
 
     showLoading();
-    fetch('/api/budgets', {
+    return fetch('/api/budgets', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'list' }),
     }).then(function(r){
-      if (r.status === 401 || r.status === 404) return null; // not signed in / no record
-      if (!r.ok) return null;
+      if (requestId !== _budgetRenderRequestId) return null;
+      if (r.status === 401 || r.status === 403) {
+        try { showReauthBanner(); } catch (e) { /* the card still shows its retry state */ }
+        throw new Error('session_expired');
+      }
+      if (!r.ok) throw new Error('budgets_http_' + r.status);
       return r.json();
     }).then(function(j){
-      var cats = (j && j.ok && j.budget && j.budget.categories) || {};
+      if (requestId !== _budgetRenderRequestId) return null;
+      if (!j || j.ok !== true || !j.budget || !j.budget.categories ||
+          typeof j.budget.categories !== 'object' || Array.isArray(j.budget.categories)) {
+        throw new Error('budgets_invalid_payload');
+      }
+      var cats = j.budget.categories;
       var names = Object.keys(cats);
       if (countEl) countEl.textContent = String(names.length);
       if (!names.length) {
@@ -3759,11 +3788,24 @@ function generatePseudoSeries(target, n, intLike) {
       }).join('');
       listEl.innerHTML = html;
       showList();
+      return j;
     }).catch(function(){
-      // Network/parse failure -- fall back to the empty CTA so the card still
-      // renders something useful.
-      try { _renderBudgetInsight({}, {}); } catch (e) { /* never block */ }
-      showEmpty();
+      if (requestId !== _budgetRenderRequestId) return null;
+      // A missing/ambiguous response is unknown, not an empty budget. Clear
+      // derived budget comparisons so stale caps are never presented as live.
+      try { _renderBudgetInsightUnavailable(); } catch (e) { /* never block */ }
+      try {
+        _forecastBudgetTotal = 0;
+        _applyForecastPace();
+        if (typeof window.__kflLastRows !== 'undefined' && window.__kflLastRows) {
+          var _f = computeForecast(window.__kflLastRows);
+          var _t = compute3MonthTrends(window.__kflLastRows);
+          var _tk = safeEl('forecast-takeaway');
+          if (_tk && _f.hasData) _tk.textContent = _forecastTakeaway(_f, _t);
+        }
+      } catch (e) { /* never block */ }
+      showError();
+      return null;
     });
   }
 
@@ -3891,9 +3933,11 @@ function generatePseudoSeries(target, n, intLike) {
   // spend by category. Called for the populated case and the no-budgets case.
   function _renderBudgetInsight(cats, mtd){
     var names = cats ? Object.keys(cats) : [];
+    var bv = safeEl('insight-budget-value');
     if (!names.length) {
       _setInsightText('insight-budget-value', 'לא הוגדרו');
       _setInsightText('insight-budget-detail', 'הגדרת תקציב תיפתח כאן');
+      if (bv) bv.className = 'mt-3 text-lg font-black text-ink-900 dark:text-white';
       return;
     }
     var overCount = 0, nearCount = 0, worstName = null, worstPct = -1;
@@ -3909,7 +3953,6 @@ function generatePseudoSeries(target, n, intLike) {
       if (pct > worstPct) { worstPct = pct; worstName = name; }
     });
 
-    var bv = safeEl('insight-budget-value');
     if (overCount > 0) {
       _setInsightText('insight-budget-value', overCount + ' בחריגה');
       if (bv) bv.className = 'mt-3 text-lg font-black text-red-600';
@@ -3926,6 +3969,12 @@ function generatePseudoSeries(target, n, intLike) {
     } else {
       _setInsightText('insight-budget-detail', names.length + ' תקציבים פעילים');
     }
+  }
+  function _renderBudgetInsightUnavailable(){
+    var bv = safeEl('insight-budget-value');
+    _setInsightText('insight-budget-value', 'לא זמין כרגע');
+    _setInsightText('insight-budget-detail', 'לא הצלחנו לבדוק את התקציבים');
+    if (bv) bv.className = 'mt-3 text-lg font-black text-amber-600';
   }
   // Expose for renderBudgets (defined earlier in this module scope, but this
   // assignment makes the dependency explicit and survives any reorder).

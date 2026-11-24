@@ -15,7 +15,7 @@
 // The suffix is the first 12 chars of css/app-tailwind.css SHA-256. The
 // deterministic build test enforces this link so installed PWAs never retain
 // an older cache-first stylesheet after the source utilities change.
-const VERSION = 'v27-2026-11-24-static-app-css-523893f64dfb';
+const VERSION = 'v27-2026-11-24-static-app-css-cd5e3b2e53b7';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
