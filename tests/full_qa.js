@@ -106,6 +106,9 @@ const UNIT_SUITES = [
   'tests/test_push_logout_isolation.js',                 // shared-device privacy: endpoint-scoped logout + browser unsubscribe before cookie clear
   'tests/test_app_push_optin.js',                        // canonical app: explicit account-bound Push settings, permission timing, safe endpoint rotation
   'tests/test_budget_push_independent.js',               // budget alerts: Push works without phone; either successful channel owns monthly dedupe
+  'tests/test_budgets_atomic.js',                        // budget writes: tri-state KV truth + atomic set/remove without lost updates
+  'tests/test_budget_cron_kv_truth.js',                  // budget cron: SCAN/GET outages are degraded failures, never empty success
+  'tests/test_budget_ui_truth.js',                       // budget UI: outages/auth/protocol errors never masquerade as an empty budget
   'tests/test_app_static_css.js',                         // canonical PWA: local reproducible Tailwind CSS, no runtime compiler, required offline precache
   'tests/test_guest_app_first_run.js',                  // logged-out app: persona-aware value preview, no fabricated financial data, secure Google CTA
   'tests/test_offline_retry_runtime.js',                // offline UX: only healthy Kesefle JSON may redirect back to /app

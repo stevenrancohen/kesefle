@@ -510,6 +510,12 @@ async function renderTx(view){
 }
 
 // ───────── INSIGHTS ─────────
+function budgetApiState(payload){
+  var categories=payload&&payload.budget&&payload.budget.categories;
+  if(!payload||payload.__unavailable===true||payload.ok!==true||!categories||
+     typeof categories!=='object'||Array.isArray(categories)) return 'unavailable';
+  return Object.keys(categories).length?'ready':'empty';
+}
 async function renderInsights(view){
   var head='<div class="mb-5"><div class="eyebrow">'+esc(SPACE_LABELS[activeSpace()])+'</div><h1 class="font-display text-4xl font-black">תובנות שעוזרות להחליט</h1><div class="mt-1 text-xs text-ink-500">'+thisMonthLabel()+'</div></div>';
   view.innerHTML=head+loadingHero();
@@ -518,7 +524,10 @@ async function renderInsights(view){
     var both=await Promise.all([
       apiGet('/api/sheet/summary'),
       apiGet('/api/sheet/getExpenses').catch(function(){return null;}),
-      apiPost('/api/budgets',{action:'list'}).catch(function(){return null;})
+      apiPost('/api/budgets',{action:'list'}).catch(function(e){
+        if(e&&e.isAuth) throw e;
+        return {__unavailable:true};
+      })
     ]);
     d=both[0]; ex=both[1]; bg=both[2];
   } catch(e){ view.innerHTML=(e&&e.isAuth?'':head)+errState(e); return; }
@@ -537,10 +546,46 @@ async function renderInsights(view){
 
   var spent=Number(d.month_expenses)||0;
   var tc=(d.top_categories||[]).filter(function(c){return c&&c.name;});
-  if(!spent && !tc.length){ view.innerHTML=head+onboardingCard(); return; }
+  var now=new Date();
+
+  // Resolve budgets before the empty-expenses branch. A new user may already
+  // have caps configured, and a budget outage must remain visible even when
+  // there are no transactions yet.
+  var budgetCard='';
+  var budgetStatus=budgetApiState(bg);
+  var cats = budgetStatus==='ready' ? bg.budget.categories : null;
+  if(budgetStatus==='unavailable'){
+    budgetCard='<div class="card mt-3 border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-500/30 dark:bg-amber-500/10" role="status">'+
+      '<div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-lg dark:bg-ink-800" aria-hidden="true">↻</span>'+
+      '<span class="min-w-0 flex-1"><strong class="block text-sm">התקציבים לא זמינים כרגע</strong><span class="mt-1 block text-[11px] leading-5 text-ink-500">שאר התובנות עדיין מעודכנות. אפשר לנסות שוב בעוד רגע.</span></span></div>'+
+      '<button type="button" onclick="route(true)" class="mt-3 min-h-[44px] w-full rounded-xl border border-amber-300 bg-white px-4 text-xs font-black text-ink-700 dark:border-amber-500/40 dark:bg-ink-800 dark:text-ink-100">ניסיון חוזר</button></div>';
+  }else if(budgetStatus==='ready'){
+    var curKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    var spendByCat={};
+    if(ex && ex.rows){ ex.rows.forEach(function(r){ if(r.is_income) return; if(String(r.date).slice(0,7)!==curKey) return; var c=r.category||'אחר'; spendByCat[c]=(spendByCat[c]||0)+(Number(r.amount)||0); }); }
+    var rows=Object.keys(cats).map(function(name){
+      var cap=Number(cats[name].cap)||0; var th=Number(cats[name].threshold)||80;
+      var sp=Number(spendByCat[name])||0; var pct=cap>0?Math.round(sp/cap*100):0;
+      var over=cap>0&&sp>cap, warn=!over&&cap>0&&pct>=th;
+      var barCol=over?'bg-rose-500':(warn?'bg-amber-500':'bg-emerald-500');
+      var txtCol=over?'text-rose-500':(warn?'text-amber-500':'text-ink-500');
+      return '<div class="mb-3">'+
+        '<div class="mb-1 flex items-center justify-between text-sm"><span class="font-medium">'+esc(name)+'</span>'+
+        '<span class="'+txtCol+'">'+money(sp)+' / '+money(cap)+'</span></div>'+
+        '<div class="h-2 w-full overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full rounded-full '+barCol+'" style="width:'+Math.min(100,pct)+'%"></div></div>'+
+        (over?'<div class="mt-0.5 text-[11px] text-rose-500">חרגת מהתקציב ב-'+money(sp-cap)+'</div>':(warn?'<div class="mt-0.5 text-[11px] text-amber-500">'+pct+'% מהתקציב</div>':''))+
+      '</div>';
+    }).join('');
+    budgetCard='<div class="card mt-3 p-4"><div class="mb-3 font-display text-base font-bold">תקציבים החודש</div>'+rows+'</div>';
+  }
+
+  if(!spent && !tc.length){
+    view.innerHTML=head+onboardingCard()+budgetCard+
+      '<div class="mt-3 text-center text-xs text-ink-500">המספרים מתעדכנים אוטומטית מהגיליון שלך.</div>';
+    return;
+  }
 
   // End-of-month projection: current pace (spent / days elapsed) x days in month.
-  var now=new Date();
   var dayOfMonth=now.getDate();
   var daysInMonth=new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
   var projected = dayOfMonth>0 ? Math.round(spent/dayOfMonth*daysInMonth) : spent;
@@ -563,30 +608,6 @@ async function renderInsights(view){
       '<div class="mt-0.5 text-sm text-ink-500">'+(up?'הוצאת יותר':(flat?'אותו דבר':'הוצאת פחות'))+'</div></div>'+
       '<div class="'+col+' font-display text-2xl font-black">'+arrow+' '+Math.abs(delta)+'%</div>'+
     '</div>';
-  }
-
-  // Budget progress (only if the user actually set caps). Real caps from
-  // /api/budgets; real current-month spend per category from getExpenses.
-  var budgetCard='';
-  var cats = bg && bg.ok && bg.budget && bg.budget.categories ? bg.budget.categories : null;
-  if(cats && Object.keys(cats).length){
-    var curKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-    var spendByCat={};
-    if(ex && ex.rows){ ex.rows.forEach(function(r){ if(r.is_income) return; if(String(r.date).slice(0,7)!==curKey) return; var c=r.category||'אחר'; spendByCat[c]=(spendByCat[c]||0)+(Number(r.amount)||0); }); }
-    var rows=Object.keys(cats).map(function(name){
-      var cap=Number(cats[name].cap)||0; var th=Number(cats[name].threshold)||80;
-      var sp=Number(spendByCat[name])||0; var pct=cap>0?Math.round(sp/cap*100):0;
-      var over=cap>0&&sp>cap, warn=!over&&cap>0&&pct>=th;
-      var barCol=over?'bg-rose-500':(warn?'bg-amber-500':'bg-emerald-500');
-      var txtCol=over?'text-rose-500':(warn?'text-amber-500':'text-ink-500');
-      return '<div class="mb-3">'+
-        '<div class="mb-1 flex items-center justify-between text-sm"><span class="font-medium">'+esc(name)+'</span>'+
-        '<span class="'+txtCol+'">'+money(sp)+' / '+money(cap)+'</span></div>'+
-        '<div class="h-2 w-full overflow-hidden rounded-full bg-ink-100 dark:bg-ink-800"><div class="h-full rounded-full '+barCol+'" style="width:'+Math.min(100,pct)+'%"></div></div>'+
-        (over?'<div class="mt-0.5 text-[11px] text-rose-500">חרגת מהתקציב ב-'+money(sp-cap)+'</div>':(warn?'<div class="mt-0.5 text-[11px] text-amber-500">'+pct+'% מהתקציב</div>':''))+
-      '</div>';
-    }).join('');
-    budgetCard='<div class="card mt-3 p-4"><div class="mb-3 font-display text-base font-bold">תקציבים החודש</div>'+rows+'</div>';
   }
 
   // 6-month expense trend from full history (expenses only).

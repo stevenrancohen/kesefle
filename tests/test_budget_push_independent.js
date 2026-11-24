@@ -32,8 +32,11 @@ async function scenario({ phone = null, whatsAppOk = false, pushOk = false, runs
   };
   const context = {
     verifyCronAuth: async () => ({ ok: true }),
-    kvScan: async () => ['usr_budget:user-1'],
-    kvGet: async (key) => records[key] || null,
+    kvScan: async () => ({ ok: true, complete: true, keys: ['usr_budget:user-1'] }),
+    kvGetState: async (key) => records[key]
+      ? { state: 'found', value: records[key] }
+      : { state: 'missing' },
+    validBudgetRecord: () => true,
     kvAcquireDeliveryLease: async (key, token) => {
       calls.leases++;
       if (dedup.has(key)) return { ok: true, acquired: false };
@@ -41,15 +44,17 @@ async function scenario({ phone = null, whatsAppOk = false, pushOk = false, runs
       return { ok: true, acquired: true };
     },
     kvFinalizeDelivery: async (key, token, value) => {
-      if (!finalizeOk || dedup.get(key) !== token) return false;
+      if (!finalizeOk || dedup.get(key) !== token) {
+        return { ok: false, finalized: false, result: null };
+      }
       calls.dedup++;
       dedup.set(key, value);
-      return true;
+      return { ok: true, finalized: true, result: 'stored' };
     },
     kvReleaseDeliveryLease: async (key, token) => {
-      if (dedup.get(key) !== token) return false;
+      if (dedup.get(key) !== token) return { ok: true, released: false, result: 'not_owner' };
       dedup.delete(key);
-      return true;
+      return { ok: true, released: true, result: 'released' };
     },
     decryptRefreshToken: () => 'refresh-1',
     exchangeRefreshForAccess: async () => 'access-1',
@@ -114,6 +119,8 @@ async function scenario({ phone = null, whatsAppOk = false, pushOk = false, runs
   assert.strictEqual(failedFinalize.responses[0].body.alerted, 0,
     'a failed durable dedupe write is never reported as a finalized alert');
   assert.strictEqual(failedFinalize.responses[0].body.errors, 1);
+  assert.strictEqual(failedFinalize.responses[0].status, 503,
+    'an uncertain durable dedupe write never reports a healthy cron');
 
   console.log('Budget Push channel independence: PASS');
 })().catch((error) => {

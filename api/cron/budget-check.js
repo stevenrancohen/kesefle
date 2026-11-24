@@ -37,8 +37,11 @@ async function kvFetch(path, opts = {}) {
       headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
-    const j = await r.json().catch(() => ({}));
-    return { ok: r.ok, status: r.status, ...j };
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || typeof j !== 'object' || Object.prototype.hasOwnProperty.call(j, 'error')) {
+      return { ok: false, status: r.status, error: j?.error || 'kv_protocol_error' };
+    }
+    return { ok: true, status: r.status, ...j };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -49,19 +52,38 @@ async function kvScan(pattern, count = 100) {
   const keys = [];
   for (let i = 0; i < 50; i++) {
     const r = await kvFetch(`/scan/${cursor}?match=${encodeURIComponent(pattern)}&count=${count}`);
-    if (!r.ok) break;
-    cursor = r.result?.[0] || '0';
-    const batch = r.result?.[1] || [];
+    if (!r.ok || !Array.isArray(r.result) || r.result.length !== 2 ||
+        !Array.isArray(r.result[1]) || !r.result[1].every((key) => typeof key === 'string')) {
+      return { ok: false, complete: false, keys };
+    }
+    cursor = String(r.result[0]);
+    const batch = r.result[1];
     keys.push(...batch);
-    if (cursor === '0') break;
+    if (cursor === '0') return { ok: true, complete: true, keys };
   }
-  return keys;
+  return { ok: false, complete: false, keys };
 }
 
-async function kvGet(key) {
+async function kvGetState(key) {
   const r = await kvFetch(`/get/${encodeURIComponent(key)}`);
-  if (!r.ok) return null;
-  try { return r.result ? JSON.parse(r.result) : null; } catch { return null; }
+  if (!r.ok || !Object.prototype.hasOwnProperty.call(r, 'result')) return { state: 'unavailable' };
+  if (r.result === null) return { state: 'missing' };
+  try {
+    const value = typeof r.result === 'string' ? JSON.parse(r.result) : r.result;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return { state: 'invalid_state' };
+    return { state: 'found', value };
+  } catch (_e) { return { state: 'invalid_state' }; }
+}
+
+function validBudgetRecord(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) ||
+      !value.categories || typeof value.categories !== 'object' || Array.isArray(value.categories)) return false;
+  return Object.entries(value.categories).every(([category, conf]) => {
+    const cap = Number(conf?.cap);
+    const threshold = Number(conf?.threshold);
+    return !!category && Number.isInteger(cap) && cap > 0 && cap <= 100000 &&
+      Number.isInteger(threshold) && threshold >= 1 && threshold <= 99;
+  });
 }
 
 async function kvSetEx(key, val, ttlSec) {
@@ -95,6 +117,10 @@ async function kvAcquireDeliveryLease(key, token) {
       !Object.prototype.hasOwnProperty.call(r, 'result')) {
     return { ok: false, acquired: false };
   }
+  // SET NX has exactly two healthy outcomes: "OK" (we own the lease) or
+  // null (another run already owns it). Any other HTTP-200 payload is a KV
+  // protocol failure and must degrade the cron instead of silently skipping.
+  if (r.result !== 'OK' && r.result !== null) return { ok: false, acquired: false };
   return { ok: true, acquired: r.result === 'OK' };
 }
 
@@ -106,7 +132,8 @@ if current ~= ARGV[1] then return 'not_owner' end
 redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3])
 return 'stored'`;
   const result = await kvEval(script, [key], [token, deliveredValue, ALERT_TTL_SEC]);
-  return result.ok && result.value === 'stored';
+  if (!result.ok) return { ok: false, finalized: false, result: null };
+  return { ok: true, finalized: result.value === 'stored', result: result.value };
 }
 
 async function kvReleaseDeliveryLease(key, token) {
@@ -116,7 +143,8 @@ if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 'not_owner' end
 redis.call('DEL', KEYS[1])
 return 'released'`;
   const result = await kvEval(script, [key], [token]);
-  return result.ok && result.value === 'released';
+  if (!result.ok) return { ok: false, released: false, result: null };
+  return { ok: true, released: result.value === 'released', result: result.value };
 }
 
 async function kvExists(key) {
@@ -241,8 +269,13 @@ async function handlerImpl(req, res) {
   const selfBaseUrl = process.env.SELF_URL || 'https://kesefle.com';
   const ymNow = monthKey(new Date());
 
-  const budgetKeys = await kvScan('usr_budget:*');
-  let scanned = 0, alerted = 0, skipped = 0, errors = 0;
+  const scan = await kvScan('usr_budget:*');
+  if (!scan.ok || !scan.complete) {
+    log.warn('budget_check.kv_scan_failed', { reqId: req.reqId, partialKeys: scan.keys.length });
+    return res.status(503).json({ ok: false, error: 'kv_scan_failed', scanned: 0, alerted: 0, skipped: 0, errors: 1 });
+  }
+  const budgetKeys = scan.keys;
+  let scanned = 0, alerted = 0, skipped = 0, errors = 0, kvErrors = 0;
   const perUser = [];
 
   for (const key of budgetKeys) {
@@ -250,20 +283,63 @@ async function handlerImpl(req, res) {
     const userSub = key.replace(/^usr_budget:/, '');
     if (!userSub) { skipped++; continue; }
 
-    const budget = await kvGet(key);
-    if (!budget || !budget.categories || !Object.keys(budget.categories).length) {
+    const budgetRead = await kvGetState(key);
+    if (budgetRead.state === 'unavailable' || budgetRead.state === 'invalid_state') {
+      errors++; kvErrors++;
+      log.warn('budget_check.budget_kv_failed', { reqId: req.reqId, sub: subHash(userSub), state: budgetRead.state });
+      continue;
+    }
+    if (budgetRead.state === 'missing') {
       skipped++;
       continue;
     }
+    const budget = budgetRead.value;
+    if (!validBudgetRecord(budget)) {
+      errors++; kvErrors++;
+      log.warn('budget_check.budget_invalid', { reqId: req.reqId, sub: subHash(userSub) });
+      continue;
+    }
+    if (!Object.keys(budget.categories).length) { skipped++; continue; }
 
     // Phone is optional: Web Push is a first-class channel for web-first users.
     // Sheet/token authority is resolved by userSub and never depends on phone.
-    const userPhoneRec = await kvGet(`userPhone:${userSub}`);
-    const phone = userPhoneRec?.phone || null;
+    const phoneRead = await kvGetState(`userPhone:${userSub}`);
+    let phone = null;
+    if (phoneRead.state === 'found' && typeof phoneRead.value.phone === 'string' && phoneRead.value.phone) {
+      phone = phoneRead.value.phone;
+    } else if (phoneRead.state === 'found' || phoneRead.state === 'unavailable' || phoneRead.state === 'invalid_state') {
+      errors++; kvErrors++;
+      log.warn('budget_check.phone_kv_failed', { reqId: req.reqId, sub: subHash(userSub), state: phoneRead.state });
+    }
 
-    const sheetRec = await kvGet(`sheet:${userSub}`);
-    const userRec = (await kvGet(`user:${userSub}`)) || {};
-    const spreadsheetId = sheetRec?.spreadsheetId || userRec.spreadsheetId || null;
+    const [sheetRead, userRead] = await Promise.all([
+      kvGetState(`sheet:${userSub}`),
+      kvGetState(`user:${userSub}`),
+    ]);
+    let sheetSpreadsheetId = null;
+    if (sheetRead.state === 'unavailable' || sheetRead.state === 'invalid_state') {
+      errors++; kvErrors++;
+      log.warn('budget_check.sheet_kv_failed', { reqId: req.reqId, sub: subHash(userSub), state: sheetRead.state });
+    } else if (sheetRead.state === 'found') {
+      if (typeof sheetRead.value.spreadsheetId === 'string' && sheetRead.value.spreadsheetId.trim()) {
+        sheetSpreadsheetId = sheetRead.value.spreadsheetId.trim();
+      } else {
+        errors++; kvErrors++;
+        log.warn('budget_check.sheet_invalid', { reqId: req.reqId, sub: subHash(userSub) });
+      }
+    }
+    if (userRead.state === 'unavailable' || userRead.state === 'invalid_state') {
+      errors++; kvErrors++;
+      log.warn('budget_check.user_kv_failed', { reqId: req.reqId, sub: subHash(userSub), state: userRead.state });
+      continue;
+    }
+    const userRec = userRead.state === 'found' ? userRead.value : {};
+    const userSpreadsheetId = typeof userRec.spreadsheetId === 'string' && userRec.spreadsheetId.trim()
+      ? userRec.spreadsheetId.trim()
+      : null;
+    // A malformed canonical sheet record is degraded, but it must not shadow a
+    // valid legacy user-record fallback and silently suppress the alert.
+    const spreadsheetId = sheetSpreadsheetId || userSpreadsheetId;
     if (!spreadsheetId) { skipped++; continue; }
 
     // Decrypt refresh token (encrypted envelope, fall back to legacy plaintext).
@@ -313,7 +389,7 @@ async function handlerImpl(req, res) {
       const leaseToken = `lease:${randomUUID()}`;
       const lease = await kvAcquireDeliveryLease(dedupKey, leaseToken);
       if (!lease.ok) {
-        errors++;
+        errors++; kvErrors++;
         log.warn('budget_check.lease_failed', { reqId: req.reqId, sub: subHash(userSub), category });
         continue;
       }
@@ -345,18 +421,26 @@ async function handlerImpl(req, res) {
           leaseToken,
           JSON.stringify({ at: new Date().toISOString(), spent, cap, pct: pctStr }),
         );
-        if (finalized) {
+        if (finalized.ok && finalized.finalized) {
           alerted++;
           perUser.push({ userSub, category, spent, cap, pct: pctStr });
         } else {
-          errors++;
+          errors++; kvErrors++;
           log.warn('budget_check.dedup_finalize_failed', {
             reqId: req.reqId, sub: subHash(userSub), category,
+            state: finalized.ok ? finalized.result : 'kv_unavailable',
           });
         }
       } else {
-        await kvReleaseDeliveryLease(dedupKey, leaseToken);
+        const released = await kvReleaseDeliveryLease(dedupKey, leaseToken);
         errors++;
+        if (!released.ok || !released.released) {
+          errors++; kvErrors++;
+          log.warn('budget_check.dedup_release_failed', {
+            reqId: req.reqId, sub: subHash(userSub), category,
+            state: released.ok ? released.result : 'kv_unavailable',
+          });
+        }
         log.warn('budget_check.send_failed', {
           reqId: req.reqId,
           sub: subHash(userSub),
@@ -368,8 +452,13 @@ async function handlerImpl(req, res) {
     }
   }
 
-  log.info('cron.budget_check.summary', { reqId: req.reqId, scanned, alerted, skipped, errors });
-  return res.status(200).json({ ok: true, scanned, alerted, skipped, errors, perUser });
+  const degraded = kvErrors > 0;
+  log.info('cron.budget_check.summary', { reqId: req.reqId, scanned, alerted, skipped, errors, kvErrors, degraded });
+  return res.status(degraded ? 503 : 200).json({
+    ok: !degraded,
+    ...(degraded ? { error: 'kv_partial_failure', degraded: true } : {}),
+    scanned, alerted, skipped, errors, kvErrors, perUser,
+  });
 }
 
 export default withRequestId(handlerImpl);
