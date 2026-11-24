@@ -4,6 +4,7 @@
   "private": true,
   "description": "Kesefle — Hebrew WhatsApp expense bot + web app. This package.json exists to give CI and developers a single 'npm test' entry point; the runtime (website + API) deploys via Vercel and the bot via Apps Script.",
   "scripts": {
+    "build:app-css": "tailwindcss -c tailwind.app.config.cjs -i css/app-tailwind.input.css -o css/app-tailwind.css --minify",
     "test": "node tests/full_qa.js",
     "test:bot": "node bot/test_isolation.js && node bot/test_isolation_edge_cases.js && node bot/test_classify.js && node bot/test_destructive_delete_confirm.js && node bot/test_tool_destructive_gating.js",
     "test:all": "npm test && npm run test:bot",
@@ -15,5 +16,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
   }
 }

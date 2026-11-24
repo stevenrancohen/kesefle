@@ -149,8 +149,8 @@ async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], 
       open: async (name) => ({
         match: async (request) => {
           const value = typeof request === 'string' ? request : new URL(request.url).pathname;
-          if (/kesefle-static-v26/.test(name) && staticPaths.includes(value)) return staticHit;
-          if (/kesefle-runtime-v26/.test(name) && runtimePaths.includes(value)) return runtimeHit;
+          if (/kesefle-static-v27/.test(name) && staticPaths.includes(value)) return staticHit;
+          if (/kesefle-runtime-v27/.test(name) && runtimePaths.includes(value)) return runtimeHit;
           return null;
         },
         put: async () => {},
@@ -258,13 +258,13 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   const missingRequired = await runInstall({ failedFetch: '/offline.html' });
   assert.ok(missingRequired.error, 'missing required offline shell rejects installation');
   assert.strictEqual(missingRequired.skipped, 0, 'failed required shell never calls skipWaiting');
-  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v26/.test(name)),
+  assert.ok(missingRequired.deletions.some((name) => /kesefle-static-v27/.test(name)),
     'failed required shell removes the incomplete versioned cache');
 
   const failedRequiredWrite = await runInstall({ failedPut: '/app.webmanifest' });
   assert.ok(failedRequiredWrite.error, 'failed required cache write rejects installation');
   assert.strictEqual(failedRequiredWrite.skipped, 0, 'failed required cache write never activates');
-  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v26/.test(name)),
+  assert.ok(failedRequiredWrite.deletions.some((name) => /kesefle-static-v27/.test(name)),
     'failed required cache write cleans up the incomplete cache');
 
   const badRequiredStatus = await runInstall({ failedStatus: '/offline.html' });
@@ -280,12 +280,19 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   assert.strictEqual(missingOptional.skipped, 1, 'an optional marketing miss still activates the complete app shell');
   for (const required of [
     '/app', '/app.html', '/app.webmanifest', '/lib/browser-session.js',
-    '/css/brand.css', '/expense', '/expense.html', '/offline.html',
+    '/css/brand.css', '/css/app-tailwind.css', '/expense', '/expense.html', '/offline.html',
     '/icon-192.png', '/icon-512.png', '/icon-512-maskable.png',
   ]) {
     assert.ok(missingOptional.writes.includes(required), required + ' is cached before activation');
   }
   assert.ok(!missingOptional.writes.includes('/og-image.png'), 'failed optional asset is not cached');
+
+  const appCss = await runOfflineFetch({
+    pathname: '/css/app-tailwind.css', destination: 'style', mode: 'same-origin',
+    staticPaths: ['/css/app-tailwind.css'],
+  });
+  assert.strictEqual(appCss.source, 'current-static',
+    'the installed app keeps its complete utility stylesheet offline');
 
   const sessionScript = await runOfflineFetch({
     pathname: '/lib/browser-session.js', destination: 'script', mode: 'same-origin',

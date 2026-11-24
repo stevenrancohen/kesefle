@@ -186,7 +186,7 @@ check('every browser profile write passes through the presentation sanitizer',
 
 const sw = read('sw.js');
 check('service worker version includes the account-Push and logout-isolation rollout',
-  /v26-2026-11-24-app-push/.test(sw));
+  /v27-2026-11-24-static-app-css-[a-f0-9]{12}/.test(sw));
 check('offline shell precaches the browser-session scrubber',
   /['"]\/lib\/browser-session\.js['"]/.test(sw));
 check('API requests remain network-only',

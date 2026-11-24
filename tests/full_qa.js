@@ -106,6 +106,7 @@ const UNIT_SUITES = [
   'tests/test_push_logout_isolation.js',                 // shared-device privacy: endpoint-scoped logout + browser unsubscribe before cookie clear
   'tests/test_app_push_optin.js',                        // canonical app: explicit account-bound Push settings, permission timing, safe endpoint rotation
   'tests/test_budget_push_independent.js',               // budget alerts: Push works without phone; either successful channel owns monthly dedupe
+  'tests/test_app_static_css.js',                         // canonical PWA: local reproducible Tailwind CSS, no runtime compiler, required offline precache
   'tests/test_guest_app_first_run.js',                  // logged-out app: persona-aware value preview, no fabricated financial data, secure Google CTA
   'tests/test_offline_retry_runtime.js',                // offline UX: only healthy Kesefle JSON may redirect back to /app
   'tests/test_admin_console_data_sources.js',         // admin console: deepened sections wire ONLY real requireAdmin endpoints (funnel-summary, registration-health, recent-signups, revenue, launch-monitor) + one-click recovery (reprovision/resend) + masked identity + honest "not instrumented" notes; no fabricated tiles

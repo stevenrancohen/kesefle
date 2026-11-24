@@ -12,7 +12,10 @@
  */
 'use strict';
 
-const VERSION = 'v26-2026-11-24-app-push';
+// The suffix is the first 12 chars of css/app-tailwind.css SHA-256. The
+// deterministic build test enforces this link so installed PWAs never retain
+// an older cache-first stylesheet after the source utilities change.
+const VERSION = 'v27-2026-11-24-static-app-css-523893f64dfb';
 const STATIC_CACHE = `kesefle-static-${VERSION}`;
 const RUNTIME_CACHE = `kesefle-runtime-${VERSION}`;
 const API_CACHE = `kesefle-api-${VERSION}`;
@@ -52,6 +55,7 @@ const REQUIRED_PRECACHE_URLS = [
   '/app.webmanifest',
   '/lib/browser-session.js',
   '/css/brand.css',
+  '/css/app-tailwind.css',
   '/expense',
   '/expense.html',
   '/offline.html',
@@ -66,6 +70,7 @@ const REQUIRED_PRECACHE_TYPES = new Map([
   ['/app.webmanifest', ['application/manifest+json']],
   ['/lib/browser-session.js', ['application/javascript', 'text/javascript']],
   ['/css/brand.css', ['text/css']],
+  ['/css/app-tailwind.css', ['text/css']],
   ['/expense', ['text/html']],
   ['/expense.html', ['text/html']],
   ['/offline.html', ['text/html']],
@@ -87,10 +92,8 @@ const OPTIONAL_PRECACHE_URLS = [
   '/og-image.png',
 ];
 
-// Hosts we will runtime-cache.
-// IMPORTANT: cdn.tailwindcss.com is intentionally NOT cached here.
-// The Tailwind JIT script must always be fresh — a stale cached copy will
-// silently break the entire page layout (no class -> default styles).
+// Hosts we will runtime-cache. The canonical /app shell uses a versioned,
+// required local Tailwind stylesheet; only font assets remain cross-origin.
 const RUNTIME_CACHEABLE_HOSTS = [
   'fonts.googleapis.com',
   'fonts.gstatic.com',
