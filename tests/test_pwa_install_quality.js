@@ -18,6 +18,9 @@ const screenshotServer = fs.readFileSync(
   path.join(ROOT, 'scripts/pwa-screenshot-preview-server.js'),
   'utf8'
 );
+const appCssPathMatch = swSource.match(/['"](\/css\/app-tailwind\.css\?v=[a-f0-9]{12})['"]/);
+assert.ok(appCssPathMatch, 'service worker precaches a content-versioned app stylesheet');
+const APP_CSS_PATH = appCssPathMatch[1];
 
 function pngDimensions(file) {
   const buffer = fs.readFileSync(file);
@@ -67,11 +70,12 @@ for (const shot of manifest.screenshots) {
 }
 
 function contentTypeFor(url) {
-  if (url === '/app' || url === '/expense' || /\.html$/.test(url) || url === '/') return 'text/html; charset=utf-8';
-  if (/\.webmanifest$/.test(url)) return 'application/manifest+json; charset=utf-8';
-  if (/\.js$/.test(url)) return 'application/javascript; charset=utf-8';
-  if (/\.css$/.test(url)) return 'text/css; charset=utf-8';
-  if (/\.png$/.test(url)) return 'image/png';
+  const pathname = new URL(url, 'https://kesefle.com').pathname;
+  if (pathname === '/app' || pathname === '/expense' || /\.html$/.test(pathname) || pathname === '/') return 'text/html; charset=utf-8';
+  if (/\.webmanifest$/.test(pathname)) return 'application/manifest+json; charset=utf-8';
+  if (/\.js$/.test(pathname)) return 'application/javascript; charset=utf-8';
+  if (/\.css$/.test(pathname)) return 'text/css; charset=utf-8';
+  if (/\.png$/.test(pathname)) return 'image/png';
   return 'application/octet-stream';
 }
 
@@ -132,7 +136,9 @@ async function runInstall({ failedFetch, failedPut, failedStatus, invalidContent
   return { error, writes, deletions, skipped };
 }
 
-async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], runtimePaths = [] }) {
+async function runOfflineFetch({
+  pathname, destination, mode, staticPaths = [], runtimePaths = [], networkResponse = null,
+}) {
   const listeners = {};
   const staticHit = { source: 'current-static' };
   const runtimeHit = { source: 'current-runtime' };
@@ -140,7 +146,10 @@ async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], 
     console,
     URL,
     Response,
-    fetch: async () => { throw new Error('offline'); },
+    fetch: async () => {
+      if (networkResponse) return networkResponse;
+      throw new Error('offline');
+    },
     caches: {
       // A global lookup is forbidden because it can see a staging worker's cache.
       match: async () => { throw new Error('global cache lookup used'); },
@@ -148,7 +157,8 @@ async function runOfflineFetch({ pathname, destination, mode, staticPaths = [], 
       delete: async () => true,
       open: async (name) => ({
         match: async (request) => {
-          const value = typeof request === 'string' ? request : new URL(request.url).pathname;
+          const parsed = typeof request === 'string' ? null : new URL(request.url);
+          const value = parsed ? parsed.pathname + parsed.search : request;
           if (/kesefle-static-v27/.test(name) && staticPaths.includes(value)) return staticHit;
           if (/kesefle-runtime-v27/.test(name) && runtimePaths.includes(value)) return runtimeHit;
           return null;
@@ -280,7 +290,7 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   assert.strictEqual(missingOptional.skipped, 1, 'an optional marketing miss still activates the complete app shell');
   for (const required of [
     '/app', '/app.html', '/app.webmanifest', '/lib/browser-session.js',
-    '/css/brand.css', '/css/app-tailwind.css', '/expense', '/expense.html', '/offline.html',
+    '/css/brand.css', APP_CSS_PATH, '/expense', '/expense.html', '/offline.html',
     '/icon-192.png', '/icon-512.png', '/icon-512-maskable.png',
   ]) {
     assert.ok(missingOptional.writes.includes(required), required + ' is cached before activation');
@@ -288,11 +298,23 @@ async function runNotificationClick(rawUrl, clientUrls = []) {
   assert.ok(!missingOptional.writes.includes('/og-image.png'), 'failed optional asset is not cached');
 
   const appCss = await runOfflineFetch({
-    pathname: '/css/app-tailwind.css', destination: 'style', mode: 'same-origin',
-    staticPaths: ['/css/app-tailwind.css'],
+    pathname: APP_CSS_PATH, destination: 'style', mode: 'same-origin',
+    staticPaths: [APP_CSS_PATH],
   });
   assert.strictEqual(appCss.source, 'current-static',
     'the installed app keeps its complete utility stylesheet offline');
+
+  const networkCss = { source: 'network-new-css', ok: true, clone() { return this; } };
+  const mixedVersionCss = await runOfflineFetch({
+    pathname: APP_CSS_PATH, destination: 'style', mode: 'same-origin',
+    // Simulate the previous worker's caches, which contain only the old,
+    // unversioned stylesheet. The hash URL must miss both and reach network.
+    staticPaths: ['/css/app-tailwind.css'],
+    runtimePaths: ['/css/app-tailwind.css'],
+    networkResponse: networkCss,
+  });
+  assert.strictEqual(mixedVersionCss.source, 'network-new-css',
+    'an old controller cannot serve stale app-only CSS to the new expense shell');
 
   const sessionScript = await runOfflineFetch({
     pathname: '/lib/browser-session.js', destination: 'script', mode: 'same-origin',
