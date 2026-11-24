@@ -426,7 +426,11 @@ async function dashboardShowFixture({ permission, dismissed, localEndpoint, subs
   ].join('\n');
   const notification = { permission };
   const context = {
-    window: { PushManager: function PushManager() {}, Notification: notification },
+    window: {
+      PushManager: function PushManager() {},
+      Notification: notification,
+      __kflDashboardSessionReady: Promise.resolve({ user: { sub: 'user-1' } }),
+    },
     Notification: notification,
     navigator: {
       serviceWorker: {

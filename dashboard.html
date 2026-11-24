@@ -193,7 +193,7 @@
 <script src="/lib/analytics.js" defer></script>
   <script src="/js/analytics-loader.js" defer></script>
 </head>
-<body class="min-h-screen bg-ink-50 bg-mesh text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-950 dark:text-white">
+<body class="kfl-session-pending min-h-screen bg-ink-50 bg-mesh text-ink-900 antialiased selection:bg-brand-200 selection:text-ink-900 dark:bg-ink-950 dark:text-white">
 
 <div id="kfl-curtain" class="kfl-curtain" aria-hidden="true">
   <div class="kfl-curtain-logo">₪</div>
@@ -214,8 +214,30 @@
   })();
 </script>
 
+<!-- Private-by-default session gate. The dashboard shell is not rendered until
+     /api/me verifies the HttpOnly session, so stale browser metadata can never
+     flash another person's identity or finances on a shared device. -->
+<style>
+  body.kfl-session-pending { padding-right: 0 !important; }
+  .kfl-session-pending .kfl-private-shell { display: none !important; }
+  .kfl-session-pending #kflNpsCard,
+  .kfl-session-pending #kfl-install-banner { display: none !important; }
+</style>
+<section id="kfl-session-gate" class="mx-auto flex min-h-[70vh] max-w-xl items-center px-5 py-12" role="status" aria-live="polite">
+  <div class="w-full rounded-3xl border border-ink-200 bg-white p-7 text-center shadow-glow dark:border-ink-700 dark:bg-ink-900 sm:p-10">
+    <div id="kfl-session-gate-icon" class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-2xl text-brand-700 dark:bg-brand-500/15 dark:text-brand-200">🔐</div>
+    <h1 id="kfl-session-gate-title" class="mt-5 text-xl font-black">מאמתים את החשבון שלך…</h1>
+    <p id="kfl-session-gate-copy" class="mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-500 dark:text-ink-300">הפרטים והנתונים יוצגו רק אחרי אימות מאובטח מול השרת.</p>
+    <div id="kfl-session-gate-actions" class="mt-6 hidden flex-col justify-center gap-2 sm:flex-row">
+      <a id="kfl-session-signin" href="/account?force_signin=1&amp;next=%2Fdashboard" class="hidden min-h-[44px] items-center justify-center rounded-2xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-soft hover:bg-brand-700">התחבר עם Google</a>
+      <button id="kfl-session-retry" type="button" onclick="window.location.reload()" class="hidden min-h-[44px] items-center justify-center rounded-2xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-soft hover:bg-brand-700">נסה שוב</button>
+      <a href="/app" class="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink-200 px-5 py-2.5 text-sm font-semibold hover:bg-ink-50 dark:border-ink-700 dark:hover:bg-ink-800">חזרה לאפליקציה</a>
+    </div>
+  </div>
+</section>
+
 <!-- nav -->
-<header class="sticky top-0 z-40 border-b border-ink-200/70 bg-white/85 backdrop-blur-md dark:border-ink-700/60 dark:bg-ink-950/80">
+<header class="kfl-private-shell sticky top-0 z-40 border-b border-ink-200/70 bg-white/85 backdrop-blur-md dark:border-ink-700/60 dark:bg-ink-950/80">
   <nav class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3.5" aria-label="ניווט ראשי">
     <a href="/" class="flex min-w-0 items-center gap-2 font-extrabold text-xl tracking-tight">
       <span class="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-soft">₪</span>
@@ -242,7 +264,7 @@
      what's coming.
 ================================================================== -->
 <aside id="kfl-sidebar"
-       class="fixed inset-y-0 right-0 z-30 hidden w-64 transform border-l border-ink-200 bg-white/95 px-4 py-6 backdrop-blur transition-transform md:block dark:border-ink-700 dark:bg-ink-900/95"
+       class="kfl-private-shell fixed inset-y-0 right-0 z-30 hidden w-64 transform border-l border-ink-200 bg-white/95 px-4 py-6 backdrop-blur transition-transform md:block dark:border-ink-700 dark:bg-ink-900/95"
        dir="rtl"
        aria-label="ניווט ראשי בדשבורד">
   <div class="mb-6 flex items-center gap-2 px-2">
@@ -276,7 +298,7 @@
 <!-- Mobile hamburger to open the sidebar -->
 <button id="kfl-sidebar-toggle"
         type="button"
-        class="fixed top-4 right-4 z-40 grid h-10 w-10 place-items-center rounded-lg border border-ink-200 bg-white/90 backdrop-blur shadow-soft md:hidden dark:border-ink-700 dark:bg-ink-900/90"
+        class="kfl-private-shell fixed top-4 right-4 z-40 grid h-10 w-10 place-items-center rounded-lg border border-ink-200 bg-white/90 backdrop-blur shadow-soft md:hidden dark:border-ink-700 dark:bg-ink-900/90"
         aria-label="פתח תפריט"
         aria-controls="kfl-sidebar"
         aria-expanded="false">
@@ -312,7 +334,7 @@
   }
 </style>
 
-<main class="relative mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 md:px-6">
+<main class="kfl-private-shell relative mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 md:px-6">
 
   <!-- Floating "add expense" FAB for desktop+mobile -->
   <a id="kfl-fab" href="/expense" class="fixed bottom-6 left-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-brand-600 text-white shadow-glow hover:bg-brand-700 transition" title="הוסף הוצאה במהירות" aria-label="הוסף הוצאה">
@@ -2035,67 +2057,158 @@ function showReauthBanner() {
 var LAST_DASHBOARD = null;
 var LAST_TX = null;
 
-// Init: gate access to authenticated users only.
-// Now ASYNC -- before redirecting, we try /api/me (cookie-based) to
-// hydrate localStorage. That covers the returning-user-on-fresh-device
-// case where the kefle_session cookie is valid but localStorage is empty.
-(async function init() {
-  var u = kesefleGetUser();
-  var s = kesefleGetSheet();
+function kesefleSetSessionGate(state) {
+  var title = document.getElementById('kfl-session-gate-title');
+  var copy = document.getElementById('kfl-session-gate-copy');
+  var icon = document.getElementById('kfl-session-gate-icon');
+  var actions = document.getElementById('kfl-session-gate-actions');
+  var signin = document.getElementById('kfl-session-signin');
+  var retry = document.getElementById('kfl-session-retry');
+  document.body.classList.add('kfl-session-pending');
+  if (actions) actions.classList.toggle('hidden', state === 'pending');
+  if (signin) signin.classList.toggle('hidden', state !== 'signed_out');
+  if (signin) signin.classList.toggle('inline-flex', state === 'signed_out');
+  if (retry) retry.classList.toggle('hidden', state !== 'unavailable');
+  if (retry) retry.classList.toggle('inline-flex', state === 'unavailable');
+  if (state === 'signed_out') {
+    if (icon) icon.textContent = '👋';
+    if (title) title.textContent = 'צריך להתחבר כדי לפתוח את הדשבורד';
+    if (copy) copy.textContent = 'לא נמצא חשבון פעיל. הנתונים הפרטיים נשארו מוסתרים.';
+  } else if (state === 'unavailable') {
+    if (icon) icon.textContent = '📡';
+    if (title) title.textContent = 'לא הצלחנו לאמת את החשבון כרגע';
+    if (copy) copy.textContent = 'ייתכן שאין חיבור לרשת או שהשירות זמנית לא זמין. לא הצגנו מידע שמור מהמכשיר.';
+  } else {
+    if (icon) icon.textContent = '🔐';
+    if (title) title.textContent = 'מאמתים את החשבון שלך…';
+    if (copy) copy.textContent = 'הפרטים והנתונים יוצגו רק אחרי אימות מאובטח מול השרת.';
+  }
+}
 
-  // Seamless one-release migration for people who still have the old Google
-  // ID token profile. The early scrubber already removed it from storage and
-  // exposes it exactly once from memory; the server verifies it, confirms the
-  // canonical account already exists, and mints the HttpOnly session cookie.
+function kesefleRevealDashboardShell() {
+  var gate = document.getElementById('kfl-session-gate');
+  if (gate) gate.classList.add('hidden');
+  document.body.classList.remove('kfl-session-pending');
+}
+
+function kesefleClearDashboardPresentation() {
+  if (window.KesefleSession) {
+    try { window.KesefleSession.clearIdentityStorage(localStorage); } catch (_e) {}
+    try { window.KesefleSession.clearIdentityStorage(sessionStorage); } catch (_e) {}
+  } else {
+    ['kesefle_user', 'kesefle_sheet', 'kesefle_whatsapp_linked', 'kesefle_whatsapp_phone', 'kesefle_signup_progress', 'kfl_push_subscribed'].forEach(function(key) {
+      try { localStorage.removeItem(key); } catch (_e) {}
+      try { sessionStorage.removeItem(key); } catch (_e) {}
+    });
+  }
+  LAST_DASHBOARD = null;
+  LAST_TX = null;
+}
+
+function kesefleDashboardDeadline(promise, timeoutMs, fallback) {
+  return new Promise(function(resolve) {
+    var settled = false;
+    var timer = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      resolve(fallback);
+    }, timeoutMs);
+    Promise.resolve(promise).then(function(value) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    }, function() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(fallback);
+    });
+  });
+}
+
+async function kesefleDetachDashboardPush() {
+  var nav = window.navigator;
+  if (!nav || !nav.serviceWorker || typeof nav.serviceWorker.getRegistration !== 'function') {
+    return { hadSubscription: false, detached: true };
+  }
+  var operation = (async function() {
+    var registration = await nav.serviceWorker.getRegistration('/');
+    if (!registration || !registration.pushManager) return { hadSubscription: false, detached: true };
+    var subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return { hadSubscription: false, detached: true };
+    if (typeof subscription.unsubscribe !== 'function') return { hadSubscription: true, detached: false };
+    return { hadSubscription: true, detached: await subscription.unsubscribe() === true };
+  })();
+  // Never let a mobile browser's stalled Push API hold the dashboard forever.
+  // Unknown is treated as a live old subscription, so account switching fails
+  // closed instead of exposing the previous account's notifications to the next.
+  return kesefleDashboardDeadline(operation, 5000, { hadSubscription: true, detached: false });
+}
+
+async function keseflePrepareDashboardSession(user) {
+  if (!user || typeof user.sub !== 'string' || !user.sub) throw new Error('invalid_user');
+  var previous = kesefleGetUser();
+  var changedAccount = !!(previous && previous.sub && previous.sub !== user.sub);
+  var pendingIsolation = false;
+  try { pendingIsolation = localStorage.getItem('kfl_push_isolation_pending') === '1'; } catch (_e) {}
+  // Missing local identity is not proof that this browser is clean: storage can
+  // be cleared independently while an old account's Push subscription remains.
+  if (previous && !changedAccount && !pendingIsolation) return { waited: false };
+  var pushState = await kesefleDetachDashboardPush();
+  kesefleClearDashboardPresentation();
+  if (pushState.hadSubscription && !pushState.detached) {
+    try { localStorage.setItem('kfl_push_isolation_pending', '1'); } catch (_e) {}
+    throw new Error('push_detach_failed');
+  }
+  try { localStorage.removeItem('kfl_push_isolation_pending'); } catch (_e) {}
+  return { waited: true };
+}
+
+function kesefleHydrateDashboardSession(payload) {
+  var user = payload && payload.user;
+  if (!user || typeof user.sub !== 'string' || !user.sub) return null;
+  var profile = window.KesefleSession
+    ? window.KesefleSession.sanitizeProfileObject(user)
+    : { version: 2, sub: user.sub, email: user.email, name: user.name, picture: user.picture, plan: user.plan };
+  try { localStorage.setItem('kesefle_user', JSON.stringify(profile)); } catch (_e) {}
+  if (payload.sheet && payload.sheet.spreadsheetUrl) {
+    try { localStorage.setItem('kesefle_sheet', JSON.stringify(payload.sheet)); } catch (_e) {}
+  } else {
+    try { localStorage.removeItem('kesefle_sheet'); } catch (_e) {}
+  }
+  // These values belong to an account and must be rebuilt by their verified
+  // endpoints after every authoritative dashboard hydration.
+  try { localStorage.removeItem('kesefle_whatsapp_linked'); } catch (_e) {}
+  try { localStorage.removeItem('kesefle_whatsapp_phone'); } catch (_e) {}
+  return { user: profile, sheet: payload.sheet || null };
+}
+
+async function kesefleProbeDashboardSession() {
   try {
-    var legacyCredential = window.KesefleSession && window.KesefleSession.consumeLegacyIdToken();
-    if (legacyCredential) {
-      await fetch('/api/auth/google', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: legacyCredential }),
-      });
+    var response = await kesefleDashboardDeadline(fetch('/api/me', {
+      credentials: 'include',
+      cache: 'no-store',
+    }), 5000, null);
+    if (!response) return { state: 'unavailable' };
+    if (response.status === 401 || response.status === 403) return { state: 'signed_out' };
+    if (!response.ok) return { state: 'unavailable' };
+    var payload = await kesefleDashboardDeadline(response.json(), 2000, null);
+    if (payload && payload.ok === false && /unauthorized|not_signed_in|session_expired/i.test(payload.error || '')) {
+      return { state: 'signed_out' };
     }
-  } catch (_legacyUpgradeError) { /* later API calls surface controlled reauth */ }
-
-  // If localStorage is empty for either piece, try to hydrate from the
-  // server using the kefle_session cookie before assuming the user is
-  // logged out. /api/me returns { ok:true, user, sheet } when the
-  // cookie is valid; 401 otherwise.
-  if (!u || !s || !s.spreadsheetUrl) {
-    try {
-      var meResp = await fetch('/api/me', { credentials: 'include' });
-      if (meResp.ok) {
-        var meJson = await meResp.json();
-        if (meJson && meJson.ok && meJson.user) {
-          if (!u) {
-            u = meJson.user;
-            try {
-              var profile = window.KesefleSession
-                ? window.KesefleSession.sanitizeProfileObject(u)
-                : { version: 2, sub: u && u.sub, email: u && u.email, name: u && u.name, picture: u && u.picture, plan: u && u.plan };
-              localStorage.setItem('kesefle_user', JSON.stringify(profile));
-            } catch (_) {}
-          }
-          if ((!s || !s.spreadsheetUrl) && meJson.sheet && meJson.sheet.spreadsheetUrl) {
-            s = meJson.sheet;
-            try { localStorage.setItem('kesefle_sheet', JSON.stringify(s)); } catch (_) {}
-          }
-        }
-      }
-    } catch (_meErr) { /* network failure -> fall through to localStorage check */ }
+    if (!payload || payload.ok !== true || !payload.user || typeof payload.user.sub !== 'string' || !payload.user.sub) {
+      return { state: 'unavailable' };
+    }
+    return { state: 'authenticated', payload: payload };
+  } catch (_e) {
+    return { state: 'unavailable' };
   }
+}
 
-  // After hydration, decide where to send the user.
-  if (!u) { window.location.href = '/'; return; }              // no auth at all
-  if (!s || !s.spreadsheetUrl) {
-    // Authenticated but no sheet -> middle of onboarding
-    window.location.href = '/account';
-    return;
-  }
-
+function keseflePaintDashboardIdentity(session) {
+  var u = session.user;
+  var s = session.sheet;
   document.getElementById('user-name').textContent = u.name || u.email || 'משתמש';
   if (u.picture) {
     var img = document.getElementById('user-picture');
@@ -2103,12 +2216,103 @@ var LAST_TX = null;
     img.classList.remove('hidden');
   }
   document.getElementById('settings-email').textContent = u.email || '—';
-
   document.getElementById('sheet-link-nav').href = s.spreadsheetUrl;
   document.getElementById('sheet-link-nav').classList.remove('hidden');
   document.getElementById('see-all-link').href = s.spreadsheetUrl;
   document.getElementById('settings-sheet').href = s.spreadsheetUrl;
   document.getElementById('export-csv').href = s.spreadsheetUrl + '/export?format=csv';
+}
+
+// The one authority gate for every private dashboard consumer. Local storage is
+// presentation-only: it is never sufficient to reveal chrome or start data APIs.
+async function kesefleInitDashboardSession() {
+  kesefleSetSessionGate('pending');
+
+  // Seamless one-release migration for people who still have the old Google
+  // ID token profile. A valid cookie is always probed FIRST: local account A
+  // must never overwrite an already-authenticated cookie for account B.
+  var legacyCredential = null;
+  try { legacyCredential = window.KesefleSession && window.KesefleSession.consumeLegacyIdToken(); }
+  catch (_legacyReadError) {}
+
+  var authority = await kesefleProbeDashboardSession();
+  if (authority.state === 'signed_out' && legacyCredential) {
+    try {
+      var upgradeResponse = await kesefleDashboardDeadline(fetch('/api/auth/google', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: legacyCredential }),
+      }), 5000, null);
+      // A timed-out mutation is not equivalent to a rejection: the server may
+      // still commit Set-Cookie after the client deadline. Keep all private UI
+      // closed and require a fresh probe via Retry instead of offering another
+      // sign-in that could race the late response.
+      if (!upgradeResponse) authority = { state: 'unavailable' };
+      else if (upgradeResponse.ok) authority = await kesefleProbeDashboardSession();
+    } catch (_legacyUpgradeError) { /* signed-out handling below remains private */ }
+  }
+
+  if (authority.state === 'signed_out') {
+    var signedOutPush = await kesefleDetachDashboardPush();
+    kesefleClearDashboardPresentation();
+    try {
+      if (signedOutPush.hadSubscription && !signedOutPush.detached) localStorage.setItem('kfl_push_isolation_pending', '1');
+      else localStorage.removeItem('kfl_push_isolation_pending');
+    } catch (_e) {}
+    if (signedOutPush.hadSubscription && !signedOutPush.detached) {
+      kesefleSetSessionGate('unavailable');
+      return null;
+    }
+    kesefleSetSessionGate('signed_out');
+    return null;
+  }
+  if (authority.state !== 'authenticated') {
+    kesefleSetSessionGate('unavailable');
+    return null;
+  }
+  // Push cleanup can wait several seconds on mobile. Re-probe after every such
+  // wait so a cookie changed by another tab cannot produce identity B + data C.
+  var stable = false;
+  for (var attempt = 0; attempt < 3; attempt += 1) {
+    var expectedSub = authority.payload.user.sub;
+    var preparation;
+    try {
+      preparation = await keseflePrepareDashboardSession(authority.payload.user);
+    } catch (_isolationError) {
+      kesefleSetSessionGate('unavailable');
+      return null;
+    }
+    if (!preparation.waited) { stable = true; break; }
+    var confirmed = await kesefleProbeDashboardSession();
+    if (confirmed.state === 'signed_out') {
+      kesefleClearDashboardPresentation();
+      kesefleSetSessionGate('signed_out');
+      return null;
+    }
+    if (confirmed.state !== 'authenticated') {
+      kesefleSetSessionGate('unavailable');
+      return null;
+    }
+    authority = confirmed;
+    if (confirmed.payload.user.sub === expectedSub) { stable = true; break; }
+  }
+  if (!stable) {
+    kesefleSetSessionGate('unavailable');
+    return null;
+  }
+  var session = kesefleHydrateDashboardSession(authority.payload);
+  if (!session) {
+    kesefleSetSessionGate('unavailable');
+    return null;
+  }
+  if (!session.sheet || !session.sheet.spreadsheetUrl) {
+    window.location.href = '/account';
+    return null;
+  }
+  keseflePaintDashboardIdentity(session);
+  kesefleRevealDashboardShell();
 
   // Auto-fetch summary on load.
   kesefleRefresh();
@@ -2117,7 +2321,10 @@ var LAST_TX = null;
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') kesefleCloseTxModal();
   });
-})();
+  return session;
+}
+
+window.__kflDashboardSessionReady = kesefleInitDashboardSession();
 
 function setLoadingState() {
   document.getElementById('reauth-banner').classList.add('hidden');
@@ -4212,6 +4419,8 @@ function generatePseudoSeries(target, n, intLike) {
   }
 
   async function load() {
+    var verifiedSession = await window.__kflDashboardSessionReady;
+    if (!verifiedSession) return;
     showLoading();
     var btn = document.getElementById('live-refresh');
     var icon = document.getElementById('live-refresh-icon');
@@ -4433,6 +4642,8 @@ function generatePseudoSeries(target, n, intLike) {
 
   async function maybeShowCard() {
     var card = getCard(); if (!card) return;
+    var verifiedSession = await window.__kflDashboardSessionReady;
+    if (!verifiedSession) return;
 
     // Quick local checks first -- avoid any network calls if we can.
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
@@ -4968,11 +5179,16 @@ function generatePseudoSeries(target, n, intLike) {
     });
   }, 100);
 
+  function loadVerifiedCategories() {
+    Promise.resolve(window.__kflDashboardSessionReady).then(function(session) {
+      if (session) return fetchList().then(render);
+    });
+  }
   if (document.readyState === 'complete') {
-    fetchList().then(render);
+    loadVerifiedCategories();
   } else {
     window.addEventListener('load', function () {
-      setTimeout(function () { fetchList().then(render); }, 1500);
+      setTimeout(loadVerifiedCategories, 1500);
     });
   }
 })();
@@ -5282,8 +5498,11 @@ window.kflBulkDelete = async function () {
   window.kflApplyDashboardWhatsAppCapability = setCapability;
   setCapability(false, '', false);
 
-  fetch('/api/config', { credentials: 'same-origin', cache: 'no-store' })
-    .then(function (response) { return response.ok ? response.json() : null; })
+  Promise.resolve(window.__kflDashboardSessionReady).then(function (session) {
+    if (!session) return null;
+    return fetch('/api/config', { credentials: 'same-origin', cache: 'no-store' });
+  })
+    .then(function (response) { return response && response.ok ? response.json() : null; })
     .then(function (config) {
       var botNumber = String(config && config.BOT_NUMBER || '').replace(/\D+/g, '');
       if (!(config && config.ok === true && config.waba_approved === true && PHONE_RE.test(botNumber))) {

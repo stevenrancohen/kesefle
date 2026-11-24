@@ -58,6 +58,7 @@ function createRuntime(configHandler, linkHandler) {
 
   const context = {
     window: {},
+    __kflDashboardSessionReady: Promise.resolve({ user: { sub: 'user-1' } }),
     document: {
       querySelectorAll(selector) {
         if (selector === '[data-wa-action]') return actions;
@@ -82,7 +83,7 @@ function createRuntime(configHandler, linkHandler) {
   return { context, actions, whatsappOnly, appOnly, linkNote, calls };
 }
 
-async function flush(times = 12) {
+async function flush(times = 30) {
   for (let i = 0; i < times; i++) await Promise.resolve();
 }
 
